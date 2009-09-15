@@ -1,0 +1,42 @@
+ #ifndef AmiQt_QtChart_hh
+#define AmiQt_QtChart_hh
+
+#include "ami/qt/QtBase.hh"
+
+#include "ami/data/EntryScalar.hh"
+
+#include "qwt_plot_curve.h"
+class QwtPlot;
+class QColor;
+
+namespace Ami {
+  class EntryChart;
+  namespace Qt {
+    class AxisArray;
+    class QtChart : public QtBase {
+    public:
+      QtChart(const QString&   title,
+	      const Ami::EntryScalar&,
+	      unsigned npoints,
+	      const QColor&);
+      ~QtChart();
+    public:
+      void        dump  (FILE*   ) const;
+      void        attach(QwtPlot*);
+      void        update()        ;
+      void        xscale_update() ;
+      void        yscale_update() ;
+      const AxisArray* xinfo() const;
+    private:
+      EntryScalar&     _cache;
+      unsigned         _n;
+      unsigned         _current;
+      QwtPlotCurve     _curve;
+      double*          _x;
+      double*          _y;
+      AxisArray*     _xinfo;
+    };
+  };
+};
+
+#endif

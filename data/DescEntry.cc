@@ -1,0 +1,53 @@
+#include <string.h>
+
+#include "ami/data/DescEntry.hh"
+
+using namespace Ami;
+
+DescEntry::DescEntry(const char* name,
+				   const char* xtitle, 
+				   const char* ytitle, 
+				   Type type, 
+				   unsigned short size,
+				   bool isnormalized) :
+  Desc(name),
+  _group(-1),
+  _options(isnormalized ? (1<<Normalized) : 0),
+  _type(type),
+  _size(size)
+{ 
+  strncpy(_xtitle, xtitle, TitleSize);
+  _xtitle[TitleSize-1] = 0;
+  strncpy(_ytitle, ytitle, TitleSize);
+  _ytitle[TitleSize-1] = 0;
+}
+
+DescEntry::Type DescEntry::type() const {return Type(_type);}
+unsigned short DescEntry::size() const {return _size;}
+const char* DescEntry::xtitle() const {return _xtitle;}
+const char* DescEntry::ytitle() const {return _ytitle;}
+
+bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
+
+void DescEntry::xwarnings(float warn, float err) 
+{
+  _options |= (1<<XWarnings);
+  _xwarn = warn;
+  _xerr = err;
+}
+
+void DescEntry::ywarnings(float warn, float err) 
+{
+  _options |= (1<<YWarnings);
+  _ywarn = warn;
+  _yerr = err;
+}
+
+bool DescEntry::xhaswarnings() const {return _options&(1<<XWarnings);}
+bool DescEntry::yhaswarnings() const {return _options&(1<<YWarnings);}
+
+float DescEntry::xwarn() const {return _xwarn;}
+float DescEntry::xerr() const {return _xerr;}
+
+float DescEntry::ywarn() const {return _ywarn;}
+float DescEntry::yerr() const {return _yerr;}

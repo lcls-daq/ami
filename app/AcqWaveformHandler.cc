@@ -1,0 +1,91 @@
+#include "AcqWaveformHandler.hh"
+
+#include "ami/data/EntryWaveform.hh"
+#include "ami/data/ChannelID.hh"
+#include "pdsdata/acqiris/ConfigV1.hh"
+#include "pdsdata/acqiris/DataDescV1.hh"
+#include "pdsdata/opal1k/ConfigV1.hh"
+
+#include <stdio.h>
+
+using namespace Ami;
+
+static Pds::Acqiris::VertV1 _default_vert[Pds::Acqiris::ConfigV1::MaxChan];
+
+static Pds::Acqiris::ConfigV1 _default(0,0,0,
+				       Pds::Acqiris::TrigV1(0,0,0,0),
+				       Pds::Acqiris::HorizV1(0,0,0,0),
+				       _default_vert);
+
+AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo& info) : 
+  EventHandler(info, Pds::TypeId::Id_AcqWaveform, Pds::TypeId::Id_AcqConfig),
+  _config(_default),
+  _nentries(0)
+{
+}
+
+AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo&   info, 
+				       const Pds::Acqiris::ConfigV1& config) :
+  EventHandler(info, Pds::TypeId::Id_AcqWaveform, Pds::TypeId::Id_AcqConfig),
+  _config(_default),
+  _nentries(0)
+{
+  _configure(&config);
+}
+
+AcqWaveformHandler::~AcqWaveformHandler()
+{
+}
+
+unsigned AcqWaveformHandler::nentries() const { return _nentries; }
+
+const Entry* AcqWaveformHandler::entry(unsigned i) const { return _entry[i]; }
+
+void AcqWaveformHandler::reset() { _nentries = 0; }
+
+void AcqWaveformHandler::_configure(const void* payload)
+{
+  const Pds::Acqiris::ConfigV1& c = *reinterpret_cast<const Pds::Acqiris::ConfigV1*>(payload);
+  const Pds::Acqiris::HorizV1& h = c.horiz();
+  unsigned channelMask = c.channelMask();
+  unsigned channelNumber = 0;
+  for(unsigned k=0; channelMask!=0; k++) {
+    if (channelMask&1) {
+      DescWaveform desc(ChannelID::name(static_cast<const Pds::DetInfo&>(info()),channelNumber),
+			"Time [s]","Voltage [V]",
+			h.nbrSamples(), 0., h.sampInterval()*h.nbrSamples());
+      _entry[_nentries++] = new EntryWaveform(desc);
+      channelNumber++;
+    }
+    channelMask >>= 1;
+  }
+  _config = c;
+}
+
+typedef Pds::Acqiris::DataDescV1 AcqDD;
+
+void AcqWaveformHandler::_event    (const void* payload)
+{
+  AcqDD* d = const_cast<AcqDD*>(reinterpret_cast<const AcqDD*>(payload));
+  const Pds::Acqiris::HorizV1& h = _config.horiz();
+
+  for (unsigned i=0;i<_config.nbrChannels();i++) {
+    if (!_entry[i]) continue;
+
+    const int16_t* data = d->waveform(h);
+    data += d->indexFirstPoint();
+    float slope = _config.vert(i).slope();
+    float offset = _config.vert(i).offset();
+    EntryWaveform* entry = _entry[i];
+    unsigned nbrSamples = h.nbrSamples();
+    for (unsigned j=0;j<nbrSamples;j++) {
+      int16_t swap = (data[j]&0xff<<8) | (data[j]&0xff00>>8);
+      double val = swap*slope-offset;
+      entry->content(val,j);
+    }
+    entry->info(1,EntryWaveform::Normalization);
+    d = d->nextChannel(h);
+  }
+}
+
+void AcqWaveformHandler::_damaged() {}
