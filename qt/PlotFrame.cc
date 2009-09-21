@@ -8,7 +8,7 @@
 
 using namespace Ami::Qt;
 
-PlotFrame::PlotFrame(QWidget* parent) : QwtPlot(parent), _c(0) {}
+PlotFrame::PlotFrame(QWidget* parent) : QwtPlot(parent), _c(0) { setAutoDelete(false); }
 
 PlotFrame::~PlotFrame() {}
 

@@ -1,10 +1,10 @@
 #include "Cursors.hh"
 
-#include "ami/qt/PlotFrame.hh"
+#include "ami/qt/CursorTarget.hh"
 
 using namespace Ami::Qt;
 
-Cursors::Cursors(PlotFrame& frame) : _frame(frame) {}
+Cursors::Cursors(CursorTarget& frame) : _frame(frame) {}
   
 Cursors::~Cursors() {}
 

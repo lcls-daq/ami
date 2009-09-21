@@ -3,10 +3,10 @@
 
 namespace Ami {
   namespace Qt {
-    class PlotFrame;
+    class CursorTarget;
     class Cursors {
     public:
-      Cursors(PlotFrame&);
+      Cursors(CursorTarget&);
       virtual ~Cursors();
     public:
       void set_cursor (double, double);
@@ -14,7 +14,7 @@ namespace Ami {
     private:
       virtual void _set_cursor(double, double) = 0;
     protected:
-      PlotFrame&  _frame;
+      CursorTarget&  _frame;
     };
   };
 };

@@ -91,7 +91,7 @@ void QtWaveform::yscale_update()
   _y[nb] = _y[nb-1];
 }
 
-const AxisArray* QtWaveform::xinfo() const
+const AxisInfo* QtWaveform::xinfo() const
 {
   return _xinfo;
 }

@@ -11,6 +11,7 @@ class QVBoxLayout;
 class QComboBox;
 
 #include "ami/qt/Cursors.hh"
+#include "ami/data/ConfigureRequest.hh"
 
 #include <list>
 
@@ -29,20 +30,21 @@ namespace Ami {
     class DescTH1F;
     class DescProf;
     class DescChart;
-    class Display;
+    class WaveformDisplay;
 
     class CursorsX : public QWidget,
 		     public Cursors {
       Q_OBJECT
     public:
-      CursorsX(ChannelDefinition* channels[], unsigned nchannels, Display&);
+      CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
       ~CursorsX();
     public:
       Ami::AbsOperator* math() const;
     public:
       void remove(CursorDefinition&);
       void configure(char*& p, unsigned input, unsigned& output,
-		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
+		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
+		     ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
     public slots:
@@ -66,7 +68,7 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
 
-      Display&  _frame;
+      WaveformDisplay&  _frame;
       QStringList     _names;
       CursorLocation* _new_value;
       QVBoxLayout*    _clayout;

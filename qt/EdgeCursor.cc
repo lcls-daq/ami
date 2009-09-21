@@ -61,7 +61,7 @@ void EdgeCursor::grab()
 
 void EdgeCursor::show_in_plot(bool lShow)
 {
-  if (lShow) _marker->attach(&_frame);
+  if (lShow) _marker->attach(static_cast<PlotFrame*>(&_frame));
   else       _marker->attach(NULL);
   emit changed();
 }

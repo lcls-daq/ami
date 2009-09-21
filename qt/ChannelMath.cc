@@ -1,5 +1,6 @@
 #include "ami/qt/ChannelMath.hh"
 
+#include "ami/qt/Calculator.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
 
@@ -7,6 +8,7 @@
 #include "ami/data/AbsFilter.hh"
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/EntryMath.hh"
+#include "ami/data/Expression.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QPushButton>
@@ -15,26 +17,57 @@
 
 using namespace Ami::Qt;
 
-ChannelMath::ChannelMath() :
+ChannelMath::ChannelMath(const QStringList& names) :
   QWidget (0),
   _expr   (new QLineEdit),
-  _changed(false)
+  _changed(false),
+  _names  (names),
+  _filter (0),
+  _operator(0)
 {
+  _expr->setReadOnly(true);
+  QPushButton* calcB = new QPushButton("Enter");
+
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(new QLabel("Expr"));
   layout->addWidget(_expr);
+  layout->addWidget(calcB);
   setLayout(layout);
 
-  connect(_expr   , SIGNAL(editingFinished()), this, SLOT(change_expr()));
+  connect(calcB, SIGNAL(clicked()), this, SLOT(calc()));
 }
 
 ChannelMath::~ChannelMath() 
 {
+  if (_filter  ) delete _filter;
+  if (_operator) delete _operator;
 }
 
-void ChannelMath::change_expr()
+static QChar _exponentiate(0x005E);
+static QChar _multiply    (0x00D7);
+static QChar _divide      (0x00F7);
+static QChar _add         (0x002B);
+static QChar _subtract    (0x002D);
+
+void ChannelMath::calc()
 {
-  _changed = true;
+  QStringList ops;
+  ops << _exponentiate
+      << _multiply
+      << _divide
+      << _add   
+      << _subtract;
+
+  QStringList vops;
+
+  Calculator* c = new Calculator(tr("Channel Math"),"",
+				 _names, vops, ops);
+  if (c->exec()==QDialog::Accepted) {
+    _expr->setText(c->result());
+    _changed = true;
+  }
+
+  delete c;
 }
 
 bool ChannelMath::resolve(ChannelDefinition* channels[],
@@ -46,10 +79,16 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   for(int i=0; i<nchannels; i++)
     names << channels[i]->name();
 
+  QString expr(_expr->text());
+  expr.replace(_exponentiate,Expression::exponentiate());
+  expr.replace(_multiply    ,Expression::multiply());
+  expr.replace(_divide      ,Expression::divide());
+  expr.replace(_add         ,Expression::add());
+  expr.replace(_subtract    ,Expression::subtract());
+
   QStringList uses;
   QRegExp match("[a-zA-Z]+");
   int pos=0;
-  QString expr(_expr->text());
   while( (pos=match.indexIn(expr,pos)) != -1) {
     QString use = expr.mid(pos,match.matchedLength());
     if (!uses.contains(use))

@@ -39,6 +39,8 @@ QtTH1F::QtTH1F(const QString&   title,
   _y[b] = _y[b-1];
   _curve.setRawData(_x,_y,nb+1);  // QwtPlotCurve wants the x-endpoint
   _xinfo = new AxisArray(_x,nb);
+
+  printf("Created TH1F %p with %d bins from signature %d\n",this,nb,entry.desc().signature());
 }
   
   
@@ -63,9 +65,11 @@ void           QtTH1F::dump  (FILE* f) const
 void           QtTH1F::attach(QwtPlot* p)
 {
   _curve.attach(p);
-  const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
-  p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
-  p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
+  if (p) {
+    const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
+    p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
+    p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
+  }
 }
 
 void           QtTH1F::update()
@@ -88,13 +92,15 @@ void QtTH1F::xscale_update()
 void QtTH1F::yscale_update()
 {
   const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
+  double   n  = _entry.info(EntryTH1F::Normalization);
+  double scal = (n < 1) ? 1. : 1./n;
   unsigned nb = _entry.desc().nbins();
   for(unsigned b=0; b<nb; b++)
-    _y[b] = _yscale(_entry.content(b));
+    _y[b] = _yscale(_entry.content(b)*scal);
   _y[nb] = _y[nb-1];
 }
 
-const AxisArray* QtTH1F::xinfo() const
+const AxisInfo* QtTH1F::xinfo() const
 {
   return _xinfo;
 }

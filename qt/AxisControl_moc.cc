@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'AxisControl.hh'
 **
-** Created: Tue Sep 1 14:32:38 2009
+** Created: Wed Sep 16 14:36:54 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,7 +22,7 @@ static const uint qt_meta_data_Ami__Qt__AxisControl[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-       4,   10, // methods
+       5,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -33,6 +33,7 @@ static const uint qt_meta_data_Ami__Qt__AxisControl[] = {
       38,   21,   21,   21, 0x0a,
       60,   21,   21,   21, 0x0a,
       82,   21,   21,   21, 0x0a,
+      99,   21,   21,   21, 0x0a,
 
        0        // eod
 };
@@ -40,7 +41,7 @@ static const uint qt_meta_data_Ami__Qt__AxisControl[] = {
 static const char qt_meta_stringdata_Ami__Qt__AxisControl[] = {
     "Ami::Qt::AxisControl\0\0windowChanged()\0"
     "changeLoEdge(QString)\0changeHiEdge(QString)\0"
-    "auto_scale(bool)\0"
+    "auto_scale(bool)\0updateInfo()\0"
 };
 
 const QMetaObject Ami::Qt::AxisControl::staticMetaObject = {
@@ -72,8 +73,9 @@ int Ami::Qt::AxisControl::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         case 1: changeLoEdge((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         case 2: changeHiEdge((*reinterpret_cast< const QString(*)>(_a[1]))); break;
         case 3: auto_scale((*reinterpret_cast< bool(*)>(_a[1]))); break;
+        case 4: updateInfo(); break;
         }
-        _id -= 4;
+        _id -= 5;
     }
     return _id;
 }

@@ -111,6 +111,7 @@ BinMath::BinMath(const char*& p, FeatureCache& features, const Cds& cds) :
 	CASETERM(Image);
       default:
 	printf("BinMath: No implementation for entry type %d\n",entry->desc().type());
+	t = 0;
 	break;
       }
       new_expr.append(expr.mid(last,pos-last));
@@ -172,5 +173,6 @@ Entry&     BinMath::_operate(const Entry& e) const
       break;
     }
   }
+  _entry->time(e.time());
   return *_entry;
 }

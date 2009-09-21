@@ -62,7 +62,8 @@ void AnalysisFactory::configure(unsigned       id,
   while(payload < end) {
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
 
-    const Entry& input = *_cds.entry(req.input());      
+    const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
+    const Entry& input = *input_cds.entry(req.input());
     const char*  p     = reinterpret_cast<const char*>(&req+1);
     _analyses.push_back(new Analysis(id, input, req.output(),
 				     cds, _features, p));

@@ -61,8 +61,8 @@ void EntryProf::setto(const EntryProf& entry)
   time(entry.time());
 }
 
-void EntryProf::setto(const EntryProf& curr, 
-			 const EntryProf& prev) 
+void EntryProf::diff(const EntryProf& curr, 
+		     const EntryProf& prev) 
 {
   double* dst = _ysum;
   const double* end = dst + SIZE(_desc.nbins());
@@ -70,6 +70,19 @@ void EntryProf::setto(const EntryProf& curr,
   const double* srcprev = prev._ysum;
   do {
     *dst++ = *srccurr++ - *srcprev++;
+  } while (dst < end);
+  time(curr.time());
+}
+
+void EntryProf::sum(const EntryProf& curr, 
+		    const EntryProf& prev) 
+{
+  double* dst = _ysum;
+  const double* end = dst + SIZE(_desc.nbins());
+  const double* srccurr = curr._ysum;
+  const double* srcprev = prev._ysum;
+  do {
+    *dst++ = *srccurr++ + *srcprev++;
   } while (dst < end);
   time(curr.time());
 }

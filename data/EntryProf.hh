@@ -34,13 +34,14 @@ namespace Ami {
     void addy(double y, unsigned bin);
     void addy(double y, double x);
 
-    enum Info { Underflow, Overflow, InfoSize };
+    enum Info { Underflow, Overflow, Normalization, InfoSize };
     double info(Info) const;
     void   info(double, Info);
     void   addinfo(double, Info);
 
     void setto(const EntryProf& entry);
-    void setto(const EntryProf& curr, const EntryProf& prev);
+    void sum  (const EntryProf&, const EntryProf&);
+    void diff (const EntryProf&, const EntryProf&);
 
     // Implements Entry
     virtual const DescProf& desc() const;
@@ -101,7 +102,6 @@ namespace Ami {
   }
   inline void EntryProf::addy(double y, double x)
   {
-    printf("Add %g,%g\n",x,y);
     int bin = int((x-_desc.xlow())*double(_desc.nbins())/(_desc.xup()-_desc.xlow()));
     if (bin < 0)      
       addinfo(y,Underflow);

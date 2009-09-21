@@ -5,10 +5,6 @@
 
 #include "ami/data/FeatureCache.hh"
 
-namespace Pds {
-  class Dgram;
-};
-
 namespace Ami {
 
   class BldXtcReader : public EventHandler {
@@ -16,8 +12,9 @@ namespace Ami {
     BldXtcReader(FeatureCache&);
     ~BldXtcReader();
   public:
-    void   _configure(const void* payload);
-    void   _event    (const void* payload);
+    void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _calibrate(const void* payload, const Pds::ClockTime& t);
+    void   _event    (const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;

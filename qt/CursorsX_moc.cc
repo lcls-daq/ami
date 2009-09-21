@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'CursorsX.hh'
 **
-** Created: Sat Sep 12 08:36:59 2009
+** Created: Fri Sep 18 15:56:34 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!

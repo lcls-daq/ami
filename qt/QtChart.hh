@@ -12,7 +12,6 @@ class QColor;
 namespace Ami {
   class EntryChart;
   namespace Qt {
-    class AxisArray;
     class QtChart : public QtBase {
     public:
       QtChart(const QString&   title,
@@ -26,15 +25,16 @@ namespace Ami {
       void        update()        ;
       void        xscale_update() ;
       void        yscale_update() ;
-      const AxisArray* xinfo() const;
+      const AxisInfo* xinfo() const;
     private:
       EntryScalar&     _cache;
-      unsigned         _n;
+      unsigned         _n;  // max # of pts
       unsigned         _current;
       QwtPlotCurve     _curve;
+      unsigned         _pts; // accumulate # of pts
       double*          _x;
       double*          _y;
-      AxisArray*     _xinfo;
+      AxisInfo*     _xinfo;
     };
   };
 };

@@ -179,6 +179,8 @@ void Ami::Qt::Display::add   (QtBase* b)
   _xinfo->update(*b->xinfo());
 
   _curves.push_back(b);
+  b->xscale_update();
+  b->update();
   b->attach(_plot);
 
   if (_xrange->isAuto()) {
@@ -187,8 +189,36 @@ void Ami::Qt::Display::add   (QtBase* b)
   emit redraw();
 }
 
+void Ami::Qt::Display::show(QtBase* b)
+{
+  if (_hidden.contains(b)) {
+    _hidden.remove(b);
+    _curves.push_back(b);
+
+    b->xscale_update();
+    b->update();
+    b->attach(_plot);
+
+    emit redraw();
+  }
+}
+
+void Ami::Qt::Display::hide(QtBase* b)
+{
+  if (_curves.contains(b)) {
+    _curves.remove(b);
+    _hidden.push_back(b);
+
+    b->attach(NULL);
+
+    emit redraw();
+  }
+}
+
 void Ami::Qt::Display::reset()
 {
+  _curves.merge(_hidden);
+
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
     delete (*it);
   }

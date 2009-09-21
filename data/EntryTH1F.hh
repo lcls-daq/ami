@@ -23,7 +23,7 @@ namespace Ami {
     void   content(double y, unsigned bin);
     void   addcontent(double y, double x);
 
-    enum Info { Underflow, Overflow, InfoSize };
+    enum Info { Underflow, Overflow, Normalization, InfoSize };
     double info(Info) const;
     void   info(double y, Info);
     void   addinfo(double y, Info);

@@ -4,6 +4,8 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryProf.hh"
 #include "ami/data/EntryFactory.hh"
 
 #include <stdio.h>
@@ -44,14 +46,31 @@ Entry&     Average::_operate(const Entry& e) const
 {
   switch(e.desc().type()) {
   case DescEntry::TH1F:
-    printf("Averaging TH1F not implemented\n");
-    break;
+    { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
+      EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
+      for(unsigned k=0; k<en.desc().nbins(); k++)
+	_en.addcontent(en.content(k),k);
+      for(unsigned j=0; j<EntryTH1F::InfoSize; j++) {
+	EntryTH1F::Info i = (EntryTH1F::Info)j;
+	_en.addinfo(en.info(i),i);
+      }
+      if (_n && _en.info(EntryTH1F::Normalization)==_n) {
+	static_cast<EntryTH1F*>(_cache)->setto(_en);
+	_en.reset();
+      }
+      break; }
   case DescEntry::TH2F:
     printf("Averaging TH2F not implemented\n");
     break;
   case DescEntry::Prof:
-    printf("Averaging Prof not implemented\n");
-    break;
+    { const EntryProf& en = static_cast<const EntryProf&>(e);
+      EntryProf& _en = static_cast<EntryProf&>(*_entry);
+      _en.sum(_en,en);
+      if (_n && _en.info(EntryProf::Normalization)==_n) {
+	static_cast<EntryProf*>(_cache)->setto(_en);
+	_en.reset();
+      }
+      break; }
   case DescEntry::Image:
     { const EntryImage& en = static_cast<const EntryImage&>(e);
       EntryImage& _en = static_cast<EntryImage&>(*_entry);
@@ -84,5 +103,13 @@ Entry&     Average::_operate(const Entry& e) const
   default:
     break;
   }
-  return _n ? *_cache : *_entry;
+  if (_n) {
+    _cache->time(e.time());
+    return *_cache;
+  }
+  else {
+    _entry->time(e.time());
+    return *_entry;
+  }
 }
+

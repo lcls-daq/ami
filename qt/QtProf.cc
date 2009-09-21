@@ -38,7 +38,6 @@ QtProf::QtProf(const QString&   title,
     if (entry.nentries(b)) {
       _x[i] = _xscale(x0 + double(b)*dx);
       _y[i] = entry.ymean(b);
-      printf("Init pt %d  %g,%g\n",i,_x[i],_y[i]);
       i++;
     }
     b++;
@@ -68,9 +67,11 @@ void           QtProf::dump  (FILE* f) const
 void           QtProf::attach(QwtPlot* p)
 {
   _curve.attach(p);
-  const EntryProf& _entry = static_cast<const EntryProf&>(entry());
-  p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
-  p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
+  if (p) {
+    const EntryProf& _entry = static_cast<const EntryProf&>(entry());
+    p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
+    p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
+  }
 }
 
 void           QtProf::update()
@@ -86,7 +87,6 @@ void           QtProf::update()
     if (_entry.nentries(b)) {
       _x[i] = _xscale(x0 + double(b)*dx);
       _y[i] = _entry.ymean(b);
-      printf("Add pt %d  %g,%g\n",i,_x[i],_y[i]);
       i++;
     }
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
@@ -102,7 +102,7 @@ void QtProf::yscale_update()
   update();
 }
 
-const AxisArray* QtProf::xinfo() const
+const AxisInfo* QtProf::xinfo() const
 {
   return _xinfo;
 }

@@ -6,7 +6,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/CursorPlot.hh"
-#include "ami/qt/Display.hh"
+#include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
@@ -94,7 +94,7 @@ static QChar _divide      (0x00F7);
 static QChar _add         (0x002B);
 static QChar _subtract    (0x002D);
 
-CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, Display& frame) :
+CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
   QWidget   (0),
   Cursors   (*frame.plot()),
   _channels (channels),
@@ -220,10 +220,11 @@ CursorsX::~CursorsX()
 }
 
 void CursorsX::configure(char*& p, unsigned input, unsigned& output,
-			ChannelDefinition* channels[], int* signatures, unsigned nchannels)
+			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
+			 ConfigureRequest::Source source)
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
 void CursorsX::setup_payload(Cds& cds)
@@ -316,6 +317,7 @@ void CursorsX::plot()
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
     break;
   default:
+    desc = 0;
     break;
   }
 

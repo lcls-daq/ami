@@ -17,7 +17,6 @@ int main(int argc, char **argv)
 {
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
-  const char* pvlist = 0;
 
   for(int i=0; i<argc; i++) {
     if (strcmp(argv[i],"-i")==0) {

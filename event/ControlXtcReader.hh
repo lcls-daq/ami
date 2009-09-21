@@ -16,8 +16,9 @@ namespace Ami {
     ControlXtcReader(FeatureCache&);
     ~ControlXtcReader();
   public:
-    void   _configure(const void* payload);
-    void   _event    (const void* payload);
+    void   _calibrate(const void* payload, const Pds::ClockTime& t);
+    void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _event    (const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;

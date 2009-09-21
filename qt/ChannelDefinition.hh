@@ -6,8 +6,11 @@
 #include <QtGui/QColor>
 #include <QtCore/QString>
 
+#include "ami/data/ConfigureRequest.hh"
+
 class QButtonGroup;
 class QLineEdit;
+class QStringList;
 
 namespace Ami {
   class AbsOperator;
@@ -19,17 +22,21 @@ namespace Ami {
     class Filter;
     class ChannelMath;
     class Transform;
+    class QtBase;
     class ChannelDefinition : public QWidget {
       Q_OBJECT
     public:
-      ChannelDefinition(const QString& name, Display& frame, const QColor&, bool init=false);
+      ChannelDefinition(const QString& name, 
+			const QStringList& names,
+			Display& frame, const QColor&, bool init=false);
       ~ChannelDefinition();
     public:
       const QString& name() const { return _name; }
       const Filter&       filter   () const { return *_filter; }
       AbsTransform& transform();
       int           configure(char*& p, unsigned input, unsigned& output,
-			      ChannelDefinition* ch[], int*, int);
+			      ChannelDefinition* ch[], int*, int,
+			      ConfigureRequest::Source = ConfigureRequest::Discovery);
       void          setup_payload  (Cds&);
     public slots:
       void load_reference();
@@ -38,6 +45,7 @@ namespace Ami {
     signals:
       void reference_loaded(bool);
       void changed();
+      void newplot(bool);
     private:
       QString       _name;
       Display&      _frame;
@@ -52,6 +60,8 @@ namespace Ami {
       unsigned      _output_signature;
       bool          _changed;
       QString       _ref_file;
+      bool          _show;
+      QtBase*       _plot;
     };
   };
 };

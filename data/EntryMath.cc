@@ -57,6 +57,7 @@ EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds) :
       CASETERM(Image);
     default:
       printf("EntryMath: No implementation for entry type %d\n",entry->desc().type());
+      t = 0;
       break;
     }
     new_expr.append(expr.mid(last,pos-last));
@@ -112,5 +113,6 @@ Entry&     EntryMath::_operate(const Entry& e) const
     printf("EntryMath::_operator no implementation for type %d\n",e.desc().type());
     break;
   }
+  _entry->time(e.time());
   return *_entry;
 }

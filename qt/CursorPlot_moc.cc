@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'CursorPlot.hh'
 **
-** Created: Fri Sep 4 19:02:20 2009
+** Created: Fri Sep 18 15:58:15 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!

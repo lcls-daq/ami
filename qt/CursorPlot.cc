@@ -146,7 +146,7 @@ void CursorPlot::setup_payload(Cds& cds)
 
 void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels,
-			   const AxisArray& xinfo)
+			   const AxisArray& xinfo, ConfigureRequest::Source source)
 {
   unsigned channel = _input->input();
   unsigned input_signature = signatures[channel];
@@ -180,6 +180,7 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
 		  _input->feature_index());
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						  source,
 						  input,
 						  _output_signature = ++output,
 						  *channels[channel]->filter().filter(),

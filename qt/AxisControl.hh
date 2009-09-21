@@ -20,6 +20,8 @@ namespace Ami {
       AxisControl(QWidget*, const QString& title, const AxisInfo& info);
       ~AxisControl();
     public:
+      void update(const AxisInfo&);
+    public:
       bool   isAuto() const;
       double loEdge() const;
       double hiEdge() const;
@@ -27,8 +29,8 @@ namespace Ami {
       void changeLoEdge(const QString&);
       void changeHiEdge(const QString&);
       void auto_scale(bool);
-#ifdef USE_SCROLL
       void updateInfo();
+#ifdef USE_SCROLL
       void changeLoEdge(int);
       void changeWindow(int,int);
       void zoom();
@@ -41,7 +43,7 @@ namespace Ami {
 #endif
     private:
       QString _title;
-      const AxisInfo& _info;
+      const AxisInfo* _info;
       QScrollBar*     _scroll;
       QLineEdit*      _loBox;
       QLineEdit*      _hiBox;

@@ -1,8 +1,6 @@
 #include "Client.hh"
 
 #include "ami/qt/Control.hh"
-#include "ami/qt/EdgeFinder.hh"
-#include "ami/qt/CursorsX.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/Math.hh"
@@ -19,9 +17,12 @@
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/service/Socket.hh"
+#include "ami/service/Semaphore.hh"
 
 #include "pdsdata/xtc/ClockTime.hh"
 
+#include <QtGui/QButtonGroup>
+#include <QtGui/QCheckBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
@@ -38,17 +39,21 @@ typedef Pds::DetInfo DI;
 static const int BufferSize = 0x8000;
 
 Ami::Qt::Client::Client(const Pds::DetInfo& src,
-			unsigned            channel) :
+			unsigned            channel,
+			Display*            frame) :
   QWidget          (0),
   _src             (src),
   _channel         (channel),
+  _frame           (frame),
   _input_entry     (0),
   _output_signature(0), 
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
   _cds             ("Client"),
   _niovload        (5),
-  _iovload         (new iovec[_niovload])
+  _iovload         (new iovec[_niovload]),
+  _layout          (new QVBoxLayout),
+  _sem             (new Semaphore(Semaphore::EMPTY))
 {
   if (src.detector()==Pds::DetInfo::AmoETof)
     setWindowTitle(QString("AmoETof-%1").arg(channel));
@@ -58,9 +63,14 @@ Ami::Qt::Client::Client(const Pds::DetInfo& src,
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this);
-  _frame   = new Display;
   _status  = new Status;
 
+  QButtonGroup* showPlotBoxes = new QButtonGroup;
+  showPlotBoxes->setExclusive( !frame->canOverlay() );
+
+  QStringList names;
+  for(unsigned i=0; i<NCHANNELS; i++)
+    names << QString("Ch%1").arg(char('A'+i));
 
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
@@ -69,26 +79,26 @@ Ami::Qt::Client::Client(const Pds::DetInfo& src,
       QPushButton* chanB[NCHANNELS];
       QColor color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
       for(int i=0; i<NCHANNELS; i++) {
-	QString title = QString("Ch%1").arg(char('A'+i));
-	_channels[i] = new ChannelDefinition(title, *_frame, color[i], i==0);
+	QString title = names[i];
+	_channels[i] = new ChannelDefinition(title, names, *_frame, color[i], i==0);
 	chanB[i] = new QPushButton(title); chanB[i]->setCheckable(true);
 	chanB[i]->setPalette(QPalette(color[i]));
-	layout1->addWidget(chanB[i]);
-	connect(chanB[i], SIGNAL(clicked(bool)), _channels[i], SLOT(setVisible(bool)));
-	connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
+	{ QHBoxLayout* layout4 = new QHBoxLayout;
+	  QCheckBox* box = new QCheckBox("");
+	  showPlotBoxes->addButton(box);
+	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
+	  box->setChecked( i==0 );
+	  layout4->addWidget(box);
+	  layout4->addWidget(chanB[i]);
+	  layout1->addLayout(layout4); 
+	  connect(chanB[i], SIGNAL(clicked(bool)), _channels[i], SLOT(setVisible(bool)));
+	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
+	}
       }
       chanBox->setLayout(layout1);
       layout3->addWidget(chanBox); }
-    { QPushButton* edgesB = new QPushButton("Edges");
-      edgesB->setCheckable(true);
-      layout3->addWidget(edgesB);
-      _edges = new EdgeFinder(_channels,NCHANNELS,*_frame);
-      connect(edgesB, SIGNAL(clicked(bool)), _edges, SLOT(setVisible(bool))); }
-    { QPushButton* cursorsB = new QPushButton("Cursors");
-      cursorsB->setCheckable(true);
-      layout3->addWidget(cursorsB);
-      _cursors = new CursorsX(_channels,NCHANNELS,*_frame);
-      connect(cursorsB, SIGNAL(clicked(bool)), _cursors, SLOT(setVisible(bool))); }
+    layout3->addLayout(_layout);
     layout3->addStretch();
     layout->addLayout(layout3); }
   { QVBoxLayout* layout1 = new QVBoxLayout;
@@ -97,13 +107,11 @@ Ami::Qt::Client::Client(const Pds::DetInfo& src,
       layout2->addStretch();
       layout2->addWidget(_status);
       layout1->addLayout(layout2); }
-    layout1->addWidget(_frame);
+    layout1->addWidget(_frame->widget());
     layout->addLayout(layout1); }
   setLayout(layout);
 
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
-  connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
 Ami::Qt::Client::~Client() 
@@ -113,10 +121,13 @@ Ami::Qt::Client::~Client()
   delete[] _request; 
 }
 
+void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }
+
+Ami::Qt::Display& Ami::Qt::Client::display() { return *_frame; }
+
 void Ami::Qt::Client::connected()
 {
   _status->set_state(Status::Connected);
-  //  _manager->configure();
   _manager->discover();
 }
 
@@ -136,6 +147,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   for(  const DescEntry* e = rx.entries(); e < rx.end(); 
       e = reinterpret_cast<const DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size())) {
+    printf("Test %s\n",e->name());
     if (strcmp(e->name(),channel_name)==0) {
       _input_entry = e;
     }
@@ -181,11 +193,8 @@ int  Ami::Qt::Client::configure       (iovec* iov)
       }
     } while(lAdded);
 
-    _edges  ->configure(p,_input_entry->signature(),_output_signature,
-			_channels,signatures,NCHANNELS);
-
-    _cursors->configure(p,_input_entry->signature(),_output_signature,
-			_channels,signatures,NCHANNELS);
+    _configure(p,_input_entry->signature(),_output_signature,
+	       _channels,signatures,NCHANNELS);
 
     if (p > _request+BufferSize) {
       printf("Client request overflow: size = 0x%x\n", p-_request);
@@ -229,6 +238,8 @@ void Ami::Qt::Client::read_description(Socket& socket)
 
   //  printf("emit description\n");
   emit description_changed(size);
+
+  _sem->take();
 }
 
 void Ami::Qt::Client::_read_description(int size)
@@ -243,9 +254,9 @@ void Ami::Qt::Client::_read_description(int size)
   const char* const end = payload + size;
   //  dump(payload, size);
 
-  { const Desc* e = reinterpret_cast<const Desc*>(payload);
-    //    printf("Cds %s\n",e->name());
-    payload += sizeof(Desc); }
+  //  { const Desc* e = reinterpret_cast<const Desc*>(payload);
+  //    printf("Cds %s\n",e->name()); }
+  payload += sizeof(Desc);
 
   while( payload < end ) {
     const DescEntry* desc = reinterpret_cast<const DescEntry*>(payload);
@@ -268,11 +279,11 @@ void Ami::Qt::Client::_read_description(int size)
   for(unsigned i=0; i<NCHANNELS; i++)
     _channels[i]->setup_payload(_cds);
 
-  _edges  ->setup_payload(_cds);
-
-  _cursors->setup_payload(_cds);
+  _setup_payload(_cds);
 
   _status->set_state(Status::Described);
+
+  _sem->give();
 }
 
 //
@@ -295,14 +306,11 @@ void Ami::Qt::Client::read_payload     (Socket& socket)
 
 void Ami::Qt::Client::process         () 
 {
-  //  printf("process\n"); 
-
   //
   //  Perform client-side processing
   //
   _frame  ->update();
-  _edges  ->update();
-  _cursors->update();
+  _update();
   
   _status->set_state(Status::Processed);
 }

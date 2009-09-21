@@ -5,7 +5,7 @@
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/EdgePlot.hh"
-#include "ami/qt/Display.hh"
+#include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/PlotFrame.hh"
 
 #include "ami/data/DescTH1F.hh"
@@ -30,7 +30,7 @@
 
 using namespace Ami::Qt;
 
-EdgeFinder::EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, Display& frame) :
+EdgeFinder::EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
   QWidget   (0),
   _channels (channels),
   _nchannels(nchannels),

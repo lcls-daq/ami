@@ -7,6 +7,8 @@
 #include "ami/data/EntryMath.hh"
 #include "ami/data/BinMath.hh"
 #include "ami/data/EdgeFinder.hh"
+#include "ami/data/XYProjection.hh"
+#include "ami/data/RPhiProjection.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -42,8 +44,9 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::EntryMath : o = new EntryMath(p,input,output_cds); break;
   case AbsOperator::BinMath   : o = new BinMath  (p,_f,output_cds); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p, output_cds); break;
+  case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
+  case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::Value     :
-  case AbsOperator::Projection:
   default: break;
   }
   if (next)

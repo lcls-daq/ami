@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'EdgeFinder.hh'
 **
-** Created: Mon Sep 14 14:33:37 2009
+** Created: Wed Sep 16 12:00:30 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!

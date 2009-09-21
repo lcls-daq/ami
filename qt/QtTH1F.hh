@@ -11,7 +11,6 @@ namespace Ami {
   class EntryTH1F;
   class AbsTransform;
   namespace Qt {
-    class AxisArray;
     class QtTH1F : public QtBase {
     public:
       QtTH1F(const QString&   title,
@@ -26,14 +25,14 @@ namespace Ami {
       void        update()        ;
       void        xscale_update() ;
       void        yscale_update() ;
-      const AxisArray* xinfo() const;
+      const AxisInfo* xinfo() const;
     private:
       const AbsTransform&     _xscale;
       const AbsTransform&     _yscale;
       QwtPlotCurve     _curve;
       double*          _x;
       double*          _y;
-      AxisArray*     _xinfo;
+      AxisInfo*     _xinfo;
     };
   };
 };

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'ChannelMath.hh'
 **
-** Created: Fri Sep 4 13:02:20 2009
+** Created: Wed Sep 16 12:31:06 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -33,7 +33,7 @@ static const uint qt_meta_data_Ami__Qt__ChannelMath[] = {
 };
 
 static const char qt_meta_stringdata_Ami__Qt__ChannelMath[] = {
-    "Ami::Qt::ChannelMath\0\0change_expr()\0"
+    "Ami::Qt::ChannelMath\0\0calc()\0"
 };
 
 const QMetaObject Ami::Qt::ChannelMath::staticMetaObject = {
@@ -61,7 +61,7 @@ int Ami::Qt::ChannelMath::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: change_expr(); break;
+        case 0: calc(); break;
         }
         _id -= 1;
     }

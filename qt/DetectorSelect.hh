@@ -7,6 +7,7 @@
 
 namespace Ami {
   namespace Qt {
+    class Client;
     class DetectorSelect : public QWidget {
       Q_OBJECT
     public:
@@ -14,16 +15,21 @@ namespace Ami {
 		     unsigned serverGroup);
       ~DetectorSelect();
     public:
-      void start_client(Pds::DetInfo::Detector, unsigned);
+      void start_waveform_client(Pds::DetInfo::Detector, unsigned, unsigned);
+      void start_image_client(Pds::DetInfo::Detector, unsigned, unsigned);
     public slots:
       void start_gd   ();
       void start_ims  ();
       void start_itof ();
       void start_mbes ();
       void start_etof (int);
+      void start_bps  (int);
+      void start_vmi  ();
     private:
       unsigned _interface;
       unsigned _serverGroup;
+      enum { MaxClients=12 };
+      Client* _client[MaxClients];
     };
   };
 };

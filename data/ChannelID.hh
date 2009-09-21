@@ -6,7 +6,7 @@
 namespace Ami {
   class ChannelID {
   public:
-    static const char* name(const Pds::DetInfo& info, unsigned channel);
+    static const char* name(const Pds::DetInfo& info, unsigned channel=0);
   };
 };
 

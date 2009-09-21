@@ -28,12 +28,12 @@ namespace Ami {
     class DescTH1F;
     class DescProf;
     class DescChart;
-    class Display;
+    class WaveformDisplay;
 
     class EdgeFinder : public QWidget {
       Q_OBJECT
     public:
-      EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, Display&);
+      EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
       ~EdgeFinder();
     public:
       Ami::AbsOperator* math() const;
@@ -55,7 +55,7 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
 
-      Display&  _frame;
+      WaveformDisplay&  _frame;
       EdgeCursor* _baseline;
       EdgeCursor* _threshold;
  

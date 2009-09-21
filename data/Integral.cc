@@ -91,6 +91,6 @@ Entry&     Integral::_operate(const Entry& e) const
   case DescEntry::TH1F:    reinterpret_cast<EntryTH1F*>  (_entry)->addcontent(1.,sum); break;
   default: break;
   }
-
+  _entry->time(e.time());
   return *_entry;
 }

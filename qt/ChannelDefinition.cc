@@ -38,6 +38,7 @@ enum { _None, _Single, _Average, _Math, _Reference };
 enum { REFERENCE_BUFFER_SIZE = 0x1000 };
 
 ChannelDefinition::ChannelDefinition(const QString& name, 
+				     const QStringList& names,
 				     Display& frame, 
 				     const QColor& color, 
 				     bool init) :
@@ -48,10 +49,12 @@ ChannelDefinition::ChannelDefinition(const QString& name,
   _filter          (new Filter   (name)),
   _operator        (0),
   _transform       (new Transform(QString("%1 : Y Transform").arg(name),"y")),
-  _math            (new ChannelMath),
+  _math            (new ChannelMath(names)),
   _interval        (new QLineEdit),
   _output_signature(-1UL),
-  _changed         (false)
+  _changed         (false),
+  _show            (false),
+  _plot            (0)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -75,10 +78,8 @@ ChannelDefinition::ChannelDefinition(const QString& name,
 
   QPushButton* filterB  = new QPushButton("Filter");
   QPushButton* yfuncB   = new QPushButton("Y Transform");
-  QPushButton* displayB = new QPushButton("Display");
   QPushButton* applyB   = new QPushButton("OK");
   QPushButton* closeB   = new QPushButton("Close");
-  displayB->setCheckable(true);  // toggles
 
   QVBoxLayout* l = new QVBoxLayout;
   { QGroupBox* plot_box = new QGroupBox("Plot");
@@ -104,7 +105,6 @@ ChannelDefinition::ChannelDefinition(const QString& name,
     l->addWidget(plot_box); }
   { QHBoxLayout* layout = new QHBoxLayout;
     layout->addStretch();
-    layout->addWidget(displayB);
     layout->addWidget(filterB);
     layout->addWidget(yfuncB);
     layout->addStretch();
@@ -122,7 +122,6 @@ ChannelDefinition::ChannelDefinition(const QString& name,
   connect(loadB   , SIGNAL(clicked()), this, SLOT(load_reference()));
   connect(filterB , SIGNAL(clicked()), _filter, SLOT(show()));
   connect(yfuncB  , SIGNAL(clicked()), _transform , SLOT(show()));
-  connect(displayB, SIGNAL(clicked(bool)), this, SLOT(show_plot(bool)));
   connect(applyB  , SIGNAL(clicked()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
 
@@ -154,6 +153,11 @@ void ChannelDefinition::load_reference()
 void ChannelDefinition::show_plot(bool s) 
 {
   //  This should be a slot on the display (QwtPlot)
+  if (s != _show) {
+    if (s) _frame.show(_plot);
+    else   _frame.hide(_plot);
+    _show = s;
+  }
 }
 
 void ChannelDefinition::apply()
@@ -177,10 +181,13 @@ void ChannelDefinition::apply()
 
   _changed = true;
   emit changed();
+
+  emit newplot(_mode!=_None);
 }
 
 int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
-				 ChannelDefinition* channels[], int* signatures, int nchannels)
+				 ChannelDefinition* channels[], int* signatures, int nchannels,
+				 ConfigureRequest::Source source)
 {
   //  if (_mode==_None) 
   //    ;
@@ -191,6 +198,7 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
 
     _output_signature = ++output;
     ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						    source,
 						    input,
 						    _output_signature,
 						    _math->filter(),
@@ -206,6 +214,7 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
 //       _output_signature = ++output;
 //     }
     ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						    source,
 						    input,
 						    _output_signature,
 						    *_filter->filter(),
@@ -225,8 +234,10 @@ Ami::AbsTransform& ChannelDefinition::transform()
 void ChannelDefinition::setup_payload(Cds& cds)
 {
   Entry* entry = cds.entry(_output_signature);
-  if (entry)
-    _frame.add(PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color));
+  if (entry) {
+    _frame.add(_plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color));
+    if (!_show) _frame.hide(_plot);
+  }
   else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }

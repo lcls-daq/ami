@@ -1,50 +1,24 @@
 #ifndef AmiQt_Display_hh
 #define AmiQt_Display_hh
 
-#include <QtGui/QWidget>
-
-#include <list>
+class QWidget;
 
 namespace Ami {
   class AbsTransform;
   namespace Qt {
-    class AxisArray;
-    class AxisControl;
-    class Transform;
     class QtBase;
-    class Cursors;
-    class PlotFrame;
-    class Display : public QWidget {
-      Q_OBJECT
+    class Display {
     public:
-      Display();
-      ~Display();
+      virtual ~Display() {}
     public:
-      void add   (QtBase*);
-      void reset ();
-      const std::list<QtBase*> plots() const;
-      const AbsTransform& xtransform() const;
-      const AxisArray&    xinfo     () const;
-      PlotFrame*          plot      () const;
-    public slots:
-      void save_image();
-      void save_data();
-      void save_reference();
-      void update();
-      void xtransform_update();
-      void xrange_change();
-      void yrange_change();
-    signals:
-      void redraw();
-    private:
-      PlotFrame*   _plot;
-      Transform*   _xtransform;
-      AxisControl* _xrange;
-      AxisControl* _yrange;
-      AxisArray* _xinfo;
-      AxisArray* _yinfo;
-      std::list<QtBase*>  _curves;
-      Cursors* _cursor_input;
+      virtual void add   (QtBase*) = 0;
+      virtual void reset () = 0;
+      virtual void show  (QtBase*) = 0;
+      virtual void hide  (QtBase*) = 0;
+      virtual const AbsTransform& xtransform() const = 0;
+      virtual void update() = 0;
+      virtual bool canOverlay() const = 0;
+      virtual QWidget* widget() = 0;
     };
   };
 };

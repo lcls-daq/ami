@@ -84,7 +84,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   const EntryWaveform& entry = *_input_entry;
   const DescWaveform& d = entry.desc();
   // find the boundaries where the pulse crosses the threshold
-  double   peak;
+  double   peak = _threshold_value;
   unsigned start  =0;
   bool     crossed=false;
   bool     rising = _threshold_value > _baseline_value;
@@ -120,5 +120,6 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
 	     (!rising && y<peak))
       peak = y;
   }
+  _output_entry->time(entry.time());
   return *_output_entry;
 }

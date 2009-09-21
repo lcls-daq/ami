@@ -18,8 +18,9 @@ namespace Ami {
 
   class AbsOperator {
   public:
-    enum Type { Single, Average, Mean, Integral, Value, Projection, Reference, 
-		EntryMath, BinMath, EdgeFinder };
+    enum Type { Single, Average, Mean, Integral, Value, 
+		XYProjection, RPhiProjection, 
+		Reference, EntryMath, BinMath, EdgeFinder };
     AbsOperator(Type t);
     virtual ~AbsOperator() {}
     Entry&       operator ()(const Entry&) const;

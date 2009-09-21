@@ -10,7 +10,8 @@ class QwtPlot;
 namespace Ami {
   class Entry;
   namespace Qt {
-    class AxisArray;
+    class AxisInfo;
+    class ImageFrame;
     class QtBase {
     public:
       QtBase(const QString& title,
@@ -18,13 +19,14 @@ namespace Ami {
       virtual ~QtBase() {}
     public:
       virtual void        dump  (FILE*) const = 0;
-      virtual void        attach(QwtPlot*) = 0;
+      virtual void        attach(QwtPlot*) {};
+      virtual void        attach(ImageFrame*) {};
     public:
       virtual void        update()          = 0;
       virtual void        xscale_update()   = 0;
       virtual void        yscale_update()   = 0;
-      virtual const AxisArray* xinfo() const = 0;
-//       virtual const AxisInfo* yinfo() const = 0;
+      virtual const AxisInfo* xinfo() const = 0;
+      virtual const AxisInfo* yinfo() const { return 0; }
     public:
       const QString& title() const { return _title; }
       const Ami::Entry& entry() const { return _entry; }

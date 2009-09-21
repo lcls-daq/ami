@@ -5,26 +5,17 @@
 #include "ami/qt/QtTH1F.hh"
 #include "ami/qt/QtProf.hh"
 // #include "ami/qt/QtTH2F.hh"
-// #include "ami/qt/QtImage.hh"
+#include "ami/qt/QtImage.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtWaveform.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryImage.hh"
 #include "ami/data/DescEntry.hh"
 
 #include <stdio.h>
-
-namespace Ami {
-  namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-  };
-};
 
 using namespace Ami::Qt;
 
@@ -46,7 +37,7 @@ QtBase* PlotFactory::plot(const QString&    name,
     QTCASE(Prof);
     //    QTCASE(TH2F);
     QTCASE(Waveform);
-      //   QTCASE(Image);
+    QTCASE(Image);
   default : 
     printf("PlotFactory type %d not implemented\n",entry.desc().type()); 
     b = 0; 

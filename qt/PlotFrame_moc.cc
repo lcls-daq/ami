@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'PlotFrame.hh'
 **
-** Created: Fri Sep 11 10:54:18 2009
+** Created: Wed Sep 16 14:12:22 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -48,6 +48,8 @@ void *Ami::Qt::PlotFrame::qt_metacast(const char *_clname)
     if (!_clname) return 0;
     if (!strcmp(_clname, qt_meta_stringdata_Ami__Qt__PlotFrame))
 	return static_cast<void*>(const_cast< PlotFrame*>(this));
+    if (!strcmp(_clname, "CursorTarget"))
+	return static_cast< CursorTarget*>(const_cast< PlotFrame*>(this));
     return QwtPlot::qt_metacast(_clname);
 }
 

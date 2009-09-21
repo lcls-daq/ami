@@ -24,7 +24,10 @@ ControlXtcReader::~ControlXtcReader()
 {
 }
 
-void   ControlXtcReader::_configure(const void* payload)
+void   ControlXtcReader::_calibrate(const void* payload, const Pds::ClockTime& t)
+{ _configure(payload,t); }
+
+void   ControlXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
 {
   const Pds::ControlData::ConfigV1& c =
     *reinterpret_cast<const Pds::ControlData::ConfigV1*>(payload);
@@ -45,7 +48,7 @@ void   ControlXtcReader::_configure(const void* payload)
 }
 
 //  no L1 data will appear from Control
-void   ControlXtcReader::_event    (const void* payload) {}
+void   ControlXtcReader::_event    (const void* payload, const Pds::ClockTime& t) {}
 
 void   ControlXtcReader::_damaged  () {}
 

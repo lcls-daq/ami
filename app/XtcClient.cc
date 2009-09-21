@@ -72,8 +72,10 @@ int XtcClient::process(Pds::Xtc* xtc)
     iterate(xtc);
   }
   else {
+        
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
+
       if (h->info().level() == xtc->src.level() &&
 	  (h->info().phy  () == -1UL ||
 	   h->info().phy  () == xtc->src.phy())) {
@@ -81,12 +83,15 @@ int XtcClient::process(Pds::Xtc* xtc)
 	  if (xtc->damage.value())
 	    h->_damaged();
 	  else
-	    h->_event(xtc->payload());
+	    h->_event(xtc->payload(),_seq->clock());
 	}
-	else if ((_seq->service()==Pds::TransitionId::Configure ||
-		  _seq->service()==Pds::TransitionId::BeginCalibCycle) && 
+	else if (_seq->service()==Pds::TransitionId::Configure &&
 		 xtc->contains.id()==h->config_type()) {
-	  h->_configure(xtc->payload());
+	  h->_configure(xtc->payload(),_seq->clock());
+	}
+	else if (_seq->service()==Pds::TransitionId::BeginCalibCycle &&
+		 xtc->contains.id()==h->config_type()) {
+	  h->_calibrate(xtc->payload(),_seq->clock());
 	}
       }
     }

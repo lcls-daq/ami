@@ -16,13 +16,15 @@ AxisControl::AxisControl(QWidget* parent,
 			 const QString&  title,
 			 const AxisInfo& info) :
   QGroupBox(title,parent),
-  _info  (info)
+  _info  (&info)
 {
   setAlignment(::Qt::AlignHCenter);
 
   _autoB = new QPushButton("Auto"); 
   _loBox = new QLineEdit(QString::number(info.position(info.lo())));
   _hiBox = new QLineEdit(QString::number(info.position(info.hi())));
+  _loBox->setMaximumWidth(60);
+  _hiBox->setMaximumWidth(60);
   new QDoubleValidator(_loBox);
   new QDoubleValidator(_hiBox);
 
@@ -78,6 +80,12 @@ AxisControl::~AxisControl()
 {
 }
 
+void   AxisControl::update(const AxisInfo& info) 
+{
+  _info = &info;
+  updateInfo();
+}
+
 bool   AxisControl::isAuto() const { return _autoB->isChecked(); }
 
 double AxisControl::loEdge() const { return _loBox->text().toDouble(); }
@@ -87,25 +95,25 @@ double AxisControl::hiEdge() const { return _hiBox->text().toDouble(); }
 #ifdef USE_SCROLL
 void AxisControl::updateInfo()
 {
-  int ilo = _info.tick(_loBox->text().toDouble());
-  int ihi = _info.tick(_hiBox->text().toDouble());
-  if (ilo < _info.lo()) ilo = _info.lo();
-  if (ihi > _info.hi()) ihi = _info.hi();
+  int ilo = _info->tick(_loBox->text().toDouble());
+  int ihi = _info->tick(_hiBox->text().toDouble());
+  if (ilo < _info->lo()) ilo = _info->lo();
+  if (ihi > _info->hi()) ihi = _info->hi();
 
-  _scroll->setRange(_info.lo(),_info.hi()-ihi+ilo);
+  _scroll->setRange(_info->lo(),_info->hi()-ihi+ilo);
   _scroll->setValue   (ilo);
   _scroll->setPageStep(ihi-ilo);
 
-  _loBox->setText(QString::number(_info.position(ilo)));
-  _hiBox->setText(QString::number(_info.position(ihi)));
+  _loBox->setText(QString::number(_info->position(ilo)));
+  _hiBox->setText(QString::number(_info->position(ihi)));
 }
 
 // user moved scroll
 void AxisControl::changeLoEdge(int ilo) {
   int ihi = ilo + _scroll->pageStep();
   
-  _loBox->setText(QString::number(_info.position(ilo)));
-  _hiBox->setText(QString::number(_info.position(ihi)));
+  _loBox->setText(QString::number(_info->position(ilo)));
+  _hiBox->setText(QString::number(_info->position(ihi)));
 
   emit windowChanged(ilo, ihi);
 }
@@ -113,15 +121,15 @@ void AxisControl::changeLoEdge(int ilo) {
 // loBox was edited
 void AxisControl::changeLoEdge(const QString& t)
 {
-  int ilo = _info.tick(t.toDouble());
+  int ilo = _info->tick(t.toDouble());
   int ihi = _scroll->value()+_scroll->pageStep();
 
-  if (ilo > _info.hi()) {
+  if (ilo > _info->hi()) {
     ilo = ihi;
-    ihi = _info.hi();
+    ihi = _info->hi();
   }
-  else if (ilo < _info.lo()) {
-    ilo = _info.lo();
+  else if (ilo < _info->lo()) {
+    ilo = _info->lo();
   }
 
   changeWindow(ilo,ihi);
@@ -131,14 +139,14 @@ void AxisControl::changeLoEdge(const QString& t)
 void AxisControl::changeHiEdge(const QString& t)
 {
   int ilo = _scroll->value();
-  int ihi = _info.tick(t.toDouble());
+  int ihi = _info->tick(t.toDouble());
 
-  if (ihi < _info.lo()) {
+  if (ihi < _info->lo()) {
     ihi = ilo;
-    ilo = _info.lo();
+    ilo = _info->lo();
   }
-  else if (ihi > _info.hi()) {
-    ihi = _info.hi();
+  else if (ihi > _info->hi()) {
+    ihi = _info->hi();
   }
 
   changeWindow(ilo,ihi);
@@ -159,14 +167,14 @@ void AxisControl::pan ()
 {
   int istep = _scroll->pageStep();
   int ilo   = _scroll->value() - istep/2;
-  if (ilo < _info.lo()) 
-    ilo = _info.lo();
+  if (ilo < _info->lo()) 
+    ilo = _info->lo();
   int ihi   = ilo + 2*istep;
-  if (ihi > _info.hi()) {
-    ihi = _info.hi();
+  if (ihi > _info->hi()) {
+    ihi = _info->hi();
     ilo = ihi - 2*istep;
-    if (ilo < _info.lo())
-      ilo = _info.lo();
+    if (ilo < _info->lo())
+      ilo = _info->lo();
   }
   
   changeWindow(ilo,ihi);
@@ -174,12 +182,12 @@ void AxisControl::pan ()
 
 void AxisControl::changeWindow(int ilo, int ihi)
 {
-  _scroll->setRange(_info.lo(),_info.hi()-ihi+ilo);
+  _scroll->setRange(_info->lo(),_info->hi()-ihi+ilo);
   _scroll->setValue   (ilo);
   _scroll->setPageStep(ihi-ilo);
 
-  _loBox->setText(QString::number(_info.position(ilo)));
-  _hiBox->setText(QString::number(_info.position(ihi)));
+  _loBox->setText(QString::number(_info->position(ilo)));
+  _hiBox->setText(QString::number(_info->position(ihi)));
 
   emit windowChanged(ilo, ihi);
 }
@@ -191,7 +199,7 @@ void AxisControl::auto_scale(bool l)
   _zoomB ->setEnabled(!l);
   _panB  ->setEnabled(!l);
   if (l)
-    changeWindow(_info.lo(), _info.hi());
+    changeWindow(_info->lo(), _info->hi());
 }
 #else
 
@@ -214,6 +222,22 @@ void AxisControl::auto_scale(bool l)
   emit windowChanged();
 }
 
+void AxisControl::updateInfo()
+{
+  if (isAuto()) {
+//     _loBox->setText(QString::number(_info->position(_info->lo())));
+//     _hiBox->setText(QString::number(_info->position(_info->hi())));
+  }
+  else {
+    int ilo = _info->tick(_loBox->text().toDouble());
+    int ihi = _info->tick(_hiBox->text().toDouble());
+    if (ilo < _info->lo()) ilo = _info->lo();
+    if (ihi > _info->hi()) ihi = _info->hi();
+
+    _loBox->setText(QString::number(_info->position(ilo)));
+    _hiBox->setText(QString::number(_info->position(ihi)));
+  }
+}
 #endif
 
 

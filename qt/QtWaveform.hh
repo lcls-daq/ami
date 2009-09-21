@@ -25,14 +25,14 @@ namespace Ami {
       void        update()        ;
       void        xscale_update() ;
       void        yscale_update() ;
-      const AxisArray* xinfo() const;
+      const AxisInfo* xinfo() const;
     private:
       const AbsTransform&   _xscale;
       const AbsTransform&   _yscale;
       QwtPlotCurve   _curve;
       double*        _x;
       double*        _y;
-      AxisArray*     _xinfo;
+      AxisInfo*      _xinfo;
     };
   };
 };

@@ -8,8 +8,8 @@ namespace Ami {
   class DescImage : public DescEntry {
   public:
     DescImage(const char* name,
-		 unsigned nbinsx, unsigned nbinsy, 
-		 int ppbx=1, int ppby=1); // pixels per bin
+	      unsigned nbinsx, unsigned nbinsy, 
+	      int ppbx=1, int ppby=1); // pixels per bin
 
     unsigned nbinsx() const;
     unsigned nbinsy() const;

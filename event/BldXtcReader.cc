@@ -23,11 +23,10 @@ BldXtcReader::~BldXtcReader()
 }
 
 //  no configure data will appear from BLD
-void   BldXtcReader::_configure(const void* payload)
-{
-}
+void   BldXtcReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void   BldXtcReader::_configure(const void* payload, const Pds::ClockTime& t) {}
 
-void   BldXtcReader::_event    (const void* payload)
+void   BldXtcReader::_event    (const void* payload, const Pds::ClockTime& t)
 {
   if (_index>=0) {
     const double* p = reinterpret_cast<const double*>(payload);

@@ -5,6 +5,7 @@
 #include "pdsdata/acqiris/ConfigV1.hh"
 #include "pdsdata/acqiris/DataDescV1.hh"
 #include "pdsdata/opal1k/ConfigV1.hh"
+#include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
 
@@ -30,7 +31,8 @@ AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo&   info,
   _config(_default),
   _nentries(0)
 {
-  _configure(&config);
+  Pds::ClockTime t;
+  _configure(&config, t);
 }
 
 AcqWaveformHandler::~AcqWaveformHandler()
@@ -43,7 +45,9 @@ const Entry* AcqWaveformHandler::entry(unsigned i) const { return _entry[i]; }
 
 void AcqWaveformHandler::reset() { _nentries = 0; }
 
-void AcqWaveformHandler::_configure(const void* payload)
+void AcqWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+
+void AcqWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Acqiris::ConfigV1& c = *reinterpret_cast<const Pds::Acqiris::ConfigV1*>(payload);
   const Pds::Acqiris::HorizV1& h = c.horiz();
@@ -64,7 +68,7 @@ void AcqWaveformHandler::_configure(const void* payload)
 
 typedef Pds::Acqiris::DataDescV1 AcqDD;
 
-void AcqWaveformHandler::_event    (const void* payload)
+void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   AcqDD* d = const_cast<AcqDD*>(reinterpret_cast<const AcqDD*>(payload));
   const Pds::Acqiris::HorizV1& h = _config.horiz();
@@ -84,6 +88,7 @@ void AcqWaveformHandler::_event    (const void* payload)
       entry->content(val,j);
     }
     entry->info(1,EntryWaveform::Normalization);
+    entry->time(t);
     d = d->nextChannel(h);
   }
 }

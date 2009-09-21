@@ -6,8 +6,7 @@
 #include "pdsdata/xtc/XtcIterator.hh"
 
 namespace Pds {
-  class Dgram;
-  class Sequence;
+  class ClockTime;
 };
 
 namespace Ami {
@@ -20,8 +19,9 @@ namespace Ami {
 		 Pds::TypeId::Type   config_type);
     virtual ~EventHandler();
   public:
-    virtual void   _configure(const void* payload) = 0;
-    virtual void   _event    (const void* payload) = 0;
+    virtual void   _configure(const void* payload, const Pds::ClockTime& t) = 0;
+    virtual void   _calibrate(const void* payload, const Pds::ClockTime& t) = 0;
+    virtual void   _event    (const void* payload, const Pds::ClockTime& t) = 0;
     virtual void   _damaged  () = 0;
   public:
     virtual unsigned     nentries() const = 0;

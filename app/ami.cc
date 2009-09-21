@@ -6,6 +6,7 @@
 #include "XtcClient.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/event/BldXtcReader.hh"
+#include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/server/ServerManager.hh"
 #include "ami/app/AnalysisFactory.hh"
@@ -82,11 +83,11 @@ int main(int argc, char* argv[]) {
 
   myClient.insert(new BldXtcReader    (features));
   myClient.insert(new ControlXtcReader(features));
-  //  myClient.insert(new EpicsXtcReader(features));
+  myClient.insert(new EpicsXtcReader  (features));
 
   myClient.insert(new Opal1kHandler(DI(0,DI::AmoVmi,0,DI::Opal1000,0)));
   myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,0,DI::Opal1000,0)));
-  myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,1,DI::Opal1000,0)));
+  myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,0,DI::Opal1000,1)));
 
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoGasdet,0,DI::Acqiris,0)));
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoIms   ,0,DI::Acqiris,0)));

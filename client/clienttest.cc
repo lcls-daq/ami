@@ -61,11 +61,13 @@ public:
     { RawFilter filter;
       Average   op;
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						      ConfigureRequest::Discovery,
 						      _acq_id,_signature++,filter,op);
       p += r.size(); }
     { RawFilter filter;
       Average   op;
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						      ConfigureRequest::Discovery,
 						      _opal_id,_signature++,filter,op);
       p += r.size(); }
     iov[0].iov_base = _request;

@@ -1,12 +1,13 @@
 #include "Opal1kHandler.hh"
 
 #include "ami/data/EntryImage.hh"
+#include "ami/data/ChannelID.hh"
 #include "pdsdata/camera/FrameV1.hh"
 #include "pdsdata/opal1k/ConfigV1.hh"
 
 #include <string.h>
 
-static const int PixelsPerBin = 4;
+static const int PixelsPerBin = 2;
 
 using namespace Ami;
 
@@ -32,17 +33,19 @@ const Entry* Opal1kHandler::entry(unsigned i) const { return i==0 ? _entry : 0; 
 
 void Opal1kHandler::reset() { _entry = 0; }
 
-void Opal1kHandler::_configure(const void* payload)
+void Opal1kHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Opal1k::ConfigV1& c = *reinterpret_cast<const Pds::Opal1k::ConfigV1*>(payload);
-  DescImage desc(DetInfo::name(static_cast<const Pds::DetInfo&>(info())),
+  //  const Pds::Opal1k::ConfigV1& c = *reinterpret_cast<const Pds::Opal1k::ConfigV1*>(payload);
+  DescImage desc(ChannelID::name(static_cast<const Pds::DetInfo&>(info())),
 		 Pds::Opal1k::ConfigV1::Column_Pixels / PixelsPerBin,
 		 Pds::Opal1k::ConfigV1::Row_Pixels / PixelsPerBin,
 		 PixelsPerBin, PixelsPerBin);
   _entry = new EntryImage(desc);
 }
 
-void Opal1kHandler::_event    (const void* payload)
+void Opal1kHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+
+void Opal1kHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (!_entry) return;
@@ -60,6 +63,8 @@ void Opal1kHandler::_event    (const void* payload)
       for(unsigned k=0; k<f.width(); k++, d++)
 	_entry->addcontent(*d, k/PixelsPerBin, j/PixelsPerBin);
   }
+  _entry->info(1,EntryImage::Normalization);
+  _entry->time(t);
 }
 
 void Opal1kHandler::_damaged() {}

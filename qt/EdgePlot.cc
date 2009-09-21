@@ -134,6 +134,7 @@ void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
   Ami::EdgeFinder op(input_signature, *_finder);
 
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						  ConfigureRequest::Discovery,
 						  input,
 						  _output_signature = ++output,
 						  *channels[channel]->filter().filter(),

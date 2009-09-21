@@ -17,23 +17,25 @@
 #include "ami/data/Cds.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
+class QLayout;
+
 namespace Ami {
   class VClientManager;
   class DescEntry;
+  class Semaphore;
 
   namespace Qt {
     class ChannelDefinition;
     class Control;
-    class CursorsX;
     class Display;
     class AxisControl;
     class Status;
     class Transform;
-    class EdgeFinder;
+
     class Client : public QWidget, public Ami::AbsClient  {
       Q_OBJECT
     public:
-      Client(const Pds::DetInfo&, unsigned);
+      Client(const Pds::DetInfo&, unsigned, Display*);
       ~Client();
     public:
       void managed         (VClientManager&);
@@ -53,23 +55,36 @@ namespace Ami {
       void _read_description(int);
     signals:
       void description_changed(int);
+    protected:
+      void              addWidget(QWidget*);
+      Ami::Qt::Display& display  ();
+    private:
+      virtual void _configure(char*& p, 
+			      unsigned input, 
+			      unsigned& output,
+			      ChannelDefinition* ch[], 
+			      int* signatures, 
+			      unsigned nchannels) {}
+      virtual void _setup_payload(Cds&) {}
+      virtual void _update() {}
     private:
       //  monitored detector channel
       Pds::DetInfo _src;
       unsigned     _channel;
 
-      const DescEntry* _input_entry;
+    protected:
+      enum {NCHANNELS=4};
+      ChannelDefinition* _channels[NCHANNELS];
+      Display*           _frame;
+      const DescEntry*   _input_entry;
+
+    private:
       unsigned    _output_signature;
       char*       _request;
       char*       _description;
 
-      enum {NCHANNELS=4};
-      ChannelDefinition* _channels[NCHANNELS];
-      EdgeFinder*        _edges;
-      CursorsX*          _cursors;
       Control*    _control;
       Transform*  _xtransform;
-      Display*    _frame;
       Status*     _status;
       AxisControl* _xrange;
       AxisControl* _yrange;
@@ -80,6 +95,10 @@ namespace Ami {
       VClientManager* _manager;
       unsigned        _niovload;
       iovec*          _iovload;
+
+      QLayout*    _layout;
+
+      Semaphore*  _sem;
     };
   };
 };

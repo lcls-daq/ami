@@ -5,6 +5,7 @@
 #include <QtCore/QString>
 
 #include "ami/data/BinMath.hh"
+#include "ami/data/ConfigureRequest.hh"
 
 #include <list>
 
@@ -27,7 +28,7 @@ namespace Ami {
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
-		     const AxisArray&);
+		     const AxisArray&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
     signals:

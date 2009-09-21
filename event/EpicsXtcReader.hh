@@ -16,8 +16,9 @@ namespace Ami {
     EpicsXtcReader(FeatureCache&);
     ~EpicsXtcReader();
   public:
-    void   _configure(const void* payload);
-    void   _event    (const void* payload);
+    void   _calibrate(const void* payload, const Pds::ClockTime& t);
+    void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _event    (const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;
@@ -25,7 +26,8 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
-    int           _index;
+    enum { MaxPvs=256 };
+    int           _index[MaxPvs];
   };
 
 };

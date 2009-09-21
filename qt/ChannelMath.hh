@@ -15,7 +15,7 @@ namespace Ami {
     class ChannelMath : public QWidget {
       Q_OBJECT
     public:
-      ChannelMath();
+      ChannelMath(const QStringList&);
       ~ChannelMath();
     public:
       const QString&   expr() const;
@@ -26,10 +26,11 @@ namespace Ami {
       const Ami::AbsFilter& filter() const;
       const Ami::AbsOperator& op  () const;
     public slots:
-      void change_expr();
+      void calc();
     private:
       QLineEdit*    _expr;
       bool          _changed;
+      QStringList   _names;
       QList<int>    _signatures;
       Ami::AbsFilter*   _filter;
       Ami::AbsOperator* _operator;
