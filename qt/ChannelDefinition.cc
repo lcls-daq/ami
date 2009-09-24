@@ -207,7 +207,6 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
     return _output_signature;
   }
   else if (_operator) {
-    printf("mode %d  op %p  type %d\n",_mode,_operator,_operator->type());
     _output_signature = ++output;
 //     if (_changed) {
 //       _changed=false;

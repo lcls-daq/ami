@@ -17,28 +17,22 @@ namespace Ami {
   //
   class EdgeFinder : public AbsOperator {
   public:
-    EdgeFinder(unsigned   input,
-	       double     fraction,
+    EdgeFinder(double     fraction,
 	       double     threshold_value,
 	       double     baseline_value,
 	       const      DescTH1F& output);
-    EdgeFinder(unsigned   input,
-	       const EdgeFinder&);
     EdgeFinder(const char*&, const Cds&);
     ~EdgeFinder();
   public:
-    unsigned   input    () const;
     DescEntry& output   () const;
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
   private:
-    unsigned   _input;
     double     _fraction;
     double     _threshold_value;
     double     _baseline_value;
     DescTH1F   _output;
-    const EntryWaveform* _input_entry;
     EntryTH1F*           _output_entry;
   };
 

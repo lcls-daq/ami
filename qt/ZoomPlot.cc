@@ -2,6 +2,7 @@
 
 #include "ami/qt/QtImage.hh"
 #include "ami/qt/ImageDisplay.hh"
+#include "ami/qt/ImageFrame.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
@@ -31,6 +32,8 @@ ZoomPlot::ZoomPlot(const QString&   name,
   _y1     (y1),
   _frame   (new ImageDisplay)
 {
+  _frame->plot()->autoXYScale(true);
+
   setWindowTitle(name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
 

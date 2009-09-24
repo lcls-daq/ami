@@ -62,6 +62,9 @@ DetectorSelect::DetectorSelect(unsigned interface,
 
 DetectorSelect::~DetectorSelect()
 {
+  for(unsigned k=0; k<MaxClients; k++)
+    if (_client[k])
+      delete _client[k];
 }
 
 void DetectorSelect::start_gd   () { start_waveform_client(Pds::DetInfo::AmoGasdet,0,0); }
@@ -84,7 +87,6 @@ void DetectorSelect::start_waveform_client(Pds::DetInfo::Detector det,
 						 _serverGroup, 
 						 *client);
     client->managed(*manager);
-    manager->connect();
     _client[i] = client;
   }
 }
@@ -102,7 +104,6 @@ void DetectorSelect::start_image_client(Pds::DetInfo::Detector det,
 						 _serverGroup, 
 						 *client);
     client->managed(*manager);
-    manager->connect();
     _client[i] = client;
   }
 }
@@ -119,7 +120,6 @@ void DetectorSelect::start_bps  (int channel)
 						 _serverGroup, 
 						 *client);
     client->managed(*manager);
-    manager->connect();
     _client[i] = client;
   }
 }

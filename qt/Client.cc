@@ -116,6 +116,7 @@ Ami::Qt::Client::Client(const Pds::DetInfo& src,
 
 Ami::Qt::Client::~Client() 
 {
+  delete _manager;
   delete[] _iovload;
   delete[] _description;
   delete[] _request; 
@@ -161,6 +162,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 
 int  Ami::Qt::Client::configure       (iovec* iov) 
 {
+  _status->set_state(Status::Configured);
   printf("Configure\n");
   if (_input_entry==0) {
     printf("input_entry not found\n");
@@ -214,7 +216,6 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 int  Ami::Qt::Client::configured      () 
 {
   printf("Configured\n");
-  //  _status->set_state(Status::Configured);
   return 0; 
 }
 
@@ -319,6 +320,7 @@ void Ami::Qt::Client::managed(VClientManager& mgr)
 {
   _manager = &mgr;
   show();
+  _manager->connect();
 }
 
 void Ami::Qt::Client::request_payload()

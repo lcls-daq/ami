@@ -56,6 +56,7 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
   { QHBoxLayout* layout2 = new QHBoxLayout;
     layout2->addWidget(_zrange);
     layout->addLayout(layout2); }
+  layout->addStretch();
   setLayout(layout);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
@@ -64,6 +65,8 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
 Ami::Qt::ImageDisplay::~ImageDisplay()
 {
 }
+
+const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 void Ami::Qt::ImageDisplay::save_image()
 {

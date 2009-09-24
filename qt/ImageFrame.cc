@@ -11,8 +11,6 @@
 #include <QtGui/QLabel>
 #include <QtGui/QImage>
 #include <QtGui/QPixmap>
-#include <QtGui/QScrollArea>
-#include <QtGui/QScrollBar>
 #include <QtGui/QPaintEngine>
 
 using namespace Ami::Qt;
@@ -37,18 +35,19 @@ ImageFrame::ImageFrame(QWidget* parent,
   _control(control),
   _canvas(new QLabel),
   _qimage(0),
-  _c(0)
+  _c(0),
+  _xyscale(false)
 {
   unsigned sz = 512 + 4;
-  _scroll = new QScrollArea;
-  _scroll->setBackgroundRole(QPalette::Dark);
-  _scroll->setWidget(_canvas);
-  _scroll->setMinimumSize(sz,sz);
+  _canvas->setMinimumSize(sz,sz);
+//   _scroll = new QScrollArea;
+//   _scroll->setBackgroundRole(QPalette::Dark);
+//   _scroll->setWidget(_canvas);
+//   _scroll->setMinimumSize(sz,sz);
 
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(_scroll);
-//   layout->addWidget(_canvas);
-  layout->setSizeConstraint(QLayout::SetFixedSize);
+  //  layout->addWidget(_scroll);
+  layout->addWidget(_canvas);
   setLayout(layout);
 
   connect(&_control , SIGNAL(windowChanged()), this , SLOT(scale_changed()));
@@ -74,12 +73,16 @@ void ImageFrame::remove_marker(ImageMarker& m) { _markers.remove(&m); }
 void ImageFrame::replot()
 {
   if (_qimage) {
-    QImage& output = _qimage->image(-_control.scale());
+    QImage& output = _qimage->image(_control.scale());
     for(std::list<ImageMarker*>::const_iterator it=_markers.begin(); it!=_markers.end(); it++) 
       (*it)->draw(output);
 
-    _canvas->setPixmap(QPixmap::fromImage(output));
-    _canvas->resize(output.size());
+    if (_xyscale)
+      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
+							   ::Qt::KeepAspectRatio));
+    else
+      _canvas->setPixmap(QPixmap::fromImage(output));
+    //    _canvas->resize(output.size());
   }
 }
 
@@ -91,7 +94,8 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 //   printf("ImageFrame mouse %d,%d  scroll area %d,%d  bars %d,%d\n",
 // 	 e->x(),e->y(), p.x(),p.y(), h->value(),v->value());
 
-  QPoint p1 = _scroll->pos();
+//  QPoint p1 = _scroll->pos();
+  QPoint p1(0,0);
   QPoint p2 = _canvas->pos();
 
   unsigned ix = e->x() - p1.x() - p2.x();
@@ -104,3 +108,8 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 }
 
 void ImageFrame::set_cursor_input(Cursors* c) { _c=c; }
+
+void ImageFrame::autoXYScale(bool v)
+{
+  _xyscale = v;
+}

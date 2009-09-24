@@ -145,8 +145,8 @@ void EdgeFinder::plot()
 		     _hist->bins(),_hist->lo(),_hist->hi()); 
   
   EdgePlot* plot = new EdgePlot(_title->text(),
-				new Ami::EdgeFinder(_channel,
-						    0.5,
+				_channel,
+				new Ami::EdgeFinder(0.5,
 						    _threshold->value(),
 						    _baseline ->value(),
 						    desc));

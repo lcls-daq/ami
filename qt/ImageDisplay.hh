@@ -26,6 +26,8 @@ namespace Ami {
       bool canOverlay() const { return false; }
       QWidget* widget() { return this; }
     public:
+      const ImageColorControl& control() const;
+    public:
 //       const std::list<QtBase*> plots() const;
 //       const AxisArray&    xinfo     () const;
       ImageFrame*          plot      () const;

@@ -180,7 +180,7 @@ int VClientManager::processIo()
     }
   }
   else {
-    printf("received id %d/%d type %d\n",reply.id(),_request.id(),reply.type());
+    printf("received id %d/%d type %d/%d\n",reply.id(),_request.id(),reply.type(),_request.type());
   }
 
   _socket->flush(); 

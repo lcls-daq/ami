@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'EdgePlot.hh'
 **
-** Created: Sun Sep 13 17:07:26 2009
+** Created: Tue Sep 22 11:04:00 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!

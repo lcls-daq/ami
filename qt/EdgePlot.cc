@@ -37,9 +37,11 @@ using namespace Ami::Qt;
 static NullTransform noTransform;
 
 EdgePlot::EdgePlot(const QString&   name,
+		   unsigned         channel,
 		   Ami::EdgeFinder* finder) :
   QWidget  (0),
   _name    (name),
+  _channel (channel),
   _finder  (finder),
   _frame   (new QwtPlot(name)),
   _plot    (0)
@@ -128,17 +130,14 @@ void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			   const AxisArray& xinfo)
 {
-  unsigned channel = _finder->input();
-  unsigned input_signature = signatures[channel];
-
-  Ami::EdgeFinder op(input_signature, *_finder);
+  unsigned input_signature = signatures[_channel];
 
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Discovery,
-						  input,
+						  ConfigureRequest::Analysis,
+						  input_signature,
 						  _output_signature = ++output,
-						  *channels[channel]->filter().filter(),
-						  op);
+						  *channels[_channel]->filter().filter(),
+						  *_finder);
   p += r.size();
 }
 

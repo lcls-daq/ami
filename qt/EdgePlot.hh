@@ -21,6 +21,7 @@ namespace Ami {
       Q_OBJECT
     public:
       EdgePlot(const QString&   name,
+	       unsigned         channel,
 	       Ami::EdgeFinder* finder);
       ~EdgePlot();
     public:
@@ -38,7 +39,7 @@ namespace Ami {
       void set_yaxis_title();
     private:
       QString     _name;
-
+      unsigned    _channel;
       Ami::EdgeFinder* _finder;
 
       unsigned _output_signature;

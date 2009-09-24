@@ -3,6 +3,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
+#include "ami/qt/PeakFinder.hh"
 
 #include <QtGui/QPushButton>
 #include <QtCore/QChar>
@@ -26,8 +27,15 @@ ImageClient::ImageClient(const Pds::DetInfo& info, unsigned ch) :
     _rfproj = new ImageRPhiProjection(_channels,NCHANNELS,*wd.plot());
     connect(cylB, SIGNAL(clicked(bool)), _rfproj, SLOT(setVisible(bool))); }
 
+  { QPushButton* hitB = new QPushButton("Hit Finder");
+    hitB ->setCheckable(true);
+    addWidget(hitB);
+    _hit = new PeakFinder(_channels,NCHANNELS,wd);
+    connect(hitB, SIGNAL(clicked(bool)), _hit, SLOT(setVisible(bool))); }
+
   connect(_xyproj, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_hit   , SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
 ImageClient::~ImageClient() {}
@@ -41,16 +49,19 @@ void ImageClient::_configure(char*& p,
 {
    _xyproj->configure(p, input, output, ch, signatures, nchannels);
    _rfproj->configure(p, input, output, ch, signatures, nchannels);
+   _hit   ->configure(p, input, output, ch, signatures, nchannels);
 }
 
 void ImageClient::_setup_payload(Cds& cds)
 {
   _xyproj->setup_payload(cds);
   _rfproj->setup_payload(cds);
+  _hit   ->setup_payload(cds);
 }
 
 void ImageClient::_update()
 {
   _xyproj->update();
   _rfproj->update();
+  _hit   ->update();
 }

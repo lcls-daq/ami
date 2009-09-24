@@ -8,6 +8,7 @@
 #include <QtGui/QPixmap>
 
 class QButtonGroup;
+class QLabel;
 
 namespace Ami {
   namespace Qt {
@@ -17,9 +18,10 @@ namespace Ami {
       ImageColorControl(QWidget*, const QString& title);
       ~ImageColorControl();
     public:
-      int scale() const;
+      double scale() const;
       const QVector<QRgb>& color_table() const;
     public slots:
+      void show_scale();
       void set_auto(bool);
       void zoom();
       void pan ();
@@ -30,6 +32,7 @@ namespace Ami {
       int     _scale;
       QString _title;
       QVector<QRgb>* _color_table;
+      QLabel* _scale_max;
     };
   };
 };

@@ -6,7 +6,6 @@
 #include <QtGui/QWidget>
 
 class QLabel;
-class QScrollArea;
 
 #include <list>
 
@@ -26,6 +25,7 @@ namespace Ami {
       void attach(QtImage&);
       void setXYScale   (int);
       void setZScale    (int);
+      void autoXYScale  (bool);
     public:
       void add_marker   (ImageMarker&);
       void remove_marker(ImageMarker&);
@@ -38,10 +38,10 @@ namespace Ami {
       void set_cursor_input(Cursors* c);
     private:
       const ImageColorControl& _control;
-      QScrollArea* _scroll;
       QLabel*   _canvas;
       QtImage*  _qimage;
       int       _zshift;
+      bool      _xyscale;
       Cursors*  _c;
       std::list<ImageMarker*> _markers;
     };

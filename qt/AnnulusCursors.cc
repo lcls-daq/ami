@@ -20,6 +20,9 @@ static void draw_arc (double _xc, double _yc,
 
 static const QChar RHO(0x03c1);
 static const QChar PHI(0x03c6);
+static const QChar DEG(0x00b0);
+static const double DEG_TO_RAD = M_PI/180.;
+static const double RAD_TO_DEG = 180./M_PI;
 
 AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   QWidget(0),
@@ -66,11 +69,11 @@ AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   layout->addWidget(_edit_outer         ,2,1);
   layout->addWidget(grab_outer          ,2,2);
 
-  layout->addWidget(new QLabel(QString("%1 begin").arg(PHI)) ,3,0);
+  layout->addWidget(new QLabel(QString("%1 begin [%2]").arg(PHI).arg(DEG)) ,3,0);
   layout->addWidget(_edit_phi1          ,3,1);
   layout->addWidget(grab_phi1           ,3,2);
 
-  layout->addWidget(new QLabel(QString("%1 end").arg(PHI)) ,4,0);
+  layout->addWidget(new QLabel(QString("%1 end [%2]").arg(PHI).arg(DEG)) ,4,0);
   layout->addWidget(_edit_phi0          ,4,1);
   layout->addWidget(grab_phi0           ,4,2);
 
@@ -107,8 +110,8 @@ void AnnulusCursors::update_edits()
   _yc = _edit_yc   ->text().toDouble();
   _r0 = _edit_inner->text().toDouble();
   _r1 = _edit_outer->text().toDouble();
-  _f0 = -_edit_phi0 ->text().toDouble();
-  _f1 = -_edit_phi1 ->text().toDouble();
+  _f0 = -_edit_phi0 ->text().toDouble()*DEG_TO_RAD;
+  _f1 = -_edit_phi1 ->text().toDouble()*DEG_TO_RAD;
   emit changed();
 }
 
@@ -118,8 +121,8 @@ void AnnulusCursors::_set_edits()
   _edit_yc   ->setText(QString::number(_yc));
   _edit_inner->setText(QString::number(_r0));
   _edit_outer->setText(QString::number(_r1));
-  _edit_phi0 ->setText(QString::number(-_f0));
-  _edit_phi1 ->setText(QString::number(-_f1));
+  _edit_phi0 ->setText(QString::number(-_f0*RAD_TO_DEG));
+  _edit_phi1 ->setText(QString::number(-_f1*RAD_TO_DEG));
 }
 
 void AnnulusCursors::draw(QImage& image)

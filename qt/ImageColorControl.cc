@@ -7,6 +7,8 @@
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
 
+#include <math.h>
+
 using namespace Ami::Qt;
 
 enum { Mono=0, Thermal=1 };
@@ -37,7 +39,8 @@ static QVector<QRgb>* thermal_palette()
 ImageColorControl::ImageColorControl(QWidget* parent,
 				   const QString&  title) :
   QGroupBox(title,parent),
-  _scale (0)
+  _scale (0),
+  _scale_max(new QLabel)
 {
   setAlignment(::Qt::AlignHCenter);
 
@@ -74,14 +77,14 @@ ImageColorControl::ImageColorControl(QWidget* parent,
     layout->addLayout(layout1); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
-    layout1->addWidget(monoB);
-    layout1->addWidget(monoC);
-    layout1->addStretch();
-    layout->addLayout(layout1); }
-  { QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addStretch();
-    layout1->addWidget(colorB);
-    layout1->addWidget(colorC);
+    { QGridLayout* layout2 = new QGridLayout;
+      layout2->addWidget(monoB,0,0);
+      layout2->addWidget(monoC,0,1,1,2);
+      layout2->addWidget(colorB,1,0);
+      layout2->addWidget(colorC,1,1,1,2);
+      layout2->addWidget(new QLabel("0"),2,1,::Qt::AlignLeft);
+      layout2->addWidget(_scale_max,2,2,::Qt::AlignRight); 
+      layout1->addLayout(layout2); }
     layout1->addStretch();
     layout->addLayout(layout1); }
   setLayout(layout);
@@ -90,15 +93,17 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   connect(zoomB , SIGNAL(clicked()), this, SLOT(zoom()));
   connect(panB  , SIGNAL(clicked()), this, SLOT(pan ()));
   connect(paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
+  connect(this  , SIGNAL(windowChanged()), this, SLOT(show_scale()));
 
   colorB->setChecked(true);
+  show_scale();
 }   
 
 ImageColorControl::~ImageColorControl()
 {
 }
 
-int ImageColorControl::scale() const { return _scale; }
+double ImageColorControl::scale() const { return pow(2,0.5*double(-_scale)); }
 
 const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_table; }
 
@@ -108,6 +113,12 @@ void   ImageColorControl::set_palette(int p)
   _color_table = (p==Mono) ? monochrome_palette() : thermal_palette();
 
   emit windowChanged();
+}
+
+void   ImageColorControl::show_scale()
+{
+  unsigned v = 0xff*scale();
+  _scale_max->setText(QString::number(v));
 }
 
 void   ImageColorControl::set_auto(bool s)

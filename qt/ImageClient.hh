@@ -7,7 +7,7 @@ namespace Ami {
   namespace Qt {
     class ImageXYProjection;
     class ImageRPhiProjection;
-
+    class PeakFinder;
     class ImageClient : public Client {
     public:
       ImageClient(const Pds::DetInfo&, unsigned);
@@ -24,6 +24,7 @@ namespace Ami {
     private:
       ImageXYProjection*   _xyproj;
       ImageRPhiProjection* _rfproj;
+      PeakFinder*          _hit;
     };
   };
 };
