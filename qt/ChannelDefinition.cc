@@ -118,11 +118,12 @@ ChannelDefinition::ChannelDefinition(const QString& name,
   setLayout(l);
 
   connect(this    , SIGNAL(reference_loaded(bool)), refB, SLOT(setEnabled(bool)));
-
+  
   connect(loadB   , SIGNAL(clicked()), this, SLOT(load_reference()));
   connect(filterB , SIGNAL(clicked()), _filter, SLOT(show()));
   connect(yfuncB  , SIGNAL(clicked()), _transform , SLOT(show()));
   connect(applyB  , SIGNAL(clicked()), this, SLOT(apply()));
+  connect(_filter , SIGNAL(changed()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
 
   noneB  ->setChecked(!init);
