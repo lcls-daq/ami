@@ -9,7 +9,7 @@
 
 using namespace Ami::Qt;
 
-Control::Control(Client& c) :
+Control::Control(Requestor& c) :
   QWidget(0),
   _client(c),
   _task  (new Task(TaskObject("amitmr")))

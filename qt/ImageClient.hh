@@ -10,7 +10,7 @@ namespace Ami {
     class PeakFinder;
     class ImageClient : public Client {
     public:
-      ImageClient(const Pds::DetInfo&, unsigned);
+      ImageClient(QWidget*,const Pds::DetInfo&, unsigned);
       ~ImageClient();
     private:
       void _configure(char*& p, 

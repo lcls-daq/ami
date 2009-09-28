@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'AxisControl.hh'
 **
-** Created: Wed Sep 16 14:36:54 2009
+** Created: Fri Sep 25 14:59:58 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!

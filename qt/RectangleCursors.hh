@@ -42,6 +42,8 @@ namespace Ami {
       QLineEdit* _edit_y0;
       QLineEdit* _edit_x1;
       QLineEdit* _edit_y1;
+      unsigned   _xmax;
+      unsigned   _ymax;
     };
   };
 };

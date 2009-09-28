@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'DetectorSelect.hh'
 **
-** Created: Fri Sep 18 18:18:03 2009
+** Created: Fri Sep 25 12:00:27 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -22,7 +22,7 @@ static const uint qt_meta_data_Ami__Qt__DetectorSelect[] = {
        1,       // revision
        0,       // classname
        0,    0, // classinfo
-       7,   10, // methods
+       8,   10, // methods
        0,    0, // properties
        0,    0, // enums/sets
 
@@ -34,6 +34,7 @@ static const uint qt_meta_data_Ami__Qt__DetectorSelect[] = {
       74,   24,   24,   24, 0x0a,
       90,   24,   24,   24, 0x0a,
      105,   24,   24,   24, 0x0a,
+     117,   24,   24,   24, 0x0a,
 
        0        // eod
 };
@@ -42,7 +43,7 @@ static const char qt_meta_stringdata_Ami__Qt__DetectorSelect[] = {
     "Ami::Qt::DetectorSelect\0\0start_gd()\0"
     "start_ims()\0start_itof()\0start_mbes()\0"
     "start_etof(int)\0start_bps(int)\0"
-    "start_vmi()\0"
+    "start_vmi()\0start_env()\0"
 };
 
 const QMetaObject Ami::Qt::DetectorSelect::staticMetaObject = {
@@ -77,8 +78,9 @@ int Ami::Qt::DetectorSelect::qt_metacall(QMetaObject::Call _c, int _id, void **_
         case 4: start_etof((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 5: start_bps((*reinterpret_cast< int(*)>(_a[1]))); break;
         case 6: start_vmi(); break;
+        case 7: start_env(); break;
         }
-        _id -= 7;
+        _id -= 8;
     }
     return _id;
 }

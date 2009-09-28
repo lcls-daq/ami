@@ -17,7 +17,7 @@ namespace Ami {
     class AxisControl : public QGroupBox {
       Q_OBJECT
     public:
-      AxisControl(QWidget*, const QString& title, const AxisInfo& info);
+      AxisControl(QWidget*, const QString& title);
       ~AxisControl();
     public:
       void update(const AxisInfo&);

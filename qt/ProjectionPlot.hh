@@ -25,9 +25,10 @@ namespace Ami {
     class ProjectionPlot : public QWidget {
       Q_OBJECT
     public:
-      ProjectionPlot(const QString&,
-		unsigned input_channel,
-		Ami::AbsOperator*);
+      ProjectionPlot(QWidget*,
+		     const QString&,
+		     unsigned input_channel,
+		     Ami::AbsOperator*);
       ~ProjectionPlot();
     public:
       void configure(char*& p, 

@@ -1,8 +1,10 @@
-#ifndef AmiQt_EdgePlot_hh
-#define AmiQt_EdgePlot_hh
+#ifndef AmiQt_EnvPlot_hh
+#define AmiQt_EnvPlot_hh
 
 #include <QtGui/QWidget>
 #include <QtCore/QString>
+
+#include "ami/data/ConfigureRequest.hh"
 
 #include <list>
 
@@ -11,23 +13,21 @@ class QwtPlot;
 namespace Ami {
   class Cds;
   class DescEntry;
-  class EdgeFinder;
   namespace Qt {
-    class AxisInfo;
+    class AxisArray;
     class ChannelDefinition;
-    class CursorDefinition;
+    class EnvDefinition;
     class QtBase;
-    class EdgePlot : public QWidget {
+    class EnvPlot : public QWidget {
       Q_OBJECT
     public:
-      EdgePlot(const QString&   name,
-	       unsigned         channel,
-	       Ami::EdgeFinder* finder);
-      ~EdgePlot();
+      EnvPlot(const QString& name,
+	      DescEntry*     desc,
+	      int            index0,
+	      int            index1);
+      ~EnvPlot();
     public:
-      void configure(char*& p, unsigned input, unsigned& output,
-		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
-		     const AxisInfo&);
+      void configure(char*& p, unsigned input, unsigned& output);
       void setup_payload(Cds&);
       void update();
     signals:
@@ -38,10 +38,12 @@ namespace Ami {
       void set_xaxis_title();
       void set_yaxis_title();
     private:
-      QString     _name;
-      unsigned    _channel;
-      Ami::EdgeFinder* _finder;
+      QString    _name;
 
+      DescEntry* _desc;
+      int        _index0;
+      int        _index1;
+      
       unsigned _output_signature;
 
       QwtPlot* _frame;

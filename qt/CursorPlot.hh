@@ -15,7 +15,7 @@ namespace Ami {
   class Cds;
   class DescEntry;
   namespace Qt {
-    class AxisArray;
+    class AxisInfo;
     class ChannelDefinition;
     class CursorDefinition;
     class QtBase;
@@ -23,12 +23,13 @@ namespace Ami {
       Q_OBJECT
     public:
       CursorPlot(const QString& name,
+		 unsigned       channel,
 		 BinMath*       desc);
       ~CursorPlot();
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
-		     const AxisArray&, ConfigureRequest::Source);
+		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
     signals:
@@ -40,6 +41,7 @@ namespace Ami {
       void set_yaxis_title();
     private:
       QString    _name;
+      unsigned   _channel;
       BinMath*   _input;
       
       unsigned _output_signature;

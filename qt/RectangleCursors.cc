@@ -20,7 +20,9 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
   _edit_x0   (new QLineEdit),
   _edit_y0   (new QLineEdit),
   _edit_x1   (new QLineEdit),
-  _edit_y1   (new QLineEdit)
+  _edit_y1   (new QLineEdit),
+  _xmax      (-1),
+  _ymax      (-1)
 {
   new QDoubleValidator(_edit_x0);
   new QDoubleValidator(_edit_y0);
@@ -66,6 +68,14 @@ void RectangleCursors::update_edits()
   _y0 = _edit_y0   ->text().toDouble();
   _x1 = _edit_x1   ->text().toDouble();
   _y1 = _edit_y1   ->text().toDouble();
+
+  if (_x0 > _xmax) _x0 = _xmax;
+  if (_y0 > _ymax) _y0 = _ymax;
+  if (_x1 > _xmax) _x1 = _xmax;
+  if (_y1 > _ymax) _y1 = _ymax;
+
+  _set_edits();
+
   emit changed();
 }
 
@@ -81,9 +91,14 @@ void RectangleCursors::draw(QImage& image)
 {
   const unsigned char c = 0xff;
   const QSize& sz = image.size();
+  _xmax = sz.width()-1;
+  _ymax = sz.height()-1;
 
   unsigned jlo = unsigned(xlo()), jhi = unsigned(xhi());
   unsigned klo = unsigned(ylo()), khi = unsigned(yhi());
+
+  if (jhi > _xmax) jhi=_xmax;
+  if (khi > _ymax) khi=_ymax;
 
   { unsigned char* cc0 = image.bits() + klo*sz.width() + jlo;
     unsigned char* cc1 = image.bits() + khi*sz.width() + jlo;
@@ -110,6 +125,12 @@ void RectangleCursors::_set_cursor(double x,double y)
   default: break;
   }
   _active=None;
+
+  if (_x0 > _xmax) _x0 = _xmax;
+  if (_y0 > _ymax) _y0 = _ymax;
+  if (_x1 > _xmax) _x1 = _xmax;
+  if (_y1 > _ymax) _y1 = _ymax;
+
   _set_edits();
   emit changed();
 }

@@ -20,7 +20,8 @@ namespace Ami {
   public:
     enum Type { Single, Average, Mean, Integral, Value, 
 		XYProjection, RPhiProjection, 
-		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder };
+		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder,
+		EnvPlot };
     AbsOperator(Type t);
     virtual ~AbsOperator() {}
     Entry&       operator ()(const Entry&) const;

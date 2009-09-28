@@ -1,6 +1,6 @@
 #include "CursorPlot.hh"
 
-#include "ami/qt/AxisArray.hh"
+#include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/PlotFactory.hh"
@@ -41,9 +41,11 @@ using namespace Ami::Qt;
 static NullTransform noTransform;
 
 CursorPlot::CursorPlot(const QString&   name,
+		       unsigned         channel,
 		       BinMath*         input) :
   QWidget  (0),
   _name    (name),
+  _channel (channel),
   _input   (input),
   _output_signature  (0),
   _frame   (new QwtPlot(name)),
@@ -146,9 +148,9 @@ void CursorPlot::setup_payload(Cds& cds)
 
 void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels,
-			   const AxisArray& xinfo, ConfigureRequest::Source source)
+			   const AxisInfo& xinfo, ConfigureRequest::Source source)
 {
-  unsigned channel = _input->input();
+  unsigned channel = _channel;
   unsigned input_signature = signatures[channel];
 
   // replace cursor values with bin indices
@@ -173,15 +175,38 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
       last = pos;
     }
     new_expr.append(expr.mid(last));
-    new_expr.replace("],[",",");
+    new_expr.replace(QString("]%1[").arg(BinMath::integrate()),QString(BinMath::integrate()));
+    new_expr.replace(QString("]%1[").arg(BinMath::range    ()),QString(BinMath::range    ()));
   }
+  QString end_expr;
+  { int last=0, next=0, pos=0;
+    while( (pos=new_expr.indexOf(BinMath::range(),pos)) != -1) {
+      if ( (next=new_expr.lastIndexOf("[",pos))==-1 )
+	printf("error parsing range in %s\n",qPrintable(expr));
+      else {
+	end_expr.append(new_expr.mid(last,next-last));
+	last  = new_expr.indexOf("]",pos);
+	int a = new_expr.mid(next+1,pos -next-1).toInt();
+	int b = new_expr.mid(pos +1,last-pos -1).toInt();
+	printf("%s/%d %s/%d\n",
+	       qPrintable(new_expr.mid(next+1,pos -next-1)),a,
+	       qPrintable(new_expr.mid(pos +1,last-pos -1)),b);
+	end_expr.append(QString("(%1)").arg(QString::number(abs(a-b)+1)));
+	pos  = ++last;
+      }
+    }
+    end_expr.append(new_expr.mid(last));
+  }
+  printf("CursorPlot %s\n",qPrintable(expr));
+  printf("CursorPlot %s\n",qPrintable(new_expr));
+  printf("CursorPlot %s\n",qPrintable(end_expr));
 
-  Ami::BinMath op(input_signature, _input->output(), qPrintable(new_expr),
+  Ami::BinMath op(_input->output(), qPrintable(end_expr),
 		  _input->feature_index());
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  source,
-						  input,
+						  input_signature,
 						  _output_signature = ++output,
 						  *channels[channel]->filter().filter(),
 						  op);

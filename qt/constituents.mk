@@ -45,6 +45,8 @@ tgtsrcs_qtclient += AnnulusCursors.cc AnnulusCursors_moc.cc
 tgtsrcs_qtclient += ImageRPhiProjection.cc ImageRPhiProjection_moc.cc
 tgtsrcs_qtclient += ImageXYProjection.cc ImageXYProjection_moc.cc
 tgtsrcs_qtclient += ImageClient.cc
+tgtsrcs_qtclient += EnvPlot.cc EnvPlot_moc.cc
+tgtsrcs_qtclient += EnvClient.cc EnvClient_moc.cc
 tgtsrcs_qtclient += DetectorSelect.cc DetectorSelect_moc.cc
 tgtsrcs_qtclient += qtclient.cc
 

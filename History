@@ -1,2 +1,8 @@
+2009-09-28	weaver	Tag V00-00-02.  Added "env" plots for viewing distributions/correlations/histories of PV and BLD.
+					Fixed bug with cursors plots fetching the wrong data.  Fixed handling of monomials
+					in expression parser.  Made calculator button text bigger and added bin range operation 
+					(left-right arrow).  Removed "e" as a cursor name, since it conflicts with double value
+					parsing.  Changed many top-level windows to independent child-windows.  Still can't close
+					all windows from the top-level, though.
 2009-09-23	weaver	Tag V00-00-01.  Added peak finding in images, image averaging and some bug fixes.
 2009-09-21	weaver	Tag V00-00-00.  Added image handling, zoom plots, x/y + r/phi projections.

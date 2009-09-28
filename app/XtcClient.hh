@@ -16,6 +16,7 @@ namespace Ami {
   class FeatureCache;
   class Factory;
   class EventHandler;
+  class Entry;
 
   class XtcClient : public XtcMonitorClient,
 		    private XtcIterator {
@@ -39,6 +40,7 @@ namespace Ami {
     const Pds::Sequence* _seq;
     bool      _sync;
     HList     _handlers;
+    Entry*    _entry;
   };
 }
 

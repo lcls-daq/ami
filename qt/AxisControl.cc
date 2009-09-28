@@ -13,16 +13,15 @@ using namespace Ami::Qt;
 
 
 AxisControl::AxisControl(QWidget* parent,
-			 const QString&  title,
-			 const AxisInfo& info) :
+			 const QString&  title) :
   QGroupBox(title,parent),
-  _info  (&info)
+  _info  (0)
 {
   setAlignment(::Qt::AlignHCenter);
 
   _autoB = new QPushButton("Auto"); 
-  _loBox = new QLineEdit(QString::number(info.position(info.lo())));
-  _hiBox = new QLineEdit(QString::number(info.position(info.hi())));
+  _loBox = new QLineEdit("0");
+  _hiBox = new QLineEdit("1000");
   _loBox->setMaximumWidth(60);
   _hiBox->setMaximumWidth(60);
   new QDoubleValidator(_loBox);

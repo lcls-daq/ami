@@ -11,6 +11,7 @@
 //
 //=========================================================
 
+#include "ami/qt/Requestor.hh"
 #include "ami/client/AbsClient.hh"
 #include <QtGui/QWidget>
 
@@ -32,10 +33,12 @@ namespace Ami {
     class Status;
     class Transform;
 
-    class Client : public QWidget, public Ami::AbsClient  {
+    class Client : public QWidget, 
+		   public Ami::AbsClient,
+		   public Requestor {
       Q_OBJECT
     public:
-      Client(const Pds::DetInfo&, unsigned, Display*);
+      Client(QWidget*,const Pds::DetInfo&, unsigned, Display*);
       ~Client();
     public:
       void managed         (VClientManager&);

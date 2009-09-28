@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'Client.hh'
 **
-** Created: Mon Sep 21 12:54:34 2009
+** Created: Fri Sep 25 19:03:01 2009
 **      by: The Qt Meta Object Compiler version 59 (Qt 4.3.4)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -58,6 +58,8 @@ void *Ami::Qt::Client::qt_metacast(const char *_clname)
 	return static_cast<void*>(const_cast< Client*>(this));
     if (!strcmp(_clname, "Ami::AbsClient"))
 	return static_cast< Ami::AbsClient*>(const_cast< Client*>(this));
+    if (!strcmp(_clname, "Requestor"))
+	return static_cast< Requestor*>(const_cast< Client*>(this));
     return QWidget::qt_metacast(_clname);
 }
 

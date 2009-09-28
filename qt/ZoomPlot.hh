@@ -22,7 +22,8 @@ namespace Ami {
     class ZoomPlot : public QWidget {
       Q_OBJECT
     public:
-      ZoomPlot(const QString&,
+      ZoomPlot(QWidget*,
+	       const QString&,
 	       unsigned input_channel,
 	       unsigned x0, 
 	       unsigned y0,

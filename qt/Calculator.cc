@@ -29,7 +29,7 @@ namespace Ami {
     public:
       QSize sizeHint() const {
 	QSize size = QToolButton::sizeHint();
-	size.rheight() += 20;
+	size.rheight() += 10;
 	size.rwidth() = qMax(size.width(), size.height());
 	return size;
       }
@@ -92,10 +92,10 @@ Calculator::Calculator(const QString&     title,
   _display->setReadOnly(true);
   _display->setAlignment(::Qt::AlignRight);
 //     display->setMaxLength(15);
-
-//     QFont font = display->font();
-//     font.setPointSize(font.pointSize() + 8);
-//     display->setFont(font);
+//
+//   QFont font = display->font();
+//   font.setPointSize(font.pointSize() + 8);
+//   display->setFont(font);
 
   QColor backspaceColor(225, 185, 135);
   QColor operatorColor(155, 175, 195);
@@ -322,6 +322,9 @@ CalculatorButton* Calculator::createButton(const QString &text, const QColor &co
 					   const char *member)
 {
   CalculatorButton* button = new CalculatorButton(text, color);
+  QFont f = button->font();
+  f.setPointSize(f.pointSize()+4);
+  button->setFont(f);
   connect(button, SIGNAL(clicked()), this, member);
   return button;
 }

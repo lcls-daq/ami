@@ -8,7 +8,7 @@
 
 namespace Ami {
   namespace Qt {
-    class AxisArray;
+    class AxisInfo;
     class AxisControl;
     class Transform;
     class PlotFrame;
@@ -29,7 +29,7 @@ namespace Ami {
       QWidget* widget() { return this; }
     public:
       const std::list<QtBase*> plots() const;
-      const AxisArray&    xinfo     () const;
+      const AxisInfo&     xinfo     () const;
       PlotFrame*          plot      () const;
     public slots:
       void save_image();
@@ -45,8 +45,8 @@ namespace Ami {
       Transform*   _xtransform;
       AxisControl* _xrange;
       AxisControl* _yrange;
-      AxisArray* _xinfo;
-      AxisArray* _yinfo;
+      const AxisInfo* _xinfo;
+      const AxisInfo* _yinfo;
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
     };

@@ -21,7 +21,7 @@ namespace Ami {
   class Entry;
 
   namespace Qt {
-    class AxisArray;
+    class AxisInfo;
     class ChannelDefinition;
     class EdgeCursor;
     class EdgePlot;

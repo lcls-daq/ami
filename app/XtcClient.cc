@@ -7,6 +7,7 @@
 #include "ami/event/EventHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
+#include "ami/data/EntryScalar.hh"
 #include "ami/server/Factory.hh"
 
 using namespace Ami;
@@ -35,6 +36,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _seq = &dg->seq;
     iterate(&dg->xtc); 
 
+    _entry->time(_seq->clock());
     _factory.analyze();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
@@ -50,6 +52,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     iterate(&dg->xtc); 
 
     //  Create and register new entries
+    _factory.discovery().add(_entry = new EntryScalar("XtcClient","timestamp"));
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       for(unsigned k=0; k<(*it)->nentries(); k++) {
 	_factory.discovery().add   (const_cast<Entry*>((*it)->entry(k)));

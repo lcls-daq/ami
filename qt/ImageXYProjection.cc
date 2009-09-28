@@ -201,7 +201,7 @@ void ImageXYProjection::plot()
     }
   }
   
-  ProjectionPlot* plot = new ProjectionPlot(_title->text(), _channel, proj);
+  ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
 
   _pplots.push_back(plot);
 
@@ -213,7 +213,8 @@ void ImageXYProjection::plot()
 
 void ImageXYProjection::zoom()
 {
-  ZoomPlot* plot = new ZoomPlot(_channels[_channel]->name(),
+  ZoomPlot* plot = new ZoomPlot(this,
+				_channels[_channel]->name(),
 				_channel,
 				unsigned(_rectangle->xlo()),
 				unsigned(_rectangle->ylo()),

@@ -175,6 +175,22 @@ QString& Expression::_process(QString& text,const QChar& o)
 
 QString& Expression::_process(QString& text)
 {
+  // 
+  //  Special case is the monomial (no operators)
+  //
+  for(VarList::const_iterator it = _variables.begin(); it != _variables.end(); it++) {
+    if (text.compare((*it)->name())==0) {
+      text = QString("[%1]").arg((unsigned long)((*it)->clone()),0,16);
+      return text;
+    }
+  }
+  bool ok;
+  double v=text.toDouble(&ok);
+  if (ok) {
+    text = QString("[%1]").arg((unsigned long)(new Constant("constant",v)),0,16);
+    return text;
+  }
+  
   _process(text,_exponentiate);
   _process(text,_divide);
   _process(text,_multiply);
@@ -190,18 +206,6 @@ Term* Expression::evaluate(const QString& e)
   printf("_evaluate %s\n",qPrintable(text));
 #endif
 
-  // 
-  //  Special case is the monomial (no operators)
-  //
-  for(VarList::const_iterator it = _variables.begin(); it != _variables.end(); it++) {
-    if (text.compare((*it)->name())==0)
-      return (*it)->clone();
-  }
-  bool ok;
-  double v=text.toDouble(&ok);
-  if (ok)
-    return new Constant("constant",v);
-  
   //  process "()" first
   int end;
   while( (end=text.indexOf(')'))!=-1 ) {
@@ -212,6 +216,7 @@ Term* Expression::evaluate(const QString& e)
 
   _process(text);
 
+  bool ok;
   Term* t = reinterpret_cast<Term*>(text.mid(1,text.size()-2).toULong(&ok,16));
 #ifdef DBUG
   printf("Result is (%s) %p %s\n",ok ? "OK" : "Not OK", t,qPrintable(text));

@@ -1,18 +1,21 @@
-#include "EdgePlot.hh"
+#include "EnvPlot.hh"
 
-#include "ami/qt/AxisInfo.hh"
-#include "ami/qt/ChannelDefinition.hh"
-#include "ami/qt/Filter.hh"
+#include "ami/qt/AxisArray.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtChart.hh"
+#include "ami/qt/QtProf.hh"
 #include "ami/qt/Path.hh"
 
+#include "ami/data/AbsTransform.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
-#include "ami/data/AbsTransform.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryTH1F.hh"
-#include "ami/data/EdgeFinder.hh"
+#include "ami/data/EntryProf.hh"
+#include "ami/data/EntryScalar.hh"
+#include "ami/data/EnvPlot.hh"
+#include "ami/data/RawFilter.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -36,13 +39,16 @@ using namespace Ami::Qt;
 
 static NullTransform noTransform;
 
-EdgePlot::EdgePlot(const QString&   name,
-		   unsigned         channel,
-		   Ami::EdgeFinder* finder) :
+EnvPlot::EnvPlot(const QString&   name,
+		 DescEntry*       desc,
+		 int              index0,
+		 int              index1) :
   QWidget  (0),
   _name    (name),
-  _channel (channel),
-  _finder  (finder),
+  _desc    (desc),
+  _index0  (index0),
+  _index1  (index1),
+  _output_signature  (0),
   _frame   (new QwtPlot(name)),
   _plot    (0)
 {
@@ -66,13 +72,13 @@ EdgePlot::EdgePlot(const QString&   name,
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
 }
 
-EdgePlot::~EdgePlot()
+EnvPlot::~EnvPlot()
 {
-  delete _finder;
+  delete _desc;
   if (_plot    ) delete _plot;
 }
 
-void EdgePlot::save_data()
+void EnvPlot::save_data()
 {
   FILE* f = Path::saveDataFile();
   if (f) {
@@ -81,7 +87,7 @@ void EdgePlot::save_data()
   }
 }
 
-void EdgePlot::set_plot_title()
+void EnvPlot::set_plot_title()
 {
   bool ok;
   QString text = QInputDialog::getText(this, tr("Plot Title"), tr("Enter new title:"), 
@@ -90,7 +96,7 @@ void EdgePlot::set_plot_title()
     _frame->setTitle(text);
 }
 
-void EdgePlot::set_xaxis_title()
+void EnvPlot::set_xaxis_title()
 {
   bool ok;
   QString text = QInputDialog::getText(this, tr("X-Axis Title"), tr("Enter new title:"), 
@@ -99,7 +105,7 @@ void EdgePlot::set_xaxis_title()
     _frame->setAxisTitle(QwtPlot::xBottom,text);
 }
 
-void EdgePlot::set_yaxis_title()
+void EnvPlot::set_yaxis_title()
 {
   bool ok;
   QString text = QInputDialog::getText(this, tr("Y-Axis Title"), tr("Enter new title:"), 
@@ -111,14 +117,29 @@ void EdgePlot::set_yaxis_title()
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
 
-void EdgePlot::setup_payload(Cds& cds)
+void EnvPlot::setup_payload(Cds& cds)
 {
   if (_plot) delete _plot;
     
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
-    _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-		       noTransform,noTransform,QColor(0,0,0));
+    switch(entry->desc().type()) {
+    case Ami::DescEntry::TH1F: 
+      _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
+			 noTransform,noTransform,QColor(0,0,0));
+      break;
+    case Ami::DescEntry::Scalar:  // create a chart from a scalar
+      _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
+			  200,QColor(0,0,0));
+      break;
+    case Ami::DescEntry::Prof: 
+      _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
+			 noTransform,noTransform,QColor(0,0,0));
+      break;
+    default:
+      printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
+      return;
+    }
     _plot->attach(_frame);
     printf("%s found signature %d created type %d\n",qPrintable(_name),_output_signature,entry->desc().type());
   }
@@ -126,22 +147,19 @@ void EdgePlot::setup_payload(Cds& cds)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }
 
-void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
-			   ChannelDefinition* channels[], int* signatures, unsigned nchannels,
-			   const AxisInfo& xinfo)
+void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 {
-  unsigned input_signature = signatures[_channel];
-
+  Ami::EnvPlot op(*_desc, _index0, _index1);
+  
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Analysis,
-						  input_signature,
+						  ConfigureRequest::Discovery,
+						  input,
 						  _output_signature = ++output,
-						  *channels[_channel]->filter().filter(),
-						  *_finder);
+						  RawFilter(), op);
   p += r.size();
 }
 
-void EdgePlot::update()
+void EnvPlot::update()
 {
   if (_plot) {
     _plot->update();

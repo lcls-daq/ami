@@ -10,8 +10,8 @@
 
 using namespace Ami::Qt;
 
-ImageClient::ImageClient(const Pds::DetInfo& info, unsigned ch) :
-  Client  (info,ch,new ImageDisplay)
+ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :
+  Client  (parent,info,ch,new ImageDisplay)
 {
   ImageDisplay& wd = static_cast<ImageDisplay&>(display());
 

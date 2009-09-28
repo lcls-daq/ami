@@ -40,11 +40,11 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
   _plot->setAxisScaleEngine(QwtPlot::yLeft  , new QwtLinearScaleEngine);
 
-  _xinfo = new AxisArray(no_scale,1);
-  _yinfo = new AxisArray(no_scale,1);
+  _xinfo = 0;
+  _yinfo = 0;
 
-  _xrange = new AxisControl(this,"X",*_xinfo);
-  _yrange = new AxisControl(this,"Y",*_yinfo);
+  _xrange = new AxisControl(this,"X");
+  _yrange = new AxisControl(this,"Y");
 
   QPushButton* xtransB = new QPushButton("X Transform");
   _xtransform = new Transform("X Transform","x");
@@ -175,7 +175,7 @@ void Ami::Qt::WaveformDisplay::save_reference()
 	  
 void Ami::Qt::WaveformDisplay::add   (QtBase* b) 
 {
-  _xrange->update(*b->xinfo());
+  _xrange->update(*(_xinfo = b->xinfo()));
 
   _curves.push_back(b);
   b->xscale_update();
@@ -244,7 +244,7 @@ void Ami::Qt::WaveformDisplay::xtransform_update()
     (*it)->xscale_update();
 
   if (_curves.size())
-    _xrange->update(*_curves.front()->xinfo());
+    _xrange->update(*(_xinfo=_curves.front()->xinfo()));
 
   if (_xrange->isAuto()) {
   }
@@ -272,7 +272,7 @@ const Ami::AbsTransform& Ami::Qt::WaveformDisplay::xtransform() const { return *
 
 const std::list<QtBase*> Ami::Qt::WaveformDisplay::plots() const { return _curves; }
 
-const AxisArray& Ami::Qt::WaveformDisplay::xinfo() const { return *_xinfo; }
+const AxisInfo& Ami::Qt::WaveformDisplay::xinfo() const { return *_xinfo; }
 
 PlotFrame* Ami::Qt::WaveformDisplay::plot() const { return _plot; }
 

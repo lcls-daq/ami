@@ -38,10 +38,11 @@ typedef Pds::DetInfo DI;
 
 static const int BufferSize = 0x8000;
 
-Ami::Qt::Client::Client(const Pds::DetInfo& src,
+Ami::Qt::Client::Client(QWidget*            parent,
+			const Pds::DetInfo& src,
 			unsigned            channel,
 			Display*            frame) :
-  QWidget          (0),
+  QWidget          (parent,::Qt::Window),
   _src             (src),
   _channel         (channel),
   _frame           (frame),

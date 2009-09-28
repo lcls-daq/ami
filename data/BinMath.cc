@@ -25,16 +25,17 @@
 #define CLASSTERM(type,func) \
   class Entry##type##Term : public Ami::Term {				\
   public:								\
-    Entry##type##Term(const Entry##type& e, unsigned lo, unsigned hi) : \
+    Entry##type##Term(const Entry*& e, unsigned lo, unsigned hi) :	\
       _entry(e), _lo(lo), _hi(hi) {}					\
       ~Entry##type##Term() {}						\
   public:								\
       double evaluate() const						\
       { double sum=0;							\
-	for(unsigned i=_lo; i<=_hi; i++) sum += _entry.func(i);		\
+	for(unsigned i=_lo; i<=_hi; i++)				\
+	  sum += static_cast<const Entry##type*>(_entry)->func(i);	\
 	return sum; }							\
   private:								\
-      const Entry##type& _entry;					\
+      const Entry*& _entry;						\
       unsigned _lo, _hi;						\
   }
 
@@ -50,12 +51,14 @@ namespace Ami {
 using namespace Ami;
 
 static QChar _integrate(0x002C);
+static QChar _range    (0x0023);
 const QChar& BinMath::integrate() { return _integrate; }
+const QChar& BinMath::range    () { return _range    ; }
 
-BinMath::BinMath(unsigned signature, const DescEntry& output, const char* expr,
+BinMath::BinMath(const DescEntry& output, 
+		 const char* expr,
 		 unsigned feature_index) :
   AbsOperator(AbsOperator::BinMath),
-  _signature (signature),
   _feature_index(feature_index),
   _cache     (0),
   _term      (0),
@@ -65,17 +68,16 @@ BinMath::BinMath(unsigned signature, const DescEntry& output, const char* expr,
   memcpy (_desc_buffer, &output, output.size());
 }
 
-#define CASETERM(type) \
+#define CASETERM(type)							\
   case DescEntry::type:							\
-  { t = new Ami::BinMathC::Entry##type##Term(static_cast<const Entry##type&>(*entry),lo,hi); \
+  { t = new Ami::BinMathC::Entry##type##Term(_input,lo,hi);		\
     break; }
 
-BinMath::BinMath(const char*& p, FeatureCache& features, const Cds& cds) :
+BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features) :
   AbsOperator(AbsOperator::BinMath),
   _cache (&features)
 {
   _extract(p, _expression , EXPRESSION_LEN);
-  _extract(p, &_signature , sizeof(_signature));
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_feature_index, sizeof(_feature_index));
 
@@ -83,8 +85,6 @@ BinMath::BinMath(const char*& p, FeatureCache& features, const Cds& cds) :
 
   _entry = EntryFactory::entry(o);
  
-  const Entry* entry = cds.entry(_signature);
-
   QString expr(_expression);
   QString new_expr;
 
@@ -104,13 +104,13 @@ BinMath::BinMath(const char*& p, FeatureCache& features, const Cds& cds) :
 	if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
       }
       Term* t;
-      switch(entry->desc().type()) {
+      switch(input.type()) {
 	CASETERM(Waveform);
 	CASETERM(TH1F);
 	CASETERM(Prof);
 	CASETERM(Image);
       default:
-	printf("BinMath: No implementation for entry type %d\n",entry->desc().type());
+	printf("BinMath: No implementation for entry type %d\n",input.type());
 	t = 0;
 	break;
       }
@@ -135,7 +135,6 @@ BinMath::~BinMath()
   if (_entry) delete _entry;
 }
 
-unsigned   BinMath::input    () const { return _signature; }
 DescEntry& BinMath::output   () const 
 { 
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
@@ -147,7 +146,6 @@ const char* BinMath::expression() const { return _expression; }
 void*      BinMath::_serialize(void* p) const
 {
   _insert(p, _expression, EXPRESSION_LEN);
-  _insert(p, &_signature, sizeof(_signature));
   _insert(p, _desc_buffer, DESC_LEN);
   _insert(p, &_feature_index, sizeof(_feature_index));
   return p;
@@ -156,6 +154,7 @@ void*      BinMath::_serialize(void* p) const
 Entry&     BinMath::_operate(const Entry& e) const
 {
   if (_term) {
+    _input = &e;
     double y = _term->evaluate();
     switch(_entry->desc().type()) {
     case DescEntry::Scalar:  static_cast<EntryScalar*>(_entry)->addcontent(y);    break;

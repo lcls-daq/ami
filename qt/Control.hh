@@ -9,12 +9,12 @@ class QLabel;
 
 namespace Ami {
   namespace Qt {
-    class Client;
+    class Requestor;
     class Control : public QWidget,
 		    public Timer {
       Q_OBJECT
     public:
-      Control(Client&);
+      Control(Requestor&);
       ~Control();
     public:  // Timer interface
       void     expired();
@@ -25,7 +25,7 @@ namespace Ami {
       void run   (bool);
       void single();
     private:
-      Client&  _client;
+      Requestor&  _client;
       Task*    _task;
       unsigned _repeat;
       QLabel*  _status;

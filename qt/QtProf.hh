@@ -32,6 +32,7 @@ namespace Ami {
       QwtPlotCurve     _curve;
       double*          _x;
       double*          _y;
+      double*          _xa;
       AxisInfo*     _xinfo;
     };
   };

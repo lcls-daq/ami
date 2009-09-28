@@ -25,10 +25,11 @@
 
 using namespace Ami::Qt;
 
-ProjectionPlot::ProjectionPlot(const QString&    name,
+ProjectionPlot::ProjectionPlot(QWidget*          parent,
+			       const QString&    name,
 			       unsigned          input_channel,
 			       Ami::AbsOperator* proj) :
-  QWidget  (0),
+  QWidget  (parent,::Qt::Window),
   _name    (name),
   _input   (input_channel),
   _proj    (proj),

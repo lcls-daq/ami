@@ -28,13 +28,15 @@ QtProf::QtProf(const QString&   title,
   unsigned nb = entry.desc().nbins();
   double xlow = entry.desc().xlow();
   double xhi  = entry.desc().xup ();
-  _x = new double[nb];
-  _y = new double[nb];
+  _xa = new double[nb];
+  _x  = new double[nb];
+  _y  = new double[nb];
   double dx = nb ? (xhi - xlow) / double(nb) : 0;
   double x0 = xlow;
   unsigned b=0;
   unsigned i=0;
   while(b<nb) {
+    _xa[b] = _xscale(x0 + double(b)*dx);
     if (entry.nentries(b)) {
       _x[i] = _xscale(x0 + double(b)*dx);
       _y[i] = entry.ymean(b);
@@ -43,7 +45,7 @@ QtProf::QtProf(const QString&   title,
     b++;
   }
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
-  _xinfo = new AxisArray(_x,i);
+  _xinfo = new AxisArray(_xa,nb);
 }
   
   
@@ -51,6 +53,7 @@ QtProf::~QtProf()
 {
   _curve.attach(NULL);
   delete _xinfo;
+  delete[] _xa;
   delete[] _x;
   delete[] _y;
 }

@@ -8,8 +8,8 @@
 
 using namespace Ami::Qt;
 
-WaveformClient::WaveformClient(const Pds::DetInfo& info, unsigned ch) :
-  Client  (info,ch, new WaveformDisplay)
+WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :
+  Client  (parent,info,ch, new WaveformDisplay)
 {
   WaveformDisplay& wd = static_cast<WaveformDisplay&>(display());
 
@@ -41,7 +41,7 @@ void WaveformClient::_configure(char*& p,
 		      ch, signatures, nchannels);
   _cursors->configure(p, input, output,
 		      ch, signatures, nchannels,
-		      ConfigureRequest::Discovery);
+		      ConfigureRequest::Analysis);
 }
 
 void WaveformClient::_setup_payload(Cds& cds)

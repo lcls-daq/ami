@@ -10,7 +10,7 @@ namespace Ami {
 
     class WaveformClient : public Client {
     public:
-      WaveformClient(const Pds::DetInfo&, unsigned);
+      WaveformClient(QWidget*,const Pds::DetInfo&, unsigned);
       ~WaveformClient();
     private:
       void _configure(char*& p, 

@@ -16,13 +16,14 @@
 
 using namespace Ami::Qt;
 
-ZoomPlot::ZoomPlot(const QString&   name,
+ZoomPlot::ZoomPlot(QWidget*         parent,
+		   const QString&   name,
 		   unsigned         input_channel,
 		   unsigned         x0, 
 		   unsigned         y0,
 		   unsigned         x1,
 		   unsigned         y1) :
-  QWidget  (0),
+  QWidget  (parent,::Qt::Window),
   _name    (name),
   _input   (input_channel),
   _signature(-1),

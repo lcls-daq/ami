@@ -10,6 +10,7 @@
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
+#include "ami/data/EnvPlot.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -43,11 +44,12 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Integral  : o = new Integral (p,input); break;
   case AbsOperator::Reference : o = new Reference(p,input); break;
   case AbsOperator::EntryMath : o = new EntryMath(p,input,output_cds); break;
-  case AbsOperator::BinMath   : o = new BinMath  (p,_f,output_cds); break;
+  case AbsOperator::BinMath   : o = new BinMath  (p,input,_f); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p, output_cds); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
+  case AbsOperator::EnvPlot   : o = new EnvPlot(p,_f,output_cds); break;
   case AbsOperator::Value     :
   default: break;
   }

@@ -202,7 +202,7 @@ void ImageRPhiProjection::plot()
     }
   }
 
-  ProjectionPlot* plot = new ProjectionPlot(_title->text(), _channel, proj);
+  ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
   _pplots.push_back(plot);
 
   connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));

@@ -87,7 +87,9 @@ namespace Ami {
 
 using namespace Ami::Qt;
 
-static QChar _integrate   (0x2026);
+//static QChar _integrate   (0x2026);  // ..
+static QChar _integrate   (0x222b);  // S
+static QChar _range       (0x2194);  // left-right arrow
 static QChar _exponentiate(0x005E);
 static QChar _multiply    (0x00D7);
 static QChar _divide      (0x00F7);
@@ -106,7 +108,7 @@ CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDi
   _title    (new QLineEdit("Cursor plot")),
   _features (new QComboBox)
 {
-  _names << "a" << "b" << "c" << "d" << "e" << "f" << "g";
+  _names << "a" << "b" << "c" << "d" << "f" << "g";
 
   _expr->setReadOnly(true);
 
@@ -167,12 +169,14 @@ CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDi
   { QGroupBox* expr_box = new QGroupBox("Expression:");
     expr_box->setToolTip(QString("Expression is a set of cursor names with the operations:\n" \
 				 "  A %1 B : Integrate between cursors A and B\n"\
-				 "  A %2 B : Exponentiate [value at] A to the power of [value at] B\n "	\
-				 "  A %3 B : Multiply [value at] A by [value at] B\n "	\
-				 "  A %4 B : Divide \n "	\
-				 "  A %5 B : Add \n "		\
-				 "  A %6 B : Subtract \n ")
+				 "  A %2 B : Count of bins between cursors A and B\n"\
+				 "  A %3 B : Exponentiate [value at] A to the power of [value at] B\n "	\
+				 "  A %4 B : Multiply [value at] A by [value at] B\n "	\
+				 "  A %5 B : Divide \n "	\
+				 "  A %6 B : Add \n "		\
+				 "  A %7 B : Subtract \n ")
 			 .arg(_integrate)
+			 .arg(_range)
 			 .arg(_exponentiate)
 			 .arg(_multiply)
 			 .arg(_divide)
@@ -280,7 +284,8 @@ void CursorsX::calc()
       << _subtract;
 
   QStringList vops;
-  vops << _integrate;
+  vops << _integrate
+       << _range;
 
   Calculator* c = new Calculator(tr("Cursor Math"),"",
  				 variables, vops, ops);
@@ -339,6 +344,7 @@ void CursorsX::plot()
     expr = new_expr;
   }
   expr.replace(_integrate   ,BinMath::integrate());
+  expr.replace(_range       ,BinMath::range    ());
   expr.replace(_exponentiate,Expression::exponentiate());
   expr.replace(_multiply    ,Expression::multiply());
   expr.replace(_divide      ,Expression::divide());
@@ -346,7 +352,8 @@ void CursorsX::plot()
   expr.replace(_subtract    ,Expression::subtract());
 
   CursorPlot* plot = new CursorPlot(_title->text(),
-				    new BinMath(_channel,*desc,qPrintable(expr),
+				    _channel,
+				    new BinMath(*desc,qPrintable(expr),
 						FeatureRegistry::instance().index(_vFeature->variable())));
   _plots.push_back(plot);
 
