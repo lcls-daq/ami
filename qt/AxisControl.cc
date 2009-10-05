@@ -52,16 +52,19 @@ AxisControl::~AxisControl()
 
 void AxisControl::save(char*& p) const
 {
-  QtPersistent::insert(p,_loBox->text().toDouble());
-  QtPersistent::insert(p,_hiBox->text().toDouble());
+  QtPersistent::insert(p,_loBox->text());
+  QtPersistent::insert(p,_hiBox->text());
   QtPersistent::insert(p,_autoB->isChecked());
 }
 
 void AxisControl::load(const char*& p)
 {
-  _loBox->setText(QtPersistent::extract_s(p));
-  _hiBox->setText(QtPersistent::extract_s(p));
-  _autoB->setChecked(QtPersistent::extract_b(p));
+  QString s,t;
+  bool b;
+  _loBox->setText(s=QtPersistent::extract_s(p));
+  _hiBox->setText(t=QtPersistent::extract_s(p));
+  _autoB->setChecked(b=QtPersistent::extract_b(p));
+  auto_scale(b);
 }
 
 void   AxisControl::update(const AxisInfo& info) 

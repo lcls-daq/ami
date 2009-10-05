@@ -14,16 +14,13 @@ Control::Control(Requestor& c) :
   _client(c),
   _task  (new Task(TaskObject("amitmr")))
 {
-  QPushButton* pRun;
-  QPushButton* pSingle;
-  
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(pRun    = new QPushButton("Run")); pRun->setCheckable(true);
-  layout->addWidget(pSingle = new QPushButton("Single"));
+  layout->addWidget(_pRun    = new QPushButton("Run")); _pRun->setCheckable(true);
+  layout->addWidget(_pSingle = new QPushButton("Single"));
   setLayout(layout);
 
-  connect(pRun   , SIGNAL(clicked(bool)), this, SLOT(run (bool)));
-  connect(pSingle, SIGNAL(clicked()), this, SLOT(single()));
+  connect(_pRun   , SIGNAL(clicked(bool)), this, SLOT(run (bool)));
+  connect(_pSingle, SIGNAL(clicked()), this, SLOT(single()));
 }
 
 Control::~Control()
@@ -52,3 +49,15 @@ void Control::single() {
   Timer::start();
 }
 
+void Control::save(char*& p) const
+{
+  QtPersistent::insert(p,_pRun   ->isChecked());
+}
+
+void Control::load(const char*& p)
+{
+  bool b = QtPersistent::extract_b(p);
+  printf("Extract RUN state %c\n",b?'t':'f');
+  _pRun   ->setChecked(b);
+  run(b);
+}

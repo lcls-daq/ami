@@ -57,7 +57,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _sem             (new Semaphore(Semaphore::EMPTY))
 {
   if (src.detector()==Pds::DetInfo::AmoETof)
-    setWindowTitle(QString("AmoETof-%1").arg(channel));
+    setWindowTitle(QString("AmoETof-%1").arg(channel+1));
   else
     setWindowTitle(QString("%1").arg(Pds::DetInfo::name(src.detector())));
 
@@ -128,6 +128,9 @@ void Ami::Qt::Client::save(char*& p) const
   QtPWidget::save(p);
 
   for(unsigned i=0; i<NCHANNELS; i++) _channels[i]->save(p);
+
+  _frame->save(p);
+  _control->save(p);
 }
 
 void Ami::Qt::Client::load(const char*& p)
@@ -139,6 +142,9 @@ void Ami::Qt::Client::load(const char*& p)
     _channels[i]->load(p);
     connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
   }
+
+  _frame->load(p);
+  _control->load(p);
 }
 
 void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }

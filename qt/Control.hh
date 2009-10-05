@@ -6,6 +6,7 @@
 #include "ami/service/Timer.hh"
 
 class QLabel;
+class QPushButton;
 
 namespace Ami {
   namespace Qt {
@@ -16,6 +17,9 @@ namespace Ami {
     public:
       Control(Requestor&);
       ~Control();
+    public:
+      void save(char*&) const;
+      void load(const char*&);
     public:  // Timer interface
       void     expired();
       Task*    task   ();
@@ -28,6 +32,8 @@ namespace Ami {
       Requestor&  _client;
       Task*    _task;
       unsigned _repeat;
+      QPushButton* _pRun;
+      QPushButton* _pSingle;
       QLabel*  _status;
     };
   };

@@ -102,6 +102,9 @@ void EdgeFinder::save(char*& p) const
   QtPersistent::insert(p,_baseline ->value());
   QtPersistent::insert(p,_threshold->value());
 
+  QtPersistent::insert(p,_title->text());
+  _hist->save(p);
+
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     QtPersistent::insert(p,QString("EdgePlot"));
     (*it)->save(p);
@@ -115,7 +118,9 @@ void EdgeFinder::load(const char*& p)
 
   _baseline ->value(QtPersistent::extract_d(p));
   _threshold->value(QtPersistent::extract_d(p));
-  
+  _title->setText(QtPersistent::extract_s(p));
+  _hist->load(p);
+
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();

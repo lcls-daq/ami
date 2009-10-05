@@ -1,3 +1,4 @@
+2009-10-05	weaver			Added additional components to load/save setup.  current->1.2.6
 2009-10-02	weaver			Added global load/save feature for restoring windows/plots.
 					Fixed bug in EdgeFinder to properly scale threshold/baseline on averaged waveforms.
 2009-09-28	weaver	Tag V00-00-02.  Added "env" plots for viewing distributions/correlations/histories of PV and BLD.

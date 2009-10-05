@@ -13,6 +13,9 @@ namespace Ami {
     public:
       DescTH1F(const char* name);
     public:
+      void save(char*&) const;
+      void load(const char*&);
+    public:
       QRadioButton* button();
       unsigned bins() const;
       double   lo  () const;

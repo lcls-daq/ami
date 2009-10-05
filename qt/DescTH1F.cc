@@ -1,4 +1,5 @@
 #include "DescTH1F.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QRadioButton>
 #include <QtGui/QLineEdit>
@@ -40,3 +41,17 @@ double   DescTH1F::hi  () const { return _hi->text().toDouble(); }
 void DescTH1F::bins(unsigned b) { _bins->setText(QString::number(b)); }
 void DescTH1F::lo  (double   v) { _lo  ->setText(QString::number(v)); }
 void DescTH1F::hi  (double   v) { _hi  ->setText(QString::number(v)); }
+
+void DescTH1F::save(char*& p) const
+{
+  QtPersistent::insert(p,_bins->text());
+  QtPersistent::insert(p,_lo  ->text());
+  QtPersistent::insert(p,_hi  ->text());
+}
+
+void DescTH1F::load(const char*& p)
+{
+  _bins->setText(QtPersistent::extract_s(p));
+  _lo  ->setText(QtPersistent::extract_s(p));
+  _hi  ->setText(QtPersistent::extract_s(p));
+}
