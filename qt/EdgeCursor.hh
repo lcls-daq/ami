@@ -21,6 +21,7 @@ namespace Ami {
       ~EdgeCursor();
     public:
       double value() const;
+      void   value(double);
     private:
       void _set_cursor(double,double);
     public slots:

@@ -1,7 +1,8 @@
 #ifndef AmiQt_PeakFinder_hh
 #define AmiQt_PeakFinder_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
@@ -27,11 +28,15 @@ namespace Ami {
     class DescImage;
     class ImageDisplay;
 
-    class PeakFinder : public QWidget {
+    class PeakFinder : public QtPWidget {
       Q_OBJECT
     public:
-      PeakFinder(ChannelDefinition* channels[], unsigned nchannels, ImageDisplay&);
+      PeakFinder(QWidget* parent,
+		 ChannelDefinition* channels[], unsigned nchannels, ImageDisplay&);
       ~PeakFinder();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);

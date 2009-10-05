@@ -1,7 +1,8 @@
 #ifndef AmiQt_CursorsX_hh
 #define AmiQt_CursorsX_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
@@ -32,12 +33,15 @@ namespace Ami {
     class DescChart;
     class WaveformDisplay;
 
-    class CursorsX : public QWidget,
+    class CursorsX : public QtPWidget,
 		     public Cursors {
       Q_OBJECT
     public:
-      CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
       ~CursorsX();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       Ami::AbsOperator* math() const;
     public:
@@ -53,8 +57,6 @@ namespace Ami {
       void add_cursor  ();
       void hide_cursors();
       void plot        ();   // configure the plot
-      void load        ();
-      void save        ();
       void remove_plot (QObject*);
       void grab_cursorx();
       void change_features();

@@ -1,6 +1,7 @@
 #include "RectangleCursors.hh"
 
 #include "ami/qt/ImageFrame.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
@@ -58,6 +59,22 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
 
 RectangleCursors::~RectangleCursors()
 {
+}
+
+void RectangleCursors::save(char*& p) const
+{
+  QtPersistent::insert(p,_x0);
+  QtPersistent::insert(p,_y0);
+  QtPersistent::insert(p,_x1);
+  QtPersistent::insert(p,_y1);
+}
+
+void RectangleCursors::load(const char*& p)
+{
+  _x0 = QtPersistent::extract_i(p);
+  _y0 = QtPersistent::extract_i(p);
+  _x1 = QtPersistent::extract_i(p);
+  _y1 = QtPersistent::extract_i(p);
 }
 
 void RectangleCursors::grab_zero() { _active = Zero; grab_cursor(); }

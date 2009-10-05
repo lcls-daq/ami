@@ -32,10 +32,11 @@ using namespace Ami::Qt;
 static const QChar RHO(0x03c1);
 static const QChar PHI(0x03c6);
 
-ImageRPhiProjection::ImageRPhiProjection(ChannelDefinition* channels[],
+ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
+					 ChannelDefinition* channels[],
 					 unsigned           nchannels, 
 					 ImageFrame&        frame) :
-  QWidget   (0),
+  QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
@@ -118,6 +119,16 @@ ImageRPhiProjection::ImageRPhiProjection(ChannelDefinition* channels[],
   
 ImageRPhiProjection::~ImageRPhiProjection()
 {
+}
+
+void ImageRPhiProjection::save(char*& p) const
+{
+  QtPWidget::save(p);
+}
+
+void ImageRPhiProjection::load(const char*& p)
+{
+  QtPWidget::load(p);
 }
 
 void ImageRPhiProjection::setVisible(bool v)

@@ -32,7 +32,7 @@ EdgeFinder::EdgeFinder(double     fraction,
 static const char* _advance(const char*& p, unsigned size) { const char* o=p; p+=size; return o; }
 #define EXTRACT(p, type) *(reinterpret_cast<const type*>(_advance(p,sizeof(type))))
 
-EdgeFinder::EdgeFinder(const char*& p, const Cds& cds) :
+EdgeFinder::EdgeFinder(const char*& p) :
   AbsOperator     (AbsOperator::EdgeFinder),
   _threshold_value(EXTRACT(p, double)),
   _baseline_value (EXTRACT(p, double)),
@@ -62,15 +62,20 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   const EntryWaveform& entry = static_cast<const EntryWaveform&>(e);
   const DescWaveform& d = entry.desc();
   // find the boundaries where the pulse crosses the threshold
-  double   peak = _threshold_value;
+  double sc = entry.info(EntryWaveform::Normalization);
+  if (sc==0) sc=1;
+  double threshold_value = _threshold_value*sc;
+  double baseline_value  = _baseline_value*sc;
+
+  double   peak = threshold_value;
   unsigned start  =0;
   bool     crossed=false;
-  bool     rising = _threshold_value > _baseline_value;
+  bool     rising = threshold_value > baseline_value;
   for(unsigned k=0; k<d.nbins(); k++) {
     double y = entry.content(k);
     bool over = 
-      ( rising && y>_threshold_value) ||
-      (!rising && y<_threshold_value);
+      ( rising && y>threshold_value) ||
+      (!rising && y<threshold_value);
     if (!crossed && over) {
       crossed = true;
       start   = k;
@@ -78,7 +83,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
     }
     else if (crossed && !over) {
       //  find the edge
-      double edge_v = 0.5*(peak+_baseline_value);
+      double edge_v = 0.5*(peak+baseline_value);
       unsigned i=start;
       if (rising) { // leading edge +
 	while(entry.content(i) < edge_v)

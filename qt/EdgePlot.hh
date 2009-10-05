@@ -1,7 +1,8 @@
 #ifndef AmiQt_EdgePlot_hh
 #define AmiQt_EdgePlot_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 
 #include <list>
@@ -17,13 +18,19 @@ namespace Ami {
     class ChannelDefinition;
     class CursorDefinition;
     class QtBase;
-    class EdgePlot : public QWidget {
+    class EdgePlot : public QtPWidget {
       Q_OBJECT
     public:
-      EdgePlot(const QString&   name,
+      EdgePlot(QWidget*         parent,
+	       const QString&   name,
 	       unsigned         channel,
 	       Ami::EdgeFinder* finder);
+      EdgePlot(QWidget*         parent,
+	       const char*&     p);
       ~EdgePlot();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,

@@ -42,6 +42,11 @@ unsigned ImageScale::value() const
   return _input->value();
 }
 
+void ImageScale::value(unsigned v)
+{
+  _input->setValue(v);
+}
+
 void ImageScale::value_change(int v)
 {
   v /= _color.scale();

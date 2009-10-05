@@ -28,6 +28,7 @@ namespace Ami {
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     BinMath(const char*&, const DescEntry& input, FeatureCache&);
+    BinMath(const char*&);
     ~BinMath();
   public:
     DescEntry& output   () const;

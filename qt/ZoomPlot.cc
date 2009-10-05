@@ -23,7 +23,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 		   unsigned         y0,
 		   unsigned         x1,
 		   unsigned         y1) :
-  QWidget  (parent,::Qt::Window),
+  QtPWidget(parent),
   _name    (name),
   _input   (input_channel),
   _signature(-1),
@@ -45,8 +45,52 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   show();
 }
 
+ZoomPlot::ZoomPlot(QWidget*         parent,
+		   const char*&     p) :
+  QtPWidget(parent),
+  _signature(-1),
+  _frame   (new ImageDisplay)
+{
+  load(p);
+
+  setWindowTitle(_name);
+  setAttribute(::Qt::WA_DeleteOnClose, true);
+
+  QHBoxLayout* layout = new QHBoxLayout;
+  layout->addWidget(_frame);
+  setLayout(layout);
+
+  show();
+}
+
 ZoomPlot::~ZoomPlot()
 {
+}
+
+void ZoomPlot::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_name);
+  QtPersistent::insert(p,_input);
+  QtPersistent::insert(p,_x0);
+  QtPersistent::insert(p,_y0);
+  QtPersistent::insert(p,_x1);
+  QtPersistent::insert(p,_y1);
+  _frame->save(p);
+}
+
+void ZoomPlot::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _name  = QtPersistent::extract_s(p);
+  _input = QtPersistent::extract_i(p);
+  _x0 = QtPersistent::extract_i(p);
+  _y0 = QtPersistent::extract_i(p);
+  _x1 = QtPersistent::extract_i(p);
+  _y1 = QtPersistent::extract_i(p);
+  _frame->load(p);
 }
 
 void ZoomPlot::setup_payload(Cds& cds)

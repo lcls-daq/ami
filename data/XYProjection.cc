@@ -37,6 +37,16 @@ XYProjection::XYProjection(const char*& p, const DescEntry& input) :
   _output = EntryFactory::entry(o);
 }
 
+XYProjection::XYProjection(const char*& p) :
+  AbsOperator(AbsOperator::XYProjection),
+  _output    (0)
+{
+  _extract(p, _desc_buffer, DESC_LEN);
+  _extract(p, &_axis      , sizeof(_axis));
+  _extract(p, &_ilo       , sizeof(_ilo ));
+  _extract(p, &_ihi       , sizeof(_ihi ));
+}
+
 XYProjection::~XYProjection()
 {
   if (_output) delete _output;

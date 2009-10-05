@@ -36,3 +36,7 @@ QRadioButton* DescTH1F::button() { return _button; }
 unsigned DescTH1F::bins() const { return _bins->text().toInt(); }
 double   DescTH1F::lo  () const { return _lo->text().toDouble(); }
 double   DescTH1F::hi  () const { return _hi->text().toDouble(); }
+
+void DescTH1F::bins(unsigned b) { _bins->setText(QString::number(b)); }
+void DescTH1F::lo  (double   v) { _lo  ->setText(QString::number(v)); }
+void DescTH1F::hi  (double   v) { _hi  ->setText(QString::number(v)); }

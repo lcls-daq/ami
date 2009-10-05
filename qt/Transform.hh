@@ -1,8 +1,8 @@
 #ifndef AmiQt_Transform_hh
 #define AmiQt_Transform_hh
 
+#include "ami/qt/QtPWidget.hh"
 #include "ami/data/AbsTransform.hh"
-#include <QtGui/QWidget>
 
 #include <list>
 
@@ -22,26 +22,25 @@ namespace Ami {
     class ExprValidator;
     class QtBase;
 
-    class Transform : public QWidget,
+    class Transform : public QtPWidget,
 		      public Ami::AbsTransform {
       Q_OBJECT
     public:
-      Transform(const QString& title,
+      Transform(QWidget* parent,
+		const QString& title,
 		const QString& axis);
       ~Transform();
     public:
       double operator()(double) const;
     public:
-//       void read (istream&) {}
-//       void write(ostream&) const {}
+      void save(char*& p) const;
+      void load(const char*& p);
     public slots:
       void add   ();
       void remove(const QString&);
       void calc  ();
       void apply ();
       void clear ();
-      void save  ();
-      void load  ();
     signals:
       void changed();
     private:

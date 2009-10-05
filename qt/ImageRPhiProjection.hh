@@ -1,7 +1,8 @@
 #ifndef AmiQt_ImageRPhiProjection_hh
 #define AmiQt_ImageRPhiProjection_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
@@ -22,11 +23,15 @@ namespace Ami {
     class ImageFrame;
     class ProjectionPlot;
 
-    class ImageRPhiProjection : public QWidget {
+    class ImageRPhiProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageRPhiProjection(ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
+      ImageRPhiProjection(QWidget* parent,
+			  ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageRPhiProjection();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);

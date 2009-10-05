@@ -1,3 +1,5 @@
+2009-10-02	weaver			Added global load/save feature for restoring windows/plots.
+					Fixed bug in EdgeFinder to properly scale threshold/baseline on averaged waveforms.
 2009-09-28	weaver	Tag V00-00-02.  Added "env" plots for viewing distributions/correlations/histories of PV and BLD.
 					Fixed bug with cursors plots fetching the wrong data.  Fixed handling of monomials
 					in expression parser.  Made calculator button text bigger and added bin range operation 

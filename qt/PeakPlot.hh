@@ -10,7 +10,7 @@
 //
 //=========================================================
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 
 #include <QtCore/QString>
 
@@ -19,13 +19,18 @@ namespace Ami {
   namespace Qt {
     class ChannelDefinition;
     class ImageDisplay;
-    class PeakPlot : public QWidget {
+    class PeakPlot : public QtPWidget {
       Q_OBJECT
     public:
-      PeakPlot(const QString&,
+      PeakPlot(QWidget* parent,
+	       const QString&,
 	       unsigned input_channel,
 	       unsigned threshold);
+      PeakPlot(QWidget*, const char*&);
       ~PeakPlot();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, 
 		     unsigned input, 

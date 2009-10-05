@@ -19,6 +19,9 @@ namespace Ami {
       WaveformDisplay();
       ~WaveformDisplay();
     public:
+      void save(char*& p) const;
+      void load(const char*& p);
+    public:
       void add   (QtBase*);
       void reset ();
       void show  (QtBase*);

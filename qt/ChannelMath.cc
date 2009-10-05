@@ -133,3 +133,12 @@ const Ami::AbsOperator& ChannelMath::op () const
   return *_operator;
 }
 
+QString   ChannelMath::expr() const
+{
+  return _expr->text();
+}
+
+void      ChannelMath::expr(const QString& t)
+{
+  _expr->setText(t);
+}

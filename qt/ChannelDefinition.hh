@@ -1,7 +1,7 @@
 #ifndef AmiQt_ChannelDefinition_hh
 #define AmiQt_ChannelDefinition_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 
 #include <QtGui/QColor>
 #include <QtCore/QString>
@@ -23,13 +23,17 @@ namespace Ami {
     class ChannelMath;
     class Transform;
     class QtBase;
-    class ChannelDefinition : public QWidget {
+    class ChannelDefinition : public QtPWidget {
       Q_OBJECT
     public:
-      ChannelDefinition(const QString& name, 
+      ChannelDefinition(QWidget* parent,
+			const QString& name, 
 			const QStringList& names,
 			Display& frame, const QColor&, bool init=false);
       ~ChannelDefinition();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       const QString& name() const { return _name; }
       const Filter&       filter   () const { return *_filter; }

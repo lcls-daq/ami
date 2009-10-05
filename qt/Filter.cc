@@ -31,8 +31,8 @@ namespace Ami {
 
 using namespace Ami::Qt;
 
-Filter::Filter(const QString& title) :
-  QWidget   (0),
+Filter::Filter(QWidget* parent,const QString& title) :
+  QtPWidget (parent),
   _name     (title),
   _expr     (new QLineEdit),
   _cond_name(new QLineEdit("A")),
@@ -58,18 +58,9 @@ Filter::Filter(const QString& title) :
   QPushButton* clearB = new QPushButton("Clear");
   QPushButton* okB    = new QPushButton("OK");
   QPushButton* cancelB= new QPushButton("Cancel");
-  QPushButton* loadB  = new QPushButton("Load");
-  QPushButton* saveB  = new QPushButton("Save");
 
   QHBoxLayout* l = new QHBoxLayout;
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* file_box = new QGroupBox("File");
-    QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(loadB);
-    layout1->addWidget(saveB);
-    layout1->addStretch();
-    file_box->setLayout(layout1);
-    layout->addWidget(file_box); }
   { QGroupBox* conditions_box = new QGroupBox("Define Conditions");
     conditions_box->setToolTip("A CONDITION is an inclusive range of one of the predefined observables." \
 			       "The CONDITION is defined by expression " \
@@ -116,8 +107,6 @@ Filter::Filter(const QString& title) :
   connect(calcB , SIGNAL(clicked()), this, SLOT(calc()));
   connect(applyB, SIGNAL(clicked()), this, SLOT(apply()));
   connect(clearB, SIGNAL(clicked()), this, SLOT(clear()));
-  connect(loadB , SIGNAL(clicked()), this, SLOT(load()));
-  connect(saveB , SIGNAL(clicked()), this, SLOT(save()));
   connect(okB   , SIGNAL(clicked()), this, SLOT(apply()));
   connect(okB   , SIGNAL(clicked()), this, SLOT(hide()));
   connect(cancelB, SIGNAL(clicked()), this, SLOT(hide()));
@@ -128,6 +117,58 @@ Filter::Filter(const QString& title) :
 Filter::~Filter()
 {
   if (_filter) delete _filter;
+}
+
+void Filter::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_expr->text());
+  for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++) {
+    QtPersistent::insert(p,QString("Condition"));
+    QtPersistent::insert(p,(*it)->label());
+  }
+  QtPersistent::insert(p,QString("EndCondition"));
+}
+
+void Filter::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _expr->setText(QtPersistent::extract_s(p));
+
+  for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++)
+    delete *it;
+  _conditions.clear();
+    
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("Condition")) {
+    name = QtPersistent::extract_s(p);
+
+    char condition[64],variable[64];
+    double lo, hi;
+    sscanf(qPrintable(name),"%s := %lg <= %s <= %lg", condition, &lo, variable, &hi);
+
+    printf("new condition %s := %g <= %s <= %g\n",
+	   condition, lo, variable, hi);
+    int index = _features->findText(variable);
+    if (index<0)
+      printf("Unable to identify %s\n",variable);
+    else {
+      Condition* c = new Condition(condition,
+				   QString("%1 := %2 <= %3 <= %4")
+				   .arg(condition)
+				   .arg(lo)
+				   .arg(variable)
+				   .arg(hi),
+				   new FeatureRange(index,lo,hi));
+      _conditions.push_back(c);
+      _clayout->addWidget(c);
+      connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
+    }
+
+    name = QtPersistent::extract_s(p);
+  }
 }
 
 void Filter::add  ()
@@ -186,80 +227,6 @@ void Filter::clear()
 
   if (_filter) delete _filter;
   _filter = new RawFilter;
-}
-
-void Filter::load()
-{
-  QString file = QFileDialog::getOpenFileName(this,"File to read from:",
-					      "", "(filter) *.flt;; (all) *");
-  if (file.isNull())
-    return;
-
-  ifstream f(qPrintable(file));
-  if (!f.good())
-    QMessageBox::warning(this, "Load",
-			 QString("Error opening %1 for reading").arg(file));
-  else {
-    for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++)
-      delete *it;
-    _conditions.clear();
-
-    char buffer[256];
-    f.getline(buffer,256);
-    _expr->setText(buffer); 
-
-    char condition[64];
-    char variable [64];
-    double lo, hi;
-    f.getline(buffer,256);
-    while(f.good()) {
-      sscanf(buffer,"%s := %lg <= %s <= %lg", condition, &lo, variable, &hi);
-      printf("new condition %s := %g <= %s <= %g\n",
-	     condition, lo, variable, hi);
-      int index = _features->findText(variable);
-      if (index<0)
-	printf("Unable to identify %s\n",variable);
-      else {
-	Condition* c = new Condition(condition,
-				     QString("%1 := %2 <= %3 <= %4")
-				     .arg(condition)
-				     .arg(lo)
-				     .arg(variable)
-				     .arg(hi),
-				     new FeatureRange(index,lo,hi));
-	_conditions.push_back(c);
-	_clayout->addWidget(c);
-	connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
-      }
-      f.getline(buffer,256);
-    }
-  }
-}
-
-void Filter::save()
-{
-  char time_buffer[32];
-  time_t seq_tm = time(NULL);
-  strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
-
-  QString def(_name);
-  def += "_";
-  def += time_buffer;
-  def += ".flt";
-  QString fname =
-    QFileDialog::getSaveFileName(this,"Save File As (.flt)",
-				 def,".flt");
-  if (!fname.isNull()) {
-    ofstream f(qPrintable(fname));
-    if (!f.good())
-      QMessageBox::warning(this, "Save data",
-			   QString("Error opening %1 for writing").arg(fname));
-    else {
-      f << qPrintable(_expr->text()) << std::endl;
-      for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++)
-	f << qPrintable((*it)->label()) << std::endl;
-    }
-  }
 }
 
 void Filter::update_features()

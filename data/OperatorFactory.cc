@@ -45,7 +45,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Reference : o = new Reference(p,input); break;
   case AbsOperator::EntryMath : o = new EntryMath(p,input,output_cds); break;
   case AbsOperator::BinMath   : o = new BinMath  (p,input,_f); break;
-  case AbsOperator::EdgeFinder: o = new EdgeFinder(p, output_cds); break;
+  case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;

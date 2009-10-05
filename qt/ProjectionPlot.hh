@@ -10,7 +10,7 @@
 //
 //=========================================================
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 
 #include <QtCore/QString>
 
@@ -22,14 +22,18 @@ namespace Ami {
     class ChannelDefinition;
     class CursorsX;
     class WaveformDisplay;
-    class ProjectionPlot : public QWidget {
+    class ProjectionPlot : public QtPWidget {
       Q_OBJECT
     public:
       ProjectionPlot(QWidget*,
 		     const QString&,
 		     unsigned input_channel,
 		     Ami::AbsOperator*);
+      ProjectionPlot(QWidget*,const char*&);
       ~ProjectionPlot();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, 
 		     unsigned input, 

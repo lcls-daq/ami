@@ -12,6 +12,9 @@ namespace Ami {
     public:
       WaveformClient(QWidget*,const Pds::DetInfo&, unsigned);
       ~WaveformClient();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     private:
       void _configure(char*& p, 
 		      unsigned input, 

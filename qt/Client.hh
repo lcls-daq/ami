@@ -12,8 +12,8 @@
 //=========================================================
 
 #include "ami/qt/Requestor.hh"
+#include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
-#include <QtGui/QWidget>
 
 #include "ami/data/Cds.hh"
 #include "pdsdata/xtc/DetInfo.hh"
@@ -29,17 +29,18 @@ namespace Ami {
     class ChannelDefinition;
     class Control;
     class Display;
-    class AxisControl;
     class Status;
-    class Transform;
 
-    class Client : public QWidget, 
+    class Client : public QtPWidget, 
 		   public Ami::AbsClient,
 		   public Requestor {
       Q_OBJECT
     public:
       Client(QWidget*,const Pds::DetInfo&, unsigned, Display*);
       ~Client();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void managed         (VClientManager&);
       void request_payload ();
@@ -87,10 +88,7 @@ namespace Ami {
       char*       _description;
 
       Control*    _control;
-      Transform*  _xtransform;
       Status*     _status;
-      AxisControl* _xrange;
-      AxisControl* _yrange;
 
       bool        _one_shot;
 

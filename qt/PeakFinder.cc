@@ -25,8 +25,9 @@
 
 using namespace Ami::Qt;
 
-PeakFinder::PeakFinder(ChannelDefinition* channels[], unsigned nchannels, ImageDisplay& frame) :
-  QWidget   (0),
+PeakFinder::PeakFinder(QWidget* parent,
+		       ChannelDefinition* channels[], unsigned nchannels, ImageDisplay& frame) :
+  QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
@@ -75,6 +76,41 @@ PeakFinder::~PeakFinder()
 {
 }
 
+void PeakFinder::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_channel);
+  QtPersistent::insert(p,_threshold->value());
+
+  for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QtPersistent::insert(p,QString("PeakPlot"));
+    (*it)->save(p);
+  }
+  QtPersistent::insert(p,QString("EndPeakPlot"));
+}
+
+void PeakFinder::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _channel = QtPersistent::extract_i(p);
+  _threshold->value(QtPersistent::extract_i(p));
+
+  for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _plots.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("PeakPlot")) {
+    PeakPlot* plot = new PeakPlot(this, p);
+    _plots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
+}
+
 void PeakFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
@@ -101,7 +137,8 @@ void PeakFinder::set_channel(int c)
 
 void PeakFinder::plot()
 {
-  PeakPlot* plot = new PeakPlot(_channels[_channel]->name() + " Peaks",
+  PeakPlot* plot = new PeakPlot(this,
+				_channels[_channel]->name() + " Peaks",
 				_channel,
 				_threshold->value());
   _plots.push_back(plot);

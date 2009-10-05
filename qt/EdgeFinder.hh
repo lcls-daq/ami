@@ -1,7 +1,8 @@
 #ifndef AmiQt_EdgeFinder_hh
 #define AmiQt_EdgeFinder_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
@@ -30,11 +31,14 @@ namespace Ami {
     class DescChart;
     class WaveformDisplay;
 
-    class EdgeFinder : public QWidget {
+    class EdgeFinder : public QtPWidget {
       Q_OBJECT
     public:
-      EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      EdgeFinder(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
       ~EdgeFinder();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       Ami::AbsOperator* math() const;
     public:
@@ -45,8 +49,6 @@ namespace Ami {
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
-      void load          ();
-      void save          ();
       void remove_plot   (QObject*);
     signals:
       void changed();
@@ -61,8 +63,7 @@ namespace Ami {
  
       QLineEdit* _title;
       DescTH1F*  _hist;
-      Ami::AbsOperator* _operator;
-      bool _grab_baseline;
+
       std::list<EdgePlot*> _plots;
     };
   };

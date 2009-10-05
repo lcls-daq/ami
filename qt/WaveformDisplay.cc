@@ -47,7 +47,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _yrange = new AxisControl(this,"Y");
 
   QPushButton* xtransB = new QPushButton("X Transform");
-  _xtransform = new Transform("X Transform","x");
+  _xtransform = new Transform(this, "X Transform","x");
 
   QMenuBar* menu_bar = new QMenuBar(this);
   {
@@ -86,6 +86,20 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
 
 Ami::Qt::WaveformDisplay::~WaveformDisplay()
 {
+}
+
+void Ami::Qt::WaveformDisplay::save(char*& p) const
+{
+  _xtransform->save(p);
+  _xrange->save(p);
+  _yrange->save(p);
+}
+
+void Ami::Qt::WaveformDisplay::load(const char*& p)
+{
+  _xtransform->load(p);
+  _xrange->load(p);
+  _yrange->load(p);
 }
 
 void Ami::Qt::WaveformDisplay::save_image()

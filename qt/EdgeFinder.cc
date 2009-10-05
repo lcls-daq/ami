@@ -30,8 +30,9 @@
 
 using namespace Ami::Qt;
 
-EdgeFinder::EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
-  QWidget   (0),
+EdgeFinder::EdgeFinder(QWidget* parent,
+		       ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
+  QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
@@ -52,18 +53,8 @@ EdgeFinder::EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, Wavefo
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
-  QPushButton* loadB  = new QPushButton("Load");
-  QPushButton* saveB  = new QPushButton("Save");
   
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* file_box = new QGroupBox("File");
-    QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addStretch();
-    layout1->addWidget(loadB);
-    layout1->addWidget(saveB);
-    layout1->addStretch();
-    file_box->setLayout(layout1);
-    layout->addWidget(file_box); }
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Channel"));
@@ -96,14 +87,49 @@ EdgeFinder::EdgeFinder(ChannelDefinition* channels[], unsigned nchannels, Wavefo
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
-  connect(loadB     , SIGNAL(clicked()),      this, SLOT(load()));
-  connect(saveB     , SIGNAL(clicked()),      this, SLOT(save()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }
   
 EdgeFinder::~EdgeFinder()
 {
+}
+
+void EdgeFinder::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_baseline ->value());
+  QtPersistent::insert(p,_threshold->value());
+
+  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QtPersistent::insert(p,QString("EdgePlot"));
+    (*it)->save(p);
+  }
+  QtPersistent::insert(p,QString("EndEdgePlot"));
+}
+
+void EdgeFinder::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _baseline ->value(QtPersistent::extract_d(p));
+  _threshold->value(QtPersistent::extract_d(p));
+  
+  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _plots.clear();
+
+  QString name=QtPersistent::extract_s(p);
+  while(name==QString("EdgePlot")) {
+    EdgePlot* plot = new EdgePlot(this, p);
+    _plots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name=QtPersistent::extract_s(p);
+  }
+
+  emit changed();
 }
 
 void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,
@@ -130,21 +156,14 @@ void EdgeFinder::set_channel(int c)
   _channel=c; 
 }
 
-void EdgeFinder::load()
-{
-}
-
-void EdgeFinder::save()
-{
-}
-
 void EdgeFinder::plot()
 {
   Ami::DescTH1F desc(qPrintable(_title->text()),
 		     "edge location","pulses",
 		     _hist->bins(),_hist->lo(),_hist->hi()); 
   
-  EdgePlot* plot = new EdgePlot(_title->text(),
+  EdgePlot* plot = new EdgePlot(this,
+				_title->text(),
 				_channel,
 				new Ami::EdgeFinder(0.5,
 						    _threshold->value(),

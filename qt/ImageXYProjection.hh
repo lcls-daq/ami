@@ -1,7 +1,8 @@
 #ifndef AmiQt_ImageXYProjection_hh
 #define AmiQt_ImageXYProjection_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
@@ -12,7 +13,6 @@ class QButtonGroup;
 
 namespace Ami {
 
-  class AbsOperator;
   class Cds;
   class Entry;
 
@@ -23,11 +23,15 @@ namespace Ami {
     class ProjectionPlot;
     class ZoomPlot;
 
-    class ImageXYProjection : public QWidget {
+    class ImageXYProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageXYProjection(ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
+      ImageXYProjection(QWidget* parent,
+			ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageXYProjection();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
@@ -55,8 +59,6 @@ namespace Ami {
       QLineEdit*    _title;
       QButtonGroup* _axis;
       QButtonGroup* _norm;
-
-      Ami::AbsOperator* _operator;
 
       std::list<ProjectionPlot*> _pplots;
       std::list<ZoomPlot*>       _zplots;

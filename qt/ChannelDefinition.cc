@@ -37,18 +37,19 @@ using namespace Ami::Qt;
 enum { _None, _Single, _Average, _Math, _Reference };
 enum { REFERENCE_BUFFER_SIZE = 0x1000 };
 
-ChannelDefinition::ChannelDefinition(const QString& name, 
+ChannelDefinition::ChannelDefinition(QWidget* parent,
+				     const QString& name, 
 				     const QStringList& names,
 				     Display& frame, 
 				     const QColor& color, 
 				     bool init) :
-  QWidget          (0),
+  QtPWidget        (parent),
   _name            (name),
   _frame           (frame),
   _color           (color),
-  _filter          (new Filter   (name)),
+  _filter          (new Filter   (this,name)),
   _operator        (0),
-  _transform       (new Transform(QString("%1 : Y Transform").arg(name),"y")),
+  _transform       (new Transform(this,QString("%1 : Y Transform").arg(name),"y")),
   _math            (new ChannelMath(names)),
   _interval        (new QLineEdit),
   _output_signature(-1UL),
@@ -134,6 +135,41 @@ ChannelDefinition::ChannelDefinition(const QString& name,
 	  
 ChannelDefinition::~ChannelDefinition()
 {
+}
+
+void ChannelDefinition::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_plot_grp->checkedId());
+  QtPersistent::insert(p,_interval->text());
+  QtPersistent::insert(p,_math->expr());
+  QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString(""));
+  _filter   ->save(p);
+  _transform->save(p);
+}
+
+void ChannelDefinition::load(const char*& p)
+{
+  QtPWidget::load(p);
+  
+  int id = QtPersistent::extract_i(p);
+  _interval->setText(QtPersistent::extract_s(p));
+  _math->expr(QtPersistent::extract_s(p));
+  QString rfile = QtPersistent::extract_s(p);
+  if (!rfile.isEmpty()) {
+    _ref_file = rfile;
+    _plot_grp->button(_Reference)->setEnabled(true);
+  }
+  else
+    _plot_grp->button(_Reference)->setEnabled(false);
+
+  _filter   ->load(p);
+  _transform->load(p);
+
+  _plot_grp->button(id)->setChecked(true);
+
+  apply();
 }
 
 void ChannelDefinition::load_reference()

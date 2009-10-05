@@ -47,33 +47,6 @@ enum { _TH1F, _vT, _vF };
 
 namespace Ami {
   namespace Qt {
-#if 0
-    class CursorLocation : public QDoubleSpinBox {
-    public:
-      CursorLocation(double* x, unsigned nx, int b=0) : _x(x), _nx(nx), _b(b) {}
-      ~CursorLocation() {}
-    public:
-      int location  () const { return _b; }
-      int location  (double v) const 
-      {
-	for(unsigned k=0; k<_nx && _xx[k]<v; k++) ;
-	return k ? k-1 : k;
-      }
-      double   location  (int v) const { return _x[v]; }
-      void     stepBy    (int steps) 
-      {
-	_b += steps;
-	if (_b<0)    _b = 0;
-	if (_b>=_nx) _b = _nx-1;
-      }
-    public:
-      QString textFromValue(double         v) const { return QString::number(location(_b=location(v))); }
-      double  valueFromText(const QString& t) const { return location(location(t.toDouble())); }
-    private:
-      int _b;
-      double   _lo, _hi;
-    };
-#else
     class CursorLocation : public QLineEdit {
     public:
       CursorLocation() : QLineEdit("0") { new QDoubleValidator(this); }
@@ -81,7 +54,6 @@ namespace Ami {
     public:
       double value() const { return text().toDouble(); }
     };
-#endif
   };
 };
 
@@ -96,8 +68,8 @@ static QChar _divide      (0x00F7);
 static QChar _add         (0x002B);
 static QChar _subtract    (0x002D);
 
-CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
-  QWidget   (0),
+CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
+  QtPWidget (parent),
   Cursors   (*frame.plot()),
   _channels (channels),
   _nchannels(nchannels),
@@ -136,19 +108,9 @@ CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDi
   QPushButton* calcB  = new QPushButton("Enter");
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
-  QPushButton* loadB  = new QPushButton("Load");
-  QPushButton* saveB  = new QPushButton("Save");
   QPushButton* grabB  = new QPushButton("Grab");
   
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* file_box = new QGroupBox("File");
-    QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addStretch();
-    layout1->addWidget(loadB);
-    layout1->addWidget(saveB);
-    layout1->addStretch();
-    file_box->setLayout(layout1);
-    layout->addWidget(file_box); }
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Channel"));
@@ -210,8 +172,6 @@ CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDi
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_new_value, SIGNAL(returnPressed()),this, SLOT(add_cursor()));
   connect(calcB     , SIGNAL(clicked()),      this, SLOT(calc()));
-  connect(loadB     , SIGNAL(clicked()),      this, SLOT(load()));
-  connect(saveB     , SIGNAL(clicked()),      this, SLOT(save()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
@@ -221,6 +181,60 @@ CursorsX::CursorsX(ChannelDefinition* channels[], unsigned nchannels, WaveformDi
   
 CursorsX::~CursorsX()
 {
+}
+
+void CursorsX::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
+    QtPersistent::insert(p,QString("CursorDef"));
+    QtPersistent::insert(p,(*it)->name());
+    QtPersistent::insert(p,(*it)->location());
+  }
+
+  for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QtPersistent::insert(p,QString("CursorPlot"));
+    (*it)->save(p);
+  }
+  QtPersistent::insert(p,QString("EndCursorX"));
+}
+
+void CursorsX::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
+    _names.push_back((*it)->name());
+    delete *it;
+  }
+  _cursors.clear();
+
+  for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    delete *it;
+  }
+  _plots.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("CursorDef")) {
+    QString n = QtPersistent::extract_s(p);
+    double  v = QtPersistent::extract_d(p);
+    _names.removeAll(n);
+    CursorDefinition* d = new CursorDefinition(n, v, *this, _frame.plot());
+    _cursors.push_back(d);
+    _clayout->addWidget(d);
+    
+    name = QtPersistent::extract_s(p);
+  }
+
+  while(name == QString("CursorPlot")) {
+    CursorPlot* plot = new CursorPlot(this, p);
+    _plots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
 }
 
 void CursorsX::configure(char*& p, unsigned input, unsigned& output,
@@ -295,14 +309,6 @@ void CursorsX::calc()
    delete c;
 }
 
-void CursorsX::load()
-{
-}
-
-void CursorsX::save()
-{
-}
-
 void CursorsX::plot()
 {
   DescEntry* desc;
@@ -351,7 +357,8 @@ void CursorsX::plot()
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
 
-  CursorPlot* plot = new CursorPlot(_title->text(),
+  CursorPlot* plot = new CursorPlot(this,
+				    _title->text(),
 				    _channel,
 				    new BinMath(*desc,qPrintable(expr),
 						FeatureRegistry::instance().index(_vFeature->variable())));

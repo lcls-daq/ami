@@ -42,7 +42,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
 			Display*            frame) :
-  QWidget          (parent,::Qt::Window),
+  QtPWidget        (parent),
   _src             (src),
   _channel         (channel),
   _frame           (frame),
@@ -81,7 +81,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       QColor color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
       for(int i=0; i<NCHANNELS; i++) {
 	QString title = names[i];
-	_channels[i] = new ChannelDefinition(title, names, *_frame, color[i], i==0);
+	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0);
 	chanB[i] = new QPushButton(title); chanB[i]->setCheckable(true);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
@@ -121,6 +121,24 @@ Ami::Qt::Client::~Client()
   delete[] _iovload;
   delete[] _description;
   delete[] _request; 
+}
+
+void Ami::Qt::Client::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  for(unsigned i=0; i<NCHANNELS; i++) _channels[i]->save(p);
+}
+
+void Ami::Qt::Client::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  for(unsigned i=0; i<NCHANNELS; i++) {
+    disconnect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+    _channels[i]->load(p);
+    connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+  }
 }
 
 void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }

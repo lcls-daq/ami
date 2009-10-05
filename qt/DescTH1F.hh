@@ -17,6 +17,9 @@ namespace Ami {
       unsigned bins() const;
       double   lo  () const;
       double   hi  () const;
+      void bins(unsigned);
+      void lo  (double);
+      void hi  (double);
     private:
       QRadioButton* _button;
       QLineEdit *_bins, *_lo, *_hi;

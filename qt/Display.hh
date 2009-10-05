@@ -1,13 +1,15 @@
 #ifndef AmiQt_Display_hh
 #define AmiQt_Display_hh
 
+#include "ami/qt/QtPersistent.hh"
+
 class QWidget;
 
 namespace Ami {
   class AbsTransform;
   namespace Qt {
     class QtBase;
-    class Display {
+    class Display : public QtPersistent {
     public:
       virtual ~Display() {}
     public:

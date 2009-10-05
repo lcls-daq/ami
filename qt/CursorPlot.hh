@@ -1,7 +1,8 @@
 #ifndef AmiQt_CursorPlot_hh
 #define AmiQt_CursorPlot_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
+
 #include <QtCore/QString>
 
 #include "ami/data/BinMath.hh"
@@ -19,13 +20,19 @@ namespace Ami {
     class ChannelDefinition;
     class CursorDefinition;
     class QtBase;
-    class CursorPlot : public QWidget {
+    class CursorPlot : public QtPWidget {
       Q_OBJECT
     public:
-      CursorPlot(const QString& name,
+      CursorPlot(QWidget*       parent,
+		 const QString& name,
 		 unsigned       channel,
 		 BinMath*       desc);
+      CursorPlot(QWidget*       parent,
+		 const char*&   p);
       ~CursorPlot();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,

@@ -18,7 +18,8 @@ namespace Ami {
       ChannelMath(const QStringList&);
       ~ChannelMath();
     public:
-      const QString&   expr() const;
+      QString          expr() const;
+      void             expr(const QString&);
       bool             resolve(ChannelDefinition* ch[],
 			       int*  signatures,
 			       int   nch,

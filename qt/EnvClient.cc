@@ -39,7 +39,7 @@ enum { _TH1F, _vT, _vF };
 static const int BufferSize = 0x8000;
 
 EnvClient::EnvClient(QWidget* parent) :
-  QWidget(parent,::Qt::Window),
+  QtPWidget        (parent),
   _input           (0),
   _output_signature(0),
   _request         (new char[BufferSize]),

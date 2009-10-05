@@ -19,10 +19,11 @@
 
 using namespace Ami::Qt;
 
-PeakPlot::PeakPlot(const QString&   name,
+PeakPlot::PeakPlot(QWidget*         parent,
+		   const QString&   name,
 		   unsigned         input_channel,
 		   unsigned         threshold) :
-  QWidget  (0),
+  QtPWidget(parent),
   _name    (name),
   _input   (input_channel),
   _threshold(threshold),
@@ -40,8 +41,46 @@ PeakPlot::PeakPlot(const QString&   name,
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
 }
 
+PeakPlot::PeakPlot(QWidget*         parent,
+		   const char*&     p) :
+  QtPWidget (parent),
+  _signature(-1),
+  _frame    (new ImageDisplay)
+{
+  load(p);
+
+  setWindowTitle(_name);
+  setAttribute(::Qt::WA_DeleteOnClose, true);
+
+  QHBoxLayout* layout = new QHBoxLayout;
+  layout->addWidget(_frame);
+  setLayout(layout);
+
+  show();
+  connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
+
+  QtPWidget::load(p);
+}
+
 PeakPlot::~PeakPlot()
 {
+}
+
+void PeakPlot::save(char*& p) const
+{
+  QtPersistent::insert(p,_name);
+  QtPersistent::insert(p,_input);
+  QtPersistent::insert(p,_threshold);
+  _frame->save(p);
+  QtPWidget::save(p);
+}
+
+void PeakPlot::load(const char*& p)
+{
+  _name  = QtPersistent::extract_s(p);
+  _input = QtPersistent::extract_i(p);
+  _threshold = QtPersistent::extract_i(p);
+  _frame->load(p);
 }
 
 void PeakPlot::setup_payload(Cds& cds)

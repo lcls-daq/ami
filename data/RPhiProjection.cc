@@ -47,6 +47,18 @@ RPhiProjection::RPhiProjection(const char*& p, const DescEntry& input) :
   _output = static_cast<EntryTH1F*>(EntryFactory::entry(o));
 }
 
+RPhiProjection::RPhiProjection(const char*& p) :
+  AbsOperator(AbsOperator::RPhiProjection),
+  _output    (0)
+{
+  _extract(p, _desc_buffer, DESC_LEN);
+  _extract(p, &_axis      , sizeof(_axis));
+  _extract(p, &_lo        , sizeof(_lo ));
+  _extract(p, &_hi        , sizeof(_hi ));
+  _extract(p, &_xc        , sizeof(_xc  ));
+  _extract(p, &_yc        , sizeof(_yc  ));
+}
+
 RPhiProjection::~RPhiProjection()
 {
   if (_output) delete _output;

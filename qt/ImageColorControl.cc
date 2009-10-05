@@ -63,9 +63,9 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   QLabel* colorC = new QLabel;
   colorC->setPixmap(QPixmap::fromImage(palette));
 
-  QButtonGroup* paletteGroup = new QButtonGroup;
-  paletteGroup->addButton(monoB ,Mono);
-  paletteGroup->addButton(colorB,Thermal);
+  _paletteGroup = new QButtonGroup;
+  _paletteGroup->addButton(monoB ,Mono);
+  _paletteGroup->addButton(colorB,Thermal);
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -92,7 +92,7 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   connect(autoB , SIGNAL(clicked(bool)), this, SLOT(set_auto(bool)));
   connect(zoomB , SIGNAL(clicked()), this, SLOT(zoom()));
   connect(panB  , SIGNAL(clicked()), this, SLOT(pan ()));
-  connect(paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
+  connect(_paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
   connect(this  , SIGNAL(windowChanged()), this, SLOT(show_scale()));
 
   colorB->setChecked(true);
@@ -101,6 +101,18 @@ ImageColorControl::ImageColorControl(QWidget* parent,
 
 ImageColorControl::~ImageColorControl()
 {
+}
+
+void ImageColorControl::save(char*& p) const
+{
+  QtPersistent::insert(p,_scale);
+  QtPersistent::insert(p,_paletteGroup->checkedId());
+}
+
+void ImageColorControl::load(const char*& p)
+{
+  _scale = QtPersistent::extract_i(p);
+  _paletteGroup->button(QtPersistent::extract_i(p))->setChecked(true);
 }
 
 double ImageColorControl::scale() const { return pow(2,0.5*double(-_scale)); }

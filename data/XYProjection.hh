@@ -20,6 +20,7 @@ namespace Ami {
     XYProjection(const DescEntry& output,
 		 Axis, unsigned lo, unsigned hi);
     XYProjection(const char*&, const DescEntry&);
+    XYProjection(const char*&);
     ~XYProjection();
   public:
     DescEntry& output   () const;

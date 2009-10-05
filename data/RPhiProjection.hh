@@ -21,6 +21,7 @@ namespace Ami {
 		   Axis, double lo, double hi,
 		   double xc, double yc);
     RPhiProjection(const char*&, const DescEntry&);
+    RPhiProjection(const char*&);
     ~RPhiProjection();
   public:
     DescEntry& output   () const;

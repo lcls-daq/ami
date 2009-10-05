@@ -66,6 +66,16 @@ Ami::Qt::ImageDisplay::~ImageDisplay()
 {
 }
 
+void ImageDisplay::save(char*& p) const
+{
+  _zrange->save(p);
+}
+
+void ImageDisplay::load(const char*& p)
+{
+  _zrange->load(p);
+}
+
 const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 void Ami::Qt::ImageDisplay::save_image()

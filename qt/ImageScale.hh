@@ -19,6 +19,7 @@ namespace Ami {
       ~ImageScale();
     public:
       unsigned value() const;
+      void     value(unsigned);
     public slots:
       void value_change(int);
       void scale_change();

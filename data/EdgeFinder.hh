@@ -7,7 +7,6 @@
 
 namespace Ami {
 
-  class Cds;
   class DescEntry;
   class EntryWaveform;
   class EntryTH1F;
@@ -21,7 +20,7 @@ namespace Ami {
 	       double     threshold_value,
 	       double     baseline_value,
 	       const      DescTH1F& output);
-    EdgeFinder(const char*&, const Cds&);
+    EdgeFinder(const char*&);
     ~EdgeFinder();
   public:
     DescEntry& output   () const;

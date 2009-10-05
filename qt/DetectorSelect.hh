@@ -7,6 +7,7 @@
 
 namespace Ami {
   namespace Qt {
+    class QtPWidget;
     class DetectorSelect : public QWidget {
       Q_OBJECT
     public:
@@ -18,6 +19,8 @@ namespace Ami {
       void start_image_client(Pds::DetInfo::Detector, unsigned, unsigned);
       void start_features_client(unsigned);
     public slots:
+      void save();
+      void load();
       void start_gd   ();
       void start_ims  ();
       void start_itof ();
@@ -29,8 +32,8 @@ namespace Ami {
     private:
       unsigned _interface;
       unsigned _serverGroup;
-      enum { MaxClients=13 };
-      QWidget* _client[MaxClients];
+      QtPWidget** _client;
+      char*       _restore;
     };
   };
 };

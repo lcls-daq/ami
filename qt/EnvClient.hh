@@ -2,8 +2,8 @@
 #define AmiQt_EnvClient_hh
 
 #include "ami/qt/Requestor.hh"
+#include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
-#include <QtGui/QWidget>
 
 #include "ami/data/Cds.hh"
 
@@ -24,7 +24,7 @@ namespace Ami {
     class DescTH1F;
     class DescChart;
     class DescProf;
-    class EnvClient : public QWidget,
+    class EnvClient : public QtPWidget,
 		      public Ami::AbsClient,
 		      public Requestor {
       Q_OBJECT

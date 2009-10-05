@@ -45,6 +45,7 @@ EdgeCursor::~EdgeCursor()
 }
 
 double EdgeCursor::value() const { return _input->text().toDouble(); }
+void   EdgeCursor::value(double v) { _input->setText(QString::number(v)); set_value(); }
 
 void EdgeCursor::set_value()
 {

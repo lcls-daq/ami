@@ -30,10 +30,11 @@
 
 using namespace Ami::Qt;
 
-ImageXYProjection::ImageXYProjection(ChannelDefinition* channels[],
+ImageXYProjection::ImageXYProjection(QWidget*           parent,
+				     ChannelDefinition* channels[],
 				     unsigned           nchannels, 
 				     ImageFrame&        frame) :
-  QWidget   (0),
+  QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
@@ -121,6 +122,64 @@ ImageXYProjection::ImageXYProjection(ChannelDefinition* channels[],
   
 ImageXYProjection::~ImageXYProjection()
 {
+}
+
+void ImageXYProjection::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_channel);
+  QtPersistent::insert(p,_title->text());
+  QtPersistent::insert(p,_axis ->checkedId());
+  QtPersistent::insert(p,_norm ->checkedId());
+  _rectangle->save(p);
+
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
+    QtPersistent::insert(p,QString("ProjectionPlot"));
+    (*it)->save(p);
+  }
+
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
+    QtPersistent::insert(p,QString("ZoomPlot"));
+    (*it)->save(p);
+  }
+
+  QtPersistent::insert(p,QString("EndImageXYProjection"));
+}
+
+void ImageXYProjection::load(const char*& p) 
+{
+  QtPWidget::load(p);
+  
+  _channel = QtPersistent::extract_i(p);
+  _title->setText(QtPersistent::extract_s(p));
+  _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _rectangle->load(p);
+
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _pplots.clear();
+
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _zplots.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("ProjectionPlot")) {
+    ProjectionPlot* plot = new ProjectionPlot(this, p);
+    _pplots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
+  while(name == QString("ZoomPlot")) {
+    ZoomPlot* plot = new ZoomPlot(this, p);
+    _zplots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
 }
 
 void ImageXYProjection::setVisible(bool v)

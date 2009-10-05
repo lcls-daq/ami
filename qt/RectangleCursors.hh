@@ -18,6 +18,9 @@ namespace Ami {
       RectangleCursors(ImageFrame&);
       ~RectangleCursors();
     public:
+      void save(char*& p) const;
+      void load(const char*& p);
+    public:
       double xlo() const;
       double ylo() const;
       double xhi() const;

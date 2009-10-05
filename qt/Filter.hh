@@ -1,7 +1,7 @@
 #ifndef AmiQt_Filter_hh
 #define AmiQt_Filter_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 
 class QComboBox;
 class QButtonGroup;
@@ -14,11 +14,14 @@ namespace Ami {
   namespace Qt {
     class Condition;
 
-    class Filter : public QWidget {
+    class Filter : public QtPWidget {
       Q_OBJECT
     public:
-      Filter(const QString&);
+      Filter(QWidget* parent,const QString&);
       ~Filter();
+    public:
+      void save(char*& p) const;
+      void load(const char*& p);
     public:
       const Ami::AbsFilter* filter() const;
     public slots:
@@ -27,8 +30,6 @@ namespace Ami {
       void calc  ();
       void apply ();
       void clear ();
-      void save  ();
-      void load  ();
       void update_features();
     signals:
       void changed();

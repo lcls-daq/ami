@@ -45,9 +45,10 @@ static QChar _divide      (0x00F7);
 static QChar _add         (0x002B);
 static QChar _subtract    (0x002D);
 
-Transform::Transform(const QString& title,
+Transform::Transform(QWidget*       parent,
+		     const QString& title,
 		     const QString& axis) :
-  QWidget   (0),
+  QtPWidget (parent),
   _name     (axis),
   _expr     (new QLineEdit),
   _new_name (new QLineEdit),
@@ -71,18 +72,9 @@ Transform::Transform(const QString& title,
   QPushButton* clearB = new QPushButton("Clear");
   QPushButton* okB    = new QPushButton("OK");
   QPushButton* cancelB= new QPushButton("Cancel");
-  QPushButton* loadB  = new QPushButton("Load");
-  QPushButton* saveB  = new QPushButton("Save");
 
   QHBoxLayout* l = new QHBoxLayout;
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* file_box = new QGroupBox("File");
-    QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(loadB);
-    layout1->addWidget(saveB);
-    layout1->addStretch();
-    file_box->setLayout(layout1);
-    layout->addWidget(file_box); }
   { QGroupBox* constants_box = new QGroupBox("Define Constants");
     constants_box->setToolTip("Assign a _named_ variable with a constant _value_.");
     QVBoxLayout* layout2 = _clayout;
@@ -131,8 +123,6 @@ Transform::Transform(const QString& title,
   connect(calcB , SIGNAL(clicked()), this, SLOT(calc()));
   connect(applyB, SIGNAL(clicked()), this, SLOT(apply()));
   connect(clearB, SIGNAL(clicked()), this, SLOT(clear()));
-  connect(loadB , SIGNAL(clicked()), this, SLOT(load()));
-  connect(saveB , SIGNAL(clicked()), this, SLOT(save()));
   connect(okB   , SIGNAL(clicked()), this, SLOT(apply()));
   connect(okB   , SIGNAL(clicked()), this, SLOT(hide()));
   connect(cancelB, SIGNAL(clicked()), this, SLOT(hide()));
@@ -141,6 +131,44 @@ Transform::Transform(const QString& title,
 Transform::~Transform()
 {
   if (_term) delete _term;
+}
+
+void Transform::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  QtPersistent::insert(p,_expr->text());
+
+  for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++) {
+    QtPersistent::insert(p,QString("Constant"));
+    QtPersistent::insert(p,(*it)->name());
+    QtPersistent::insert(p,(*it)->value());
+  }
+  QtPersistent::insert(p,QString("EndTransform"));
+}
+
+void Transform::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _expr->setText(QtPersistent::extract_s(p));
+
+  for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++)
+    delete *it;
+  _constants.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("Constant")) {
+    name = QtPersistent::extract_s(p);
+    TransformConstant* c = new TransformConstant(name,QtPersistent::extract_d(p));
+    _constants.push_back(c);
+    _clayout->addWidget(c);
+    connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
+
+    name = QtPersistent::extract_s(p);
+  }
+
+  apply();
 }
 
 void Transform::add  ()
@@ -204,7 +232,7 @@ void Transform::apply()
   expr.replace(_subtract    ,Expression::subtract());
   _term = parser.evaluate(expr);
   if (_term==0) {
-    QMessageBox::critical(this, QString("Evaluate transform"), QString("Unable to parse expression."));
+    QMessageBox::critical(this, QString("Evaluate transform"), QString("Unable to parse expression: %1").arg(expr));
   }
 
   for(std::list<Variable*>::iterator it=variables.begin(); it!=variables.end(); it++)
@@ -216,65 +244,6 @@ void Transform::apply()
 void Transform::clear()
 {
   _expr->setText(_name);
-}
-
-void Transform::load()
-{
-  QString file = QFileDialog::getOpenFileName(this,"File to read from:",
-					      "", "(axis) *.axis;; (all) *");
-  if (file.isNull())
-    return;
-
-  ifstream f(qPrintable(file));
-  if (!f.good())
-    QMessageBox::warning(this, "Load",
-			 QString("Error opening %1 for reading").arg(file));
-  else {
-    for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++)
-      delete *it;
-    _constants.clear();
-
-    char buffer[256];
-    f.getline(buffer,256);
-    _expr->setText(buffer);
-
-    double v;
-    f >> buffer >> buffer[255] >> v;
-    while(f.good()) {
-      printf("new constant %s = %g\n",buffer,v);
-      TransformConstant* c = new TransformConstant(buffer,v);
-      _constants.push_back(c);
-      _clayout->addWidget(c);
-      connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
-      f >> buffer >> buffer[255] >> v;
-    }
-  }
-}
-
-void Transform::save()
-{
-  char time_buffer[32];
-  time_t seq_tm = time(NULL);
-  strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
-
-  QString def(_name);
-  def += "_";
-  def += time_buffer;
-  def += ".axis";
-  QString fname =
-    QFileDialog::getSaveFileName(this,"Save File As (.axis)",
-				 def,".axis");
-  if (!fname.isNull()) {
-    ofstream f(qPrintable(fname));
-    if (!f.good())
-      QMessageBox::warning(this, "Save data",
-			   QString("Error opening %1 for writing").arg(fname));
-    else {
-      f << qPrintable(_expr->text()) << std::endl;
-      for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++)
-	f << qPrintable((*it)->name()) << " = " << (*it)->value() << std::endl;
-    }
-  }
 }
 
 double Transform::operator()(double u) const

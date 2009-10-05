@@ -129,6 +129,17 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     printf("BinMath failed to parse %s\n",qPrintable(new_expr));
 }
 
+BinMath::BinMath(const char*& p) :
+  AbsOperator(AbsOperator::BinMath),
+  _cache     (0),
+  _term      (0),
+  _entry     (0)
+{
+  _extract(p, _expression , EXPRESSION_LEN);
+  _extract(p, _desc_buffer, DESC_LEN);
+  _extract(p, &_feature_index, sizeof(_feature_index));
+}
+
 BinMath::~BinMath()
 {
   if (_term) delete _term;
