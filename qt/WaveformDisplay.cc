@@ -7,6 +7,7 @@
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PlotFrame.hh"
+#include "ami/qt/PrintAction.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
@@ -57,6 +58,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
     menu_bar->addMenu(file_menu);
+    menu_bar->addAction(new PrintAction(*this));
   }
 
   QVBoxLayout* layout = new QVBoxLayout;

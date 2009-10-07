@@ -12,11 +12,9 @@
 
 using namespace Ami;
 
-XtcClient::XtcClient(char*     tag,
-		     FeatureCache& cache, 
+XtcClient::XtcClient(FeatureCache& cache, 
 		     Factory&  factory,
 		     bool      sync) :
-  XtcMonitorClient(tag),
   _cache  (cache),
   _factory(factory),
   _sync   (sync)

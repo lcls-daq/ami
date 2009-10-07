@@ -1,7 +1,9 @@
-#ifndef XTC_MONITOR_CLIENT_HH
-#define XTC_MONITOR_CLIENT_HH
+#ifndef Ami_XtcShmClient_hh
+#define Ami_XtcShmClient_hh
 
 #include "ami/service/Fd.hh"
+
+#include "ami/app/XtcClient.hh"
 
 //#ifdef _POSIX_MESSAGE_PASSING
 #include <mqueue.h>
@@ -11,16 +13,15 @@ namespace Pds { class Dgram; }
 
 namespace Ami {
 
-  class XtcMonitorClient : public Fd {
+  class XtcShmClient : public Fd {
   public:
-    XtcMonitorClient(char* partitionTag);
-    ~XtcMonitorClient() {};
+    XtcShmClient(XtcClient& client, char* partitionTag);
+    ~XtcShmClient() {};
   public:
     int fd() const { return _inputQueue; }
     int processIo();
-  public:
-    virtual void processDgram(Pds::Dgram*);
   private:
+    XtcClient& _client;
     char* _tag;
     mqd_t _inputQueue;
     mqd_t _outputQueue;

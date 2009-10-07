@@ -28,7 +28,7 @@ namespace Ami {
 
   protected:
     DescEntry(const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=false);
+	      Type type, unsigned short size, bool isnormalized=true);
 
   private:
     enum {TitleSize=128};

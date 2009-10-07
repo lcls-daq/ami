@@ -2,7 +2,7 @@
 tgtnames := ami test
 
 # List source files for each target
-tgtsrcs_ami := $(filter-out test.cc,$(wildcard *.cc))
+tgtsrcs_ami := ami.cc
 tgtsrcs_test := test.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
@@ -17,7 +17,7 @@ tgtslib_test := /usr/lib/rt
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics
-tgtlibs_ami += ami/service ami/data ami/server ami/event
+tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
 tgtlibs_ami += qt/QtCore
 
 # List special include directories (if any) needed by exe_a as
@@ -30,10 +30,10 @@ tgtincs_ami := qt/include
 # tgtsinc_exe_a := /usr/include
 
 # List libraries (if any) for this package
-# libnames := lib_a lib_b
+libnames := app
 
 # List source files for each library
-# libsrcs_lib_a := src_4.cc src_5.cc
+libsrcs_app := $(filter-out test.cc ami.cc,$(wildcard *.cc))
 # libsrcs_lib_b := src_6.cc
 
 # List special include directories (if any) needed by lib_a as

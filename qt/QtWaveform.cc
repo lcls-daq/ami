@@ -83,8 +83,11 @@ void QtWaveform::xscale_update()
 void QtWaveform::yscale_update()
 {
   const EntryWaveform& _entry = static_cast<const EntryWaveform&>(entry());
-  double   n  = _entry.info(EntryWaveform::Normalization);
-  double scal = (n < 1) ? 1. : 1./n;
+  double scal = 1;
+  if (entry().desc().isnormalized()) {
+    double   n  = _entry.info(EntryWaveform::Normalization);
+    scal = (n < 1) ? 1. : 1./n;
+  }
   unsigned nb = _entry.desc().nbins();
   for(unsigned b=0; b<nb; b++)
     _y[b] = _yscale(_entry.content(b)*scal);

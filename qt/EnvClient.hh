@@ -32,6 +32,9 @@ namespace Ami {
       EnvClient(QWidget*);
       ~EnvClient();
     public:
+      void save(char*&) const;
+      void load(const char*&);
+    public:
       void managed         (VClientManager&);
       void request_payload ();
       void one_shot        (bool) {}

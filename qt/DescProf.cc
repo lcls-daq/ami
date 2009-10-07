@@ -1,4 +1,5 @@
 #include "DescProf.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
@@ -76,3 +77,17 @@ const QString& DescProf::variable() const { return _var; }
 unsigned DescProf::bins() const { return _bins->text().toInt(); }
 double   DescProf::lo  () const { return _lo->text().toDouble(); }
 double   DescProf::hi  () const { return _hi->text().toDouble(); }
+
+void DescProf::save(char*& p) const
+{
+  QtPersistent::insert(p,_bins->text());
+  QtPersistent::insert(p,_lo  ->text());
+  QtPersistent::insert(p,_hi  ->text());
+}
+
+void DescProf::load(const char*& p)
+{
+  _bins->setText(QtPersistent::extract_s(p));
+  _lo  ->setText(QtPersistent::extract_s(p));
+  _hi  ->setText(QtPersistent::extract_s(p));
+}

@@ -6,6 +6,8 @@
 
 #include <list>
 
+class QPrinter;
+
 namespace Ami {
   namespace Qt {
     class ImageColorControl;

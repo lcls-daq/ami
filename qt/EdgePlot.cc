@@ -19,6 +19,7 @@
 #include <QtGui/QActionGroup>
 #include <QtGui/QInputDialog>
 #include <QtGui/QLineEdit>
+#include <QtGui/QLabel>
 
 #include "qwt_plot.h"
 
@@ -45,24 +46,10 @@ EdgePlot::EdgePlot(QWidget*         parent,
   _channel (channel),
   _finder  (finder),
   _frame   (new QwtPlot(name)),
-  _plot    (0)
+  _plot    (0),
+  _counts  (new QLabel("Np 0"))
 {
-  setAttribute(::Qt::WA_DeleteOnClose, true);
-  
-  QVBoxLayout* layout = new QVBoxLayout;
-  QMenuBar* menu_bar = new QMenuBar;
-  { QMenu* file_menu = new QMenu("File");
-    file_menu->addAction("Save data", this, SLOT(save_data()));
-    menu_bar->addMenu(file_menu); }
-  { QMenu* annotate = new QMenu("Annotate");
-    annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
-    annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
-    annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
-    menu_bar->addMenu(annotate); }
-  layout->addWidget(menu_bar);
-  layout->addWidget(_frame);
-  setLayout(layout);
-  
+  _layout();
   show();
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
 }
@@ -71,26 +58,11 @@ EdgePlot::EdgePlot(QWidget* parent,
 		   const char*& p) :
   QtPWidget(parent),
   _finder  (0),
-  _plot    (0)
+  _plot    (0),
+  _counts  (new QLabel("Np 0"))
 {
   load(p);
-
-  setAttribute(::Qt::WA_DeleteOnClose, true);
-  
-  QVBoxLayout* layout = new QVBoxLayout;
-  QMenuBar* menu_bar = new QMenuBar;
-  { QMenu* file_menu = new QMenu("File");
-    file_menu->addAction("Save data", this, SLOT(save_data()));
-    menu_bar->addMenu(file_menu); }
-  { QMenu* annotate = new QMenu("Annotate");
-    annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
-    annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
-    annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
-    menu_bar->addMenu(annotate); }
-  layout->addWidget(menu_bar);
-  layout->addWidget(_frame);
-  setLayout(layout);
-  
+  _layout();
   show();
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
   QtPWidget::load(p);
@@ -100,6 +72,29 @@ EdgePlot::~EdgePlot()
 {
   delete _finder;
   if (_plot    ) delete _plot;
+}
+
+void EdgePlot::_layout()
+{
+  setAttribute(::Qt::WA_DeleteOnClose, true);
+  
+  QVBoxLayout* layout = new QVBoxLayout;
+  { QHBoxLayout* l = new QHBoxLayout;
+    QMenuBar* menu_bar = new QMenuBar;
+    { QMenu* file_menu = new QMenu("File");
+      file_menu->addAction("Save data", this, SLOT(save_data()));
+      menu_bar->addMenu(file_menu); }
+    { QMenu* annotate = new QMenu("Annotate");
+      annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
+      annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
+      annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
+      menu_bar->addMenu(annotate); }
+    l->addWidget(menu_bar);
+    l->addStretch();
+    l->addWidget(_counts);
+    layout->addLayout(l); }
+  layout->addWidget(_frame);
+  setLayout(layout);
 }
 
 void EdgePlot::save(char*& p) const
@@ -199,6 +194,7 @@ void EdgePlot::update()
 {
   if (_plot) {
     _plot->update();
+    _counts->setText(QString("Np %1").arg(_plot->normalization()));
     emit redraw();
   }
 }

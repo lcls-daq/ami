@@ -69,12 +69,22 @@ Entry&     EnvPlot::_operate(const Entry& e) const
   double y = _cache->cache(_input,&dmg);
   if (!dmg) {
     switch(_entry->desc().type()) {
-    case DescEntry::Scalar:  static_cast<EntryScalar*>(_entry)->addcontent(y);    break;
-    case DescEntry::TH1F:    static_cast<EntryTH1F*  >(_entry)->addcontent(1.,y); break;
+    case DescEntry::Scalar: 
+      { EntryScalar* en = static_cast<EntryScalar*>(_entry);
+	en->addcontent(y);    
+	break; }
+    case DescEntry::TH1F: 
+      { EntryTH1F* en = static_cast<EntryTH1F*>(_entry);
+	en->addcontent(1.,y); 
+	en->addinfo(1.,EntryTH1F::Normalization);
+	break; }
     case DescEntry::Prof:    
       { bool damaged; double x=_cache->cache(_prof,&damaged);
-	if (!damaged)
-	  static_cast<EntryProf*  >(_entry)->addy(y,x);
+	if (!damaged) {
+	  EntryProf* en = static_cast<EntryProf*>(_entry);
+	  en->addy(y,x);
+	  en->addinfo(1.,EntryProf::Normalization);
+	}
 	break; }
     case DescEntry::Waveform:
     case DescEntry::TH2F:

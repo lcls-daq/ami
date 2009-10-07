@@ -15,6 +15,9 @@ namespace Ami {
     public:
       DescProf(const char*);
       DescProf(const char*,QComboBox*);
+    public:
+      void save(char*&) const;
+      void load(const char*&);
     public slots:
       void set_variable(const QString&);
     public:

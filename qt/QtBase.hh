@@ -27,6 +27,7 @@ namespace Ami {
       virtual void        yscale_update()   = 0;
       virtual const AxisInfo* xinfo() const = 0;
       virtual const AxisInfo* yinfo() const { return 0; }
+      virtual double      normalization() const { return 0; }
     public:
       const QString& title() const { return _title; }
       const Ami::Entry& entry() const { return _entry; }

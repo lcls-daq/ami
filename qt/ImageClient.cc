@@ -46,7 +46,7 @@ void ImageClient::save(char*& p) const
 
   _xyproj->save(p);
   _rfproj->save(p);
-  //  _hit   ->save(p);
+  _hit   ->save(p);
 }
 
 void ImageClient::load(const char*& p)
@@ -55,7 +55,7 @@ void ImageClient::load(const char*& p)
 
   _xyproj->load(p);
   _rfproj->load(p);
-  //  _hit   ->load(p);
+  _hit   ->load(p);
 }
 
 void ImageClient::_configure(char*& p, 

@@ -4,6 +4,7 @@
 #include "ami/qt/WaveformClient.hh"
 #include "ami/qt/ImageClient.hh"
 #include "ami/qt/EnvClient.hh"
+#include "ami/qt/PrintAction.hh"
 #include "ami/client/VClientManager.hh"
 
 #include <QtGui/QGridLayout>
@@ -14,6 +15,8 @@
 #include <QtGui/QFont>
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
+#include <QtGui/QPrinter>
+#include <QtGui/QPrintDialog>
 
 #include <errno.h>
 
@@ -26,7 +29,8 @@ static const char* names[] = { "GasDet", "IMS", "ITOF", "MBES",
 			       "VMI", "BPS_0", "BPS_1", "Env" };
 static const int MaxConfigSize = 0x100000;
 
-DetectorSelect::DetectorSelect(unsigned interface,
+DetectorSelect::DetectorSelect(const QString& label,
+			       unsigned interface,
 			       unsigned serverGroup) :
   QWidget     (0),
   _interface  (interface),
@@ -37,23 +41,27 @@ DetectorSelect::DetectorSelect(unsigned interface,
   for(unsigned k=0; k<MaxClients; k++)
     _client[k] = 0;
 
-  setWindowTitle("AMO Live\nMonitoring");
+  setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   QVBoxLayout* l = new QVBoxLayout;
-  { QLabel* title = new QLabel("AMO Live\nMonitoring");
+  { QLabel* title = new QLabel(label);
+    title->setWordWrap(true);
     QFont font = title->font();
     font.setPointSize(font.pointSize()+8);
     title->setFont(font);
     l->addWidget(title,0,::Qt::AlignHCenter); }
   { QGroupBox* setup_box = new QGroupBox("Setup");
     QVBoxLayout* layout = new QVBoxLayout;
-    QPushButton* saveB = new QPushButton("Save");
-    QPushButton* loadB = new QPushButton("Load");
+    QPushButton* saveB  = new QPushButton("Save");
+    QPushButton* loadB  = new QPushButton("Load");
+    QPushButton* printB = new QPushButton("Printer");
     layout->addWidget(saveB);
     layout->addWidget(loadB);
-    connect(saveB, SIGNAL(clicked()), this, SLOT(save()));
-    connect(loadB, SIGNAL(clicked()), this, SLOT(load()));
+    layout->addWidget(printB);
+    connect(saveB , SIGNAL(clicked()), this, SLOT(save()));
+    connect(loadB , SIGNAL(clicked()), this, SLOT(load()));
+    connect(printB, SIGNAL(clicked()), this, SLOT(print_setup()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
@@ -216,6 +224,13 @@ void DetectorSelect::load       ()
     name=QtPersistent::extract_s(p);
   }
   delete[] buffer;
+}
+
+void DetectorSelect::print_setup()
+{
+  QPrintDialog* d = new QPrintDialog(PrintAction::printer(),this);
+  d->exec();
+  delete d;
 }
 
 void DetectorSelect::start_gd   () { start_waveform_client(Pds::DetInfo::AmoGasdet,0,Gd); }

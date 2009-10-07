@@ -26,6 +26,7 @@ namespace Ami {
       void        xscale_update() ;
       void        yscale_update() ;
       const AxisInfo* xinfo() const;
+      double      normalization() const;
     private:
       const AbsTransform&     _xscale;
       const AbsTransform&     _yscale;

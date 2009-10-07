@@ -1,4 +1,5 @@
 #include "DescChart.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
@@ -26,3 +27,15 @@ DescChart::DescChart(const char* name, double dpt) :
 QRadioButton* DescChart::button() { return _button; }
 unsigned DescChart::pts() const { return _pts->text().toInt(); }
 double   DescChart::dpt() const { return _dpt; }
+
+void DescChart::save(char*& p) const
+{
+  QtPersistent::insert(p,_pts->text());
+  QtPersistent::insert(p,_dpt);
+}
+
+void DescChart::load(const char*& p)
+{
+  _pts->setText(QtPersistent::extract_s(p));
+  _dpt = QtPersistent::extract_d(p);
+}

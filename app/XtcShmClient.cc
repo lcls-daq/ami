@@ -12,7 +12,9 @@
 #include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 #include "pdsdata/xtc/Dgram.hh"
-#include "XtcMonitorClient.hh"
+
+#include "ami/app/XtcShmClient.hh"
+#include "ami/app/XtcClient.hh"
 
 namespace Pds {
   class Msg {
@@ -31,16 +33,11 @@ namespace Pds {
 
 using namespace Ami;
 
-void XtcMonitorClient::processDgram(Pds::Dgram* dg) {
-  printf("%s transition: time 0x%x/0x%x, payloadSize 0x%x\n",
-	 Pds::TransitionId::name(dg->seq.service()),
-	 dg->seq.stamp().fiducials(),dg->seq.stamp().ticks(),dg->xtc.sizeofPayload());
-}
-
 enum {PERMS  = S_IRUSR|S_IRUSR|S_IRUSR|S_IROTH|S_IROTH|S_IROTH|S_IRGRP|S_IRGRP|S_IRGRP};
 enum {OFLAGS = O_RDONLY};
 
-XtcMonitorClient::XtcMonitorClient(char * tag) :
+XtcShmClient::XtcShmClient(XtcClient& client, char * tag) :
+  _client(client),
   _tag(tag)
 {
   int error = 0;
@@ -71,7 +68,7 @@ XtcMonitorClient::XtcMonitorClient(char * tag) :
   _sizeOfShm = 0;
 }
 
-int XtcMonitorClient::processIo()
+int XtcShmClient::processIo()
 {
   int error = 0;
   unsigned pageSize = (unsigned)sysconf(_SC_PAGESIZE);
@@ -99,7 +96,7 @@ int XtcMonitorClient::processIo()
       else printf("Shared memory at %x\n", (unsigned)_myShm);
     }
     dg = (Pds::Dgram*) (_myShm + (myMsg.sizeOfBuffers() * myMsg.bufferIndex()));
-    this->processDgram(dg);
+    _client.processDgram(dg);
     if (mq_send(_outputQueue, (const char *)&myMsg, sizeof(myMsg), priority)) {
       perror("mq_send back buffer");
       error++;

@@ -167,7 +167,7 @@ QImage&        QtImage::image(double s)
 //   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
 //   if (s>0)  n<<= s;
 //   else      n>>=-s;
-  float n = _entry.info(EntryImage::Normalization);
+  float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
   n *= double(s);
 

@@ -110,6 +110,55 @@ EnvClient::EnvClient(QWidget* parent) :
 
 EnvClient::~EnvClient() {}
 
+void EnvClient::save(char*& p) const
+{
+  QtPWidget::save(p);
+
+  _hist ->save(p);
+  _vTime->save(p);
+  _vBld ->save(p);
+  _vFeature->save(p);
+  QtPersistent::insert(p,_source  ->currentIndex());
+  QtPersistent::insert(p,_features->currentIndex());
+  QtPersistent::insert(p,_plot_grp->checkedId ());
+
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QtPersistent::insert(p,QString("EnvPlot"));
+    (*it)->save(p);
+  }
+  QtPersistent::insert(p,QString("EndEnvPlot"));
+
+  _control->save(p);
+}
+
+void EnvClient::load(const char*& p)
+{
+  QtPWidget::load(p);
+
+  _hist ->load(p);
+  _vTime->load(p);
+  _vBld ->load(p);
+  _vFeature->load(p);
+  _source  ->setCurrentIndex(QtPersistent::extract_i(p));
+  _features->setCurrentIndex(QtPersistent::extract_i(p));
+  _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _plots.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("EnvPlot")) {
+    EnvPlot* plot = new EnvPlot(this, p);
+    _plots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
+
+  _control->load(p);
+}
+
 void EnvClient::connected()
 {
   _status->set_state(Status::Connected);
@@ -289,7 +338,8 @@ void EnvClient::plot()
     break;
   }
 
-  EnvPlot* plot = new EnvPlot(_source->currentText(),
+  EnvPlot* plot = new EnvPlot(this,
+			      _source->currentText(),
 			      desc,
 			      FeatureRegistry::instance().index(_source->currentText()),
 			      FeatureRegistry::instance().index(_vFeature->variable()));

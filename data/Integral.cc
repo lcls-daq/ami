@@ -55,17 +55,20 @@ void*      Integral::_serialize(void* p) const
 Entry&     Integral::_operate(const Entry& e) const
 {
   double sum = 0;
+  double n   = 0;
   switch(e.desc().type()) {
   case DescEntry::TH1F:
     { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
       for(unsigned k=_xlo; k<_xhi; k++)
 	sum += en.content(k);
+      n = en.info(EntryTH1F::Normalization);
       break; }
   case DescEntry::TH2F:
     { const EntryTH2F& en = static_cast<const EntryTH2F&>(e);
       for(unsigned k=_xlo; k<_xhi; k++)
 	for(unsigned j=_ylo; j<_yhi; j++)
 	  sum += en.content(k,j);
+      n = en.info(EntryTH2F::Normalization);
       break; }
   case DescEntry::Prof:
     printf("Integrating Prof not implemented\n");
@@ -75,11 +78,13 @@ Entry&     Integral::_operate(const Entry& e) const
       for(unsigned k=_xlo; k<_xhi; k++)
 	for(unsigned j=_ylo; j<_yhi; j++)
 	  sum += en.content(k,j);
+      n = en.info(EntryImage::Normalization);
       break; }
   case DescEntry::Waveform:
     { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
       for(unsigned k=_xlo; k<_xhi; k++)
 	sum += en.content(k);
+      n = en.info(EntryWaveform::Normalization);
       break; }
   default:
     printf("Integral: unknown input type %d\n",e.desc().type());
@@ -87,8 +92,15 @@ Entry&     Integral::_operate(const Entry& e) const
   }
   
   switch(_entry->desc().type()) {
-  case DescEntry::Scalar:  reinterpret_cast<EntryScalar*>(_entry)->addcontent(sum); break;
-  case DescEntry::TH1F:    reinterpret_cast<EntryTH1F*>  (_entry)->addcontent(1.,sum); break;
+  case DescEntry::Scalar:  
+    { EntryScalar* en = static_cast<EntryScalar*>(_entry);
+      en->addcontent(sum); 
+      break; }
+  case DescEntry::TH1F:    
+    { EntryTH1F* en = static_cast<EntryTH1F*>(_entry);
+      en->addcontent(1.,sum); 
+      en->addinfo(n,EntryTH1F::Normalization);
+      break; }
   default: break;
   }
   _entry->time(e.time());

@@ -8,6 +8,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/NullTransform.hh"
+#include "ami/qt/PrintAction.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
@@ -44,6 +45,7 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
     menu_bar->addMenu(file_menu);
+    menu_bar->addAction(new PrintAction(*this));
   }
 
   QVBoxLayout* layout = new QVBoxLayout;

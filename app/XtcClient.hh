@@ -1,12 +1,12 @@
 #ifndef Ami_XtcClient_hh
 #define Ami_XtcClient_hh
 
-#include "ami/app/XtcMonitorClient.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
 #include <list>
 
 namespace Pds {
+  class Dgram;
   class Xtc;
   class Sequence;
 };
@@ -18,11 +18,9 @@ namespace Ami {
   class EventHandler;
   class Entry;
 
-  class XtcClient : public XtcMonitorClient,
-		    private XtcIterator {
+  class XtcClient : private XtcIterator {
   public:
-    XtcClient(char* tag,
-	      FeatureCache& cache, 
+    XtcClient(FeatureCache& cache, 
 	      Factory& factory, 
 	      bool sync=false);
     ~XtcClient();

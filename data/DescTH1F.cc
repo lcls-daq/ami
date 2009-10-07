@@ -7,8 +7,9 @@ DescTH1F::DescTH1F(const char* name,
 		   const char* ytitle, 
 		   unsigned nbins, 
 		   float xlow, 
-		   float xup) :
-  DescEntry(name, xtitle, ytitle, TH1F, sizeof(DescTH1F), false),
+		   float xup,
+		   bool normalize) :
+  DescEntry(name, xtitle, ytitle, TH1F, sizeof(DescTH1F), normalize),
   _nbins(nbins ? nbins : 1),
   _xlow(xlow),
   _xup(xup)

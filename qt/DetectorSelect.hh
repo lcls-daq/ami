@@ -2,8 +2,11 @@
 #define AmiQt_DetectorSelect_hh
 
 #include <QtGui/QWidget>
+#include <QtCore/QString>
 
 #include "pdsdata/xtc/DetInfo.hh"
+
+class QPrinter;
 
 namespace Ami {
   namespace Qt {
@@ -11,7 +14,8 @@ namespace Ami {
     class DetectorSelect : public QWidget {
       Q_OBJECT
     public:
-      DetectorSelect(unsigned interface,
+      DetectorSelect(const QString&,
+		     unsigned interface,
 		     unsigned serverGroup);
       ~DetectorSelect();
     public:
@@ -21,6 +25,7 @@ namespace Ami {
     public slots:
       void save();
       void load();
+      void print_setup();
       void start_gd   ();
       void start_ims  ();
       void start_itof ();
@@ -34,6 +39,7 @@ namespace Ami {
       unsigned _serverGroup;
       QtPWidget** _client;
       char*       _restore;
+      QPrinter*   _printer;
     };
   };
 };

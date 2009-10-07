@@ -14,6 +14,8 @@
 
 #include <QtCore/QString>
 
+class QPrinter;
+
 namespace Ami {
   class Cds;
   namespace Qt {

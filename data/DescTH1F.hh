@@ -12,7 +12,8 @@ namespace Ami {
 	     const char* ytitle, 
 	     unsigned nbins, 
 	     float xlow, 
-	     float xup);
+	     float xup,
+	     bool normalize=true);
 
     void params(unsigned nbins, float xlow, float xup);
 

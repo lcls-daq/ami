@@ -1,3 +1,6 @@
+2009-10-07	weaver	Tag V00-01-00.	Added offline interface to full statistics.
+					Added pulse counters to Edge,EnvPlots.
+					First try add Print buttons.
 2009-10-05	weaver			Added additional components to load/save setup.  current->1.2.6
 2009-10-02	weaver			Added global load/save feature for restoring windows/plots.
 					Fixed bug in EdgeFinder to properly scale threshold/baseline on averaged waveforms.

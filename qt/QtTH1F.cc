@@ -92,8 +92,11 @@ void QtTH1F::xscale_update()
 void QtTH1F::yscale_update()
 {
   const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
-  double   n  = _entry.info(EntryTH1F::Normalization);
-  double scal = (n < 1) ? 1. : 1./n;
+  double scal = 1;
+  if (entry().desc().isnormalized()) {
+    double   n  = _entry.info(EntryTH1F::Normalization);
+    scal = (n < 1) ? 1. : 1./n;
+  }
   unsigned nb = _entry.desc().nbins();
   for(unsigned b=0; b<nb; b++)
     _y[b] = _yscale(_entry.content(b)*scal);
@@ -103,4 +106,9 @@ void QtTH1F::yscale_update()
 const AxisInfo* QtTH1F::xinfo() const
 {
   return _xinfo;
+}
+
+double QtTH1F::normalization() const
+{
+  return static_cast<const EntryTH1F&>(entry()).info(EntryTH1F::Normalization);
 }

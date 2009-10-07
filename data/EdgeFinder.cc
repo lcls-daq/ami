@@ -103,6 +103,8 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
 	     (!rising && y<peak))
       peak = y;
   }
+  _output_entry->addinfo(entry.info(EntryWaveform::Normalization),
+			 EntryTH1F::Normalization);
   _output_entry->time(entry.time());
   return *_output_entry;
 }

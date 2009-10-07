@@ -11,6 +11,9 @@ namespace Ami {
     class DescChart : public QWidget {
       Q_OBJECT
     public:
+      void save(char*&) const;
+      void load(const char*&);
+    public:
       DescChart(const char* name, double dpt);
     public:
       QRadioButton* button();

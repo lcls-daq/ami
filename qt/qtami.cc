@@ -3,9 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "ami/app/XtcClient.hh"
-#include "ami/app/XtcShmClient.hh"
-
+#include "ami/qt/XtcFileClient.hh"
+#include "ami/qt/DetectorSelect.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/event/BldXtcReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
@@ -14,9 +13,12 @@
 #include "ami/app/AnalysisFactory.hh"
 #include "ami/app/Opal1kHandler.hh"
 #include "ami/app/AcqWaveformHandler.hh"
+#include "ami/app/XtcClient.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
+
+#include <QtGui/QApplication>
 
 using namespace Ami;
 
@@ -24,11 +26,10 @@ typedef Pds::DetInfo DI;
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s -p <partitionTag>\n"
-	  "          -i <interface address>\n"
-	  "          -s <server mcast group>\n"
-	  "          -c <client mcast group>\n"
-	  "          [-f] (offline) [-h] (help)\n", progname);
+	  "Usage: %s -e <experiment name>\n"
+	  "         [-i <interface address>]\n"
+	  "         [-s <server mcast group>]\n"
+	  "         [-c <client mcast group>]\n", progname);
 }
 
 
@@ -37,19 +38,10 @@ int main(int argc, char* argv[]) {
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   unsigned clientGroup = 0xefff2001;
-  char* partitionTag = 0;
   bool offline=false;
 
-  while ((c = getopt(argc, argv, "?hfp:i:s:c:")) != -1) {
+  while ((c = getopt(argc, argv, "?hs:c:")) != -1) {
     switch (c) {
-    case 'f':
-      offline=true;
-      break;
-    case 'i':
-      { in_addr inp;
-	if (inet_aton(optarg, &inp))
-	  interface = ntohl(inp.s_addr);
-	break; }
     case 's':
       { in_addr inp;
 	if (inet_aton(optarg, &inp))
@@ -60,9 +52,6 @@ int main(int argc, char* argv[]) {
 	if (inet_aton(optarg, &inp))
 	  clientGroup = ntohl(inp.s_addr);
 	break; }
-    case 'p':
-      partitionTag = optarg;
-      break;
     case '?':
     case 'h':
     default:
@@ -71,18 +60,20 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!partitionTag || !interface) {
+  if (!interface) {
     usage(argv[0]);
     exit(0);
   }
+
+  QApplication app(argc, argv);
 
   ServerManager   srv(interface, serverGroup, clientGroup);
 
   FeatureCache    features;
   AnalysisFactory factory(features, srv);
 
-  XtcClient myClient(features, factory, offline);
-  XtcShmClient input(myClient, partitionTag);
+  XtcClient     myClient(features, factory, offline);
+  Ami::Qt::XtcFileClient input(myClient);
 
   myClient.insert(new BldXtcReader    (features));
   myClient.insert(new ControlXtcReader(features));
@@ -98,11 +89,18 @@ int main(int argc, char* argv[]) {
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoMbes  ,0,DI::Acqiris,0)));
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoETof  ,0,DI::Acqiris,0)));
 
-  srv.manage(input);
   srv.serve(factory);
-  //  srv.start();  // run in another thread
-  srv.routine();  // run in this thread
-  //  srv.stop();   // terminate the other thread
+  srv.start();  // run in another thread
+  //  srv.routine();  // run in this thread
+
+  input.show();
+
+  Ami::Qt::DetectorSelect output("AMO Offline Monitoring",interface,serverGroup);
+  output.show();
+
+  app.exec();
+
+  srv.stop();   // terminate the other thread
   srv.dont_serve();
   return 1;
 }

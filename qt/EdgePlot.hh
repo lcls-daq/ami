@@ -8,6 +8,7 @@
 #include <list>
 
 class QwtPlot;
+class QLabel;
 
 namespace Ami {
   class Cds;
@@ -28,6 +29,8 @@ namespace Ami {
       EdgePlot(QWidget*         parent,
 	       const char*&     p);
       ~EdgePlot();
+    private:
+      void _layout();
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -53,6 +56,7 @@ namespace Ami {
 
       QwtPlot* _frame;
       QtBase*  _plot;
+      QLabel*  _counts;
     };
   };
 };
