@@ -165,7 +165,7 @@ void EdgeFinder::plot()
 {
   Ami::DescTH1F desc(qPrintable(_title->text()),
 		     "edge location","pulses",
-		     _hist->bins(),_hist->lo(),_hist->hi()); 
+		     _hist->bins(),_hist->lo(),_hist->hi(),false); 
   
   EdgePlot* plot = new EdgePlot(this,
 				_title->text(),
