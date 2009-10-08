@@ -16,7 +16,7 @@ namespace Ami {
     public:
       static QPrinter* printer();
     public slots:
-      void triggered();
+      void print();
     private:
       QWidget&  _display;
       static QPrinter* _printer;
