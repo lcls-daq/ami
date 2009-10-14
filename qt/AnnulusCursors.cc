@@ -1,6 +1,7 @@
 #include "AnnulusCursors.hh"
 
 #include "ami/qt/ImageFrame.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
@@ -97,6 +98,27 @@ AnnulusCursors::AnnulusCursors(ImageFrame& f) :
 
 AnnulusCursors::~AnnulusCursors()
 {
+}
+
+void AnnulusCursors::save(char*& p) const
+{
+  QtPersistent::insert(p,_xc);
+  QtPersistent::insert(p,_yc);
+  QtPersistent::insert(p,_r0);
+  QtPersistent::insert(p,_r1);
+  QtPersistent::insert(p,_f0);
+  QtPersistent::insert(p,_f1);
+}
+
+void AnnulusCursors::load(const char*& p)
+{
+  _xc = QtPersistent::extract_i(p);
+  _yc = QtPersistent::extract_i(p);
+  _r0 = QtPersistent::extract_i(p);
+  _r1 = QtPersistent::extract_i(p);
+  _f0 = QtPersistent::extract_i(p);
+  _f1 = QtPersistent::extract_i(p);
+  _set_edits();
 }
 
 void AnnulusCursors::grab_center() { _active = Center; grab_cursor(); }

@@ -53,9 +53,9 @@ namespace Ami {
       unsigned _channel;
 
       ImageFrame&  _frame;
+      AnnulusCursors* _annulus;
 
       QLineEdit* _title;
-      AnnulusCursors* _annulus;
       QButtonGroup* _axis;
       QButtonGroup* _norm;
 

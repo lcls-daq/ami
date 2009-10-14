@@ -75,6 +75,6 @@ Entry&     PeakFinder::_operate(const Entry& e) const
 	_output_entry->addcontent(1,j,k);
     }
   }
-  _output_entry->time(entry.time());
+  _output_entry->valid(entry.time());
   return *_output_entry;
 }

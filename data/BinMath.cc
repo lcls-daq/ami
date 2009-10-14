@@ -183,6 +183,6 @@ Entry&     BinMath::_operate(const Entry& e) const
       break;
     }
   }
-  _entry->time(e.time());
+  _entry->valid(e.time());
   return *_entry;
 }

@@ -41,8 +41,8 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
-  _title    (new QLineEdit("Projection")),
-  _annulus  (new AnnulusCursors(frame))
+  _annulus  (new AnnulusCursors(frame)),
+  _title    (new QLineEdit("Projection"))
 {
   setWindowTitle("Image Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -124,11 +124,43 @@ ImageRPhiProjection::~ImageRPhiProjection()
 void ImageRPhiProjection::save(char*& p) const
 {
   QtPWidget::save(p);
+
+  QtPersistent::insert(p,_channel);
+  QtPersistent::insert(p,_title->text());
+  QtPersistent::insert(p,_axis ->checkedId());
+  QtPersistent::insert(p,_norm ->checkedId());
+  _annulus->save(p);
+
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
+    QtPersistent::insert(p,QString("ProjectionPlot"));
+    (*it)->save(p);
+  }
+
+  QtPersistent::insert(p,QString("EndImageXYProjection"));
 }
 
 void ImageRPhiProjection::load(const char*& p)
 {
   QtPWidget::load(p);
+
+  _channel = QtPersistent::extract_i(p);
+  _title->setText(QtPersistent::extract_s(p));
+  _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _annulus->load(p);
+
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _pplots.clear();
+
+  QString name = QtPersistent::extract_s(p);
+  while(name == QString("ProjectionPlot")) {
+    ProjectionPlot* plot = new ProjectionPlot(this, p);
+    _pplots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
 }
 
 void ImageRPhiProjection::setVisible(bool v)

@@ -4,6 +4,7 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/AbsFilter.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/Entry.hh"
 
 #include "ami/data/FilterFactory.hh"
 #include "ami/data/OperatorFactory.hh"
@@ -37,7 +38,7 @@ unsigned   Analysis::id() const { return _id; }
 
 void   Analysis::analyze()
 {
-  if (_filter->accept())
+  if (_input.valid() && _filter->accept())
     (*_op)(_input);
 }
 

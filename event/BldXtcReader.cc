@@ -53,7 +53,7 @@ const Entry* BldXtcReader::entry   (unsigned) const { return 0; }
 void         BldXtcReader::reset   () 
 {
   _index = _cache.add("FEE:GDET:11:ENRC");
+  _cache.add("FEE:GDET:12:ENRC");
   _cache.add("FEE:GDET:21:ENRC");
-  _cache.add("FEE:GDET:31:ENRC");
-  _cache.add("FEE:GDET:41:ENRC");
+  _cache.add("FEE:GDET:22:ENRC");
 }

@@ -30,11 +30,12 @@ void XtcClient::remove(EventHandler* h) { _handlers.remove(h); }
 
 void XtcClient::processDgram(Pds::Dgram* dg) 
 {
-  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
+  //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
+  if (dg->seq.isEvent()) {
     _seq = &dg->seq;
     iterate(&dg->xtc); 
 
-    _entry->time(_seq->clock());
+    _entry->valid(_seq->clock());
     _factory.analyze();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {

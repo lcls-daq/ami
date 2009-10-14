@@ -8,6 +8,8 @@ const int DoubleSize = 16;
 
 void QtPersistent::insert(char*& p, const QString& s)
 {
+  printf("Inserting %s @ %p\n",qPrintable(s),p);
+
   int sz = s.size();
   *reinterpret_cast<int*>(p) = sz;
   p += sizeof(int);
@@ -49,11 +51,13 @@ void QtPersistent::insert(char*& p, bool s)
 
 QString QtPersistent::extract_s(const char*& p)
 {
+  const char* t = p;
   int sz = *reinterpret_cast<const int*>(p);
   p += sizeof(int);
   const QChar* ch = reinterpret_cast<const QChar*>(p);
   p += sz*sizeof(QChar);
   QString s(ch,sz);
+  printf("Extracted %s @ %p\n",qPrintable(s),t);
   return s;
 }
 

@@ -88,7 +88,7 @@ void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t
       entry->content(val,j);
     }
     entry->info(1,EntryWaveform::Normalization);
-    entry->time(t);
+    entry->valid(t);
     d = d->nextChannel(h);
   }
 }

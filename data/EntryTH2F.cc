@@ -57,7 +57,7 @@ void EntryTH2F::setto(const EntryTH2F& entry)
   do {
     *dst++ = *src++;
   } while (dst < end);
-  time(entry.time());
+  valid(entry.time());
 }
 
 void EntryTH2F::setto(const EntryTH2F& curr, 
@@ -70,6 +70,6 @@ void EntryTH2F::setto(const EntryTH2F& curr,
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }
 

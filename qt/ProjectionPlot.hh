@@ -21,6 +21,7 @@ namespace Ami {
   namespace Qt {
     class ChannelDefinition;
     class CursorsX;
+    class PeakFit;
     class WaveformDisplay;
     class ProjectionPlot : public QtPWidget {
       Q_OBJECT
@@ -48,6 +49,8 @@ namespace Ami {
     signals:
       void description_changed();
     private:
+      void _layout();
+    private:
       QString           _name;
       unsigned          _input;
       Ami::AbsOperator* _proj;
@@ -57,6 +60,7 @@ namespace Ami {
       WaveformDisplay*   _frame;
       const DescEntry*   _input_entry;
       CursorsX*          _cursors;
+      PeakFit*           _peakfit;
     };
   };
 };

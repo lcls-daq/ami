@@ -55,6 +55,11 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   QPushButton* closeB = new QPushButton("Close");
   
   QVBoxLayout* layout = new QVBoxLayout;
+  { QLabel* desc = new QLabel;
+    desc->setWordWrap(true);
+    desc->setAlignment(::Qt::AlignHCenter);
+    desc->setText("Locates leading edge of each pulse above 'threshold' at a constract fraction of peak height from 'baseline'.");
+    layout->addWidget(desc); }
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Channel"));

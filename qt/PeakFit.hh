@@ -1,5 +1,5 @@
-#ifndef AmiQt_CursorsX_hh
-#define AmiQt_CursorsX_hh
+#ifndef AmiQt_PeakFit_hh
+#define AmiQt_PeakFit_hh
 
 #include "ami/qt/QtPWidget.hh"
 
@@ -25,27 +25,22 @@ namespace Ami {
   namespace Qt {
     class AxisArray;
     class ChannelDefinition;
-    class CursorDefinition;
-    class CursorLocation;
-    class CursorPlot;
+    class EdgeCursor;
+    class PeakFitPlot;
     class DescTH1F;
     class DescProf;
     class DescChart;
     class WaveformDisplay;
 
-    class CursorsX : public QtPWidget,
-		     public Cursors {
+    class PeakFit : public QtPWidget {
       Q_OBJECT
     public:
-      CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
-      ~CursorsX();
+      PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      ~PeakFit();
     public:
       void save(char*& p) const;
       void load(const char*& p);
     public:
-      Ami::AbsOperator* math() const;
-    public:
-      void remove(CursorDefinition&);
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
 		     ConfigureRequest::Source);
@@ -53,29 +48,20 @@ namespace Ami {
       void update();
     public slots:
       void set_channel(int); // set the source
-      void calc        ();
-      void add_cursor  ();
-      void hide_cursors();
+      void set_quantity(int); // set the parameter
       void plot        ();   // configure the plot
       void remove_plot (QObject*);
-      void grab_cursorx();
       void change_features();
     signals:
       void changed();
-      void grabbed();
-    private:
-      void _set_cursor  (double, double);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
       unsigned _channel;
 
       WaveformDisplay&  _frame;
-      QStringList     _names;
-      CursorLocation* _new_value;
-      QVBoxLayout*    _clayout;
-
-      QLineEdit* _expr;
+      EdgeCursor* _baseline;
+      unsigned   _quantity;
 
       QLineEdit* _title;
       QButtonGroup* _plot_grp;
@@ -84,10 +70,7 @@ namespace Ami {
       DescProf*  _vFeature;
       QComboBox* _features;
 
-      std::list<CursorDefinition*> _cursors;
-      Ami::AbsOperator* _operator;
-
-      std::list<CursorPlot*> _plots;
+      std::list<PeakFitPlot*> _plots;
     };
   };
 };

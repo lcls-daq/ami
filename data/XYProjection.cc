@@ -111,7 +111,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
     default:
       break;
     }
-    _output->time(e.time());
+    _output->valid(e.time());
   }
   return *_output;
 }

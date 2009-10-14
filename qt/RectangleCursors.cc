@@ -75,6 +75,7 @@ void RectangleCursors::load(const char*& p)
   _y0 = QtPersistent::extract_i(p);
   _x1 = QtPersistent::extract_i(p);
   _y1 = QtPersistent::extract_i(p);
+  _set_edits();
 }
 
 void RectangleCursors::grab_zero() { _active = Zero; grab_cursor(); }

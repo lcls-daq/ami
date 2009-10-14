@@ -4,8 +4,6 @@
 #include <QtGui/QWidget>
 
 class QString;
-class QDate;
-class QDateEdit;
 class QListWidget;
 class QPushButton;
 
@@ -20,14 +18,12 @@ namespace Ami {
     public:
       QStringList paths() const;
     public slots:
-      void change_date(const QDate&);
       void change_path_list(const QStringList&);
-      void file_selected(int);
+      void run_selected(int);
     private:
       QStringList  _paths;
-      QString      _file;
+      QString      _run;
       QListWidget* _list;
-      QDateEdit*   _date;
     };
   };
 };

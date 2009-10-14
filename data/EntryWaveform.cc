@@ -52,7 +52,7 @@ void EntryWaveform::setto(const EntryWaveform& entry)
   do {
     *dst++ = *src++;
   } while (dst < end);
-  time(entry.time());
+  valid(entry.time());
 }
 
 void EntryWaveform::setto(const EntryWaveform& curr, 
@@ -65,7 +65,7 @@ void EntryWaveform::setto(const EntryWaveform& curr,
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }
 
 void EntryWaveform::addcontent(double y, double x)

@@ -113,6 +113,6 @@ Entry&     EntryMath::_operate(const Entry& e) const
     printf("EntryMath::_operator no implementation for type %d\n",e.desc().type());
     break;
   }
-  _entry->time(e.time());
+  _entry->valid(e.time());
   return *_entry;
 }

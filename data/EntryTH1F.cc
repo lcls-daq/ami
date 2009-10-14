@@ -52,7 +52,7 @@ void EntryTH1F::setto(const EntryTH1F& entry)
   do {
     *dst++ = *src++;
   } while (dst < end);
-  time(entry.time());
+  valid(entry.time());
 }
 
 void EntryTH1F::setto(const EntryTH1F& curr, 
@@ -65,7 +65,7 @@ void EntryTH1F::setto(const EntryTH1F& curr,
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }
 
 void EntryTH1F::addcontent(double y, double x)

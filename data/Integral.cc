@@ -103,6 +103,6 @@ Entry&     Integral::_operate(const Entry& e) const
       break; }
   default: break;
   }
-  _entry->time(e.time());
+  _entry->valid(e.time());
   return *_entry;
 }

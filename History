@@ -1,3 +1,6 @@
+2009-10-13	weaver	Tag V00-01-01.  Added peak fit plots to image projections {FWHM,RMS}.
+					Extended save/restore to image processing.
+					Offline interface looks at appropriate offline array.
 2009-10-07	weaver	Tag V00-01-00.	Added offline interface to full statistics.
 					Added pulse counters to Edge,EnvPlots.
 					First try add Print buttons.

@@ -26,7 +26,9 @@ namespace Ami {
 
     double                last() const;
     const Pds::ClockTime& time() const;
-    void                  time(const Pds::ClockTime& t);
+    void                  valid  (const Pds::ClockTime& t);
+    void                  invalid();
+    bool                  valid  () const;
 
     void reset();
 

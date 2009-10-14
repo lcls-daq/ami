@@ -91,7 +91,7 @@ namespace Ami {
       { float f = randomnumber(0,10);
 	for(unsigned j=0; j<_wf->desc().nbins(); j++)
 	  _wf->content(cos(double(j)*0.1+f), j);
-	_wf->time(clk); }
+	_wf->valid(clk); }
       //  Fill the image
       { float x,y;
 	randomgss(x,y);
@@ -102,7 +102,7 @@ namespace Ami {
 	    _im->content(unsigned((ex*ey+1)*100), j,k);
 	  }
 	}
-	_im->time(clk); }
+	_im->valid(clk); }
     }
     void discover() { _srv.discover(); }
     void wait_for_configure() {}

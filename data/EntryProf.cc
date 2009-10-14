@@ -58,7 +58,7 @@ void EntryProf::setto(const EntryProf& entry)
   do {
     *dst++ = *src++;
   } while (dst < end);
-  time(entry.time());
+  valid(entry.time());
 }
 
 void EntryProf::diff(const EntryProf& curr, 
@@ -71,7 +71,7 @@ void EntryProf::diff(const EntryProf& curr,
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }
 
 void EntryProf::sum(const EntryProf& curr, 
@@ -84,5 +84,5 @@ void EntryProf::sum(const EntryProf& curr,
   do {
     *dst++ = *srccurr++ + *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }

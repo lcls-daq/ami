@@ -44,7 +44,8 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
   _task   (new Task(TaskObject("amiqt")))
 {
   QStringList experiments;
-  experiments << "amo01809";
+  //  experiments << "amo01809";
+  experiments << "amo02109";
 
   _expt_select = new QListWidget;
   _expt_select->addItems(experiments);
@@ -77,14 +78,18 @@ XtcFileClient::~XtcFileClient()
 void XtcFileClient::select_expt(const QString& expt)
 {
   QStringList paths;
-  for(unsigned i=0; i<_nodes; i++)
-    paths << QString("/reg/d/pcds/amo/offline/%1/online%2").arg(expt).arg(i);
+//   for(unsigned i=0; i<_nodes; i++)
+//     paths << QString("/reg/d/pcds/amo/offline/%1/online%2").arg(expt).arg(i);
+  paths << QString("/reg/d/pcds/amo/offline/%1/xtc").arg(expt);
 
   _file_select->change_path_list(paths);
 }
 
 void XtcFileClient::run() { _task->call(this); }
 
+//
+//  We don't yet worry about chunked files
+//
 void XtcFileClient::routine()
 {
   // process a set of files

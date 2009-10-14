@@ -105,6 +105,6 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   }
   _output_entry->addinfo(entry.info(EntryWaveform::Normalization),
 			 EntryTH1F::Normalization);
-  _output_entry->time(entry.time());
+  _output_entry->valid(entry.time());
   return *_output_entry;
 }

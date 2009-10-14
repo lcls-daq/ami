@@ -8,6 +8,7 @@
 #include "ami/data/BinMath.hh"
 #include "ami/data/EdgeFinder.hh"
 #include "ami/data/PeakFinder.hh"
+#include "ami/data/PeakFitPlot.hh"
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
 #include "ami/data/EnvPlot.hh"
@@ -47,6 +48,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::BinMath   : o = new BinMath  (p,input,_f); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
+  case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _f); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::EnvPlot   : o = new EnvPlot(p,_f,output_cds); break;

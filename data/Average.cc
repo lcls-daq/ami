@@ -104,11 +104,11 @@ Entry&     Average::_operate(const Entry& e) const
     break;
   }
   if (_n) {
-    _cache->time(e.time());
+    _cache->valid(e.time());
     return *_cache;
   }
   else {
-    _entry->time(e.time());
+    _entry->valid(e.time());
     return *_entry;
   }
 }

@@ -64,7 +64,7 @@ void Opal1kHandler::_event    (const void* payload, const Pds::ClockTime& t)
 	_entry->addcontent(*d, k/PixelsPerBin, j/PixelsPerBin);
   }
   _entry->info(1,EntryImage::Normalization);
-  _entry->time(t);
+  _entry->valid(t);
 }
 
-void Opal1kHandler::_damaged() {}
+void Opal1kHandler::_damaged() { _entry->invalid(); }

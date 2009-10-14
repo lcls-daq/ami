@@ -18,6 +18,9 @@ namespace Ami {
       AnnulusCursors(ImageFrame&);
       ~AnnulusCursors();
     public:
+      void save(char*& p) const;
+      void load(const char*& p);
+    public:
       double xcenter() const { return _xc; }
       double ycenter() const { return _yc; }
       double r_inner() const { return _r0; }

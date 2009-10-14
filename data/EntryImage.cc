@@ -53,7 +53,7 @@ void EntryImage::setto(const EntryImage& entry)
   do {
     *dst++ = *src++;
   } while (dst < end);
-  time(entry.time());
+  valid(entry.time());
 }
 
 void EntryImage::setto(const EntryImage& curr, 
@@ -66,6 +66,6 @@ void EntryImage::setto(const EntryImage& curr,
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
-  time(curr.time());
+  valid(curr.time());
 }
 

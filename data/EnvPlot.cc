@@ -93,7 +93,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
       printf("EnvPlot::_operator no implementation for type %d\n",_entry->desc().type());
       break;
     }
-    _entry->time(e.time());
+    _entry->valid(e.time());
   }
   return *_entry;
 }

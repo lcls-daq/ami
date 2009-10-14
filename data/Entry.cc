@@ -57,8 +57,13 @@ const Pds::ClockTime& Entry::time() const
   return *reinterpret_cast<const Pds::ClockTime*>(_payload);
 }
 
-void Entry::time(const Pds::ClockTime& t) 
+static const Pds::ClockTime _invalid(0,0);
+
+void Entry::valid(const Pds::ClockTime& t) 
 {
   *_payload = *(reinterpret_cast<const unsigned long long*>(&t));
 }
 
+void Entry::invalid() { valid(_invalid); }
+
+bool Entry::valid() const { return !(time()==_invalid); }
