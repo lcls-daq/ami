@@ -1,5 +1,5 @@
-#ifndef Ami_BldXtcReader_hh
-#define Ami_BldXtcReader_hh
+#ifndef Ami_PhaseCavityReader_hh
+#define Ami_PhaseCavityReader_hh
 
 #include "ami/event/EventHandler.hh"
 
@@ -7,10 +7,10 @@
 
 namespace Ami {
 
-  class BldXtcReader : public EventHandler {
+  class PhaseCavityReader : public EventHandler {
   public:
-    BldXtcReader(FeatureCache&);
-    ~BldXtcReader();
+    PhaseCavityReader(FeatureCache&);
+    ~PhaseCavityReader();
   public:
     void   _configure(const void* payload, const Pds::ClockTime& t);
     void   _calibrate(const void* payload, const Pds::ClockTime& t);

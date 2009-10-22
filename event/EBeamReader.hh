@@ -1,21 +1,19 @@
-#ifndef Ami_ControlXtcReader_hh
-#define Ami_ControlXtcReader_hh
+#ifndef Ami_EBeamReader_hh
+#define Ami_EBeamReader_hh
 
 #include "ami/event/EventHandler.hh"
 
-namespace Pds {
-  class Dgram;
-};
+#include "ami/data/FeatureCache.hh"
 
 namespace Ami {
-  class FeatureCache;
-  class ControlXtcReader : public EventHandler {
+
+  class EBeamReader : public EventHandler {
   public:
-    ControlXtcReader(FeatureCache&);
-    ~ControlXtcReader();
+    EBeamReader(FeatureCache&);
+    ~EBeamReader();
   public:
-    void   _calibrate(const void* payload, const Pds::ClockTime& t);
     void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _calibrate(const void* payload, const Pds::ClockTime& t);
     void   _event    (const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
@@ -24,6 +22,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
+    int           _index;
   };
 
 };

@@ -274,6 +274,11 @@ void Ami::Qt::WaveformDisplay::xrange_change()
     _plot->setAxisAutoScale  (QwtPlot::xBottom);
   else
     _plot->setAxisScale      (QwtPlot::xBottom, _xrange->loEdge(), _xrange->hiEdge());
+
+  if (_xrange->isLog())
+    _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
+  else
+    _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
 }
 
 void Ami::Qt::WaveformDisplay::yrange_change()
@@ -282,6 +287,11 @@ void Ami::Qt::WaveformDisplay::yrange_change()
     _plot->setAxisAutoScale  (QwtPlot::yLeft);
   else
     _plot->setAxisScale      (QwtPlot::yLeft, _yrange->loEdge(), _yrange->hiEdge());
+
+  if (_yrange->isLog())
+    _plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
+  else
+    _plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
 }
 
 const Ami::AbsTransform& Ami::Qt::WaveformDisplay::xtransform() const { return *_xtransform; }

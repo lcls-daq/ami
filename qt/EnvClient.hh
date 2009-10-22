@@ -24,6 +24,7 @@ namespace Ami {
     class DescTH1F;
     class DescChart;
     class DescProf;
+    class DescScan;
     class EnvClient : public QtPWidget,
 		      public Ami::AbsClient,
 		      public Requestor {
@@ -51,7 +52,7 @@ namespace Ami {
       void _read_description   (int);
       void plot                ();
       void remove_plot         (QObject*);
-      void change_features ();
+      void change_features     ();
     signals:
       void changed();
       void description_changed(int);
@@ -80,10 +81,9 @@ namespace Ami {
       QButtonGroup* _plot_grp;
       DescTH1F*  _hist;
       DescChart* _vTime;
-      DescProf*  _vBld;
       DescProf*  _vFeature;
+      DescScan*  _vScan;
       QComboBox* _source;
-      QComboBox* _features;
 
       std::list<EnvPlot*> _plots;
     };

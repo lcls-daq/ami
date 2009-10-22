@@ -9,7 +9,6 @@
 class QLineEdit;
 class QButtonGroup;
 class QVBoxLayout;
-class QComboBox;
 
 #include "ami/qt/Cursors.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -30,6 +29,7 @@ namespace Ami {
     class CursorPlot;
     class DescTH1F;
     class DescProf;
+    class DescScan;
     class DescChart;
     class WaveformDisplay;
 
@@ -59,7 +59,6 @@ namespace Ami {
       void plot        ();   // configure the plot
       void remove_plot (QObject*);
       void grab_cursorx();
-      void change_features();
     signals:
       void changed();
       void grabbed();
@@ -82,7 +81,7 @@ namespace Ami {
       DescTH1F*  _hist;
       DescChart* _vTime;
       DescProf*  _vFeature;
-      QComboBox* _features;
+      DescScan*  _vScan;
 
       std::list<CursorDefinition*> _cursors;
       Ami::AbsOperator* _operator;

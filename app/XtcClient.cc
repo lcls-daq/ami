@@ -70,11 +70,13 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
 int XtcClient::process(Pds::Xtc* xtc) 
 {
+  if (xtc->extent < sizeof(Xtc))
+    return 0;
+
   if (xtc->contains.id() == Pds::TypeId::Id_Xtc) {
     iterate(xtc);
   }
   else {
-        
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
 

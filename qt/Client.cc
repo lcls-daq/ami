@@ -3,7 +3,6 @@
 #include "ami/qt/Control.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/Display.hh"
-#include "ami/qt/Math.hh"
 #include "ami/qt/Status.hh"
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/ChannelDefinition.hh"
@@ -56,10 +55,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _layout          (new QVBoxLayout),
   _sem             (new Semaphore(Semaphore::EMPTY))
 {
-  if (src.detector()==Pds::DetInfo::AmoETof)
-    setWindowTitle(QString("AmoETof-%1").arg(channel+1));
-  else
-    setWindowTitle(QString("%1").arg(Pds::DetInfo::name(src.detector())));
+  setWindowTitle(ChannelID::name(src, channel));
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 

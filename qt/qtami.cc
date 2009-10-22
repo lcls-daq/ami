@@ -6,7 +6,9 @@
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/data/FeatureCache.hh"
-#include "ami/event/BldXtcReader.hh"
+#include "ami/event/FEEGasDetEnergyReader.hh"
+#include "ami/event/EBeamReader.hh"
+#include "ami/event/PhaseCavityReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/server/ServerManager.hh"
@@ -75,9 +77,11 @@ int main(int argc, char* argv[]) {
   XtcClient     myClient(features, factory, offline);
   Ami::Qt::XtcFileClient input(myClient);
 
-  myClient.insert(new BldXtcReader    (features));
-  myClient.insert(new ControlXtcReader(features));
-  myClient.insert(new EpicsXtcReader  (features));
+  myClient.insert(new ControlXtcReader     (features));
+  myClient.insert(new FEEGasDetEnergyReader(features));
+  myClient.insert(new EBeamReader          (features));
+  myClient.insert(new PhaseCavityReader    (features));
+  myClient.insert(new EpicsXtcReader       (features));
 
   myClient.insert(new Opal1kHandler(DI(0,DI::AmoVmi,0,DI::Opal1000,0)));
   myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,0,DI::Opal1000,0)));

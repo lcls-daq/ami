@@ -13,6 +13,7 @@ namespace Ami {
 
   class DescEntry;
   class Entry;
+  class Term;
   class FeatureCache;
 
   class PeakFitPlot : public AbsOperator {
@@ -25,7 +26,7 @@ namespace Ami {
     PeakFitPlot(const DescEntry& output,
 		double    baseline,
 		Parameter prm,
-		unsigned  prof);
+		const char* feature);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     PeakFitPlot(const char*&, FeatureCache&);
@@ -35,7 +36,7 @@ namespace Ami {
     DescEntry& output   () const;
     unsigned   input    () const;
     Parameter  prm      () const;
-    unsigned   prof     () const;
+    const char* feature() const;
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
@@ -44,9 +45,11 @@ namespace Ami {
     char             _desc_buffer[DESC_LEN];
     double           _baseline;
     Parameter        _prm;
-    unsigned         _prof;
+    enum { FEATURE_LEN = 256 };
+    char             _feature[FEATURE_LEN];
 
     FeatureCache* _cache;
+    Term*         _term;
     Entry*        _entry;
   };
 

@@ -23,8 +23,7 @@ namespace Ami {
   public:
     //  Defined by the input entry's signature, the output entry's description,
     //    the algebraic expression, and any BLD/PV dependence for profiles.
-    BinMath(const DescEntry& output, const char* expr,
-	    unsigned feature_index);
+    BinMath(const DescEntry& output, const char* expr, const char* feature);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     BinMath(const char*&, const DescEntry& input, FeatureCache&);
@@ -32,8 +31,8 @@ namespace Ami {
     ~BinMath();
   public:
     DescEntry& output   () const;
-    unsigned   feature_index() const;
     const char*        expression() const;
+    const char*        feature   () const;
   public:
     static const QChar& integrate();
     static const QChar& range    ();
@@ -45,10 +44,12 @@ namespace Ami {
     char             _expression[EXPRESSION_LEN];
     enum { DESC_LEN = 1024 };
     char             _desc_buffer[DESC_LEN];
-    unsigned         _feature_index;
+    enum { FEATURE_LEN = 256 };
+    char             _feature   [FEATURE_LEN];
 
     FeatureCache* _cache;
     Term*         _term;
+    Term*         _fterm;
     mutable const Entry*  _input;
     Entry*        _entry;
   };

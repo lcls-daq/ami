@@ -3,13 +3,13 @@
 using namespace Ami;
 
 DescProf::DescProf(const char* name, 
-				 const char* xtitle, 
-				 const char* ytitle, 
-				 unsigned nbins, 
-				 float xlow, 
-				 float xup, 
-				 const char* names) :
-  DescEntry(name, xtitle, ytitle, Prof, sizeof(DescProf)),
+		   const char* xtitle, 
+		   const char* ytitle, 
+		   unsigned nbins, 
+		   float xlow, 
+		   float xup, 
+		   const char* names) :
+  DescEntry(name, xtitle, ytitle, Prof, sizeof(DescProf), false),
   _nbins(nbins ? nbins : 1),
   _xlow(xlow),
   _xup(xup)
@@ -30,9 +30,9 @@ DescProf::DescProf(const char* name,
 }
 
 void DescProf::params(unsigned nbins, 
-			     float xlow, 
-			     float xup, 
-			     const char* names)
+		      float xlow, 
+		      float xup, 
+		      const char* names)
 {
   _nbins = nbins ? nbins : 1;
   _xlow = xlow;

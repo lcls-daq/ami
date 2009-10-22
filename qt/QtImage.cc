@@ -36,11 +36,11 @@ QtImage::QtImage(const QString&   title,
   x0 &= ~3;  // 32-bit aligned
   _x0 = x0; _y0 = y0; _nx = x1-x0+1; _ny = y1-y0+1; 
 
+  _scale = 1;
+#ifdef FAST_IMPLEMENTATION
   unsigned sx = entry.desc().nbinsx() / _nx;
   unsigned sy = entry.desc().nbinsy() / _ny;
   unsigned s = (sx < sy ) ? sx : sy;
-  _scale = 1;
-#ifdef FAST_IMPLEMENTATION
   while( s>>=1 )
     _scale<<=1;
   if (_scale>8) _scale=8;

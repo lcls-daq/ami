@@ -1,16 +1,16 @@
-#include "QtProf.hh"
+#include "QtScan.hh"
 #include "ami/qt/AxisArray.hh"
 
 #include "ami/data/AbsTransform.hh"
-#include "ami/data/EntryProf.hh"
+#include "ami/data/EntryScan.hh"
 
 #include "qwt_plot.h"
 #include "qwt_symbol.h"
 
 using namespace Ami::Qt;
 
-QtProf::QtProf(const QString&   title,
-	       const Ami::EntryProf& entry,
+QtScan::QtScan(const QString&   title,
+	       const Ami::EntryScan& entry,
 	       const AbsTransform& x,
 	       const AbsTransform& y,
 	       const QColor& c) :
@@ -26,19 +26,15 @@ QtProf::QtProf(const QString&   title,
   _curve.setCurveAttribute(QwtPlotCurve::Inverted,true);
   
   unsigned nb = entry.desc().nbins();
-  double xlow = entry.desc().xlow();
-  double xhi  = entry.desc().xup ();
   _xa = new double[nb];
   _x  = new double[nb];
   _y  = new double[nb];
-  double dx = nb ? (xhi - xlow) / double(nb) : 0;
-  double x0 = xlow;
   unsigned b=0;
   unsigned i=0;
   while(b<nb) {
-    _xa[b] = _xscale(x0 + double(b)*dx);
+    _xa[b] = _xscale(entry.xbin(b));
     if (entry.nentries(b)) {
-      _x[i] = _xscale(x0 + double(b)*dx);
+      _x[i] = _xscale(entry.xbin(b));
       _y[i] = entry.ymean(b);
       i++;
     }
@@ -49,7 +45,7 @@ QtProf::QtProf(const QString&   title,
 }
   
   
-QtProf::~QtProf()
+QtScan::~QtScan()
 {
   _curve.attach(NULL);
   delete _xinfo;
@@ -58,7 +54,7 @@ QtProf::~QtProf()
   delete[] _y;
 }
 
-void           QtProf::dump  (FILE* f) const
+void           QtScan::dump  (FILE* f) const
 {
   for(unsigned b=0; b<_curve.data().size(); b++) {
     double x = _x[b];
@@ -67,50 +63,41 @@ void           QtProf::dump  (FILE* f) const
   }
 }
 
-void           QtProf::attach(QwtPlot* p)
+void           QtScan::attach(QwtPlot* p)
 {
   _curve.attach(p);
   if (p) {
-    const EntryProf& _entry = static_cast<const EntryProf&>(entry());
+    const EntryScan& _entry = static_cast<const EntryScan&>(entry());
     p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
     p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
   }
 }
 
-void           QtProf::update()
+void           QtScan::update()
 {
-  const EntryProf& _entry = static_cast<const EntryProf&>(entry());
+  const EntryScan& _entry = static_cast<const EntryScan&>(entry());
   unsigned nb = _entry.desc().nbins();
-  double xlow = _entry.desc().xlow();
-  double xhi  = _entry.desc().xup ();
-  double dx = nb ? (xhi - xlow) / double(nb) : 0;
-  double x0 = xlow;
   unsigned i=0;
   for(unsigned b=0; b<nb; b++)
     if (_entry.nentries(b)) {
-      _x[i] = _xscale(x0 + double(b)*dx);
+      _x[i] = _xscale(_entry.xbin(b));
       _y[i] = _entry.ymean(b);
       i++;
     }
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
 }
 
-void QtProf::xscale_update()
+void QtScan::xscale_update()
 {
   update();
 }
 
-void QtProf::yscale_update()
+void QtScan::yscale_update()
 {
   update();
 }
 
-const AxisInfo* QtProf::xinfo() const
+const AxisInfo* QtScan::xinfo() const
 {
   return _xinfo;
-}
-
-double QtProf::normalization() const
-{
-  return static_cast<const EntryProf&>(entry()).info(EntryProf::Normalization);
 }

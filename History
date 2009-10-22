@@ -1,3 +1,7 @@
+2009-10-20	weaver	Tag V00-02-00.  Added EBeam and PhaseCavity BLD.  Added XtcIterator protection against
+					corrupt xtcs.  Added PeakFitPlots {FWHM,RMS}, EnvPlot.  Added plot
+					versus algebra of features.  Added scatter plots ("vs Scan").
+					Added 2 GasDet channels and 2 MBES channels.
 2009-10-13	weaver	Tag V00-01-01.  Added peak fit plots to image projections {FWHM,RMS}.
 					Extended save/restore to image processing.
 					Offline interface looks at appropriate offline array.

@@ -22,9 +22,9 @@
 
 using namespace Ami::Qt;
 
-enum { Gd=0, Ims=1, Itof=2, Mbes=3, Etof=4, Vmi=9, Bps=10, Env=12, MaxClients=13 };
+enum { Gd=0, Ims=2, Itof=3, Mbes=4, Etof=6, Vmi=11, Bps=12, Env=14, MaxClients=15 };
 
-static const char* names[] = { "GasDet", "IMS", "ITOF", "MBES", 
+static const char* names[] = { "GasDet_1", "GasDet_2", "IMS", "ITOF", "MBES_1", "MBES_2", 
 			       "ETOF_1", "ETOF_2", "ETOF_3", "ETOF_4", "ETOF_5",
 			       "VMI", "BPS_0", "BPS_1", "Env" };
 static const int MaxConfigSize = 0x100000;
@@ -69,8 +69,12 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     QPushButton* imsB  = new QPushButton(names[Ims]);
     QPushButton* itofB = new QPushButton(names[Itof]);
-    QPushButton* gdB   = new QPushButton(names[Gd]);
-    QPushButton* mbesB = new QPushButton(names[Mbes]);
+    QComboBox*   gdB  = new QComboBox;
+    for(int i=0; i<2; i++)
+      gdB->addItem(names[Gd+i]);
+    QComboBox*   mbesB  = new QComboBox;
+    for(int i=0; i<2; i++)
+      mbesB->addItem(names[Mbes+i]);
     QComboBox*   etofB = new QComboBox;
     for(int i=0; i<5; i++)
       etofB->addItem(names[Etof+i]);
@@ -89,10 +93,10 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(vmiB );
     layout->addWidget(envB );
 
-    connect(gdB   , SIGNAL(clicked()), this, SLOT(start_gd()));
+    connect(gdB   , SIGNAL(activated(int)), this, SLOT(start_gd(int)));
     connect(imsB  , SIGNAL(clicked()), this, SLOT(start_ims()));
     connect(itofB , SIGNAL(clicked()), this, SLOT(start_itof()));
-    connect(mbesB , SIGNAL(clicked()), this, SLOT(start_mbes()));
+    connect(mbesB , SIGNAL(activated(int)), this, SLOT(start_mbes(int)));
     connect(etofB , SIGNAL(activated(int)), this, SLOT(start_etof(int)));
     connect(bpsB  , SIGNAL(activated(int)), this, SLOT(start_bps (int)));
     connect(vmiB  , SIGNAL(clicked()), this, SLOT(start_vmi()));
@@ -192,10 +196,8 @@ void DetectorSelect::load       ()
 	  _client[i]->load(p);
 	else {
 	  switch(i) {
-	  case Gd:   { CASE_WFCLIENT(AmoGasdet); LOAD_AND_CONNECT } break;
 	  case Ims:  { CASE_WFCLIENT(AmoIms   ); LOAD_AND_CONNECT } break;
 	  case Itof: { CASE_WFCLIENT(AmoITof  ); LOAD_AND_CONNECT } break;
-	  case Mbes: { CASE_WFCLIENT(AmoMbes  ); LOAD_AND_CONNECT } break;
 	  case Vmi:  
 	    { Ami::Qt::ImageClient* client = 
 		new Ami::Qt::ImageClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoVmi,
@@ -206,17 +208,38 @@ void DetectorSelect::load       ()
 	    { Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);
 	      LOAD_AND_CONNECT }
 	    break;
-	  default:
-	    if (i<Bps) {
-	      Ami::Qt::WaveformClient* client = 
+	  case Mbes+0:
+	  case Mbes+1:
+	    { Ami::Qt::WaveformClient* client = 
+		new Ami::Qt::WaveformClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoMbes,
+							      0,Pds::DetInfo::Acqiris,0),i-Mbes);
+	      LOAD_AND_CONNECT }
+	    break;
+	  case Gd+0:
+	  case Gd+1:
+	    { Ami::Qt::WaveformClient* client = 
+		new Ami::Qt::WaveformClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoGasdet,
+							      0,Pds::DetInfo::Acqiris,0),i-Gd);
+	      LOAD_AND_CONNECT }
+	    break;
+	  case Etof+0:
+	  case Etof+1:
+	  case Etof+2:
+	  case Etof+3:
+	  case Etof+4:
+	    { Ami::Qt::WaveformClient* client = 
 		new Ami::Qt::WaveformClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoETof,
 							      0,Pds::DetInfo::Acqiris,0),i-Etof);
 	      LOAD_AND_CONNECT }
-	    else {
-	      Ami::Qt::ImageClient* client = 
+	    break;
+	  case Bps+0:
+	  case Bps+1:
+	    { Ami::Qt::ImageClient* client = 
 		new Ami::Qt::ImageClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoBps,
 							   0,Pds::DetInfo::Opal1000,i-Bps),0);
 	      LOAD_AND_CONNECT }
+	    break;
+	  default:
 	    break;
 	  }
 	}
@@ -233,10 +256,10 @@ void DetectorSelect::print_setup()
   delete d;
 }
 
-void DetectorSelect::start_gd   () { start_waveform_client(Pds::DetInfo::AmoGasdet,0,Gd); }
+void DetectorSelect::start_gd   (int channel) { start_waveform_client(Pds::DetInfo::AmoGasdet,channel,Gd+channel); }
 void DetectorSelect::start_ims  () { start_waveform_client(Pds::DetInfo::AmoIms   ,0,Ims); }
 void DetectorSelect::start_itof () { start_waveform_client(Pds::DetInfo::AmoITof  ,0,Itof); }
-void DetectorSelect::start_mbes () { start_waveform_client(Pds::DetInfo::AmoMbes  ,0,Mbes); }
+void DetectorSelect::start_mbes (int channel) { start_waveform_client(Pds::DetInfo::AmoMbes,channel,Mbes+channel); }
 void DetectorSelect::start_etof (int channel) { start_waveform_client(Pds::DetInfo::AmoETof,channel,Etof+channel); }
 void DetectorSelect::start_vmi  () { start_image_client(Pds::DetInfo::AmoVmi   ,0,Vmi); }
 void DetectorSelect::start_env  () { start_features_client(Env); }

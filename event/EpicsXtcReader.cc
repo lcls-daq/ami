@@ -12,15 +12,15 @@
 namespace Ami {
   class EpicsInfo : public Pds::Src {
   public:
-    EpicsInfo() : Pds::Src(Pds::Level::Segment) { _phy=0; }
+    EpicsInfo() : Pds::Src(Pds::Level::Segment) { _phy=1; }
   };
 };
 
 using namespace Ami;
 
 EpicsXtcReader::EpicsXtcReader(FeatureCache& f)  : 
-  //  EventHandler(Pds::DetInfo(0, Pds::DetInfo::EpicsArch, 0, DetInfo::NoDevice, 0),
-  EventHandler(EpicsInfo(),
+  EventHandler(Pds::DetInfo(0, Pds::DetInfo::EpicsArch, 0, DetInfo::NoDevice, 0),
+    //  EventHandler(EpicsInfo(),
 	       Pds::TypeId::Id_Epics,
 	       Pds::TypeId::Id_Epics),
   _cache(f)

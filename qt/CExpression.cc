@@ -36,13 +36,13 @@ QString& CExpression::_process(QString& text,const QChar& o)
 {
   QRegExp termMatch       ("\\[[0-9a-fA-F]+\\]");
 
-  int index, first, last;
+  int index, first=-1, last=-1;
   while( (index=text.lastIndexOf(o))!=-1 ) { // left-to-right
     //  while( (index=text.lastIndexOf(o))!=-1 ) { // right-to-left
 #ifdef DBUG
     printf("_process(%s) %s\n",qPrintable(QString(o)),qPrintable(text));
 #endif
-    Ami::AbsFilter* b;
+    Ami::AbsFilter* b = 0;
     if (termMatch.indexIn(text,index+1)==index+1) {
       int len = termMatch.matchedLength();
       last = index+len;
@@ -76,7 +76,7 @@ QString& CExpression::_process(QString& text,const QChar& o)
     else {
       printf("Unrecognized input at %s\n",qPrintable(text.mid(index+1)));
     }
-    Ami::AbsFilter* a;
+    Ami::AbsFilter* a=0;
     if ((termMatch.lastIndexIn(text,index-1)+termMatch.matchedLength())==index) {
       int len = termMatch.matchedLength();
       first = index-len;

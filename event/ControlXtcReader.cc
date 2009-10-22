@@ -1,4 +1,5 @@
 #include "ControlXtcReader.hh"
+#include "ami/data/FeatureCache.hh"
 
 #include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/xtc/Level.hh"
@@ -15,8 +16,7 @@ ControlXtcReader::ControlXtcReader(FeatureCache& f)  :
   EventHandler(Pds::ProcInfo(Pds::Level::Control,0,-1UL),
 	       Pds::TypeId::NumberOf,   // expect no L1 data
 	       Pds::TypeId::Id_ControlConfig),  // expect no configure
-  _cache(f),
-  _index(-1)
+  _cache(f)
 {
 }
 
@@ -38,11 +38,13 @@ void   ControlXtcReader::_configure(const void* payload, const Pds::ClockTime& t
     const Pds::ControlData::PVControl& pv = c.pvControl(k);
     int index;
     if (pv.array()) {
-      snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d]", pv.name(), pv.index());
+      snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
       index = _cache.add(nbuf);
     }
-    else
-      index = _cache.add(pv.name());
+    else {
+      snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
+      index = _cache.add(nbuf);
+    }
     _cache.cache(index,pv.value());
   }
 }

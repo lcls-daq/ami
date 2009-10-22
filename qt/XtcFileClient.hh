@@ -7,6 +7,7 @@
 #include <list>
 
 class QListWidget;
+class QPushButton;
 
 namespace Pds {
   class Dgram;
@@ -32,11 +33,15 @@ namespace Ami {
     public slots:
       void select_expt(const QString&);
       void run();
+      void ready();
+    signals:
+      void done();
     private:
       Ami::XtcClient&  _client;
       Task*       _task;  // thread for Qt
       FileSelect* _file_select;
       QListWidget* _expt_select;
+      QPushButton* _runB;
     };
   };
 }

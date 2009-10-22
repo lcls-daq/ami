@@ -5,7 +5,6 @@
 #include "ami/qt/Filter.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtTH1F.hh"
-#include "ami/qt/Path.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -14,13 +13,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EdgeFinder.hh"
 
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QMenuBar>
-#include <QtGui/QActionGroup>
-#include <QtGui/QInputDialog>
-#include <QtGui/QLineEdit>
 #include <QtGui/QLabel>
-
 #include "qwt_plot.h"
 
 namespace Ami {
@@ -41,31 +34,23 @@ EdgePlot::EdgePlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         channel,
 		   Ami::EdgeFinder* finder) :
-  QtPWidget(parent),
-  _name    (name),
+  QtPlot   (parent, name),
   _channel (channel),
   _finder  (finder),
-  _frame   (new QwtPlot(name)),
-  _plot    (0),
-  _counts  (new QLabel("Np 0"))
+  _plot    (0)
 {
-  _layout();
-  show();
-  connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
 }
 
 EdgePlot::EdgePlot(QWidget* parent,
 		   const char*& p) :
-  QtPWidget(parent),
+  QtPlot   (parent,p),
   _finder  (0),
-  _plot    (0),
-  _counts  (new QLabel("Np 0"))
+  _plot    (0)
 {
-  load(p);
-  _layout();
-  show();
-  connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
-  QtPWidget::load(p);
+  _channel = QtPersistent::extract_i(p);
+
+  p += 2*sizeof(uint32_t);
+  _finder = new Ami::EdgeFinder(p);
 }
 
 EdgePlot::~EdgePlot()
@@ -74,88 +59,20 @@ EdgePlot::~EdgePlot()
   if (_plot    ) delete _plot;
 }
 
-void EdgePlot::_layout()
-{
-  setAttribute(::Qt::WA_DeleteOnClose, true);
-  
-  QVBoxLayout* layout = new QVBoxLayout;
-  { QHBoxLayout* l = new QHBoxLayout;
-    QMenuBar* menu_bar = new QMenuBar;
-    { QMenu* file_menu = new QMenu("File");
-      file_menu->addAction("Save data", this, SLOT(save_data()));
-      menu_bar->addMenu(file_menu); }
-    { QMenu* annotate = new QMenu("Annotate");
-      annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
-      annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
-      annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
-      menu_bar->addMenu(annotate); }
-    l->addWidget(menu_bar);
-    l->addStretch();
-    l->addWidget(_counts);
-    layout->addLayout(l); }
-  layout->addWidget(_frame);
-  setLayout(layout);
-}
-
 void EdgePlot::save(char*& p) const
 {
-  QtPersistent::insert(p,_name);
+  QtPlot::save(p);
+
   QtPersistent::insert(p,(int)_channel);
 
   p = (char*)_finder->serialize(p);
-  
-  QtPWidget::save(p);
 }
 
 void EdgePlot::load(const char*& p) 
 {
-  _name    = QtPersistent::extract_s(p);
-  _channel = QtPersistent::extract_i(p);
-
-  if (_finder) delete _finder;
-
-  p += 2*sizeof(uint32_t);
-  _finder = new Ami::EdgeFinder(p);
-  _frame  = new QwtPlot(_name);
-
-  _plot   = 0;
 }
 
-void EdgePlot::save_data()
-{
-  FILE* f = Path::saveDataFile();
-  if (f) {
-    _plot->dump(f);
-    fclose(f);
-  }
-}
-
-void EdgePlot::set_plot_title()
-{
-  bool ok;
-  QString text = QInputDialog::getText(this, tr("Plot Title"), tr("Enter new title:"), 
-				       QLineEdit::Normal, _frame->title().text(), &ok);
-  if (ok)
-    _frame->setTitle(text);
-}
-
-void EdgePlot::set_xaxis_title()
-{
-  bool ok;
-  QString text = QInputDialog::getText(this, tr("X-Axis Title"), tr("Enter new title:"), 
-				       QLineEdit::Normal, _frame->axisTitle(QwtPlot::xBottom).text(), &ok);
-  if (ok)
-    _frame->setAxisTitle(QwtPlot::xBottom,text);
-}
-
-void EdgePlot::set_yaxis_title()
-{
-  bool ok;
-  QString text = QInputDialog::getText(this, tr("Y-Axis Title"), tr("Enter new title:"), 
-				       QLineEdit::Normal, _frame->axisTitle(QwtPlot::yLeft).text(), &ok);
-  if (ok)
-    _frame->setAxisTitle(QwtPlot::yLeft,text);
-}
+void EdgePlot::_dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"

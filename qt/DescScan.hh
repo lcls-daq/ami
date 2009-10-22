@@ -1,5 +1,5 @@
-#ifndef AmiQt_DescProf_hh
-#define AmiQt_DescProf_hh
+#ifndef AmiQt_DescScan_hh
+#define AmiQt_DescScan_hh
 
 #include <QtGui/QWidget>
 #include <QtCore/QString>
@@ -7,30 +7,27 @@
 class QComboBox;
 class QRadioButton;
 class QLineEdit;
-class QLabel;
 
 namespace Ami {
   namespace Qt {
-    class DescProf : public QWidget {
+    class DescScan : public QWidget {
       Q_OBJECT
     public:
-      DescProf(const char*);
+      DescScan(const char*);
     public:
       void save(char*&) const;
       void load(const char*&);
     public slots:
-      void calc();
+      void change_features();
     public:
       QRadioButton* button();
-      unsigned bins() const;
-      double   lo  () const;
-      double   hi  () const;
       QString  expr() const;
       QString  feature() const;
+      unsigned bins() const;
     private:
       QRadioButton* _button;
-      QLineEdit *_bins, *_lo, *_hi;
-      QLabel* _expr;
+      QLineEdit* _bins;
+      QComboBox* _features;
     };
   };
 };

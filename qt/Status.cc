@@ -12,6 +12,8 @@ Status::Status() :
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(_label = new QLabel("Disconnected",this));
   setLayout(layout);
+
+  connect(this, SIGNAL(state_changed()), this, SLOT(update_state()));
 }
 
 Status::~Status()
@@ -21,7 +23,12 @@ Status::~Status()
 void Status::set_state(State s)
 {
   _state = s;
-  switch(s) {
+  emit state_changed();
+}
+
+void Status::update_state()
+{
+  switch(_state) {
   case Disconnected: _label->setText("Disconnected"); break;
   case Connected   : _label->setText("Connected"); break;
   case Discovered  : _label->setText("Discovered"); break;

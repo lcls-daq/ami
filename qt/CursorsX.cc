@@ -2,6 +2,7 @@
 
 #include "ami/qt/DescTH1F.hh"
 #include "ami/qt/DescProf.hh"
+#include "ami/qt/DescScan.hh"
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
@@ -14,6 +15,7 @@
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
+#include "ami/data/DescScan.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/Expression.hh"
@@ -42,7 +44,7 @@
 //#define bold(t) "<b>" #t "</b>"
 #define bold(t) #t
 
-enum { _TH1F, _vT, _vF };
+enum { _TH1F, _vT, _vF, _vS };
 
 
 namespace Ami {
@@ -77,8 +79,7 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
   _frame    (frame),
   _clayout  (new QVBoxLayout),
   _expr     (new QLineEdit("1")),
-  _title    (new QLineEdit("Cursor plot")),
-  _features (new QComboBox)
+  _title    (new QLineEdit("Cursor plot"))
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g";
 
@@ -93,16 +94,16 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _features->addItems(FeatureRegistry::instance().names());
-
-  _hist   = new DescTH1F (bold(Sum (1dH)));
-  _vTime  = new DescChart(bold(Sum v Time),0.2);
-  _vFeature = new DescProf (bold(Sum v Var),_features);
+  _hist   = new DescTH1F   (bold(Sum (1dH)));
+  _vTime  = new DescChart  (bold(Mean v Time),0.2);
+  _vFeature = new DescProf (bold(Mean v Var) );
+  _vScan    = new DescScan (bold(Mean v Scan));
 
   _plot_grp = new QButtonGroup;
   _plot_grp->addButton(_hist    ->button(),_TH1F);
   _plot_grp->addButton(_vTime   ->button(),_vT);
   _plot_grp->addButton(_vFeature->button(),_vF);
+  _plot_grp->addButton(_vScan   ->button(),_vS);
   _hist->button()->setChecked(true);
 
   QPushButton* calcB  = new QPushButton("Enter");
@@ -159,6 +160,7 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
     layout1->addWidget(_hist );
     layout1->addWidget(_vTime);
     layout1->addWidget(_vFeature);
+    layout1->addWidget(_vScan);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -174,7 +176,6 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
   connect(calcB     , SIGNAL(clicked()),      this, SLOT(calc()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
   connect(grabB     , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
 }
@@ -312,6 +313,7 @@ void CursorsX::calc()
 void CursorsX::plot()
 {
   DescEntry* desc;
+  QString feature;
   switch(_plot_grp->checkedId()) {
   case _TH1F:
     desc = new Ami::DescTH1F(qPrintable(_title->text()),
@@ -324,8 +326,14 @@ void CursorsX::plot()
     break;
   case _vF:
     desc = new Ami::DescProf(qPrintable(_title->text()),
-			     qPrintable(_vFeature->variable()),"mean",
+			     qPrintable(_vFeature->expr()),"mean",
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
+    feature = _vFeature->feature();
+    break;
+  case _vS:
+    desc = new Ami::DescScan(qPrintable(_title->text()),
+			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
+    feature = _vScan->feature();
     break;
   default:
     desc = 0;
@@ -360,8 +368,7 @@ void CursorsX::plot()
   CursorPlot* plot = new CursorPlot(this,
 				    _title->text(),
 				    _channel,
-				    new BinMath(*desc,qPrintable(expr),
-						FeatureRegistry::instance().index(_vFeature->variable())));
+				    new BinMath(*desc,qPrintable(expr),qPrintable(feature)));
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
@@ -389,9 +396,3 @@ void CursorsX::_set_cursor(double x, double y)
   emit grabbed();
 }
 
-void CursorsX::change_features()
-{
-  _features->clear();
-  _features->addItems(FeatureRegistry::instance().names());
-  _features->setCurrentIndex(0);
-}

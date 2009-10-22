@@ -26,10 +26,10 @@ namespace Ami {
       void save();
       void load();
       void print_setup();
-      void start_gd   ();
+      void start_gd   (int);
       void start_ims  ();
       void start_itof ();
-      void start_mbes ();
+      void start_mbes (int);
       void start_etof (int);
       void start_bps  (int);
       void start_vmi  ();

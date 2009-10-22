@@ -5,6 +5,8 @@
 
 #include <QtCore/QStringList>
 
+#include "ami/service/Semaphore.hh"
+
 namespace Ami {
   namespace Qt {
     class FeatureRegistry : public QObject {
@@ -16,8 +18,8 @@ namespace Ami {
       void               insert  (const char* names,
 				  unsigned n);
     public:
-      const QStringList& names   () const;
-      int                index   (const QString&) const;
+      QStringList names   () const;
+      int         index   (const QString&) const;
     signals:
       void changed();
     private:
@@ -25,6 +27,7 @@ namespace Ami {
       ~FeatureRegistry();
     private:
       QStringList _names;
+      Ami::Semaphore _sem;
     };
   };
 };

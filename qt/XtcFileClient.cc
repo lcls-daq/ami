@@ -46,11 +46,12 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
   QStringList experiments;
   //  experiments << "amo01809";
   experiments << "amo02109";
+  experiments << "amo01509";
 
   _expt_select = new QListWidget;
   _expt_select->addItems(experiments);
 
-  QPushButton* runB  = new QPushButton("Run");
+  _runB  = new QPushButton("Run");
   QPushButton* exitB = new QPushButton("Exit");
 
   QVBoxLayout* l = new QVBoxLayout;
@@ -58,7 +59,7 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
   l->addWidget(_file_select = new FileSelect(0,QStringList()));
   { QHBoxLayout* l1 = new QHBoxLayout;
     l1->addStretch();
-    l1->addWidget( runB );
+    l1->addWidget(_runB );
     l1->addStretch();
     l1->addWidget( exitB );
     l1->addStretch();
@@ -66,7 +67,8 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
   setLayout(l);
 
   connect(_expt_select, SIGNAL(currentTextChanged(const QString&)), this, SLOT(select_expt(const QString&)));
-  connect(runB, SIGNAL(clicked()), this, SLOT(run()));
+  connect(_runB, SIGNAL(clicked()), this, SLOT(run()));
+  connect(this , SIGNAL(done())   , this, SLOT(ready()));
   connect(exitB, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
 }
 
@@ -85,7 +87,16 @@ void XtcFileClient::select_expt(const QString& expt)
   _file_select->change_path_list(paths);
 }
 
-void XtcFileClient::run() { _task->call(this); }
+void XtcFileClient::run() 
+{
+  _runB->setEnabled(false);
+  _task->call(this); 
+}
+
+void XtcFileClient::ready() 
+{
+  _runB->setEnabled(true);
+}
 
 //
 //  We don't yet worry about chunked files
@@ -128,7 +139,7 @@ void XtcFileClient::routine()
     //
     unsigned i = 0;
     ClockTime tmin(-1,-1);
-    for(unsigned k=1; k<nfiles; k++) {
+    for(unsigned k=0; k<nfiles; k++) {
       if (hdr[k].seq.service()==Pds::TransitionId::L1Accept &&
 	  tmin > hdr[k].seq.clock())
 	tmin = hdr[i=k].seq.clock();
@@ -181,4 +192,6 @@ void XtcFileClient::routine()
 
   delete[] hdr;
   delete[] buffer;
+
+  emit done();
 }

@@ -6,6 +6,7 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QToolButton>
 #include <QtGui/QPushButton>
+#include <QtGui/QComboBox>
 
 #include <math.h>
 
@@ -111,13 +112,7 @@ Calculator::Calculator(const QString&     title,
   buttonLayout->addWidget(createButton(tr("CLR")    , backspaceColor, SLOT(clear()))              , 0, 2, 1, 2);
   buttonLayout->addWidget(createButton(tr("RST"), backspaceColor.light(120), SLOT(clearAll())), 0, 4, 1, 2);
 
-  // variables on the left
   int row=1;
-  for(QStringList::const_iterator it = variables.constBegin(); 
-      it!=variables.constEnd(); it++)
-    buttonLayout->addWidget(createButton(*it, operatorColor.light(120), SLOT(variableClicked())),
-			  row++,0);
-
   if (_varconops.size()) {
     // digits in the middle
     const int NumDigitButtons=10;
@@ -144,6 +139,32 @@ Calculator::Calculator(const QString&     title,
       it!=var_con_ops.constEnd(); it++)
     buttonLayout->addWidget(createButton(*it, operatorColor, SLOT(varconClicked())),
 			  row++,5);
+
+  int max_row = 4;
+  if (max_row < var_var_ops.size()) max_row = var_var_ops.size();
+  if (max_row < var_con_ops.size()) max_row = var_con_ops.size();
+
+  if (variables.size() > max_row) {  // variables in a box on the bottom
+    QComboBox* box = new QComboBox;
+
+    QPalette newPalette = box->palette();
+    newPalette.setColor(QPalette::Button, operatorColor.light(120));
+    box->setPalette(newPalette);
+
+    box->addItems(variables);
+    buttonLayout->addWidget(box, max_row+1, 0, 1, 5);
+    QFont f = box->font();
+    f.setPointSize(f.pointSize()+4);
+    box->setFont(f);
+    connect(box, SIGNAL(activated(const QString&)), this, SLOT(variableClicked(const QString&)));
+  } 
+  else {   // variables on the left
+    int row=1;
+    for(QStringList::const_iterator it = variables.constBegin(); 
+	it!=variables.constEnd(); it++)
+      buttonLayout->addWidget(createButton(*it, operatorColor.light(120), SLOT(variableClicked())),
+			      row++,0);
+  }
 
   layout->addLayout(buttonLayout);
   
@@ -227,6 +248,19 @@ void Calculator::variableClicked()
   //  CalculatorButton* clickedButton = qobject_cast<CalculatorButton* >(sender());
   QToolButton* clickedButton = qobject_cast<QToolButton* >(sender());
   text.append(clickedButton->text());
+  _display->setText(text);
+}
+
+void Calculator::variableClicked(const QString& v)
+{
+  QString text = _display->text();
+
+  if (!(text.isEmpty() ||
+	lengthAtEnd(_varvarops,text) ||
+	lengthAtEnd(_varconops,text)))
+    return;
+
+  text.append(v);
   _display->setText(text);
 }
 

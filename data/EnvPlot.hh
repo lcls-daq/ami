@@ -14,6 +14,7 @@ namespace Ami {
   class Cds;
   class DescEntry;
   class Entry;
+  class Term;
   class FeatureCache;
 
   class EnvPlot : public AbsOperator {
@@ -22,7 +23,7 @@ namespace Ami {
     //    the BLD/PV, and any BLD/PV dependence for profiles.
     EnvPlot(const DescEntry& output,
 	    unsigned input,
-	    unsigned prof);
+	    const char* feature);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     EnvPlot(const char*&, FeatureCache&, const Cds&);
@@ -30,7 +31,7 @@ namespace Ami {
   public:
     DescEntry& output   () const;
     unsigned   input    () const;
-    unsigned   prof     () const;
+    const char* feature() const;
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
@@ -38,9 +39,11 @@ namespace Ami {
     enum { DESC_LEN = 1024 };
     char             _desc_buffer[DESC_LEN];
     unsigned         _input;
-    unsigned         _prof;
+    enum { FEATURE_LEN = 256 };
+    char             _feature[FEATURE_LEN];
 
     FeatureCache* _cache;
+    Term*         _term;
     Entry*        _entry;
   };
 

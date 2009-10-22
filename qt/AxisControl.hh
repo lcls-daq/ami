@@ -22,6 +22,7 @@ namespace Ami {
     public:
       void update(const AxisInfo&);
     public:
+      bool   isLog () const;
       bool   isAuto() const;
       double loEdge() const;
       double hiEdge() const;
@@ -29,6 +30,7 @@ namespace Ami {
       void changeLoEdge(const QString&);
       void changeHiEdge(const QString&);
       void auto_scale(bool);
+      void log_scale (bool);
       void updateInfo();
     signals:
       void windowChanged();
@@ -38,6 +40,7 @@ namespace Ami {
       QLineEdit*      _loBox;
       QLineEdit*      _hiBox;
       QPushButton*    _autoB;
+      QPushButton*    _logB;
     };
   };
 };

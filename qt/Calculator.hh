@@ -31,6 +31,7 @@ namespace Ami {
       void clear();
       void clearAll();
       void variableClicked();
+      void variableClicked(const QString&);
       void varvarClicked();
       void varconClicked();
 

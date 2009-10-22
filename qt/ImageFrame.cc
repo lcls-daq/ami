@@ -35,8 +35,8 @@ ImageFrame::ImageFrame(QWidget* parent,
   _control(control),
   _canvas(new QLabel),
   _qimage(0),
-  _c(0),
-  _xyscale(false)
+  _xyscale(false),
+  _c(0)
 {
   unsigned sz = 512 + 4;
   _canvas->setMinimumSize(sz,sz);

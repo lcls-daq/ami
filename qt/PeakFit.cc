@@ -2,6 +2,7 @@
 
 #include "ami/qt/DescTH1F.hh"
 #include "ami/qt/DescProf.hh"
+#include "ami/qt/DescScan.hh"
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
@@ -14,6 +15,7 @@
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
+#include "ami/data/DescScan.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/PeakFitPlot.hh"
@@ -42,7 +44,7 @@
 //#define bold(t) "<b>" #t "</b>"
 #define bold(t) #t
 
-enum { _TH1F, _vT, _vF };
+enum { _TH1F, _vT, _vF, _vS };
 
 
 using namespace Ami::Qt;
@@ -53,8 +55,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
-  _title    (new QLineEdit("Peak plot")),
-  _features (new QComboBox)
+  _title    (new QLineEdit("Peak plot"))
 {
   setWindowTitle("PeakFit Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -62,8 +63,6 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   QComboBox* channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
-
-  _features->addItems(FeatureRegistry::instance().names());
 
   _baseline  = new EdgeCursor("baseline" ,*_frame.plot());
 
@@ -74,13 +73,15 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   qtyBox->addItems(q);
 
   _hist   = new DescTH1F (bold(Sum (1dH)));
-  _vTime  = new DescChart(bold(Sum v Time),0.2);
-  _vFeature = new DescProf (bold(Sum v Var),_features);
+  _vTime  = new DescChart(bold(Mean v Time),0.2);
+  _vFeature = new DescProf (bold(Mean v Var) );
+  _vScan    = new DescScan (bold(Mean v Scan));
 
   _plot_grp = new QButtonGroup;
   _plot_grp->addButton(_hist    ->button(),_TH1F);
   _plot_grp->addButton(_vTime   ->button(),_vT);
   _plot_grp->addButton(_vFeature->button(),_vF);
+  _plot_grp->addButton(_vScan   ->button(),_vS);
   _hist->button()->setChecked(true);
 
   QPushButton* plotB  = new QPushButton("Plot");
@@ -118,6 +119,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
     layout1->addWidget(_hist );
     layout1->addWidget(_vTime);
     layout1->addWidget(_vFeature);
+    layout1->addWidget(_vScan);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -132,7 +134,6 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(qtyBox    , SIGNAL(activated(int)), this, SLOT(set_quantity(int)));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
 
   set_quantity(0);
 }
@@ -150,6 +151,7 @@ void PeakFit::save(char*& p) const
   _hist->save(p);
   _vTime->save(p);
   _vFeature->save(p);
+  _vScan->save(p);
 
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     QtPersistent::insert(p,QString("PeakFitPlot"));
@@ -167,6 +169,7 @@ void PeakFit::load(const char*& p)
   _hist->load(p);
   _vTime->load(p);
   _vFeature->load(p);
+  _vScan->load(p);
 
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
@@ -218,6 +221,7 @@ void PeakFit::plot()
 {
   DescEntry* desc;
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
+  QString feature;
   switch(_plot_grp->checkedId()) {
   case _TH1F:
     desc = new Ami::DescTH1F(qPrintable(_title->text()),
@@ -230,8 +234,14 @@ void PeakFit::plot()
     break;
   case _vF:
     desc = new Ami::DescProf(qPrintable(_title->text()),
-			     qPrintable(_vFeature->variable()),name,
+			     qPrintable(_vFeature->expr()),name,
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
+    feature = _vFeature->feature();
+    break;
+  case _vS:
+    desc = new Ami::DescScan(qPrintable(_title->text()),
+			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
+    feature = _vScan->feature();
     break;
   default:
     desc = 0;
@@ -242,8 +252,8 @@ void PeakFit::plot()
 				      _title->text(),
 				      _channel,
 				      new Ami::PeakFitPlot(*desc,_baseline->value(),
-							   (Ami::PeakFitPlot::Parameter)_quantity,
-							   FeatureRegistry::instance().index(_vFeature->variable())));
+							   (Ami::PeakFitPlot::Parameter)_quantity,qPrintable(feature)));
+							   
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
@@ -259,9 +269,3 @@ void PeakFit::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
-void PeakFit::change_features()
-{
-  _features->clear();
-  _features->addItems(FeatureRegistry::instance().names());
-  _features->setCurrentIndex(0);
-}

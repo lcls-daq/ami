@@ -6,7 +6,7 @@
 namespace Ami {
   class FeatureCache {
   public:
-    enum { FEATURE_NAMELEN=32 };
+    enum { FEATURE_NAMELEN=48 };
     FeatureCache();
     ~FeatureCache();
   public:

@@ -8,6 +8,7 @@ class QLabel;
 namespace Ami {
   namespace Qt {
     class Status : public QWidget {
+      Q_OBJECT
     public:
       Status();
       ~Status();
@@ -22,6 +23,10 @@ namespace Ami {
 		   Processed };
       void set_state(State);
       State state() const { return _state; }
+    public slots:
+      void update_state();
+    signals:
+      void state_changed();
     private:
       State   _state;
       QLabel* _label;

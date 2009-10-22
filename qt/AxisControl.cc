@@ -21,6 +21,7 @@ AxisControl::AxisControl(QWidget* parent,
   setAlignment(::Qt::AlignHCenter);
 
   _autoB = new QPushButton("Auto"); 
+  _logB  = new QPushButton("Log Scale"); 
   _loBox = new QLineEdit("0");
   _hiBox = new QLineEdit("1000");
   _loBox->setMaximumWidth(60);
@@ -35,15 +36,21 @@ AxisControl::AxisControl(QWidget* parent,
     layout1->addWidget(_autoB);
     layout1->addStretch();
     layout1->addWidget(_hiBox);
+    layout1->addStretch();
+    layout1->addWidget(_logB);
     layout->addLayout(layout1); }
   setLayout(layout);
 
   connect(_loBox , SIGNAL(textEdited(const QString&)), this, SLOT(changeLoEdge(const QString&)));
   connect(_hiBox , SIGNAL(textEdited(const QString&)), this, SLOT(changeHiEdge(const QString&)));
   connect(_autoB , SIGNAL(clicked(bool)), this, SLOT(auto_scale(bool)));
+  connect(_logB  , SIGNAL(clicked(bool)), this, SLOT(log_scale(bool)));
 
   _autoB->setCheckable(true);   // initialize with auto scale
   _autoB->setChecked  (true);
+
+  _logB->setCheckable(true);
+  _logB->setChecked  (false);
 }   
 
 AxisControl::~AxisControl()
@@ -55,6 +62,7 @@ void AxisControl::save(char*& p) const
   QtPersistent::insert(p,_loBox->text());
   QtPersistent::insert(p,_hiBox->text());
   QtPersistent::insert(p,_autoB->isChecked());
+  QtPersistent::insert(p,_logB ->isChecked());
 }
 
 void AxisControl::load(const char*& p)
@@ -65,6 +73,8 @@ void AxisControl::load(const char*& p)
   _hiBox->setText(t=QtPersistent::extract_s(p));
   _autoB->setChecked(b=QtPersistent::extract_b(p));
   auto_scale(b);
+  _logB ->setChecked(b=QtPersistent::extract_b(p));
+  log_scale(b);
 }
 
 void   AxisControl::update(const AxisInfo& info) 
@@ -74,10 +84,19 @@ void   AxisControl::update(const AxisInfo& info)
 }
 
 bool   AxisControl::isAuto() const { return _autoB->isChecked(); }
+bool   AxisControl::isLog () const { return _logB ->isChecked(); }
 
-double AxisControl::loEdge() const { return _loBox->text().toDouble(); }
+double AxisControl::loEdge() const {
+  double v = _loBox->text().toDouble(); 
+  if (isLog() && v<=0) v = 0.5;
+  return v;
+}
 
-double AxisControl::hiEdge() const { return _hiBox->text().toDouble(); }
+double AxisControl::hiEdge() const {
+  double v = _hiBox->text().toDouble(); 
+  if (isLog() && v<=0) v = 5.0;
+  return v;
+}
 
 // loBox was edited
 void AxisControl::changeLoEdge(const QString& t)
@@ -93,8 +112,11 @@ void AxisControl::changeHiEdge(const QString& t)
 
 void AxisControl::auto_scale(bool l)
 {
-//   _loBox ->setEnabled(!l);
-//   _hiBox ->setEnabled(!l);
+  emit windowChanged();
+}
+
+void AxisControl::log_scale(bool l)
+{
   emit windowChanged();
 }
 

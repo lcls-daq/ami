@@ -1,7 +1,7 @@
 #ifndef AmiQt_CursorPlot_hh
 #define AmiQt_CursorPlot_hh
 
-#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtPlot.hh"
 
 #include <QtCore/QString>
 
@@ -9,8 +9,6 @@
 #include "ami/data/ConfigureRequest.hh"
 
 #include <list>
-
-class QwtPlot;
 
 namespace Ami {
   class Cds;
@@ -20,7 +18,7 @@ namespace Ami {
     class ChannelDefinition;
     class CursorDefinition;
     class QtBase;
-    class CursorPlot : public QtPWidget {
+    class CursorPlot : public QtPlot {
       Q_OBJECT
     public:
       CursorPlot(QWidget*       parent,
@@ -39,21 +37,12 @@ namespace Ami {
 		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
-    signals:
-      void redraw();
-    public slots:
-      void save_data();
-      void set_plot_title();
-      void set_xaxis_title();
-      void set_yaxis_title();
     private:
-      QString    _name;
-      unsigned   _channel;
-      BinMath*   _input;
-      
+      void _dump(FILE*) const;
+    private:
+      unsigned _channel;
+      BinMath* _input;
       unsigned _output_signature;
-
-      QwtPlot* _frame;
       QtBase*  _plot;
     };
   };

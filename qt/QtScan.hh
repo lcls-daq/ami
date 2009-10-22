@@ -1,5 +1,5 @@
-#ifndef AmiQt_QtProf_hh
-#define AmiQt_QtProf_hh
+#ifndef AmiQt_QtScan_hh
+#define AmiQt_QtScan_hh
 
 #include "ami/qt/QtBase.hh"
 
@@ -8,17 +8,17 @@ class QwtPlot;
 class QColor;
 
 namespace Ami {
-  class EntryProf;
+  class EntryScan;
   class AbsTransform;
   namespace Qt {
-    class QtProf : public QtBase {
+    class QtScan : public QtBase {
     public:
-      QtProf(const QString&   title,
-	     const Ami::EntryProf&,
+      QtScan(const QString&   title,
+	     const Ami::EntryScan&,
 	     const AbsTransform& x,
 	     const AbsTransform& y,
 	     const QColor&);
-      ~QtProf();
+      ~QtScan();
     public:
       void        dump  (FILE*   ) const;
       void        attach(QwtPlot*);
@@ -26,7 +26,6 @@ namespace Ami {
       void        xscale_update() ;
       void        yscale_update() ;
       const AxisInfo* xinfo() const;
-      double      normalization() const;
     private:
       const AbsTransform&     _xscale;
       const AbsTransform&     _yscale;

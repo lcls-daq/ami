@@ -65,10 +65,11 @@ void AnalysisFactory::configure(unsigned       id,
     const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
     const Entry& input = *input_cds.entry(req.input());
     const char*  p     = reinterpret_cast<const char*>(&req+1);
-    _analyses.push_back(new Analysis(id, input, req.output(),
-				     cds, _features, p));
-
+    Analysis* a = new Analysis(id, input, req.output(),
+			       cds, _features, p);
+    _analyses.push_back(a);
     payload += req.size();
+    printf("Added new analysis %p\n",a);
   }
 
   _configured.give();

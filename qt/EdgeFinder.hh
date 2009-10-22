@@ -27,8 +27,6 @@ namespace Ami {
     class EdgeCursor;
     class EdgePlot;
     class DescTH1F;
-    class DescProf;
-    class DescChart;
     class WaveformDisplay;
 
     class EdgeFinder : public QtPWidget {

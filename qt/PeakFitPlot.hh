@@ -1,7 +1,7 @@
 #ifndef AmiQt_PeakFitPlot_hh
 #define AmiQt_PeakFitPlot_hh
 
-#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtPlot.hh"
 
 #include <QtCore/QString>
 
@@ -19,7 +19,7 @@ namespace Ami {
     class AxisInfo;
     class ChannelDefinition;
     class QtBase;
-    class PeakFitPlot : public QtPWidget {
+    class PeakFitPlot : public QtPlot {
       Q_OBJECT
     public:
       PeakFitPlot(QWidget*       parent,
@@ -38,21 +38,14 @@ namespace Ami {
 		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
-    signals:
-      void redraw();
-    public slots:
-      void save_data();
-      void set_plot_title();
-      void set_xaxis_title();
-      void set_yaxis_title();
     private:
-      QString    _name;
+      void _dump(FILE*) const;
+    private:
       unsigned   _channel;
       Ami::PeakFitPlot* _input;
       
       unsigned _output_signature;
 
-      QwtPlot* _frame;
       QtBase*  _plot;
     };
   };
