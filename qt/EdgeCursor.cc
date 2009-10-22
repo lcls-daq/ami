@@ -33,10 +33,10 @@ EdgeCursor::EdgeCursor(const QString& name,
   layout->addWidget(_showB);
   setLayout(layout);
 
-  connect(_input, SIGNAL(returnPressed()), this, SLOT(set_value()));
-  connect(grabB , SIGNAL(clicked())      , this, SLOT(grab()));
-  connect(_showB, SIGNAL(clicked(bool))  , this, SLOT(show_in_plot(bool)));
-  connect(this  , SIGNAL(changed())      , &frame, SLOT(replot()));
+  connect(_input, SIGNAL(editingFinished()), this, SLOT(set_value()));
+  connect(grabB , SIGNAL(clicked())        , this, SLOT(grab()));
+  connect(_showB, SIGNAL(clicked(bool))    , this, SLOT(show_in_plot(bool)));
+  connect(this  , SIGNAL(changed())        , &frame, SLOT(replot()));
 }
 
 EdgeCursor::~EdgeCursor()
