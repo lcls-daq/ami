@@ -7,12 +7,14 @@ class QWidget;
 
 namespace Ami {
   class AbsTransform;
+  class DescEntry;
   namespace Qt {
     class QtBase;
     class Display : public QtPersistent {
     public:
       virtual ~Display() {}
     public:
+      virtual void prototype(const Ami::DescEntry*) = 0;
       virtual void add   (QtBase*) = 0;
       virtual void reset () = 0;
       virtual void show  (QtBase*) = 0;

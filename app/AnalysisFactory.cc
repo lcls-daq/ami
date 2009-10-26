@@ -17,6 +17,7 @@ AnalysisFactory::AnalysisFactory(FeatureCache& cache,
   _srv       (srv),
   _cds       ("Analysis"),
   _configured(Semaphore::EMPTY),
+  _sem       (Semaphore::FULL),
   _features  (cache)
 {
 }
@@ -34,9 +35,14 @@ Cds& AnalysisFactory::discovery() { return _cds; }
 //
 void AnalysisFactory::discover () 
 {
-  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++)
-    delete *it;
+  _sem.take();
+  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
+    Analysis* an = *it;
+    printf("AF delete %p\n",an);
+    delete an;
+  }
   _analyses.clear();
+  _sem.give();
   _srv.discover(); 
 }
 
@@ -46,12 +52,15 @@ void AnalysisFactory::configure(unsigned       id,
 				Cds&           cds)
 {
   printf("configure\n");
-  
+
+  _sem.take();
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
-    if (a->id() == id)
+    if (a->id() == id) {
+      printf("AF delete %p\n",a);
       delete a;
+    }
     else
       newlist.push_back(a);
   }
@@ -67,19 +76,23 @@ void AnalysisFactory::configure(unsigned       id,
     const char*  p     = reinterpret_cast<const char*>(&req+1);
     Analysis* a = new Analysis(id, input, req.output(),
 			       cds, _features, p);
+    printf("AF create %p\n",a);
     _analyses.push_back(a);
     payload += req.size();
     printf("Added new analysis %p\n",a);
   }
+  _sem.give();
 
   _configured.give();
 }
 
 void AnalysisFactory::analyze  ()
 {
+  _sem.take();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }
+  _sem.give();
 }
 
 void AnalysisFactory::wait_for_configure() { _configured.take(); }

@@ -81,7 +81,7 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
   _expr     (new QLineEdit("1")),
   _title    (new QLineEdit("Cursor plot"))
 {
-  _names << "a" << "b" << "c" << "d" << "f" << "g";
+  _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
   _expr->setReadOnly(true);
 

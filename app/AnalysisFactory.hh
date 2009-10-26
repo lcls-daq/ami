@@ -33,6 +33,7 @@ namespace Ami {
     typedef std::list<Analysis*> AnList;
     AnList    _analyses;
     Semaphore _configured;
+    Semaphore _sem;
     FeatureCache& _features;
   };
 

@@ -72,6 +72,7 @@ libsrcs_amiqt += DescChart.cc DescChart_moc.cc
 libsrcs_amiqt += QtPersistent.cc
 libsrcs_amiqt += ChannelDefinition.cc ChannelDefinition_moc.cc
 libsrcs_amiqt += AxisArray.cc
+libsrcs_amiqt += AxisBins.cc
 libsrcs_amiqt += AxisControl.cc AxisControl_moc.cc
 libsrcs_amiqt += Control.cc Control_moc.cc
 libsrcs_amiqt += TransformConstant.cc TransformConstant_moc.cc

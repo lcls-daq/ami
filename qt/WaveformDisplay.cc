@@ -1,7 +1,7 @@
 #include "WaveformDisplay.hh"
 
 #include "ami/qt/QtBase.hh"
-#include "ami/qt/AxisArray.hh"
+#include "ami/qt/AxisBins.hh"
 #include "ami/qt/AxisControl.hh"
 #include "ami/qt/Transform.hh"
 #include "ami/qt/Cursors.hh"
@@ -10,6 +10,8 @@
 #include "ami/qt/PrintAction.hh"
 
 #include "ami/data/DescEntry.hh"
+#include "ami/data/DescTH1F.hh"
+#include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 
 #include <QtGui/QMenuBar>
@@ -41,7 +43,8 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
   _plot->setAxisScaleEngine(QwtPlot::yLeft  , new QwtLinearScaleEngine);
 
-  _xinfo = 0;
+  _xbins = new AxisBins(0,1000,10);
+  _xinfo = _xbins;
   _yinfo = 0;
 
   _xrange = new AxisControl(this,"X");
@@ -88,6 +91,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
 
 Ami::Qt::WaveformDisplay::~WaveformDisplay()
 {
+  delete _xbins;
 }
 
 void Ami::Qt::WaveformDisplay::save(char*& p) const
@@ -189,10 +193,27 @@ void Ami::Qt::WaveformDisplay::save_reference()
   }
 }
 	  
+void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
+{
+  switch(e->type()) {
+  case Ami::DescEntry::TH1F:
+    { const Ami::DescTH1F& d = *static_cast<const Ami::DescTH1F*>(e);
+      _xbins->update(d.xlow(),d.xup(),d.nbins());
+      break; }
+  case Ami::DescEntry::Waveform:
+    { const Ami::DescWaveform& d = *static_cast<const Ami::DescWaveform*>(e);
+      _xbins->update(d.xlow(),d.xup(),d.nbins());
+      break; }
+  default:
+    break;
+  }
+
+  _xrange->update(*_xinfo);
+}
+
 void Ami::Qt::WaveformDisplay::add   (QtBase* b) 
 {
   _xrange->update(*(_xinfo = b->xinfo()));
-
   _curves.push_back(b);
   b->xscale_update();
   b->update();

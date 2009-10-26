@@ -7,8 +7,10 @@
 #include <list>
 
 namespace Ami {
+  class DescEntry;
   namespace Qt {
     class AxisInfo;
+    class AxisBins;
     class AxisControl;
     class Transform;
     class PlotFrame;
@@ -22,6 +24,7 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      void prototype(const Ami::DescEntry*);
       void add   (QtBase*);
       void reset ();
       void show  (QtBase*);
@@ -48,6 +51,7 @@ namespace Ami {
       Transform*   _xtransform;
       AxisControl* _xrange;
       AxisControl* _yrange;
+      AxisBins* _xbins;
       const AxisInfo* _xinfo;
       const AxisInfo* _yinfo;
       std::list<QtBase*>  _curves;

@@ -172,6 +172,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
     printf("Test %s\n",e->name());
     if (strcmp(e->name(),channel_name)==0) {
       _input_entry = e;
+      _frame->prototype(e);
     }
   }
 
