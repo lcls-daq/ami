@@ -34,6 +34,8 @@ namespace Ami {
       bool canOverlay() const { return true; }
       QWidget* widget() { return this; }
     public:
+      void save_plots(const QString&) const;
+    public:
       const std::list<QtBase*> plots() const;
       const AxisInfo&     xinfo     () const;
       PlotFrame*          plot      () const;

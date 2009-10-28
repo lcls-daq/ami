@@ -128,6 +128,22 @@ void Ami::Qt::WaveformDisplay::save_image()
   }
 }
 
+void Ami::Qt::WaveformDisplay::save_plots(const QString& p) const
+{
+  QString fname = QString("%1.dat").arg(p);
+  FILE* f = fopen(qPrintable(fname),"w");
+  if (!f)
+    QMessageBox::warning(0, "Save data",
+			 QString("Error opening %1 for writing").arg(fname));
+  else {
+    for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) {
+      (*it)->dump(f);
+      fprintf(f,"\n");
+    }
+    fclose(f);
+  }
+}
+
 void Ami::Qt::WaveformDisplay::save_data()
 {
   if (!_curves.size())
@@ -139,25 +155,14 @@ void Ami::Qt::WaveformDisplay::save_data()
     time_t seq_tm = time(NULL);
     strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
 
-    QString def("ami");
-    def += "_";
-    def += time_buffer;
-    def += ".dat";
+    QString def = QString("%1/%2.dat").arg(Path::base()).arg(time_buffer);
     QString fname =
       QFileDialog::getSaveFileName(this,"Save File As (.dat)",
-				   def,".dat");
+				   def,"*.dat");
     if (!fname.isNull()) {
-      FILE* f = fopen(qPrintable(fname),"w");
-      if (!f)
-	QMessageBox::warning(this, "Save data",
-			     QString("Error opening %1 for writing").arg(fname));
-      else {
-	for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) {
-	  (*it)->dump(f);
-	  fprintf(f,"\n");
-	}
-	fclose(f);
-      }
+      if (fname.endsWith(".dat"))
+	fname.remove(fname.size()-5);
+      save_plots(fname);
     }
   }
 }

@@ -63,6 +63,7 @@ namespace Ami {
     protected:
       void              addWidget(QWidget*);
       Ami::Qt::Display& display  ();
+      const Ami::Qt::Display& display  () const;
     private:
       virtual void _configure(char*& p, 
 			      unsigned input, 

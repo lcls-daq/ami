@@ -54,6 +54,8 @@ void WaveformClient::load(const char*& p)
 
 void WaveformClient::save_plots(const QString& p) const
 {
+  const WaveformDisplay& wd = static_cast<const WaveformDisplay&>(display());
+  wd.save_plots(p);
   _edges  ->save_plots(p+"_edge");
   _cursors->save_plots(p+"_cursor");
 }

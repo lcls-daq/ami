@@ -149,6 +149,8 @@ void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }
 
 Ami::Qt::Display& Ami::Qt::Client::display() { return *_frame; }
 
+const Ami::Qt::Display& Ami::Qt::Client::display() const { return *_frame; }
+
 void Ami::Qt::Client::connected()
 {
   _status->set_state(Status::Connected);
