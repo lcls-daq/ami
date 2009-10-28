@@ -1,10 +1,13 @@
 #include "DetectorSelect.hh"
 
-#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtTopWidget.hh"
 #include "ami/qt/WaveformClient.hh"
 #include "ami/qt/ImageClient.hh"
 #include "ami/qt/EnvClient.hh"
+#include "ami/qt/Path.hh"
 #include "ami/qt/PrintAction.hh"
+#include "ami/qt/DetectorSave.hh"
+#include "ami/qt/DetectorReset.hh"
 #include "ami/client/VClientManager.hh"
 
 #include <QtGui/QGridLayout>
@@ -32,11 +35,13 @@ static const int MaxConfigSize = 0x100000;
 DetectorSelect::DetectorSelect(const QString& label,
 			       unsigned interface,
 			       unsigned serverGroup) :
-  QWidget     (0),
+  QtPWidget   (0),
   _interface  (interface),
   _serverGroup(serverGroup),
-  _client     (new QtPWidget*[MaxClients]),
-  _restore    (0)
+  _client     (new QtTopWidget*[MaxClients]),
+  _restore    (0),
+  _reset_box  (new DetectorReset(this, _client, names, MaxClients)),
+  _save_box   (new DetectorSave (this, _client, names, MaxClients))
 {
   for(unsigned k=0; k<MaxClients; k++)
     _client[k] = 0;
@@ -58,14 +63,17 @@ DetectorSelect::DetectorSelect(const QString& label,
     QPushButton* printB = new QPushButton("Printer");
     layout->addWidget(saveB);
     layout->addWidget(loadB);
-    layout->addWidget(printB);
-    connect(saveB , SIGNAL(clicked()), this, SLOT(save()));
-    connect(loadB , SIGNAL(clicked()), this, SLOT(load()));
+    //    layout->addWidget(printB);
+    connect(saveB , SIGNAL(clicked()), this, SLOT(save_setup()));
+    connect(loadB , SIGNAL(clicked()), this, SLOT(load_setup()));
     connect(printB, SIGNAL(clicked()), this, SLOT(print_setup()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
     QVBoxLayout* layout = new QVBoxLayout;
+    
+    QPushButton* resetB = new QPushButton("Reset Plots");
+    QPushButton* saveB  = new QPushButton("Save Plots");
 
     QPushButton* imsB  = new QPushButton(names[Ims]);
     QPushButton* itofB = new QPushButton(names[Itof]);
@@ -84,6 +92,9 @@ DetectorSelect::DetectorSelect(const QString& label,
     QPushButton* vmiB  = new QPushButton(names[Vmi]);
     QPushButton* envB  = new QPushButton(names[Env]);
   
+    layout->addWidget(resetB);
+    layout->addWidget(saveB);
+
     layout->addWidget(gdB  );
     layout->addWidget(imsB );
     layout->addWidget(itofB);
@@ -92,6 +103,9 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(bpsB );
     layout->addWidget(vmiB );
     layout->addWidget(envB );
+
+    connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
+    connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 
     connect(gdB   , SIGNAL(activated(int)), this, SLOT(start_gd(int)));
     connect(imsB  , SIGNAL(clicked()), this, SLOT(start_ims()));
@@ -114,10 +128,11 @@ DetectorSelect::~DetectorSelect()
       delete _client[k];
 }
 
-void DetectorSelect::save       ()
+void DetectorSelect::save_setup ()
 {
   char* buffer = new char[MaxConfigSize];
   char* p = buffer;
+
   for(unsigned i=0; i<MaxClients; i++)
     if (_client[i]) {
       QtPersistent::insert(p,QString("DetectorSelect"));
@@ -125,16 +140,19 @@ void DetectorSelect::save       ()
       _client[i]->save(p);
     }
   QtPersistent::insert(p,QString("EndDetectorSelect"));
-  
+
+  save(p);
+  _save_box ->save(p);
+  _reset_box->save(p);
+
   char time_buffer[32];
   time_t seq_tm = time(NULL);
   strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
 
-  QString def(time_buffer);
-  def += ".ami";
+  QString def = QString("%1/%2.ami").arg(Path::base()).arg(time_buffer);
   QString fname =     
     QFileDialog::getSaveFileName(this,"Save Setup to File (.ami)",
-                                 def,".ami");
+                                 def,"*.ami");
   FILE* o = fopen(qPrintable(fname),"w");
   if (o) {
     fwrite(buffer,p-buffer,1,o);
@@ -162,11 +180,11 @@ void DetectorSelect::save       ()
 				  Pds::DetInfo(0,Pds::DetInfo::det,	\
 					       0,Pds::DetInfo::Acqiris,0),0);
 
-void DetectorSelect::load       ()
+void DetectorSelect::load_setup ()
 {
   // get the file 
   QString fname = QFileDialog::getOpenFileName(this,"Load Setup from File (.ami)",
-					       ".", "*.ami");
+					       Path::base(), "*.ami");
 
   FILE* f = fopen(qPrintable(fname),"r");
   if (!f) {
@@ -181,11 +199,10 @@ void DetectorSelect::load       ()
 
   const char* p   = buffer;
 
+  // parse the input
   //
   //  Create the clients, if necessary, load them, and connect
   //
-
-  // parse the input
   QString name = QtPersistent::extract_s(p);
   while(name==QString("DetectorSelect")) {
     name=QtPersistent::extract_s(p);
@@ -242,10 +259,17 @@ void DetectorSelect::load       ()
 	  default:
 	    break;
 	  }
+	  _save_box ->enable(i);
+	  _reset_box->enable(i);
 	}
       }
     name=QtPersistent::extract_s(p);
   }
+
+  load(p);
+  _save_box ->load(p);
+  _reset_box->load(p);
+
   delete[] buffer;
 }
 
@@ -254,6 +278,16 @@ void DetectorSelect::print_setup()
   QPrintDialog* d = new QPrintDialog(PrintAction::printer(),this);
   d->exec();
   delete d;
+}
+
+void DetectorSelect::reset_plots()
+{
+  _reset_box->show();
+}
+
+void DetectorSelect::save_plots()
+{
+  _save_box->show();
 }
 
 void DetectorSelect::start_gd   (int channel) { start_waveform_client(Pds::DetInfo::AmoGasdet,channel,Gd+channel); }
@@ -281,6 +315,8 @@ void DetectorSelect::start_waveform_client(Pds::DetInfo::Detector det,
     client->managed(*manager);
     _client[i] = client;
     printf("wf client @ %d,%d\n",_client[i]->pos().x(),_client[i]->pos().y());
+    _save_box ->enable(i);
+    _reset_box->enable(i);
   }
 }
 
@@ -298,6 +334,8 @@ void DetectorSelect::start_image_client(Pds::DetInfo::Detector det,
 						 *client);
     client->managed(*manager);
     _client[i] = client;
+    _save_box ->enable(i);
+    _reset_box->enable(i);
   }
 }
 
@@ -314,6 +352,8 @@ void DetectorSelect::start_bps  (int channel)
 						 *client);
     client->managed(*manager);
     _client[i] = client;
+    _save_box ->enable(i);
+    _reset_box->enable(i);
   }
 }
 
@@ -328,6 +368,8 @@ void DetectorSelect::start_features_client(unsigned i)
 						 *client);
     client->managed(*manager);
     _client[i] = client;
+    _save_box ->enable(i);
+    _reset_box->enable(i);
   }
 }
 

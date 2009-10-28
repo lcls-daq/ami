@@ -52,6 +52,12 @@ void WaveformClient::load(const char*& p)
   connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
+void WaveformClient::save_plots(const QString& p) const
+{
+  _edges  ->save_plots(p+"_edge");
+  _cursors->save_plots(p+"_cursor");
+}
+
 void WaveformClient::_configure(char*& p, 
 				unsigned input, 
 				unsigned& output,

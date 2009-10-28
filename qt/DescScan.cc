@@ -1,6 +1,6 @@
 #include "DescScan.hh"
 #include "ami/qt/QtPersistent.hh"
-#include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/FeatureBox.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
@@ -16,8 +16,7 @@ DescScan::DescScan(const char* name) :
   QWidget(0), _button(new QRadioButton(name)),
   _bins(new QLineEdit("200"))
 {
-  _features = new QComboBox;
-  _features->addItems(FeatureRegistry::instance().names());
+  _features = new FeatureBox;
 
   _bins->setMaximumWidth(60);
   new QIntValidator   (_bins);
@@ -31,30 +30,22 @@ DescScan::DescScan(const char* name) :
     layout->addWidget(_bins);
     layout1->addLayout(layout); }
   setLayout(layout1);
-
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
 }
 
 QRadioButton* DescScan::button() { return _button; }
-QString  DescScan::expr() const { return _features->currentText(); }
-QString  DescScan::feature() const { return QString("[%1]").arg(FeatureRegistry::instance().index(_features->currentText())); }
+QString  DescScan::expr() const { return _features->entry(); }
+QString  DescScan::feature() const { return _features->entry(); }
 unsigned DescScan::bins() const { return _bins->text().toInt(); }
 
 void DescScan::save(char*& p) const
 {
-  QtPersistent::insert(p,_features->currentIndex());
+  _features->save(p);
   QtPersistent::insert(p,_bins->text());
 }
 
 void DescScan::load(const char*& p)
 {
-  _features->setCurrentIndex(QtPersistent::extract_i(p));
+  _features->load(p);
   _bins->setText(QtPersistent::extract_s(p));
 }
 
-void DescScan::change_features()
-{
-  _features->clear();
-  _features->addItems(FeatureRegistry::instance().names());
-  _features->setCurrentIndex(0);
-}

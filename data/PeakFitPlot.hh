@@ -25,8 +25,7 @@ namespace Ami {
     //    the BLD/PV, and any BLD/PV dependence for profiles.
     PeakFitPlot(const DescEntry& output,
 		double    baseline,
-		Parameter prm,
-		const char* feature);
+		Parameter prm);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     PeakFitPlot(const char*&, FeatureCache&);
@@ -45,8 +44,6 @@ namespace Ami {
     char             _desc_buffer[DESC_LEN];
     double           _baseline;
     Parameter        _prm;
-    enum { FEATURE_LEN = 256 };
-    char             _feature[FEATURE_LEN];
 
     FeatureCache* _cache;
     Term*         _term;

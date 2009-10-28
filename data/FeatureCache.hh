@@ -12,11 +12,12 @@ namespace Ami {
   public:
     void     clear();
     unsigned add(const char* name);
+    int      lookup(const char* name) const;
   public:
     unsigned    entries() const;
     const char* names  () const;
-    double      cache  (unsigned index, bool* damaged=0) const;
-    void        cache  (unsigned index, double, bool damaged=0);
+    double      cache  (int index, bool* damaged=0) const;
+    void        cache  (int index, double, bool damaged=0);
   private:
     unsigned  _entries;
     unsigned  _max_entries;

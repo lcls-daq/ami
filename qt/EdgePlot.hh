@@ -35,8 +35,7 @@ namespace Ami {
 		     const AxisInfo&);
       void setup_payload(Cds&);
       void update();
-    private:
-      void _dump(FILE*) const;
+      void dump(FILE*) const;
     private:
       unsigned    _channel;
       Ami::EdgeFinder* _finder;

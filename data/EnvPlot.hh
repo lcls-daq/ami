@@ -21,30 +21,24 @@ namespace Ami {
   public:
     //  Defined by the output entry's description,
     //    the BLD/PV, and any BLD/PV dependence for profiles.
-    EnvPlot(const DescEntry& output,
-	    unsigned input,
-	    const char* feature);
+    EnvPlot(const DescEntry& output);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     EnvPlot(const char*&, FeatureCache&, const Cds&);
     ~EnvPlot();
   public:
     DescEntry& output   () const;
-    unsigned   input    () const;
-    const char* feature() const;
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
   private:
     enum { DESC_LEN = 1024 };
     char             _desc_buffer[DESC_LEN];
-    unsigned         _input;
-    enum { FEATURE_LEN = 256 };
-    char             _feature[FEATURE_LEN];
 
     FeatureCache* _cache;
     Term*         _term;
     Entry*        _entry;
+    int           _input;
   };
 
 };

@@ -161,7 +161,7 @@ void Filter::load(const char*& p)
 				   .arg(lo)
 				   .arg(variable)
 				   .arg(hi),
-				   new FeatureRange(index,lo,hi));
+				   new FeatureRange(variable,lo,hi));
       _conditions.push_back(c);
       _clayout->addWidget(c);
       connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
@@ -186,7 +186,7 @@ void Filter::add  ()
 				.arg(_lo_rng->text())
 				.arg(_features->currentText())
 				.arg(_hi_rng->text()),
-				new FeatureRange(_features->currentIndex(),
+				new FeatureRange(qPrintable(_features->currentText()),
 						 _lo_rng->text().toDouble(),
 						 _hi_rng->text().toDouble()));
   _conditions.push_back(c);

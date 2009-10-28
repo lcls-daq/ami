@@ -8,7 +8,6 @@
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/PeakFitPlot.hh"
 #include "ami/qt/WaveformDisplay.hh"
-#include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 
@@ -221,7 +220,6 @@ void PeakFit::plot()
 {
   DescEntry* desc;
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
-  QString feature;
   switch(_plot_grp->checkedId()) {
   case _TH1F:
     desc = new Ami::DescTH1F(qPrintable(_title->text()),
@@ -236,12 +234,10 @@ void PeakFit::plot()
     desc = new Ami::DescProf(qPrintable(_title->text()),
 			     qPrintable(_vFeature->expr()),name,
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    feature = _vFeature->feature();
     break;
   case _vS:
     desc = new Ami::DescScan(qPrintable(_title->text()),
 			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
-    feature = _vScan->feature();
     break;
   default:
     desc = 0;
@@ -252,7 +248,7 @@ void PeakFit::plot()
 				      _title->text(),
 				      _channel,
 				      new Ami::PeakFitPlot(*desc,_baseline->value(),
-							   (Ami::PeakFitPlot::Parameter)_quantity,qPrintable(feature)));
+							   (Ami::PeakFitPlot::Parameter)_quantity));
 							   
   _plots.push_back(plot);
 

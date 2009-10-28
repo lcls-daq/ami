@@ -52,8 +52,7 @@ using namespace Ami;
 
 PeakFitPlot::PeakFitPlot(const DescEntry& output, 
 			 double    baseline,
-			 Parameter prm,
-			 const char* feature) :
+			 Parameter prm) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _baseline  (baseline),
   _prm       (prm),
@@ -61,7 +60,6 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _entry     (0)
 {
   memcpy (_desc_buffer, &output, output.size());
-  strncpy(_feature, feature, FEATURE_LEN);
 }
 
 PeakFitPlot::PeakFitPlot(const char*& p, FeatureCache& features) :
@@ -71,17 +69,19 @@ PeakFitPlot::PeakFitPlot(const char*& p, FeatureCache& features) :
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_baseline  , sizeof(_baseline));
   _extract(p, &_prm  , sizeof(_prm  ));
-  _extract(p, _feature , FEATURE_LEN);
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
   _entry = EntryFactory::entry(o);
 
-  QString expr(_feature);
-  FeatureExpression parser;
-  _term = parser.evaluate(features,expr);
-  if (!_term)
-    printf("PeakFitPlot failed to parse %s\n",qPrintable(expr));
+  if (o.type()==DescEntry::Prof ||
+      o.type()==DescEntry::Scan) {
+    QString expr(o.xtitle());
+    FeatureExpression parser;
+    _term = parser.evaluate(features,expr);
+    if (!_term)
+      printf("PeakFitPlot failed to parse %s\n",qPrintable(expr));
+  }
 }
 
 PeakFitPlot::PeakFitPlot(const char*& p) :
@@ -91,7 +91,6 @@ PeakFitPlot::PeakFitPlot(const char*& p) :
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_baseline  , sizeof(_baseline));
   _extract(p, &_prm  , sizeof(_prm  ));
-  _extract(p, _feature , FEATURE_LEN);
 }
 
 PeakFitPlot::~PeakFitPlot()
@@ -107,14 +106,11 @@ DescEntry& PeakFitPlot::output   () const
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
 
-const char* PeakFitPlot::feature() const { return _feature; }
-
 void*      PeakFitPlot::_serialize(void* p) const
 {
   _insert(p, _desc_buffer, DESC_LEN);
   _insert(p, &_baseline  , sizeof(_baseline));
   _insert(p, &_prm  , sizeof(_prm));
-  _insert(p, _feature, FEATURE_LEN);
   return p;
 }
 
@@ -222,6 +218,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       en->addinfo(1.,EntryTH1F::Normalization);
       break; }
   case DescEntry::Prof:    
+    if (!_term)
+      return *_entry;
     { double x=_term->evaluate();
       if (!damaged) {
 	EntryProf* en = static_cast<EntryProf*>(_entry);
@@ -230,6 +228,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       }
       break; }
   case DescEntry::Scan:    
+    if (!_term)
+      return *_entry;
     { double x=_term->evaluate();
       if (!damaged) {
 	EntryScan* en = static_cast<EntryScan*>(_entry);

@@ -12,7 +12,7 @@
 //=========================================================
 
 #include "ami/qt/Requestor.hh"
-#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtTopWidget.hh"
 #include "ami/client/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
@@ -31,7 +31,7 @@ namespace Ami {
     class Display;
     class Status;
 
-    class Client : public QtPWidget, 
+    class Client : public QtTopWidget, 
 		   public Ami::AbsClient,
 		   public Requestor {
       Q_OBJECT
@@ -41,6 +41,7 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void reset_plots();
     public:
       void managed         (VClientManager&);
       void request_payload ();

@@ -63,6 +63,7 @@ libnames := amiqt
 libsrcs_amiqt := Status.cc Status_moc.cc
 libsrcs_amiqt += Path.cc
 libsrcs_amiqt += FeatureRegistry.cc FeatureRegistry_moc.cc
+libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
 libsrcs_amiqt += CExpression.cc
 libsrcs_amiqt += Calculator.cc Calculator_moc.cc
 libsrcs_amiqt += DescTH1F.cc DescTH1F_moc.cc
@@ -113,6 +114,9 @@ libsrcs_amiqt += ImageXYProjection.cc ImageXYProjection_moc.cc
 libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc
 libsrcs_amiqt += EnvClient.cc EnvClient_moc.cc
+libsrcs_amiqt += DetectorGroup.cc DetectorGroup_moc.cc
+libsrcs_amiqt += DetectorSave.cc
+libsrcs_amiqt += DetectorReset.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 
 # List special include directories (if any) needed by lib_a as

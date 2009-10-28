@@ -163,6 +163,10 @@ void ImageRPhiProjection::load(const char*& p)
   }
 }
 
+void ImageRPhiProjection::save_plots(const QString& p) const
+{
+}
+
 void ImageRPhiProjection::setVisible(bool v)
 {
   if (v)  _frame.add_marker(*_annulus);

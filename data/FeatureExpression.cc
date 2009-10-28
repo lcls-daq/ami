@@ -31,10 +31,37 @@ FeatureExpression::FeatureExpression() : Expression(_variables) {}
 FeatureExpression::~FeatureExpression() {}
 
 Term* FeatureExpression::evaluate(FeatureCache& features,
-				  const QString& expr)
+				  const QString& e)
 {
-  QString new_expr;
+  QString expr;
+  {  //  Translate feature names to feature cache indices
+    int pos=0;
+    while(1) {
+      int npos = e.size();
+      QString spos;
+      const char* p = features.names();
+      for(unsigned i=0; i<features.entries(); i++) {
+	QString it(p);
+        int np = e.indexOf(it, pos);
+        if ((np >=0 && np < npos) || (np==npos && it.size()>spos.size())) {
+          npos = np;
+          spos = it;
+        }
+	p += FeatureCache::FEATURE_NAMELEN;
+      }
+      if (!spos.isEmpty()) {
+        expr.append(e.mid(pos,npos-pos));
+        expr.append(QString("[%1]").arg(features.lookup(qPrintable(spos))));
+	pos = npos + spos.size();
+      }
+      else
+	break;
+    }
+    expr.append(e.mid(pos));
+    printf("expr %s\n",qPrintable(expr));
+  }
 
+  QString new_expr;
   {  // parse expression for FeatureCache indices
     QRegExp match("\\[[0-9]+\\]");
     int last=0;

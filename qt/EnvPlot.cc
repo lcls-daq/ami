@@ -38,13 +38,9 @@ static NullTransform noTransform;
 
 EnvPlot::EnvPlot(QWidget*         parent,
 		 const QString&   name,
-		 DescEntry*       desc,
-		 int              index0,
-		 const QString&   var) :
+		 DescEntry*       desc) :
   QtPlot   (parent, name),
   _desc    (desc),
-  _index0  (index0),
-  _var     (var),
   _output_signature  (0),
   _plot    (0)
 {
@@ -72,9 +68,6 @@ EnvPlot::EnvPlot(QWidget*     parent,
     default: break;
   }
   delete[] buff;
-
-  _index0 = QtPersistent::extract_i(p);
-  _var    = QtPersistent::extract_s(p);
 }
 
 EnvPlot::~EnvPlot()
@@ -86,10 +79,7 @@ EnvPlot::~EnvPlot()
 void EnvPlot::save(char*& p) const
 {
   QtPlot::save(p);
-
   memcpy(p, _desc, _desc->size()); p += _desc->size();
-  QtPersistent::insert(p,_index0);
-  QtPersistent::insert(p,_var);
 }
 
 
@@ -97,7 +87,7 @@ void EnvPlot::load(const char*& p)
 {
 }
 
-void EnvPlot::_dump(FILE* f) const { _plot->dump(f); }
+void EnvPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
@@ -138,7 +128,7 @@ void EnvPlot::setup_payload(Cds& cds)
 
 void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 {
-  Ami::EnvPlot op(*_desc, _index0, qPrintable(_var));
+  Ami::EnvPlot op(*_desc);
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Discovery,

@@ -1,3 +1,5 @@
+2009-10-28	weaver			Changed ami/data FeatureCache index references to strings to handle cases when
+					FeatureCache list changes.  Added global reset_plots and save_plots button.
 2009-10-26	weaver			Added semaphore in AnalysisFactory to guard Analysis list.  Raised CursorsX.cc
 					number of cursors to 10.  Added prototype member to Display for discovering
 					cursor operation bin mapping (when cursor settings are loaded prior to bin mapping

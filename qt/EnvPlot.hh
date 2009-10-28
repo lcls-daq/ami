@@ -21,9 +21,7 @@ namespace Ami {
     public:
       EnvPlot(QWidget*,
 	      const QString& name,
-	      DescEntry*     desc,
-	      int            index0,
-	      const QString& var);
+	      DescEntry*     desc);
       EnvPlot(QWidget*,const char*&);
       ~EnvPlot();
     public:
@@ -33,12 +31,9 @@ namespace Ami {
       void configure(char*& p, unsigned input, unsigned& output);
       void setup_payload(Cds&);
       void update();
-    private:
-      void _dump(FILE*) const;
+      void dump(FILE*) const;
     private:
       DescEntry* _desc;
-      int        _index0;
-      QString    _var;
       
       unsigned _output_signature;
 

@@ -77,7 +77,7 @@ void CursorPlot::load(const char*& p)
 {
 }
 
-void CursorPlot::_dump(FILE* f) const { _plot->dump(f); }
+void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
@@ -171,8 +171,7 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
   printf("CursorPlot %s\n",qPrintable(new_expr));
   printf("CursorPlot %s\n",qPrintable(end_expr));
 
-  Ami::BinMath op(_input->output(), qPrintable(end_expr),
-		  _input->feature());
+  Ami::BinMath op(_input->output(), qPrintable(end_expr));
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  source,

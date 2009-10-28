@@ -58,6 +58,13 @@ void ImageClient::load(const char*& p)
   _hit   ->load(p);
 }
 
+void ImageClient::save_plots(const QString& p) const
+{
+  _xyproj->save_plots(p+"_xyproj");
+  _rfproj->save_plots(p+"_rfproj");
+  _hit   ->save_plots(p+"_hits");
+}
+
 void ImageClient::_configure(char*& p, 
 			     unsigned input, 
 			     unsigned& output,

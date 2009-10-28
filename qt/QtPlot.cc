@@ -92,7 +92,7 @@ void QtPlot::save_data()
 {
   FILE* f = Path::saveDataFile();
   if (f) {
-    _dump(f);
+    dump(f);
     fclose(f);
   }
 }

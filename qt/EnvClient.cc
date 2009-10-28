@@ -2,6 +2,7 @@
 
 #include "ami/qt/Control.hh"
 #include "ami/qt/Status.hh"
+#include "ami/qt/FeatureBox.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/EnvPlot.hh"
 #include "ami/qt/DescTH1F.hh"
@@ -41,7 +42,7 @@ enum { _TH1F, _vT, _vF, _vS };
 static const int BufferSize = 0x8000;
 
 EnvClient::EnvClient(QWidget* parent) :
-  QtPWidget        (parent),
+  QtTopWidget      (parent),
   _input           (0),
   _output_signature(0),
   _request         (new char[BufferSize]),
@@ -57,8 +58,7 @@ EnvClient::EnvClient(QWidget* parent) :
   _control = new Control(*this);
   _status  = new Status;
 
-  _source = new QComboBox;
-  _source->addItems(FeatureRegistry::instance().names());
+  _source = new FeatureBox;
 
   _hist   = new DescTH1F  ("Sum (1dH)");
   _vTime  = new DescChart ("Mean v Time",0.2);
@@ -105,7 +105,6 @@ EnvClient::EnvClient(QWidget* parent) :
 
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect(this, SIGNAL(changed()), this, SLOT(update_configuration()));
 }
@@ -116,10 +115,11 @@ void EnvClient::save(char*& p) const
 {
   QtPWidget::save(p);
 
-  _hist ->save(p);
-  _vTime->save(p);
+  _hist    ->save(p);
+  _vTime   ->save(p);
   _vFeature->save(p);
-  QtPersistent::insert(p,_source  ->currentIndex());
+  _source  ->save(p);
+
   QtPersistent::insert(p,_plot_grp->checkedId ());
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
@@ -135,10 +135,11 @@ void EnvClient::load(const char*& p)
 {
   QtPWidget::load(p);
 
-  _hist ->load(p);
-  _vTime->load(p);
+  _hist    ->load(p);
+  _vTime   ->load(p);
   _vFeature->load(p);
-  _source  ->setCurrentIndex(QtPersistent::extract_i(p));
+  _source  ->load(p);
+
   _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
@@ -156,6 +157,21 @@ void EnvClient::load(const char*& p)
 
   _control->load(p);
 }
+
+void EnvClient::save_plots(const QString& p) const 
+{
+  int i=1;
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
+}
+
+void EnvClient::reset_plots() { update_configuration(); }
 
 void EnvClient::connected()
 {
@@ -316,27 +332,26 @@ void EnvClient::update_configuration()
 void EnvClient::plot()
 {
   DescEntry* desc;
-  QString feature;
+  QString entry(_source->entry());
+
   switch(_plot_grp->checkedId()) {
   case _TH1F:
-    desc = new Ami::DescTH1F(qPrintable(_source->currentText()),
-			     "value","events",
+    desc = new Ami::DescTH1F(qPrintable(entry),
+			     qPrintable(entry),"events",
 			     _hist->bins(),_hist->lo(),_hist->hi()); 
     break;
   case _vT: 
-    desc = new Ami::DescScalar(qPrintable(_source->currentText()),
-			       "mean");
+    desc = new Ami::DescScalar(qPrintable(entry),"mean");
     break;
   case _vF:
-    desc = new Ami::DescProf(qPrintable(_source->currentText()),
+    desc = new Ami::DescProf(qPrintable(entry),
 			     qPrintable(_vFeature->expr()),"mean",
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    feature = _vFeature->feature();
     break;
   case _vS:
-    desc = new Ami::DescScan(qPrintable(_source->currentText()),
-			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
-    feature = _vScan->feature();
+    desc = new Ami::DescScan(qPrintable(entry),
+			     qPrintable(_vScan->expr()),qPrintable(entry),
+			     _vScan->bins());
     break;
   default:
     desc = 0;
@@ -344,10 +359,8 @@ void EnvClient::plot()
   }
 
   EnvPlot* plot = new EnvPlot(this,
-			      _source->currentText(),
-			      desc,
-			      FeatureRegistry::instance().index(_source->currentText()),
-			      feature);
+			      entry,
+			      desc);
 
   _plots.push_back(plot);
 
@@ -364,9 +377,3 @@ void EnvClient::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
-void EnvClient::change_features()
-{
-  _source->clear();
-  _source->addItems(FeatureRegistry::instance().names());
-  _source->setCurrentIndex(0);
-}

@@ -8,7 +8,6 @@
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/WaveformDisplay.hh"
-#include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 
@@ -238,6 +237,19 @@ void CursorsX::load(const char*& p)
   }
 }
 
+void CursorsX::save_plots(const QString& p) const
+{
+  int i=1;
+  for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
+}
+
 void CursorsX::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)
@@ -313,7 +325,6 @@ void CursorsX::calc()
 void CursorsX::plot()
 {
   DescEntry* desc;
-  QString feature;
   switch(_plot_grp->checkedId()) {
   case _TH1F:
     desc = new Ami::DescTH1F(qPrintable(_title->text()),
@@ -328,12 +339,10 @@ void CursorsX::plot()
     desc = new Ami::DescProf(qPrintable(_title->text()),
 			     qPrintable(_vFeature->expr()),"mean",
 			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    feature = _vFeature->feature();
     break;
   case _vS:
     desc = new Ami::DescScan(qPrintable(_title->text()),
 			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
-    feature = _vScan->feature();
     break;
   default:
     desc = 0;
@@ -368,7 +377,7 @@ void CursorsX::plot()
   CursorPlot* plot = new CursorPlot(this,
 				    _title->text(),
 				    _channel,
-				    new BinMath(*desc,qPrintable(expr),qPrintable(feature)));
+				    new BinMath(*desc,qPrintable(expr)));
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));

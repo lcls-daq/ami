@@ -22,8 +22,8 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      virtual void dump(FILE*) const=0;
     private:
-      virtual void _dump(FILE*) const=0;
       void _layout();
     signals:
       void redraw();

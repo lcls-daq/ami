@@ -111,6 +111,10 @@ void PeakFinder::load(const char*& p)
   }
 }
 
+void PeakFinder::save_plots(const QString& p) const
+{
+}
+
 void PeakFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {

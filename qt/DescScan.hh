@@ -4,12 +4,12 @@
 #include <QtGui/QWidget>
 #include <QtCore/QString>
 
-class QComboBox;
 class QRadioButton;
 class QLineEdit;
 
 namespace Ami {
   namespace Qt {
+    class FeatureBox;
     class DescScan : public QWidget {
       Q_OBJECT
     public:
@@ -17,8 +17,6 @@ namespace Ami {
     public:
       void save(char*&) const;
       void load(const char*&);
-    public slots:
-      void change_features();
     public:
       QRadioButton* button();
       QString  expr() const;
@@ -26,8 +24,8 @@ namespace Ami {
       unsigned bins() const;
     private:
       QRadioButton* _button;
-      QLineEdit* _bins;
-      QComboBox* _features;
+      QLineEdit*  _bins;
+      FeatureBox* _features;
     };
   };
 };

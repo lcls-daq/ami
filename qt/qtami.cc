@@ -5,6 +5,7 @@
 
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
+#include "ami/qt/Path.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/event/FEEGasDetEnergyReader.hh"
 #include "ami/event/EBeamReader.hh"
@@ -42,7 +43,7 @@ int main(int argc, char* argv[]) {
   unsigned clientGroup = 0xefff2001;
   bool offline=false;
 
-  while ((c = getopt(argc, argv, "?hs:c:")) != -1) {
+  while ((c = getopt(argc, argv, "?hs:c:f:")) != -1) {
     switch (c) {
     case 's':
       { in_addr inp;
@@ -54,6 +55,9 @@ int main(int argc, char* argv[]) {
 	if (inet_aton(optarg, &inp))
 	  clientGroup = ntohl(inp.s_addr);
 	break; }
+    case 'f':
+      Ami::Qt::Path::setBase(optarg);
+      break;
     case '?':
     case 'h':
     default:

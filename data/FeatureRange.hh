@@ -2,12 +2,13 @@
 #define Ami_FeatureRange_hh
 
 #include "AbsFilter.hh"
+#include "ami/data/FeatureCache.hh"
 
 namespace Ami {
   class FeatureCache;
   class FeatureRange : public AbsFilter {
   public:
-    FeatureRange(unsigned i, double lo, double hi);
+    FeatureRange(const char* feature, double lo, double hi);
     FeatureRange(const char*&, FeatureCache&);
     ~FeatureRange();
   public:
@@ -16,10 +17,11 @@ namespace Ami {
   private:
     void* _serialize(void*) const;
   private:
-    unsigned      _index;
+    char          _feature[FeatureCache::FEATURE_NAMELEN];
     FeatureCache* _cache;
     double        _lo;
     double        _hi;
+    int           _index;
   };
 };
 

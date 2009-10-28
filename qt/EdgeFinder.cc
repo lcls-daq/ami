@@ -50,6 +50,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
     channelBox->addItem(channels[i]->name());
 
   _hist   = new DescTH1F ("Sum (1dH)");
+  _hist->button()->setChecked(true);
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -140,6 +141,19 @@ void EdgeFinder::load(const char*& p)
   }
 
   emit changed();
+}
+
+void EdgeFinder::save_plots(const QString& p) const
+{
+  int i=1;
+  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
 }
 
 void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,

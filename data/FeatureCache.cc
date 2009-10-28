@@ -55,20 +55,31 @@ unsigned FeatureCache::add(const char* name)
   return _entries++;
 }
 
-unsigned    FeatureCache::entries() const { return _entries; }
-const char* FeatureCache::names  () const { return _names; }
-double      FeatureCache::cache  (unsigned index, bool* damaged) const 
+int         FeatureCache::lookup(const char* name) const
 {
-  if (damaged) *damaged = (_damaged[index>>5]>>(index&0x1f)) & 1;
-  return _cache[index]; 
+  for(int k=0; k<_entries; k++)
+    if (strcmp(_names+k*FEATURE_NAMELEN,name)==0)
+      return k;
+
+  return -1;
 }
 
-void        FeatureCache::cache  (unsigned index, double v, bool damaged)
+unsigned    FeatureCache::entries() const { return _entries; }
+const char* FeatureCache::names  () const { return _names; }
+double      FeatureCache::cache  (int index, bool* damaged) const 
 {
-  _cache[index] = v;
-  uint32_t mask = 1<<(index&0x1f);
-  if (damaged)
-    _damaged[index>>5] |= mask;
-  else
-    _damaged[index>>5] &= ~mask;
+  if (damaged) *damaged = (index<0) | ((_damaged[index>>5]>>(index&0x1f)) & 1);
+  return index>=0 ? _cache[index] : 0;
+}
+
+void        FeatureCache::cache  (int index, double v, bool damaged)
+{
+  if (index>=0) {
+    _cache[index] = v;
+    uint32_t mask = 1<<(index&0x1f);
+    if (damaged)
+      _damaged[index>>5] |= mask;
+    else
+      _damaged[index>>5] &= ~mask;
+  }
 }

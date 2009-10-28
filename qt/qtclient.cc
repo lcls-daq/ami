@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include "ami/qt/DetectorSelect.hh"
+#include "ami/qt/Path.hh"
 #include "ami/service/Ins.hh"
 
 #include <QtGui/QApplication>
@@ -28,6 +29,9 @@ int main(int argc, char **argv)
       in_addr inp;
       if (inet_aton(argv[++i], &inp))
 	serverGroup = ntohl(inp.s_addr);
+    }
+    else if (strcmp(argv[i],"-f")==0) {
+      Ami::Qt::Path::setBase(argv[++i]);
     }
   }
 

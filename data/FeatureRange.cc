@@ -8,23 +8,25 @@ using namespace Ami;
 
 static const int NameSize = FeatureCache::FEATURE_NAMELEN;
 
-FeatureRange::FeatureRange(unsigned index,
+FeatureRange::FeatureRange(const char* feature,
 			   double lo, double hi) :
   AbsFilter(AbsFilter::FeatureRange),
-  _index(index),
   _cache(0),
   _lo   (lo),
   _hi   (hi)
 {
+  strncpy(_feature, feature, NameSize);
 }
 
 FeatureRange::FeatureRange(const char*& p, FeatureCache& f) :
   AbsFilter(AbsFilter::FeatureRange)
 {
-  _extract(p, &_index, sizeof(_index));
+  memcpy  (_feature, p, NameSize);
   _extract(p, &_lo   , sizeof(_lo));
   _extract(p, &_hi   , sizeof(_hi));
   _cache = &f;
+
+  _index = f.lookup(_feature);
 }
 
 FeatureRange::~FeatureRange()
@@ -34,7 +36,11 @@ FeatureRange::~FeatureRange()
 bool  FeatureRange::accept() const 
 {
   bool damaged;
-  double v = _cache->cache(_index,&damaged);
+  double v;
+  if (_index>=0)
+    v = _cache->cache(_index,&damaged);
+  else
+    damaged = true;
   return !damaged && v>=_lo && v<=_hi;
 }
 
@@ -46,4 +52,4 @@ void* FeatureRange::_serialize(void* p) const
   return p;
 }
 
-AbsFilter* FeatureRange::clone() const { return new FeatureRange(_index,_lo,_hi); }
+AbsFilter* FeatureRange::clone() const { return new FeatureRange(_feature,_lo,_hi); }

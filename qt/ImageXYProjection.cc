@@ -182,6 +182,10 @@ void ImageXYProjection::load(const char*& p)
   }
 }
 
+void ImageXYProjection::save_plots(const QString& p) const
+{
+}
+
 void ImageXYProjection::setVisible(bool v)
 {
   if (v)    _frame.add_marker(*_rectangle);

@@ -41,7 +41,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
 			Display*            frame) :
-  QtPWidget        (parent),
+  QtTopWidget      (parent),
   _src             (src),
   _channel         (channel),
   _frame           (frame),
@@ -142,6 +142,8 @@ void Ami::Qt::Client::load(const char*& p)
   _frame->load(p);
   _control->load(p);
 }
+
+void Ami::Qt::Client::reset_plots() { update_configuration(); }
 
 void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }
 

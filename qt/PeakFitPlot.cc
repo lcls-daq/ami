@@ -79,7 +79,7 @@ void PeakFitPlot::load(const char*& p)
 {
 }
 
-void PeakFitPlot::_dump(FILE* f) const { _plot->dump(f); }
+void PeakFitPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"

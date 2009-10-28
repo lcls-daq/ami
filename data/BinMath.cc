@@ -57,8 +57,7 @@ const QChar& BinMath::integrate() { return _integrate; }
 const QChar& BinMath::range    () { return _range    ; }
 
 BinMath::BinMath(const DescEntry& output, 
-		 const char* expr,
-		 const char* feature) :
+		 const char* expr) :
   AbsOperator(AbsOperator::BinMath),
   _cache     (0),
   _term      (0),
@@ -67,7 +66,6 @@ BinMath::BinMath(const DescEntry& output,
 {
   strncpy(_expression, expr, EXPRESSION_LEN);
   memcpy (_desc_buffer, &output, output.size());
-  strncpy(_feature   , feature, FEATURE_LEN);
 }
 
 #define CASETERM(type)							\
@@ -81,7 +79,6 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
-  _extract(p, _feature    , FEATURE_LEN);
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
@@ -131,7 +128,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 
   if (o.type() == DescEntry::Prof ||
       o.type() == DescEntry::Scan) {
-    QString expr(_feature);
+    QString expr(o.xtitle());
     FeatureExpression parser;
     _fterm = parser.evaluate(features,expr);
     if (!_fterm)
@@ -148,7 +145,6 @@ BinMath::BinMath(const char*& p) :
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
-  _extract(p, _feature    , FEATURE_LEN);
 }
 
 BinMath::~BinMath()
@@ -165,13 +161,10 @@ DescEntry& BinMath::output   () const
 
 const char* BinMath::expression() const { return _expression; }
 
-const char* BinMath::feature() const { return _feature; }
-
 void*      BinMath::_serialize(void* p) const
 {
   _insert(p, _expression , EXPRESSION_LEN);
   _insert(p, _desc_buffer, DESC_LEN);
-  _insert(p, _feature    , FEATURE_LEN);
   return p;
 }
 
@@ -190,7 +183,9 @@ Entry&     BinMath::_operate(const Entry& e) const
 	en->addcontent(1.,y); 
 	en->addinfo(1.,EntryTH1F::Normalization);
 	break; }
-    case DescEntry::Prof:    
+    case DescEntry::Prof:  
+      if (!_fterm)
+	return *_entry;
       { bool damaged=false; double x=_fterm->evaluate();
 	if (!damaged) {
 	  EntryProf* en = static_cast<EntryProf*  >(_entry);
@@ -199,6 +194,8 @@ Entry&     BinMath::_operate(const Entry& e) const
 	}
 	break; }
     case DescEntry::Scan:    
+      if (!_fterm)
+	return *_entry;
       { bool damaged=false; double x=_fterm->evaluate();
 	if (!damaged) {
 	  EntryScan* en = static_cast<EntryScan*  >(_entry);

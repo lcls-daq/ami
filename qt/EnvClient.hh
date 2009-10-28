@@ -2,7 +2,7 @@
 #define AmiQt_EnvClient_hh
 
 #include "ami/qt/Requestor.hh"
-#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtTopWidget.hh"
 #include "ami/client/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
@@ -25,7 +25,8 @@ namespace Ami {
     class DescChart;
     class DescProf;
     class DescScan;
-    class EnvClient : public QtPWidget,
+    class FeatureBox;
+    class EnvClient : public QtTopWidget,
 		      public Ami::AbsClient,
 		      public Requestor {
       Q_OBJECT
@@ -35,6 +36,8 @@ namespace Ami {
     public:
       void save(char*&) const;
       void load(const char*&);
+      void save_plots(const QString&) const;
+      void reset_plots();
     public:
       void managed         (VClientManager&);
       void request_payload ();
@@ -52,7 +55,6 @@ namespace Ami {
       void _read_description   (int);
       void plot                ();
       void remove_plot         (QObject*);
-      void change_features     ();
     signals:
       void changed();
       void description_changed(int);
@@ -79,11 +81,11 @@ namespace Ami {
       Semaphore*  _sem;
 
       QButtonGroup* _plot_grp;
-      DescTH1F*  _hist;
-      DescChart* _vTime;
-      DescProf*  _vFeature;
-      DescScan*  _vScan;
-      QComboBox* _source;
+      DescTH1F*   _hist;
+      DescChart*  _vTime;
+      DescProf*   _vFeature;
+      DescScan*   _vScan;
+      FeatureBox* _source;
 
       std::list<EnvPlot*> _plots;
     };
