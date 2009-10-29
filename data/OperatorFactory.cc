@@ -53,7 +53,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::EnvPlot   : o = new EnvPlot(p,_f,output_cds); break;
   case AbsOperator::Value     :
-  default: break;
+  default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
   if (next)
     o->next(_extract(p,o->output(),output_cds));

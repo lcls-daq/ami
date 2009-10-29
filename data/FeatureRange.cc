@@ -21,7 +21,7 @@ FeatureRange::FeatureRange(const char* feature,
 FeatureRange::FeatureRange(const char*& p, FeatureCache& f) :
   AbsFilter(AbsFilter::FeatureRange)
 {
-  memcpy  (_feature, p, NameSize);
+  _extract(p, _feature, NameSize);
   _extract(p, &_lo   , sizeof(_lo));
   _extract(p, &_hi   , sizeof(_hi));
   _cache = &f;
@@ -46,7 +46,7 @@ bool  FeatureRange::accept() const
 
 void* FeatureRange::_serialize(void* p) const 
 { 
-  _insert(p, &_index, sizeof(_index));
+  _insert(p, _feature, NameSize );
   _insert(p, &_lo   , sizeof(_lo));
   _insert(p, &_hi   , sizeof(_hi));
   return p;

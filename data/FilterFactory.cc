@@ -37,6 +37,9 @@ AbsFilter* FilterFactory::deserialize(const char*& p) const
       AbsFilter* f1 = deserialize(p);
       r = new LogicOr( *f0, *f1 ); }
     break;
+  default:
+    printf("FilterFactory: unknown type %d\n",type);
+    break;
   }
   return r;
 }
