@@ -161,7 +161,7 @@ void Ami::Qt::WaveformDisplay::save_data()
 				   def,"*.dat");
     if (!fname.isNull()) {
       if (fname.endsWith(".dat"))
-	fname.remove(fname.size()-5);
+	fname.remove(fname.size()-4,4);
       save_plots(fname);
     }
   }

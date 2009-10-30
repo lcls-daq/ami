@@ -48,6 +48,7 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
   experiments << "amo02109";
   experiments << "amo01509";
   experiments << "amo02709";
+  experiments << "amo01709";
 
   _expt_select = new QListWidget;
   _expt_select->addItems(experiments);
