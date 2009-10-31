@@ -6,6 +6,7 @@
 #include "ami/service/Timer.hh"
 
 class QLabel;
+class QLineEdit;
 class QPushButton;
 
 namespace Ami {
@@ -28,13 +29,16 @@ namespace Ami {
     public slots:
       void run   (bool);
       void single();
+      void set_rate();
     private:
       Requestor&  _client;
       Task*    _task;
       unsigned _repeat;
+      unsigned _duration;
       QPushButton* _pRun;
       QPushButton* _pSingle;
-      QLabel*  _status;
+      QLabel*      _status;
+      QLineEdit*   _pRate;
     };
   };
 };
