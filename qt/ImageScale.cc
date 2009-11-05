@@ -49,7 +49,7 @@ void ImageScale::value(unsigned v)
 
 void ImageScale::value_change(int v)
 {
-  v /= int(_color.scale());
+  v = int(double(v)/_color.scale());
   if (v > 0xff) v = 0xff;
   _pixmap->fill(_color.color_table()[v]);
   _canvas->setPixmap(*_pixmap);
