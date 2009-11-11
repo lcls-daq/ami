@@ -153,7 +153,7 @@ QImage&        QtImage::image(int s)
     type* dst = (type*)_qimage->bits();			\
     for(unsigned k=0; k<_ny; k++) {			\
       for(unsigned j=0; j<_nx; j++) {			\
-	unsigned sh = (*src++)/n;			\
+        unsigned sh = static_cast<unsigned>((*src++)/n);       \
 	*dst++ = factor*(sh >= 0xff ? 0xff : sh); }	\
       src += d.nbinsx()-_nx;				\
     } }
@@ -172,7 +172,7 @@ QImage&        QtImage::image(double s)
   n *= double(s);
 
   const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
-    switch(_scale) {
+  switch(_scale) {
     case 1: { COPYIMAGE(uint8_t ,0x01); break; }
     case 2: { COPYIMAGE(uint16_t,0x0101); break; }
     case 4: { COPYIMAGE(uint32_t,0x01010101); break; }

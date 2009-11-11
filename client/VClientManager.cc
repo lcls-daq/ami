@@ -31,6 +31,8 @@ static const int Step = 20;
 static const int Timeout = 20;  // milliseconds
 static const int BufferSize = 0x8000;
 
+static void dump(const char* payload, unsigned size) __attribute__((unused));
+
 static void dump(const char* payload, unsigned size)
 {
   const unsigned* p = (const unsigned*)payload;

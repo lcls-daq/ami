@@ -57,7 +57,7 @@ unsigned FeatureCache::add(const char* name)
 
 int         FeatureCache::lookup(const char* name) const
 {
-  for(int k=0; k<_entries; k++)
+  for(int k=0; k<static_cast<int>(_entries); k++)
     if (strcmp(_names+k*FEATURE_NAMELEN,name)==0)
       return k;
 

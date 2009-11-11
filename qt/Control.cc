@@ -61,7 +61,7 @@ void Control::single() {
 }
 
 void Control::set_rate() {
-  _duration = 1000./_pRate->text().toDouble();
+  _duration = static_cast<unsigned>(1000./_pRate->text().toDouble());
   if (_pRun->isChecked()) {
     cancel();
     Timer::start();

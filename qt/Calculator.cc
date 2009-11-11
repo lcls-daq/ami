@@ -67,7 +67,7 @@ static unsigned numberAtEnd(const QString& str)
 {
   QRegExp digits("[0-9\\.]*");
   QString rev;
-  for(unsigned k=0; k<str.size(); k++)
+  for(int k=0; k<str.size(); k++)
     rev.push_front(str[k]);
   int index = digits.indexIn(rev);
   int len   = digits.matchedLength();

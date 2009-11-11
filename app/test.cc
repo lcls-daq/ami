@@ -8,7 +8,7 @@ int main()
   _iov[0].iov_base = (void*)0x8000000; _iov[0].iov_len = 0x10;
   _iov[1].iov_base = (void*)0x9000000; _iov[1].iov_len = 0x18000;
   _iov[2].iov_base = (void*)0xa000000; _iov[2].iov_len = 0x80;
-  int cnt = 2;
+  unsigned cnt = 2;
 
   unsigned payload = 0x10 + 0x18000 + 0x80;
   const unsigned CHUNKSIZE=0x7F00;

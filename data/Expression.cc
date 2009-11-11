@@ -55,7 +55,7 @@ QString& Expression::_process(QString& text,const QChar& o)
   QRegExp revConstantMatch("[0-9]*[\\.]?[0-9]*[\\+\\-]?");
   QRegExp termMatch       ("\\[[0-9a-fA-F]+\\]");
 
-  int index, first, last;
+  int index, first = 0, last = 0;
   while( (index=text.indexOf(o))!=-1 ) {  // left-to-right
     //  while( (index=text.lastIndexOf(o))!=-1 ) {   // right-to-left
 #ifdef DBUG
@@ -69,7 +69,7 @@ QString& Expression::_process(QString& text,const QChar& o)
     for(int i=0; i<index; i++)
       revText.prepend(text[i]);
       
-    Term* b;
+    Term* b = NULL;
     if (termMatch.indexIn(text,index+1)==index+1) {
       int len = termMatch.matchedLength();
       last = index+len;
@@ -113,7 +113,7 @@ QString& Expression::_process(QString& text,const QChar& o)
     else {
       printf("Unrecognized input at %s\n",qPrintable(text.mid(index+1)));
     }
-    Term* a;
+    Term* a = NULL;
     if ((termMatch.lastIndexIn(text,index-1)+termMatch.matchedLength())==index) {
       int len = termMatch.matchedLength();
       first = index-len;

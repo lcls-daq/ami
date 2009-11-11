@@ -129,7 +129,7 @@ void   ImageColorControl::set_palette(int p)
 
 void   ImageColorControl::show_scale()
 {
-  unsigned v = 0xff*scale();
+  unsigned v = static_cast<unsigned>(0xff*scale());
   _scale_max->setText(QString::number(v));
 }
 
