@@ -186,7 +186,7 @@ void CursorPlot::update()
 {
   if (_plot) {
     _plot->update();
-    _counts->setText(QString("Np %1").arg(_plot->normalization()));
+    emit counts_changed(_plot->normalization());
     emit redraw();
   }
 }

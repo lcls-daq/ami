@@ -157,6 +157,7 @@ void DetectorSelect::save_setup ()
   if (o) {
     fwrite(buffer,p-buffer,1,o);
     fclose(o);
+    printf("Saved %d bytes to %s\n",p-buffer,qPrintable(fname));
   }
   else {
     QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
@@ -195,7 +196,7 @@ void DetectorSelect::load_setup ()
   char* buffer = new char[MaxConfigSize];
   int size = fread(buffer,1,MaxConfigSize,f);
   
-  printf("Read %d bytes\n",size);
+  printf("Load %d bytes from %s\n",size,qPrintable(fname));
 
   const char* p   = buffer;
 

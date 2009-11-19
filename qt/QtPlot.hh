@@ -27,12 +27,14 @@ namespace Ami {
       void _layout();
     signals:
       void redraw();
+      void counts_changed(double);
     public slots:
       void save_data();
       void set_plot_title();
       void set_xaxis_title();
       void set_yaxis_title();
       void yrange_change();
+      void update_counts(double);
     protected:
       QString      _name;
       QwtPlot*     _frame;

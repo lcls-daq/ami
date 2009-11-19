@@ -74,6 +74,8 @@ void QtPlot::_layout()
   
   show();
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
+  connect(this, SIGNAL(counts_changed(double)), 
+	  this, SLOT(update_counts(double)));
   connect(_yrange, SIGNAL(windowChanged()), this , SLOT(yrange_change()));
 }
 
@@ -137,3 +139,7 @@ void QtPlot::yrange_change()
     _frame->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
 }
 
+void QtPlot::update_counts(double n)
+{
+  _counts->setText(QString("Np %1").arg(n));
+}
