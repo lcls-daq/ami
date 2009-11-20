@@ -218,7 +218,7 @@ void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
 
 void Ami::Qt::WaveformDisplay::add   (QtBase* b) 
 {
-  _xrange->update(*(_xinfo = b->xinfo()));
+  _xrange->update(*_xinfo);
   _curves.push_back(b);
   b->xscale_update();
   b->update();
@@ -286,7 +286,7 @@ void Ami::Qt::WaveformDisplay::xtransform_update()
     (*it)->xscale_update();
 
   if (_curves.size())
-    _xrange->update(*(_xinfo=_curves.front()->xinfo()));
+    _xrange->update(*_xinfo);
 
   if (_xrange->isAuto()) {
   }

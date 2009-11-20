@@ -70,7 +70,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
 int XtcClient::process(Pds::Xtc* xtc) 
 {
-  if (xtc->extent < sizeof(Xtc))
+  if (xtc->extent < sizeof(Xtc) ||
+      xtc->contains.id() >= TypeId::NumberOf)
     return 0;
 
   if (xtc->contains.id() == Pds::TypeId::Id_Xtc) {
