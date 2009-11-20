@@ -33,25 +33,25 @@ void   EBeamReader::_event    (const void* payload, const Pds::ClockTime& t)
     const Pds::BldDataEBeam& bld = 
       *reinterpret_cast<const Pds::BldDataEBeam*>(payload);
     unsigned index = _index;
-    const double* p = &bld.fEbeamCharge;
-    const double* e = &bld.fEbeamPkCurrBC2;
-    unsigned mask   =  bld.uDamageMask;
-    while(p <= e) {
-      if (mask&1)
-	_cache.cache(index,-1,true);
-      else
-	_cache.cache(index,*p);
-      mask >>= 1;
-      index++;
-      p++;
-    }	
-    //       _cache.cache(index++,bld.fEbeamCharge);
-    //       _cache.cache(index++,bld.fEbeamL3Energy);
-    //       _cache.cache(index++,bld.fEbeamLTUPosX);
-    //       _cache.cache(index++,bld.fEbeamLTUPosY);
-    //       _cache.cache(index++,bld.fEbeamLTUAngX);
-    //       _cache.cache(index++,bld.fEbeamLTUAngY);
-    //       _cache.cache(index++,bld.fEbeamPkCurrBC2);
+//     const double* p = &bld.fEbeamCharge;
+//     const double* e = &bld.fEbeamPkCurrBC2;
+//     unsigned mask   =  bld.uDamageMask;
+//     while(p <= e) {
+//       if (mask&1)
+// 	_cache.cache(index,-1,true);
+//       else
+// 	_cache.cache(index,*p);
+//       mask >>= 1;
+//       index++;
+//       p++;
+//     }	
+    _cache.cache(index++,bld.fEbeamCharge);
+    _cache.cache(index++,bld.fEbeamL3Energy);
+    _cache.cache(index++,bld.fEbeamLTUPosX);
+    _cache.cache(index++,bld.fEbeamLTUPosY);
+    _cache.cache(index++,bld.fEbeamLTUAngX);
+    _cache.cache(index++,bld.fEbeamLTUAngY);
+    _cache.cache(index++,bld.fEbeamPkCurrBC2);
   }
 }
 

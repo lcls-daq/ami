@@ -23,7 +23,7 @@ namespace Ami {
   Binary(Add,_a.evaluate()+_b.evaluate());
   Binary(Sub,_a.evaluate()-_b.evaluate());
   Binary(Mul,_a.evaluate()*_b.evaluate());
-  Binary(Div,_a.evaluate()/_b.evaluate());
+  Binary(Div,(_b.evaluate()==0) ? 0 : _a.evaluate()/_b.evaluate());
   Binary(Exp,pow(_a.evaluate(),_b.evaluate()));
 };
 

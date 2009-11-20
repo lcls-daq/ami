@@ -43,7 +43,12 @@ unsigned AcqWaveformHandler::nentries() const { return _nentries; }
 
 const Entry* AcqWaveformHandler::entry(unsigned i) const { return _entry[i]; }
 
-void AcqWaveformHandler::reset() { _nentries = 0; }
+void AcqWaveformHandler::reset() 
+{
+  for(unsigned i=0; i<_nentries; i++)
+    delete _entry[i];
+  _nentries = 0; 
+}
 
 void AcqWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
@@ -73,9 +78,8 @@ void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t
   AcqDD* d = const_cast<AcqDD*>(reinterpret_cast<const AcqDD*>(payload));
   const Pds::Acqiris::HorizV1& h = _config.horiz();
 
-  for (unsigned i=0;i<_config.nbrChannels();i++) {
-    if (!_entry[i]) continue;
-
+  unsigned n = _nentries < _config.nbrChannels() ? _nentries : _config.nbrChannels();
+  for (unsigned i=0;i<n;i++) {
     const int16_t* data = d->waveform(h);
     data += d->indexFirstPoint();
     float slope = _config.vert(i).slope();
