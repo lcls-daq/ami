@@ -25,11 +25,23 @@
 
 using namespace Ami::Qt;
 
+#ifndef CAMP
 enum { Gd=0, Ims=2, Itof=3, Mbes=4, Etof=6, Vmi=11, Bps=12, Env=14, MaxClients=15 };
 
 static const char* names[] = { "GasDet_1", "GasDet_2", "IMS", "ITOF", "MBES_1", "MBES_2", 
 			       "ETOF_1", "ETOF_2", "ETOF_3", "ETOF_4", "ETOF_5",
 			       "VMI", "BPS_0", "BPS_1", "Env" };
+#else
+enum { Evr=0, CampAcq=2, CampVmi=22, Env=23, MaxClients=24 };
+
+static const char* names[] = { "EVR_1", "EVR_2", 
+			       "ACQ_1" , "ACQ_2" , "ACQ_3" , "ACQ_4" , "ACQ_5" ,
+			       "ACQ_6" , "ACQ_7" , "ACQ_8" , "ACQ_9" , "ACQ_10",
+			       "ACQ_11", "ACQ_12", "ACQ_13", "ACQ_14", "ACQ_15",
+			       "ACQ_16", "ACQ_17", "ACQ_18", "ACQ_19", "ACQ_20",
+			       "VMI", "Env" };
+#endif
+
 static const int MaxConfigSize = 0x100000;
 
 DetectorSelect::DetectorSelect(const QString& label,
@@ -74,7 +86,12 @@ DetectorSelect::DetectorSelect(const QString& label,
     
     QPushButton* resetB = new QPushButton("Reset Plots");
     QPushButton* saveB  = new QPushButton("Save Plots");
+    layout->addWidget(resetB);
+    layout->addWidget(saveB);
+    connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
+    connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 
+#ifndef CAMP
     QPushButton* imsB  = new QPushButton(names[Ims]);
     QPushButton* itofB = new QPushButton(names[Itof]);
     QComboBox*   gdB  = new QComboBox;
@@ -90,10 +107,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     for(int i=0; i<2; i++)
       bpsB->addItem(names[Bps+i]);
     QPushButton* vmiB  = new QPushButton(names[Vmi]);
-    QPushButton* envB  = new QPushButton(names[Env]);
-  
-    layout->addWidget(resetB);
-    layout->addWidget(saveB);
 
     layout->addWidget(gdB  );
     layout->addWidget(imsB );
@@ -102,10 +115,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(etofB);
     layout->addWidget(bpsB );
     layout->addWidget(vmiB );
-    layout->addWidget(envB );
-
-    connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
-    connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 
     connect(gdB   , SIGNAL(activated(int)), this, SLOT(start_gd(int)));
     connect(imsB  , SIGNAL(clicked()), this, SLOT(start_ims()));
@@ -114,6 +123,24 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(etofB , SIGNAL(activated(int)), this, SLOT(start_etof(int)));
     connect(bpsB  , SIGNAL(activated(int)), this, SLOT(start_bps (int)));
     connect(vmiB  , SIGNAL(clicked()), this, SLOT(start_vmi()));
+#else
+    QComboBox*   evrB  = new QComboBox;
+    for(int i=0; i<2; i++)
+      evrB->addItem(names[Evr+i]);
+    QComboBox*   acqB = new QComboBox;
+    for(int i=0; i<20; i++)
+      acqB->addItem(names[CampAcq+i]);
+    QPushButton* vmiB  = new QPushButton(names[CampVmi]);
+    layout->addWidget(evrB);
+    layout->addWidget(acqB);
+    layout->addWidget(vmiB );
+    connect(evrB , SIGNAL(activated(int)), this, SLOT(start_evrmon (int)));
+    connect(acqB , SIGNAL(activated(int)), this, SLOT(start_campacq(int)));
+    connect(vmiB , SIGNAL(clicked())     , this, SLOT(start_campvmi()));
+#endif
+
+    QPushButton* envB  = new QPushButton(names[Env]);
+    layout->addWidget(envB );
     connect(envB  , SIGNAL(clicked()), this, SLOT(start_env()));
 
     data_box->setLayout(layout);
@@ -214,16 +241,13 @@ void DetectorSelect::load_setup ()
 	  _client[i]->load(p);
 	else {
 	  switch(i) {
+#ifndef CAMP
 	  case Ims:  { CASE_WFCLIENT(AmoIms   ); LOAD_AND_CONNECT } break;
 	  case Itof: { CASE_WFCLIENT(AmoITof  ); LOAD_AND_CONNECT } break;
 	  case Vmi:  
 	    { Ami::Qt::ImageClient* client = 
 		new Ami::Qt::ImageClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoVmi,
 							   0,Pds::DetInfo::Opal1000,0),0);
-	      LOAD_AND_CONNECT }
-	    break;
-	  case Env:  
-	    { Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);
 	      LOAD_AND_CONNECT }
 	    break;
 	  case Mbes+0:
@@ -255,6 +279,12 @@ void DetectorSelect::load_setup ()
 	    { Ami::Qt::ImageClient* client = 
 		new Ami::Qt::ImageClient(this,Pds::DetInfo(0,Pds::DetInfo::AmoBps,
 							   0,Pds::DetInfo::Opal1000,i-Bps),0);
+	      LOAD_AND_CONNECT }
+	    break;
+#else
+#endif
+	  case Env:  
+	    { Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);
 	      LOAD_AND_CONNECT }
 	    break;
 	  default:
@@ -291,12 +321,19 @@ void DetectorSelect::save_plots()
   _save_box->show();
 }
 
+#ifndef CAMP
 void DetectorSelect::start_gd   (int channel) { start_waveform_client(Pds::DetInfo::AmoGasdet,channel,Gd+channel); }
 void DetectorSelect::start_ims  () { start_waveform_client(Pds::DetInfo::AmoIms   ,0,Ims); }
 void DetectorSelect::start_itof () { start_waveform_client(Pds::DetInfo::AmoITof  ,0,Itof); }
 void DetectorSelect::start_mbes (int channel) { start_waveform_client(Pds::DetInfo::AmoMbes,channel,Mbes+channel); }
 void DetectorSelect::start_etof (int channel) { start_waveform_client(Pds::DetInfo::AmoETof,channel,Etof+channel); }
 void DetectorSelect::start_vmi  () { start_image_client(Pds::DetInfo::AmoVmi   ,0,Vmi); }
+#else
+void DetectorSelect::start_evrmon (int channel) { start_waveform_client(Pds::DetInfo::AmoMbes,channel,Evr+channel); }
+void DetectorSelect::start_campacq(int channel) { start_waveform_client(Pds::DetInfo::Camp,channel,CampAcq+channel); }
+void DetectorSelect::start_campvmi  () { start_image_client(Pds::DetInfo::Camp   ,0,CampVmi); }
+#endif
+
 void DetectorSelect::start_env  () { start_features_client(Env); }
 
 void DetectorSelect::start_waveform_client(Pds::DetInfo::Detector det, 
@@ -340,6 +377,7 @@ void DetectorSelect::start_image_client(Pds::DetInfo::Detector det,
   }
 }
 
+#ifndef CAMP
 void DetectorSelect::start_bps  (int channel) 
 {
   unsigned i = Bps+channel;
@@ -357,6 +395,7 @@ void DetectorSelect::start_bps  (int channel)
     _reset_box->enable(i);
   }
 }
+#endif
 
 void DetectorSelect::start_features_client(unsigned i)
 {

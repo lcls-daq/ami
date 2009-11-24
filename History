@@ -1,3 +1,4 @@
+2009-11-24	weaver  Tag V00-03-00.	Changed DetectorSelect to reflect Camp instruments.
 2009-10-28	weaver			Changed ami/data FeatureCache index references to strings to handle cases when
 					FeatureCache list changes.  Added global reset_plots and save_plots button.
 2009-10-26	weaver			Added semaphore in AnalysisFactory to guard Analysis list.  Raised CursorsX.cc

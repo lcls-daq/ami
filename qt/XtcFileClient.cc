@@ -16,6 +16,10 @@
 #include <QtGui/QListWidget>
 #include <QtGui/QApplication>
 
+#include <glob.h>
+#include <libgen.h>
+#include <string>
+
 using namespace Ami::Qt;
 
 static void insert_transition(Pds::Dgram* dg, Pds::TransitionId::Value tr)
@@ -38,19 +42,24 @@ static void dump(Pds::Dgram* dg)
 
 static const unsigned _nodes=4;
 
-XtcFileClient::XtcFileClient(Ami::XtcClient& client) :
+XtcFileClient::XtcFileClient(Ami::XtcClient& client,
+			     const char* basedir) :
   QWidget (0,::Qt::Window),
   _client (client),
+  _basedir(basedir),
   _task   (new Task(TaskObject("amiqt")))
 {
   QStringList experiments;
-  //  experiments << "amo01809";
-  experiments << "amo02109";
-  experiments << "amo01509";
-  experiments << "amo02709";
-  experiments << "amo01709";
-  experiments << "amo00209";
-  experiments << "amo02609";
+  {
+    glob_t g;
+    std::string gpath(_basedir);
+    gpath += "/*";
+    glob(gpath.c_str(),GLOB_ONLYDIR,0,&g);
+    
+    for(unsigned i=0; i<g.gl_pathc; i++)
+      experiments << basename(g.gl_pathv[i]);
+    globfree(&g);
+  }
 
   _expt_select = new QListWidget;
   _expt_select->addItems(experiments);
@@ -84,9 +93,7 @@ XtcFileClient::~XtcFileClient()
 void XtcFileClient::select_expt(const QString& expt)
 {
   QStringList paths;
-//   for(unsigned i=0; i<_nodes; i++)
-//     paths << QString("/reg/d/pcds/amo/offline/%1/online%2").arg(expt).arg(i);
-  paths << QString("/reg/d/pcds/amo/offline/%1/xtc").arg(expt);
+  paths << QString("%1/%2/xtc").arg(_basedir).arg(expt);
 
   _file_select->change_path_list(paths);
 }

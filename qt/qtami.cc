@@ -42,8 +42,9 @@ int main(int argc, char* argv[]) {
   unsigned serverGroup = 0xefff2000;
   unsigned clientGroup = 0xefff2001;
   bool offline=false;
+  const char* path = "/reg/d/pcds/amo/offline";
 
-  while ((c = getopt(argc, argv, "?hs:c:f:")) != -1) {
+  while ((c = getopt(argc, argv, "?hs:c:f:p:")) != -1) {
     switch (c) {
     case 's':
       { in_addr inp;
@@ -57,6 +58,9 @@ int main(int argc, char* argv[]) {
 	break; }
     case 'f':
       Ami::Qt::Path::setBase(optarg);
+      break;
+    case 'p':
+      path = optarg;
       break;
     case '?':
     case 'h':
@@ -79,7 +83,7 @@ int main(int argc, char* argv[]) {
   AnalysisFactory factory(features, srv);
 
   XtcClient     myClient(features, factory, offline);
-  Ami::Qt::XtcFileClient input(myClient);
+  Ami::Qt::XtcFileClient input(myClient, path);
 
   myClient.insert(new ControlXtcReader     (features));
   myClient.insert(new FEEGasDetEnergyReader(features));

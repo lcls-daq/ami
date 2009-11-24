@@ -7,6 +7,8 @@
 
 #include "pdsdata/xtc/DetInfo.hh"
 
+#define CAMP
+
 class QPrinter;
 
 namespace Ami {
@@ -23,7 +25,7 @@ namespace Ami {
       ~DetectorSelect();
     public:
       void start_waveform_client(Pds::DetInfo::Detector, unsigned, unsigned);
-      void start_image_client(Pds::DetInfo::Detector, unsigned, unsigned);
+      void start_image_client   (Pds::DetInfo::Detector, unsigned, unsigned);
       void start_features_client(unsigned);
     public slots:
       void save_setup();
@@ -33,6 +35,7 @@ namespace Ami {
       void reset_plots();
       void save_plots();
 
+#ifndef CAMP
       void start_gd   (int);
       void start_ims  ();
       void start_itof ();
@@ -40,7 +43,13 @@ namespace Ami {
       void start_etof (int);
       void start_bps  (int);
       void start_vmi  ();
+#else
+      void start_evrmon (int);
+      void start_campacq(int);
+      void start_campvmi();
+#endif
       void start_env  ();
+
     private:
       unsigned _interface;
       unsigned _serverGroup;

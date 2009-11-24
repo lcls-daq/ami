@@ -26,7 +26,8 @@ namespace Ami {
 			  public  Routine {
       Q_OBJECT
     public:
-      XtcFileClient(Ami::XtcClient&  client);
+      XtcFileClient(Ami::XtcClient&  client,
+		    const char* basedir);
       ~XtcFileClient();
     public:
       void routine();
@@ -38,6 +39,7 @@ namespace Ami {
       void done();
     private:
       Ami::XtcClient&  _client;
+      const char* _basedir;
       Task*       _task;  // thread for Qt
       FileSelect* _file_select;
       QListWidget* _expt_select;

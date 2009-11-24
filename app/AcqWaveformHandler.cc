@@ -43,12 +43,7 @@ unsigned AcqWaveformHandler::nentries() const { return _nentries; }
 
 const Entry* AcqWaveformHandler::entry(unsigned i) const { return _entry[i]; }
 
-void AcqWaveformHandler::reset() 
-{
-  for(unsigned i=0; i<_nentries; i++)
-    delete _entry[i];
-  _nentries = 0; 
-}
+void AcqWaveformHandler::reset() { _nentries = 0; }
 
 void AcqWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
