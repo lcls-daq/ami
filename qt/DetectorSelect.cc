@@ -282,6 +282,44 @@ void DetectorSelect::load_setup ()
 	      LOAD_AND_CONNECT }
 	    break;
 #else
+	  case Evr+0:
+	  case Evr+1:
+	    { Ami::Qt::WaveformClient* client = 
+		new Ami::Qt::WaveformClient(this,Pds::DetInfo(0,Pds::DetInfo::NoDetector,
+							      0,Pds::DetInfo::Acqiris,0),i-Evr);
+	      LOAD_AND_CONNECT }
+	    break;
+	  case CampAcq+0:
+	  case CampAcq+1:
+	  case CampAcq+2:
+	  case CampAcq+3:
+	  case CampAcq+4:
+	  case CampAcq+5:
+	  case CampAcq+6:
+	  case CampAcq+7:
+	  case CampAcq+8:
+	  case CampAcq+9:
+	  case CampAcq+10:
+	  case CampAcq+11:
+	  case CampAcq+12:
+	  case CampAcq+13:
+	  case CampAcq+14:
+	  case CampAcq+15:
+	  case CampAcq+16:
+	  case CampAcq+17:
+	  case CampAcq+18:
+	  case CampAcq+19:
+	    { Ami::Qt::WaveformClient* client = 
+		new Ami::Qt::WaveformClient(this,Pds::DetInfo(0,Pds::DetInfo::Camp,
+							      0,Pds::DetInfo::Acqiris,0),i-CampAcq);
+	      LOAD_AND_CONNECT }
+	    break;
+	  case CampVmi:  
+	    { Ami::Qt::ImageClient* client = 
+		new Ami::Qt::ImageClient(this,Pds::DetInfo(0,Pds::DetInfo::Camp,
+							   0,Pds::DetInfo::Opal1000,0),0);
+	      LOAD_AND_CONNECT }
+	    break;
 #endif
 	  case Env:  
 	    { Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);

@@ -81,7 +81,7 @@ Entry&     Average::_operate(const Entry& e) const
 	EntryImage::Info i = (EntryImage::Info)j;
 	_en.addinfo(en.info(i),i);
       }
-      if (_en.info(EntryImage::Normalization)==_n) {
+      if (_n && _en.info(EntryImage::Normalization)==_n) {
 	static_cast<EntryImage*>(_cache)->setto(_en);
 	_en.reset();
       }
