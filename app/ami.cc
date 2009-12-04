@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 
 #include "ami/app/XtcClient.hh"
 #include "ami/app/XtcShmClient.hh"
@@ -27,7 +29,7 @@ typedef Pds::DetInfo DI;
 static void usage(char* progname) {
   fprintf(stderr,
 	  "Usage: %s -p <partitionTag>\n"
-	  "          -i <interface address>\n"
+	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
 	  "          -c <client mcast group>\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
@@ -48,10 +50,34 @@ int main(int argc, char* argv[]) {
       offline=true;
       break;
     case 'i':
-      { in_addr inp;
+      if (optarg[0]<'0' || optarg[0]>'9') {
+	int skt = socket(AF_INET, SOCK_DGRAM, 0);
+	if (skt<0) {
+	  perror("Failed to open socket\n");
+	  exit(1);
+	}
+	ifreq ifr;
+	strcpy( ifr.ifr_name, optarg);
+	if (ioctl( skt, SIOCGIFADDR, (char*)&ifr)==0)
+	  interface = ntohl( *(unsigned*)&(ifr.ifr_addr.sa_data[2]) );
+	else {
+	  printf("Cannot get IP address for network interface %s.\n",optarg);
+	  exit(1);
+	}
+	printf("Using interface %s (%d.%d.%d.%d)\n",
+	       optarg,
+	       (interface>>24)&0xff,
+	       (interface>>16)&0xff,
+	       (interface>> 8)&0xff,
+	       (interface>> 0)&0xff);
+	close(skt);
+      }
+      else {
+	in_addr inp;
 	if (inet_aton(optarg, &inp))
 	  interface = ntohl(inp.s_addr);
-	break; }
+      }
+      break; 
     case 's':
       { in_addr inp;
 	if (inet_aton(optarg, &inp))
