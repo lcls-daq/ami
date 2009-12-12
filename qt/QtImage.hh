@@ -35,7 +35,7 @@ namespace Ami {
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
     public:
-      QImage&     image(double scale);
+      QImage&     image(double scale,bool linear=true);
       void        set_color_table(const QVector<QRgb>&);
     private:
       unsigned _x0, _y0;

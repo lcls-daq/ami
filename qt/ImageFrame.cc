@@ -73,7 +73,7 @@ void ImageFrame::remove_marker(ImageMarker& m) { _markers.remove(&m); }
 void ImageFrame::replot()
 {
   if (_qimage) {
-    QImage& output = _qimage->image(_control.scale());
+    QImage& output = _qimage->image(_control.scale(),_control.linear());
     for(std::list<ImageMarker*>::const_iterator it=_markers.begin(); it!=_markers.end(); it++) 
       (*it)->draw(output);
 

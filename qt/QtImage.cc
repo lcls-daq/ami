@@ -149,16 +149,20 @@ QImage&        QtImage::image(int s)
 }
 #else
 
-#define COPYIMAGE(type,factor) {			\
-    type* dst = (type*)_qimage->bits();			\
-    for(unsigned k=0; k<_ny; k++) {			\
-      for(unsigned j=0; j<_nx; j++) {			\
-        unsigned sh = static_cast<unsigned>((*src++)/n);       \
-	*dst++ = factor*(sh >= 0xff ? 0xff : sh); }	\
-      src += d.nbinsx()-_nx;				\
+#define LINTRANS(x) (x > p   ? (x-p)/n : 0)
+#define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
+
+#define COPYIMAGE(type,T,factor) {			      \
+    type* dst = (type*)_qimage->bits();			      \
+    for(unsigned k=0; k<_ny; k++) {			      \
+      for(unsigned j=0; j<_nx; j++) {			      \
+        unsigned sh = static_cast<unsigned>(T(*src));	      \
+	*dst++ = factor*(sh >= 0xff ? 0xff : sh);	      \
+	src++; }					      \
+      src += d.nbinsx()-_nx;				      \
     } }
 
-QImage&        QtImage::image(double s)
+QImage&        QtImage::image(double s, bool linear)
 {
   const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
   const Ami::DescImage&  d = _entry.desc();
@@ -167,18 +171,33 @@ QImage&        QtImage::image(double s)
 //   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
 //   if (s>0)  n<<= s;
 //   else      n>>=-s;
+  float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  n *= double(s);
 
   const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
-  switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,0x0101010101010101ULL); break; }
+  if (linear) {
+    n *= double(s);
+    switch(_scale) {
+    case 1: { COPYIMAGE(uint8_t ,LINTRANS,0x01); break; }
+    case 2: { COPYIMAGE(uint16_t,LINTRANS,0x0101); break; }
+    case 4: { COPYIMAGE(uint32_t,LINTRANS,0x01010101); break; }
+    case 8: { COPYIMAGE(uint64_t,LINTRANS,0x0101010101010101ULL); break; }
     default: break;
     }
+  }
+  else {
+    const float  ppn  = p+n;
+    const double logn = log(n);
+    const double invlogs = 256./(log(s)+log(256));
+    switch(_scale) {
+    case 1: { COPYIMAGE(uint8_t ,LOGTRANS,0x01); break; }
+    case 2: { COPYIMAGE(uint16_t,LOGTRANS,0x0101); break; }
+    case 4: { COPYIMAGE(uint32_t,LOGTRANS,0x01010101); break; }
+    case 8: { COPYIMAGE(uint64_t,LOGTRANS,0x0101010101010101ULL); break; }
+    default: break;
+    }
+  }
   return *_qimage;
 }
 #endif

@@ -101,6 +101,9 @@ int main(int argc, char* argv[]) {
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoMbes  ,0,DI::Acqiris,0)));
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoETof  ,0,DI::Acqiris,0)));
 
+  myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,0)));
+  myClient.insert(new AcqWaveformHandler(DI(0,DI::Camp  ,0,DI::Acqiris,0)));
+
   srv.serve(factory);
   srv.start();  // run in another thread
   //  srv.routine();  // run in this thread

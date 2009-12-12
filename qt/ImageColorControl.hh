@@ -10,6 +10,7 @@
 #include <QtGui/QPixmap>
 
 class QButtonGroup;
+class QCheckBox;
 class QLabel;
 
 namespace Ami {
@@ -24,6 +25,7 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      bool   linear() const;
       double scale() const;
       const QVector<QRgb>& color_table() const;
     public slots:
@@ -38,8 +40,11 @@ namespace Ami {
       int     _scale;
       QString _title;
       QVector<QRgb>* _color_table;
+      QLabel* _scale_min;
+      QLabel* _scale_mid;
       QLabel* _scale_max;
       QButtonGroup* _paletteGroup;
+      QCheckBox* _logscale;
     };
   };
 };

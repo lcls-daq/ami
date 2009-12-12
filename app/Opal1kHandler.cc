@@ -63,6 +63,7 @@ void Opal1kHandler::_event    (const void* payload, const Pds::ClockTime& t)
       for(unsigned k=0; k<f.width(); k++, d++)
 	_entry->addcontent(*d, k/PixelsPerBin, j/PixelsPerBin);
   }
+  _entry->info(f.offset()*PixelsPerBin*PixelsPerBin,EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }

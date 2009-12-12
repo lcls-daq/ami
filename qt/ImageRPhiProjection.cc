@@ -10,6 +10,7 @@
 #include "ami/data/DescProf.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/RPhiProjection.hh"
+#include "ami/data/FFT.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
@@ -23,6 +24,7 @@
 #include <QtGui/QDoubleValidator>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QComboBox>
+#include <QtGui/QCheckBox>
 #include <QtGui/QMessageBox>
 
 #include <sys/socket.h>
@@ -68,6 +70,9 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   _norm->addButton(meanB,1);
   sumB->setChecked(true);
 
+  _transform = new QCheckBox("Apply Fourier Transform");
+  _transform->setChecked(false);
+
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
@@ -102,6 +107,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
       layout2->addWidget(new QLabel("axis"));
       layout2->addStretch();
       layout1->addLayout(layout2); }
+    //    layout1->addWidget(_transform);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -248,6 +254,9 @@ void ImageRPhiProjection::plot()
 				     _annulus->xcenter(), _annulus->ycenter());
     }
   }
+
+  if (_transform->isChecked())
+    proj->next(new Ami::FFT);
 
   ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
   _pplots.push_back(plot);

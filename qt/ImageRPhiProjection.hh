@@ -8,6 +8,7 @@
 
 class QLineEdit;
 class QButtonGroup;
+class QCheckBox;
 
 #include <list>
 
@@ -59,6 +60,7 @@ namespace Ami {
       QLineEdit* _title;
       QButtonGroup* _axis;
       QButtonGroup* _norm;
+      QCheckBox*    _transform;
 
       Ami::AbsOperator* _operator;
 
