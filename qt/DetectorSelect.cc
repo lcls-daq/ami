@@ -50,14 +50,10 @@ DetectorSelect::DetectorSelect(const QString& label,
   QtPWidget   (0),
   _interface  (interface),
   _serverGroup(serverGroup),
-  _client     (new QtTopWidget*[MaxClients]),
   _restore    (0),
-  _reset_box  (new DetectorReset(this, _client, names, MaxClients)),
-  _save_box   (new DetectorSave (this, _client, names, MaxClients))
+  _reset_box  (new DetectorReset(this, _clients)),
+  _save_box   (new DetectorSave (this, _clients))
 {
-  for(unsigned k=0; k<MaxClients; k++)
-    _client[k] = 0;
-
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 

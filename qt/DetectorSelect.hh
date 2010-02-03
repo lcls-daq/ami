@@ -2,10 +2,10 @@
 #define AmiQt_DetectorSelect_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "pdsdata/xtc/DetInfo.hh"
 
 #include <QtCore/QString>
-
-#include "pdsdata/xtc/DetInfo.hh"
+#include <list>
 
 #define CAMP
 
@@ -51,13 +51,13 @@ namespace Ami {
       void start_env  ();
 
     private:
-      unsigned _interface;
-      unsigned _serverGroup;
-      QtTopWidget** _client;
-      char*       _restore;
-      QPrinter*   _printer;
-      DetectorReset*   _reset_box;
-      DetectorSave*    _save_box;
+      unsigned       _interface;
+      unsigned       _serverGroup;
+      std::list<QtTopWidget*> _clients;
+      char*          _restore;
+      QPrinter*      _printer;
+      DetectorReset* _reset_box;
+      DetectorSave*  _save_box;
     };
   };
 };

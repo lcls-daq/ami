@@ -9,10 +9,8 @@
 using namespace Ami::Qt;
 
 DetectorSave::DetectorSave(QWidget* parent,
-			   QtTopWidget** clients,
-			   const char** names,
-			   int          n) :
-  DetectorGroup("Save Plots",parent,clients,names,n) 
+			   std::list<QtTopWidget*>& clients) :
+  DetectorGroup("Save Plots",parent,clients) 
 {
 }
 
@@ -32,8 +30,8 @@ void DetectorSave::_init()
 					 def,"*.dat");
 }
 
-void DetectorSave::_apply(QtTopWidget& client, const QString& name)
+void DetectorSave::_apply(QtTopWidget& client)
 {
   if (!_prefix.isNull())
-    client.save_plots(QString("%1_%2").arg(_prefix).arg(name));
+    client.save_plots(QString("%1_%2").arg(_prefix).arg(client.title()));
 }

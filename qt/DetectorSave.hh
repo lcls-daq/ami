@@ -8,13 +8,11 @@ namespace Ami {
     class DetectorSave : public DetectorGroup {
     public:
       DetectorSave(QWidget* parent,
-		   QtTopWidget**,
-		   const char**,
-		   int);
+		   const std::list<QtTopWidget*>&);
       ~DetectorSave();
     private:
       void _init ();
-      void _apply(QtTopWidget&, const QString&);
+      void _apply(QtTopWidget&);
     private:
       QString _prefix;
     };

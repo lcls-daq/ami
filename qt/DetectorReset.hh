@@ -8,12 +8,10 @@ namespace Ami {
     class DetectorReset : public DetectorGroup {
     public:
       DetectorReset(QWidget*,
-		    QtTopWidget**,
-		    const char**,
-		    int);
+		    const std::list<QtTopWidget*>&);
       ~DetectorReset();
     private:
-      void _apply(QtTopWidget&, const QString&);
+      void _apply(QtTopWidget&);
     };
   };
 };

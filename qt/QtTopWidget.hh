@@ -10,6 +10,7 @@ namespace Ami {
       QtTopWidget(QWidget* parent) : QtPWidget(parent) {}
       virtual ~QtTopWidget() {}
     public:
+      virtual const QString& title() const = 0;
       virtual void save_setup(char*& p) const { save(p); }
       virtual void load_setup(const char*& p) { load(p); }
       virtual void save_plots(const QString&) const = 0;

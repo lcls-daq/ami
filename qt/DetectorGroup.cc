@@ -11,12 +11,10 @@ using namespace Ami::Qt;
 
 DetectorGroup::DetectorGroup(const QString& label,
 			     QWidget*     parent,
-			     QtTopWidget** clients,
-			     const char** names,
-			     int          n) :
+			     const std::list<QtTopWidget*>& clients) :
   QtPWidget(parent),
   _clients (clients),
-  _n       (n),
+  _snapshot(clients),
   _buttons (new QButtonGroup)
 {
   _buttons->setExclusive(false);
@@ -26,12 +24,14 @@ DetectorGroup::DetectorGroup(const QString& label,
 
   QVBoxLayout* l = new QVBoxLayout;
 
-  for(int i=0; i<n; i++) {
-    QCheckBox* button = new QCheckBox(names[i],this);
+  int i=0;
+  for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
+      it != _snapshot.end(); it++,i++) {
+    QCheckBox* button = new QCheckBox(it->title(),this);
     button->setChecked(false);
     button->setEnabled(false);
     l->addWidget(button);
-    _buttons->addButton(button,i);
+    _buttons->addButton(button,i++);
   }
 
   { QHBoxLayout* layout = new QHBoxLayout;
@@ -53,7 +53,9 @@ DetectorGroup::~DetectorGroup()
 void DetectorGroup::save(char*& p) const
 {
   QtPWidget::save(p);
-  for(int i=0; i<_n; i++) {
+  int i=0;
+  for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
+      it != _snapshot.end(); it++,i++) {
     QAbstractButton* box = _buttons->button(i);
     QtPersistent::insert(p, box->text());
     QtPersistent::insert(p, box->isChecked());
@@ -66,9 +68,11 @@ void DetectorGroup::load(const char*& p)
   QtPWidget::load(p);
   QString name = QtPersistent::extract_s(p);
   while(name!=QString("EndGroup")) {
-    for(int i=0; i<_n; i++) {
-      QAbstractButton* box = _buttons->button(i);
-      if (box->text() == name) {
+    int i=0;
+    for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
+	it != _snapshot.end(); it++,i++) {
+      if (it->name() == name) {
+	QAbstractButton* box = _buttons->button(i);
 	box->setChecked(QtPersistent::extract_b(p));
 	break;
       }
@@ -91,13 +95,41 @@ void DetectorGroup::disable(int i)
   box->setChecked(false);
 }
 
+void DetectorGroup::update_list()
+{
+  QButtonGroup* g = new QButtonGroup;
+  QVBoxLayout*  l = new QVBoxLayout;
+
+  int i=0;
+  for(std::list<QtTopWidget*>::const_iterator it = _clients.begin();
+      it != _clients.end(); it++,i++) {
+    QCheckBox* newbox = new QCheckBox(it->title(),this);
+    g->addButton(newbox,i);
+    l->addWidget(newbox);
+    int j=0;
+    for(std::list<QtTopWidget*>::const_iterator sit = _snapshot.begin();
+	sit != _snapshot.end(); sit++,j++) {
+      if (*it == *sit) {
+	QAbstractButton* box = _buttons->button(j);
+	newbox->setChecked(box->isChecked());
+      }
+    }
+  }
+  delete layout();
+  setLayout(l);
+}
+
 void DetectorGroup::apply()
 {
   _init();
-  for(int i=0; i<_n; i++) {
+  int i=0;
+  for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
+      it != _snapshot.end(); it++,i++) {
     QAbstractButton* box = _buttons->button(i);
-    if (box->isEnabled() && box->isChecked())
-      _apply(*_clients[i],box->text());
+    if (box->isEnabled() && box->isChecked()) {
+      QtTopWidget* p = *it;
+      _apply(*p);
+    }
   }
 }
 

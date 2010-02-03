@@ -2,6 +2,7 @@
 #define AmiQt_DetectorGroup_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include <list>
 
 class QButtonGroup;
 
@@ -14,9 +15,7 @@ namespace Ami {
     public:
       DetectorGroup(const QString&,
 		    QWidget* parent,
-		    QtTopWidget**,
-		    const char**,
-		    int);
+		    const std::list<QtTopWidget*>&);
       ~DetectorGroup();
     public:
       void save(char*& p) const;
@@ -25,14 +24,15 @@ namespace Ami {
       void enable (int);
       void disable(int);
     public slots:
+      void update_list();
       void apply();
       void close();
     private:
       virtual void _init () {}
-      virtual void _apply(QtTopWidget&,const QString&) = 0;
+      virtual void _apply(QtTopWidget&) = 0;
     private:
-      QtTopWidget** _clients;
-      int           _n;
+      const std::list<QtTopWidget*>& _clients;
+      std::list<QtTopWidget*>        _snapshot;
       QButtonGroup* _buttons;
     };
   };

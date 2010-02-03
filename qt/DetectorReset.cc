@@ -4,10 +4,8 @@
 using namespace Ami::Qt;
 
 DetectorReset::DetectorReset(QWidget* parent,
-			     QtTopWidget** clients,
-			     const char** names,
-			     int          n) :
-  DetectorGroup("Reset Plots",parent,clients,names,n) 
+			     const std::list<QtTopWidget*>& clients) :
+  DetectorGroup("Reset Plots",parent,clients) 
 {
 }
 
@@ -15,7 +13,7 @@ DetectorReset::~DetectorReset()
 {
 }
 
-void DetectorReset::_apply(QtTopWidget& client, const QString&)
+void DetectorReset::_apply(QtTopWidget& client)
 {
   client.reset_plots();
 }
