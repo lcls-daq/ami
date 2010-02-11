@@ -1,3 +1,4 @@
+2010-02-11	weaver	Tag V00-04-00.  Added ContourProjection, mouse release events.
 2009-11-24	weaver  Tag V00-03-00.	Changed DetectorSelect to reflect Camp instruments.
 2009-10-28	weaver			Changed ami/data FeatureCache index references to strings to handle cases when
 					FeatureCache list changes.  Added global reset_plots and save_plots button.
