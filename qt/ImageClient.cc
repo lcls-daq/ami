@@ -3,6 +3,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
+#include "ami/qt/ImageContourProjection.hh"
 #include "ami/qt/PeakFinder.hh"
 
 #include <QtGui/QPushButton>
@@ -27,15 +28,22 @@ ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) 
     _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*wd.plot());
     connect(cylB, SIGNAL(clicked(bool)), _rfproj, SLOT(setVisible(bool))); }
 
+  { QPushButton* cntB = new QPushButton("Contour Projection");
+    cntB ->setCheckable(true);
+    addWidget(cntB);
+    _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*wd.plot());
+    connect(cntB, SIGNAL(clicked(bool)), _cntproj, SLOT(setVisible(bool))); }
+
   { QPushButton* hitB = new QPushButton("Hit Finder");
     hitB ->setCheckable(true);
     addWidget(hitB);
     _hit = new PeakFinder(this,_channels,NCHANNELS,wd);
     connect(hitB, SIGNAL(clicked(bool)), _hit, SLOT(setVisible(bool))); }
 
-  connect(_xyproj, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_rfproj, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_hit   , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_cntproj, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_hit    , SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
 ImageClient::~ImageClient() {}
@@ -44,25 +52,28 @@ void ImageClient::save(char*& p) const
 {
   Client::save(p);
 
-  _xyproj->save(p);
-  _rfproj->save(p);
-  _hit   ->save(p);
+  _xyproj ->save(p);
+  _rfproj ->save(p);
+  _cntproj->save(p);
+  _hit    ->save(p);
 }
 
 void ImageClient::load(const char*& p)
 {
   Client::load(p);
 
-  _xyproj->load(p);
-  _rfproj->load(p);
-  _hit   ->load(p);
+  _xyproj ->load(p);
+  _rfproj ->load(p);
+  _cntproj->load(p);
+  _hit    ->load(p);
 }
 
 void ImageClient::save_plots(const QString& p) const
 {
-  _xyproj->save_plots(p+"_xyproj");
-  _rfproj->save_plots(p+"_rfproj");
-  _hit   ->save_plots(p+"_hits");
+  _xyproj ->save_plots(p+"_xyproj");
+  _rfproj ->save_plots(p+"_rfproj");
+  _cntproj->save_plots(p+"_cntproj");
+  _hit    ->save_plots(p+"_hits");
 }
 
 void ImageClient::_configure(char*& p, 
@@ -72,21 +83,24 @@ void ImageClient::_configure(char*& p,
 			     int* signatures, 
 			     unsigned nchannels)
 {
-   _xyproj->configure(p, input, output, ch, signatures, nchannels);
-   _rfproj->configure(p, input, output, ch, signatures, nchannels);
-   _hit   ->configure(p, input, output, ch, signatures, nchannels);
+   _xyproj ->configure(p, input, output, ch, signatures, nchannels);
+   _rfproj ->configure(p, input, output, ch, signatures, nchannels);
+   _cntproj->configure(p, input, output, ch, signatures, nchannels);
+   _hit    ->configure(p, input, output, ch, signatures, nchannels);
 }
 
 void ImageClient::_setup_payload(Cds& cds)
 {
-  _xyproj->setup_payload(cds);
-  _rfproj->setup_payload(cds);
-  _hit   ->setup_payload(cds);
+  _xyproj ->setup_payload(cds);
+  _rfproj ->setup_payload(cds);
+  _cntproj->setup_payload(cds);
+  _hit    ->setup_payload(cds);
 }
 
 void ImageClient::_update()
 {
-  _xyproj->update();
-  _rfproj->update();
-  _hit   ->update();
+  _xyproj ->update();
+  _rfproj ->update();
+  _cntproj->update();
+  _hit    ->update();
 }

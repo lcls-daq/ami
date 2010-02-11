@@ -27,18 +27,18 @@ namespace Ami {
       double yhi() const;
     public:   // ImageMarker interface
       void draw(QImage&);
-    private:  // Cursors interface
-      void _set_cursor(double,double);
+    public:  // Cursors interface
+      void mousePressEvent(double,double);
+      void mouseReleaseEvent(double,double);
+    private:
       void _set_edits ();
     public slots:
-      void grab_zero();
-      void grab_one ();
+      void grab();
       void update_edits();
     signals:
       void changed();
     private:
-      enum Cursor { None, Zero, One, NumberOf };
-      Cursor _active;
+      ImageFrame& _frame;
       double _x0, _y0;
       double _x1, _y1;
       QLineEdit* _edit_x0;

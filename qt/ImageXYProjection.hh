@@ -48,8 +48,6 @@ namespace Ami {
     signals:
       void changed();
     private:
-      void _set_cursor  (double, double);
-    private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
       unsigned _channel;

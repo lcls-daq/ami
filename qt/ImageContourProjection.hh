@@ -1,5 +1,5 @@
-#ifndef AmiQt_ImageRPhiProjection_hh
-#define AmiQt_ImageRPhiProjection_hh
+#ifndef AmiQt_ImageContourProjection_hh
+#define AmiQt_ImageContourProjection_hh
 
 #include "ami/qt/QtPWidget.hh"
 
@@ -8,28 +8,27 @@
 
 class QLineEdit;
 class QButtonGroup;
-class QCheckBox;
 
 #include <list>
 
 namespace Ami {
 
-  class AbsOperator;
   class Cds;
   class Entry;
 
   namespace Qt {
-    class AnnulusCursors;
     class ChannelDefinition;
+    class RectangleCursors;
+    class Contour;
     class ImageFrame;
     class ProjectionPlot;
 
-    class ImageRPhiProjection : public QtPWidget {
+    class ImageContourProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageRPhiProjection(QWidget* parent,
-			  ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
-      ~ImageRPhiProjection();
+      ImageContourProjection(QWidget* parent,
+			     ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
+      ~ImageContourProjection();
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -52,15 +51,13 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
 
-      ImageFrame&  _frame;
-      AnnulusCursors* _annulus;
+      ImageFrame&       _frame;
+      RectangleCursors* _rectangle;
 
-      QLineEdit* _title;
+      QLineEdit*    _title;
       QButtonGroup* _axis;
       QButtonGroup* _norm;
-      QCheckBox*    _transform;
-
-      Ami::AbsOperator* _operator;
+      Contour*      _contour;
 
       std::list<ProjectionPlot*> _pplots;
     };

@@ -71,7 +71,6 @@ static QChar _subtract    (0x002D);
 
 CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
   QtPWidget (parent),
-  Cursors   (*frame.plot()),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
@@ -397,11 +396,13 @@ void CursorsX::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
-void CursorsX::grab_cursorx() { grab_cursor(); }
+void CursorsX::grab_cursorx() { _frame.plot()->set_cursor_input(this); }
 
-void CursorsX::_set_cursor(double x, double y)
+void CursorsX::mousePressEvent(double x, double y)
 {
+  _frame.plot()->set_cursor_input(0);
   _new_value->setText(QString::number(x));
   emit grabbed();
 }
 
+void CursorsX::mouseReleaseEvent(double,double) {}

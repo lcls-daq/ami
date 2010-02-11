@@ -22,8 +22,8 @@ namespace Ami {
     public:
       double value() const;
       void   value(double);
-    private:
-      void _set_cursor(double,double);
+      void mousePressEvent(double,double);
+      void mouseReleaseEvent(double,double);
     public slots:
       void set_value();    
       void grab();
@@ -31,6 +31,7 @@ namespace Ami {
     signals:
       void changed();
     private:
+      PlotFrame& _frame;
       QString    _name;
       QLineEdit* _input;
       QPushButton* _showB;

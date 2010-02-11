@@ -16,6 +16,7 @@ namespace Ami {
       ~PlotFrame();
     protected:
       void mousePressEvent(QMouseEvent* e);
+      void mouseReleaseEvent(QMouseEvent* e);
     public:
       void set_cursor_input(Cursors* c);
     private:

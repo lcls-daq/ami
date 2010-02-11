@@ -7,6 +7,7 @@ namespace Ami {
   namespace Qt {
     class ImageXYProjection;
     class ImageRPhiProjection;
+    class ImageContourProjection;
     class PeakFinder;
     class ImageClient : public Client {
     public:
@@ -26,9 +27,10 @@ namespace Ami {
       void _setup_payload(Cds&);
       void _update();
     private:
-      ImageXYProjection*   _xyproj;
-      ImageRPhiProjection* _rfproj;
-      PeakFinder*          _hit;
+      ImageXYProjection*      _xyproj;
+      ImageRPhiProjection*    _rfproj;
+      ImageContourProjection* _cntproj;
+      PeakFinder*             _hit;
     };
   };
 };

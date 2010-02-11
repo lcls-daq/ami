@@ -88,23 +88,26 @@ void ImageFrame::replot()
 
 void ImageFrame::mousePressEvent(QMouseEvent* e)
 {
-//   QScrollBar* h = _scroll->horizontalScrollBar();
-//   QScrollBar* v = _scroll->verticalScrollBar();
-
-//   printf("ImageFrame mouse %d,%d  scroll area %d,%d  bars %d,%d\n",
-// 	 e->x(),e->y(), p.x(),p.y(), h->value(),v->value());
-
-//  QPoint p1 = _scroll->pos();
-  QPoint p1(0,0);
   QPoint p2 = _canvas->pos();
 
-  unsigned ix = e->x() - p1.x() - p2.x();
-  unsigned iy = e->y() - p1.x() - p2.y();
-  //  _shift(ix,iy,-_xyshift);
+  unsigned ix = e->x() - p2.x();
+  unsigned iy = e->y() - p2.y();
   double x(ix),y(iy);
   if (_c)
-    _c->set_cursor(x,y);
+    _c->mousePressEvent(x,y);
   QWidget::mousePressEvent(e);
+}
+
+void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
+{
+  QPoint p2 = _canvas->pos();
+
+  unsigned ix = e->x() - p2.x();
+  unsigned iy = e->y() - p2.y();
+  double x(ix),y(iy);
+  if (_c)
+    _c->mouseReleaseEvent(x,y);
+  QWidget::mouseReleaseEvent(e);
 }
 
 void ImageFrame::set_cursor_input(Cursors* c) { _c=c; }

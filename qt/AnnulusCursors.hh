@@ -31,18 +31,18 @@ namespace Ami {
       void draw(QImage&);
     public slots:
       void grab_center();
-      void grab_inner ();
-      void grab_outer ();
-      void grab_phi0  ();
-      void grab_phi1  ();
+      void grab_limits();
       void update_edits();
-    private:  // Cursors interface
-      void _set_cursor(double,double);
+    public:  // Cursors interface
+      void mousePressEvent(double,double);
+      void mouseReleaseEvent(double,double);
+    private:
       void _set_edits ();
     signals:
       void changed();
     private:
-      enum Cursor { None, Center, Inner, Outer, Phi0, Phi1, NumberOf };
+      ImageFrame& _frame;
+      enum Cursor { None, Center, Limits, NumberOf };
       Cursor _active;
       double _xc,_yc;
       double _r0,_r1;

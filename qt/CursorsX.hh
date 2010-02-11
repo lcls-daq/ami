@@ -63,8 +63,9 @@ namespace Ami {
     signals:
       void changed();
       void grabbed();
-    private:
-      void _set_cursor  (double, double);
+    public:
+      void mousePressEvent  (double, double);
+      void mouseReleaseEvent  (double, double);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;

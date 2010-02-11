@@ -33,6 +33,7 @@ namespace Ami {
       void replot();
       void scale_changed();
     protected:
+      void mouseReleaseEvent(QMouseEvent* e);
       void mousePressEvent(QMouseEvent* e);
     public:
       void set_cursor_input(Cursors* c);

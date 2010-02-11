@@ -27,7 +27,7 @@ static const double RAD_TO_DEG = 180./M_PI;
 
 AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   QWidget(0),
-  Cursors(f),
+  _frame(f),
   _xc(f.size().width()/2),
   _yc(f.size().height()/2),
   _r0(f.size().width()/4),
@@ -43,6 +43,13 @@ AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   _edit_phi0 (new QLineEdit),
   _edit_phi1 (new QLineEdit)
 {
+  _edit_xc   ->setMaximumWidth(40);
+  _edit_yc   ->setMaximumWidth(40);
+  _edit_inner->setMaximumWidth(40);
+  _edit_outer->setMaximumWidth(40);
+  _edit_phi0 ->setMaximumWidth(40);
+  _edit_phi1 ->setMaximumWidth(40);
+
   new QDoubleValidator(_edit_xc);
   new QDoubleValidator(_edit_yc);
   new QDoubleValidator(_edit_inner);
@@ -51,10 +58,7 @@ AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   new QDoubleValidator(_edit_phi1);
 
   QPushButton* grab_center = new QPushButton("Grab");
-  QPushButton* grab_inner  = new QPushButton("Grab");
-  QPushButton* grab_outer  = new QPushButton("Grab");
-  QPushButton* grab_phi0   = new QPushButton("Grab");
-  QPushButton* grab_phi1   = new QPushButton("Grab");
+  QPushButton* grab_limits = new QPushButton("Grab");
 
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(new QLabel("center"),0,0);
@@ -62,29 +66,19 @@ AnnulusCursors::AnnulusCursors(ImageFrame& f) :
   layout->addWidget(_edit_yc            ,0,2);
   layout->addWidget(grab_center         ,0,3);
 
-  layout->addWidget(new QLabel("inner") ,1,0);
+  layout->addWidget(new QLabel(QString("r inner,%1 begin [%2]").arg(PHI).arg(DEG)) ,1,0);
   layout->addWidget(_edit_inner         ,1,1);
-  layout->addWidget(grab_inner          ,1,2);
+  layout->addWidget(_edit_phi1          ,1,2);
 
-  layout->addWidget(new QLabel("outer") ,2,0);
+  layout->addWidget(new QLabel(QString("r outer,%1 end [%2]").arg(PHI).arg(DEG)) ,2,0);
   layout->addWidget(_edit_outer         ,2,1);
-  layout->addWidget(grab_outer          ,2,2);
-
-  layout->addWidget(new QLabel(QString("%1 begin [%2]").arg(PHI).arg(DEG)) ,3,0);
-  layout->addWidget(_edit_phi1          ,3,1);
-  layout->addWidget(grab_phi1           ,3,2);
-
-  layout->addWidget(new QLabel(QString("%1 end [%2]").arg(PHI).arg(DEG)) ,4,0);
-  layout->addWidget(_edit_phi0          ,4,1);
-  layout->addWidget(grab_phi0           ,4,2);
+  layout->addWidget(_edit_phi0          ,2,2);
+  layout->addWidget(grab_limits         ,1,3,2,1);
 
   setLayout(layout);
 
   connect(grab_center, SIGNAL(clicked()), this, SLOT(grab_center()));
-  connect(grab_inner , SIGNAL(clicked()), this, SLOT(grab_inner ()));
-  connect(grab_outer , SIGNAL(clicked()), this, SLOT(grab_outer ()));
-  connect(grab_phi0  , SIGNAL(clicked()), this, SLOT(grab_phi0  ()));
-  connect(grab_phi1  , SIGNAL(clicked()), this, SLOT(grab_phi1  ()));
+  connect(grab_limits, SIGNAL(clicked()), this, SLOT(grab_limits()));
 
   connect(_edit_xc   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
   connect(_edit_yc   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
@@ -121,11 +115,9 @@ void AnnulusCursors::load(const char*& p)
   _set_edits();
 }
 
-void AnnulusCursors::grab_center() { _active = Center; grab_cursor(); }
-void AnnulusCursors::grab_inner () { _active = Inner ; grab_cursor(); }
-void AnnulusCursors::grab_outer () { _active = Outer ; grab_cursor(); }
-void AnnulusCursors::grab_phi0  () { _active = Phi0  ; grab_cursor(); }
-void AnnulusCursors::grab_phi1  () { _active = Phi1  ; grab_cursor(); }
+void AnnulusCursors::grab_center() { _active = Center; _frame.set_cursor_input(this); }
+void AnnulusCursors::grab_limits() { _active = Limits; _frame.set_cursor_input(this); }
+
 void AnnulusCursors::update_edits() 
 {
   _xc = _edit_xc   ->text().toDouble();
@@ -145,6 +137,12 @@ void AnnulusCursors::_set_edits()
   _edit_outer->setText(QString::number(_r1));
   _edit_phi0 ->setText(QString::number(-_f0*RAD_TO_DEG));
   _edit_phi1 ->setText(QString::number(-_f1*RAD_TO_DEG));
+  _edit_xc   ->setCursorPosition(0);
+  _edit_yc   ->setCursorPosition(0);
+  _edit_inner->setCursorPosition(0);
+  _edit_outer->setCursorPosition(0);
+  _edit_phi0 ->setCursorPosition(0);
+  _edit_phi1 ->setCursorPosition(0);
 }
 
 void AnnulusCursors::draw(QImage& image)
@@ -166,15 +164,29 @@ void AnnulusCursors::draw(QImage& image)
   draw_arc(_xc,_yc,_f0, f1,_r1,image);  // draw outer arc
 }
 
-void AnnulusCursors::_set_cursor(double x,double y)
+void AnnulusCursors::mousePressEvent(double x,double y)
 {
   switch(_active) {
   case Center:  _xc=x; _yc=y; break;
-  case Inner :  _r0=sqrt(pow(x-_xc,2)+pow(y-_yc,2)); break;
-  case Outer :  _r1=sqrt(pow(x-_xc,2)+pow(y-_yc,2)); break;
-  case Phi0  :  _f0=atan2(y-_yc,x-_xc); break;
-  case Phi1  :  _f1=atan2(y-_yc,x-_xc); break;
+  case Limits:  
+    _r0=sqrt(pow(x-_xc,2)+pow(y-_yc,2)); 
+    _f1=atan2(y-_yc,x-_xc); 
+    break;
   default: break;
+  }
+}
+
+void AnnulusCursors::mouseReleaseEvent(double x,double y) 
+{
+  _frame.set_cursor_input(0);
+  if (_active==Limits) {
+    _r1=sqrt(pow(x-_xc,2)+pow(y-_yc,2));
+    _f0=atan2(y-_yc,x-_xc); 
+    if (_r1<_r0) {
+      double r0 = _r0;
+      _r0 = _r1;
+      _r1 = r0;
+    }
   }
   _active=None;
   _set_edits();

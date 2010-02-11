@@ -13,7 +13,7 @@ using namespace Ami::Qt;
 
 RectangleCursors::RectangleCursors(ImageFrame& f) :
   QWidget(0),
-  Cursors(f),
+  _frame(f),
   _x0(f.size().width()/4),
   _y0(f.size().width()/4),
   _x1(f.size().width()*3/4),
@@ -25,29 +25,32 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
   _xmax      (-1),
   _ymax      (-1)
 {
+  _edit_x0->setMaximumWidth(40);
+  _edit_y0->setMaximumWidth(40);
+  _edit_x1->setMaximumWidth(40);
+  _edit_y1->setMaximumWidth(40);
+
   new QDoubleValidator(_edit_x0);
   new QDoubleValidator(_edit_y0);
   new QDoubleValidator(_edit_x1);
   new QDoubleValidator(_edit_y1);
 
-  QPushButton* grab_zero = new QPushButton("Grab");
-  QPushButton* grab_one  = new QPushButton("Grab");
+  QPushButton* grab = new QPushButton("Grab");
 
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(new QLabel("c0")    ,0,0);
   layout->addWidget(_edit_x0            ,0,1);
   layout->addWidget(_edit_y0            ,0,2);
-  layout->addWidget(grab_zero           ,0,3);
 
   layout->addWidget(new QLabel("c1")    ,1,0);
   layout->addWidget(_edit_x1            ,1,1);
   layout->addWidget(_edit_y1            ,1,2);
-  layout->addWidget(grab_one            ,1,3);
+
+  layout->addWidget(grab                ,0,3,2,1);
 
   setLayout(layout);
 
-  connect(grab_zero, SIGNAL(clicked()), this, SLOT(grab_zero()));
-  connect(grab_one , SIGNAL(clicked()), this, SLOT(grab_one ()));
+  connect(grab, SIGNAL(clicked()), this, SLOT(grab()));
 
   connect(_edit_x0   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
   connect(_edit_y0   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
@@ -78,8 +81,7 @@ void RectangleCursors::load(const char*& p)
   _set_edits();
 }
 
-void RectangleCursors::grab_zero() { _active = Zero; grab_cursor(); }
-void RectangleCursors::grab_one () { _active = One ; grab_cursor(); }
+void RectangleCursors::grab() { _frame.set_cursor_input(this); }
 void RectangleCursors::update_edits() 
 {
   _x0 = _edit_x0   ->text().toDouble();
@@ -135,17 +137,20 @@ void RectangleCursors::draw(QImage& image)
   }
 }
 
-void RectangleCursors::_set_cursor(double x,double y)
+void RectangleCursors::mousePressEvent(double x,double y)
 {
-  switch(_active) {
-  case Zero:  _x0=x; _y0=y; break;
-  case One :  _x1=x; _y1=y; break;
-  default: break;
-  }
-  _active=None;
+  _x0=x; _y0=y;
 
   if (_x0 > _xmax) _x0 = _xmax;
   if (_y0 > _ymax) _y0 = _ymax;
+}
+
+void RectangleCursors::mouseReleaseEvent(double x,double y) 
+{
+  _frame.set_cursor_input(0);
+
+  _x1=x; _y1=y;
+
   if (_x1 > _xmax) _x1 = _xmax;
   if (_y1 > _ymax) _y1 = _ymax;
 
