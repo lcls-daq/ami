@@ -11,6 +11,7 @@
 #include "ami/data/PeakFitPlot.hh"
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
+#include "ami/data/ContourProjection.hh"
 #include "ami/data/FFT.hh"
 #include "ami/data/EnvPlot.hh"
 #include "ami/data/Cds.hh"
@@ -52,6 +53,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _f); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
+  case AbsOperator::ContourProjection: o = new ContourProjection(p,input); break;
   case AbsOperator::EnvPlot   : o = new EnvPlot(p,_f,output_cds); break;
   case AbsOperator::FFT       : o = new FFT    (p,input); break;
   case AbsOperator::Value     :

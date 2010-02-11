@@ -16,6 +16,8 @@ namespace Ami {
     void params(unsigned nbins, float xlow, float xup);
     void params(const DescTH1F& desc);
 
+    void clear();
+
     //  The contents are organized as 
     //  [ data0, data1, ..., dataN-1, underflow, overflow, normalization ]
     double content(unsigned bin) const;

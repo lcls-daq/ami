@@ -36,6 +36,15 @@ void EntryTH1F::params(const DescTH1F& desc)
   build(_desc.nbins());
 }
 
+void EntryTH1F::clear()
+{
+  double* dst = _y;
+  const double* end = dst+SIZE(_desc.nbins());
+  do {
+    *dst++ = 0;
+  } while (dst < end);
+}
+
 void EntryTH1F::build(unsigned nbins)
 {
   _y = static_cast<double*>(allocate(sizeof(double)*SIZE(nbins)));

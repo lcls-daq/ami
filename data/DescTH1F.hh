@@ -16,6 +16,7 @@ namespace Ami {
 	     bool normalize=true);
 
     void params(unsigned nbins, float xlow, float xup);
+    void clear();
 
     unsigned nbins() const;
     float xlow() const;
