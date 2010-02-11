@@ -30,7 +30,8 @@ FFT::FFT(const char*& p, const DescEntry& input) :
     { const DescTH1F& inputd = static_cast<const DescTH1F&>(input);
       float w = 0.5*float(inputd.nbins()-1)/(inputd.xup()-inputd.xlow());
       unsigned n = inputd.nbins()>>1;
-      DescTH1F desc(inputd.name(), inputd.xtitle(), inputd.ytitle(),
+      DescTH1F desc(inputd.info(), inputd.channel(),
+		    inputd.name(), inputd.xtitle(), inputd.ytitle(),
 		    n, 0., w*float(n),false);
       _output = new EntryTH1F(desc);
       break; }
@@ -38,7 +39,8 @@ FFT::FFT(const char*& p, const DescEntry& input) :
     { const DescProf& inputd = static_cast<const DescProf&>(input);
       float w = 0.5*float(inputd.nbins()-1)/(inputd.xup()-inputd.xlow());
       unsigned n = inputd.nbins()>>1;
-      DescProf desc(inputd.name(), inputd.xtitle(), inputd.ytitle(),
+      DescProf desc(inputd.info(), inputd.channel(),
+		    inputd.name(), inputd.xtitle(), inputd.ytitle(),
 		    n, 0., w*float(n), NULL);
       _output = new EntryProf(desc);
       break; }

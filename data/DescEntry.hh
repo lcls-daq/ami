@@ -3,12 +3,17 @@
 
 #include "ami/data/Desc.hh"
 
+#include "pdsdata/xtc/DetInfo.hh"
+
 namespace Ami {
 
   class DescEntry : public Desc {
   public:
     enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan};
     Type type() const;
+
+    const Pds::DetInfo& info()    const;
+    unsigned            channel() const;
 
     const char* xtitle() const;
     const char* ytitle() const;
@@ -30,7 +35,13 @@ namespace Ami {
     DescEntry(const char* name, const char* xtitle, const char* ytitle, 
 	      Type type, unsigned short size, bool isnormalized=true);
 
+    DescEntry(const Pds::DetInfo& info, unsigned channel,
+	      const char* name, const char* xtitle, const char* ytitle, 
+	      Type type, unsigned short size, bool isnormalized=true);
+
   private:
+    Pds::DetInfo _info;
+    unsigned     _channel;
     enum {TitleSize=128};
     char _xtitle[TitleSize];
     char _ytitle[TitleSize];

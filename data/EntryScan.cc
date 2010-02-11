@@ -8,10 +8,11 @@ using namespace Ami;
 
 EntryScan::~EntryScan() {}
 
-EntryScan::EntryScan(const char* name, 
+EntryScan::EntryScan(const Pds::DetInfo& info, unsigned channel,
+		     const char* name, 
 		     const char* xtitle, 
 		     const char* ytitle) :
-  _desc(name, xtitle, ytitle, DefaultNbins)
+  _desc(info, channel, name, xtitle, ytitle, DefaultNbins)
 {
   build(DefaultNbins);
 }

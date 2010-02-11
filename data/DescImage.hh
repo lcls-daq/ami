@@ -7,6 +7,12 @@ namespace Ami {
 
   class DescImage : public DescEntry {
   public:
+    DescImage(const Pds::DetInfo& info,
+	      unsigned channel,
+	      const char* name,
+	      unsigned nbinsx, unsigned nbinsy, 
+	      int ppbx=1, int ppby=1); // pixels per bin
+
     DescImage(const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 
 	      int ppbx=1, int ppby=1); // pixels per bin

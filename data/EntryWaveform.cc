@@ -10,10 +10,11 @@ using namespace Ami;
 
 EntryWaveform::~EntryWaveform() {}
 
-EntryWaveform::EntryWaveform(const char* name, 
+EntryWaveform::EntryWaveform(const Pds::DetInfo& info, unsigned channel,
+			     const char* name, 
 			     const char* xtitle, 
 			     const char* ytitle) :
-  _desc(name, xtitle, ytitle, DefaultNbins, DefaultLo, DefaultUp)
+  _desc(info, channel, name, xtitle, ytitle, DefaultNbins, DefaultLo, DefaultUp)
 {
   build(DefaultNbins);
 }

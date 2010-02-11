@@ -10,7 +10,7 @@ namespace Ami {
 
   class EntryScalar : public Entry {
   public:
-    EntryScalar(const char* name, const char* ytitle);
+    EntryScalar(const Pds::DetInfo& info, unsigned channel, const char* name, const char* ytitle);
     EntryScalar(const DescScalar& desc);
 
     virtual ~EntryScalar();

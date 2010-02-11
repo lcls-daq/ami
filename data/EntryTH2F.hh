@@ -8,8 +8,9 @@ namespace Ami {
 
   class EntryTH2F : public Entry {
   public:
-    EntryTH2F(const char* name, const char* xtitle, const char* ytitle,
-		 bool isnormalized=false);
+    EntryTH2F(const Pds::DetInfo& info, unsigned channel,
+	      const char* name, const char* xtitle, const char* ytitle,
+	      bool isnormalized=false);
     EntryTH2F(const DescTH2F& desc);
 
     virtual ~EntryTH2F();

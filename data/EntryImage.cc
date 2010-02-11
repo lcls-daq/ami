@@ -10,8 +10,8 @@ using namespace Ami;
 
 EntryImage::~EntryImage() {}
 
-EntryImage::EntryImage(const char* name) :
-  _desc(name, DefaultNbins, DefaultNbins)
+EntryImage::EntryImage(const Pds::DetInfo& info, unsigned channel, const char* name) :
+  _desc(info, channel, name, DefaultNbins, DefaultNbins)
 {
   build(DefaultNbins, DefaultNbins);
 }

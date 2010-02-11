@@ -8,9 +8,16 @@ namespace Ami {
   class DescTH2F : public DescEntry {
   public:
     DescTH2F(const char* name, const char* xtitle, const char* ytitle, 
-		unsigned nbinsx, float xlow, float xup,
-		unsigned nbinsy, float ylow, float yup,
-		bool isnormalized=false);
+	     unsigned nbinsx, float xlow, float xup,
+	     unsigned nbinsy, float ylow, float yup,
+	     bool isnormalized=false);
+
+    DescTH2F(const Pds::DetInfo& info,
+	     unsigned channel,
+	     const char* name, const char* xtitle, const char* ytitle, 
+	     unsigned nbinsx, float xlow, float xup,
+	     unsigned nbinsy, float ylow, float yup,
+	     bool isnormalized=false);
 
     unsigned nbinsx() const;
     unsigned nbinsy() const;

@@ -7,6 +7,16 @@ namespace Ami {
 
   class DescTH1F : public DescEntry {
   public:
+    DescTH1F(const Pds::DetInfo& info,
+	     unsigned channel,
+	     const char* name, 
+	     const char* xtitle, 
+	     const char* ytitle, 
+	     unsigned nbins, 
+	     float xlow, 
+	     float xup,
+	     bool normalize=true);
+
     DescTH1F(const char* name, 
 	     const char* xtitle, 
 	     const char* ytitle, 

@@ -11,10 +11,11 @@ using namespace Ami;
 
 EntryProf::~EntryProf() {}
 
-EntryProf::EntryProf(const char* name, 
-			   const char* xtitle, 
-			   const char* ytitle) :
-  _desc(name, xtitle, ytitle, DefaultNbins, DefaultLo, DefaultUp, DefaultNames)
+EntryProf::EntryProf(const Pds::DetInfo& info, unsigned channel, 
+		     const char* name, 
+		     const char* xtitle, 
+		     const char* ytitle) :
+  _desc(info, channel, name, xtitle, ytitle, DefaultNbins, DefaultLo, DefaultUp, DefaultNames)
 {
   build(DefaultNbins);
 }

@@ -1,21 +1,48 @@
 #include "ChannelID.hh"
 
+#include <string.h>
 #include <stdio.h>
 
+using namespace Pds;
+
 static char _buffer[128];
+
+#define NoChannel(title) { strcpy(_buffer,title); }
+#define AppendChannel(title) { sprintf(_buffer,"%s_%d",title,channel+1); }
+#define AcqChannel(title) {			\
+    if (info.device()==DetInfo::Acqiris)	\
+      AppendChannel(title);			\
+  }
+#define OpalChannel(title) {			\
+    if (info.device()==DetInfo::Opal1000)	\
+      AppendChannel(title);			\
+  }
+#define AcqDetector(title) {			\
+    if (info.device()==DetInfo::Acqiris)	\
+      NoChannel(title);				\
+  }
+#define OpalDetector(title) {			\
+    if (info.device()==DetInfo::Opal1000)	\
+      NoChannel(title);				\
+  }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
 				 unsigned channel)
 {
-  if (info.detector()==Pds::DetInfo::AmoETof ||
-      info.detector()==Pds::DetInfo::AmoGasdet ||
-      info.detector()==Pds::DetInfo::AmoMbes ||
-      (info.detector()==Pds::DetInfo::Camp && info.device()==Pds::DetInfo::Acqiris))
-    sprintf(_buffer,"%s Channel %d",Pds::DetInfo::name(info),channel+1);
-  else if (info.detector()==Pds::DetInfo::AmoITof &&
-	   channel==1)
-    sprintf(_buffer,"SyncdTrigger");
-  else
-    sprintf(_buffer,"%s",Pds::DetInfo::name(info));
+  *_buffer = 0;
+  switch(info.detector()) {
+    //  AMO Detectors
+  case DetInfo::AmoITof  : AcqDetector("ITOF"); break;
+  case DetInfo::AmoIms   : AcqChannel("IMS"); break;
+  case DetInfo::AmoETof  : AcqChannel("ETOF"); break;
+  case DetInfo::AmoGasdet: AcqChannel("GASDET"); break;
+  case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
+  case DetInfo::AmoBps   : OpalChannel("BPS"); break;
+    //  CAMP Detectors
+  case DetInfo::Camp     : AcqChannel("ACQ"); OpalDetector("VMI"); break;
+    //  Others
+  default: break;
+  }
   return _buffer;
-}
+}   
+

@@ -10,11 +10,12 @@ using namespace Ami;
 
 EntryTH2F::~EntryTH2F() {}
 
-EntryTH2F::EntryTH2F(const char* name, 
-			   const char* xtitle, 
-			   const char* ytitle,
-			   bool isnormalized) :
-  _desc(name, xtitle, ytitle, 
+EntryTH2F::EntryTH2F(const Pds::DetInfo& info, unsigned channel,
+		     const char* name, 
+		     const char* xtitle, 
+		     const char* ytitle,
+		     bool isnormalized) :
+  _desc(info, channel, name, xtitle, ytitle, 
 	DefaultNbins, DefaultLo, DefaultUp,
 	DefaultNbins, DefaultLo, DefaultUp,
 	isnormalized)

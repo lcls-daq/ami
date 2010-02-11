@@ -8,7 +8,8 @@ namespace Ami {
 
   class EntryWaveform : public Entry {
   public:
-    EntryWaveform(const char* name, const char* xtitle, const char* ytitle);
+    EntryWaveform(const Pds::DetInfo& info, unsigned channel,
+		  const char* name, const char* xtitle, const char* ytitle);
     EntryWaveform(const DescWaveform& desc);
 
     virtual ~EntryWaveform();

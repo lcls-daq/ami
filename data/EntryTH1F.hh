@@ -8,7 +8,7 @@ namespace Ami {
 
   class EntryTH1F : public Entry {
   public:
-    EntryTH1F(const char* name, const char* xtitle, const char* ytitle);
+    EntryTH1F(const Pds::DetInfo& info, unsigned channel, const char* name, const char* xtitle, const char* ytitle);
     EntryTH1F(const DescTH1F& desc);
 
     virtual ~EntryTH1F();

@@ -8,7 +8,12 @@ namespace Ami {
   class DescProf : public DescEntry {
   public:
     DescProf(const char* name, const char* xtitle, const char* ytitle, 
-		unsigned nbins, float xlow, float xup, const char* names);
+	     unsigned nbins, float xlow, float xup, const char* names);
+
+    DescProf(const Pds::DetInfo& info,
+	     unsigned channel,
+	     const char* name, const char* xtitle, const char* ytitle, 
+	     unsigned nbins, float xlow, float xup, const char* names);
 
     unsigned nbins() const;
     float xlow() const;

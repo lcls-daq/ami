@@ -6,9 +6,10 @@ using namespace Ami;
 
 EntryScalar::~EntryScalar() {}
 
-EntryScalar::EntryScalar(const char* name, 
+EntryScalar::EntryScalar(const Pds::DetInfo& info, unsigned channel,
+			 const char* name, 
 			 const char* ytitle) :
-  _desc(name, ytitle),
+  _desc(info, channel, name, ytitle),
   _y   (static_cast<double*>(allocate(sizeof(double)*3)))
 {
 }

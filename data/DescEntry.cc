@@ -5,12 +5,35 @@
 using namespace Ami;
 
 DescEntry::DescEntry(const char* name,
-				   const char* xtitle, 
-				   const char* ytitle, 
-				   Type type, 
-				   unsigned short size,
-				   bool isnormalized) :
+		     const char* xtitle, 
+		     const char* ytitle, 
+		     Type type, 
+		     unsigned short size,
+		     bool isnormalized) :
   Desc(name),
+  _channel(-1),
+  _group(-1),
+  _options(isnormalized ? (1<<Normalized) : 0),
+  _type(type),
+  _size(size)
+{ 
+  strncpy(_xtitle, xtitle, TitleSize);
+  _xtitle[TitleSize-1] = 0;
+  strncpy(_ytitle, ytitle, TitleSize);
+  _ytitle[TitleSize-1] = 0;
+}
+
+DescEntry::DescEntry(const Pds::DetInfo& info,
+		     unsigned channel,
+		     const char* name,
+		     const char* xtitle, 
+		     const char* ytitle, 
+		     Type type, 
+		     unsigned short size,
+		     bool isnormalized) :
+  Desc(name),
+  _info   (info),
+  _channel(channel),
   _group(-1),
   _options(isnormalized ? (1<<Normalized) : 0),
   _type(type),
@@ -26,6 +49,9 @@ DescEntry::Type DescEntry::type() const {return Type(_type);}
 unsigned short DescEntry::size() const {return _size;}
 const char* DescEntry::xtitle() const {return _xtitle;}
 const char* DescEntry::ytitle() const {return _ytitle;}
+
+const Pds::DetInfo& DescEntry::info() const { return _info; }
+unsigned            DescEntry::channel() const { return _channel; }
 
 bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
 

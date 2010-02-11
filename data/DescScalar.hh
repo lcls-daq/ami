@@ -9,6 +9,11 @@ namespace Ami {
   public:
     DescScalar(const char* name, 
 	       const char* ytitle);
+
+    DescScalar(const Pds::DetInfo& info,
+	       unsigned channel,
+	       const char* name, 
+	       const char* ytitle);
   };
 };
 

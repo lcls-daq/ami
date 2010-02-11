@@ -9,6 +9,10 @@ namespace Ami {
   public:
     DescScan(const char* name, const char* xtitle, const char* ytitle, unsigned nbins);
 
+    DescScan(const Pds::DetInfo& info,
+	     unsigned channel,
+	     const char* name, const char* xtitle, const char* ytitle, unsigned nbins);
+
     unsigned nbins() const;
 
     void params(unsigned nbins);

@@ -7,7 +7,9 @@ namespace Ami {
 
   class DescWaveform : public DescEntry {
   public:
-    DescWaveform(const char* name, 
+    DescWaveform(const Pds::DetInfo& info,
+		 unsigned channel,
+		 const char* name, 
 		 const char* xtitle, 
 		 const char* ytitle, 
 		 unsigned nbins, 

@@ -8,7 +8,7 @@ namespace Ami {
 
   class EntryImage : public Entry {
   public:
-    EntryImage(const char* name);
+    EntryImage(const Pds::DetInfo&, unsigned channel, const char* name);
     EntryImage(const DescImage& desc);
 
     virtual ~EntryImage();

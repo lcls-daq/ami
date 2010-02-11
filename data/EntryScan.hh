@@ -11,7 +11,7 @@ namespace Ami {
 
   class EntryScan : public Entry {
   public:
-    EntryScan(const char* name, const char* xtitle, const char* ytitle);
+    EntryScan(const Pds::DetInfo& info, unsigned channel, const char* name, const char* xtitle, const char* ytitle);
     EntryScan(const DescScan& desc);
 
     virtual ~EntryScan();

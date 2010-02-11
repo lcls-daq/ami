@@ -11,7 +11,7 @@ namespace Ami {
 
   class EntryProf : public Entry {
   public:
-    EntryProf(const char* name, const char* xtitle, const char* ytitle);
+    EntryProf(const Pds::DetInfo& info, unsigned channel, const char* name, const char* xtitle, const char* ytitle);
     EntryProf(const DescProf& desc);
 
     virtual ~EntryProf();
