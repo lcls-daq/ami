@@ -49,11 +49,11 @@ namespace Ami {
       _srv(srv)
     {
       { DI src(0,DI::NoDetector,0,DI::Acqiris,0);
-	DescWaveform wfd(ChannelID::name(src,0),"x","y",200,-0.5,199.5);
+	DescWaveform wfd(src,0,ChannelID::name(src,0),"x","y",200,-0.5,199.5);
 	wfd.signature(1);
 	_wf = new EntryWaveform(wfd); }
       { DI src(0,DI::NoDetector,0,DI::Opal1000,0);
-	DescImage    imd(ChannelID::name(src,0),256,256,4,4);
+	DescImage    imd(src,0,ChannelID::name(src,0),256,256,4,4);
 	imd.signature(2);
 	_im = new EntryImage(imd); }
       _cds.add(_wf);
