@@ -40,9 +40,11 @@ using namespace Ami::Qt;
 enum { _TH1F, _vT, _vF, _vS };
 
 static const int BufferSize = 0x8000;
+static const Pds::DetInfo envInfo(0, Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
 
 EnvClient::EnvClient(QWidget* parent) :
-  QtTopWidget      (parent),
+  QtTopWidget      (parent,envInfo,0),
+  _title           ("Env"),
   _input           (0),
   _output_signature(0),
   _request         (new char[BufferSize]),
@@ -110,6 +112,8 @@ EnvClient::EnvClient(QWidget* parent) :
 }
 
 EnvClient::~EnvClient() {}
+
+const QString& EnvClient::title() const { return _title; }
 
 void EnvClient::save(char*& p) const
 {

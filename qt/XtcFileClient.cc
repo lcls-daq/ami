@@ -81,7 +81,9 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client,
 
   connect(_expt_select, SIGNAL(currentTextChanged(const QString&)), this, SLOT(select_expt(const QString&)));
   connect(_runB, SIGNAL(clicked()), this, SLOT(run()));
-  connect(this , SIGNAL(done())   , this, SLOT(ready()));
+  //  connect(this , SIGNAL(done())   , this, SLOT(ready()));
+  //  Infinite playback mode
+  connect(this , SIGNAL(done())   , this, SLOT(run()));
   connect(exitB, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
 }
 

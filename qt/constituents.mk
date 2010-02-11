@@ -8,7 +8,6 @@ tgtsrcs_offline_ami := FileSelect.cc FileSelect_moc.cc
 tgtsrcs_offline_ami += XtcFileClient.cc XtcFileClient_moc.cc
 tgtsrcs_offline_ami += qtami.cc
 
-
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
@@ -118,6 +117,8 @@ libsrcs_amiqt += EnvClient.cc EnvClient_moc.cc
 libsrcs_amiqt += DetectorGroup.cc DetectorGroup_moc.cc
 libsrcs_amiqt += DetectorSave.cc
 libsrcs_amiqt += DetectorReset.cc
+libsrcs_amiqt += DetectorButton.cc DetectorButton_moc.cc
+libsrcs_amiqt += DetectorList.cc   DetectorList_moc.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 
 # List special include directories (if any) needed by lib_a as

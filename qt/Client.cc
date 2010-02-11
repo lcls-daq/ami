@@ -41,11 +41,10 @@ Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
 			Display*            frame) :
-  QtTopWidget      (parent),
-  _src             (src),
-  _channel         (channel),
+  QtTopWidget      (parent,src,channel),
   _frame           (frame),
   _input_entry     (0),
+  _title           (ChannelID::name(src,channel)),
   _output_signature(0), 
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
@@ -119,6 +118,8 @@ Ami::Qt::Client::~Client()
   delete[] _request; 
 }
 
+const QString& Ami::Qt::Client::title() const { return _title; }
+
 void Ami::Qt::Client::save(char*& p) const
 {
   QtPWidget::save(p);
@@ -167,7 +168,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   FeatureRegistry::instance().insert(rx.feature_name(0),rx.features());
 
   char channel_name [128]; 
-  strcpy(channel_name ,ChannelID::name(_src,_channel));
+  strcpy(channel_name ,ChannelID::name(info,channel));
   _input_entry = 0;
 
   for(  const DescEntry* e = rx.entries(); e < rx.end(); 

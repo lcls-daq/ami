@@ -36,7 +36,8 @@ void Opal1kHandler::reset() { _entry = 0; }
 void Opal1kHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   //  const Pds::Opal1k::ConfigV1& c = *reinterpret_cast<const Pds::Opal1k::ConfigV1*>(payload);
-  DescImage desc(ChannelID::name(static_cast<const Pds::DetInfo&>(info())),
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+  DescImage desc(det, 0, ChannelID::name(det),
 		 Pds::Opal1k::ConfigV1::Column_Pixels / PixelsPerBin,
 		 Pds::Opal1k::ConfigV1::Row_Pixels / PixelsPerBin,
 		 PixelsPerBin, PixelsPerBin);

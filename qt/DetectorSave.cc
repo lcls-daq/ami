@@ -9,7 +9,7 @@
 using namespace Ami::Qt;
 
 DetectorSave::DetectorSave(QWidget* parent,
-			   std::list<QtTopWidget*>& clients) :
+			   const std::list<QtTopWidget*>& clients) :
   DetectorGroup("Save Plots",parent,clients) 
 {
 }

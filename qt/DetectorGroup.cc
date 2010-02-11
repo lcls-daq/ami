@@ -24,15 +24,19 @@ DetectorGroup::DetectorGroup(const QString& label,
 
   QVBoxLayout* l = new QVBoxLayout;
 
+  _client_layout = new QVBoxLayout;
+
   int i=0;
   for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
       it != _snapshot.end(); it++,i++) {
-    QCheckBox* button = new QCheckBox(it->title(),this);
+    QCheckBox* button = new QCheckBox((*it)->title(),this);
     button->setChecked(false);
     button->setEnabled(false);
-    l->addWidget(button);
+    _client_layout->addWidget(button);
     _buttons->addButton(button,i++);
   }
+
+  l->addLayout(_client_layout);
 
   { QHBoxLayout* layout = new QHBoxLayout;
     QPushButton* applyB = new QPushButton("Apply");
@@ -71,7 +75,7 @@ void DetectorGroup::load(const char*& p)
     int i=0;
     for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
 	it != _snapshot.end(); it++,i++) {
-      if (it->name() == name) {
+      if ((*it)->title() == name) {
 	QAbstractButton* box = _buttons->button(i);
 	box->setChecked(QtPersistent::extract_b(p));
 	break;
@@ -97,26 +101,41 @@ void DetectorGroup::disable(int i)
 
 void DetectorGroup::update_list()
 {
-  QButtonGroup* g = new QButtonGroup;
-  QVBoxLayout*  l = new QVBoxLayout;
+  setUpdatesEnabled(false);
 
-  int i=0;
+  std::list<QCheckBox*> newlist;
   for(std::list<QtTopWidget*>::const_iterator it = _clients.begin();
-      it != _clients.end(); it++,i++) {
-    QCheckBox* newbox = new QCheckBox(it->title(),this);
-    g->addButton(newbox,i);
-    l->addWidget(newbox);
+      it != _clients.end(); it++) {
+    QCheckBox* newbox = new QCheckBox((*it)->title(),this);
     int j=0;
     for(std::list<QtTopWidget*>::const_iterator sit = _snapshot.begin();
 	sit != _snapshot.end(); sit++,j++) {
       if (*it == *sit) {
 	QAbstractButton* box = _buttons->button(j);
 	newbox->setChecked(box->isChecked());
+	break;
       }
     }
+    newlist.push_back(newbox);
   }
-  delete layout();
-  setLayout(l);
+
+  for(int j=0; j<_snapshot.size(); j++)
+    _buttons->removeButton(_buttons->button(j));
+
+  QLayoutItem* child;
+  while((child=_client_layout->takeAt(0)))
+    delete child;
+
+  _snapshot = _clients;
+
+  int i=0;
+  for(std::list<QCheckBox*>::const_iterator it = newlist.begin();
+      it != newlist.end(); it++,i++) {
+    _buttons->addButton(*it,i);
+    _client_layout->addWidget(*it);
+  }
+
+  setUpdatesEnabled(true);
 }
 
 void DetectorGroup::apply()

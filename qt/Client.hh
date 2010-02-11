@@ -16,7 +16,6 @@
 #include "ami/client/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
-#include "pdsdata/xtc/DetInfo.hh"
 
 class QLayout;
 
@@ -39,6 +38,7 @@ namespace Ami {
       Client(QWidget*,const Pds::DetInfo&, unsigned, Display*);
       ~Client();
     public:
+      const QString& title() const;
       void save(char*& p) const;
       void load(const char*& p);
       void reset_plots();
@@ -73,10 +73,6 @@ namespace Ami {
 			      unsigned nchannels) {}
       virtual void _setup_payload(Cds&) {}
       virtual void _update() {}
-    private:
-      //  monitored detector channel
-      Pds::DetInfo _src;
-      unsigned     _channel;
 
     protected:
       enum {NCHANNELS=4};
@@ -85,6 +81,7 @@ namespace Ami {
       const DescEntry*   _input_entry;
 
     private:
+      QString     _title;
       unsigned    _output_signature;
       char*       _request;
       char*       _description;

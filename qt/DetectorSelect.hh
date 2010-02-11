@@ -2,21 +2,24 @@
 #define AmiQt_DetectorSelect_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/client/AbsClient.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <QtCore/QString>
 #include <list>
 
-#define CAMP
-
 class QPrinter;
+class QVBoxLayout;
 
 namespace Ami {
+  class VClientManager;
   namespace Qt {
+    class Client;
     class QtTopWidget;
     class DetectorReset;
     class DetectorSave;
-    class DetectorSelect : public QtPWidget {
+    class DetectorSelect : public QtPWidget,
+			   public Ami::AbsClient {
       Q_OBJECT
     public:
       DetectorSelect(const QString&,
@@ -24,9 +27,13 @@ namespace Ami {
 		     unsigned serverGroup);
       ~DetectorSelect();
     public:
-      void start_waveform_client(Pds::DetInfo::Detector, unsigned, unsigned);
-      void start_image_client   (Pds::DetInfo::Detector, unsigned, unsigned);
-      void start_features_client(unsigned);
+      void connected       () ;
+      int  configure       (iovec*) ;
+      int  configured      () ;
+      void discovered      (const DiscoveryRx&) ;
+      void read_description(Socket&) ;
+      void read_payload    (Socket&) ;
+      void process         () ;
     public slots:
       void save_setup();
       void load_setup();
@@ -35,25 +42,18 @@ namespace Ami {
       void reset_plots();
       void save_plots();
 
-#ifndef CAMP
-      void start_gd   (int);
-      void start_ims  ();
-      void start_itof ();
-      void start_mbes (int);
-      void start_etof (int);
-      void start_bps  (int);
-      void start_vmi  ();
-#else
-      void start_evrmon (int);
-      void start_campacq(int);
-      void start_campvmi();
-#endif
+      void start_detector(const Pds::DetInfo&, unsigned);
       void start_env  ();
+
+    private:
+      Ami::Qt::Client* _create_client(const Pds::DetInfo&, unsigned);
 
     private:
       unsigned       _interface;
       unsigned       _serverGroup;
-      std::list<QtTopWidget*> _clients;
+      VClientManager* _manager;
+      std::list<QtTopWidget*> _client;
+      QVBoxLayout*   _client_layout;
       char*          _restore;
       QPrinter*      _printer;
       DetectorReset* _reset_box;

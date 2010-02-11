@@ -51,7 +51,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     iterate(&dg->xtc); 
 
     //  Create and register new entries
-    _factory.discovery().add(_entry = new EntryScalar("XtcClient","timestamp"));
+    Pds::DetInfo noInfo;
+    _factory.discovery().add(_entry = new EntryScalar(noInfo,0,"XtcClient","timestamp"));
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       for(unsigned k=0; k<(*it)->nentries(); k++) {
 	_factory.discovery().add   (const_cast<Entry*>((*it)->entry(k)));

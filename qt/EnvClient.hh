@@ -34,6 +34,7 @@ namespace Ami {
       EnvClient(QWidget*);
       ~EnvClient();
     public:
+      const QString& title() const;
       void save(char*&) const;
       void load(const char*&);
       void save_plots(const QString&) const;
@@ -65,6 +66,7 @@ namespace Ami {
       void _setup_payload(Cds&);
       void _update();
     private:
+      QString     _title;
       unsigned    _input;
       unsigned    _output_signature;
       char*       _request;

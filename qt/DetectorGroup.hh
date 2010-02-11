@@ -5,6 +5,7 @@
 #include <list>
 
 class QButtonGroup;
+class QVBoxLayout;
 
 namespace Ami {
   namespace Qt {
@@ -32,6 +33,7 @@ namespace Ami {
       virtual void _apply(QtTopWidget&) = 0;
     private:
       const std::list<QtTopWidget*>& _clients;
+      QVBoxLayout*                   _client_layout;
       std::list<QtTopWidget*>        _snapshot;
       QButtonGroup* _buttons;
     };

@@ -55,7 +55,9 @@ void AcqWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
   unsigned channelNumber = 0;
   for(unsigned k=0; channelMask!=0; k++) {
     if (channelMask&1) {
-      DescWaveform desc(ChannelID::name(static_cast<const Pds::DetInfo&>(info()),channelNumber),
+      const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+      DescWaveform desc(det, channelNumber,
+			ChannelID::name(det,channelNumber),
 			"Time [s]","Voltage [V]",
 			h.nbrSamples(), 0., h.sampInterval()*h.nbrSamples());
       _entry[_nentries++] = new EntryWaveform(desc);
