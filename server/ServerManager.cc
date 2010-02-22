@@ -10,7 +10,8 @@
 #include "ami/data/Message.hh"
 #include "ami/server/Server.hh"
 #include "ami/server/VServerSocket.hh"
-#include "ami/server/Exception.hh"
+#include "ami/service/TSocket.hh"
+#include "ami/service/Exception.hh"
 
 #include <errno.h>
 #include <string.h>
@@ -19,12 +20,10 @@ using namespace Ami;
 
 
 ServerManager::ServerManager(unsigned interface,
-			     unsigned serverGroup,
-			     unsigned clientGroup) :
-  Poll      (-1),
+			     unsigned serverGroup) :
+  Poll      (1000),
   _interface(interface),
   _serverGroup(serverGroup),
-  _clientGroup(clientGroup),
   _socket   (0)
 {
 }
@@ -37,12 +36,9 @@ ServerManager::~ServerManager()
 
 void ServerManager::serve(Factory& factory)
 {
-  _factory = &factory,
-  _socket = new VServerSocket(Ins(_serverGroup,Port::serverPortBase()),
-			      _interface,
-			      Ins(_clientGroup,Port::clientPort()));
-  Message request(0, Message::Reconnect);
-  _socket->write(&request, sizeof(request));
+  _factory = &factory;
+  _socket = new VServerSocket(Ins(_serverGroup,Port::serverPort()),
+			      _interface);
   manage(*this);
 }
 
@@ -67,23 +63,23 @@ int ServerManager::processIo()
   _socket->peek(&request);
 
   Ins ins(_socket->peer().get());
-//   printf("request type %d id %d from %x/%d\n",
-// 	 request.type(), request.id(),
-// 	 ins.address(),ins.portId());
-
+  printf("request type %d id %d from %x/%d\n",
+ 	 request.type(), request.id(),
+ 	 ins.address(),ins.portId());
+  
   if (request.type()==Message::Connect) {
     try {
-      VServerSocket* s = new VServerSocket(Ins(_serverGroup,request.payload()),
-					   _interface,
-					   _socket->peer());
+      TSocket* s = new TSocket;
+      s->connect(Ins(_socket->peer().get().address(),
+		     request.payload()));
       Server* srv = new Server(s,*_factory,request);
       _servers.push_back(srv);
       manage(*srv);
-    } 
+     } 
     catch (Event& e) {
-      printf("Connect failed\n");
-      Message reply(request.id(),Message::Connect,0);
-      _socket->write(&reply,sizeof(reply));
+      printf("Connect failed: %s\n",e.what());
+      //       Message reply(request.id(),Message::Connect,0);
+      //       _socket->write(&reply,sizeof(reply));
     }
   }
   _socket->flush();

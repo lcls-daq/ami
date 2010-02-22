@@ -3,10 +3,8 @@
 //
 #include "Server.hh"
 
-#include "ami/server/VServerSocket.hh"
-#include "ami/server/VServerManager.hh"
+#include "ami/service/Socket.hh"
 #include "ami/server/Factory.hh"
-#include "ami/data/Assembler.hh"
 #include "ami/data/Discovery.hh"
 
 #include <errno.h>
@@ -15,7 +13,7 @@ using namespace Ami;
 
 static const int BufferSize = 32*1024;
 
-Server::Server(VServerSocket*  socket,
+Server::Server(Socket*         socket,
 	       Factory&        factory,
 	       const Message&  request) :
   _socket(socket),
@@ -51,7 +49,7 @@ int Server::processIo()
 {
   int r = 1;
   Message request(0,Message::NoOp);
-  _socket->peek(&request);
+  _socket->read(&request,sizeof(request));
 
   switch(request.type()) {
   case Message::Disconnect:
@@ -66,7 +64,7 @@ int Server::processIo()
       reply(request.id(), Message::Discover, n); }
     break;
   case Message::ConfigReq:
-    _socket->read(_buffer,BufferSize);
+    _socket->read(_buffer,request.payload());
     _factory.configure(fd(), request,_buffer,_cds);
     _described = true;
   case Message::DescriptionReq:
@@ -86,7 +84,7 @@ int Server::processIo()
   default:
     break;
   }
-  _socket->flush();
+
   return r;
 }
 
@@ -125,8 +123,6 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
   _reply.type(type);
   _reply.payload(_iov+1,cnt-1);
 
-  if (type == Message::Payload && _reply.payload()>Assembler::ChunkSize)
-    Assembler::fragment(*_socket, _reply, _iov, cnt);
-  else if (_socket->writev(_iov,cnt)<0)
+  if (_socket->writev(_iov,cnt)<0)
     printf("Error in Server::reply writev writing %d bytes : %s\n",_reply.payload(),strerror(errno));
 }

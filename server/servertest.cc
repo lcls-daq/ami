@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   if (inet_aton(argv[1], &inp))
     interface = ntohl(inp.s_addr);
 
-  ServerManager srv(interface,0xefff2000,0xefff2001);
+  ServerManager srv(interface,0xefff2000);
   MyFactory     factory(srv);
   srv.serve(factory);
 

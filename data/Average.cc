@@ -46,14 +46,8 @@ Entry&     Average::_operate(const Entry& e) const
 {
   switch(e.desc().type()) {
   case DescEntry::TH1F:
-    { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
-      EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
-      for(unsigned k=0; k<en.desc().nbins(); k++)
-	_en.addcontent(en.content(k),k);
-      for(unsigned j=0; j<EntryTH1F::InfoSize; j++) {
-	EntryTH1F::Info i = (EntryTH1F::Info)j;
-	_en.addinfo(en.info(i),i);
-      }
+    { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
+      _en.add(static_cast<const EntryTH1F&>(e));
       if (_n && _en.info(EntryTH1F::Normalization)==_n) {
 	static_cast<EntryTH1F*>(_cache)->setto(_en);
 	_en.reset();
@@ -63,9 +57,8 @@ Entry&     Average::_operate(const Entry& e) const
     printf("Averaging TH2F not implemented\n");
     break;
   case DescEntry::Prof:
-    { const EntryProf& en = static_cast<const EntryProf&>(e);
-      EntryProf& _en = static_cast<EntryProf&>(*_entry);
-      _en.sum(_en,en);
+    { EntryProf& _en = static_cast<EntryProf&>(*_entry);
+      _en.sum(_en,static_cast<const EntryProf&>(e));
       if (_n && _en.info(EntryProf::Normalization)==_n) {
 	static_cast<EntryProf*>(_cache)->setto(_en);
 	_en.reset();

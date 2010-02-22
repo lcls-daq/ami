@@ -69,3 +69,13 @@ void EntryImage::setto(const EntryImage& curr,
   valid(curr.time());
 }
 
+void EntryImage::add  (const EntryImage& entry) 
+{
+  unsigned* dst = _y;
+  const unsigned* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const unsigned* src = entry._y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+}
+

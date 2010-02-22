@@ -80,12 +80,12 @@ public:
     _sem.give(); 
     return 0; 
   }
-  void read_description(Socket&)
+  void read_description(Socket&,int)
   {
     printf("description\n"); 
     _sem.give(); 
   }
-  void read_payload    (Socket&)
+  void read_payload    (Socket&,int)
   {
     printf("payload\n"); 
   }

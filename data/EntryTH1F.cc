@@ -66,7 +66,7 @@ void EntryTH1F::setto(const EntryTH1F& entry)
 }
 
 void EntryTH1F::setto(const EntryTH1F& curr, 
-			 const EntryTH1F& prev) 
+		      const EntryTH1F& prev) 
 {
   double* dst = _y;
   const double* end = dst+SIZE(_desc.nbins());
@@ -76,6 +76,16 @@ void EntryTH1F::setto(const EntryTH1F& curr,
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
   valid(curr.time());
+}
+
+void EntryTH1F::add(const EntryTH1F& entry)
+{
+  double* dst = _y;
+  const double* end = dst+SIZE(_desc.nbins());
+  const double* src = entry._y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
 }
 
 void EntryTH1F::addcontent(double y, double x)

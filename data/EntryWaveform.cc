@@ -69,6 +69,16 @@ void EntryWaveform::setto(const EntryWaveform& curr,
   valid(curr.time());
 }
 
+void EntryWaveform::add  (const EntryWaveform& entry) 
+{
+  double* dst = _y;
+  const double* end = dst+SIZE(_desc.nbins());
+  const double* src = entry._y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+}
+
 void EntryWaveform::addcontent(double y, double x)
 {
   if (x < _desc.xlow()) 

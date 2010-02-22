@@ -10,7 +10,7 @@
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
 
-#include "ami/client/VClientManager.hh"
+#include "ami/client/ClientManager.hh"
 
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
@@ -225,10 +225,10 @@ int  EnvClient::configured      ()
   return 0; 
 }
 
-void EnvClient::read_description(Socket& socket)
+void EnvClient::read_description(Socket& socket,int len)
 {
   printf("Described so\n");
-  int size = socket.read(_description,BufferSize);
+  int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
@@ -286,7 +286,7 @@ void EnvClient::_read_description(int size)
   _sem->give();
 }
 
-void EnvClient::read_payload     (Socket& socket)
+void EnvClient::read_payload     (Socket& socket,int)
 {
   //  printf("payload\n"); 
   if (_status->state() == Status::Requested) {
@@ -312,7 +312,7 @@ void EnvClient::process         ()
   _status->set_state(Status::Processed);
 }
 
-void EnvClient::managed(VClientManager& mgr)
+void EnvClient::managed(ClientManager& mgr)
 {
   _manager = &mgr;
   show();

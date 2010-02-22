@@ -13,7 +13,7 @@ class QButtonGroup;
 class QComboBox;
 
 namespace Ami {
-  class VClientManager;
+  class ClientManager;
   class DescEntry;
   class Semaphore;
 
@@ -40,7 +40,7 @@ namespace Ami {
       void save_plots(const QString&) const;
       void reset_plots();
     public:
-      void managed         (VClientManager&);
+      void managed         (ClientManager&);
       void request_payload ();
       void one_shot        (bool) {}
     public: // AbsClient interface
@@ -48,8 +48,8 @@ namespace Ami {
       int  configure       (iovec*);
       int  configured      ();
       void discovered      (const DiscoveryRx&);
-      void read_description(Ami::Socket&);
-      void read_payload    (Ami::Socket&);
+      void read_description(Ami::Socket&,int);
+      void read_payload    (Ami::Socket&,int);
       void process         ();
     public slots:
       void update_configuration();
@@ -76,7 +76,7 @@ namespace Ami {
       Status*     _status;
 
       Cds             _cds;
-      VClientManager* _manager;
+      ClientManager*  _manager;
       unsigned        _niovload;
       iovec*          _iovload;
 

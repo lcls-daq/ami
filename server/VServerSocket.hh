@@ -3,7 +3,7 @@
 
 #include "ami/service/VSocket.hh"
 
-#include "ami/server/Exception.hh"
+#include "ami/service/Exception.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Sockaddr.hh"
 

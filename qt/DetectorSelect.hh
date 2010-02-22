@@ -12,7 +12,7 @@ class QPrinter;
 class QVBoxLayout;
 
 namespace Ami {
-  class VClientManager;
+  class ClientManager;
   namespace Qt {
     class Client;
     class QtTopWidget;
@@ -31,8 +31,8 @@ namespace Ami {
       int  configure       (iovec*) ;
       int  configured      () ;
       void discovered      (const DiscoveryRx&) ;
-      void read_description(Socket&) ;
-      void read_payload    (Socket&) ;
+      void read_description(Socket&,int) ;
+      void read_payload    (Socket&,int) ;
       void process         () ;
     public slots:
       void save_setup();
@@ -51,7 +51,8 @@ namespace Ami {
     private:
       unsigned       _interface;
       unsigned       _serverGroup;
-      VClientManager* _manager;
+      unsigned short _clientPort;
+      ClientManager* _manager;
       std::list<QtTopWidget*> _client;
       QVBoxLayout*   _client_layout;
       char*          _restore;

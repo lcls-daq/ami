@@ -63,6 +63,13 @@ void Poll::bcast(const char* msg, int size)
   _loopback->write(msg,size);
 }
 
+void Poll::bcast(const iovec* iov, int len)
+{
+  int hdr=Broadcast;
+  _loopback->write(&hdr,sizeof(hdr));
+  _loopback->write(iov,len);
+}
+
 //
 //  Should only be called before "start" or within poll thread;
 //  i.e. from processIo()
@@ -126,11 +133,17 @@ int Poll::poll()
   return result;
 }
 
+int Poll::processTmo() { return 1; }
+
 void Poll::routine()
 {
   while(poll());
   _sem.give();
 }
+
+int  Poll::nfds() const { return _nfds; }
+
+Fd&  Poll::fds (int i) const { return *_ofd[i]; }
 
 int  Poll::timeout() const { return _timeout; }
 

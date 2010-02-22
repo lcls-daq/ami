@@ -28,7 +28,7 @@ tgtlibs_clienttest += qt/QtCore
 libnames := client
 
 # List source files for each library
-libsrcs_client := VClientSocket.cc VClientManager.cc
+libsrcs_client := VClientSocket.cc VClientManager.cc ClientManager.cc ClientSocket.cc
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

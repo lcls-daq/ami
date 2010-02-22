@@ -9,11 +9,6 @@
 
 namespace Ami {
 
-  class DetInfoCompare {
-  public:
-    bool operator()(const Pds::DetInfo&, const Pds::DetInfo&) const;
-  };
-
   class Event {
   public:
     Event();

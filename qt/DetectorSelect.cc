@@ -10,9 +10,10 @@
 #include "ami/qt/DetectorReset.hh"
 #include "ami/qt/DetectorButton.hh"
 #include "ami/qt/DetectorList.hh"
-#include "ami/client/VClientManager.hh"
+#include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
+#include "ami/service/Port.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>
@@ -60,7 +61,9 @@ DetectorSelect::DetectorSelect(const QString& label,
   QtPWidget   (0),
   _interface  (interface),
   _serverGroup(serverGroup),
-  _manager    (new VClientManager(interface, serverGroup, *this)),
+  _clientPort (Port::clientPortBase()),
+  _manager    (new ClientManager(interface, serverGroup, 
+				 _clientPort++,*this)),
   _restore    (0),
   _reset_box  (new DetectorReset(this, _client)),
   _save_box   (new DetectorSave (this, _client))
@@ -108,6 +111,8 @@ DetectorSelect::DetectorSelect(const QString& label,
     data_box->setLayout(layout);
     l->addWidget(data_box); }
   setLayout(l);
+
+  _manager->connect();
 }
 
 DetectorSelect::~DetectorSelect()
@@ -243,9 +248,10 @@ Ami::Qt::Client* DetectorSelect::_create_client(const Pds::DetInfo& info,
   default: printf("Device type %x not recognized\n", info.device()); break;
   }
   if (client) {
-    VClientManager* manager = new VClientManager(_interface,     
-						 _serverGroup,	
-						 *client);	
+    ClientManager* manager = new ClientManager(_interface,     
+					       _serverGroup,
+					       _clientPort++,
+					       *client);	
     client->managed(*manager);					
     _client.push_back(client);
     _reset_box->update_list();
@@ -275,9 +281,10 @@ void DetectorSelect::start_env  ()
     }
 
   Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);
-  VClientManager* manager = new VClientManager(_interface,
-					       _serverGroup, 
-					       *client);
+  ClientManager* manager = new ClientManager(_interface,
+					     _serverGroup, 
+					     _clientPort++,
+					     *client);
   client->managed(*manager);
   _client.push_back(client);
   _reset_box->update_list();
@@ -348,10 +355,10 @@ void DetectorSelect::discovered      (const DiscoveryRx& rx)
   setUpdatesEnabled(true);
 }
 
-void DetectorSelect::read_description(Socket& s) {
+void DetectorSelect::read_description(Socket& s,int) {
 }
 
-void DetectorSelect::read_payload    (Socket& s) {
+void DetectorSelect::read_payload    (Socket& s,int) {
 }
 
 void DetectorSelect::process         () {

@@ -8,7 +8,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/FeatureRegistry.hh"
 
-#include "ami/client/VClientManager.hh"
+#include "ami/client/ClientManager.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
@@ -249,10 +249,10 @@ int  Ami::Qt::Client::configured      ()
 //
 //  read_description adds/removes plots
 //
-void Ami::Qt::Client::read_description(Socket& socket)
+void Ami::Qt::Client::read_description(Socket& socket, int len)
 {
   printf("Described so\n");
-  int size = socket.read(_description,BufferSize);
+  int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
@@ -317,7 +317,7 @@ void Ami::Qt::Client::_read_description(int size)
 //
 //  read_payload changes plot contents
 //
-void Ami::Qt::Client::read_payload     (Socket& socket)
+void Ami::Qt::Client::read_payload     (Socket& socket, int size)
 {
   //  printf("payload\n"); 
   if (_status->state() == Status::Requested) {
@@ -343,7 +343,7 @@ void Ami::Qt::Client::process         ()
   _status->set_state(Status::Processed);
 }
 
-void Ami::Qt::Client::managed(VClientManager& mgr)
+void Ami::Qt::Client::managed(ClientManager& mgr)
 {
   _manager = &mgr;
   show();

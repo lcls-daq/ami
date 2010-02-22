@@ -38,3 +38,10 @@ void EntryScalar::setto(const EntryScalar& curr,
   _y[2] = curr._y[2] - prev._y[2];
 }
 
+void EntryScalar::add(const EntryScalar& entry) 
+{
+  _y[0] += entry._y[0];
+  _y[1] += entry._y[1];
+  _y[2] += entry._y[2];
+}
+

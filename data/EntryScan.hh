@@ -45,6 +45,7 @@ namespace Ami {
     void setto(const EntryScan& entry);
     void sum  (const EntryScan&, const EntryScan&);
     void diff (const EntryScan&, const EntryScan&);
+    void add  (const EntryScan& entry);
 
     // Implements Entry
     virtual const DescScan& desc() const;

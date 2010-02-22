@@ -31,6 +31,7 @@ namespace Ami {
 
     void setto(const EntryWaveform& entry);
     void setto(const EntryWaveform& curr, const EntryWaveform& prev);
+    void add  (const EntryWaveform& entry);
 
     // Implements Entry
     virtual const DescWaveform& desc() const;

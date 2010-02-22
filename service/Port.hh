@@ -5,9 +5,13 @@ namespace Ami {
 
   class Port {
   public:
+    static unsigned short clientPortBase();
+    static unsigned short serverPort();
+
     static unsigned short clientPort();
     static unsigned short serverPortBase();
-    static unsigned short nServerPorts();
+
+    static unsigned nPorts();
   };
 };
 

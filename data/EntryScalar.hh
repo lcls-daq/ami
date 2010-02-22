@@ -24,6 +24,7 @@ namespace Ami {
 
     void setto(const EntryScalar& entry);
     void setto(const EntryScalar& curr, const EntryScalar& prev);
+    void add  (const EntryScalar& entry);
 
     // Implements Entry
     virtual const DescScalar& desc() const;

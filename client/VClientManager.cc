@@ -167,15 +167,15 @@ int VClientManager::processIo()
       }
       break;
     case Message::Description: 
-      _client.read_description(*_socket);
+      _client.read_description(*_socket,reply.payload());
       _request = Message(_request.id()+1,_request.type());  // only need one reply
       break;
     case Message::Payload:     
-      _client.read_payload(*_socket);
+      _client.read_payload(*_socket,reply.payload());
       break;
     case Message::PayloadFragment:
       if (_assembler.assemble(reply,*_socket))
- 	_client.read_payload(_assembler);
+ 	_client.read_payload(_assembler,0);
       break;
     default:          
       break;

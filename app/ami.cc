@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     exit(0);
   }
 
-  ServerManager   srv(interface, serverGroup, clientGroup);
+  ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
   AnalysisFactory factory(features, srv);

@@ -105,3 +105,4 @@ int XtcShmClient::processIo()
   //  return error ? 0 : 1;
   return 1;
 }
+

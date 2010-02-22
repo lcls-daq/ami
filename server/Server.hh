@@ -10,13 +10,12 @@ class iovec;
 
 namespace Ami {
 
-  class VServerSocket;
-  class VServerManager;
+  class Socket;
   class Factory;
 
   class Server : public Fd {
   public:
-    Server(VServerSocket*,
+    Server(Socket*,
 	   Factory&,
 	   const Message&);
     ~Server();
@@ -28,7 +27,7 @@ namespace Ami {
     void _adjust     (int);
     void reply       (unsigned,Message::Type,unsigned);
   private:
-    VServerSocket*  _socket;
+    Socket*         _socket;
     iovec*          _iov;
     int             _iovcnt;
     Message         _reply;

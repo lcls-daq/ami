@@ -32,6 +32,7 @@ namespace Ami {
 
     void setto(const EntryTH1F& entry);
     void setto(const EntryTH1F& curr, const EntryTH1F& prev);
+    void add  (const EntryTH1F& entry);
 
     // Implements Entry
     virtual const DescTH1F& desc() const;
@@ -43,7 +44,7 @@ namespace Ami {
   private:
     DescTH1F _desc;
 
-  private:
+  private: 
     double* _y;
   };
 

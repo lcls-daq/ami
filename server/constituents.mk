@@ -3,7 +3,7 @@ libnames := server
 
 # List source files for each library
 #libsrcs_server := $(filter-out servertest.cc serverapp.cc,$(wildcard *.cc))
-libsrcs_server := Exception.cc Server.cc ServerManager.cc VServerSocket.cc
+libsrcs_server := Server.cc ServerManager.cc VServerSocket.cc
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

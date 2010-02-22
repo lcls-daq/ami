@@ -17,8 +17,7 @@ namespace Ami {
 			public Fd {
   public:
     ServerManager (unsigned interface,
-		   unsigned serverGroup,
-		   unsigned clientGroup);
+		   unsigned serverGroup);
     ~ServerManager();
   public:
     void serve     (Factory&);
@@ -36,7 +35,6 @@ namespace Ami {
     typedef std::list<Server*> SvList;
     unsigned           _interface;
     unsigned           _serverGroup;
-    unsigned           _clientGroup;
     Factory*           _factory;
     VServerSocket*     _socket;
     SvList             _servers;

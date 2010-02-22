@@ -34,6 +34,7 @@ namespace Ami {
 
     void setto(const EntryImage& entry);
     void setto(const EntryImage& curr, const EntryImage& prev);
+    void add  (const EntryImage& entry);
 
     // Implements Entry
     virtual const DescImage& desc() const;

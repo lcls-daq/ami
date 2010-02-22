@@ -6,6 +6,8 @@
 
 #include <poll.h>
 
+class iovec;
+
 namespace Ami {
 
   class Fd;
@@ -21,9 +23,12 @@ namespace Ami {
     void stop ();
     void routine();
   public:
+    int  nfds() const;
+    Fd&  fds(int) const;
     void manage  (Fd&);
     void unmanage(Fd&);
     void bcast   (const char*,int);
+    void bcast   (const iovec*,int);
   private:
     int poll();
     void adjust ();
@@ -31,7 +36,7 @@ namespace Ami {
     int  timeout() const;
     void timeout(int);
   private:
-    virtual int processTmo() = 0;
+    virtual int processTmo();
   private:
     int        _timeout;
     Task*      _task;
