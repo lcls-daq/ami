@@ -37,8 +37,13 @@ ServerManager::~ServerManager()
 void ServerManager::serve(Factory& factory)
 {
   _factory = &factory;
-  _socket = new VServerSocket(Ins(_serverGroup,Port::serverPort()),
-			      _interface);
+  try {
+    _socket = new VServerSocket(Ins(_serverGroup,Port::serverPort()),
+				_interface);
+  } catch (Event& e) {
+    printf("SM::serve %s : %s\n",e.who(),e.what());
+    return;
+  }
   manage(*this);
 }
 
@@ -52,7 +57,7 @@ void ServerManager::dont_serve()
 void ServerManager::discover()
 {
   Message msg(0,Message::DiscoverReq);
-  bcast(reinterpret_cast<const char*>(&msg),sizeof(msg));
+  bcast_in(reinterpret_cast<const char*>(&msg),sizeof(msg));
 }
 
 int ServerManager::fd() const { return _socket->socket(); }
@@ -63,15 +68,23 @@ int ServerManager::processIo()
   _socket->peek(&request);
 
   Ins ins(_socket->peer().get());
-  printf("request type %d id %d from %x/%d\n",
+  printf("SM request type %d id %d from %x/%d\n",
  	 request.type(), request.id(),
  	 ins.address(),ins.portId());
   
   if (request.type()==Message::Connect) {
     try {
       TSocket* s = new TSocket;
-      s->connect(Ins(_socket->peer().get().address(),
-		     request.payload()));
+      Ins remote(_socket->peer().get().address(),
+		 request.payload());
+      s->connect(remote);
+      Ins local (s->ins());
+
+      printf("new ServerSocket %d bound to local: %x/%d  remote: %x/%d\n",
+	     s->socket(), 
+	     local .address(), local .portId(),
+	     remote.address(), remote.portId());
+
       Server* srv = new Server(s,*_factory,request);
       _servers.push_back(srv);
       manage(*srv);

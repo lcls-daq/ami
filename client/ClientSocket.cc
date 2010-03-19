@@ -9,8 +9,6 @@ ClientSocket::ClientSocket(ClientManager& mgr, int s) :
   TSocket(s),
   _mgr(mgr)
 {
-  Ins src = this->ins();
-  printf("new ClientSocket bound to %x/%d\n",src.address(),src.portId());
   _mgr.add_client(*this);
 }
 
@@ -23,8 +21,7 @@ int ClientSocket::fd() const { return _socket; }
 
 int ClientSocket::processIo()
 {
-  _mgr.handle_client_io(*this);
-  return 1;
+  return _mgr.handle_client_io(*this);
 }
 
 int ClientSocket::processIo(const char* p,int l) 

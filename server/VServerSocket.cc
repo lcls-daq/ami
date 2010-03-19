@@ -23,6 +23,11 @@ VServerSocket::VServerSocket(const Ins& mcast,
     throw Event("VServerSocket set broadcast error",strerror(errno));
   }
 
+  if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (char*)&y, sizeof(y)) == -1) {
+    throw Event("VServerSocket set reuseaddr error",strerror(errno));
+  }
+
+
   Sockaddr sa(mcast);
   int result = ::bind(sockfd, (sockaddr*)sa.name(), sa.sizeofName());
   if (result < 0) {

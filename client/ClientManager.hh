@@ -3,6 +3,7 @@
 
 #include "ami/data/Message.hh"
 #include "ami/service/Routine.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <list>
 using std::list;
@@ -37,7 +38,7 @@ namespace Ami {
   public:
     void add_client      (ClientSocket&);
     void remove_client   (ClientSocket&);
-    void handle_client_io(ClientSocket&);
+    int  handle_client_io(ClientSocket&);
   private:
     int  _nconnected() const;
     void _flush_sockets(const Message&, ClientSocket&);
@@ -54,6 +55,7 @@ namespace Ami {
     Task*           _task;
     TSocket*        _listen;
     VClientSocket*  _connect;
+    Semaphore       _listen_sem;
   };
 
 };

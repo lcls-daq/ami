@@ -6,24 +6,29 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
-TSocket::TSocket() throw(Event) :
-  _iovs(new iovec[_iovcnt=10])
+TSocket::TSocket() throw(Event)
 {
   if ((_socket = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
     throw Event("TSocket failed to open socket",strerror(errno));
 
+  _rhdr.msg_name       = 0;
+  _rhdr.msg_namelen    = 0;
   _rhdr.msg_control    = 0;
   _rhdr.msg_controllen = 0;
+  _rhdr.msg_flags      = 0;
 }
 
-TSocket::TSocket(int s) throw(Event) :
-  _iovs(new iovec[_iovcnt=10])
+TSocket::TSocket(int s) throw(Event)
 {
+  _rhdr.msg_name       = 0;
+  _rhdr.msg_namelen    = 0;
   _rhdr.msg_control    = 0;
   _rhdr.msg_controllen = 0;
+  _rhdr.msg_flags      = 0;
 
   _socket = s;
 }
@@ -75,10 +80,30 @@ TSocket::~TSocket()
 
 int TSocket::readv(const iovec* iov, int iovcnt)
 {
-  int bytes = 0;
   _rhdr.msg_iov    = const_cast<iovec*>(iov);
   _rhdr.msg_iovlen = iovcnt;
-  bytes += ::recvmsg(_socket, &_rhdr, 0);
+  int bytes = ::recvmsg(_socket, &_rhdr, MSG_WAITALL);
+#ifdef DBUG
+  { printf("\nTSocket %d read %d bytes\n",socket(),bytes);
+    int remaining=bytes;
+    if (remaining>128) remaining=128;
+    for(const iovec* i = iov; remaining>0; i++) {
+      unsigned k=0;
+      const unsigned char* end = (const unsigned char*)i->iov_base
+	+ (i->iov_len > remaining ? remaining : i->iov_len);
+      for(const unsigned char* c = (const unsigned char*)i->iov_base;
+	  c < end; c++,k++)
+	printf("%02x%c",*c,(k%32)==31 ? '\n' : ' ');
+      printf("\n");
+      remaining -= i->iov_len;
+    }
+  }
+#endif
+  if (bytes<0) {
+    printf("Error reading from skt %d : %s\n",
+	   socket(), strerror(errno));
+    abort();
+  }
   return bytes;
 }
 

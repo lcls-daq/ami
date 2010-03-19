@@ -43,5 +43,22 @@ int Loopback::readv(const iovec* iov, int iovcnt)
 {
   _hdr.msg_iov    = const_cast<iovec*>(iov);
   _hdr.msg_iovlen = iovcnt;
-  return ::recvmsg(_socket, &_hdr, 0);
+  int bytes = ::recvmsg(_socket, &_hdr, 0);
+#ifdef DBUG
+  { printf("\nLoopback skt %d read %d bytes\n",socket(),bytes);
+    int remaining=bytes;
+    if (remaining>128) remaining=128;
+    for(const iovec* i = iov; remaining>0; i++) {
+      unsigned k=0;
+      const unsigned char* end = (const unsigned char*)i->iov_base
+	+ (i->iov_len > remaining ? remaining : i->iov_len);
+      for(const unsigned char* c = (const unsigned char*)i->iov_base;
+	  c < end; c++,k++)
+	printf("%02x%c",*c,(k%32)==31 ? '\n' : ' ');
+      printf("\n");
+      remaining -= i->iov_len;
+    }
+  }
+#endif
+  return bytes;
 }

@@ -60,7 +60,8 @@ ClientManager::ClientManager(unsigned   interface,
   _discovery (new char[BufferSize]),
   _task      (new Task(TaskObject("lstn"))),
   _listen    (new TSocket),
-  _connect   (new VClientSocket)
+  _connect   (new VClientSocket),
+  _listen_sem(Semaphore::EMPTY)
 {
   {
     Ins ins(serverGroup, Port::serverPort());
@@ -73,6 +74,8 @@ ClientManager::ClientManager(unsigned   interface,
     printf("bind error : %s\n",e.what());
   }
   _task->call(this);
+  _poll->start();
+  _listen_sem.take();
 }
 
 
@@ -91,8 +94,8 @@ void ClientManager::request_payload()
 {
   if (_state == Connected) {
     _request = Message(_request.id()+1,Message::PayloadReq);
-    _poll->bcast(reinterpret_cast<const char*>(&_request),
-		 sizeof(_request));
+    _poll->bcast_out(reinterpret_cast<const char*>(&_request),
+		     sizeof(_request));
   }
 }
 
@@ -104,8 +107,8 @@ void ClientManager::connect()
 {
   _request = Message(_request.id()+1,Message::Connect,
 		     _listen->ins().portId());
-  printf("Request connection from %x/%d\n",
-	 _listen->ins().address(),_listen->ins().portId());
+  printf("(%p) CM Request connection from %x/%d\n",
+	 this,_listen->ins().address(),_listen->ins().portId());
   _connect->write(&_request,sizeof(_request));
   _state = Connected;
 }
@@ -119,8 +122,8 @@ void ClientManager::disconnect()
 {
   if (_state != Disconnected && _nconnected()) {
     _request = Message(_request.id()+1,Message::Disconnect);
-    _poll->bcast(reinterpret_cast<const char*>(&_request),
-		 sizeof(_request));
+    _poll->bcast_out(reinterpret_cast<const char*>(&_request),
+		     sizeof(_request));
     _state = Disconnected;
   }
 }
@@ -128,8 +131,8 @@ void ClientManager::disconnect()
 void ClientManager::discover()
 {
   _request = Message(_request.id()+1,Message::DiscoverReq);
-  _poll->bcast(reinterpret_cast<const char*>(&_request),
-	       sizeof(_request));
+  _poll->bcast_out(reinterpret_cast<const char*>(&_request),
+		   sizeof(_request));
 }
 
 //
@@ -143,23 +146,30 @@ void ClientManager::configure()
   _request.payload(_iovs+1,n);
   _iovs[0].iov_base = &_request;
   _iovs[0].iov_len  = sizeof(_request);
-  _poll->bcast(_iovs, n+1);
+  _poll->bcast_out(_iovs, n+1);
+  _client.configured();
 }
 
 void ClientManager::routine()
 {
   while(1) {
-    printf("listening\n");
     if (::listen(_listen->socket(),5)<0)
       printf("ClientManager listen failed\n");
     else {
-      sockaddr_in name;
-      unsigned length = sizeof(name);
-      int s = ::accept(_listen->socket(),(sockaddr*)&name, &length);
+      _listen_sem.give();
+      Ami::Sockaddr name;
+      unsigned length = name.sizeofName();
+      int s = ::accept(_listen->socket(),name.name(), &length);
       if (s<0)
 	printf("ClientManager accept failed\n");
       else {
-	new ClientSocket(*this,s);
+	ClientSocket* cs = new ClientSocket(*this,s);
+	Ins local  = cs->ins();
+	Ins remote = name.get();
+	printf("(%p) new ClientSocket %d bound to local: %x/%d  remote: %x/%d\n",
+	       this, s, 
+	       local .address(), local .portId(),
+	       remote.address(), remote.portId());
 	_state = Connected;
 	_client.connected();
       }
@@ -169,14 +179,16 @@ void ClientManager::routine()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
-  printf("ClientManager::add_client %d\n",_nconnected());
+  printf("(%p) ClientManager::add_client %d (skt %d)\n",
+	 this, _nconnected(),socket.socket());
   _poll->manage(socket);
 }
 
 void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
-  printf("ClientManager::remove_client %d\n",_nconnected());
+  printf("(%p) ClientManager::remove_client %d\n",
+	 this,_nconnected());
 }
 
 void ClientManager::_flush_sockets(const Message& reply,
@@ -196,13 +208,17 @@ void ClientManager::_flush_sockets(const Message& reply,
   }
 }
 
-void ClientManager::handle_client_io(ClientSocket& socket)
+int ClientManager::handle_client_io(ClientSocket& socket)
 {
   Message reply(0,Message::NoOp);
-  socket.read(&reply,sizeof(reply));
+  if (socket.read(&reply,sizeof(reply))!=sizeof(reply)) {
+    printf("Error reading from skt %d : %s\n",
+	   socket.socket(), strerror(errno));
+    return 0;
+  }
 
-  printf("handle_client_io type %d from socket %d\n",
-	 reply.type(), socket.fd());
+//   printf("(%p) handle_client_io type %d from socket %d\n",
+// 	 this, reply.type(), socket.fd());
 
   if (reply.type() == Message::Discover) { // unsolicited message
     int size = socket.read(_discovery,reply.payload());
@@ -211,10 +227,12 @@ void ClientManager::handle_client_io(ClientSocket& socket)
     _client.discovered(rx);
   }
   else if (reply.id() == _request.id()) {   // solicited message
+//     printf("(%p) handle_client_io payload %d\n",
+// 	   this, reply.payload());
     switch (reply.type()) {
     case Message::Description: 
       _client.read_description(socket, reply.payload());
-      _request = Message(_request.id()+1,_request.type());  // only need one reply
+      //      _request = Message(_request.id()+1,_request.type());  // only need one reply
       break;
     case Message::Payload:     
       _client.read_payload(socket,reply.payload());
@@ -225,6 +243,22 @@ void ClientManager::handle_client_io(ClientSocket& socket)
     }
   }
   else {
-    printf("received id %d/%d type %d/%d\n",reply.id(),_request.id(),reply.type(),_request.type());
+    printf("(%p) received id %d/%d type %d/%d\n",
+	   this, reply.id(),_request.id(),reply.type(),_request.type());
+    switch (reply.type()) {
+    case Message::Description: 
+    case Message::Payload:     
+      { int remaining = reply.payload();
+	while(remaining) {
+	  int sz = socket.read(_buffer,remaining < BufferSize ? 
+			       remaining : BufferSize);
+	  remaining -= sz;
+	} 
+      }
+      break;
+    default:          
+      break;
+    }
   }
+  return 1;
 }

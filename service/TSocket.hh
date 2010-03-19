@@ -28,9 +28,6 @@ namespace Ami {
 
   protected:
     struct msghdr _rhdr;
-  private:
-    iovec*        _iovs;
-    int           _iovcnt;
   };
 };
 

@@ -4,6 +4,7 @@
 class iovec;
 
 namespace Ami {
+  class ClientManager;
   class DiscoveryRx;
   class Message;
   class Socket;
@@ -11,6 +12,7 @@ namespace Ami {
   public:
     virtual ~AbsClient() {}
 
+    virtual void managed         (ClientManager&) {}
     virtual void connected       () = 0;
     virtual int  configure       (iovec*) = 0;
     virtual int  configured      () = 0;

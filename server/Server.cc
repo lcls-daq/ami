@@ -30,8 +30,8 @@ Server::Server(Socket*         socket,
   _iov[0].iov_base = &_reply;
   _iov[0].iov_len  = sizeof(_reply);
 
-  _reply = request;
-  _socket->writev(_iov,1);
+//   _reply = request;
+//   _socket->writev(_iov,1);
 
 //   Message disc(0, Message::DiscoverReq);
 //   processIo(reinterpret_cast<const char*>(&disc), sizeof(disc));
@@ -49,7 +49,15 @@ int Server::processIo()
 {
   int r = 1;
   Message request(0,Message::NoOp);
-  _socket->read(&request,sizeof(request));
+  int result = _socket->read(&request,sizeof(request));
+  if (result != sizeof(request)) {
+    printf("S processIo read result %d (skt %d): %s\n",
+	   result,_socket->socket(),strerror(errno));
+    return 0;
+  }
+
+//   printf("S request type %d id %d (skt %d)\n",
+// 	 request.type(), request.id(), _socket->socket());
 
   switch(request.type()) {
   case Message::Disconnect:
@@ -79,6 +87,7 @@ int Server::processIo()
       _adjust(n);
       _cds.payload(_iov+1);
       reply(request.id(), Message::Payload, n); 
+      //      _cds.invalidate_payload();
     }
     break;
   default:
@@ -122,6 +131,9 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
   _reply.id(id);
   _reply.type(type);
   _reply.payload(_iov+1,cnt-1);
+
+//   printf("S reply type %d  id %d  payload %d\n",
+// 	 _reply.type(),_reply.id(),_reply.payload());
 
   if (_socket->writev(_iov,cnt)<0)
     printf("Error in Server::reply writev writing %d bytes : %s\n",_reply.payload(),strerror(errno));

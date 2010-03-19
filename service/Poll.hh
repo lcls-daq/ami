@@ -27,9 +27,12 @@ namespace Ami {
     Fd&  fds(int) const;
     void manage  (Fd&);
     void unmanage(Fd&);
-    void bcast   (const char*,int);
-    void bcast   (const iovec*,int);
+    void bcast_in (const char*,int);
+    void bcast_out(const char*,int);
+    void bcast_out(const iovec*,int);
   private:
+    void bcast   (const char*,int,int);
+    void bcast   (const iovec*,int,int);
     int poll();
     void adjust ();
   protected:

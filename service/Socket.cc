@@ -3,6 +3,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "Socket.hh"
 #include "ami/service/Ins.hh"
@@ -35,6 +36,7 @@ int Socket::read(void* buffer, int size)
 
 int Socket::write(const void* data, int size)
 {
+  if (size==1) abort();
   iovec iov;
   iov.iov_base = const_cast<void*>(data);
   iov.iov_len  = size;
@@ -45,9 +47,28 @@ int Socket::write(const void* data, int size)
 
 int Socket::writev(const iovec* iov, int iovcnt)
 {
+#ifdef DBUG
+  { int size=0;
+    for(const iovec* i = iov; i<iov+iovcnt; i++)
+      size += i->iov_len;
+    printf("\nSocket %d send %d bytes\n",socket(),size);
+    int remaining = size;
+    if (remaining>128) remaining=128;
+    for(const iovec* i = iov; remaining>0; i++) {
+      unsigned k=0;
+      const unsigned char* end = (const unsigned char*)i->iov_base
+	+ (i->iov_len > remaining ? remaining : i->iov_len);
+      for(const unsigned char* c = (const unsigned char*)i->iov_base;
+	  c < end; c++,k++)
+	printf("%02x%c",*c,(k%32)==31 ? '\n' : ' ');
+      printf("\n");
+      remaining -= i->iov_len;
+    }
+  }
+#endif
   _hdr.msg_iov          = const_cast<iovec*>(iov);
   _hdr.msg_iovlen       = iovcnt;
-  return ::sendmsg(_socket, &_hdr, MSG_DONTROUTE);
+  return ::sendmsg(_socket, &_hdr, 0);
 }
 
 int Socket::setsndbuf(unsigned size) 

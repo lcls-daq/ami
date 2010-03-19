@@ -8,13 +8,15 @@
 
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
 const int Step=32;
 const int BufferSize=0x1000;
 
-enum LoopbackMsg { Broadcast, Shutdown };
+enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown };
 
 Poll::Poll(int timeout) :
   _timeout (timeout),
@@ -54,20 +56,50 @@ void Poll::stop()
 }
 
 //
-//  Broadcast a message to all servers
+//  Broadcast a message to all remote endpoints
 //
-void Poll::bcast(const char* msg, int size)
+void Poll::bcast_out(const char* msg, int size)
 {
-  int hdr=Broadcast;
-  _loopback->write(&hdr,sizeof(hdr));
-  _loopback->write(msg,size);
+  bcast(msg, size, BroadcastOut);
 }
 
-void Poll::bcast(const iovec* iov, int len)
+void Poll::bcast_out(const iovec* iov, int len)
 {
-  int hdr=Broadcast;
-  _loopback->write(&hdr,sizeof(hdr));
-  _loopback->write(iov,len);
+  bcast(iov, len, BroadcastOut);
+}
+
+void Poll::bcast_in (const char* msg, int size)
+{
+  bcast(msg, size, BroadcastIn);
+}
+
+void Poll::bcast    (const char* msg, int size, int hdr)
+{
+  int iovcnt=2;
+  iovec* iov = new iovec[iovcnt];
+  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
+  iov[1].iov_base = (void*)msg; iov[1].iov_len = size;
+  _loopback->writev(iov,iovcnt);
+  delete[] iov;
+//   _loopback->write(&hdr ,sizeof(hdr));
+//   _loopback->write(&bsiz,sizeof(size));
+//   _loopback->write(msg  ,size);
+}
+
+void Poll::bcast    (const iovec* iov, int len, int hdr)
+{
+  int iovcnt = len+1;
+  iovec* niov = new iovec[iovcnt];
+  niov[0].iov_base = &hdr ; niov[0].iov_len = sizeof(hdr);
+  for(int i=0; i<len; i++) {
+    niov[i+1].iov_base = iov[i].iov_base;
+    niov[i+1].iov_len  = iov[i].iov_len;
+  }
+  _loopback->writev(niov ,iovcnt);
+  delete[] niov;
+//   _loopback->write(&hdr ,sizeof(hdr));
+//   _loopback->write(&size,sizeof(size));
+//   _loopback->writev(iov ,len);
 }
 
 //
@@ -108,16 +140,27 @@ int Poll::poll()
   int result = 1;
   if (::poll(_pfd, _nfds, _timeout) > 0) {
     if (_pfd[0].revents & (POLLIN | POLLERR)) {
-      int cmd;
-      _loopback->read(&cmd,sizeof(cmd));
-      if (cmd==Shutdown)
+      int size;
+      int& cmd = *reinterpret_cast<int*>(_buffer);
+      if ((size=_loopback->read(_buffer,BufferSize))<0)
+	printf("Error reading loopback\n");
+      else if (cmd==Shutdown)
 	result = 0;
-      else if (cmd==Broadcast) {
-	int size=_loopback->read(_buffer,BufferSize);
-	for (unsigned short n=1; n<_nfds; n++) {
-	  if (_ofd[n])
-	    if (!_ofd[n]->processIo(_buffer,size))
-	      unmanage(*_ofd[n]);
+      else if (cmd==BroadcastIn || cmd==BroadcastOut) {
+	size -= sizeof(int);
+	if (size<0)
+	  printf("Error reading bcast\n");
+	else {
+	  if (size != 16) 
+	    printf("Poll::bcast %d bytes\n",size);
+	  const char* payload = _buffer+sizeof(int);
+	  for (unsigned short n=1; n<_nfds; n++) {
+	    if (_ofd[n])
+	      if (cmd==BroadcastOut)
+		::write(_ofd[n]->fd(), payload, size);
+	      else if (!_ofd[n]->processIo(payload,size))
+ 		unmanage(*_ofd[n]);
+	  }
 	}
       }
     }
@@ -133,7 +176,10 @@ int Poll::poll()
   return result;
 }
 
-int Poll::processTmo() { return 1; }
+int Poll::processTmo() 
+{
+  return 1; 
+}
 
 void Poll::routine()
 {

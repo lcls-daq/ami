@@ -2,6 +2,7 @@
 
 #include <sys/socket.h>
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 
@@ -18,12 +19,28 @@ BSocket::~BSocket()
 int BSocket::readv(const iovec* iov, int iovcnt)
 {
   char* data = _buffer;
-  while(iovcnt--) {
-    memcpy(iov->iov_base, data, iov->iov_len);
-    data += iov->iov_len;
-    iov++;
+  for(int i=0; i<iovcnt; i++) {
+    memcpy(iov[i].iov_base, data, iov[i].iov_len);
+    data += iov[i].iov_len;
   }
-  return data-_buffer;
+  int bytes = data-_buffer;
+#ifdef DBUG
+  { printf("\nBSocket %d read %d bytes\n",socket(),bytes);
+    int remaining=bytes;
+    if (remaining>128) remaining=128;
+    for(const iovec* i = iov; remaining>0; i++) {
+      unsigned k=0;
+      const unsigned char* end = (const unsigned char*)i->iov_base
+	+ (i->iov_len > remaining ? remaining : i->iov_len);
+      for(const unsigned char* c = (const unsigned char*)i->iov_base;
+	  c < end; c++,k++)
+	printf("%02x%c",*c,(k%32)==31 ? '\n' : ' ');
+      printf("\n");
+      remaining -= i->iov_len;
+    }
+  }
+#endif
+  return bytes;
 }
 
 char* BSocket::data() { return _buffer; }
