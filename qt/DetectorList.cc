@@ -6,6 +6,7 @@
 using namespace Ami::Qt;
 
 DetectorList::DetectorList(DetectorSelect* parent, const QStringList& names, const Pds::DetInfo& info, unsigned n) :
+  _parent(parent),
   _info(info)
 {
   // populate the box

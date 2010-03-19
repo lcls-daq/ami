@@ -35,6 +35,8 @@ namespace Ami {
     void     description(iovec*) const;
     void     payload    (iovec*) const;
 
+    void     invalidate_payload();
+
     Semaphore& payload_sem() const { return _payload_sem; }
   private:
     void adjust();

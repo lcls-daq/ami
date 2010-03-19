@@ -9,6 +9,11 @@ DetectorReset::DetectorReset(QWidget* parent,
 {
 }
 
+DetectorReset::DetectorReset(const DetectorReset& clone) :
+  DetectorGroup(clone)
+{
+}
+
 DetectorReset::~DetectorReset()
 {
 }

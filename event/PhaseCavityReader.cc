@@ -13,7 +13,7 @@ using namespace Ami;
 PhaseCavityReader::PhaseCavityReader(FeatureCache& f)  : 
   EventHandler(Pds::BldInfo(0,Pds::BldInfo::PhaseCavity),
 	       Pds::TypeId::Id_PhaseCavity,
-	       Pds::TypeId::NumberOf),  // expect no configure
+	       Pds::TypeId::Id_PhaseCavity),
   _cache(f),
   _index(-1)
 {
@@ -23,9 +23,14 @@ PhaseCavityReader::~PhaseCavityReader()
 {
 }
 
-//  no configure data will appear from BLD
 void   PhaseCavityReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   PhaseCavityReader::_configure(const void* payload, const Pds::ClockTime& t) {}
+void   PhaseCavityReader::_configure(const void* payload, const Pds::ClockTime& t) 
+{
+  _index = _cache.add("BLD:PHASECAV:T1");
+  _cache.add("BLD:PHASECAV:T2");
+  _cache.add("BLD:PHASECAV:Q1");
+  _cache.add("BLD:PHASECAV:Q2");
+}
 
 void   PhaseCavityReader::_event    (const void* payload, const Pds::ClockTime& t)
 {
@@ -42,20 +47,16 @@ void   PhaseCavityReader::_event    (const void* payload, const Pds::ClockTime& 
 
 void   PhaseCavityReader::_damaged  ()
 {
-  unsigned index = _index;
-  _cache.cache(index++,-1,true);
-  _cache.cache(index++,-1,true);
-  _cache.cache(index++,-1,true);
-  _cache.cache(index  ,-1,true);
+  if (_index>=0) {
+    unsigned index = _index;
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
+    _cache.cache(index  ,-1,true);
+  }
 }
 
 //  No Entry data
 unsigned     PhaseCavityReader::nentries() const { return 0; }
 const Entry* PhaseCavityReader::entry   (unsigned) const { return 0; }
-void         PhaseCavityReader::reset   () 
-{
-  _index = _cache.add("PHASECAV:T1");
-  _cache.add("PHASECAV:T2");
-  _cache.add("PHASECAV:Q1");
-  _cache.add("PHASECAV:Q2");
-}
+void         PhaseCavityReader::reset   () { _index=-1; }

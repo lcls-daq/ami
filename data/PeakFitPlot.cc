@@ -57,6 +57,7 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _baseline  (baseline),
   _prm       (prm),
   _cache     (0),
+  _term      (0),
   _entry     (0)
 {
   memcpy (_desc_buffer, &output, output.size());
@@ -64,7 +65,8 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
 
 PeakFitPlot::PeakFitPlot(const char*& p, FeatureCache& features) :
   AbsOperator(AbsOperator::PeakFitPlot),
-  _cache (&features)
+  _cache (&features),
+  _term  (0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_baseline  , sizeof(_baseline));
@@ -86,7 +88,9 @@ PeakFitPlot::PeakFitPlot(const char*& p, FeatureCache& features) :
 
 PeakFitPlot::PeakFitPlot(const char*& p) :
   AbsOperator(AbsOperator::PeakFitPlot),
-  _cache(0)
+  _cache(0),
+  _term (0),
+  _entry(0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_baseline  , sizeof(_baseline));
@@ -95,7 +99,7 @@ PeakFitPlot::PeakFitPlot(const char*& p) :
 
 PeakFitPlot::~PeakFitPlot()
 {
-  if (_term) delete _term;
+  if (_term ) delete _term;
   if (_entry) delete _entry;
 }
 

@@ -31,8 +31,10 @@ namespace Ami {
       ~XtcFileClient();
     public:
       void routine();
+      void configure();
     public slots:
       void select_expt(const QString&);
+      void configure_run();
       void run();
       void ready();
     signals:

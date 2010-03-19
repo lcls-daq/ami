@@ -34,7 +34,7 @@ namespace Ami {
     void     offset (unsigned size);
     
   private:
-    unsigned  _id;
+    volatile unsigned  _id;
     Type      _type;
     unsigned  _offset;
     unsigned  _payload;

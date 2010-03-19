@@ -4,6 +4,11 @@
 
 using namespace Ami::Qt;
 
+QtPWidget::QtPWidget() :
+  QWidget(0)
+{
+}
+
 QtPWidget::QtPWidget(QWidget* parent) : 
   //  QWidget(parent,::Qt::Window) 
   QWidget(0)
@@ -31,5 +36,5 @@ void QtPWidget::load(const char*& p)
   setVisible(v ? true : false);
   move(x,y);
 
-//   printf("QtP load %d,%d %c\n",x,y,v?'t':'f');
+  printf("QtP load %d,%d %c\n",x,y,v?'t':'f');
 }

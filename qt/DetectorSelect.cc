@@ -8,8 +8,7 @@
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/DetectorSave.hh"
 #include "ami/qt/DetectorReset.hh"
-#include "ami/qt/DetectorButton.hh"
-#include "ami/qt/DetectorList.hh"
+#include "ami/qt/DetectorListItem.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
@@ -29,6 +28,8 @@
 #include <errno.h>
 
 using namespace Ami::Qt;
+
+static const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
 
 static const int MaxConfigSize = 0x100000;
 
@@ -64,7 +65,6 @@ DetectorSelect::DetectorSelect(const QString& label,
   _clientPort (Port::clientPortBase()),
   _manager    (new ClientManager(interface, serverGroup, 
 				 _clientPort++,*this)),
-  _restore    (0),
   _reset_box  (new DetectorReset(this, _client)),
   _save_box   (new DetectorSave (this, _client))
 {
@@ -101,16 +101,17 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
     connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 
-    _client_layout = new QVBoxLayout;
-    layout->addLayout(_client_layout);
+    layout->addWidget(_detList = new QListWidget(this));
+    *new DetectorListItem(_detList, "Env", envInfo, 0);
 
-    QPushButton* envB  = new QPushButton("Env");
-    layout->addWidget(envB );
-    connect(envB  , SIGNAL(clicked()), this, SLOT(start_env()));
+    connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
+	    this, SLOT(show_detector(QListWidgetItem*)));
 
     data_box->setLayout(layout);
     l->addWidget(data_box); }
   setLayout(l);
+
+  connect(this, SIGNAL(detectors_discovered(const char*)), this, SLOT(change_detectors(const char*)));
 
   _manager->connect();
 }
@@ -208,8 +209,13 @@ void DetectorSelect::load_setup ()
 	break;
       }
 
-    if (!lFound)
-      _create_client(info,channel)->load(p);
+    if (!lFound) {
+      Ami::Qt::AbsClient* c = _create_client(info,channel);
+      if (c) {
+	c->load(p);
+	_connect_client(c);
+      }
+    }
 
     name=QtPersistent::extract_s(p);
   }
@@ -238,60 +244,44 @@ void DetectorSelect::save_plots()
   _save_box->show();
 }
 
-Ami::Qt::Client* DetectorSelect::_create_client(const Pds::DetInfo& info, 
-						unsigned channel)
+Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info, 
+						   unsigned channel)
 {
-  Ami::Qt::Client* client = 0;
+  Ami::Qt::AbsClient* client = 0;
   switch(info.device()) {
+  case Pds::DetInfo::Evr     : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
   case Pds::DetInfo::Acqiris : client = new Ami::Qt::WaveformClient(this, info, channel); break;
   case Pds::DetInfo::Opal1000: client = new Ami::Qt::ImageClient   (this, info, channel); break;
   default: printf("Device type %x not recognized\n", info.device()); break;
   }
-  if (client) {
-    ClientManager* manager = new ClientManager(_interface,     
-					       _serverGroup,
-					       _clientPort++,
-					       *client);	
-    client->managed(*manager);					
-    _client.push_back(client);
-    _reset_box->update_list();
-    _save_box ->update_list();
-  }
   return client;
+ }
+
+ void DetectorSelect::_connect_client(Ami::Qt::AbsClient* client)
+ {
+   ClientManager* manager = new ClientManager(_interface,     
+					      _serverGroup,
+					      _clientPort++,
+					      *client);	
+   client->managed(*manager);					
+   _client.push_back(client);
+   _update_groups();
 }
    
-void DetectorSelect::start_detector(const Pds::DetInfo& info, 
-				    unsigned channel)
+void DetectorSelect::show_detector(QListWidgetItem* item)
 {
+  DetectorListItem* ditem = static_cast<DetectorListItem*>(item);
   for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++)
-    if ((*it)->info==info && (*it)->channel==channel) {
+    if ((*it)->info==ditem->info && (*it)->channel==ditem->channel) {
       (*it)->show();
       return;
     }
-  _create_client(info,channel);
+  Ami::Qt::AbsClient* c = _create_client(ditem->info,ditem->channel);
+  if (c)
+    _connect_client(c);
 }
 
-void DetectorSelect::start_env  ()
-{
-  const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
-  for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++)
-    if ((*it)->info==envInfo && (*it)->channel==0) {
-      (*it)->show();
-      return;
-    }
-
-  Ami::Qt::EnvClient* client = new Ami::Qt::EnvClient(this);
-  ClientManager* manager = new ClientManager(_interface,
-					     _serverGroup, 
-					     _clientPort++,
-					     *client);
-  client->managed(*manager);
-  _client.push_back(client);
-  _reset_box->update_list();
-  _save_box ->update_list();
-}
-
- void DetectorSelect::connected       () { _manager->discover(); }
+void DetectorSelect::connected       () { _manager->discover(); }
 
 int DetectorSelect:: configure       (iovec* iov) { return 0; }
 
@@ -299,14 +289,14 @@ int DetectorSelect:: configured      () { return 0; }
 
 void DetectorSelect::discovered      (const DiscoveryRx& rx) 
 { 
-  setUpdatesEnabled(false);
+  emit detectors_discovered(reinterpret_cast<const char*>(&rx));
+}
 
-  //  Remove all buttons
-  { 
-    QLayoutItem* child;
-    while((child=_client_layout->takeAt(0)))
-      delete child;
-  }
+void DetectorSelect::change_detectors(const char* c)
+{
+  const DiscoveryRx& rx = *reinterpret_cast<const DiscoveryRx*>(c);
+
+  setUpdatesEnabled(false);
 
   //  Remove all clients not discovered
   {
@@ -317,7 +307,8 @@ void DetectorSelect::discovered      (const DiscoveryRx& rx)
       for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
 	  e = reinterpret_cast<const Ami::DescEntry*>
 	    (reinterpret_cast<const char*>(e) + e->size()))
-	if ((*it)->info == e->info() && (*it)->channel == e->channel()) {
+	if (((*it)->info == e->info() && (*it)->channel == e->channel()) ||
+	    ((*it)->info == envInfo   && (*it)->channel == 0)) {
 	  lFound=true;
 	  break;
 	}
@@ -325,33 +316,33 @@ void DetectorSelect::discovered      (const DiscoveryRx& rx)
 	remove.push_back(*it);
     }
     for(std::list<QtTopWidget*>::iterator it = remove.begin(); it != remove.end(); it++) {
+      printf("DetectorSelect::discovered removing %s\n",qPrintable((*it)->title()));
       _client.remove(*it);
-      delete *it;
     }
   }
 
   //  Register new buttons
   {
+    _detList->clear();
+
+    new DetectorListItem(_detList, "Env", envInfo, 0);
+
+    const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;
-    QStringList names;
     for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = n) {
       n = reinterpret_cast<const Ami::DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size());
-      names.append(e->name());
-      if (n < rx.end() && e->info()==n->info()) {
+
+      if (e->info() == noInfo)   // Skip unknown devices 
 	continue;
-      }
 
       printf("Discovered %s\n",e->name());
-      if (e->channel()==0)
-	_client_layout->addWidget(new DetectorButton(this, e->name(), e->info()));
-      else
-	_client_layout->addWidget(new DetectorList  (this, names, e->info(), e->channel()+1));
-      names.clear();
+      new DetectorListItem(_detList, e->name(), e->info(), e->channel());
     }
+    _detList->sortItems();
   }
-  _reset_box->update_list();
-  _save_box ->update_list();
+  _update_groups();
+
   setUpdatesEnabled(true);
 }
 
@@ -364,3 +355,12 @@ void DetectorSelect::read_payload    (Socket& s,int) {
 void DetectorSelect::process         () {
 }
 
+void DetectorSelect::_update_groups()
+{
+  DetectorReset* reset_box = new DetectorReset(*_reset_box);
+  delete _reset_box;
+  _reset_box = reset_box;
+  DetectorSave * save_box  = new DetectorSave (*_save_box);
+  delete _save_box;
+  _save_box = save_box;
+}

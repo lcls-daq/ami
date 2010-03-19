@@ -94,4 +94,11 @@ void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t
   }
 }
 
-void AcqWaveformHandler::_damaged() {}
+void AcqWaveformHandler::_damaged() 
+{
+  unsigned n = _nentries < _config.nbrChannels() ? _nentries : _config.nbrChannels();
+  for (unsigned i=0;i<n;i++) {
+    EntryWaveform* entry = _entry[i];
+    entry->invalid();
+  }
+}

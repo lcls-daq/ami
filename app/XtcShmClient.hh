@@ -2,31 +2,29 @@
 #define Ami_XtcShmClient_hh
 
 #include "ami/service/Fd.hh"
+#include "pdsdata/app/XtcMonitorClient.hh"
 
 #include "ami/app/XtcClient.hh"
-
-//#ifdef _POSIX_MESSAGE_PASSING
-#include <mqueue.h>
-//#endif
-
-namespace Pds { class Dgram; }
+#include "ami/service/Semaphore.hh"
 
 namespace Ami {
 
-  class XtcShmClient : public Fd {
+  class Task;
+
+  class XtcShmClient : public XtcMonitorClient,
+		       public Fd {
   public:
-    XtcShmClient(XtcClient& client, char* partitionTag);
+    XtcShmClient(XtcClient& client, char* partitionTag, int index=0);
     ~XtcShmClient() {};
   public:
-    int fd() const { return _inputQueue; }
+    int processDgram(Dgram*);
+    int fd() const;
     int processIo();
   private:
     XtcClient& _client;
-    char* _tag;
-    mqd_t _inputQueue;
-    mqd_t _outputQueue;
-    unsigned _sizeOfShm;
-    char* _myShm;
+    int        _pipefd[2];
+    Semaphore  _sem;
+    Task*      _task;
   };
-}
+};
 #endif

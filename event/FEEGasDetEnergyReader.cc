@@ -13,7 +13,7 @@ using namespace Ami;
 FEEGasDetEnergyReader::FEEGasDetEnergyReader(FeatureCache& f)  : 
   EventHandler(Pds::BldInfo(0,Pds::BldInfo::FEEGasDetEnergy),
 	       Pds::TypeId::Id_FEEGasDetEnergy,
-	       Pds::TypeId::NumberOf),  // expect no configure
+	       Pds::TypeId::Id_FEEGasDetEnergy),
   _cache(f),
   _index(-1)
 {
@@ -23,9 +23,14 @@ FEEGasDetEnergyReader::~FEEGasDetEnergyReader()
 {
 }
 
-//  no configure data will appear from BLD
 void   FEEGasDetEnergyReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   FEEGasDetEnergyReader::_configure(const void* payload, const Pds::ClockTime& t) {}
+void   FEEGasDetEnergyReader::_configure(const void* payload, const Pds::ClockTime& t) 
+{
+  _index = _cache.add("BLD:FEE:GDET:11:ENRC");
+  _cache.add("BLD:FEE:GDET:12:ENRC");
+  _cache.add("BLD:FEE:GDET:21:ENRC");
+  _cache.add("BLD:FEE:GDET:22:ENRC");
+}
 
 void   FEEGasDetEnergyReader::_event    (const void* payload, const Pds::ClockTime& t)
 {
@@ -42,20 +47,16 @@ void   FEEGasDetEnergyReader::_event    (const void* payload, const Pds::ClockTi
 
 void   FEEGasDetEnergyReader::_damaged  ()
 {
-  unsigned index = _index;
-  _cache.cache(index++,-1,true); // f_11
-  _cache.cache(index++,-1,true); // f_12
-  _cache.cache(index++,-1,true); // f_21
-  _cache.cache(index  ,-1,true); // f_22
+  if (_index>=0) {
+    unsigned index = _index;
+    _cache.cache(index++,-1,true); // f_11
+    _cache.cache(index++,-1,true); // f_12
+    _cache.cache(index++,-1,true); // f_21
+    _cache.cache(index  ,-1,true); // f_22
+  }
 }
 
 //  No Entry data
 unsigned     FEEGasDetEnergyReader::nentries() const { return 0; }
 const Entry* FEEGasDetEnergyReader::entry   (unsigned) const { return 0; }
-void         FEEGasDetEnergyReader::reset   () 
-{
-  _index = _cache.add("FEE:GDET:11:ENRC");
-  _cache.add("FEE:GDET:12:ENRC");
-  _cache.add("FEE:GDET:21:ENRC");
-  _cache.add("FEE:GDET:22:ENRC");
-}
+void         FEEGasDetEnergyReader::reset   () { _index=-1; }

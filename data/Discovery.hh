@@ -35,6 +35,9 @@ namespace Ami {
     const Desc*      title_desc() const;
     const DescEntry* entries() const;
     const DescEntry* end    () const;
+  public:
+    const char* payload() const { return _p; }
+    unsigned    payload_size() const { return _size; }
   private:
     const char* _p;
     unsigned    _size;

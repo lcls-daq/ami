@@ -19,7 +19,9 @@ namespace Ami {
       QStringList paths() const;
     public slots:
       void change_path_list(const QStringList&);
-      void run_selected(int);
+      void select_run(int);
+    signals:
+      void run_selected();
     private:
       QStringList  _paths;
       QString      _run;

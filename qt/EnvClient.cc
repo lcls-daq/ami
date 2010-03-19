@@ -40,10 +40,9 @@ using namespace Ami::Qt;
 enum { _TH1F, _vT, _vF, _vS };
 
 static const int BufferSize = 0x8000;
-static const Pds::DetInfo envInfo(0, Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
 
-EnvClient::EnvClient(QWidget* parent) :
-  QtTopWidget      (parent,envInfo,0),
+EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel) :
+  Ami::Qt::AbsClient(parent,info,channel),
   _title           ("Env"),
   _input           (0),
   _output_signature(0),
@@ -86,7 +85,7 @@ EnvClient::EnvClient(QWidget* parent) :
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(_source);
-    layout1->addStretch();
+    //    layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
   { QGroupBox* plot_box = new QGroupBox("Plot");
@@ -160,6 +159,8 @@ void EnvClient::load(const char*& p)
   }
 
   _control->load(p);
+
+  update_configuration();
 }
 
 void EnvClient::save_plots(const QString& p) const 
@@ -330,7 +331,8 @@ void EnvClient::request_payload()
 
 void EnvClient::update_configuration()
 {
-  _manager->configure();
+  if (_manager)
+    _manager->configure();
 }
 
 void EnvClient::plot()

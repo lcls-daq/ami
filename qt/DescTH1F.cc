@@ -11,9 +11,11 @@
 
 using namespace Ami::Qt;
 
-DescTH1F::DescTH1F(const char* name) : 
+DescTH1F::DescTH1F(const char* name) :
   QWidget(0), _button(new QRadioButton(name)), 
-  _bins(new QLineEdit("100")), _lo(new QLineEdit("0")), _hi(new QLineEdit("1")) 
+  _bins(new QLineEdit("100")),
+  _lo  (new QLineEdit("0")),
+  _hi  (new QLineEdit("0"))
 {
   _bins->setMaximumWidth(60);
   _lo  ->setMaximumWidth(60);

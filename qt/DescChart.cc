@@ -20,6 +20,7 @@ DescChart::DescChart(const char* name, double dpt) :
   layout->addStretch();
   layout->addWidget(new QLabel("points"));
   layout->addWidget(_pts);
+  _pts->setEnabled(false);
   //  layout->addWidget(new QLabel(QString("%1 seconds/pt").arg(dpt)));
   setLayout(layout);
 }

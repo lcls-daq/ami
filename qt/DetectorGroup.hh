@@ -6,6 +6,7 @@
 
 class QButtonGroup;
 class QVBoxLayout;
+class QCheckBox;
 
 namespace Ami {
   namespace Qt {
@@ -17,6 +18,7 @@ namespace Ami {
       DetectorGroup(const QString&,
 		    QWidget* parent,
 		    const std::list<QtTopWidget*>&);
+      DetectorGroup(const DetectorGroup&);
       ~DetectorGroup();
     public:
       void save(char*& p) const;
@@ -25,15 +27,15 @@ namespace Ami {
       void enable (int);
       void disable(int);
     public slots:
-      void update_list();
       void apply();
       void close();
     private:
       virtual void _init () {}
       virtual void _apply(QtTopWidget&) = 0;
-    private:
+    protected:
+      void build(const std::list<QCheckBox*>&);
+
       const std::list<QtTopWidget*>& _clients;
-      QVBoxLayout*                   _client_layout;
       std::list<QtTopWidget*>        _snapshot;
       QButtonGroup* _buttons;
     };

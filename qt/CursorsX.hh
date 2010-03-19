@@ -19,6 +19,7 @@ namespace Ami {
 
   class AbsOperator;
   class Cds;
+  class DescEntry;
   class Entry;
 
   namespace Qt {
@@ -52,6 +53,7 @@ namespace Ami {
 		     ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
+      void initialize(const Ami::DescEntry&);
     public slots:
       void set_channel(int); // set the source
       void calc        ();

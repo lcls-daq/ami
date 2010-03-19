@@ -17,28 +17,24 @@ ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) 
   ImageDisplay& wd = static_cast<ImageDisplay&>(display());
 
   { QPushButton* rectB = new QPushButton("X / Y Selection");
-    rectB->setCheckable(true);
     addWidget(rectB);
     _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(rectB, SIGNAL(clicked(bool)), _xyproj, SLOT(setVisible(bool))); }
+    connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(show())); }
 
   { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
-    cylB ->setCheckable(true);
     addWidget(cylB);
     _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cylB, SIGNAL(clicked(bool)), _rfproj, SLOT(setVisible(bool))); }
+    connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(show())); }
 
   { QPushButton* cntB = new QPushButton("Contour Projection");
-    cntB ->setCheckable(true);
     addWidget(cntB);
     _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cntB, SIGNAL(clicked(bool)), _cntproj, SLOT(setVisible(bool))); }
+    connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(show())); }
 
   { QPushButton* hitB = new QPushButton("Hit Finder");
-    hitB ->setCheckable(true);
     addWidget(hitB);
     _hit = new PeakFinder(this,_channels,NCHANNELS,wd);
-    connect(hitB, SIGNAL(clicked(bool)), _hit, SLOT(setVisible(bool))); }
+    connect(hitB, SIGNAL(clicked()), _hit, SLOT(show())); }
 
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
@@ -66,6 +62,8 @@ void ImageClient::load(const char*& p)
   _rfproj ->load(p);
   _cntproj->load(p);
   _hit    ->load(p);
+
+  update_configuration();
 }
 
 void ImageClient::save_plots(const QString& p) const

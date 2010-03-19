@@ -112,3 +112,8 @@ void Cds::payload(iovec* iov) const
     (*it)->payload(*iov);
 }
 
+void Cds::invalidate_payload()
+{
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++)
+    (*it)->invalid();
+}

@@ -20,6 +20,10 @@ namespace Ami {
     unsigned short size() const;
 
     bool isnormalized() const;
+    bool aggregate   () const;
+
+    void normalize(bool);
+    void aggregate(bool);
 
     void xwarnings(float warn, float err);
     bool xhaswarnings() const;
@@ -33,11 +37,11 @@ namespace Ami {
 
   protected:
     DescEntry(const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=true);
+	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=true);
 
     DescEntry(const Pds::DetInfo& info, unsigned channel,
 	      const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=true);
+	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=true);
 
   private:
     Pds::DetInfo _info;
@@ -55,7 +59,7 @@ namespace Ami {
     float _yerr;
 
   private:
-    enum Option {Normalized, XWarnings, YWarnings};
+    enum Option {Normalized, Aggregate, XWarnings, YWarnings};
   };
 };
 

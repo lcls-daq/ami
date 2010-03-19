@@ -41,9 +41,12 @@ void FeatureBox::set_entry(const QString& e) { _entry=e; }
 void FeatureBox::_seek()
 {
   const QStringList& l = FeatureRegistry::instance().names();
-  for(int i=0; i<l.size(); i++)
-    if (l[i]==_entry) {
-      setCurrentIndex(i);
-      break;
-    }
+  if (_entry.isEmpty() && l.size()>0)
+    _entry = l[0];
+  else
+    for(int i=0; i<l.size(); i++)
+      if (l[i]==_entry) {
+	setCurrentIndex(i);
+	break;
+      }
 }

@@ -16,7 +16,7 @@ tgtslib_test := /usr/lib/rt
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
-tgtlibs_ami += pdsdata/controldata pdsdata/epics
+tgtlibs_ami += pdsdata/controldata pdsdata/epics 
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
 tgtlibs_ami += qt/QtCore
 
@@ -33,6 +33,7 @@ tgtincs_ami := qt/include
 libnames := app
 
 # List source files for each library
+#libsrcs_app := $(filter-out Agent.cc ami_agent.cc test.cc ami.cc,$(wildcard *.cc))
 libsrcs_app := $(filter-out test.cc ami.cc,$(wildcard *.cc))
 # libsrcs_lib_b := src_6.cc
 

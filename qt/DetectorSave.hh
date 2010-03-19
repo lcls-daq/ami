@@ -9,6 +9,7 @@ namespace Ami {
     public:
       DetectorSave(QWidget* parent,
 		   const std::list<QtTopWidget*>&);
+      DetectorSave(const DetectorSave&);
       ~DetectorSave();
     private:
       void _init ();

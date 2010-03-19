@@ -41,7 +41,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
 			Display*            frame) :
-  QtTopWidget      (parent,src,channel),
+  Ami::Qt::AbsClient(parent,src,channel),
   _frame           (frame),
   _input_entry     (0),
   _title           (ChannelID::name(src,channel)),
@@ -49,10 +49,12 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
   _cds             ("Client"),
+  _manager         (0),
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _layout          (new QVBoxLayout),
-  _sem             (new Semaphore(Semaphore::EMPTY))
+  _sem             (new Semaphore(Semaphore::EMPTY)),
+  _throttled       (false)
 {
   setWindowTitle(ChannelID::name(src, channel));
 
@@ -77,7 +79,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       for(int i=0; i<NCHANNELS; i++) {
 	QString title = names[i];
 	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0);
-	chanB[i] = new QPushButton(title); chanB[i]->setCheckable(true);
+	chanB[i] = new QPushButton(title); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
@@ -87,7 +89,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4); 
-	  connect(chanB[i], SIGNAL(clicked(bool)), _channels[i], SLOT(setVisible(bool)));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
 	}
@@ -112,7 +114,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
 Ami::Qt::Client::~Client() 
 {
-  delete _manager;
+  if (_manager) delete _manager;
   delete[] _iovload;
   delete[] _description;
   delete[] _request; 
@@ -154,14 +156,16 @@ const Ami::Qt::Display& Ami::Qt::Client::display() const { return *_frame; }
 
 void Ami::Qt::Client::connected()
 {
-  _status->set_state(Status::Connected);
-  _manager->discover();
+  if (_manager) {
+    _status->set_state(Status::Connected);
+    _manager->discover();
+  }
 }
 
 void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
-  printf("Discovered\n");
+  printf("%s Discovered\n",qPrintable(title()));
 
   //  iterate through discovery and print
   FeatureRegistry::instance().clear ();
@@ -178,6 +182,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
     if (strcmp(e->name(),channel_name)==0) {
       _input_entry = e;
       _frame->prototype(e);
+      _prototype(*e);
     }
   }
 
@@ -190,7 +195,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 int  Ami::Qt::Client::configure       (iovec* iov) 
 {
   _status->set_state(Status::Configured);
-  printf("Configure\n");
+  printf("%s Configure\n",qPrintable(title()));
   if (_input_entry==0) {
     printf("input_entry not found\n");
     return 0;
@@ -242,7 +247,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 //
 int  Ami::Qt::Client::configured      () 
 {
-  printf("Configured\n");
+  printf("%s Configured\n",qPrintable(title()));
   return 0; 
 }
 
@@ -259,7 +264,7 @@ void Ami::Qt::Client::read_description(Socket& socket, int len)
     return;
   }
 
-  if (size==BufferSize) {
+  if (size>BufferSize) {
     printf("Buffer overflow in Ami::Qt::Client::read_description.  Dying...\n");
     abort();
   }
@@ -319,9 +324,9 @@ void Ami::Qt::Client::_read_description(int size)
 //
 void Ami::Qt::Client::read_payload     (Socket& socket, int size)
 {
-  //  printf("payload\n"); 
   if (_status->state() == Status::Requested) {
-    socket.readv(_iovload,_cds.totalentries());
+    int sz = socket.readv(_iovload,_cds.totalentries());
+    //    printf("payload read %d bytes\n", sz);
   }
   else if (!_one_shot) {
     //
@@ -352,9 +357,16 @@ void Ami::Qt::Client::managed(ClientManager& mgr)
 
 void Ami::Qt::Client::request_payload()
 {
-  if (_status->state() >= Status::Described) {
-    _manager->request_payload();
+  if (_status->state() == Status::Described ||
+      _status->state() == Status::Processed) {
+    _throttled = false;
     _status->set_state(Status::Requested);
+    _manager->request_payload();
+  }
+  else if (_status->state() == Status::Requested &&
+	   !_throttled) {
+    _throttled = true;
+    printf("Client request_payload throttling\n");
   }
 }
 
@@ -365,5 +377,6 @@ void Ami::Qt::Client::one_shot(bool l)
 
 void Ami::Qt::Client::update_configuration()
 {
-  _manager->configure();
+  if (_manager)
+    _manager->configure();
 }

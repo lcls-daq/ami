@@ -20,6 +20,9 @@ namespace Ami {
       EdgeCursor(const QString&, PlotFrame&);
       ~EdgeCursor();
     public:
+      void load(const char*&);
+      void save(char*&) const;
+    public:
       double value() const;
       void   value(double);
       void mousePressEvent(double,double);

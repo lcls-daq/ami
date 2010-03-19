@@ -31,7 +31,8 @@ namespace Ami {
     iovec*     _iovload;
     iovec*     _iovdesc;
     BSocket*   _buffer;
-    enum { Init, Configured, Describing, Described, Processing, Processed } _state;
+    enum { Init, Configured, Describing, Described, Processing } _state;
+    double     _latest;
   };
 };
 

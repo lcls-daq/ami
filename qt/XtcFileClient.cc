@@ -20,6 +20,20 @@
 #include <libgen.h>
 #include <string>
 
+namespace Ami {
+  namespace Qt {
+    class ConfigureTask : public Routine {
+    public:
+      ConfigureTask(XtcFileClient& c) : _c(c) {}
+      ~ConfigureTask() {}
+    public:
+      void routine() { _c.configure(); delete this; }
+    private:
+      XtcFileClient& _c;
+    };
+  };
+};
+
 using namespace Ami::Qt;
 
 static void insert_transition(Pds::Dgram* dg, Pds::TransitionId::Value tr)
@@ -80,10 +94,11 @@ XtcFileClient::XtcFileClient(Ami::XtcClient& client,
   setLayout(l);
 
   connect(_expt_select, SIGNAL(currentTextChanged(const QString&)), this, SLOT(select_expt(const QString&)));
+  connect(_file_select, SIGNAL(run_selected()), this, SLOT(configure_run()));
   connect(_runB, SIGNAL(clicked()), this, SLOT(run()));
-  //  connect(this , SIGNAL(done())   , this, SLOT(ready()));
+  connect(this , SIGNAL(done())   , this, SLOT(ready()));
   //  Infinite playback mode
-  connect(this , SIGNAL(done())   , this, SLOT(run()));
+  //  connect(this , SIGNAL(done())   , this, SLOT(run()));
   connect(exitB, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
 }
 
@@ -98,6 +113,48 @@ void XtcFileClient::select_expt(const QString& expt)
   paths << QString("%1/%2/xtc").arg(_basedir).arg(expt);
 
   _file_select->change_path_list(paths);
+}
+
+void XtcFileClient::configure_run()
+{
+  _task->call(new ConfigureTask(*this));
+}
+
+void XtcFileClient::configure()
+{
+  const char* fname = qPrintable(_file_select->paths().at(0));
+
+  FILE* f = fopen(fname,"r");
+  if (!f) {
+    printf("Error opening file %s\n",fname);
+    return;
+  }
+  else {
+    printf("Opened file %s\n",fname);
+  }
+
+  char* buffer = new char[0x800000];
+  Pds::Dgram* dg = (Pds::Dgram*)buffer;
+
+  insert_transition(dg, TransitionId::Map);
+  _client.processDgram(dg);
+
+  //  read configure transition
+  fread(dg, sizeof(Dgram), 1, f);
+  fread(dg->xtc.payload(), dg->xtc.sizeofPayload(), 1, f);
+  if (feof(f))
+    printf("Unexpected eof in %s\n",fname);
+  else
+    _client.processDgram(dg);
+
+  insert_transition(dg, TransitionId::Unconfigure);
+  _client.processDgram(dg);
+
+  insert_transition(dg, TransitionId::Unmap);
+  _client.processDgram(dg);
+
+  fclose(f);
+  delete[] buffer;
 }
 
 void XtcFileClient::run() 

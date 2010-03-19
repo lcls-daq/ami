@@ -14,6 +14,11 @@ DetectorSave::DetectorSave(QWidget* parent,
 {
 }
 
+DetectorSave::DetectorSave(const DetectorSave& clone) :
+  DetectorGroup(clone)
+{
+}
+
 DetectorSave::~DetectorSave()
 {
 }

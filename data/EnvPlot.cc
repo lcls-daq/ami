@@ -30,7 +30,8 @@ EnvPlot::EnvPlot(const DescEntry& output) :
 
 EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   AbsOperator(AbsOperator::EnvPlot),
-  _cache (&features)
+  _cache (&features),
+  _term  (0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
 

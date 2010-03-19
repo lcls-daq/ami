@@ -1,9 +1,7 @@
 #ifndef AmiQt_EnvClient_hh
 #define AmiQt_EnvClient_hh
 
-#include "ami/qt/Requestor.hh"
-#include "ami/qt/QtTopWidget.hh"
-#include "ami/client/AbsClient.hh"
+#include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -26,12 +24,10 @@ namespace Ami {
     class DescProf;
     class DescScan;
     class FeatureBox;
-    class EnvClient : public QtTopWidget,
-		      public Ami::AbsClient,
-		      public Requestor {
+    class EnvClient : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
-      EnvClient(QWidget*);
+      EnvClient(QWidget*, const Pds::DetInfo&, unsigned);
       ~EnvClient();
     public:
       const QString& title() const;

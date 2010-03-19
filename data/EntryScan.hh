@@ -43,6 +43,7 @@ namespace Ami {
     void   addinfo(double, Info);
 
     void setto(const EntryScan& entry);
+    void sum  (const double*, const double*);
     void sum  (const EntryScan&, const EntryScan&);
     void diff (const EntryScan&, const EntryScan&);
     void add  (const EntryScan& entry);
@@ -60,6 +61,8 @@ namespace Ami {
   private:
     class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; };
     BinV* _p;
+
+    int  _insert_bin(const BinV&, int&);
   };
 
   inline double EntryScan::ymean(unsigned bin) const 

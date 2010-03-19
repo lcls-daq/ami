@@ -9,12 +9,13 @@
 #include <list>
 
 class QPrinter;
-class QVBoxLayout;
+class QListWidget;
+class QListWidgetItem;
 
 namespace Ami {
   class ClientManager;
   namespace Qt {
-    class Client;
+    class AbsClient;
     class QtTopWidget;
     class DetectorReset;
     class DetectorSave;
@@ -42,11 +43,16 @@ namespace Ami {
       void reset_plots();
       void save_plots();
 
-      void start_detector(const Pds::DetInfo&, unsigned);
-      void start_env  ();
+      void show_detector(QListWidgetItem*);
+      void change_detectors (const char*);
+
+    signals:
+      void detectors_discovered (const char*);
 
     private:
-      Ami::Qt::Client* _create_client(const Pds::DetInfo&, unsigned);
+      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned);
+      void                _connect_client(Ami::Qt::AbsClient* client);
+      void                _update_groups();
 
     private:
       unsigned       _interface;
@@ -54,8 +60,7 @@ namespace Ami {
       unsigned short _clientPort;
       ClientManager* _manager;
       std::list<QtTopWidget*> _client;
-      QVBoxLayout*   _client_layout;
-      char*          _restore;
+      QListWidget*   _detList;
       QPrinter*      _printer;
       DetectorReset* _reset_box;
       DetectorSave*  _save_box;

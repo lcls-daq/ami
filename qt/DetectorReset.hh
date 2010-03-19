@@ -9,6 +9,7 @@ namespace Ami {
     public:
       DetectorReset(QWidget*,
 		    const std::list<QtTopWidget*>&);
+      DetectorReset(const DetectorReset& clone);
       ~DetectorReset();
     private:
       void _apply(QtTopWidget&);

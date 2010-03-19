@@ -25,9 +25,12 @@ namespace Ami {
 		      unsigned nchannels);
       void _setup_payload(Cds&);
       void _update();
+      void _prototype(const DescEntry&);
+
     private:
       EdgeFinder*        _edges;
       CursorsX*          _cursors;
+      bool               _initialized;
     };
   };
 };

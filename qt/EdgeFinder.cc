@@ -9,6 +9,7 @@
 #include "ami/qt/PlotFrame.hh"
 
 #include "ami/data/DescTH1F.hh"
+#include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EdgeFinder.hh"
 
@@ -105,8 +106,8 @@ void EdgeFinder::save(char*& p) const
 {
   QtPWidget::save(p);
 
-  QtPersistent::insert(p,_baseline ->value());
-  QtPersistent::insert(p,_threshold->value());
+  _baseline ->save(p);
+  _threshold->save(p);
 
   QtPersistent::insert(p,_title->text());
   _hist->save(p);
@@ -122,8 +123,8 @@ void EdgeFinder::load(const char*& p)
 {
   QtPWidget::load(p);
 
-  _baseline ->value(QtPersistent::extract_d(p));
-  _threshold->value(QtPersistent::extract_d(p));
+  _baseline ->load(p);
+  _threshold->load(p);
   _title->setText(QtPersistent::extract_s(p));
   _hist->load(p);
 
@@ -173,6 +174,19 @@ void EdgeFinder::update()
 {
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
+}
+
+void EdgeFinder::initialize(const Ami::DescEntry& e)
+{
+  switch(e.type()) {
+  case DescEntry::Waveform:
+    { const DescWaveform& wf = reinterpret_cast<const DescWaveform&>(e);
+      _hist->lo(wf.xlow());
+      _hist->hi(wf.xup()); }
+    break;
+  default:
+    break;
+  }
 }
 
 void EdgeFinder::set_channel(int c) 

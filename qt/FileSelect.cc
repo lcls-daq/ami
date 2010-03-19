@@ -21,7 +21,7 @@ FileSelect::FileSelect(QWidget* parent,
   setLayout(l);
 
   connect(_list,  SIGNAL(currentRowChanged(int)),
-	  this,   SLOT  (run_selected(int)));
+	  this,   SLOT  (select_run(int)));
 
   change_path_list(paths);
 }
@@ -60,7 +60,7 @@ void FileSelect::change_path_list(const QStringList& paths)
   _paths = paths;
 
   disconnect(_list, SIGNAL(currentRowChanged(int)),
-	     this,  SLOT  (run_selected(int)));
+	     this,  SLOT  (select_run(int)));
 
   _list->clear();
 
@@ -95,13 +95,15 @@ void FileSelect::change_path_list(const QStringList& paths)
   printf("Found %d runs\n",runs.size());
 
   connect(_list, SIGNAL(currentRowChanged(int)),
-	  this,  SLOT  (run_selected(int)));
+	  this,  SLOT  (select_run(int)));
 }
 
-void FileSelect::run_selected(int row)
+void FileSelect::select_run(int row)
 {
-  if (row>=0)
+  if (row>=0) {
     _run = _list->currentItem()->text();
+    emit run_selected();
+  }
   else
     _run = QString("");
 }

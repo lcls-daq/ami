@@ -9,14 +9,18 @@ DescEntry::DescEntry(const char* name,
 		     const char* ytitle, 
 		     Type type, 
 		     unsigned short size,
-		     bool isnormalized) :
+		     bool isnormalized,
+		     bool doaggregate) :
   Desc(name),
   _channel(-1),
   _group(-1),
-  _options(isnormalized ? (1<<Normalized) : 0),
+  _options(0),
   _type(type),
   _size(size)
 { 
+  normalize(isnormalized);
+  aggregate(doaggregate);
+
   strncpy(_xtitle, xtitle, TitleSize);
   _xtitle[TitleSize-1] = 0;
   strncpy(_ytitle, ytitle, TitleSize);
@@ -30,15 +34,19 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
 		     const char* ytitle, 
 		     Type type, 
 		     unsigned short size,
-		     bool isnormalized) :
+		     bool isnormalized,
+		     bool doaggregate) :
   Desc(name),
   _info   (info),
   _channel(channel),
   _group(-1),
-  _options(isnormalized ? (1<<Normalized) : 0),
+  _options(0),
   _type(type),
   _size(size)
 { 
+  normalize(isnormalized);
+  aggregate(doaggregate);
+
   strncpy(_xtitle, xtitle, TitleSize);
   _xtitle[TitleSize-1] = 0;
   strncpy(_ytitle, ytitle, TitleSize);
@@ -54,6 +62,17 @@ const Pds::DetInfo& DescEntry::info() const { return _info; }
 unsigned            DescEntry::channel() const { return _channel; }
 
 bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
+bool DescEntry::aggregate   () const {return _options&(1<<Aggregate);}
+
+void DescEntry::normalize(bool v) {
+  if (v) _options |=  (1<<Normalized);
+  else   _options &= ~(1<<Normalized);
+}
+
+void DescEntry::aggregate(bool v) {
+  if (v) _options |=  (1<<Aggregate);
+  else   _options &= ~(1<<Aggregate);
+}
 
 void DescEntry::xwarnings(float warn, float err) 
 {

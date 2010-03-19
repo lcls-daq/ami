@@ -23,6 +23,7 @@ Single::Single(const char*& p, const DescEntry& e) :
   AbsOperator(AbsOperator::Single)
 {
   _entry = EntryFactory::entry(e);
+  _entry->desc().aggregate(false);
 }
 
 Single::~Single()

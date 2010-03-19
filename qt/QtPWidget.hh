@@ -9,6 +9,7 @@ namespace Ami {
     class QtPWidget : public QWidget, public QtPersistent {
       Q_OBJECT
     public:
+      QtPWidget();
       QtPWidget(QWidget* parent);
       virtual ~QtPWidget();
     public:

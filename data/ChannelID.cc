@@ -21,9 +21,13 @@ static char _buffer[128];
     if (info.device()==DetInfo::Acqiris)	\
       NoChannel(title);				\
   }
-#define OpalDetector(title) {			\
-    if (info.device()==DetInfo::Opal1000)	\
-      NoChannel(title);				\
+#define OpalDetector(title) {				\
+    if (info.device()==DetInfo::Opal1000) {		\
+      if (info.devId()==0)				\
+	strcpy(_buffer,title);				\
+      else						\
+	sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
+    }							\
   }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,

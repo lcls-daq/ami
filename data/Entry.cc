@@ -1,5 +1,6 @@
 #include <string.h>
 #include <sys/uio.h>
+#include <math.h>
 
 #include "ami/data/Entry.hh"
 #include "pdsdata/xtc/ClockTime.hh"
@@ -62,6 +63,12 @@ static const Pds::ClockTime _invalid(0,0);
 void Entry::valid(const Pds::ClockTime& t) 
 {
   *_payload = *(reinterpret_cast<const unsigned long long*>(&t));
+}
+
+void Entry::valid(double v)
+{
+  Pds::ClockTime t(unsigned(v),unsigned(drem(v,1)*1.e9));
+  *_payload = *reinterpret_cast<unsigned long long*>(&t);
 }
 
 void Entry::invalid() { valid(_invalid); }

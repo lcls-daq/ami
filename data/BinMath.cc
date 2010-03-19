@@ -32,9 +32,10 @@
   public:								\
       double evaluate() const						\
       { double sum=0;							\
+	const Entry##type* e = static_cast<const Entry##type*>(_entry); \
 	for(unsigned i=_lo; i<=_hi; i++)				\
-	  sum += static_cast<const Entry##type*>(_entry)->func(i);	\
-	return sum; }							\
+	  sum += e->func(i);						\
+	return sum / e->info(Entry##type::Normalization); }		\
   private:								\
       const Entry*& _entry;						\
       unsigned _lo, _hi;						\

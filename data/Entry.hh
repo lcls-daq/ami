@@ -21,12 +21,15 @@ namespace Ami {
 
     virtual int update() {return 0;}
 
+    const unsigned long long* payload() const { return _payload; }
+
     void payload(iovec& iov);
     void payload(iovec& iov) const;
 
     double                last() const;
     const Pds::ClockTime& time() const;
     void                  valid  (const Pds::ClockTime& t);
+    void                  valid  (double);
     void                  invalid();
     bool                  valid  () const;
 

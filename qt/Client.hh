@@ -11,9 +11,7 @@
 //
 //=========================================================
 
-#include "ami/qt/Requestor.hh"
-#include "ami/qt/QtTopWidget.hh"
-#include "ami/client/AbsClient.hh"
+#include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -30,9 +28,7 @@ namespace Ami {
     class Display;
     class Status;
 
-    class Client : public QtTopWidget, 
-		   public Ami::AbsClient,
-		   public Requestor {
+    class Client : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
       Client(QWidget*,const Pds::DetInfo&, unsigned, Display*);
@@ -73,6 +69,7 @@ namespace Ami {
 			      unsigned nchannels) {}
       virtual void _setup_payload(Cds&) {}
       virtual void _update() {}
+      virtual void _prototype(const DescEntry&) {}
 
     protected:
       enum {NCHANNELS=4};
@@ -99,6 +96,8 @@ namespace Ami {
       QLayout*    _layout;
 
       Semaphore*  _sem;
+
+      bool _throttled;
     };
   };
 };

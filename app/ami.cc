@@ -29,6 +29,7 @@ typedef Pds::DetInfo DI;
 static void usage(char* progname) {
   fprintf(stderr,
 	  "Usage: %s -p <partitionTag>\n"
+	  "          -n <partitionIndex>\n"
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
 	  "          -c <client mcast group>\n"
@@ -40,11 +41,11 @@ int main(int argc, char* argv[]) {
   int c;
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
-  unsigned clientGroup = 0xefff2001;
   char* partitionTag = 0;
+  int   partitionIndex = 0;
   bool offline=false;
 
-  while ((c = getopt(argc, argv, "?hfp:i:s:c:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfp:n:i:s:c:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -83,13 +84,13 @@ int main(int argc, char* argv[]) {
 	if (inet_aton(optarg, &inp))
 	  serverGroup = ntohl(inp.s_addr);
 	break; }
-    case 'c':
-      { in_addr inp;
-	if (inet_aton(optarg, &inp))
-	  clientGroup = ntohl(inp.s_addr);
-	break; }
     case 'p':
       partitionTag = optarg;
+      break;
+    case 'n':
+      partitionIndex = strtoul(optarg,NULL,0);
+      break;
+    case 'c': 
       break;
     case '?':
     case 'h':
@@ -110,7 +111,7 @@ int main(int argc, char* argv[]) {
   AnalysisFactory factory(features, srv);
 
   XtcClient myClient(features, factory, offline);
-  XtcShmClient input(myClient, partitionTag);
+  XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   myClient.insert(new ControlXtcReader     (features));
   myClient.insert(new FEEGasDetEnergyReader(features));
@@ -129,6 +130,7 @@ int main(int argc, char* argv[]) {
   myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoETof  ,0,DI::Acqiris,0)));
 
   myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,0)));
+  myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,1)));
   myClient.insert(new AcqWaveformHandler(DI(0,DI::Camp  ,0,DI::Acqiris,0)));
 
   srv.manage(input);

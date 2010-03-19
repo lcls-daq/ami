@@ -1,6 +1,7 @@
 #include "ami/data/Aggregator.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/EntryScan.hh"
 #include "ami/service/BSocket.hh"
 
 #include <sys/types.h>
@@ -13,12 +14,14 @@ static const int BufferSize = 0x800000;
 Aggregator::Aggregator(AbsClient& client) :
   _client          (client),
   _n               (0),
+  _remaining       (0),
   _cds             ("Aggregator"),
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _iovdesc         (new iovec[_niovload+1]),
   _buffer          (new BSocket(BufferSize)),
-  _state           (Init)
+  _state           (Init),
+  _latest          (0)
 {
 }
 
@@ -29,7 +32,7 @@ Aggregator::~Aggregator()
 //
 //  Add another server
 //
-void Aggregator::connected       () { _n++; }
+void Aggregator::connected       () { _n++; _client.connected(); }
 
 //
 //  Scale down the statistics required from each server
@@ -57,7 +60,12 @@ void Aggregator::discovered      (const DiscoveryRx& rx)
 //
 void Aggregator::read_description(Socket& socket, int len) 
 {
-  if ( _n > 1 ) {
+  if (_n == 1) {
+    _client.read_description(socket,len);
+    _state = Described;
+    _remaining = 0;
+  }
+  else if ( _n > 1 ) {
 
     if (len > BufferSize) {
       printf("Aggregator::read_description too large to buffer (%d)\n",len);
@@ -67,6 +75,7 @@ void Aggregator::read_description(Socket& socket, int len)
     int size = socket.read(_buffer->data(),len);
 
     if (_state != Describing) {
+      
       _cds.reset();
     
       const char* payload = _buffer->data();
@@ -82,6 +91,10 @@ void Aggregator::read_description(Socket& socket, int len)
 	Entry* entry = EntryFactory::entry(*desc);
 	_cds.add(entry, desc->signature());
 	payload += desc->size();
+	printf("%s  norm %c  agg %c\n",
+	       desc->name(),
+	       desc->isnormalized() ? 't':'f',
+	       desc->aggregate() ? 't':'f');
       }
 
       if (_cds.totalentries()>_niovload) {
@@ -101,10 +114,6 @@ void Aggregator::read_description(Socket& socket, int len)
       _state = Described;
     }
   }
-  else {
-    _client.read_description(socket,len);
-    _state = Described;
-  }
 }
 
 //
@@ -115,22 +124,31 @@ void Aggregator::read_description(Socket& socket, int len)
   reinterpret_cast<Entry##type*>(payload)->f(*reinterpret_cast<Entry##type*>(iovl->iov_base)); \
   break;
 
+#define SETNORM(type,e)							\
+  case DescEntry::type:							\
+  norm = reinterpret_cast<Entry##type*>(e)->info(Entry##type::Normalization); \
+  break;
 
-void Aggregator::read_payload    (Socket& s, int niov) 
+#include "pdsdata/xtc/ClockTime.hh"
+
+void Aggregator::read_payload    (Socket& s, int sz) 
 {
-  if ( _n > 1 ) {
-    s.readv(_iovload,niov);
-    if (_state == Processed) {  // simply copy
-      iovec* iov = _iovload;
-      char* payload = _buffer->data();
-      while(niov--) {
-	memcpy(payload, iov->iov_base, iov->iov_len);
-	payload += iov->iov_len;
-	iov++;
-      }
+  if (_state != Described) 
+    return;
+
+  if ( _n == 1 ) { 
+    _client.read_payload(s,sz);
+    _remaining = 0;
+  }
+  else if ( _n > 1 ) {
+
+    if (_remaining==0) {  // simply copy
+      s.read(_buffer->data(),sz);
       _remaining = _n-1;
     }
     else {  // aggregate
+      int niov = _cds.totalentries();
+      int szz = s.readv(_iovload,niov);
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
@@ -143,32 +161,56 @@ void Aggregator::read_payload    (Socket& s, int niov)
 	case DescEntry::Prof:
 	case DescEntry::Image:
 	  { const char* base = (const char*)iovl->iov_base;
+	    //  the first word is the valid flag (update time)
 	    double* dst = reinterpret_cast<double*>(payload);
 	    const double* src = reinterpret_cast<const double*>(base);
 	    const double* end = reinterpret_cast<const double*>(base+iovl->iov_len);
-	    do {
-	      *dst++ += *src++;
-	    } while (src < end);
-	  } break;
+// 	    { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
+// 	      const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
+// 	      printf("Agg Std agg %c  dst %08x/%08x  src %08x/%08x\n",
+// 		     desc->aggregate() ? 't':'f', 
+// 		     dst_clk->seconds(), dst_clk->nanoseconds(),
+// 		     src_clk->seconds(), src_clk->nanoseconds()); }
+	    if (desc->aggregate() && *dst!=0 && *src!=0 ) { // sum them 
+	      if (*dst < *src)
+		*dst = *src;   // record later time
+	      while (++src < end)
+		*++dst += *src;  
+	    }
+	    else if (*dst < *src)  // copy most recent (including time)
+	      while (src < end)
+		*dst++  = *src++;  
+	  } 
+	  break;
 	case DescEntry::Scan:  // This one's hard
+// 	  printf("Agg Scan\n");
 	  //  Consider scans that don't gather enough events to see all servers
-	  //  Consider bld that is different for event event
+	  //  Consider bld that is different for every event
+	  { double* dst = reinterpret_cast<double*>(payload);
+	    const double* end = reinterpret_cast<const double*>(payload+iovl->iov_len);
+	    const double* src = reinterpret_cast<const double*>(iovl->iov_base);
+
+	    EntryScan* t = new EntryScan(*reinterpret_cast<const DescScan*>(desc));
+	    t->sum(dst,src);
+
+	    src = reinterpret_cast<const double*>(t->payload());
+	    while(dst < end)
+	      *dst++ = *src++;
+	  }	  
 	  break;
 	case DescEntry::TH2F:
 	default:
+// 	  printf("Agg Other\n");
 	  break;
 	}
 	payload += iovl->iov_len;
 	iovl++;
 	iovd++;
       }
-      if (--_remaining==0)
-	_state = Processing;
+      if (--_remaining == 0) {
+	_client.read_payload(*_buffer,sz);
+      }
     }
-  }
-  else {
-    _client.read_payload(s,niov);
-    _state = Processing;
   }
 }
 
@@ -177,9 +219,6 @@ void Aggregator::read_payload    (Socket& s, int niov)
 //
 void Aggregator::process         () 
 {
-  if (_state != Processing)
-    return;
-
-  _client.process();
-  _state = Processed;
+  if (_state==Described && _remaining==0)
+    _client.process();
 }

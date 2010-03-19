@@ -1,6 +1,7 @@
 #include "EdgeCursor.hh"
 
 #include "ami/qt/PlotFrame.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
@@ -35,13 +36,25 @@ EdgeCursor::EdgeCursor(const QString& name,
 
   connect(_input, SIGNAL(editingFinished()), this, SLOT(set_value()));
   connect(grabB , SIGNAL(clicked())        , this, SLOT(grab()));
-  connect(_showB, SIGNAL(clicked(bool))    , this, SLOT(show_in_plot(bool)));
+  connect(_showB, SIGNAL(toggled(bool))    , this, SLOT(show_in_plot(bool)));
   connect(this  , SIGNAL(changed())        , &frame, SLOT(replot()));
 }
 
 EdgeCursor::~EdgeCursor()
 {
   delete _marker;
+}
+
+void EdgeCursor::load(const char*& p)
+{
+  value(QtPersistent::extract_d(p));
+  _showB->setChecked(QtPersistent::extract_b(p));
+}
+
+void EdgeCursor::save(char*& p) const 
+{
+  QtPersistent::insert(p,value());
+  QtPersistent::insert(p,_showB->isChecked());
 }
 
 double EdgeCursor::value() const { return _input->text().toDouble(); }

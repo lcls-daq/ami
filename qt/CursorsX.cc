@@ -186,6 +186,14 @@ void CursorsX::save(char*& p) const
 {
   QtPWidget::save(p);
 
+  QtPersistent::insert(p,_expr ->text());
+  QtPersistent::insert(p,_title->text());
+  _hist    ->save(p);
+  _vTime   ->save(p);
+  _vFeature->save(p);
+  _vScan   ->save(p);
+  QtPersistent::insert(p,_plot_grp->checkedId());
+
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QtPersistent::insert(p,QString("CursorDef"));
     QtPersistent::insert(p,(*it)->name());
@@ -202,6 +210,14 @@ void CursorsX::save(char*& p) const
 void CursorsX::load(const char*& p)
 {
   QtPWidget::load(p);
+
+  _expr ->setText(QtPersistent::extract_s(p));
+  _title->setText(QtPersistent::extract_s(p));
+  _hist    ->load(p);
+  _vTime   ->load(p);
+  _vFeature->load(p);
+  _vScan   ->load(p);
+  _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
@@ -267,6 +283,10 @@ void CursorsX::update()
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
+}
+
+void CursorsX::initialize(const DescEntry& e)
+{
 }
 
 void CursorsX::set_channel(int c) 

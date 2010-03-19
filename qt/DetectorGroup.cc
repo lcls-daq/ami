@@ -13,30 +13,90 @@ DetectorGroup::DetectorGroup(const QString& label,
 			     QWidget*     parent,
 			     const std::list<QtTopWidget*>& clients) :
   QtPWidget(parent),
-  _clients (clients),
-  _snapshot(clients),
-  _buttons (new QButtonGroup)
+  _clients (clients)
 {
-  _buttons->setExclusive(false);
-
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  QVBoxLayout* l = new QVBoxLayout;
-
-  _client_layout = new QVBoxLayout;
-
-  int i=0;
-  for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
-      it != _snapshot.end(); it++,i++) {
+  std::list<QCheckBox*> boxes;
+  for(std::list<QtTopWidget*>::const_iterator it = _clients.begin();
+      it != _clients.end(); it++) {
     QCheckBox* button = new QCheckBox((*it)->title(),this);
     button->setChecked(false);
     button->setEnabled(false);
-    _client_layout->addWidget(button);
-    _buttons->addButton(button,i++);
+    boxes.push_back(button);
   }
 
-  l->addLayout(_client_layout);
+  build(boxes);
+}
+
+DetectorGroup::DetectorGroup(const DetectorGroup& clone) :
+  _clients (clone._clients)
+{
+  setWindowTitle(clone.windowTitle());
+  setAttribute(::Qt::WA_DeleteOnClose, false);
+
+  //
+  //  Construct a new list of check boxes, 
+  //  preserving the state of boxes for existing clients
+  //
+  std::list<QCheckBox*> newlist;
+  for(std::list<QtTopWidget*>::const_iterator it = _clients.begin();
+      it != _clients.end(); it++) {
+    QCheckBox* newbox = new QCheckBox((*it)->title(),this);
+    for(QList<QAbstractButton*>::const_iterator bit = clone._buttons->buttons().begin();
+	bit != clone._buttons->buttons().end(); bit++)
+      if (*bit!=0 && (*bit)->text()==(*it)->title()) {
+ 	newbox->setChecked((*bit)->isChecked());
+ 	break;
+      }
+    newlist.push_back(newbox);
+  }
+
+  build(newlist);
+
+  setVisible(clone.isVisible());
+  
+  QPoint p = pos();
+
+  move(clone.pos());
+
+//   printf("%s pos %d,%d -> %d,%d [%d,%d]\n",
+// 	 qPrintable(windowTitle()),
+// 	 p.x(),p.y(),
+// 	 pos().x(),pos().y(),
+// 	 clone.pos().x(),clone.pos().y());
+}
+
+void DetectorGroup::build(const std::list<QCheckBox*>& boxes)
+{
+  _snapshot = _clients;
+  _buttons  = new QButtonGroup;
+  _buttons->setExclusive(false);
+
+  QVBoxLayout* l = new QVBoxLayout;
+
+  QVBoxLayout* client_layout = new QVBoxLayout;
+
+  QStringList names;
+  for(std::list<QCheckBox*>::const_iterator it = boxes.begin();
+      it != boxes.end(); it++)
+    names.append((*it)->text());
+  names.sort();
+
+  int i=0;
+  for(QList<QString>::const_iterator it = names.begin();
+      it != names.end(); it++, i++) {
+    for(std::list<QCheckBox*>::const_iterator bit = boxes.begin();
+	bit != boxes.end(); bit++) {
+      if ((*bit)->text()==(*it)) {
+	client_layout->addWidget(*bit);
+	_buttons->addButton(*bit,i);
+      }
+    }
+  }
+
+  l->addLayout(client_layout);
 
   { QHBoxLayout* layout = new QHBoxLayout;
     QPushButton* applyB = new QPushButton("Apply");
@@ -97,45 +157,6 @@ void DetectorGroup::disable(int i)
   QAbstractButton* box = _buttons->button(i);
   box->setEnabled(false);
   box->setChecked(false);
-}
-
-void DetectorGroup::update_list()
-{
-  setUpdatesEnabled(false);
-
-  std::list<QCheckBox*> newlist;
-  for(std::list<QtTopWidget*>::const_iterator it = _clients.begin();
-      it != _clients.end(); it++) {
-    QCheckBox* newbox = new QCheckBox((*it)->title(),this);
-    int j=0;
-    for(std::list<QtTopWidget*>::const_iterator sit = _snapshot.begin();
-	sit != _snapshot.end(); sit++,j++) {
-      if (*it == *sit) {
-	QAbstractButton* box = _buttons->button(j);
-	newbox->setChecked(box->isChecked());
-	break;
-      }
-    }
-    newlist.push_back(newbox);
-  }
-
-  for(int j=0; j<_snapshot.size(); j++)
-    _buttons->removeButton(_buttons->button(j));
-
-  QLayoutItem* child;
-  while((child=_client_layout->takeAt(0)))
-    delete child;
-
-  _snapshot = _clients;
-
-  int i=0;
-  for(std::list<QCheckBox*>::const_iterator it = newlist.begin();
-      it != newlist.end(); it++,i++) {
-    _buttons->addButton(*it,i);
-    _client_layout->addWidget(*it);
-  }
-
-  setUpdatesEnabled(true);
 }
 
 void DetectorGroup::apply()
