@@ -1,3 +1,9 @@
+2010-03-19	weaver	Tag V01-00-00.  Changed service/Poll broadcast to distinguish input and output (connected sockets).
+					Upgraded app to multiple monshm client model.  Changed event/ to
+					discover BLD components on Configure.  Added aggr attribute to DescEntry.
+					data/Aggregator now handles all Entry types.  qt/ added more content to
+					Save/Load feature.  DetectorSelect dynamicly learns detectors from
+					Configure.
 2010-02-22	weaver			Added client/ClientManager using TCP.  Added server aggregation.
 2010-02-11	weaver	Tag V00-05-00.  Added DetInfo to DescEntry.  qt/DetectorSelect is now dyanmic.
 2010-02-11	weaver	Tag V00-04-00.  Added ContourProjection, mouse release events.
