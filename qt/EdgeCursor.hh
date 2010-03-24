@@ -25,7 +25,8 @@ namespace Ami {
     public:
       double value() const;
       void   value(double);
-      void mousePressEvent(double,double);
+      void mousePressEvent  (double,double);
+      void mouseMoveEvent   (double,double);
       void mouseReleaseEvent(double,double);
     public slots:
       void set_value();    

@@ -98,6 +98,18 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
   QWidget::mousePressEvent(e);
 }
 
+void ImageFrame::mouseMoveEvent(QMouseEvent* e)
+{
+  QPoint p2 = _canvas->pos();
+
+  unsigned ix = e->x() - p2.x();
+  unsigned iy = e->y() - p2.y();
+  double x(ix),y(iy);
+  if (_c)
+    _c->mouseMoveEvent(x,y);
+  QWidget::mousePressEvent(e);
+}
+
 void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
 {
   QPoint p2 = _canvas->pos();

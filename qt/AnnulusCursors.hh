@@ -34,7 +34,8 @@ namespace Ami {
       void grab_limits();
       void update_edits();
     public:  // Cursors interface
-      void mousePressEvent(double,double);
+      void mousePressEvent  (double,double);
+      void mouseMoveEvent   (double,double);
       void mouseReleaseEvent(double,double);
     private:
       void _set_edits ();

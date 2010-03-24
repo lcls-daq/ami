@@ -425,4 +425,5 @@ void CursorsX::mousePressEvent(double x, double y)
   emit grabbed();
 }
 
+void CursorsX::mouseMoveEvent   (double,double) {}
 void CursorsX::mouseReleaseEvent(double,double) {}

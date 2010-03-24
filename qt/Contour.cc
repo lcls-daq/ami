@@ -37,6 +37,8 @@ void Contour::draw(QImage& image)
   }
 }
 
+static unsigned _superscript[] = { 0, 0, 0x00b2, 0x00b3, 0x2074, 0x2075, 0x2076, 0x2077, 0x2078, 0x2079 };
+
 void Contour::setup(const char* x, const char* y)
 {
   QHBoxLayout* layout2 = new QHBoxLayout;
@@ -46,7 +48,10 @@ void Contour::setup(const char* x, const char* y)
   for(unsigned i=1; i<=Ami::Contour::MaxOrder; i++) {
     layout2->addWidget(new QLabel(" + "));
     layout2->addWidget(_c[i] = new QLineEdit);
-    layout2->addWidget(new QLabel(QString("%1^%2").arg(x).arg(i)));
+    if (i<2)
+      layout2->addWidget(new QLabel(QString("%1").arg(x)));
+    else
+      layout2->addWidget(new QLabel(QString("%1%2").arg(x).arg(QChar(_superscript[i]))));
   }
   layout2->addStretch();
   setLayout(layout2);

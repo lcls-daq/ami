@@ -83,6 +83,11 @@ void*      RPhiProjection::_serialize(void* p) const
 Entry&     RPhiProjection::_operate(const Entry& e) const
 {
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
+  const double           p = _input->info(EntryImage::Pedestal);
+  double xc = _xc;
+  double yc = _yc;
+  double lo = _lo;
+  double hi = _hi;
   if (_input) {
     switch(output().type()) {
     case DescEntry::TH1F:  // unnormalized
@@ -93,18 +98,18 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
 	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, d.xup(),
+		     xc,yc, d.xup(),
 		     _input->desc().nbinsx(),_input->desc().nbinsy())) {
 	    for(int j=y0; j<y1; j++) {
-	      double dy  = double(j)-_yc;
+	      double dy  = double(j)-yc;
 	      double dy2 = dy*dy;
 	      for(int k=x0; k<x1; k++) {
-		double dx  = double(k)-_xc;
+		double dx  = double(k)-xc;
 		double dx2 = dx*dx;
 		double f   = atan2(dy,dx);
-		if ( (f>=_lo && f<=_hi) ||
-		     (f+2*M_PI <= _hi) )
-		  o->addcontent(_input->content(k,j),sqrt(dx2+dy2));
+		if ( (f>=lo && f<=hi) ||
+		     (f+2*M_PI <= hi) )
+		  o->addcontent(_input->content(k,j)-p,sqrt(dx2+dy2));
 	      }
 	    }
 	  }
@@ -112,20 +117,20 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
 	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, _hi,
+		     _xc,_yc, hi,
 		     _input->desc().nbinsx(),_input->desc().nbinsy())) {
-	    double losq = _lo*_lo;
-	    double hisq = _hi*_hi;
+	    double losq = lo*lo;
+	    double hisq = hi*hi;
 	    for(int j=y0; j<y1; j++) {
-	      double dy  = double(j)-_yc;
+	      double dy  = double(j)-yc;
 	      double dy2 = dy*dy;
 	      for(int k=x0; k<x1; k++) {
-		double dx  = double(k)-_xc;
+		double dx  = double(k)-xc;
 		double dx2 = dx*dx;
 		double rsq = dx2 + dy2;
 		if (rsq >= losq && rsq <= hisq) {
 		  double f = atan2(dy,dx);
-		  double y = _input->content(k,j);
+		  double y = _input->content(k,j)-p;
 		  o->addcontent(y, f);
 		  o->addcontent(y, f+2*M_PI);
 		}
@@ -146,15 +151,15 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 		     _xc,_yc, d.xup(),
 		     _input->desc().nbinsx(),_input->desc().nbinsy())) {
 	    for(int j=y0; j<y1; j++) {
-	      double dy  = double(j)-_yc;
+	      double dy  = double(j)-yc;
 	      double dy2 = dy*dy;
 	      for(int k=x0; k<x1; k++) {
-		double dx  = double(k)-_xc;
+		double dx  = double(k)-xc;
 		double dx2 = dx*dx;
 		double f   = atan2(dy,dx);
-		if ( (f>=_lo && f<=_hi) ||
-		     (f+2*M_PI <= _hi) )
-		  o->addy(_input->content(k,j),sqrt(dx2+dy2));
+		if ( (f>=lo && f<=hi) ||
+		     (f+2*M_PI <= hi) )
+		  o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
 	      }
 	    }
 	  }
@@ -162,20 +167,20 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
 	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, _hi,
+		     _xc,_yc, hi,
 		     _input->desc().nbinsx(),_input->desc().nbinsy())) {
-	    double losq = _lo*_lo;
-	    double hisq = _hi*_hi;
+	    double losq = lo*lo;
+	    double hisq = hi*hi;
 	    for(int j=y0; j<y1; j++) {
-	      double dy  = double(j)-_yc;
+	      double dy  = double(j)-yc;
 	      double dy2 = dy*dy;
 	      for(int k=x0; k<x1; k++) {
-		double dx  = double(k)-_xc;
+		double dx  = double(k)-xc;
 		double dx2 = dx*dx;
 		double rsq = dx2 + dy2;
 		if (rsq >= losq && rsq <= hisq) {
 		  double f = atan2(dy,dx);
-		  double y = _input->content(k,j);
+		  double y = _input->content(k,j)-p;
 		  o->addy(y, f);
 		  o->addy(y, f+2*M_PI);
 		}

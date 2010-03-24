@@ -5,6 +5,15 @@
 #include "pdsdata/xtc/Dgram.hh"
 
 #include "ami/event/EventHandler.hh"
+#include "ami/event/FEEGasDetEnergyReader.hh"
+#include "ami/event/EBeamReader.hh"
+#include "ami/event/PhaseCavityReader.hh"
+#include "ami/event/EpicsXtcReader.hh"
+#include "ami/event/ControlXtcReader.hh"
+#include "ami/app/Opal1kHandler.hh"
+#include "ami/app/TM6740Handler.hh"
+#include "ami/app/PrincetonHandler.hh"
+#include "ami/app/AcqWaveformHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -99,6 +108,31 @@ int XtcClient::process(Pds::Xtc* xtc)
 		 xtc->contains.id()==h->config_type()) {
 	  h->_calibrate(xtc->payload(),_seq->clock());
 	}
+	return 1;
+      }
+    }
+    //  Wasn't handled
+    if (_seq->service()==Pds::TransitionId::Configure) {
+      const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
+      EventHandler* h = 0;
+      switch(xtc->contains.id()) {
+      case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
+      case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
+      case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
+      case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
+      case Pds::TypeId::Id_pnCCDconfig:      break;
+      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;
+      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader       (_cache); break;
+      case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;
+      case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
+      case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
+      default: break;
+      }
+      if (!h)
+	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
+      else {
+	insert(h);
+	h->_configure(xtc->payload(),_seq->clock());
       }
     }
   }

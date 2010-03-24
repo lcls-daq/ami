@@ -9,15 +9,8 @@
 #include "ami/app/XtcShmClient.hh"
 
 #include "ami/data/FeatureCache.hh"
-#include "ami/event/FEEGasDetEnergyReader.hh"
-#include "ami/event/EBeamReader.hh"
-#include "ami/event/PhaseCavityReader.hh"
-#include "ami/event/EpicsXtcReader.hh"
-#include "ami/event/ControlXtcReader.hh"
 #include "ami/server/ServerManager.hh"
 #include "ami/app/AnalysisFactory.hh"
-#include "ami/app/Opal1kHandler.hh"
-#include "ami/app/AcqWaveformHandler.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -113,6 +106,7 @@ int main(int argc, char* argv[]) {
   XtcClient myClient(features, factory, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
+  /*
   myClient.insert(new ControlXtcReader     (features));
   myClient.insert(new FEEGasDetEnergyReader(features));
   myClient.insert(new EBeamReader          (features));
@@ -132,6 +126,7 @@ int main(int argc, char* argv[]) {
   myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,0)));
   myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,1)));
   myClient.insert(new AcqWaveformHandler(DI(0,DI::Camp  ,0,DI::Acqiris,0)));
+  */
 
   srv.manage(input);
   srv.serve(factory);

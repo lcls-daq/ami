@@ -29,7 +29,7 @@ typedef Pds::DetInfo DI;
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s -e <experiment name>\n"
+	  "Usage: %s -e <experiment name> -p <xtc path>\n"
 	  "         [-i <interface address>]\n"
 	  "         [-s <server mcast group>]\n"
 	  "         [-c <client mcast group>]\n", progname);

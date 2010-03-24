@@ -11,8 +11,6 @@ class QButtonGroup;
 class QVBoxLayout;
 class QComboBox;
 
-#include "ami/qt/Cursors.hh"
-
 #include <list>
 
 namespace Ami {

@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 
   QApplication app(argc, argv);
 
-  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("AMO Online Monitoring",interface,serverGroup);
+  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring",interface,serverGroup);
   select->show();
 
   app.exec();

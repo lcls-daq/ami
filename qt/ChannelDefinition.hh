@@ -36,7 +36,9 @@ namespace Ami {
       void load(const char*& p);
     public:
       const QString& name() const { return _name; }
-      const Filter&       filter   () const { return *_filter; }
+      const Filter&  filter  () const { return *_filter; }
+      bool           is_shown() const { return _show; }
+    public:
       AbsTransform& transform();
       int           configure(char*& p, unsigned input, unsigned& output,
 			      ChannelDefinition* ch[], int*, int,

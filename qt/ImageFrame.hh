@@ -34,7 +34,8 @@ namespace Ami {
       void scale_changed();
     protected:
       void mouseReleaseEvent(QMouseEvent* e);
-      void mousePressEvent(QMouseEvent* e);
+      void mouseMoveEvent   (QMouseEvent* e);
+      void mousePressEvent  (QMouseEvent* e);
     public:
       void set_cursor_input(Cursors* c);
     private:

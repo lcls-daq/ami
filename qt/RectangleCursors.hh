@@ -28,7 +28,8 @@ namespace Ami {
     public:   // ImageMarker interface
       void draw(QImage&);
     public:  // Cursors interface
-      void mousePressEvent(double,double);
+      void mousePressEvent  (double,double);
+      void mouseMoveEvent   (double,double);
       void mouseReleaseEvent(double,double);
     private:
       void _set_edits ();

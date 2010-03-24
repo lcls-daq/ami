@@ -14,7 +14,7 @@
 using namespace Ami;
 
 const int Step=32;
-const int BufferSize=0x1000;
+const int BufferSize=0x100000;
 
 enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown };
 

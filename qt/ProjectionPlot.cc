@@ -39,7 +39,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _name    (name),
   _input   (input_channel),
   _proj    (proj),
-  _frame   (new WaveformDisplay)
+  _frame   (new WaveformDisplay),
+  _showMask(1)
 {
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
@@ -91,11 +92,11 @@ void ProjectionPlot::_layout()
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
-	  box->setChecked( i==0 );
+	  box->setChecked( _showMask & (1<<i) );
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4);
-	  connect(chanB[i], SIGNAL(clicked(bool)), _channels[i], SLOT(setVisible(bool)));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); }
       }
@@ -129,6 +130,7 @@ void ProjectionPlot::save(char*& p) const
 
   for(unsigned i=0; i<NCHANNELS; i++) _channels[i]->save(p);
 
+  _frame  ->save(p);
   _cursors->save(p);
   _peakfit->save(p);
 }
@@ -148,9 +150,15 @@ void ProjectionPlot::load(const char*& p)
     default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
     }
   }
+  
+  _showMask = 0;
+  for(unsigned i=0; i<NCHANNELS; i++) {
+    _channels[i]->load(p);
+    if (_channels[i]->is_shown())
+      _showMask |= 1<<i;
+  }
 
-  for(unsigned i=0; i<NCHANNELS; i++)    _channels[i]->load(p);
-
+  _frame  ->load(p);
   _cursors->load(p);
   _peakfit->load(p);
 }

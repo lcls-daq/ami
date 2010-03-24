@@ -14,6 +14,8 @@
 
 #include <QtCore/QString>
 
+class QButtonGroup;
+
 namespace Ami {
   class Cds;
   class DescEntry;
@@ -61,6 +63,8 @@ namespace Ami {
       const DescEntry*   _input_entry;
       CursorsX*          _cursors;
       PeakFit*           _peakfit;
+
+      unsigned           _showMask;
     };
   };
 };

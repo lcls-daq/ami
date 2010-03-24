@@ -45,7 +45,11 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
     //  CAMP Detectors
   case DetInfo::Camp     : AcqChannel("ACQ"); OpalDetector("VMI"); break;
     //  Others
-  default: break;
+  default: 
+    sprintf(_buffer,"UNK_%s_%s",
+	    DetInfo::name(info.detector()),
+	    DetInfo::name(info.device  ()));
+    break;
   }
   return _buffer;
 }   

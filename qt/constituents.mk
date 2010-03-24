@@ -25,6 +25,7 @@ tgtlibs_online_ami += $(qt_libs)
 
 tgtlibs_offline_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_offline_ami += pdsdata/camdata pdsdata/opal1kdata
+tgtlibs_offline_ami += pdsdata/pnccddata
 tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
@@ -69,6 +70,8 @@ libsrcs_amiqt += DescTH1F.cc DescTH1F_moc.cc
 libsrcs_amiqt += DescProf.cc DescProf_moc.cc
 libsrcs_amiqt += DescScan.cc DescScan_moc.cc
 libsrcs_amiqt += DescChart.cc DescChart_moc.cc
+libsrcs_amiqt += ScalarPlotDesc.cc
+libsrcs_amiqt += XYProjectionPlotDesc.cc
 libsrcs_amiqt += QtPersistent.cc
 libsrcs_amiqt += ChannelDefinition.cc ChannelDefinition_moc.cc
 libsrcs_amiqt += AxisArray.cc

@@ -1,3 +1,8 @@
+//
+//  Completes the parsing of expressions involving bin indices.
+//  Indices for 1-d objects appear as [bin#] or [bin#,bin#].
+//  Indices for 2-d objects appear as [bin#][bin#] or [bin#,bin#][bin#,bin#]
+//
 #include "BinMath.hh"
 
 #include "ami/data/FeatureCache.hh"
@@ -32,8 +37,9 @@
   public:								\
       double evaluate() const						\
       { double sum=0;							\
+	unsigned lo=_lo, hi=_hi;					\
 	const Entry##type* e = static_cast<const Entry##type*>(_entry); \
-	for(unsigned i=_lo; i<=_hi; i++)				\
+	for(unsigned i=lo; i<=hi; i++)					\
 	  sum += e->func(i);						\
 	return sum / e->info(Entry##type::Normalization); }		\
   private:								\
@@ -46,7 +52,28 @@ namespace Ami {
     CLASSTERM(Waveform,content);
     CLASSTERM(TH1F    ,content);
     CLASSTERM(Prof    ,ymean  );
-    CLASSTERM(Image   ,content); // This isn't right for summing over 2-dimensions
+
+    class EntryImageTerm : public Ami::Term {
+    public:
+      EntryImageTerm(const Entry*& e, unsigned xlo, unsigned xhi, unsigned ylo, unsigned yhi) :
+	_entry(e), _xlo(xlo), _xhi(xhi), _ylo(ylo), _yhi(yhi) {}
+      ~EntryImageTerm() {}
+    public:
+      double evaluate() const {
+	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
+	double sum = 0;
+	double p   = e.info(EntryImage::Pedestal);
+	unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
+	for(unsigned j=ylo; j<=yhi; j++)
+	  for(unsigned i=xlo; i<=xhi; i++)
+	    sum += e.content(i,j)-p;
+	return sum / e.info(EntryImage::Normalization);
+      }
+    private:
+      const Entry*& _entry;
+      unsigned _xlo, _xhi, _ylo, _yhi;
+    };
+
   };
 };
 
@@ -56,6 +83,8 @@ static QChar _integrate(0x002C);
 static QChar _range    (0x0023);
 const QChar& BinMath::integrate() { return _integrate; }
 const QChar& BinMath::range    () { return _range    ; }
+
+static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
 
 BinMath::BinMath(const DescEntry& output, 
 		 const char* expr) :
@@ -91,23 +120,26 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     QRegExp match("\\[[0-9,]+\\]");
     int last=0;
     int pos=0;
+    int mlen=0;
     while( (pos=match.indexIn(expr,pos)) != -1) {
-      QString use = expr.mid(pos+1,match.matchedLength()-2);
-      unsigned lo, hi;
-      int index = use.indexOf(_integrate);
-      if (index == -1)
-	lo = hi = use.toInt();
-      else {
-	lo = use.mid(0,index).toInt();
-	hi = use.mid(index+1,-1).toInt();
-	if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
-      }
+      mlen = match.matchedLength();
+      QString use = expr.mid(pos+1,mlen-2);
+      unsigned lo, hi;  _parseIndices(use,lo,hi);
       Term* t;
       switch(input.type()) {
 	CASETERM(Waveform);
 	CASETERM(TH1F);
 	CASETERM(Prof);
-	CASETERM(Image);
+      case DescEntry::Image:
+	{ int ypos = pos+mlen;
+	  ypos = match.indexIn(expr,ypos);
+	  mlen += match.matchedLength();
+	  QString yuse = expr.mid(ypos+1,match.matchedLength()-2);
+	  printf("Expression parsing 2nd image dimension from %s : %d, %d, %s\n",
+		 qPrintable(yuse), pos, ypos, qPrintable(expr));
+	  unsigned ylo, yhi;  _parseIndices(yuse,ylo,yhi);
+	  t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi); }
+	break;
       default:
 	printf("BinMath: No implementation for entry type %d\n",input.type());
 	t = 0;
@@ -115,7 +147,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
       }
       new_expr.append(expr.mid(last,pos-last));
       new_expr.append(QString("[%1]").arg((ulong)t,0,16));
-      pos += match.matchedLength();
+      pos += mlen;
       last = pos;
     }
     new_expr.append(expr.mid(last));
@@ -124,7 +156,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     Expression parser(variables);
     _term = parser.evaluate(new_expr);
     if (!_term)
-      printf("BinMath failed to parse %s\n",qPrintable(new_expr));
+      printf("BinMath failed to parse %s (%s)\n",qPrintable(new_expr),_expression);
   }
 
   if (o.type() == DescEntry::Prof ||
@@ -215,3 +247,15 @@ Entry&     BinMath::_operate(const Entry& e) const
   _entry->valid(e.time());
   return *_entry;
 }
+
+ static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
+   {
+     int index = use.indexOf(_integrate);
+     if (index == -1)
+       lo = hi = use.toInt();
+     else {
+       lo = use.mid(0,index).toInt();
+       hi = use.mid(index+1,-1).toInt();
+       if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
+     }
+   }

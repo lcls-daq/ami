@@ -8,6 +8,7 @@
 
 class QLineEdit;
 class QButtonGroup;
+class QTabWidget;
 
 #include <list>
 
@@ -21,7 +22,10 @@ namespace Ami {
     class RectangleCursors;
     class ImageFrame;
     class ProjectionPlot;
+    class CursorPlot;
     class ZoomPlot;
+    class XYProjectionPlotDesc;
+    class ScalarPlotDesc;
 
     class ImageXYProjection : public QtPWidget {
       Q_OBJECT
@@ -56,10 +60,13 @@ namespace Ami {
       RectangleCursors* _rectangle;
 
       QLineEdit*    _title;
-      QButtonGroup* _axis;
-      QButtonGroup* _norm;
+      QTabWidget*   _plot_tab;
+
+      XYProjectionPlotDesc* _projection_plot;
+      ScalarPlotDesc*       _integral_plot;
 
       std::list<ProjectionPlot*> _pplots;
+      std::list<CursorPlot*>     _cplots;
       std::list<ZoomPlot*>       _zplots;
     };
   };

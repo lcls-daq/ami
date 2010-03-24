@@ -70,6 +70,8 @@ Entry&     XYProjection::_operate(const Entry& e) const
 {
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   if (_input) {
+    unsigned ihi = _ihi;
+    unsigned ilo = _ilo;
     switch(output().type()) {
     case DescEntry::TH1F:  // unnormalized
       { const DescTH1F& d = static_cast<const DescTH1F&>(output());
@@ -78,14 +80,16 @@ Entry&     XYProjection::_operate(const Entry& e) const
 	for(unsigned k=0; k<d.nbins(); k++,i++) {
 	  if (_axis == X) {
 	    unsigned z=0;
-	    for(unsigned j=_ilo; j<_ihi; j++)
+	    for(unsigned j=ilo; j<ihi; j++)
 	      z += _input->content(i,j);
+	    z -= _input->info(EntryImage::Pedestal)*(ihi-ilo);
 	    o->content(double(z),k);
 	  }
 	  else { // (_axis == Y)
 	    unsigned z=0;
-	    for(unsigned j=_ilo; j<_ihi; j++)
+	    for(unsigned j=ilo; j<ihi; j++)
 	      z += _input->content(j,i);
+	    z -= _input->info(EntryImage::Pedestal)*(ihi-ilo);
 	    o->content(double(z),k);
 	  }
 	}
@@ -94,16 +98,17 @@ Entry&     XYProjection::_operate(const Entry& e) const
     case DescEntry::Prof:  // normalized
       { const DescProf& d = static_cast<const DescProf&>(output());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
+	const double    p = _input->info(EntryImage::Pedestal);
 	o->reset();
 	unsigned i=unsigned(d.xlow());
 	for(unsigned k=0; k<d.nbins(); k++,i++) {
 	  if (_axis == X) {
-	    for(unsigned j=_ilo; j<_ihi; j++)
-	      o->addy(_input->content(i,j),k);
+	    for(unsigned j=ilo; j<ihi; j++)
+	      o->addy(_input->content(i,j)-p,k);
 	  }
 	  else if (_axis == Y) {
-	    for(unsigned j=_ilo; j<_ihi; j++)
-	      o->addy(_input->content(j,i),k);
+	    for(unsigned j=ilo; j<ihi; j++)
+	      o->addy(_input->content(j,i)-p,k);
 	  }
 	}
 	o->info(_input->info(EntryImage::Normalization),EntryProf::Normalization);

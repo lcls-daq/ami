@@ -159,25 +159,27 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       double y2 = 0.5*(y+_baseline);
     
       double x0=0;
-      { unsigned i=v; 
-	while(i!=0) {
-	  double z = acc->bin_value(--i);
+      { unsigned i=v-1; 
+	while(i>0) {
+	  double z = acc->bin_value(i);
 	  if (z < y2) {
 	    x0 = double(i) + (y2-z)/(acc->bin_value(i+1)-z);
 	    break;
 	  }
+	  i--;
 	}
       }
 
       double x1=acc->nbins();
-      { unsigned i=v; 
-	do {
-	  double z = acc->bin_value(++i);
+      { unsigned i=v+1; 
+	while(i<acc->nbins()) {
+	  double z = acc->bin_value(i);
 	  if (z < y2) {
 	    x1 = double(i) - (y2-z)/(acc->bin_value(i-1)-z);
 	    break;
 	  }
-	} while(i<acc->nbins());
+	  i++;
+	}
       }
       
       y = (x1-x0)*(acc->xup()-acc->xlow())/double(acc->nbins());

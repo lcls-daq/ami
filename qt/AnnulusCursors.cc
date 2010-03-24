@@ -176,12 +176,21 @@ void AnnulusCursors::mousePressEvent(double x,double y)
   }
 }
 
-void AnnulusCursors::mouseReleaseEvent(double x,double y) 
+void AnnulusCursors::mouseMoveEvent   (double x,double y)
 {
-  _frame.set_cursor_input(0);
   if (_active==Limits) {
     _r1=sqrt(pow(x-_xc,2)+pow(y-_yc,2));
     _f0=atan2(y-_yc,x-_xc); 
+    _set_edits();
+    emit changed();
+  }
+}
+
+void AnnulusCursors::mouseReleaseEvent(double x,double y) 
+{
+  _frame.set_cursor_input(0);
+  mouseMoveEvent(x,y);
+  if (_active==Limits) {
     if (_r1<_r0) {
       double r0 = _r0;
       _r0 = _r1;
@@ -221,29 +230,31 @@ void draw_line(double _xc, double _yc,
   r1 = clip_r ( r1, sinf, -_yc, ymax);
   
   //  draw
-  if (fabs(_f) < 0.25*M_PI) {
-    for(double x=r0*cosf; x<=r1*cosf; x++) {
-      double y=x*tanf;
-      *(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
-    }
-  }
-  else if (fabs(_f-M_PI_2) < 0.25*M_PI) {
-    for(double y=r0*sinf; y<=r1*sinf; y++) {
-      double x=y*cotf;
-      *(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
-    }
-  }
-  else if (fabs(_f-M_PI) < 0.25*M_PI) {
-    for(double x=r0*cosf; x>=r1*cosf; x--) {
-      double y=x*tanf;
-      *(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
-    }
+  double dx = (r1-r0)*cosf;
+  double dy = (r1-r0)*sinf;
+  if (fabs(dx) > fabs(dy)) {
+    if (dx > 0)
+      for(double x=r0*cosf; x<=r1*cosf; x++) {
+	double y=x*tanf;
+	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+      }
+    else
+      for(double x=r1*cosf; x<=r0*cosf; x++) {
+	double y=x*tanf;
+	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+      }
   }
   else {
-    for(double y=r0*sinf; y>=r1*sinf; y--) {
-      double x=y*cotf;
-      *(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
-    }
+    if (dy > 0)
+      for(double y=r0*sinf; y<=r1*sinf; y++) {
+	double x=y*cotf;
+	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+      }
+    else
+      for(double y=r1*sinf; y<=r0*sinf; y++) {
+	double x=y*cotf;
+	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+      }
   }
 }
 

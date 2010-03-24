@@ -19,10 +19,7 @@ namespace Ami {
     class Control;
     class Status;
     class EnvPlot;
-    class DescTH1F;
-    class DescChart;
-    class DescProf;
-    class DescScan;
+    class ScalarPlotDesc;
     class FeatureBox;
     class EnvClient : public Ami::Qt::AbsClient {
       Q_OBJECT
@@ -78,11 +75,8 @@ namespace Ami {
 
       Semaphore*  _sem;
 
-      QButtonGroup* _plot_grp;
-      DescTH1F*   _hist;
-      DescChart*  _vTime;
-      DescProf*   _vFeature;
-      DescScan*   _vScan;
+      ScalarPlotDesc* _scalar_plot;
+
       FeatureBox* _source;
 
       std::list<EnvPlot*> _plots;

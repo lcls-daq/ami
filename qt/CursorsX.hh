@@ -67,7 +67,8 @@ namespace Ami {
       void grabbed();
     public:
       void mousePressEvent  (double, double);
-      void mouseReleaseEvent  (double, double);
+      void mouseMoveEvent   (double, double);
+      void mouseReleaseEvent(double, double);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;

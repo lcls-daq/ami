@@ -87,4 +87,5 @@ void EdgeCursor::mousePressEvent(double x, double y)
   set_value();
 }
 
+void EdgeCursor::mouseMoveEvent   (double x, double y) {}
 void EdgeCursor::mouseReleaseEvent(double x, double y) {}

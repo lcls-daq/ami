@@ -16,6 +16,7 @@ tgtslib_test := /usr/lib/rt
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
+tgtlibs_ami += pdsdata/pnccddata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
 tgtlibs_ami += qt/QtCore

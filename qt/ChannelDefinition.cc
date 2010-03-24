@@ -145,6 +145,7 @@ void ChannelDefinition::save(char*& p) const
   QtPersistent::insert(p,_interval->text());
   QtPersistent::insert(p,_math->expr());
   QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString(""));
+  QtPersistent::insert(p,_show);
   _filter   ->save(p);
   _transform->save(p);
 }
@@ -163,7 +164,7 @@ void ChannelDefinition::load(const char*& p)
   }
   else
     _plot_grp->button(_Reference)->setEnabled(false);
-
+  _show = QtPersistent::extract_b(p);
   _filter   ->load(p);
   _transform->load(p);
 

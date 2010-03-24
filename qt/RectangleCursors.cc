@@ -145,10 +145,8 @@ void RectangleCursors::mousePressEvent(double x,double y)
   if (_y0 > _ymax) _y0 = _ymax;
 }
 
-void RectangleCursors::mouseReleaseEvent(double x,double y) 
+void RectangleCursors::mouseMoveEvent (double x,double y)
 {
-  _frame.set_cursor_input(0);
-
   _x1=x; _y1=y;
 
   if (_x1 > _xmax) _x1 = _xmax;
@@ -156,6 +154,12 @@ void RectangleCursors::mouseReleaseEvent(double x,double y)
 
   _set_edits();
   emit changed();
+}
+
+void RectangleCursors::mouseReleaseEvent(double x,double y) 
+{
+  _frame.set_cursor_input(0);
+  mouseMoveEvent(x,y);
 }
 
 double RectangleCursors::xlo() const { return _x0 < _x1 ? _x0 : _x1; }

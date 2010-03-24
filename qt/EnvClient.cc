@@ -5,20 +5,15 @@
 #include "ami/qt/FeatureBox.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/EnvPlot.hh"
-#include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescChart.hh"
-#include "ami/qt/DescProf.hh"
-#include "ami/qt/DescScan.hh"
+#include "ami/qt/ScalarPlotDesc.hh"
 
 #include "ami/client/ClientManager.hh"
 
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
-#include "ami/data/DescTH1F.hh"
-#include "ami/data/DescScalar.hh"
-#include "ami/data/DescProf.hh"
-#include "ami/data/DescScan.hh"
+#include "ami/data/DescEntry.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/EnvPlot.hh"
 
 #include "ami/service/Socket.hh"
 #include "ami/service/Semaphore.hh"
@@ -36,8 +31,6 @@
 #include <sys/socket.h>
 
 using namespace Ami::Qt;
-
-enum { _TH1F, _vT, _vF, _vS };
 
 static const int BufferSize = 0x8000;
 
@@ -61,17 +54,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
 
   _source = new FeatureBox;
 
-  _hist   = new DescTH1F  ("Sum (1dH)");
-  _vTime  = new DescChart ("Mean v Time",0.2);
-  _vFeature = new DescProf("Mean v Var" );
-  _vScan    = new DescScan("Mean v Scan");
-
-  _plot_grp = new QButtonGroup;
-  _plot_grp->addButton(_hist    ->button(),_TH1F);
-  _plot_grp->addButton(_vTime   ->button(),_vT);
-  _plot_grp->addButton(_vFeature->button(),_vF);
-  _plot_grp->addButton(_vScan   ->button(),_vS);
-  _hist->button()->setChecked(true);
+  _scalar_plot = new ScalarPlotDesc(this);
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -88,14 +71,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     //    layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
-    QVBoxLayout* layout1 = new QVBoxLayout;
-    layout1->addWidget(_hist );
-    layout1->addWidget(_vTime);
-    layout1->addWidget(_vFeature);
-    layout1->addWidget(_vScan);
-    plot_box->setLayout(layout1); 
-    layout->addWidget(plot_box); }
+  { layout->addWidget(_scalar_plot); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -118,12 +94,9 @@ void EnvClient::save(char*& p) const
 {
   QtPWidget::save(p);
 
-  _hist    ->save(p);
-  _vTime   ->save(p);
-  _vFeature->save(p);
   _source  ->save(p);
 
-  QtPersistent::insert(p,_plot_grp->checkedId ());
+  _scalar_plot->save(p);
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     QtPersistent::insert(p,QString("EnvPlot"));
@@ -138,12 +111,9 @@ void EnvClient::load(const char*& p)
 {
   QtPWidget::load(p);
 
-  _hist    ->load(p);
-  _vTime   ->load(p);
-  _vFeature->load(p);
   _source  ->load(p);
 
-  _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+  _scalar_plot->load(p);
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
@@ -337,33 +307,9 @@ void EnvClient::update_configuration()
 
 void EnvClient::plot()
 {
-  DescEntry* desc;
   QString entry(_source->entry());
-
-  switch(_plot_grp->checkedId()) {
-  case _TH1F:
-    desc = new Ami::DescTH1F(qPrintable(entry),
-			     qPrintable(entry),"events",
-			     _hist->bins(),_hist->lo(),_hist->hi()); 
-    break;
-  case _vT: 
-    desc = new Ami::DescScalar(qPrintable(entry),"mean");
-    break;
-  case _vF:
-    desc = new Ami::DescProf(qPrintable(entry),
-			     qPrintable(_vFeature->expr()),"mean",
-			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    break;
-  case _vS:
-    desc = new Ami::DescScan(qPrintable(entry),
-			     qPrintable(_vScan->expr()),qPrintable(entry),
-			     _vScan->bins());
-    break;
-  default:
-    desc = 0;
-    break;
-  }
-
+  DescEntry* desc = _scalar_plot->desc(qPrintable(entry));
+  
   EnvPlot* plot = new EnvPlot(this,
 			      entry,
 			      desc);

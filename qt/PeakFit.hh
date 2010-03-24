@@ -10,7 +10,6 @@ class QLineEdit;
 class QButtonGroup;
 class QVBoxLayout;
 
-#include "ami/qt/Cursors.hh"
 #include "ami/data/ConfigureRequest.hh"
 
 #include <list>
