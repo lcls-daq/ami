@@ -24,6 +24,7 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QPrinter>
 #include <QtGui/QPrintDialog>
+#include <QtCore/QTimer>
 
 #include <errno.h>
 
@@ -113,6 +114,10 @@ DetectorSelect::DetectorSelect(const QString& label,
 
   connect(this, SIGNAL(detectors_discovered(const char*)), this, SLOT(change_detectors(const char*)));
 
+  _autosave_timer = new QTimer(this);
+  _autosave_timer->setSingleShot(true);
+  connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
+
   _manager->connect();
 }
 
@@ -120,18 +125,19 @@ DetectorSelect::~DetectorSelect()
 {
   for(std::list<QtTopWidget*>::iterator it = _client.begin();
       it != _client.end(); it++)
-    if (*it)
+    if (*it) {
+      disconnect((*it), SIGNAL(changed()), this, SLOT(queue_autosave()));
       delete (*it);
+    }
 
   delete _manager;
 }
 
-void DetectorSelect::save_setup ()
+int DetectorSelect::get_setup(char* buffer) const
 {
-  char* buffer = new char[MaxConfigSize];
   char* p = buffer;
 
-  for(std::list<QtTopWidget*>::iterator it = _client.begin();
+  for(std::list<QtTopWidget*>::const_iterator it = _client.begin();
       it != _client.end(); it++)
     if ((*it)) {
       QtPersistent::insert(p,QString("DetectorSelect"));
@@ -145,6 +151,15 @@ void DetectorSelect::save_setup ()
   _save_box ->save(p);
   _reset_box->save(p);
 
+  return p-buffer;
+}
+
+void DetectorSelect::save_setup ()
+{
+  char* buffer = new char[MaxConfigSize];
+
+  int len = get_setup(buffer);
+
   char time_buffer[32];
   time_t seq_tm = time(NULL);
   strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
@@ -155,9 +170,9 @@ void DetectorSelect::save_setup ()
                                  def,"*.ami");
   FILE* o = fopen(qPrintable(fname),"w");
   if (o) {
-    fwrite(buffer,p-buffer,1,o);
+    fwrite(buffer,len,1,o);
     fclose(o);
-    printf("Saved %d bytes to %s\n",p-buffer,qPrintable(fname));
+    printf("Saved %d bytes to %s\n",len,qPrintable(fname));
   }
   else {
     QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
@@ -181,11 +196,17 @@ void DetectorSelect::load_setup ()
   }
   char* buffer = new char[MaxConfigSize];
   int size = fread(buffer,1,MaxConfigSize,f);
-  
+  fclose(f);
+
   printf("Load %d bytes from %s\n",size,qPrintable(fname));
 
-  const char* p   = buffer;
+  set_setup(buffer, size);
 
+  delete[] buffer;
+}
+
+void DetectorSelect::set_setup(const char* p, int size)
+{
   // parse the input
   //
   //  Create the clients, if necessary, load them, and connect
@@ -223,8 +244,6 @@ void DetectorSelect::load_setup ()
   load(p);
   _save_box ->load(p);
   _reset_box->load(p);
-
-  delete[] buffer;
 }
 
 void DetectorSelect::print_setup()
@@ -266,6 +285,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
    client->managed(*manager);					
    _client.push_back(client);
    _update_groups();
+
+   connect(client, SIGNAL(changed()), this, SLOT(queue_autosave()));
 }
    
 void DetectorSelect::show_detector(QListWidgetItem* item)
@@ -363,4 +384,32 @@ void DetectorSelect::_update_groups()
   DetectorSave * save_box  = new DetectorSave (*_save_box);
   delete _save_box;
   _save_box = save_box;
+}
+
+void DetectorSelect::queue_autosave()
+{
+  _autosave_timer->stop();
+  _autosave_timer->start(10000);
+}
+
+void DetectorSelect::autosave()
+{
+  char* buffer = new char[MaxConfigSize];
+
+  int len = get_setup(buffer);
+
+  QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
+
+  FILE* o = fopen(qPrintable(fname),"w");
+  if (o) {
+    fwrite(buffer,len,1,o);
+    fclose(o);
+    printf("Saved %d bytes to %s\n",len,qPrintable(fname));
+  }
+  else {
+    QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
+    QMessageBox::critical(this,"Save Error",msg);
+  }
+
+  delete[] buffer;
 }

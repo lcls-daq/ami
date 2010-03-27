@@ -35,6 +35,7 @@ namespace Ami {
   public:
     static const QChar& integrate();
     static const QChar& range    ();
+    static const double floatPrecision();
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;

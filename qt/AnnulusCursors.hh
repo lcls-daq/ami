@@ -27,6 +27,7 @@ namespace Ami {
       double r_outer() const { return _r1; }
       double phi0   () const { return _f0; }
       double phi1   () const { return _f1; }
+      unsigned nrbins() const;
     public:   // ImageMarker interface
       void draw(QImage&);
     public slots:

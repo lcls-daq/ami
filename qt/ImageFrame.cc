@@ -1,5 +1,6 @@
 #include "ImageFrame.hh"
 
+#include "ami/qt/AxisInfo.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageMarker.hh"
@@ -92,9 +93,9 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  double x(ix),y(iy);
-  if (_c)
-    _c->mousePressEvent(x,y);
+  if (_c && _qimage)
+    _c->mousePressEvent(xinfo()->position(ix),
+			yinfo()->position(iy));
   QWidget::mousePressEvent(e);
 }
 
@@ -104,9 +105,10 @@ void ImageFrame::mouseMoveEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  double x(ix),y(iy);
   if (_c)
-    _c->mouseMoveEvent(x,y);
+    _c->mouseMoveEvent(xinfo()->position(ix),
+		       yinfo()->position(iy));
+
   QWidget::mousePressEvent(e);
 }
 
@@ -116,9 +118,10 @@ void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  double x(ix),y(iy);
   if (_c)
-    _c->mouseReleaseEvent(x,y);
+    _c->mouseReleaseEvent(xinfo()->position(ix),
+			  yinfo()->position(iy));
+
   QWidget::mouseReleaseEvent(e);
 }
 
@@ -128,3 +131,4 @@ void ImageFrame::autoXYScale(bool v)
 {
   _xyscale = v;
 }
+

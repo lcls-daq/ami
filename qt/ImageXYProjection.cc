@@ -187,10 +187,24 @@ void ImageXYProjection::load(const char*& p)
 
     name = QtPersistent::extract_s(p);
   }
+
+  if (name != QString("EndImageXYProjection"))
+    printf("Error loading ImageXYProjection\n");
 }
 
 void ImageXYProjection::save_plots(const QString& p) const
 {
+  int i=1;
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
 }
 
 void ImageXYProjection::setVisible(bool v)
@@ -256,12 +270,12 @@ void ImageXYProjection::plot()
     }
   case PlotIntegral:
     { QString expr = QString("[%1]%2[%3][%4]%5[%6]").
-	arg(unsigned(_rectangle->xlo())).
+	arg(_rectangle->ixlo()).
 	arg(BinMath::integrate()).
-	arg(unsigned(_rectangle->xhi())).
-	arg(unsigned(_rectangle->ylo())).
+	arg(_rectangle->ixhi()).
+	arg(_rectangle->iylo()).
 	arg(BinMath::integrate()).
-	arg(unsigned(_rectangle->yhi()));
+	arg(_rectangle->iyhi());
       
       DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
       CursorPlot* plot = 
@@ -285,10 +299,10 @@ void ImageXYProjection::zoom()
   ZoomPlot* plot = new ZoomPlot(this,
 				_channels[_channel]->name(),
 				_channel,
-				unsigned(_rectangle->xlo()),
-				unsigned(_rectangle->ylo()),
-				unsigned(_rectangle->xhi()),
-				unsigned(_rectangle->yhi()));
+				_rectangle->ixlo(),
+				_rectangle->iylo(),
+				_rectangle->ixhi(),
+				_rectangle->iyhi());
 
   _zplots.push_back(plot);
 

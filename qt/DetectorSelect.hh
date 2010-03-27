@@ -11,6 +11,7 @@
 class QPrinter;
 class QListWidget;
 class QListWidgetItem;
+class QTimer;
 
 namespace Ami {
   class ClientManager;
@@ -35,6 +36,9 @@ namespace Ami {
       void read_description(Socket&,int) ;
       void read_payload    (Socket&,int) ;
       void process         () ;
+    public:
+      int                 get_setup(char*) const;
+      void                set_setup(const char*,int);
     public slots:
       void save_setup();
       void load_setup();
@@ -42,10 +46,11 @@ namespace Ami {
 
       void reset_plots();
       void save_plots();
+      void queue_autosave();
+      void autosave();
 
       void show_detector(QListWidgetItem*);
       void change_detectors (const char*);
-
     signals:
       void detectors_discovered (const char*);
 
@@ -64,6 +69,7 @@ namespace Ami {
       QPrinter*      _printer;
       DetectorReset* _reset_box;
       DetectorSave*  _save_box;
+      QTimer*        _autosave_timer;
     };
   };
 };

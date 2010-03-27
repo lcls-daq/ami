@@ -11,12 +11,14 @@ namespace Ami {
     class AbsClient : public QtTopWidget, 
 		      public Ami::AbsClient,
 		      public Requestor {
+      Q_OBJECT
     public:
       AbsClient(QWidget*            parent,
 		const Pds::DetInfo& src, 
-		unsigned            channel) :
-	QtTopWidget(parent,src,channel) {}
-      virtual ~AbsClient() {}
+		unsigned            channel);
+      virtual ~AbsClient();
+    signals:
+      void changed();
     };
   };
 };

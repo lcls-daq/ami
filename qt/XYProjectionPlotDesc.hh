@@ -3,12 +3,11 @@
 
 #include <QtGui/QWidget>
 
-#include "ami/data/XYProjection.hh"
-
 class QButtonGroup;
 
 namespace Ami {
   class DescEntry;
+  class XYProjection;
   namespace Qt {
     class RectangleCursors;
 

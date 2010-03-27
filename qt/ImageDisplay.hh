@@ -21,6 +21,7 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void save_plots(const QString&) const;
     public:
       void prototype(const Ami::DescEntry*) {}
       void add   (QtBase*);

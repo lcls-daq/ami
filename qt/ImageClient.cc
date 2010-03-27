@@ -36,10 +36,10 @@ ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) 
     _hit = new PeakFinder(this,_channels,NCHANNELS,wd);
     connect(hitB, SIGNAL(clicked()), _hit, SLOT(show())); }
 
-  connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_cntproj, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_hit    , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed()));
 }
 
 ImageClient::~ImageClient() {}
@@ -68,6 +68,8 @@ void ImageClient::load(const char*& p)
 
 void ImageClient::save_plots(const QString& p) const
 {
+  const ImageDisplay& id = static_cast<const ImageDisplay&>(display());
+  id.save_plots(p);
   _xyproj ->save_plots(p+"_xyproj");
   _rfproj ->save_plots(p+"_rfproj");
   _cntproj->save_plots(p+"_cntproj");

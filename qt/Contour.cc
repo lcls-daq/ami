@@ -1,5 +1,6 @@
 #include "ami/qt/Contour.hh"
 #include "ami/qt/QtPersistent.hh"
+#include "ami/qt/RectangleCursors.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QImage>
@@ -10,9 +11,13 @@
 
 using namespace Ami::Qt;
 
-Contour::Contour() 
+Contour::Contour(const char* x, const char* y,
+		 const ImageFrame&       image,
+		 const RectangleCursors& frame) :
+  _image(image),
+  _frame(frame)
 {
-  setup("X","Y");
+  setup(x,y);
   show();
 }
 
@@ -22,18 +27,42 @@ Contour::~Contour()
 
 void Contour::draw(QImage& image)
 {
-  const unsigned char c = 0xff;
-  const QSize& sz = image.size();
-  unsigned xmax = sz.width()-1;
-  unsigned ymax = sz.height()-1;
+  //
+  //  Calculate y extremes of the contour
+  //
+  Ami::Contour f = value();
+  double x = _frame.xlo();
+  double ymin=f.value(x), ymax=ymin;
+  while (++x<=_frame.xhi()) {
+    double y = f.value(x);
+    if (y < ymin) { ymin = y; }
+    if (y > ymax) { ymax = y; }
+  }
 
-  Ami::Contour cnt = value();
-  for(unsigned j=0; j<=xmax; j++) {
-    float y = cnt.value(float(j));
-    if (y>=0 && y<=ymax) {
-      unsigned char* cc = image.bits() + int(y)*sz.width() + j;
-      *cc = c;
-    }
+  if (ymax - ymin > _frame.yhi() - _frame.ylo())  // ROI (_frame) can't contain the contour
+    return;
+
+  //
+  //  Draw the f(X) contour and the contour boundaries of the frame
+  //
+  const unsigned char c = 0xff;
+
+  const AxisInfo& xinfo = *_image.xinfo();
+  const AxisInfo& yinfo = *_image.yinfo();
+  unsigned w = image.size().width();
+  
+  for(int ix = xinfo.lo(); ix < xinfo.hi(); ix++) {
+    float y = f.value(xinfo.position(ix));
+    *(image.bits() + yinfo.tick(y)*w + ix) = c;
+  }
+
+  float y0 = _frame.ylo() - ymin;
+  float y1 = _frame.yhi() - ymax;
+  unsigned ixhi = xinfo.tick(_frame.xhi());
+  for(unsigned ix = xinfo.tick(_frame.xlo()); ix <= ixhi; ix++) {
+    float y = f.value(xinfo.position(ix));
+    *(image.bits() + yinfo.tick(y+y0)*w + ix) = c;
+    *(image.bits() + yinfo.tick(y+y1)*w + ix) = c;
   }
 }
 
@@ -44,7 +73,8 @@ void Contour::setup(const char* x, const char* y)
   QHBoxLayout* layout2 = new QHBoxLayout;
   layout2->addStretch();
   layout2->addWidget(new QLabel(QString("%1 = ").arg(y)));
-  layout2->addWidget(_c[0] = new QLineEdit);
+  _c[0] = new QLineEdit;
+  layout2->addWidget(_c[0]);
   for(unsigned i=1; i<=Ami::Contour::MaxOrder; i++) {
     layout2->addWidget(new QLabel(" + "));
     layout2->addWidget(_c[i] = new QLineEdit);

@@ -35,8 +35,9 @@ namespace Ami {
       ProjectionPlot(QWidget*,const char*&);
       ~ProjectionPlot();
     public:
-      void save(char*& p) const;
-      void load(const char*& p);
+      virtual void save(char*& p) const;
+      virtual void load(const char*& p);
+      void save_plots(const QString&) const;
     public:
       void configure(char*& p, 
 		     unsigned input, 
@@ -46,6 +47,7 @@ namespace Ami {
 		     unsigned nchannels);
       void setup_payload(Cds&);
       void update();
+      void dump(FILE*) const;
     public slots:
       void update_configuration();
     signals:

@@ -10,10 +10,15 @@ class QLineEdit;
 
 namespace Ami {
   namespace Qt {
+    class ImageFrame;
+    class RectangleCursors;
+
     class Contour : public QWidget, 
 		    public ImageMarker {
     public:
-      Contour();
+      Contour(const char* x, const char* y,
+	      const ImageFrame&,
+	      const RectangleCursors&);
       ~Contour();
     public:
       void draw(QImage&);
@@ -23,6 +28,8 @@ namespace Ami {
     public:
       Ami::Contour value() const;
     private:
+      const ImageFrame&       _image;
+      const RectangleCursors& _frame;
       QLineEdit* _c[Ami::Contour::MaxOrder+1];
     };
   };

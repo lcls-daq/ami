@@ -23,18 +23,35 @@ void QtPWidget::save(char*& p) const
 {
   QtPersistent::insert(p,pos().x());
   QtPersistent::insert(p,pos().y());
-  QtPersistent::insert(p,isVisible() ? 1:0);
+
+  QtPersistent::insert(p,size().width());
+  QtPersistent::insert(p,size().height());
+
+  QtPersistent::insert(p,isVisible());
+
+  if (isVisible())
+    printf("QtP save %d,%d %d,%d %c\n",
+	   pos().x(),pos().y(),
+	   size().width(),size().height(),
+	   isVisible()?'t':'f');
 }
 
 void QtPWidget::load(const char*& p)
 {
-  int x,y,v;
-  x=QtPersistent::extract_i(p);
-  y=QtPersistent::extract_i(p);
-  v=QtPersistent::extract_i(p);
+  QPoint r;
+  r.setX(QtPersistent::extract_i(p));
+  r.setY(QtPersistent::extract_i(p));
 
-  setVisible(v ? true : false);
-  move(x,y);
+  QSize s;
+  s.setWidth (QtPersistent::extract_i(p));
+  s.setHeight(QtPersistent::extract_i(p));
 
-  printf("QtP load %d,%d %c\n",x,y,v?'t':'f');
+  bool v=QtPersistent::extract_b(p);
+
+  setVisible(v);
+  if (v) {
+    move  (r);
+    resize(s);
+    printf("QtP load %d,%d %d,%d %c\n",r.x(),r.y(),s.width(),s.height(),v?'t':'f');
+  }
 }

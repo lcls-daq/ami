@@ -90,7 +90,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4); 
 	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
-	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+	  connect(_channels[i], SIGNAL(changed()), this, SIGNAL(changed()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
 	}
       }
@@ -109,7 +109,9 @@ Ami::Qt::Client::Client(QWidget*            parent,
     layout->addLayout(layout1); }
   setLayout(layout);
 
+  printf("Connection Client::update_config\n");
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
+  connect((AbsClient*)this, SIGNAL(changed()),                this, SLOT(update_configuration()));
 }
 
 Ami::Qt::Client::~Client() 
@@ -137,9 +139,9 @@ void Ami::Qt::Client::load(const char*& p)
   QtPWidget::load(p);
 
   for(unsigned i=0; i<NCHANNELS; i++) {
-    disconnect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+    disconnect(_channels[i], SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
     _channels[i]->load(p);
-    connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration())); 
+    connect(_channels[i], SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
   }
 
   _frame->load(p);

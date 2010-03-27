@@ -15,6 +15,7 @@
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/DescImage.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
@@ -24,6 +25,11 @@
 #include <QtCore/QRegExp>
 
 #include <stdio.h>
+
+static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
+static bool bounds(int& x0, int& x1, int& y0, int& y1,
+		   double xc, double yc, double r,
+		   const Ami::DescImage& d);
 
 //
 //  this could probably be a template
@@ -74,6 +80,46 @@ namespace Ami {
       unsigned _xlo, _xhi, _ylo, _yhi;
     };
 
+    class EntryImageTermF : public Ami::Term {
+    public:
+      EntryImageTermF(const Entry*& e, double xc, double yc, double r0, double r1, double f0, double f1) :
+	_entry(e), _xc(xc), _yc(yc), _r0(r0), _r1(r1), _f0(f0), _f1(f1) {}
+      ~EntryImageTermF() {}
+    public:
+      double evaluate() const {
+	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
+	const DescImage& d = e.desc();
+	int ixlo, ixhi, iylo, iyhi;
+	if (bounds(ixlo, ixhi, iylo, iyhi,
+		   _xc, _yc, _r1, d)) {
+	  double sum = 0;
+	  double p   = e.info(EntryImage::Pedestal);
+	  double xc(_xc), yc(_yc);
+	  double r0sq(_r0*_r0), r1sq(_r1*_r1);
+	  for(int j=iylo; j<=iyhi; j++) {
+	    double dy  = d.biny(j)-yc;
+	    double dy2 = dy*dy;
+	    for(int i=ixlo; i<=ixhi; i++) {
+	      double dx  = d.binx(i)-xc;
+	      double dx2 = dx*dx;
+	      double rsq = dx2 + dy2;
+	      double f   = atan2(dy,dx);
+	      if ( (rsq >= r0sq && rsq <= r1sq) &&
+		   ( (f>=_f0 && f<=_f1) ||
+		     (f+2*M_PI <= _f1) ) )
+		sum += double(e.content(i,j))-p;
+	    }
+	  }
+	  return sum / double(e.info(EntryImage::Normalization));
+	}
+	else
+	  return 0;
+      }
+    private:
+      const Entry*& _entry;
+      double _xc, _yc, _r0, _r1, _f0, _f1;
+    };
+
   };
 };
 
@@ -83,8 +129,7 @@ static QChar _integrate(0x002C);
 static QChar _range    (0x0023);
 const QChar& BinMath::integrate() { return _integrate; }
 const QChar& BinMath::range    () { return _range    ; }
-
-static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
+const double BinMath::floatPrecision() { return 1.e3; }
 
 BinMath::BinMath(const DescEntry& output, 
 		 const char* expr) :
@@ -135,10 +180,21 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 	  ypos = match.indexIn(expr,ypos);
 	  mlen += match.matchedLength();
 	  QString yuse = expr.mid(ypos+1,match.matchedLength()-2);
-	  printf("Expression parsing 2nd image dimension from %s : %d, %d, %s\n",
-		 qPrintable(yuse), pos, ypos, qPrintable(expr));
 	  unsigned ylo, yhi;  _parseIndices(yuse,ylo,yhi);
-	  t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi); }
+	  if (expr[pos+mlen]=='[') {  // third dimension (azimuth)
+	    int zpos = pos+mlen;
+	    zpos = match.indexIn(expr,zpos);
+	    mlen += match.matchedLength();
+	    QString zuse = expr.mid(zpos+1,match.matchedLength()-2);
+	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi);
+	    t = new Ami::BinMathC::EntryImageTermF(_input,
+						   double( lo)/floatPrecision(),double( hi)/floatPrecision(),
+						   double(ylo)/floatPrecision(),double(yhi)/floatPrecision(),
+						   double(zlo)/floatPrecision(),double(zhi)/floatPrecision()); 
+	  }
+	  else
+	    t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi); 
+	}
 	break;
       default:
 	printf("BinMath: No implementation for entry type %d\n",input.type());
@@ -248,14 +304,37 @@ Entry&     BinMath::_operate(const Entry& e) const
   return *_entry;
 }
 
- static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
-   {
-     int index = use.indexOf(_integrate);
-     if (index == -1)
-       lo = hi = use.toInt();
-     else {
-       lo = use.mid(0,index).toInt();
-       hi = use.mid(index+1,-1).toInt();
-       if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
-     }
-   }
+static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
+{
+  int index = use.indexOf(_integrate);
+  if (index == -1)
+    lo = hi = use.toInt();
+  else {
+    lo = use.mid(0,index).toInt();
+    hi = use.mid(index+1,-1).toInt();
+    if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
+  }
+}
+
+bool bounds(int& x0, int& x1, int& y0, int& y1,
+	    double xc, double yc, double r,
+	    const DescImage& d)
+{
+  x0 = d.xbin(xc - r);
+  x1 = d.xbin(xc + r);
+  y0 = d.ybin(yc - r);
+  y1 = d.ybin(yc + r);
+  if ((x0 >= (int)d.nbinsx()) ||
+      (x1 < 0) ||
+      (y0 >= (int)d.nbinsy()) || 
+      (y1 < 0)) {
+    x0 = x1 = y0 = y1 = 0; 
+    printf("BinMath failed bounds check %g %g %g %d %d\n",
+	   xc,yc,r,d.nbinsx(),d.nbinsy());
+  }
+  if (x0 < 0) x0=0;
+  if (x1 >= (int)d.nbinsx()) x1=d.nbinsx()-1;
+  if (y0 < 0) y0=0;
+  if (y1 >= (int)d.nbinsy()) y1=d.nbinsy()-1;
+  return true;
+}

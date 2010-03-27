@@ -3,9 +3,14 @@
 #include "ami/qt/AnnulusCursors.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/ProjectionPlot.hh"
+#include "ami/qt/CursorPlot.hh"
+#include "ami/qt/RPhiProjectionPlotDesc.hh"
+#include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
+#include "ami/qt/AxisBins.hh"
 
+#include "ami/data/BinMath.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/Entry.hh"
@@ -26,13 +31,13 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QCheckBox>
 #include <QtGui/QMessageBox>
+#include <QtGui/QTabWidget>
 
 #include <sys/socket.h>
 
 using namespace Ami::Qt;
 
-static const QChar RHO(0x03c1);
-static const QChar PHI(0x03c6);
+enum { PlotProjection, PlotIntegral };
 
 ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
 					 ChannelDefinition* channels[],
@@ -56,22 +61,11 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
 
-  QRadioButton* raxisB = new QRadioButton(RHO);
-  QRadioButton* faxisB = new QRadioButton(PHI);
-  _axis = new QButtonGroup;
-  _axis->addButton(raxisB,0);
-  _axis->addButton(faxisB,1);
-  raxisB->setChecked(true);
-
-  QRadioButton* sumB  = new QRadioButton("sum");
-  QRadioButton* meanB = new QRadioButton("mean");
-  _norm = new QButtonGroup;
-  _norm->addButton(sumB ,0);
-  _norm->addButton(meanB,1);
-  sumB->setChecked(true);
-
-  _transform = new QCheckBox("Apply Fourier Transform");
-  _transform->setChecked(false);
+  _plot_tab        = new QTabWidget(0);
+  _projection_plot = new RPhiProjectionPlotDesc(0, *_annulus);
+  _integral_plot   = new ScalarPlotDesc(0);
+  _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
+  _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
@@ -92,22 +86,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
       layout2->addWidget(new QLabel("Title"));
       layout2->addWidget(_title);
       layout1->addLayout(layout2); }
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(plotB);
-      layout2->addWidget(new QLabel("Project"));
-      { QVBoxLayout* layout3 = new QVBoxLayout;
-	layout3->addWidget(sumB);
-	layout3->addWidget(meanB);
-	layout2->addLayout(layout3); }
-      layout2->addWidget(new QLabel("onto"));
-      { QVBoxLayout* layout3 = new QVBoxLayout;
-	layout3->addWidget(raxisB);
-	layout3->addWidget(faxisB);
-	layout2->addLayout(layout3); }
-      layout2->addWidget(new QLabel("axis"));
-      layout2->addStretch();
-      layout1->addLayout(layout2); }
-    //    layout1->addWidget(_transform);
+    layout1->addWidget(_plot_tab);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -133,8 +112,11 @@ void ImageRPhiProjection::save(char*& p) const
 
   QtPersistent::insert(p,_channel);
   QtPersistent::insert(p,_title->text());
-  QtPersistent::insert(p,_axis ->checkedId());
-  QtPersistent::insert(p,_norm ->checkedId());
+  QtPersistent::insert(p,_plot_tab->currentIndex());
+
+  _projection_plot->save(p);
+  _integral_plot  ->save(p);
+
   _annulus->save(p);
 
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
@@ -142,7 +124,12 @@ void ImageRPhiProjection::save(char*& p) const
     (*it)->save(p);
   }
 
-  QtPersistent::insert(p,QString("EndImageXYProjection"));
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
+    QtPersistent::insert(p,QString("CursorPlot"));
+    (*it)->save(p);
+  }
+
+  QtPersistent::insert(p,QString("EndImageRPhiProjection"));
 }
 
 void ImageRPhiProjection::load(const char*& p)
@@ -151,13 +138,20 @@ void ImageRPhiProjection::load(const char*& p)
 
   _channel = QtPersistent::extract_i(p);
   _title->setText(QtPersistent::extract_s(p));
-  _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
-  _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _plot_tab->setCurrentIndex(QtPersistent::extract_i(p));
+
+  _projection_plot->load(p);
+  _integral_plot  ->load(p);
+
   _annulus->load(p);
 
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
+
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _cplots.clear();
 
   QString name = QtPersistent::extract_s(p);
   while(name == QString("ProjectionPlot")) {
@@ -167,10 +161,31 @@ void ImageRPhiProjection::load(const char*& p)
 
     name = QtPersistent::extract_s(p);
   }
+  while(name == QString("CursorPlot")) {
+    CursorPlot* plot = new CursorPlot(this, p);
+    _cplots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+
+    name = QtPersistent::extract_s(p);
+  }
+
+  if (name != QString("EndImageRPhiProjection"))
+    printf("Error loading ImageRPhiProjection\n");
 }
 
 void ImageRPhiProjection::save_plots(const QString& p) const
 {
+  int i=1;
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
 }
 
 void ImageRPhiProjection::setVisible(bool v)
@@ -183,19 +198,27 @@ void ImageRPhiProjection::setVisible(bool v)
 void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 				ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  const unsigned maxint=0x40000000;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,
+		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
 }
 
 void ImageRPhiProjection::setup_payload(Cds& cds)
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
    (*it)->setup_payload(cds);
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->setup_payload(cds);
 }
 
 void ImageRPhiProjection::update()
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->update();
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     (*it)->update();
 }
 
@@ -210,67 +233,55 @@ void ImageRPhiProjection::plot()
   double f1 = _annulus->phi1();
   if (!(f0 < f1)) f1 += 2*M_PI;
 
-  Ami::RPhiProjection* proj;
+  switch(_plot_tab->currentIndex()) {
+  case PlotProjection:
+    { ProjectionPlot* plot = 
+	new ProjectionPlot(this,_title->text(), _channel, 
+			   _projection_plot->desc(qPrintable(_title->text())));
 
-  if (_axis->checkedId()==0) { // R
-    int r0 = int(_annulus->r_inner());
-    int r1 = int(_annulus->r_outer());
-    if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(qPrintable(_title->text()),
-			 "radius", "sum",
-			 r1-r0+1, double(r0), double(r1+1));
-      proj = new Ami::RPhiProjection(desc,
-				     Ami::RPhiProjection::R, f0, f1,
-				     _annulus->xcenter(), _annulus->ycenter());
+      _pplots.push_back(plot);
+
+      connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      emit changed();
+
+      break;
     }
-    else {
-      Ami::DescProf desc(qPrintable(_title->text()),
-			 "radius", "mean",
-			 r1-r0+1, double(r0), double(r1+1), "");
-      proj = new Ami::RPhiProjection(desc,
-				     Ami::RPhiProjection::R, f0, f1,
-				     _annulus->xcenter(), _annulus->ycenter());
+  case PlotIntegral:
+    { QString expr = QString("[%1]%2[%3][%4]%5[%6][%7]%8[%9]").
+	arg(_annulus->xcenter()*BinMath::floatPrecision()).
+	arg(BinMath::integrate()).
+	arg(_annulus->ycenter()*BinMath::floatPrecision()).
+	arg(_annulus->r_inner()*BinMath::floatPrecision()).
+	arg(BinMath::integrate()).
+	arg(_annulus->r_outer()*BinMath::floatPrecision()).
+	arg(f0*BinMath::floatPrecision()).
+	arg(BinMath::integrate()).
+	arg(f1*BinMath::floatPrecision());
+      
+      DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
+      CursorPlot* plot = 
+ 	new CursorPlot(this, _title->text(), _channel, new BinMath(*desc,qPrintable(expr)));
+      
+      _cplots.push_back(plot);
+
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      emit changed();
+
+      break;
     }
+  default:
+    break;
   }
-  else {
-    if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(qPrintable(_title->text()),
-			 "azimuth", "sum",
-			 int(0.5*(_annulus->r_outer()+_annulus->r_inner())*(f1-f0)),
-			 f0, f1);
-      proj = new Ami::RPhiProjection(desc,
-				     Ami::RPhiProjection::Phi,
-				     _annulus->r_inner(), _annulus->r_outer(),
-				     _annulus->xcenter(), _annulus->ycenter());
-    }
-    else {
-      Ami::DescProf desc(qPrintable(_title->text()),
-			 "azimuth", "mean",
-			 int(0.5*(_annulus->r_outer()+_annulus->r_inner())*(f1-f0)),
-			 f0, f1, "");
-      proj = new Ami::RPhiProjection(desc,
-				     Ami::RPhiProjection::Phi,
-				     _annulus->r_inner(), _annulus->r_outer(),
-				     _annulus->xcenter(), _annulus->ycenter());
-    }
-  }
-
-  if (_transform->isChecked())
-    proj->next(new Ami::FFT);
-
-  ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
-  _pplots.push_back(plot);
-
-  connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-  emit changed();
 }
 
 void ImageRPhiProjection::remove_plot(QObject* obj)
 {
   { ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
     _pplots.remove(plot); }
+
+  { CursorPlot* plot = static_cast<CursorPlot*>(obj);
+    _cplots.remove(plot); }
 
   disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }

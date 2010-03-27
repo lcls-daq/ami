@@ -25,6 +25,10 @@ namespace Ami {
     float xup() const;
     float ylow() const;
     float yup() const;
+    int xbin(float) const;
+    int ybin(float) const;
+    float binx(unsigned) const;
+    float biny(unsigned) const;
 
     void params(unsigned nbinsx,
 		unsigned nbinsy,
@@ -46,6 +50,10 @@ namespace Ami {
   inline float DescImage::xup() const {return _nbinsx*_ppbx;}
   inline float DescImage::ylow() const {return 0;}
   inline float DescImage::yup() const {return _nbinsy*_ppby;}
+  inline int DescImage::xbin(float x) const {return int(x)/_ppbx;}
+  inline int DescImage::ybin(float y) const {return int(y)/_ppby;}
+  inline float DescImage::binx(unsigned b) const {return float(b)*_ppbx;}
+  inline float DescImage::biny(unsigned b) const {return float(b)*_ppby;}
 };
 
 #endif

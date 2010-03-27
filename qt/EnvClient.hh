@@ -25,11 +25,11 @@ namespace Ami {
       Q_OBJECT
     public:
       EnvClient(QWidget*, const Pds::DetInfo&, unsigned);
-      ~EnvClient();
+      virtual ~EnvClient();
     public:
       const QString& title() const;
-      void save(char*&) const;
-      void load(const char*&);
+      virtual void save(char*&) const;
+      virtual void load(const char*&);
       void save_plots(const QString&) const;
       void reset_plots();
     public:
@@ -50,7 +50,6 @@ namespace Ami {
       void plot                ();
       void remove_plot         (QObject*);
     signals:
-      void changed();
       void description_changed(int);
     private:
       void _configure(char*& p, 

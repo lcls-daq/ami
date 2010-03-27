@@ -13,6 +13,7 @@ namespace Ami {
   class EntryImage;
   class AbsTransform;
   namespace Qt {
+    class AxisBins;
     class ImageData;
     class QtImage : public QtBase {
     public:
@@ -41,7 +42,9 @@ namespace Ami {
       unsigned _x0, _y0;
       unsigned _nx, _ny;
       unsigned _scale;
-      QImage*        _qimage;
+      QImage*   _qimage;
+      AxisBins* _xinfo;
+      AxisBins* _yinfo;
     };
   };
 };

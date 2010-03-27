@@ -1,4 +1,5 @@
 #include "QtImage.hh"
+#include "ami/qt/AxisBins.hh"
 #include "ami/qt/ImageFrame.hh"
 
 #include "ami/data/AbsTransform.hh"
@@ -24,6 +25,9 @@ QtImage::QtImage(const QString&   title,
 
   _qimage = new QImage(_nx*_scale, _ny*_scale, QImage::Format_Indexed8);
   _qimage->fill(128);
+
+  _xinfo = new AxisBins(d.xlow(),d.xup(),d.nbinsx());
+  _yinfo = new AxisBins(d.ylow(),d.yup(),d.nbinsy());
 }
   
   
@@ -60,12 +64,18 @@ QtImage::QtImage(const QString&   title,
     printf("image is null\n");
   else
     printf("created with size 0x%x x 0x%x\n",_qimage->size().width(),_qimage->size().height());
+
+  const DescImage& d = entry.desc();
+  _xinfo = new AxisBins(d.xlow(),d.xlow() + _nx*d.ppxbin(),_nx);
+  _yinfo = new AxisBins(d.ylow(),d.ylow() + _ny*d.ppybin(),_ny);
 }
   
   
 QtImage::~QtImage()
 {
   delete _qimage;
+  delete _xinfo;
+  delete _yinfo;
 }
 
 void           QtImage::dump  (FILE* f) const
@@ -205,7 +215,7 @@ QImage&        QtImage::image(double s, bool linear)
 void QtImage::xscale_update() {}
 void QtImage::yscale_update() {}
 
-const AxisInfo* QtImage::xinfo() const { return 0; }
-const AxisInfo* QtImage::yinfo() const { return 0; }
+const AxisInfo* QtImage::xinfo() const { return _xinfo; }
+const AxisInfo* QtImage::yinfo() const { return _yinfo; }
 
 void QtImage::set_color_table(const QVector<QRgb>& colors) { _qimage->setColorTable(colors); }

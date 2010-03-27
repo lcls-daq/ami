@@ -39,6 +39,7 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void save_plots(const QString&) const;
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,

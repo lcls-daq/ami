@@ -17,18 +17,18 @@ using namespace Ami;
 ContourProjection::ContourProjection(const DescEntry& output, 
 				     const Contour& contour,
 				     Axis axis, 
-				     unsigned ilo, unsigned ihi,
-				     unsigned jlo, unsigned jhi) :
+				     double xlo, double xhi,
+				     double ylo, double yhi) :
   AbsOperator(AbsOperator::ContourProjection),
   _contour   (contour),
   _axis      (axis),
-  _ilo       (ilo),
-  _ihi       (ihi),
-  _jlo       (jlo),
-  _jhi       (jhi),
+  _xlo       (xlo),
+  _xhi       (xhi),
+  _ylo       (ylo),
+  _yhi       (yhi),
   _output    (0),
   _offset_len(0),
-  _offset    (new int16_t[2])
+  _offset    (0)
 {
   memcpy(_desc_buffer, &output, output.size());
 }
@@ -39,16 +39,16 @@ ContourProjection::ContourProjection(const char*& p, const DescEntry& input) :
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_contour   , sizeof(_contour));
   _extract(p, &_axis      , sizeof(_axis));
-  _extract(p, &_ilo       , sizeof(_ilo ));
-  _extract(p, &_ihi       , sizeof(_ihi ));
-  _extract(p, &_jlo       , sizeof(_jlo ));
-  _extract(p, &_jhi       , sizeof(_jhi ));
+  _extract(p, &_xlo       , sizeof(_xlo ));
+  _extract(p, &_xhi       , sizeof(_xhi ));
+  _extract(p, &_ylo       , sizeof(_ylo ));
+  _extract(p, &_yhi       , sizeof(_yhi ));
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
   _output = EntryFactory::entry(o);
 
   _offset_len = 0;
-  _offset     = new int16_t[2];
+  _offset     = 0;
 }
 
 ContourProjection::ContourProjection(const char*& p) :
@@ -58,13 +58,13 @@ ContourProjection::ContourProjection(const char*& p) :
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_contour   , sizeof(_contour));
   _extract(p, &_axis      , sizeof(_axis));
-  _extract(p, &_ilo       , sizeof(_ilo ));
-  _extract(p, &_ihi       , sizeof(_ihi ));
-  _extract(p, &_jlo       , sizeof(_jlo ));
-  _extract(p, &_jhi       , sizeof(_jhi ));
+  _extract(p, &_xlo       , sizeof(_xlo ));
+  _extract(p, &_xhi       , sizeof(_xhi ));
+  _extract(p, &_ylo       , sizeof(_ylo ));
+  _extract(p, &_yhi       , sizeof(_yhi ));
 
   _offset_len = 0;
-  _offset     = new int16_t[2];
+  _offset     = 0;
 }
 
 ContourProjection::~ContourProjection()
@@ -83,10 +83,10 @@ void*      ContourProjection::_serialize(void* p) const
   _insert(p, _desc_buffer, DESC_LEN);
   _insert(p, &_contour   , sizeof(_contour));
   _insert(p, &_axis      , sizeof(_axis));
-  _insert(p, &_ilo       , sizeof(_ilo ));
-  _insert(p, &_ihi       , sizeof(_ihi ));
-  _insert(p, &_jlo       , sizeof(_jlo ));
-  _insert(p, &_jhi       , sizeof(_jhi ));
+  _insert(p, &_xlo       , sizeof(_xlo ));
+  _insert(p, &_xhi       , sizeof(_xhi ));
+  _insert(p, &_ylo       , sizeof(_ylo ));
+  _insert(p, &_yhi       , sizeof(_yhi ));
   return p;
 }
 
@@ -96,45 +96,56 @@ Entry&     ContourProjection::_operate(const Entry& e) const
   const DescImage& inputd  = _input->desc();
   ContourProjection* pthis = const_cast<ContourProjection*>(this);
   if (_input) {
-    if      (_axis==Y && inputd.nbinsx()==_offset_len) ;
-    else if (_axis==X && inputd.nbinsy()==_offset_len) ;
-    else if (_axis==Y) {
-      pthis->_offset_len = inputd.nbinsx();
+    //
+    //  Recompute the contour offsets when they change
+    //
+    if      (_axis==Y && _offset==0) {
+      pthis->_offset_len = inputd.xbin(_xhi)-inputd.xbin(_xlo)+1;
       pthis->_offset = new int16_t[_offset_len];
-      float x = inputd.xlow()+0.5*float(inputd.ppxbin());
-      for(unsigned i=0; i<_offset_len; i++) {
-	pthis->_offset[i] = float(_contour.value(x));
-	x += float(inputd.ppxbin());
+      for(unsigned i=0,ix=inputd.xbin(_xlo); i<_offset_len; i++,ix++) {
+	pthis->_offset[i] = int16_t(_contour.value(inputd.binx(ix)));
       }
     }
-    else if (_axis==X) {
-      pthis->_offset_len = inputd.nbinsy();
+    else if (_axis==X && _offset==0) {
+      pthis->_offset_len = inputd.ybin(_yhi)-inputd.ybin(_yhi)+1;
       pthis->_offset = new int16_t[_offset_len];
-      float x = inputd.ylow()+0.5*float(inputd.ppybin());
-      for(unsigned i=0; i<_offset_len; i++) {
-	pthis->_offset[i] = float(_contour.value(x));
-	x += float(inputd.ppybin());
-      }
+      for(unsigned i=0,iy=inputd.ybin(_ylo); i<_offset_len; i++,iy++)
+	pthis->_offset[i] = int16_t(_contour.value(inputd.biny(iy)));
     }
+    //
+    //  Fill the projection
+    //
     switch(output().type()) {
     case DescEntry::TH1F:  // unnormalized
       { const DescTH1F& d = static_cast<const DescTH1F&>(output());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	o->clear();
-	for(unsigned j=_jlo; j<_jhi; j++) {
-	  if (_axis == X) {
-	    int16_t off = _offset[j];
-	    for(unsigned i=_ilo; i<_ihi; i++) {
-	      double v = i - off;
-	      if (v >= d.xlow() && v <= d.xup())
-		o->addcontent(_input->content(i,j),v);
+	if (_axis == X) {
+	  unsigned ixlo = inputd.xbin(_xlo);
+	  unsigned ixhi = inputd.xbin(_xhi);
+	  unsigned iylo = inputd.ybin(_ylo);
+	  unsigned iyhi = inputd.ybin(_yhi);
+	  const int16_t* off = _offset;
+	  for(unsigned j=iylo; j<=iyhi; j++,off++) {
+	    for(unsigned i=ixlo; i<ixhi; i++) {
+	      double yp = inputd.binx(i) - double(*off);
+	      if (yp >= d.xlow() && yp <= d.xup())
+		o->addcontent(_input->content(i,j),yp);
 	    }
 	  }
-	  else { // (_axis == Y)
-	    for(unsigned i=_ilo; i<_ihi; i++) {
-	      double v = j - _offset[i];
-	      if (v >= d.xlow() && v <= d.xup())
-		o->addcontent(_input->content(i,j),v);
+	}
+	else { // (_axis == Y)
+	  unsigned ixlo = inputd.xbin(_xlo);
+	  unsigned ixhi = inputd.xbin(_xhi);
+	  unsigned iylo = inputd.ybin(_ylo);
+	  unsigned iyhi = inputd.ybin(_yhi);
+	  for(unsigned j=iylo; j<=iyhi; j++) {
+	    const int16_t* off = _offset;
+	    double y = inputd.biny(j);
+	    for(unsigned i=ixlo; i<ixhi; i++) {
+	      double yp = y - double(*off++);
+	      if (yp >= d.xlow() && yp <= d.xup())
+		o->addcontent(_input->content(i,j),yp);
 	    }
 	  }
 	}
@@ -144,20 +155,32 @@ Entry&     ContourProjection::_operate(const Entry& e) const
       { const DescProf& d = static_cast<const DescProf&>(output());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
 	o->reset();
-	for(unsigned j=_jlo; j<_jhi; j++) {
-	  if (_axis == X) {
-	    int16_t off = _offset[j];
-	    for(unsigned i=_ilo; i<_ihi; i++) {
-	      double v = i - off;
-	      if (v >= d.xlow() && v <= d.xup())
-		o->addy(_input->content(i,j),v);
+	if (_axis == X) {
+	  unsigned ixlo = inputd.xbin(_xlo);
+	  unsigned ixhi = inputd.xbin(_xhi);
+	  unsigned iylo = inputd.ybin(_ylo);
+	  unsigned iyhi = inputd.ybin(_yhi);
+	  const int16_t* off = _offset;
+	  for(unsigned j=iylo; j<=iyhi; j++,off++) {
+	    for(unsigned i=ixlo; i<ixhi; i++) {
+	      double yp = inputd.binx(i) - double(*off);
+	      if (yp >= d.xlow() && yp <= d.xup())
+		o->addy(_input->content(i,j),yp);
 	    }
 	  }
-	  else { // (_axis == Y)
-	    for(unsigned i=_ilo; i<_ihi; i++) {
-	      double v = j - _offset[i];
-	      if (v >= d.xlow() && v <= d.xup())
-		o->addy(_input->content(i,j),v);
+	}
+	else { // (_axis == Y)
+	  unsigned ixlo = inputd.xbin(_xlo);
+	  unsigned ixhi = inputd.xbin(_xhi);
+	  unsigned iylo = inputd.ybin(_ylo);
+	  unsigned iyhi = inputd.ybin(_yhi);
+	  for(unsigned j=iylo; j<=iyhi; j++) {
+	    const int16_t* off = _offset;
+	    double y = inputd.biny(j);
+	    for(unsigned i=ixlo; i<ixhi; i++) {
+	      double yp = y - double(*off++);
+	      if (yp >= d.xlow() && yp <= d.xup())
+		o->addy(_input->content(i,j),yp);
 	    }
 	  }
 	}

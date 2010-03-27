@@ -10,10 +10,12 @@ namespace Ami {
   class DescEntry;
   namespace Qt {
     class QtBase;
-    class Display : public QtPersistent {
+    class Display { // : public QtPersistent {
     public:
       virtual ~Display() {}
     public:
+      virtual void save(char*& p) const = 0;
+      virtual void load(const char*& p) = 0;
       virtual void prototype(const Ami::DescEntry*) = 0;
       virtual void add   (QtBase*) = 0;
       virtual void reset () = 0;

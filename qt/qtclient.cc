@@ -20,6 +20,7 @@ int main(int argc, char **argv)
 {
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
+  const char* loadfile = 0;
 
   for(int i=0; i<argc; i++) {
     if (strcmp(argv[i],"-i")==0) {
@@ -60,12 +61,30 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-f")==0) {
       Ami::Qt::Path::setBase(argv[++i]);
     }
+    else if (strcmp(argv[i],"-F")==0) {
+      loadfile = argv[++i];
+    }
   }
 
   QApplication app(argc, argv);
 
   Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring",interface,serverGroup);
   select->show();
+
+  if (loadfile) {
+    FILE* f = fopen(loadfile,"r");
+    if (f) {
+      const int MaxConfigSize = 0x100000;
+      char* buffer = new char[MaxConfigSize];
+      int size = fread(buffer,1,MaxConfigSize,f);
+      fclose(f);
+      select->set_setup(buffer,size);
+      delete[] buffer;
+    }
+    else {
+      printf("Unable to open %s\n",loadfile);
+    }
+  }
 
   app.exec();
 

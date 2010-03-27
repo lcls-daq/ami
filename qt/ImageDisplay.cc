@@ -78,6 +78,22 @@ void ImageDisplay::load(const char*& p)
   _zrange->load(p);
 }
 
+void ImageDisplay::save_plots(const QString& p) const
+{
+  QString fname = QString("%1.dat").arg(p);
+  FILE* f = fopen(qPrintable(fname),"w");
+  if (!f)
+    QMessageBox::warning(0, "Save data",
+			 QString("Error opening %1 for writing").arg(fname));
+  else {
+    for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) {
+      (*it)->dump(f);
+      fprintf(f,"\n");
+    }
+    fclose(f);
+  }
+}
+
 const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 void Ami::Qt::ImageDisplay::save_image()

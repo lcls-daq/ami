@@ -2,6 +2,7 @@
 #define AmiQt_ImageFrame_hh
 
 #include "ami/qt/CursorTarget.hh"
+#include "ami/qt/QtImage.hh"
 
 #include <QtGui/QWidget>
 
@@ -26,6 +27,9 @@ namespace Ami {
       void setXYScale   (int);
       void setZScale    (int);
       void autoXYScale  (bool);
+    public:
+      const AxisInfo* xinfo() const { return _qimage->xinfo(); }
+      const AxisInfo* yinfo() const { return _qimage->yinfo(); }
     public:
       void add_marker   (ImageMarker&);
       void remove_marker(ImageMarker&);

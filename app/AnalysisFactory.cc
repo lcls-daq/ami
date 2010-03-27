@@ -38,7 +38,6 @@ void AnalysisFactory::discover ()
   _sem.take();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* an = *it;
-    printf("AF delete %p\n",an);
     delete an;
   }
   _analyses.clear();
@@ -58,7 +57,6 @@ void AnalysisFactory::configure(unsigned       id,
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
     if (a->id() == id) {
-      printf("AF delete %p\n",a);
       delete a;
     }
     else
@@ -76,10 +74,8 @@ void AnalysisFactory::configure(unsigned       id,
     const char*  p     = reinterpret_cast<const char*>(&req+1);
     Analysis* a = new Analysis(id, input, req.output(),
 			       cds, _features, p);
-    printf("AF create %p\n",a);
     _analyses.push_back(a);
     payload += req.size();
-    printf("Added new analysis %p\n",a);
   }
   _sem.give();
 

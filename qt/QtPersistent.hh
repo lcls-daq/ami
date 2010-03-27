@@ -9,8 +9,8 @@ namespace Ami {
     public:
       virtual ~QtPersistent() {}
     public:
-      virtual void save(char*& p) const = 0;
-      virtual void load(const char*& p) = 0;
+//       virtual void save(char*& p) const = 0;
+//       virtual void load(const char*& p) = 0;
     public:
       static void insert(char*&, const QString&);
       static void insert(char*&, unsigned);

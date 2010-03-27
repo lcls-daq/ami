@@ -18,7 +18,7 @@ namespace Ami {
   public:
     enum Axis { X, Y };
     XYProjection(const DescEntry& output,
-		 Axis, unsigned lo, unsigned hi);
+		 Axis, double lo, double hi);
     XYProjection(const char*&, const DescEntry&);
     XYProjection(const char*&);
     ~XYProjection();
@@ -31,8 +31,8 @@ namespace Ami {
     enum { DESC_LEN = sizeof(DescProf) };
     char             _desc_buffer[DESC_LEN];
     Axis             _axis;
-    unsigned         _ilo;
-    unsigned         _ihi;
+    double           _lo;
+    double           _hi;
     Entry*           _output;
   };
 

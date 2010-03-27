@@ -1,5 +1,6 @@
 #include "RectangleCursors.hh"
 
+#include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/QtPersistent.hh"
 
@@ -111,14 +112,17 @@ void RectangleCursors::draw(QImage& image)
 {
   const unsigned char c = 0xff;
   const QSize& sz = image.size();
-  _xmax = sz.width()-1;
-  _ymax = sz.height()-1;
 
-  unsigned jlo = unsigned(xlo()), jhi = unsigned(xhi());
-  unsigned klo = unsigned(ylo()), khi = unsigned(yhi());
+  const AxisInfo& xinfo = *_frame.xinfo();
+  const AxisInfo& yinfo = *_frame.yinfo();
+  _xmax = xinfo.position(sz.width());
+  _ymax = yinfo.position(sz.height());
 
-  if (jhi > _xmax) jhi=_xmax;
-  if (khi > _ymax) khi=_ymax;
+  unsigned jlo = unsigned(xinfo.tick(xlo())), jhi = unsigned(xinfo.tick(xhi()));
+  unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));
+
+//   if (jhi > _xmax) jhi=_xmax;
+//   if (khi > _ymax) khi=_ymax;
 
   { unsigned char* cc0 = image.bits() + klo*sz.width() + jlo;
     unsigned char* cc1 = image.bits() + khi*sz.width() + jlo;
@@ -166,3 +170,4 @@ double RectangleCursors::xlo() const { return _x0 < _x1 ? _x0 : _x1; }
 double RectangleCursors::ylo() const { return _y0 < _y1 ? _y0 : _y1; }
 double RectangleCursors::xhi() const { return _x0 < _x1 ? _x1 : _x0; }
 double RectangleCursors::yhi() const { return _y0 < _y1 ? _y1 : _y0; }
+

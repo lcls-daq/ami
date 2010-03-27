@@ -8,7 +8,8 @@
 
 class QLineEdit;
 class QButtonGroup;
-class QCheckBox;
+//class QCheckBox;
+class QTabWidget;
 
 #include <list>
 
@@ -23,6 +24,9 @@ namespace Ami {
     class ChannelDefinition;
     class ImageFrame;
     class ProjectionPlot;
+    class CursorPlot;
+    class RPhiProjectionPlotDesc;
+    class ScalarPlotDesc;
 
     class ImageRPhiProjection : public QtPWidget {
       Q_OBJECT
@@ -56,13 +60,18 @@ namespace Ami {
       AnnulusCursors* _annulus;
 
       QLineEdit* _title;
-      QButtonGroup* _axis;
-      QButtonGroup* _norm;
-      QCheckBox*    _transform;
+//       QButtonGroup* _axis;
+//       QButtonGroup* _norm;
+//       QCheckBox*    _transform;
 
-      Ami::AbsOperator* _operator;
+//       Ami::AbsOperator* _operator;
+
+      QTabWidget*   _plot_tab;
+      RPhiProjectionPlotDesc* _projection_plot;
+      ScalarPlotDesc*         _integral_plot;
 
       std::list<ProjectionPlot*> _pplots;
+      std::list<CursorPlot*>     _cplots;
     };
   };
 };

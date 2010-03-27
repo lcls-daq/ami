@@ -44,4 +44,16 @@ float Contour::value(float x) const {
   return y;
 }
 
-
+void  Contour::extremes(double  x0,double  x1,
+			double& y0,double& y1) const
+{
+  double x  = x0;
+  double ymin=value(x), ymax=ymin;
+  while (++x<=x1) {
+    double y = value(x);
+    if (y < ymin) { ymin = y; }
+    if (y > ymax) { ymax = y; }
+  }
+  y0 = ymin;
+  y1 = ymax;
+}

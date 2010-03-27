@@ -16,6 +16,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
+#include "ami/data/ContourProjection.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -145,8 +146,9 @@ void ProjectionPlot::load(const char*& p)
   { uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(p);
     p+=2*sizeof(uint32_t); // type and next
     switch(type) {
-    case AbsOperator::XYProjection  : _proj = new XYProjection  (p); break;
-    case AbsOperator::RPhiProjection: _proj = new RPhiProjection(p); break;
+    case AbsOperator::XYProjection     : _proj = new XYProjection     (p); break;
+    case AbsOperator::RPhiProjection   : _proj = new RPhiProjection   (p); break;
+    case AbsOperator::ContourProjection: _proj = new ContourProjection(p); break;
     default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
     }
   }
@@ -161,6 +163,13 @@ void ProjectionPlot::load(const char*& p)
   _frame  ->load(p);
   _cursors->load(p);
   _peakfit->load(p);
+}
+
+void ProjectionPlot::save_plots(const QString& p) const
+{
+  _frame  ->save_plots(p);
+  _cursors->save_plots(p+"_cursor");
+  _peakfit->save_plots(p+"_peakfit");
 }
 
 void ProjectionPlot::update_configuration()

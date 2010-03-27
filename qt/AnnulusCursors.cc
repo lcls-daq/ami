@@ -1,5 +1,6 @@
 #include "AnnulusCursors.hh"
 
+#include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/QtPersistent.hh"
 
@@ -124,8 +125,8 @@ void AnnulusCursors::update_edits()
   _yc = _edit_yc   ->text().toDouble();
   _r0 = _edit_inner->text().toDouble();
   _r1 = _edit_outer->text().toDouble();
-  _f0 = -_edit_phi0 ->text().toDouble()*DEG_TO_RAD;
-  _f1 = -_edit_phi1 ->text().toDouble()*DEG_TO_RAD;
+  _f0 = _edit_phi0 ->text().toDouble()*DEG_TO_RAD;
+  _f1 = _edit_phi1 ->text().toDouble()*DEG_TO_RAD;
   emit changed();
 }
 
@@ -135,8 +136,8 @@ void AnnulusCursors::_set_edits()
   _edit_yc   ->setText(QString::number(_yc));
   _edit_inner->setText(QString::number(_r0));
   _edit_outer->setText(QString::number(_r1));
-  _edit_phi0 ->setText(QString::number(-_f0*RAD_TO_DEG));
-  _edit_phi1 ->setText(QString::number(-_f1*RAD_TO_DEG));
+  _edit_phi0 ->setText(QString::number(_f0*RAD_TO_DEG));
+  _edit_phi1 ->setText(QString::number(_f1*RAD_TO_DEG));
   _edit_xc   ->setCursorPosition(0);
   _edit_yc   ->setCursorPosition(0);
   _edit_inner->setCursorPosition(0);
@@ -149,19 +150,31 @@ void AnnulusCursors::draw(QImage& image)
 {
   const unsigned char c = 0xff;
   const QSize& sz = image.size();
+
+  const AxisInfo& xinfo = *_frame.xinfo();
+  const AxisInfo& yinfo = *_frame.yinfo();
+
+  int xc = xinfo.tick(_xc);
+  int yc = yinfo.tick(_yc);
+
   // draw center cross
-  unsigned char* cc = image.bits() + int(_yc)*sz.width() + int(_xc);
+  unsigned char* cc = image.bits() + yc*sz.width() + xc;
   for(int i=-5; i<=5; i++) {
-    if ((i+int(_xc))>=0 && (i+int(_xc))<sz.width())      *(cc+i) = c;
-    if ((i+int(_yc))>=0 && (i+int(_yc))<sz.height())     *(cc+i*sz.width()) = c;
+    if ((i+xc)>=0 && (i+xc)<sz.width())      *(cc+i) = c;
+    if ((i+yc)>=0 && (i+yc)<sz.height())     *(cc+i*sz.width()) = c;
   }
+
+  //  Assuming x scale factor is same as y scale factor
+  double scale = double(xinfo.hi()-xinfo.lo())/(xinfo.position(xinfo.hi())-xinfo.position(xinfo.lo()));
+  double r0 = _r0*scale;
+  double r1 = _r1*scale;
   if (_f0 != _f1) {
-    draw_line(_xc,_yc,_r0,_r1,_f0,image);    // draw clockwise angular boundary
-    draw_line(_xc,_yc,_r0,_r1,_f1,image);    // draw counterclockwise angular boundary
+    draw_line(xc,yc,r0,r1,_f0,image);    // draw clockwise angular boundary
+    draw_line(xc,yc,r0,r1,_f1,image);    // draw counterclockwise angular boundary
   }
   double f1 = _f0 < _f1 ? _f1 : _f1 + 2*M_PI;
-  draw_arc(_xc,_yc,_f0, f1,_r0,image);  // draw inner arc
-  draw_arc(_xc,_yc,_f0, f1,_r1,image);  // draw outer arc
+  draw_arc(xc,yc,_f0,f1,r0,image);  // draw inner arc
+  draw_arc(xc,yc,_f0,f1,r1,image);  // draw outer arc
 }
 
 void AnnulusCursors::mousePressEvent(double x,double y)
@@ -276,3 +289,8 @@ void draw_arc (double _xc, double _yc,
   }
 }
 
+unsigned AnnulusCursors::nrbins() const
+{
+  const AxisInfo& info = *_frame.xinfo();
+  return info.tick(r_outer())-info.tick(r_inner());
+}

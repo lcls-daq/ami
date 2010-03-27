@@ -186,6 +186,19 @@ void PeakFit::load(const char*& p)
   }
 }
 
+void PeakFit::save_plots(const QString& p) const
+{
+  int i=1;
+  for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
+    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    FILE* f = fopen(qPrintable(s),"w");
+    if (f) {
+      (*it)->dump(f);
+      fclose(f);
+    }
+  }
+}
+
 void PeakFit::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)

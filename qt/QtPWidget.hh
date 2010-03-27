@@ -2,11 +2,12 @@
 #define AmiQt_QtPWidget_hh
 
 #include "QtPersistent.hh"
+
 #include <QtGui/QWidget>
 
 namespace Ami {
   namespace Qt {
-    class QtPWidget : public QWidget, public QtPersistent {
+    class QtPWidget : public QWidget { // , public QtPersistent {
       Q_OBJECT
     public:
       QtPWidget();

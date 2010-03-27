@@ -20,8 +20,8 @@ namespace Ami {
     enum Axis { X, Y };
     ContourProjection(const DescEntry& output,
 		      const Contour&,Axis, 
-		      unsigned ilo, unsigned ihi,
-		      unsigned jlo, unsigned jhi);
+		      double xlo, double xhi,
+		      double ylo, double yhi);
     ContourProjection(const char*&, const DescEntry&);
     ContourProjection(const char*&);
     ~ContourProjection();
@@ -35,8 +35,8 @@ namespace Ami {
     char             _desc_buffer[DESC_LEN];
     Contour          _contour;
     Axis             _axis;
-    unsigned         _ilo, _ihi;
-    unsigned         _jlo, _jhi;
+    double           _xlo, _xhi;
+    double           _ylo, _yhi;
     Entry*           _output;
     unsigned         _offset_len;
     int16_t*         _offset;
