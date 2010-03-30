@@ -11,6 +11,7 @@
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescTH1F.hh"
+#include "ami/data/DescProf.hh"
 #include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 
@@ -200,15 +201,15 @@ void Ami::Qt::WaveformDisplay::save_reference()
 	  
 void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
 {
+#define CASETYPE(type)							\
+    case Ami::DescEntry::type:						\
+      { const Ami::Desc##type& d = *static_cast<const Ami::Desc##type*>(e); \
+	_xbins->update(d.xlow(),d.xup(),d.nbins());			\
+	break; }						       
   switch(e->type()) {
-  case Ami::DescEntry::TH1F:
-    { const Ami::DescTH1F& d = *static_cast<const Ami::DescTH1F*>(e);
-      _xbins->update(d.xlow(),d.xup(),d.nbins());
-      break; }
-  case Ami::DescEntry::Waveform:
-    { const Ami::DescWaveform& d = *static_cast<const Ami::DescWaveform*>(e);
-      _xbins->update(d.xlow(),d.xup(),d.nbins());
-      break; }
+    CASETYPE(TH1F)
+    CASETYPE(Prof)
+    CASETYPE(Waveform)
   default:
     break;
   }

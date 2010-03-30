@@ -274,6 +274,7 @@ void ChannelDefinition::setup_payload(Cds& cds)
   if (entry) {
     _frame.add(_plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color));
     if (!_show) _frame.hide(_plot);
+    else        _frame.prototype(&entry->desc());
   }
   else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);

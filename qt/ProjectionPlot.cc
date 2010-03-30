@@ -87,7 +87,7 @@ void ProjectionPlot::_layout()
       QVBoxLayout* layout1 = new QVBoxLayout;
       QPushButton* chanB[NCHANNELS];
       for(int i=0; i<NCHANNELS; i++) {
-	chanB[i] = new QPushButton(names[i]); chanB[i]->setCheckable(true);
+	chanB[i] = new QPushButton(names[i]);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
@@ -104,13 +104,11 @@ void ProjectionPlot::_layout()
       chanBox->setLayout(layout1);
       layout3->addWidget(chanBox); }
     { QPushButton* cursorsB = new QPushButton("Cursors");
-      cursorsB->setCheckable(true);
       layout3->addWidget(cursorsB);
-      connect(cursorsB, SIGNAL(clicked(bool)), _cursors, SLOT(setVisible(bool))); }
+      connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(show())); }
     { QPushButton* peakFitB = new QPushButton("Peak");
-      peakFitB->setCheckable(true);
       layout3->addWidget(peakFitB);
-      connect(peakFitB, SIGNAL(clicked(bool)), _peakfit, SLOT(setVisible(bool))); }
+      connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(show())); }
     layout3->addStretch();
     layout->addLayout(layout3); }
   layout->addWidget(_frame);

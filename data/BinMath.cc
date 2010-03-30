@@ -159,6 +159,8 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 
   _entry = EntryFactory::entry(o);
  
+  printf("BinMath expr %s  type %d\n", _expression, input.type());
+
   { QString expr(_expression);
     QString new_expr;
     // parse expression for bin indices
