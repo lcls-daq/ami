@@ -1,3 +1,9 @@
+ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
+qtincdir  := qt/include64
+else
+qtincdir  := qt/include
+endif
+
 # List targets (if any) for this package
 tgtnames := online_ami offline_ami
 
@@ -11,7 +17,7 @@ tgtsrcs_offline_ami += qtami.cc
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-# tgtslib_exe_a := /usr/lib/rt
+# tgtslib_exe_a := $(USRLIBDIR)/rt
 
 qt_libs := qt/QtGui qt/QtCore
 qt_libs += qwt/qwt
@@ -25,7 +31,7 @@ tgtlibs_online_ami += $(qt_libs)
 
 tgtlibs_offline_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_offline_ami += pdsdata/camdata pdsdata/opal1kdata
-tgtlibs_offline_ami += pdsdata/pnccddata
+tgtlibs_offline_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
@@ -33,22 +39,22 @@ tgtlibs_offline_ami += $(qt_libs)
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-qt_incs := qt/include qwt/include
+qt_incs := $(qtincdir) qwt/include
 # qwt includes qt headers without package prefix!
-qt_incs += qt/include/Qt
-qt_incs += qt/include/Qt3Support
-qt_incs += qt/include/QtAssistant
-qt_incs += qt/include/QtCore
-qt_incs += qt/include/QtDesigner
-qt_incs += qt/include/QtGui
-qt_incs += qt/include/QtNetwork
-qt_incs += qt/include/QtOpenGL
-qt_incs += qt/include/QtScript
-qt_incs += qt/include/QtSql
-qt_incs += qt/include/QtSvg
-qt_incs += qt/include/QtTest
-qt_incs += qt/include/QtUiTools
-qt_incs += qt/include/QtXml
+qt_incs += $(qtincdir)/Qt
+qt_incs += $(qtincdir)/Qt3Support
+qt_incs += $(qtincdir)/QtAssistant
+qt_incs += $(qtincdir)/QtCore
+qt_incs += $(qtincdir)/QtDesigner
+qt_incs += $(qtincdir)/QtGui
+qt_incs += $(qtincdir)/QtNetwork
+qt_incs += $(qtincdir)/QtOpenGL
+qt_incs += $(qtincdir)/QtScript
+qt_incs += $(qtincdir)/QtSql
+qt_incs += $(qtincdir)/QtSvg
+qt_incs += $(qtincdir)/QtTest
+qt_incs += $(qtincdir)/QtUiTools
+qt_incs += $(qtincdir)/QtXml
 
 tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)

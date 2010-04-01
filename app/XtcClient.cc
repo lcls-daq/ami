@@ -10,10 +10,11 @@
 #include "ami/event/PhaseCavityReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
-#include "ami/app/Opal1kHandler.hh"
-#include "ami/app/TM6740Handler.hh"
-#include "ami/app/PrincetonHandler.hh"
-#include "ami/app/AcqWaveformHandler.hh"
+#include "ami/event/IpimbHandler.hh"
+#include "ami/event/Opal1kHandler.hh"
+#include "ami/event/TM6740Handler.hh"
+#include "ami/event/PrincetonHandler.hh"
+#include "ami/event/AcqWaveformHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -92,7 +93,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       EventHandler* h = *it;
 
       if (h->info().level() == xtc->src.level() &&
-	  (h->info().phy  () == -1UL ||
+	  (h->info().phy  () == (uint32_t)-1 ||
 	   h->info().phy  () == xtc->src.phy())) {
 	if (_seq->isEvent() && xtc->contains.id()==h->data_type()) {
 	  if (xtc->damage.value())
@@ -126,6 +127,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
+      case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
       default: break;
       }
       if (!h)

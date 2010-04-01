@@ -106,28 +106,6 @@ int main(int argc, char* argv[]) {
   XtcClient myClient(features, factory, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
-  /*
-  myClient.insert(new ControlXtcReader     (features));
-  myClient.insert(new FEEGasDetEnergyReader(features));
-  myClient.insert(new EBeamReader          (features));
-  myClient.insert(new PhaseCavityReader    (features));
-  myClient.insert(new EpicsXtcReader       (features));
-
-  myClient.insert(new Opal1kHandler(DI(0,DI::AmoVmi,0,DI::Opal1000,0)));
-  myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,0,DI::Opal1000,0)));
-  myClient.insert(new Opal1kHandler(DI(0,DI::AmoBps,0,DI::Opal1000,1)));
-
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoGasdet,0,DI::Acqiris,0)));
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoIms   ,0,DI::Acqiris,0)));
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoITof  ,0,DI::Acqiris,0)));
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoMbes  ,0,DI::Acqiris,0)));
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::AmoETof  ,0,DI::Acqiris,0)));
-
-  myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,0)));
-  myClient.insert(new Opal1kHandler     (DI(0,DI::Camp  ,0,DI::Opal1000,1)));
-  myClient.insert(new AcqWaveformHandler(DI(0,DI::Camp  ,0,DI::Acqiris,0)));
-  */
-
   srv.manage(input);
   srv.serve(factory);
   //  srv.start();  // run in another thread

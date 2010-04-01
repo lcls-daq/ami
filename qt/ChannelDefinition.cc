@@ -52,7 +52,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _transform       (new Transform(this,QString("%1 : Y Transform").arg(name),"y")),
   _math            (new ChannelMath(names)),
   _interval        (new QLineEdit),
-  _output_signature(-1UL),
+  _output_signature((unsigned)-1),
   _changed         (false),
   _show            (false),
   _plot            (0)

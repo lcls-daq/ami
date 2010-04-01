@@ -7,7 +7,7 @@ tgtsrcs_clienttest := clienttest.cc
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-tgtslib_clienttest := /usr/lib/rt
+tgtslib_clienttest := $(USRLIBDIR)/rt
 
 # List project libraries (if any) needed by exe_a as <project>/<lib>.
 # Note that <lib> is the name of the library, not of the file: i.e.
