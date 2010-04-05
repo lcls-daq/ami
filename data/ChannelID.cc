@@ -29,6 +29,10 @@ static char _buffer[128];
 	sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
     }							\
   }
+#define PnccdDetector {				     \
+    if (info.device()==DetInfo::pnCCD)		     \
+      sprintf(_buffer,"pnCCD_%d",info.devId()+1);    \
+  }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
 				 unsigned channel)
@@ -43,7 +47,11 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
   case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
   case DetInfo::AmoBps   : OpalChannel("BPS"); break;
     //  CAMP Detectors
-  case DetInfo::Camp     : AcqChannel("ACQ"); OpalDetector("VMI"); break;
+  case DetInfo::Camp     : 
+    AcqChannel("ACQ"); 
+    OpalDetector("VMI"); 
+    PnccdDetector;
+    break;
     //  Others
   default: 
     sprintf(_buffer,"UNK_%s_%s",

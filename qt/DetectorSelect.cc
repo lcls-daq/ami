@@ -270,7 +270,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
   switch(info.device()) {
   case Pds::DetInfo::Evr     : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
   case Pds::DetInfo::Acqiris : client = new Ami::Qt::WaveformClient(this, info, channel); break;
-  case Pds::DetInfo::Opal1000: client = new Ami::Qt::ImageClient   (this, info, channel); break;
+  case Pds::DetInfo::Opal1000 : 
+  case Pds::DetInfo::TM6740   : 
+  case Pds::DetInfo::pnCCD    :
+  case Pds::DetInfo::Princeton: 
+  case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
   default: printf("Device type %x not recognized\n", info.device()); break;
   }
   return client;
