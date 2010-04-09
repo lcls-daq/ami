@@ -76,15 +76,17 @@ void PnccdHandler::_damaged() { _entry->invalid(); }
 void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 {
   //  PixelsPerBin = 2
-  for(unsigned j=0; j<rows_segment<<1; j+=PixelsPerBin,y++,d+=cols_segment) {
+  unsigned iy = y>>1;
+  for(unsigned j=0; j<rows_segment; j+=2,iy++,d+=cols_segment) {
     const uint16_t* d1 = d+cols_segment;
-    for(unsigned k=0; k<cols_segment<<1; k+=PixelsPerBin,x++) {
+    unsigned ix = x>>1;
+    for(unsigned k=0; k<cols_segment; k+=2,ix++) {
       unsigned v = 
 	(d [0]&0x3fff) + 
 	(d [1]&0x3fff) + 
 	(d1[0]&0x3fff) +
 	(d1[1]&0x3fff);
-      _entry->content(v, x, y);
+      _entry->content(v, ix, iy);
       d  += 2;
       d1 += 2;
     }
@@ -94,15 +96,17 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 {
   //  PixelsPerBin = 2
-  for(unsigned j=0; j<rows_segment<<1; j+=PixelsPerBin,y--,d+=cols_segment) {
+  unsigned iy = y>>1;
+  for(unsigned j=0; j<rows_segment; j+=2,iy--,d+=cols_segment) {
     const uint16_t* d1 = d+cols_segment;
-    for(unsigned k=0; k<cols_segment<<1; k+=PixelsPerBin,x--) {
+    unsigned ix = x>>1;
+    for(unsigned k=0; k<cols_segment; k+=2,ix--) {
       unsigned v = 
 	(d [0]&0x3fff) + 
 	(d [1]&0x3fff) + 
 	(d1[0]&0x3fff) +
 	(d1[1]&0x3fff);
-      _entry->content(v, x, y);
+      _entry->content(v, ix, iy);
       d  += 2;
       d1 += 2;
     }
