@@ -63,26 +63,38 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
 void FrameHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
+template <class T>
+void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
+{
+  const DescImage& desc = entry.desc();
+
+  const T* d = reinterpret_cast<const T*>(f.data());
+  for(unsigned j=0; j<f.height(); j++) {
+    unsigned iy = desc.ppybin()==2 ? j>>1 : j;
+    if (desc.ppxbin()==2)
+      for(unsigned k=0; k<f.width(); k++, d++)
+	entry.addcontent(*d, k>>1, iy);
+    else
+      for(unsigned k=0; k<f.width(); k++, d++)
+	entry.addcontent(*d, k, iy);
+  }
+
+  entry.info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
+  entry.info(1,EntryImage::Normalization);
+}
+
 void FrameHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (!_entry) return;
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
-  if (f.depth_bytes()==2) {
-    const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data());
-    for(unsigned j=0; j<f.height(); j++)
-      for(unsigned k=0; k<f.width(); k++, d++)
-	_entry->addcontent(*d, k/PixelsPerBin, j/PixelsPerBin);
-  }
-  else {
-    const uint8_t* d = reinterpret_cast<const uint8_t*>(f.data());
-    for(unsigned j=0; j<f.height(); j++)
-      for(unsigned k=0; k<f.width(); k++, d++)
-	_entry->addcontent(*d, k/PixelsPerBin, j/PixelsPerBin);
-  }
-  _entry->info(f.offset()*PixelsPerBin*PixelsPerBin,EntryImage::Pedestal);
-  _entry->info(1,EntryImage::Normalization);
+
+  if (f.depth_bytes()==2)
+    _fill<uint16_t>(f,*_entry);
+  else
+    _fill<uint8_t >(f,*_entry);
+
   _entry->valid(t);
 }
 
