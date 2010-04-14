@@ -13,6 +13,7 @@
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/TM6740Handler.hh"
+#include "ami/event/FccdHandler.hh"
 #include "ami/event/PnccdHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
@@ -121,6 +122,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
       case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
+      case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info); break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;

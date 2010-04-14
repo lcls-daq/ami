@@ -82,6 +82,10 @@ int TSocket::readv(const iovec* iov, int iovcnt)
 {
   _rhdr.msg_iov    = const_cast<iovec*>(iov);
   _rhdr.msg_iovlen = iovcnt;
+
+  //  A read of 0 bytes + MSG_WAITALL = hang
+  if (iov[0].iov_len==0) return 0;
+
   int bytes = ::recvmsg(_socket, &_rhdr, MSG_WAITALL);
 #ifdef DBUG
   { printf("\nTSocket %d read %d bytes\n",socket(),bytes);

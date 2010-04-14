@@ -62,6 +62,7 @@ Transform::Transform(QWidget*       parent,
   //  _expr->setWordWrap(true);
   _expr->setText(_name);
   _expr->setReadOnly(true);
+  _expr->setEnabled(false);
   _term = 0;
 
   new QDoubleValidator(_new_value);

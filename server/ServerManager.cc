@@ -80,7 +80,7 @@ int ServerManager::processIo()
       s->connect(remote);
       Ins local (s->ins());
 
-      printf("new ServerSocket %d bound to local: %x/%d  remote: %x/%d\n",
+      printf("ServerManager::connect new ServerSocket %d bound to local: %x/%d  remote: %x/%d\n",
 	     s->socket(), 
 	     local .address(), local .portId(),
 	     remote.address(), remote.portId());

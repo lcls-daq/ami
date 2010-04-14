@@ -1,28 +1,16 @@
 #ifndef Ami_TM6740Handler_hh
 #define Ami_TM6740Handler_hh
 
-#include "ami/event/EventHandler.hh"
-#include "pdsdata/xtc/DetInfo.hh"
+#include "ami/event/FrameHandler.hh"
+#include "pdsdata/pulnix/TM6740ConfigV1.hh"
 
 namespace Ami {
-  class EntryImage;
-
-  class TM6740Handler : public EventHandler {
+  class TM6740Handler : public FrameHandler {
   public:
-    TM6740Handler(const Pds::DetInfo& info);
-    ~TM6740Handler();
-  public:
-    unsigned     nentries() const;
-    const Entry* entry(unsigned) const;
-    void         reset();
-  private:
-    void _calibrate(const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t);
-    void _event    (const void* payload, const Pds::ClockTime& t);
-    void _damaged  ();
-  private:
-    TM6740Handler(const Pds::DetInfo& info, const EntryImage*);
-    EntryImage* _entry;
+    TM6740Handler(const Pds::DetInfo& info) :
+      FrameHandler(info,
+		   Pds::Pulnix::TM6740ConfigV1::Column_Pixels,
+		   Pds::Pulnix::TM6740ConfigV1::Row_Pixels) {}
   };
 };
 

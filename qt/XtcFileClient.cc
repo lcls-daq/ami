@@ -20,6 +20,11 @@
 #include <libgen.h>
 #include <string>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+
 namespace Ami {
   namespace Qt {
     class ConfigureTask : public Routine {
@@ -110,6 +115,7 @@ XtcFileClient::~XtcFileClient()
 void XtcFileClient::select_expt(const QString& expt)
 {
   QStringList paths;
+  paths << QString("%1/%2").arg(_basedir).arg(expt);
   paths << QString("%1/%2/xtc").arg(_basedir).arg(expt);
 
   _file_select->change_path_list(paths);
@@ -124,9 +130,9 @@ void XtcFileClient::configure()
 {
   const char* fname = qPrintable(_file_select->paths().at(0));
 
-  FILE* f = fopen(fname,"r");
-  if (!f) {
-    printf("Error opening file %s\n",fname);
+  int fd = ::open(fname,O_LARGEFILE,O_RDONLY);
+  if (fd == -1) {
+    printf("Error opening file %s : %s\n",fname,strerror(errno));
     return;
   }
   else {
@@ -140,9 +146,8 @@ void XtcFileClient::configure()
   _client.processDgram(dg);
 
   //  read configure transition
-  fread(dg, sizeof(Dgram), 1, f);
-  fread(dg->xtc.payload(), dg->xtc.sizeofPayload(), 1, f);
-  if (feof(f))
+  ::read(fd,dg, sizeof(Dgram));
+  if (::read(fd,dg->xtc.payload(), dg->xtc.sizeofPayload()) != dg->xtc.sizeofPayload()) 
     printf("Unexpected eof in %s\n",fname);
   else
     _client.processDgram(dg);
@@ -153,7 +158,7 @@ void XtcFileClient::configure()
   insert_transition(dg, TransitionId::Unmap);
   _client.processDgram(dg);
 
-  fclose(f);
+  ::close(fd);
   delete[] buffer;
 }
 
@@ -178,10 +183,10 @@ void XtcFileClient::routine()
 
   const unsigned nfiles = files.size();
 
-  FILE** f = new FILE*[nfiles];
+  int* fd = new int[nfiles];
   for(unsigned i=0; i<nfiles; i++) {
-    f[i] = fopen(qPrintable(files.at(i)),"r");
-    if (!f[i]) {
+    fd[i] = ::open(qPrintable(files.at(i)),O_LARGEFILE,O_RDONLY);
+    if (fd[i] == -1) {
       printf("Error opening file %s\n",qPrintable(files.at(i)));
       return;
     }
@@ -200,7 +205,7 @@ void XtcFileClient::routine()
   _client.processDgram(dg);
 
   for(unsigned k=0; k<nfiles; k++)
-    fread(&hdr[k], sizeof(Dgram), 1, f[k]);
+    ::read(fd[k], &hdr[k], sizeof(Dgram));
 
   bool ldone=false;
   do {
@@ -216,8 +221,7 @@ void XtcFileClient::routine()
     }
 
     memcpy(dg, &hdr[i], sizeof(Pds::Dgram));
-    fread(dg->xtc.payload(), dg->xtc.sizeofPayload(), 1, f[i]);
-    if (feof(f[i])) {
+    if (::read(fd[i], dg->xtc.payload(), dg->xtc.sizeofPayload()) != dg->xtc.sizeofPayload()) {
       printf("Unexpected eof in %s\n",qPrintable(files.at(i)));
       break;
     }
@@ -229,18 +233,18 @@ void XtcFileClient::routine()
       dump(dg);
       
       for(unsigned k=0; k<nfiles; k++) {
-	if (k != i) 
-	  fseek(f[k], hdr[k].xtc.sizeofPayload(), SEEK_CUR);
-	fread(&hdr[k], sizeof(Dgram), 1, f[k]);
-	if (feof(f[k])) {
+	if (k != i) {
+	  off_t off = hdr[k].xtc.sizeofPayload();
+	  lseek64(fd[k], off, SEEK_CUR);
+	}
+	if (::read(fd[k], &hdr[k], sizeof(Dgram)) != sizeof(Dgram)) {
 	  ldone=true;
 	  printf("eof in %s\n",qPrintable(files.at(k)));
 	}
       }
     }
     else {
-      fread(&hdr[i], sizeof(Dgram), 1, f[i]);
-      if (feof(f[i])) {
+      if (::read(fd[i], &hdr[i], sizeof(Dgram)) != sizeof(Dgram)) {
 	ldone=true;
 	printf("Unexpected eof in %s\n",qPrintable(files.at(i)));
       }
@@ -256,12 +260,13 @@ void XtcFileClient::routine()
   for(unsigned i=0; i<nfiles; i++) {
     printf("Closing file %s at position %ld\n",
 	   qPrintable(files.at(i)),
-	   ftell(f[i]));
-    fclose(f[i]);
+	   lseek64(fd[i],off_t(0),SEEK_CUR));
+    ::close(fd[i]);
   }
 
   delete[] hdr;
   delete[] buffer;
+  delete[] fd;
 
   emit done();
 }
