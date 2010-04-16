@@ -97,8 +97,11 @@ void*      EntryMath::_serialize(void* p) const
   { Entry##type& en = static_cast<Entry##type&>(*_entry);		\
     _index = 0;								\
     for(unsigned j=0; j<en.desc().nbinsy(); j++)			\
-      for(unsigned k=0; k<en.desc().nbinsx(); k++)			\
-	en.contents()[_index++] = unsigned(_term->evaluate());		\
+      for(unsigned k=0; k<en.desc().nbinsx(); k++) {			\
+	double v = _term->evaluate();					\
+	unsigned iv = (v>0) ? unsigned(v) : 0;				\
+	en.contents()[_index++] = iv;					\
+      }									\
     break;								\
   }
 

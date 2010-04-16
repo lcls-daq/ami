@@ -30,6 +30,8 @@ FrameHandler::FrameHandler(const Pds::DetInfo& info, const EntryImage* entry) :
 
 FrameHandler::~FrameHandler()
 {
+  if (_entry)
+    delete _entry;
 }
 
 unsigned FrameHandler::nentries() const { return _entry ? 1 : 0; }
@@ -58,7 +60,11 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
   }
   DescImage desc(det, 0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);
+
+  if (_entry) 
+    delete _entry;
   _entry = new EntryImage(desc);
+  _entry->invalid();
 }
 
 void FrameHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}

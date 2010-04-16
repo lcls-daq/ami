@@ -48,6 +48,7 @@ namespace Ami {
       void save_plots();
       void queue_autosave();
       void autosave();
+      void autoload();
 
       void show_detector(QListWidgetItem*);
       void change_detectors (const char*);
@@ -55,6 +56,7 @@ namespace Ami {
       void detectors_discovered (const char*);
 
     private:
+      void                _load_setup_from_file(const char*);
       Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned);
       void                _connect_client(Ami::Qt::AbsClient* client);
       void                _update_groups();

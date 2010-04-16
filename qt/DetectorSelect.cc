@@ -114,6 +114,8 @@ DetectorSelect::DetectorSelect(const QString& label,
 
   connect(this, SIGNAL(detectors_discovered(const char*)), this, SLOT(change_detectors(const char*)));
 
+  //  autoload();
+
   _autosave_timer = new QTimer(this);
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
@@ -188,7 +190,12 @@ void DetectorSelect::load_setup ()
   QString fname = QFileDialog::getOpenFileName(this,"Load Setup from File (.ami)",
 					       Path::base(), "*.ami");
 
-  FILE* f = fopen(qPrintable(fname),"r");
+  _load_setup_from_file(qPrintable(fname));
+}
+
+void DetectorSelect::_load_setup_from_file(const char* fname)
+{
+  FILE* f = fopen(fname,"r");
   if (!f) {
     QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
     QMessageBox::critical(this,"Load Error",msg);
@@ -198,7 +205,7 @@ void DetectorSelect::load_setup ()
   int size = fread(buffer,1,MaxConfigSize,f);
   fclose(f);
 
-  printf("Load %d bytes from %s\n",size,qPrintable(fname));
+  printf("Load %d bytes from %s\n",size,fname);
 
   set_setup(buffer, size);
 
@@ -416,4 +423,10 @@ void DetectorSelect::autosave()
   }
 
   delete[] buffer;
+}
+
+void DetectorSelect::autoload()
+{
+  QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
+  _load_setup_from_file(qPrintable(fname));
 }

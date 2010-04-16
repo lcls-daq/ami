@@ -51,7 +51,7 @@ QtWaveform::~QtWaveform()
 void           QtWaveform::dump  (FILE* f) const
 {
   const EntryWaveform& _entry = static_cast<const EntryWaveform&>(entry());
-  for(unsigned b=0; b<= _entry.desc().nbins(); b++) {
+  for(unsigned b=0; b< _entry.desc().nbins(); b++) {
     double x = _xscale(0.5*(_x[b]+_x[b+1]));
     double y = _yscale(_y[b]);
     fprintf(f,"%g %g\n",x,y);

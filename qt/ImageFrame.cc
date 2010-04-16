@@ -39,12 +39,9 @@ ImageFrame::ImageFrame(QWidget* parent,
   _xyscale(false),
   _c(0)
 {
-  unsigned sz = 512 + 4;
-  _canvas->setMinimumSize(sz,sz);
-//   _scroll = new QScrollArea;
-//   _scroll->setBackgroundRole(QPalette::Dark);
-//   _scroll->setWidget(_canvas);
-//   _scroll->setMinimumSize(sz,sz);
+//   unsigned sz = 512 + 4;
+//   _canvas->setMinimumSize(sz,sz);
+  _canvas->setAlignment(::Qt::AlignLeft | ::Qt::AlignTop);
 
   QHBoxLayout* layout = new QHBoxLayout;
   //  layout->addWidget(_scroll);
