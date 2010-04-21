@@ -70,7 +70,7 @@ void*      EnvPlot::_serialize(void* p) const
 
 Entry&     EnvPlot::_operate(const Entry& e) const
 {
-  if (_input >= 0) {
+  if (_input >= 0 && e.valid()) {
     bool dmg;
     double y = _cache->cache(_input,&dmg);
     if (!dmg) {

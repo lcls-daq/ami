@@ -55,7 +55,10 @@ namespace Ami {
 		   unsigned& index) : _entry(e), _index(index) {}
     ~EntryImageTerm() {}
   public:
-    double evaluate() const { return _entry.content(_index); }
+    double evaluate() const {
+      double n = double(_entry.info(EntryImage::Normalization));
+      return (n>1) ? _entry.content(_index)/n : _entry.content(_index); 
+    }
   private:
     const EntryImage& _entry;
     unsigned& _index;

@@ -405,6 +405,8 @@ void DetectorSelect::queue_autosave()
 
 void DetectorSelect::autosave()
 {
+  static bool warned = false;
+
   char* buffer = new char[MaxConfigSize];
 
   int len = get_setup(buffer);
@@ -417,7 +419,8 @@ void DetectorSelect::autosave()
     fclose(o);
     printf("Saved %d bytes to %s\n",len,qPrintable(fname));
   }
-  else {
+  else if (!warned) {
+    warned = true;
     QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
     QMessageBox::critical(this,"Save Error",msg);
   }

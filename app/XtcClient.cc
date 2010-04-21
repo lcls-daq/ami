@@ -5,6 +5,7 @@
 #include "pdsdata/xtc/Dgram.hh"
 
 #include "ami/event/EventHandler.hh"
+#include "ami/event/EvrHandler.hh"
 #include "ami/event/FEEGasDetEnergyReader.hh"
 #include "ami/event/EBeamReader.hh"
 #include "ami/event/PhaseCavityReader.hh"
@@ -131,6 +132,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
+      case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
       default: break;
       }
       if (!h)

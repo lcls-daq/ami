@@ -17,6 +17,7 @@ tgtslib_test := $(USRLIBDIR)/rt
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
 tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
+tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
 tgtlibs_ami += qt/QtCore

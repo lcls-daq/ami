@@ -48,9 +48,6 @@ QtChart::QtChart(const QString&   title,
   _x = new double[nb];
   _y = new double[nb];
 
-//   struct timespec tv;
-//   clock_gettime(CLOCK_REALTIME,&tv);
-//   double time = double(tv.tv_sec) + 1.e-9*double(tv.tv_nsec);
   const Pds::ClockTime& tv = entry.time();
   double time = double(tv.seconds()) + 1.e-9*double(tv.nanoseconds());
   for(unsigned k=0; k<nb; k++) {
@@ -91,13 +88,23 @@ void           QtChart::attach(QwtPlot* p)
 void           QtChart::update()
 {
   const EntryScalar& entry = static_cast<const EntryScalar&>(QtBase::entry());
+  if (!entry.valid())
+    return;
+
   double n = entry.entries() - _cache.entries();
   if (n>0) {
-//     struct timespec tv;
-//     clock_gettime(CLOCK_REALTIME,&tv);
-//    double time = double(tv.tv_sec) + 1.e-9*double(tv.tv_nsec);
     const Pds::ClockTime& tv = entry.time();
     double time = double(tv.seconds()) + 1.e-9*double(tv.nanoseconds());
+
+    if (_cache.entries()==0) {
+      printf("QtChart %s first entry with time %x/%x\n",
+	     qPrintable(title()), tv.seconds(), tv.nanoseconds());
+      for(unsigned k=0; k<2*_n; k++) {
+	_x[k] = time;
+	_y[k] = 0;
+      }
+    }
+
     _x[_current+0 ] = time;
     _x[_current+_n] = time;
     
