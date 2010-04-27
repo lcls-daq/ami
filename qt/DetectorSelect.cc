@@ -120,6 +120,19 @@ DetectorSelect::DetectorSelect(const QString& label,
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
 
+  {
+    timespec tp;
+    clock_gettime(CLOCK_REALTIME, &tp);
+    printf("sleep at %d.%09d\n", tp.tv_sec, tp.tv_nsec); 
+
+    timespec ts;
+    ts.tv_sec = 3;
+    ts.tv_nsec = 0;
+    nanosleep(&ts, 0);
+
+    clock_gettime(CLOCK_REALTIME, &tp);
+    printf(" wake at %d.%09d\n", tp.tv_sec, tp.tv_nsec); 
+  }
   _manager->connect();
 }
 
@@ -348,7 +361,7 @@ void DetectorSelect::change_detectors(const char* c)
 	remove.push_back(*it);
     }
     for(std::list<QtTopWidget*>::iterator it = remove.begin(); it != remove.end(); it++) {
-      printf("DetectorSelect::discovered removing %s\n",qPrintable((*it)->title()));
+      printf("DetectorSelect::change_detectors removing %s\n",qPrintable((*it)->title()));
       _client.remove(*it);
     }
   }

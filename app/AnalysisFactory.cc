@@ -43,6 +43,7 @@ void AnalysisFactory::discover ()
   _analyses.clear();
   _sem.give();
   _srv.discover(); 
+  printf("AnalysisFactory::discover complete\n");
 }
 
 void AnalysisFactory::configure(unsigned       id,
@@ -70,11 +71,17 @@ void AnalysisFactory::configure(unsigned       id,
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
 
     const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
-    const Entry& input = *input_cds.entry(req.input());
-    const char*  p     = reinterpret_cast<const char*>(&req+1);
-    Analysis* a = new Analysis(id, input, req.output(),
-			       cds, _features, p);
-    _analyses.push_back(a);
+    const Entry* input = input_cds.entry(req.input());
+    if (!input) {
+      printf("AnalysisFactory::configure failed input for configure request:\n");
+      printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
+    }
+    else {
+      const char*  p     = reinterpret_cast<const char*>(&req+1);
+      Analysis* a = new Analysis(id, *input, req.output(),
+				 cds, _features, p);
+      _analyses.push_back(a);
+    }
     payload += req.size();
   }
   _sem.give();

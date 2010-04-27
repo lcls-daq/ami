@@ -13,7 +13,8 @@ DetectorGroup::DetectorGroup(const QString& label,
 			     QWidget*     parent,
 			     const std::list<QtTopWidget*>& clients) :
   QtPWidget(parent),
-  _clients (clients)
+  _clients (clients),
+  _buttons (new QButtonGroup)
 {
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -27,11 +28,14 @@ DetectorGroup::DetectorGroup(const QString& label,
     boxes.push_back(button);
   }
 
+  _buttons->setExclusive(false);
+
   build(boxes);
 }
 
 DetectorGroup::DetectorGroup(const DetectorGroup& clone) :
-  _clients (clone._clients)
+  _clients (clone._clients),
+  _buttons (new QButtonGroup)
 {
   setWindowTitle(clone.windowTitle());
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -53,6 +57,8 @@ DetectorGroup::DetectorGroup(const DetectorGroup& clone) :
     newlist.push_back(newbox);
   }
 
+  _buttons->setExclusive(false);
+
   build(newlist);
 
   setVisible(clone.isVisible());
@@ -71,8 +77,6 @@ DetectorGroup::DetectorGroup(const DetectorGroup& clone) :
 void DetectorGroup::build(const std::list<QCheckBox*>& boxes)
 {
   _snapshot = _clients;
-  _buttons  = new QButtonGroup;
-  _buttons->setExclusive(false);
 
   QVBoxLayout* l = new QVBoxLayout;
 

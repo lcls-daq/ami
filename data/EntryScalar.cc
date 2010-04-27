@@ -2,8 +2,6 @@
 
 using namespace Ami;
 
-#define SIZE(nb) (nb+InfoSize)
-
 EntryScalar::~EntryScalar() {}
 
 EntryScalar::EntryScalar(const Pds::DetInfo& info, unsigned channel,

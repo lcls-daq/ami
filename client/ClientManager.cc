@@ -227,8 +227,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     _client.discovered(rx);
   }
   else if (reply.id() == _request.id()) {   // solicited message
-//     printf("(%p) handle_client_io payload %d\n",
-// 	   this, reply.payload());
+  //  else if (1) { // solicited message
     switch (reply.type()) {
     case Message::Description: 
       _client.read_description(socket, reply.payload());

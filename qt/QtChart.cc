@@ -97,8 +97,6 @@ void           QtChart::update()
     double time = double(tv.seconds()) + 1.e-9*double(tv.nanoseconds());
 
     if (_cache.entries()==0) {
-      printf("QtChart %s first entry with time %x/%x\n",
-	     qPrintable(title()), tv.seconds(), tv.nanoseconds());
       for(unsigned k=0; k<2*_n; k++) {
 	_x[k] = time;
 	_y[k] = 0;

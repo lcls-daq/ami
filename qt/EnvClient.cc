@@ -157,7 +157,7 @@ void EnvClient::connected()
 void EnvClient::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
-  printf("Discovered\n");
+  printf("Env Discovered\n");
 
   const DescEntry* e = rx.entries();
   _input = e->signature();

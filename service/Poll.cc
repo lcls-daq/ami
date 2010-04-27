@@ -151,8 +151,6 @@ int Poll::poll()
 	if (size<0)
 	  printf("Error reading bcast\n");
 	else {
-	  if (size != 16) 
-	    printf("Poll::bcast %d bytes\n",size);
 	  const char* payload = _buffer+sizeof(int);
 	  for (unsigned short n=1; n<_nfds; n++) {
 	    if (_ofd[n])

@@ -39,6 +39,7 @@ namespace Ami {
     bool      _sync;
     HList     _handlers;
     Entry*    _entry;
+    bool      _ready;
   };
 }
 

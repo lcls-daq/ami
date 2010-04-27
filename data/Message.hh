@@ -8,6 +8,7 @@ namespace Ami {
   class Message {
   public:
     enum Type{NoOp,
+	      Hello,
 	      Connect,
 	      Reconnect,
 	      Disconnect,

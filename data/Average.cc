@@ -54,6 +54,7 @@ Entry&     Average::_operate(const Entry& e) const
     { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
       _en.add(static_cast<const EntryTH1F&>(e));
       if (_n && _en.info(EntryTH1F::Normalization)==_n) {
+	_cache->valid(e.time());
 	static_cast<EntryTH1F*>(_cache)->setto(_en);
 	_en.reset();
       }
@@ -65,6 +66,7 @@ Entry&     Average::_operate(const Entry& e) const
     { EntryProf& _en = static_cast<EntryProf&>(*_entry);
       _en.sum(_en,static_cast<const EntryProf&>(e));
       if (_n && _en.info(EntryProf::Normalization)==_n) {
+	_cache->valid(e.time());
 	static_cast<EntryProf*>(_cache)->setto(_en);
 	_en.reset();
       }
@@ -80,6 +82,7 @@ Entry&     Average::_operate(const Entry& e) const
 	_en.addinfo(en.info(i),i);
       }
       if (_n && _en.info(EntryImage::Normalization)==_n) {
+	_cache->valid(e.time());
 	static_cast<EntryImage*>(_cache)->setto(_en);
 	_en.reset();
       }
@@ -94,6 +97,7 @@ Entry&     Average::_operate(const Entry& e) const
 	_en.addinfo(en.info(i),i);
       }
       if (_n && _en.info(EntryWaveform::Normalization)==_n) {
+	_cache->valid(e.time());
 	static_cast<EntryWaveform*>(_cache)->setto(_en);
 	_en.reset();
       }
@@ -102,7 +106,6 @@ Entry&     Average::_operate(const Entry& e) const
     break;
   }
   if (_n) {
-    _cache->valid(e.time());
     return *_cache;
   }
   else {

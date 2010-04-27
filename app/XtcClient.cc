@@ -30,7 +30,8 @@ XtcClient::XtcClient(FeatureCache& cache,
 		     bool      sync) :
   _cache  (cache),
   _factory(factory),
-  _sync   (sync)
+  _sync   (sync),
+  _ready  (false)
 {
 }
 
@@ -44,7 +45,7 @@ void XtcClient::remove(EventHandler* h) { _handlers.remove(h); }
 void XtcClient::processDgram(Pds::Dgram* dg) 
 {
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
-  if (dg->seq.isEvent()) {
+  if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
     iterate(&dg->xtc); 
 
@@ -52,6 +53,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.analyze();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
+
+    printf("XtcClient configure\n");
 
     _cache.clear();
 
@@ -72,11 +75,18 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       }
     }
 
+    printf("XtcClient configure done\n");
+
     //  Advertise
     _factory.discover();
     if (_sync) _factory.wait_for_configure();
+
+    _ready =  true;
   }
   else {
+    if (dg->seq.service() == Pds::TransitionId::Unconfigure)
+      _ready = false;
+
     _seq = &dg->seq;
     iterate(&dg->xtc); 
   }
@@ -94,7 +104,6 @@ int XtcClient::process(Pds::Xtc* xtc)
   else {
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
-
       if (h->info().level() == xtc->src.level() &&
 	  (h->info().phy  () == (uint32_t)-1 ||
 	   h->info().phy  () == xtc->src.phy())) {
@@ -138,6 +147,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       if (!h)
 	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
       else {
+	printf("XtcClient::process adding handler for type %x\n",xtc->contains.id());
 	insert(h);
 	h->_configure(xtc->payload(),_seq->clock());
       }

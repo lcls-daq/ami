@@ -261,9 +261,10 @@ void*      BinMath::_serialize(void* p) const
 
 Entry&     BinMath::_operate(const Entry& e) const
 {
-  if (_term) {
+  if (_term && e.valid()) {
     _input = &e;
     double y = _term->evaluate();
+
     switch(_entry->desc().type()) {
     case DescEntry::Scalar:  
       { EntryScalar* en = static_cast<EntryScalar*>(_entry);

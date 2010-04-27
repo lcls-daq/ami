@@ -2,6 +2,7 @@
 #define AmiQt_DetectorGroup_hh
 
 #include "ami/qt/QtPWidget.hh"
+
 #include <list>
 
 class QButtonGroup;
@@ -37,7 +38,7 @@ namespace Ami {
 
       const std::list<QtTopWidget*>& _clients;
       std::list<QtTopWidget*>        _snapshot;
-      QButtonGroup* _buttons;
+      QButtonGroup*                  _buttons;
     };
   };
 };

@@ -280,6 +280,7 @@ void ImageXYProjection::plot()
       DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
       CursorPlot* plot = 
  	new CursorPlot(this, _title->text(), _channel, new BinMath(*desc,qPrintable(expr)));
+      delete desc;
       
       _cplots.push_back(plot);
 

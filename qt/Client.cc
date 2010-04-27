@@ -111,7 +111,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
   printf("Connection Client::update_config\n");
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
-  connect((AbsClient*)this, SIGNAL(changed()),                this, SLOT(update_configuration()));
+  connect((AbsClient*)this, SIGNAL(changed()),    this, SLOT(update_configuration()));
 }
 
 Ami::Qt::Client::~Client() 
@@ -180,7 +180,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   for(  const DescEntry* e = rx.entries(); e < rx.end(); 
       e = reinterpret_cast<const DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size())) {
-    printf("Test %s\n",e->name());
+    //    printf("Test %s\n",e->name());
     if (strcmp(e->name(),channel_name)==0) {
       _input_entry = e;
       _frame->prototype(e);
@@ -258,7 +258,7 @@ int  Ami::Qt::Client::configured      ()
 //
 void Ami::Qt::Client::read_description(Socket& socket, int len)
 {
-  printf("Described so\n");
+  printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -279,7 +279,7 @@ void Ami::Qt::Client::read_description(Socket& socket, int len)
 
 void Ami::Qt::Client::_read_description(int size)
 {
-  printf("Described si\n");
+  printf("%s Described si\n",qPrintable(_title));
   //  printf("description\n"); 
 
   _frame->reset();

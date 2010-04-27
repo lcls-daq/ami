@@ -5,6 +5,7 @@
 #include "pdsdata/pnCCD/FrameV1.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 static const int PixelsPerBin = 2;
 
@@ -67,6 +68,7 @@ void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
   f = f->next(_config);
 
   //  _entry->info(f.offset()*PixelsPerBin*PixelsPerBin,EntryImage::Pedestal);
+  _entry->info(0,EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
