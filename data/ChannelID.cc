@@ -40,7 +40,7 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
   *_buffer = 0;
   switch(info.detector()) {
     //  AMO Detectors
-  case DetInfo::AmoITof  : AcqDetector("ITOF"); break;
+  case DetInfo::AmoITof  : AcqChannel("ITOF"); break;
   case DetInfo::AmoIms   : AcqChannel("IMS"); break;
   case DetInfo::AmoETof  : AcqChannel("ETOF"); break;
   case DetInfo::AmoGasdet: AcqChannel("GASDET"); break;

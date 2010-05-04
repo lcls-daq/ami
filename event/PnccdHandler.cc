@@ -58,13 +58,13 @@ void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
-  _fillQuadrant (f->data(), 0, 0);   
+  _fillQuadrant (f->data(), 0, 0);                      // upper left
   f = f->next(_config);
-  _fillQuadrant (f->data(), cols_segment, 0);
+  _fillQuadrantR(f->data(), cols_segment-1, rows-1);    // lower left
   f = f->next(_config);
-  _fillQuadrantR(f->data(), cols_segment-1, rows-1);
+  _fillQuadrantR(f->data(), cols-1, rows-1);            // lower right
   f = f->next(_config);
-  _fillQuadrantR(f->data(), cols-1, rows-1);
+  _fillQuadrant (f->data(), cols_segment, 0);           // upper right
   f = f->next(_config);
 
   //  _entry->info(f.offset()*PixelsPerBin*PixelsPerBin,EntryImage::Pedestal);

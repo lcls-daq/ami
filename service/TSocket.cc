@@ -106,7 +106,7 @@ int TSocket::readv(const iovec* iov, int iovcnt)
   if (bytes<0) {
     printf("Error reading from skt %d : %s\n",
 	   socket(), strerror(errno));
-    abort();
+    //    abort();
   }
   return bytes;
 }

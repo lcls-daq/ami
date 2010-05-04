@@ -6,8 +6,6 @@
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
 
-#include "pdsdata/app/XtcMonitorClient.cc"
-
 namespace Ami {
   class ShmTask : public Routine {
   public:
@@ -15,7 +13,7 @@ namespace Ami {
       _c(c), _tag(tag), _id(id) {}
     ~ShmTask() {}
   public:
-    void routine() { _c.run(_tag,_id); delete this; }
+    void routine() { _c.run(_tag,_id,_id); delete this; }
   private:
     XtcShmClient& _c;
     char*         _tag;

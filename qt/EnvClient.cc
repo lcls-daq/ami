@@ -42,6 +42,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
   _cds             ("Client"),
+  _manager         (0),
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY))
