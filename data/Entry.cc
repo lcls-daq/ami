@@ -14,7 +14,8 @@ Entry::Entry() :
 
 Entry::~Entry()
 {
-  delete [] _payload;  
+  if (_payload)
+    delete [] _payload;  
 }
 
 void Entry::payload(iovec& iov)

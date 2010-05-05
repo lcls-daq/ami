@@ -34,6 +34,13 @@ static char _buffer[128];
       sprintf(_buffer,"pnCCD_%d",info.devId()+1);    \
   }
 
+static void _default(char* b, const DetInfo& info)
+{
+  sprintf(b,"UNK_%s_%s",
+	  DetInfo::name(info.detector()),
+	  DetInfo::name(info.device  ()));
+}
+
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
 				 unsigned channel)
 {
@@ -53,11 +60,19 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
     PnccdDetector;
     break;
     //  Others
-  default: 
-    sprintf(_buffer,"UNK_%s_%s",
-	    DetInfo::name(info.detector()),
-	    DetInfo::name(info.device  ()));
+  case DetInfo::SxrBeamline:
+    switch(info.device()) {
+    case DetInfo::Opal1000:
+      switch(info.devId()) {
+      case 0 : strcpy(_buffer,"TSS_Opal"); break;
+      case 1 : strcpy(_buffer,"EXS_Opal"); break;
+      default: _default(_buffer,info); break;
+      }
+      break;
+    default: _default(_buffer,info); break;
+    }
     break;
+  default: _default(_buffer,info); break;
   }
   return _buffer;
 }   
