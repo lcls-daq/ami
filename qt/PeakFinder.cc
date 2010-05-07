@@ -142,7 +142,7 @@ void PeakFinder::set_channel(int c)
 void PeakFinder::plot()
 {
   PeakPlot* plot = new PeakPlot(this,
-				_channels[_channel]->name() + " Peaks",
+				QString("%1 Peaks : %2").arg(_channels[_channel]->name()).arg(_threshold->value()),
 				_channel,
 				_threshold->value());
   _plots.push_back(plot);

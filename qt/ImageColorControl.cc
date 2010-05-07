@@ -121,7 +121,11 @@ void ImageColorControl::save(char*& p) const
 void ImageColorControl::load(const char*& p)
 {
   _scale = QtPersistent::extract_i(p);
-  _paletteGroup->button(QtPersistent::extract_i(p))->setChecked(true);
+  int palette = QtPersistent::extract_i(p);
+  _paletteGroup->button(palette)->setChecked(true);
+  set_palette(palette);
+  show_scale();
+  emit windowChanged();
 }
 
 bool   ImageColorControl::linear() const { return !_logscale->isChecked(); }

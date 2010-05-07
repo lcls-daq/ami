@@ -19,11 +19,11 @@ QtImage::QtImage(const QString&   title,
   QtBase(title,entry)
 {
   const Ami::DescImage& d = entry.desc();
-  _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy(); _scale = 1;
+  _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy();
 
-  printf("QtImage 0x%x x 0x%x\n",_nx*_scale,_ny*_scale);
+  printf("QtImage 0x%x x 0x%x\n",_nx,_ny);
 
-  _qimage = new QImage(_nx*_scale, _ny*_scale, QImage::Format_Indexed8);
+  _qimage = new QImage(_nx, _ny, QImage::Format_Indexed8);
   _qimage->fill(128);
 
   _xinfo = new AxisBins(d.xlow(),d.xup(),d.nbinsx());
@@ -40,24 +40,9 @@ QtImage::QtImage(const QString&   title,
   x0 &= ~3;  // 32-bit aligned
   _x0 = x0; _y0 = y0; _nx = x1-x0+1; _ny = y1-y0+1; 
 
-  _scale = 1;
-#ifdef FAST_IMPLEMENTATION
-  unsigned sx = entry.desc().nbinsx() / _nx;
-  unsigned sy = entry.desc().nbinsy() / _ny;
-  unsigned s = (sx < sy ) ? sx : sy;
-  while( s>>=1 )
-    _scale<<=1;
-  if (_scale>8) _scale=8;
-
-  if (_scale==1) _nx = (_nx+3)&~3;
-  if (_scale==2) _nx = (_nx+1)&~1;
-#else
   _nx = (_nx+3)&~3;
-#endif
 
-  printf("QtImage 0x%x x 0x%x\n",_nx*_scale,_ny*_scale);
-
-  _qimage = new QImage(_nx*_scale, _ny*_scale, QImage::Format_Indexed8);
+  _qimage = new QImage(_nx, _ny, QImage::Format_Indexed8);
   _qimage->fill(128);
 
   if (_qimage->isNull())
@@ -95,70 +80,6 @@ void           QtImage::attach(ImageFrame* p)
 
 void           QtImage::update() {}
 
-#ifdef FAST_IMPLEMENTATION
-
-#define NO_SHIFT (*src++)
-#define LEFT_SHIFT ((*src++)<<shift)
-#define RIGHT_SHIFT ((*src++)>>shift)
-
-#define COPYIMAGE(type,shift_op,factor) {		\
-    type* dst = (type*)_qimage->bits();			\
-    for(unsigned k=0; k<_ny; k++) {			\
-      type* r = dst;					\
-      for(unsigned j=0; j<_nx; j++) {			\
-	unsigned sh = shift_op;				\
-	*dst++ = factor*(sh >= 0xff ? 0xff : sh); }	\
-      for(unsigned j=1; j<_scale; j++) {		\
-	memcpy(dst, r, _nx*sizeof(type));		\
-	dst += _nx; }					\
-      src += d.nbinsx()-_nx;				\
-    } }
-
-QImage&        QtImage::image(int s)
-{
-  const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
-  const Ami::DescImage&  d = _entry.desc();
-
-  //  int shift(s);
-  //  unsigned n = _entry.info(EntryImage::Normalization);
-  //  n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  //  while( (n>>=1) )
-  //    shift++;
-
-  const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
-  if (shift>0) {
-    switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,RIGHT_SHIFT,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,RIGHT_SHIFT,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,RIGHT_SHIFT,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,RIGHT_SHIFT,0x0101010101010101ULL); break; }
-    default: break;
-    }
-  }
-  else if (shift<0) {
-    shift = -shift;
-    switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,LEFT_SHIFT,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,LEFT_SHIFT,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,LEFT_SHIFT,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,LEFT_SHIFT,0x0101010101010101ULL); break; }
-    default: break;
-    }
-  }
-  else {
-    switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,NO_SHIFT,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,NO_SHIFT,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,NO_SHIFT,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,NO_SHIFT,0x0101010101010101ULL); break; }
-    default: break;
-    }
-  }
-
-  return *_qimage;
-}
-#else
-
 #define LINTRANS(x) (x > p   ? (x-p)/n : 0)
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
 
@@ -188,29 +109,16 @@ QImage&        QtImage::image(double s, bool linear)
   const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
   if (linear) {
     n *= double(s);
-    switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,LINTRANS,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,LINTRANS,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,LINTRANS,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,LINTRANS,0x0101010101010101ULL); break; }
-    default: break;
-    }
+    COPYIMAGE(uint8_t ,LINTRANS,0x01);
   }
   else {
     const float  ppn  = p+n;
     const double logn = log(n);
     const double invlogs = 256./(log(s)+log(256));
-    switch(_scale) {
-    case 1: { COPYIMAGE(uint8_t ,LOGTRANS,0x01); break; }
-    case 2: { COPYIMAGE(uint16_t,LOGTRANS,0x0101); break; }
-    case 4: { COPYIMAGE(uint32_t,LOGTRANS,0x01010101); break; }
-    case 8: { COPYIMAGE(uint64_t,LOGTRANS,0x0101010101010101ULL); break; }
-    default: break;
-    }
+    COPYIMAGE(uint8_t ,LOGTRANS,0x01);
   }
   return *_qimage;
 }
-#endif
 
 void QtImage::xscale_update() {}
 void QtImage::yscale_update() {}
