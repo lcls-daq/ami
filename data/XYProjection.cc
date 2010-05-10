@@ -128,7 +128,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
 	  unsigned jlo = unsigned((_lo-inputd.xlow())/inputd.ppxbin());
 	  unsigned jhi = unsigned((_hi-inputd.xlow())/inputd.ppxbin());
 	  for(unsigned i=ilo; i<ihi; i++) {
-	    unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
+	    unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
 	    for(unsigned j=jlo; j<jhi; j++)
 	      o->addy(double(_input->content(j,i))-p,k);
 	  }

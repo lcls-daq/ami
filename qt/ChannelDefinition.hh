@@ -52,6 +52,7 @@ namespace Ami {
       void reference_loaded(bool);
       void changed();
       void newplot(bool);
+      void load_show();
     private:
       QString       _name;
       Display&      _frame;

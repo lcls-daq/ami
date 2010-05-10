@@ -171,6 +171,9 @@ void ChannelDefinition::load(const char*& p)
   _plot_grp->button(id)->setChecked(true);
 
   apply();
+
+  if (_show) 
+    emit load_show();
 }
 
 void ChannelDefinition::load_reference()

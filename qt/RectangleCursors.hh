@@ -26,8 +26,8 @@ namespace Ami {
       double ylo() const;
       double xhi() const;
       double yhi() const;
-      unsigned nxbins() const { return ixhi()-ixlo()+1; }
-      unsigned nybins() const { return iyhi()-iylo()+1; }
+      unsigned nxbins() const { return ixhi()-ixlo(); }
+      unsigned nybins() const { return iyhi()-iylo(); }
       unsigned ixlo() const { return _frame.xinfo()->tick(xlo()); }
       unsigned ixhi() const { return _frame.xinfo()->tick(xhi()); }
       unsigned iylo() const { return _frame.yinfo()->tick(ylo()); }
