@@ -104,8 +104,12 @@ void EnvPlot::setup_payload(Cds& cds)
 			 noTransform,noTransform,QColor(0,0,0));
       break;
     case Ami::DescEntry::Scalar:  // create a chart from a scalar
+//       { const DescChart& d = *reinterpret_cast<const DescChart*>(_desc);
+// 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
+// 			    d.pts(),QColor(0,0,0));
+// 	break; }
       _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  200,QColor(0,0,0));
+			  400,QColor(0,0,0));
       break;
     case Ami::DescEntry::Prof: 
       _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),

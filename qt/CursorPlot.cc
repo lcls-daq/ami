@@ -50,14 +50,14 @@ CursorPlot::CursorPlot(QWidget* parent,
 
 CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
-  QtPlot   (parent,p)
+  QtPlot   (parent,p),
+  _plot    (0)
 {
   _channel = QtPersistent::extract_i(p);
 
   p += 2*sizeof(uint32_t);
   _input = new BinMath(p);
   _output_signature=0;
-  _plot  = 0;
 }
 
 CursorPlot::~CursorPlot()
@@ -84,7 +84,10 @@ void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void CursorPlot::setup_payload(Cds& cds)
 {
-  if (_plot) delete _plot;
+  if (_plot) {
+    delete _plot;
+    _plot = 0;
+  }
     
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
@@ -95,7 +98,7 @@ void CursorPlot::setup_payload(Cds& cds)
       break;
     case Ami::DescEntry::Scalar:  // create a chart from a scalar
       _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  200,QColor(0,0,0));
+			  400,QColor(0,0,0));
       break;
     case Ami::DescEntry::Prof: 
       _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),

@@ -43,10 +43,14 @@ void   IpimbHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Ipimb::DataV1& d = *reinterpret_cast<const Pds::Ipimb::DataV1*>(payload);
 
-  _cache.cache(_index[0], d.channel0());
-  _cache.cache(_index[1], d.channel1());
-  _cache.cache(_index[2], d.channel2());
-  _cache.cache(_index[3], d.channel3());
+//   _cache.cache(_index[0], d.channel0());
+//   _cache.cache(_index[1], d.channel1());
+//   _cache.cache(_index[2], d.channel2());
+//   _cache.cache(_index[3], d.channel3());
+  _cache.cache(_index[0], d.channel0Volts());
+  _cache.cache(_index[1], d.channel1Volts());
+  _cache.cache(_index[2], d.channel2Volts());
+  _cache.cache(_index[3], d.channel3Volts());
 }
 
 void   IpimbHandler::_damaged  ()
