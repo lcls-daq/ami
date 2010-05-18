@@ -68,7 +68,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
   QStringList names;
   for(unsigned i=0; i<NCHANNELS; i++)
-    names << QString("Ch%1").arg(char('A'+i));
+    names << QString("%1_Ch%2").arg(_title).arg(char('A'+i));
 
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
@@ -79,7 +79,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       for(int i=0; i<NCHANNELS; i++) {
 	QString title = names[i];
 	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0);
-	chanB[i] = new QPushButton(title); chanB[i]->setCheckable(false);
+	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
