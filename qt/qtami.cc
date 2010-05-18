@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
   input.show();
 
-  Ami::Qt::DetectorSelect output("AMO Offline Monitoring",interface,serverGroup);
+  Ami::Qt::DetectorSelect output("AMO Offline Monitoring",interface,interface,serverGroup);
   output.show();
 
   app.exec();

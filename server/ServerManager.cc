@@ -21,10 +21,10 @@ using namespace Ami;
 
 ServerManager::ServerManager(unsigned interface,
 			     unsigned serverGroup) :
-  Poll      (1000),
-  _interface(interface),
+  Poll        (1000),
+  _interface  (interface),
   _serverGroup(serverGroup),
-  _socket   (0)
+  _socket     (0)
 {
 }
 
@@ -75,8 +75,9 @@ int ServerManager::processIo()
   if (request.type()==Message::Connect) {
     try {
       TSocket* s = new TSocket;
-      Ins remote(_socket->peer().get().address(),
-		 request.payload());
+//       Ins remote(_socket->peer().get().address(),
+// 		 request.payload());
+      Ins remote(request.payload(),request.offset());
       s->connect(remote);
       Ins local (s->ins());
 

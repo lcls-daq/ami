@@ -47,7 +47,8 @@ static void dump(const char* payload, unsigned size)
 }
 
 
-ClientManager::ClientManager(unsigned   interface,
+ClientManager::ClientManager(unsigned   ppinterface,
+			     unsigned   interface,
 			     unsigned   serverGroup,
 			     unsigned short port,
 			     AbsClient& client) :
@@ -69,7 +70,7 @@ ClientManager::ClientManager(unsigned   interface,
   }
 
   try {
-    _listen->bind(Ins(interface,port));
+    _listen->bind(Ins(ppinterface,port));
   } catch(Event& e) {
     printf("bind error : %s\n",e.what());
   }
@@ -106,6 +107,7 @@ void ClientManager::request_payload()
 void ClientManager::connect()
 {
   _request = Message(_request.id()+1,Message::Connect,
+		     _listen->ins().address(),
 		     _listen->ins().portId());
   printf("(%p) CM Request connection from %x/%d\n",
 	 this,_listen->ins().address(),_listen->ins().portId());

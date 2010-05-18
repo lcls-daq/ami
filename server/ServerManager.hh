@@ -35,11 +35,11 @@ namespace Ami {
     typedef std::list<Server*> SvList;
     unsigned           _interface;
     unsigned           _serverGroup;
+    unsigned           _ppinterface;
     Factory*           _factory;
     VServerSocket*     _socket;
     SvList             _servers;
   };
-
 };
 
 #endif

@@ -21,7 +21,8 @@ namespace Ami {
 
   class ClientManager : public Routine {
   public:
-    ClientManager(unsigned   interface,
+    ClientManager(unsigned   ppinterface,
+		  unsigned   interface,
 		  unsigned   serverGroup,
 		  unsigned short port,
 		  AbsClient& client);

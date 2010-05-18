@@ -58,13 +58,16 @@ static void extractInfo(const char*& p, Pds::DetInfo& info, unsigned& channel)
 
 
 DetectorSelect::DetectorSelect(const QString& label,
+			       unsigned ppinterface,
 			       unsigned interface,
 			       unsigned serverGroup) :
   QtPWidget   (0),
+  _ppinterface(ppinterface),
   _interface  (interface),
   _serverGroup(serverGroup),
   _clientPort (Port::clientPortBase()),
-  _manager    (new ClientManager(interface, serverGroup, 
+  _manager    (new ClientManager(ppinterface,
+				 interface, serverGroup, 
 				 _clientPort++,*this)),
   _reset_box  (new DetectorReset(this, _client)),
   _save_box   (new DetectorSave (this, _client))
@@ -302,7 +305,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
 
  void DetectorSelect::_connect_client(Ami::Qt::AbsClient* client)
  {
-   ClientManager* manager = new ClientManager(_interface,     
+   ClientManager* manager = new ClientManager(_ppinterface,
+					      _interface,     
 					      _serverGroup,
 					      _clientPort++,
 					      *client);	

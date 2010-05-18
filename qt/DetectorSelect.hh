@@ -25,6 +25,7 @@ namespace Ami {
       Q_OBJECT
     public:
       DetectorSelect(const QString&,
+		     unsigned ppinterface,
 		     unsigned interface,
 		     unsigned serverGroup);
       ~DetectorSelect();
@@ -62,6 +63,7 @@ namespace Ami {
       void                _update_groups();
 
     private:
+      unsigned       _ppinterface;
       unsigned       _interface;
       unsigned       _serverGroup;
       unsigned short _clientPort;
