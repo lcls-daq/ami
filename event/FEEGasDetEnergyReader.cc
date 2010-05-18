@@ -26,10 +26,10 @@ FEEGasDetEnergyReader::~FEEGasDetEnergyReader()
 void   FEEGasDetEnergyReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void   FEEGasDetEnergyReader::_configure(const void* payload, const Pds::ClockTime& t) 
 {
-  _index = _cache.add("BLD:FEE:GDET:11:ENRC");
-  _cache.add("BLD:FEE:GDET:12:ENRC");
-  _cache.add("BLD:FEE:GDET:21:ENRC");
-  _cache.add("BLD:FEE:GDET:22:ENRC");
+  _index = _cache.add("BLD:FEE:GDET1:PMT1:ENRC");
+  _cache.add("BLD:FEE:GDET1:PMT2:ENRC");
+  _cache.add("BLD:FEE:GDET2:PMT1:ENRC");
+  _cache.add("BLD:FEE:GDET2:PMT2:ENRC");
 }
 
 void   FEEGasDetEnergyReader::_event    (const void* payload, const Pds::ClockTime& t)

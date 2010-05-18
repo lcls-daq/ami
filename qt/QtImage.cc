@@ -66,6 +66,7 @@ QtImage::~QtImage()
 void           QtImage::dump  (FILE* f) const
 {
   const EntryImage& _entry = static_cast<const EntryImage&>(entry());
+  fprintf(f,"%d %d\n", _entry.info(EntryImage::Normalization), _entry.info(EntryImage::Pedestal));
   for(unsigned j=_y0; j<_y0+_nx; j++) {
     for(unsigned k=_x0; k<_x0+_nx; k++)
       fprintf(f,"%d ", _entry.content(k,j));

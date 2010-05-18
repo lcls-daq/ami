@@ -55,6 +55,7 @@ void Control::run (bool l) {
 }
 
 void Control::single() {
+  _pRun->setChecked(false);
   _client.one_shot(true);
   _repeat = 0; 
   Timer::start();
