@@ -8,8 +8,6 @@
 
 #include <string.h>
 
-static const int PixelsPerBin = 2;
-
 using namespace Ami;
 
 FrameHandler::FrameHandler(const Pds::DetInfo& info,
@@ -44,7 +42,7 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  unsigned columns,rows,ppb=1;
+  unsigned columns,rows;
   if (c.forwarding() == Pds::Camera::FrameFexConfigV1::FullFrame) {
     columns = _defColumns;
     rows    = _defRows;
@@ -53,11 +51,10 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
     columns = c.roiEnd().column-c.roiBegin().column;
     rows    = c.roiEnd().row   -c.roiBegin().row   ;
   }
-  if (columns > 640 || rows > 640) {
-    columns /= PixelsPerBin;
-    rows    /= PixelsPerBin;
-    ppb      = PixelsPerBin;
-  }
+  unsigned pixels  = (columns > rows) ? columns : rows;
+  unsigned ppb     = (pixels-1)/640 + 1;
+  columns /= ppb;
+  rows    /= ppb;
   DescImage desc(det, 0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);
 

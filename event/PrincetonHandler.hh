@@ -2,6 +2,7 @@
 #define Ami_PrincetonHandler_hh
 
 #include "ami/event/EventHandler.hh"
+#include "pdsdata/princeton/ConfigV1.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {
@@ -22,6 +23,7 @@ namespace Ami {
     void _damaged  ();
   private:
     PrincetonHandler(const Pds::DetInfo& info, const EntryImage*);
+    Pds::Princeton::ConfigV1 _config;
     EntryImage* _entry;
   };
 };

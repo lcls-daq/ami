@@ -16,6 +16,7 @@ tgtslib_test := $(USRLIBDIR)/rt
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
+tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
 tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
