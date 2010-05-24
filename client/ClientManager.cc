@@ -53,6 +53,7 @@ ClientManager::ClientManager(unsigned   ppinterface,
 			     unsigned short port,
 			     AbsClient& client) :
   _client    (*new Aggregator(client)),
+  _ppinterface(ppinterface),
   _poll      (new Poll(1000)),
   _state     (Disconnected),
   _request   (0,Message::NoOp),
@@ -69,11 +70,11 @@ ClientManager::ClientManager(unsigned   ppinterface,
     _connect->set_dst(ins, interface);
   }
 
-  try {
-    _listen->bind(Ins(ppinterface,port));
-  } catch(Event& e) {
-    printf("bind error : %s\n",e.what());
-  }
+  //  try {
+  //    _listen->bind(Ins(ppinterface,port));
+  //  } catch(Event& e) {
+  //    printf("bind error : %s\n",e.what());
+  //  }
   _task->call(this);
   _poll->start();
   _listen_sem.take();
@@ -107,10 +108,11 @@ void ClientManager::request_payload()
 void ClientManager::connect()
 {
   _request = Message(_request.id()+1,Message::Connect,
-		     _listen->ins().address(),
+		     //		     _listen->ins().address(),
+		     _ppinterface,
 		     _listen->ins().portId());
   printf("(%p) CM Request connection from %x/%d\n",
-	 this,_listen->ins().address(),_listen->ins().portId());
+	 this,_ppinterface,_listen->ins().portId());
   _connect->write(&_request,sizeof(_request));
   _state = Connected;
 }

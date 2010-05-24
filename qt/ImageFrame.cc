@@ -53,10 +53,11 @@ ImageFrame::ImageFrame(QWidget* parent,
 
 ImageFrame::~ImageFrame() {}
 
-void ImageFrame::attach(QtImage& image) 
+void ImageFrame::attach(QtImage* image) 
 {
-  _qimage = &image; 
-  _qimage->set_color_table(_control.color_table());
+  _qimage = image; 
+  if (_qimage)
+    _qimage->set_color_table(_control.color_table());
 }
 
 void ImageFrame::scale_changed()

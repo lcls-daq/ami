@@ -85,7 +85,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
-	  connect(_channels[i], SIGNAL(load_show), box, SLOT(toggle()));
+	  connect(_channels[i], SIGNAL(load_show()), box, SLOT(toggle()));
 	  box->setChecked( i==0 );
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);

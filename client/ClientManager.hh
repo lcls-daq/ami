@@ -46,6 +46,7 @@ namespace Ami {
   private:
     enum State { Disconnected, Connected };
     AbsClient&      _client;
+    int             _ppinterface;
     Poll*           _poll;
     State           _state;
     Message         _request;

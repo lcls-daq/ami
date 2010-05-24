@@ -76,7 +76,7 @@ void           QtImage::dump  (FILE* f) const
 
 void           QtImage::attach(ImageFrame* p)
 {
-  p->attach(*this);
+  p->attach(this);
 }
 
 void           QtImage::update() {}

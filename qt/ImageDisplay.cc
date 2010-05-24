@@ -221,11 +221,11 @@ void Ami::Qt::ImageDisplay::hide(QtBase* b)
 
 void Ami::Qt::ImageDisplay::reset()
 {
-  _curves.merge(_hidden);
+  _plot->attach(NULL);
 
-  for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
+  _curves.merge(_hidden);
+  for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     delete (*it);
-  }
   _curves.clear();
 }
 

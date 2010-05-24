@@ -23,7 +23,7 @@ namespace Ami {
       ImageFrame(QWidget*, const ImageColorControl&);
       ~ImageFrame();
     public:
-      void attach(QtImage&);
+      void attach(QtImage*);
       void setXYScale   (int);
       void setZScale    (int);
       void autoXYScale  (bool);
