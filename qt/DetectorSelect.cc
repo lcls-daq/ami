@@ -4,6 +4,7 @@
 #include "ami/qt/WaveformClient.hh"
 #include "ami/qt/ImageClient.hh"
 #include "ami/qt/EnvClient.hh"
+#include "ami/qt/SummaryClient.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/DetectorSave.hh"
@@ -31,6 +32,7 @@
 using namespace Ami::Qt;
 
 static const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
+static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
 
 static const int MaxConfigSize = 0x100000;
 
@@ -106,7 +108,8 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 
     layout->addWidget(_detList = new QListWidget(this));
-    *new DetectorListItem(_detList, "Env", envInfo, 0);
+    *new DetectorListItem(_detList, "Env"    , envInfo, 0);
+    *new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
@@ -124,17 +127,10 @@ DetectorSelect::DetectorSelect(const QString& label,
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
 
   {
-    timespec tp;
-    clock_gettime(CLOCK_REALTIME, &tp);
-    printf("sleep at %d.%09d\n", tp.tv_sec, tp.tv_nsec); 
-
     timespec ts;
     ts.tv_sec = 3;
     ts.tv_nsec = 0;
     nanosleep(&ts, 0);
-
-    clock_gettime(CLOCK_REALTIME, &tp);
-    printf(" wake at %d.%09d\n", tp.tv_sec, tp.tv_nsec); 
   }
   _manager->connect();
 }
@@ -291,8 +287,9 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
 {
   Ami::Qt::AbsClient* client = 0;
   switch(info.device()) {
-  case Pds::DetInfo::Evr     : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
-  case Pds::DetInfo::Acqiris : client = new Ami::Qt::WaveformClient(this, info, channel); break;
+  case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, noInfo , 0); break;
+  case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
+  case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
   case Pds::DetInfo::Opal1000 : 
   case Pds::DetInfo::TM6740   : 
   case Pds::DetInfo::pnCCD    :
@@ -375,6 +372,7 @@ void DetectorSelect::change_detectors(const char* c)
     _detList->clear();
 
     new DetectorListItem(_detList, "Env", envInfo, 0);
+    new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;

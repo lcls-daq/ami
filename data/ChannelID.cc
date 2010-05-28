@@ -34,11 +34,17 @@ static char _buffer[128];
       sprintf(_buffer,"pnCCD_%d",info.devId()+1);    \
   }
 
-static void _default(char* b, const DetInfo& info)
+static void _default(char* b, const DetInfo& info, unsigned channel)
 {
-  sprintf(b,"UNK_%s_%s",
-	  DetInfo::name(info.detector()),
-	  DetInfo::name(info.device  ()));
+  if (info.device()==DetInfo::Acqiris)
+    sprintf(b,"UNK_%s_%s_%d",
+	    DetInfo::name(info.detector()),
+	    DetInfo::name(info.device  ()), 
+	    channel+1);
+  else
+    sprintf(b,"UNK_%s_%s",
+	    DetInfo::name(info.detector()),
+	    DetInfo::name(info.device  ()));
 }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
@@ -66,13 +72,17 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       switch(info.devId()) {
       case 0 : strcpy(_buffer,"TSS_Opal"); break;
       case 1 : strcpy(_buffer,"EXS_Opal"); break;
-      default: _default(_buffer,info); break;
+      default: _default(_buffer,info,channel); break;
       }
       break;
-    default: _default(_buffer,info); break;
+    default: _default(_buffer,info,channel); break;
     }
     break;
-  default: _default(_buffer,info); break;
+  case DetInfo::SxrEndstation:
+    AcqChannel ("ACQ"); 
+    OpalChannel("OPAL");
+    break;
+  default: _default(_buffer,info,channel); break;
   }
   return _buffer;
 }   

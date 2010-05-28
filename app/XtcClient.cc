@@ -1,8 +1,6 @@
 #include "XtcClient.hh"
 
-#include "pdsdata/xtc/DetInfo.hh"
-#include "pdsdata/xtc/XtcIterator.hh"
-#include "pdsdata/xtc/Dgram.hh"
+#include "ami/app/SummaryAnalysis.hh"
 
 #include "ami/event/EventHandler.hh"
 #include "ami/event/EvrHandler.hh"
@@ -12,6 +10,7 @@
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
+#include "ami/event/EncoderHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/TM6740Handler.hh"
 #include "ami/event/FccdHandler.hh"
@@ -22,6 +21,10 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/server/Factory.hh"
+
+#include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/xtc/XtcIterator.hh"
+#include "pdsdata/xtc/Dgram.hh"
 
 using namespace Ami;
 
@@ -47,6 +50,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
+    SummaryAnalysis::instance().clock(dg->seq.clock());
     iterate(&dg->xtc); 
 
     _entry->valid(_seq->clock());
@@ -60,10 +64,12 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     //  Cleanup previous entries
     _factory.discovery().reset();
+    SummaryAnalysis::instance().reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
 
     _seq = &dg->seq;
+    SummaryAnalysis::instance().clock(dg->seq.clock());
     iterate(&dg->xtc); 
 
     //  Create and register new entries
@@ -102,6 +108,16 @@ int XtcClient::process(Pds::Xtc* xtc)
     iterate(xtc);
   }
   else {
+    if (_seq->service()==Pds::TransitionId::L1Accept) {
+      SummaryAnalysis::instance().event    (xtc->src,
+					    xtc->contains,
+					    xtc->payload());
+    }
+    else if (_seq->service()==Pds::TransitionId::Configure) {
+      SummaryAnalysis::instance().configure(xtc->src,
+					    xtc->contains,
+					    xtc->payload());
+    }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
       if (h->info().level() == xtc->src.level() &&
@@ -141,6 +157,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
+      case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,_cache); break;
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
       default: break;
       }

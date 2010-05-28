@@ -12,7 +12,7 @@ namespace Ami {
   class ConfigureRequest {
   public:
     enum State { Create, Destroy };
-    enum Source { Discovery, Analysis };
+    enum Source { Discovery, Analysis, Summary };
     ConfigureRequest(State        state, 
 		     Source       source,
 		     int          input,  // signature
@@ -23,6 +23,10 @@ namespace Ami {
     {
       char* e = (char*)op.serialize(filter.serialize(this+1));
       _size = e - (char*)this;
+    }
+    ConfigureRequest(State        state) : 
+      _state(state), _source(Summary), _input(-1), _output(-1), _size(sizeof(*this))
+    {
     }
   public:
     State  state () const { return _state; }

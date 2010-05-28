@@ -128,6 +128,7 @@ libsrcs_amiqt += ImageXYProjection.cc ImageXYProjection_moc.cc
 libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc
 libsrcs_amiqt += EnvClient.cc EnvClient_moc.cc
+libsrcs_amiqt += SummaryClient.cc SummaryClient_moc.cc
 libsrcs_amiqt += DetectorGroup.cc DetectorGroup_moc.cc
 libsrcs_amiqt += DetectorSave.cc
 libsrcs_amiqt += DetectorReset.cc

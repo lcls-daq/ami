@@ -1,5 +1,6 @@
 #include "AnalysisFactory.hh"
 
+#include "ami/app/SummaryAnalysis.hh"
 #include "ami/data/Analysis.hh"
 
 #include "ami/data/FeatureCache.hh"
@@ -54,6 +55,7 @@ void AnalysisFactory::configure(unsigned       id,
   printf("configure\n");
 
   _sem.take();
+  SummaryAnalysis::instance().clear();
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
@@ -70,17 +72,21 @@ void AnalysisFactory::configure(unsigned       id,
   while(payload < end) {
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
 
-    const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
-    const Entry* input = input_cds.entry(req.input());
-    if (!input) {
-      printf("AnalysisFactory::configure failed input for configure request:\n");
-      printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
-    }
+    if (req.source() == ConfigureRequest::Summary)
+      SummaryAnalysis::instance().create(cds);
     else {
-      const char*  p     = reinterpret_cast<const char*>(&req+1);
-      Analysis* a = new Analysis(id, *input, req.output(),
-				 cds, _features, p);
-      _analyses.push_back(a);
+      const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
+      const Entry* input = input_cds.entry(req.input());
+      if (!input) {
+	printf("AnalysisFactory::configure failed input for configure request:\n");
+	printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
+      }
+      else {
+	const char*  p     = reinterpret_cast<const char*>(&req+1);
+	Analysis* a = new Analysis(id, *input, req.output(),
+				   cds, _features, p);
+	_analyses.push_back(a);
+      }
     }
     payload += req.size();
   }
@@ -92,6 +98,7 @@ void AnalysisFactory::configure(unsigned       id,
 void AnalysisFactory::analyze  ()
 {
   _sem.take();
+  SummaryAnalysis::instance().analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }
