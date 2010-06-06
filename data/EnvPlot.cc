@@ -23,7 +23,8 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   AbsOperator(AbsOperator::EnvPlot),
   _cache     (0),
   _term      (0),
-  _entry     (0)
+  _entry     (0),
+  _input     (0)
 {
   memcpy (_desc_buffer, &output, output.size());
 }
@@ -39,12 +40,16 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
 
   _entry = EntryFactory::entry(o);
 
-  _input = features.lookup(o.name());
+  FeatureExpression parser;
+  { QString expr(o.name());
+    _input = parser.evaluate(features,expr);
+    if (!_input)
+      printf("EnvPlot failed to parse %s\n",qPrintable(expr));
+  }
 
   if (o.type()==DescEntry::Prof ||
       o.type()==DescEntry::Scan) {
     QString expr(o.xtitle());
-    FeatureExpression parser;
     _term = parser.evaluate(features,expr);
     if (!_term)
       printf("EnvPlot failed to parse %s\n",qPrintable(expr));
@@ -53,7 +58,8 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
 
 EnvPlot::~EnvPlot()
 {
-  if (_term) delete _term;
+  if (_input) delete _input;
+  if (_term ) delete _term;
   if (_entry) delete _entry;
 }
 
@@ -68,12 +74,14 @@ void*      EnvPlot::_serialize(void* p) const
   return p;
 }
 
+#include "pdsdata/xtc/ClockTime.hh"
+
 Entry&     EnvPlot::_operate(const Entry& e) const
 {
-  if (_input >= 0 && e.valid()) {
-    bool dmg;
-    double y = _cache->cache(_input,&dmg);
-    if (!dmg) {
+  if (_input != 0 && e.valid()) {
+    Feature::damage(false);
+    double y = _input->evaluate();
+    if (!Feature::damage()) {
       switch(_entry->desc().type()) {
       case DescEntry::Scalar: 
 	{ EntryScalar* en = static_cast<EntryScalar*>(_entry);

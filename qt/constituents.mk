@@ -75,6 +75,7 @@ libsrcs_amiqt += FeatureRegistry.cc FeatureRegistry_moc.cc
 libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
 libsrcs_amiqt += CExpression.cc
 libsrcs_amiqt += Calculator.cc Calculator_moc.cc
+libsrcs_amiqt += FeatureCalculator.cc
 libsrcs_amiqt += DescTH1F.cc DescTH1F_moc.cc
 libsrcs_amiqt += DescProf.cc DescProf_moc.cc
 libsrcs_amiqt += DescScan.cc DescScan_moc.cc

@@ -57,7 +57,9 @@ namespace Ami {
   public:
     double evaluate() const {
       double n = double(_entry.info(EntryImage::Normalization));
-      return (n>1) ? _entry.content(_index)/n : _entry.content(_index); 
+      double v = double(_entry.content(_index)) - 
+	double(_entry.info(EntryImage::Pedestal));
+      return (n>1) ? v/n : v;
     }
   private:
     const EntryImage& _entry;

@@ -30,6 +30,9 @@ using namespace Ami::Qt;
 //   }
 // }
 
+static const int CanvasSizeDefault  = 512;
+static const int CanvasSizeIncrease = 4;
+
 ImageFrame::ImageFrame(QWidget* parent,
 		       const ImageColorControl& control) : 
   QWidget(parent), 
@@ -39,7 +42,7 @@ ImageFrame::ImageFrame(QWidget* parent,
   _xyscale(false),
   _c(0)
 {
-  unsigned sz = 512 + 4;
+  unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
   _canvas->setMinimumSize(sz,sz);
   _canvas->setAlignment(::Qt::AlignLeft | ::Qt::AlignTop);
 
@@ -79,9 +82,14 @@ void ImageFrame::replot()
     if (_xyscale)
       _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
 							   ::Qt::KeepAspectRatio));
-    else
+    else {
+      QSize sz = output.size();
+      sz.rwidth () += CanvasSizeIncrease;
+      sz.rheight() += CanvasSizeIncrease;
+      if (sz != _canvas->size())
+	_canvas->setMinimumSize(sz);
       _canvas->setPixmap(QPixmap::fromImage(output));
-    //    _canvas->resize(output.size());
+    }
   }
 }
 

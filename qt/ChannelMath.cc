@@ -87,7 +87,7 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   expr.replace(_subtract    ,Expression::subtract());
 
   QStringList uses;
-  QRegExp match("[a-zA-Z]+");
+  QRegExp match("[a-zA-Z_]+[0-9]*");
   int pos=0;
   while( (pos=match.indexIn(expr,pos)) != -1) {
     QString use = expr.mid(pos,match.matchedLength());
@@ -99,10 +99,14 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   _signatures.clear();
   for(QStringList::iterator it=uses.begin(); it!=uses.end(); it++) {
     int index=names.indexOf(*it);
-    if (index<0)
+    if (index<0) {
+      printf("CM::resolve index not found\n");
       return false;
-    if (signatures[index]<0)
+    }
+    if (signatures[index]<0) {
+      printf("CM::resolve signature[%d] not found\n",index);
       return false;
+    }
     _signatures << signatures[index];
   }
 

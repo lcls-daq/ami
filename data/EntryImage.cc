@@ -3,6 +3,7 @@
 static const unsigned DefaultNbins = 1;
 static const float DefaultLo = 0;
 static const float DefaultUp = 1;
+static const unsigned DefaultPedestal = 128;
 
 using namespace Ami;
 
@@ -40,6 +41,7 @@ void EntryImage::params(const DescImage& desc)
 void EntryImage::build(unsigned nbinsx, unsigned nbinsy)
 {
   _y = static_cast<unsigned*>(allocate(sizeof(unsigned)*SIZE(nbinsx,nbinsy)));
+  info(DefaultPedestal, EntryImage::Pedestal);
 }
 
 const DescImage& EntryImage::desc() const {return _desc;}

@@ -9,6 +9,7 @@
 
 class QButtonGroup;
 class QComboBox;
+class QPushButton;
 
 namespace Ami {
   class ClientManager;
@@ -21,6 +22,7 @@ namespace Ami {
     class EnvPlot;
     class ScalarPlotDesc;
     class FeatureBox;
+    class Filter;
     class EnvClient : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
@@ -49,6 +51,7 @@ namespace Ami {
       void _read_description   (int);
       void plot                ();
       void remove_plot         (QObject*);
+      void select_source       ();
     signals:
       void description_changed(int);
     private:
@@ -74,9 +77,12 @@ namespace Ami {
 
       Semaphore*  _sem;
 
-      ScalarPlotDesc* _scalar_plot;
+      bool _throttled;
 
-      FeatureBox* _source;
+      QPushButton* _source;
+      Filter*      _filter;
+
+      ScalarPlotDesc* _scalar_plot;
 
       std::list<EnvPlot*> _plots;
     };

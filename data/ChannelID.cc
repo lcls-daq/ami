@@ -82,7 +82,12 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
     AcqChannel ("ACQ"); 
     OpalChannel("OPAL");
     break;
-  default: _default(_buffer,info,channel); break;
+  default:
+    switch(info.device()) {
+    case DetInfo::TM6740: sprintf(_buffer,"%sCvd",Pds::DetInfo::name(info.detector())); break;
+    default: _default(_buffer,info,channel); break;
+    } 
+    break;
   }
   return _buffer;
 }   

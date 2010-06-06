@@ -27,7 +27,6 @@ void SummaryAnalysis::event    (const Pds::Src&       src,
 
 void SummaryAnalysis::clear    () 
 {
-  printf("SummaryAnalysis::clear\n");
   if (_seconds) {
     _cds->remove(_seconds); 
     _cds = 0;
@@ -36,7 +35,6 @@ void SummaryAnalysis::clear    ()
 
 void SummaryAnalysis::create   (Cds& cds)
 {
-  printf("SummaryAnalysis::create\n");
   _seconds = new EntryScalar(DescScalar("Seconds","Seconds"));
   _minutes = new EntryScalar(DescScalar("Minutes","Minutes"));
   _cds = &cds; 

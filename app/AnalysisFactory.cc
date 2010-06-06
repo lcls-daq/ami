@@ -52,7 +52,7 @@ void AnalysisFactory::configure(unsigned       id,
 				const char*    payload, 
 				Cds&           cds)
 {
-  printf("configure\n");
+  printf("AnalysisFactory::configure\n");
 
   _sem.take();
   SummaryAnalysis::instance().clear();

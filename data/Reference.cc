@@ -59,5 +59,6 @@ void*      Reference::_serialize(void* p) const
 
 Entry&     Reference::_operate(const Entry& e) const
 {
+  _entry->valid(e.time());
   return *_entry;
 }

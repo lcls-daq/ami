@@ -25,6 +25,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache&        _cache;
+    int                  _index[256];
   };
 };
 

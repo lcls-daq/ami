@@ -47,7 +47,8 @@ static bool bounds(int& x0, int& x1, int& y0, int& y1,
 	const Entry##type* e = static_cast<const Entry##type*>(_entry); \
 	for(unsigned i=lo; i<=hi; i++)					\
 	  sum += e->func(i);						\
-	return sum / e->info(Entry##type::Normalization); }		\
+	double n = e->info(Entry##type::Normalization);			\
+	return n > 0 ? sum / n : sum; }					\
   private:								\
       const Entry*& _entry;						\
       unsigned _lo, _hi;						\
@@ -68,12 +69,13 @@ namespace Ami {
       double evaluate() const {
 	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
 	double sum = 0;
-	double p   = e.info(EntryImage::Pedestal);
+	double p   = double(e.info(EntryImage::Pedestal));
 	unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
 	for(unsigned j=ylo; j<=yhi; j++)
 	  for(unsigned i=xlo; i<=xhi; i++)
-	    sum += e.content(i,j)-p;
-	return sum / e.info(EntryImage::Normalization);
+	    sum += double(e.content(i,j))-p;
+	double n = double(e.info(EntryImage::Normalization));
+	return n > 1 ? sum / n : sum;
       }
     private:
       const Entry*& _entry;
@@ -110,7 +112,8 @@ namespace Ami {
 		sum += double(e.content(i,j))-p;
 	    }
 	  }
-	  return sum / double(e.info(EntryImage::Normalization));
+	  double n = double(e.info(EntryImage::Normalization));
+	  return n > 0 ? sum / n : sum;
 	}
 	else
 	  return 0;
@@ -159,8 +162,6 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 
   _entry = EntryFactory::entry(o);
  
-  printf("BinMath expr %s  type %d\n", _expression, input.type());
-
   { QString expr(_expression);
     QString new_expr;
     // parse expression for bin indices

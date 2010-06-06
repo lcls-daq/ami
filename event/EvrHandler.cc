@@ -2,7 +2,8 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/evr/ConfigV3.hh"
+#include "pdsdata/evr/ConfigV4.hh"
+#include "pdsdata/evr/DataV3.hh"
 #include "pdsdata/evr/PulseConfigV3.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -27,9 +28,17 @@ EvrHandler::~EvrHandler()
 void   EvrHandler::_calibrate(const void* payload, const Pds::ClockTime& t) 
 { _configure(payload,t); }
 
+#define REGISTER_CODE(evtcode) {		\
+    unsigned code = evtcode;			\
+    sprintf(iptr,"Evt%d",code);			\
+    int index = _cache.add(buffer);		\
+    _cache.cache(index, 0);			\
+    _index[code] = index;			\
+  }
+
 void   EvrHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::EvrData::ConfigV3& c = *reinterpret_cast<const Pds::EvrData::ConfigV3*>(payload);
+  const Pds::EvrData::ConfigV4& c = *reinterpret_cast<const Pds::EvrData::ConfigV4*>(payload);
 
   char buffer[64];
 
@@ -42,11 +51,39 @@ void   EvrHandler::_configure(const void* payload, const Pds::ClockTime& t)
     double delay = floor(c.pulse(i).delay()*c.pulse(i).prescale())/119.e6;
     _cache.cache(index, delay);
   }
+
+  memset(_index, -1, sizeof(_index));
+
+  for(unsigned i=0; i<c.neventcodes(); i++) {
+    REGISTER_CODE(c.eventcode(i).code());
+  }
+
+  REGISTER_CODE(140);
+  REGISTER_CODE(162);
 }
 
-void   EvrHandler::_event    (const void* payload, const Pds::ClockTime& t) {}
+#undef REGISTER_CODE
 
-void   EvrHandler::_damaged  () {}
+void   EvrHandler::_event    (const void* payload, const Pds::ClockTime& t) 
+{
+  for(unsigned i=0; i<256; i++)
+    if (_index[i]>=0)
+      _cache.cache(_index[i],0);
+
+  const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
+
+  for(unsigned i=0; i<d.numFifoEvents(); i++) {
+    int index = _index[d.fifoEvent(i).EventCode];
+    if (index >=0) _cache.cache(index, 1);
+  }
+}
+
+void   EvrHandler::_damaged  () 
+{
+  for(unsigned i=0; i<256; i++)
+    if (_index[i]>=0)
+      _cache.cache(_index[i],0);
+}
 
 //  No Entry data
 unsigned     EvrHandler::nentries() const { return 0; }

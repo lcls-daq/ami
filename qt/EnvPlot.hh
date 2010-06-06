@@ -9,6 +9,7 @@
 #include <list>
 
 namespace Ami {
+  class AbsFilter;
   class Cds;
   class DescEntry;
   namespace Qt {
@@ -20,8 +21,9 @@ namespace Ami {
       Q_OBJECT
     public:
       EnvPlot(QWidget*,
-	      const QString& name,
-	      DescEntry*     desc);
+	      const QString&  name,
+	      const Ami::AbsFilter& filter,
+	      DescEntry*      desc);
       EnvPlot(QWidget*,const char*&);
       ~EnvPlot();
     public:
@@ -33,6 +35,7 @@ namespace Ami {
       void update();
       void dump(FILE*) const;
     private:
+      Ami::AbsFilter* _filter;
       DescEntry* _desc;
       
       unsigned _output_signature;

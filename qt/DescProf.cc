@@ -1,7 +1,7 @@
 #include "DescProf.hh"
 #include "ami/qt/QtPersistent.hh"
 #include "ami/qt/FeatureRegistry.hh"
-#include "ami/qt/Calculator.hh"
+#include "ami/qt/FeatureCalculator.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
@@ -52,26 +52,9 @@ DescProf::DescProf(const char* name) :
 }
 
 
-static QChar _exponentiate(0x005E);
-static QChar _multiply    (0x00D7);
-static QChar _divide      (0x00F7);
-static QChar _add         (0x002B);
-static QChar _subtract    (0x002D);
-
 void DescProf::calc()
 {
-  QStringList ops;
-  ops << _exponentiate
-      << _multiply
-      << _divide
-      << _add   
-      << _subtract;
-
-  QStringList vops;
-
-  Calculator* c = new Calculator(tr("X Var Math"), "",
-				 FeatureRegistry::instance().names(),
-				 vops, ops);
+  FeatureCalculator* c = new FeatureCalculator(tr("X Var Math"));
   if (c->exec()==QDialog::Accepted)
     _expr->setText(c->result());
 

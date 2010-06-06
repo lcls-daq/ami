@@ -164,7 +164,7 @@ void ChannelDefinition::load(const char*& p)
   }
   else
     _plot_grp->button(_Reference)->setEnabled(false);
-  _show = QtPersistent::extract_b(p);
+  bool show = QtPersistent::extract_b(p);
   _filter   ->load(p);
   _transform->load(p);
 
@@ -172,8 +172,7 @@ void ChannelDefinition::load(const char*& p)
 
   apply();
 
-  if (_show) 
-    emit load_show();
+  show_plot_changed(show);
 }
 
 void ChannelDefinition::load_reference()
@@ -234,8 +233,10 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
   //    ;
   //  else if (_mode==_Math) {
   if (_mode==_Math) {
-    if (!_math->resolve(channels, signatures, nchannels, *_filter->filter()))
+    if (!_math->resolve(channels, signatures, nchannels, *_filter->filter())) {
+      printf("ChannelDefinition::_math resolve failed\n");
       return -1;
+    }
 
     _output_signature = ++output;
     ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,

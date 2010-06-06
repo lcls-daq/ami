@@ -12,6 +12,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
 
+#include "pdsdata/xtc/ClockTime.hh"
+
 #include <QtCore/QString>
 #include <QtCore/QRegExp>
 
@@ -35,7 +37,7 @@ EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds) :
 {
   _extract(p, _expression, EXPRESSION_LEN);
   _entry = EntryFactory::entry(e);
- 
+
   // parse expression for signatures
   QRegExp match("\\[[0-9]+\\]");
   QString expr(_expression);
@@ -98,7 +100,7 @@ void*      EntryMath::_serialize(void* p) const
     _index = 0;								\
     for(unsigned j=0; j<en.desc().nbinsy(); j++)			\
       for(unsigned k=0; k<en.desc().nbinsx(); k++) {			\
-	double v = _term->evaluate();					\
+	double v = _term->evaluate() + en.info(Entry##type::Pedestal);	\
 	unsigned iv = (v>0) ? unsigned(v) : 0;				\
 	en.contents()[_index++] = iv;					\
       }									\

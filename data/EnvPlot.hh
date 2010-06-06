@@ -38,7 +38,7 @@ namespace Ami {
     FeatureCache* _cache;
     Term*         _term;
     Entry*        _entry;
-    int           _input;
+    Term*         _input;
   };
 
 };

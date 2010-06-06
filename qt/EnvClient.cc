@@ -3,7 +3,9 @@
 #include "ami/qt/Control.hh"
 #include "ami/qt/Status.hh"
 #include "ami/qt/FeatureBox.hh"
+#include "ami/qt/FeatureCalculator.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/Filter.hh"
 #include "ami/qt/EnvPlot.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 
@@ -45,7 +47,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _manager         (0),
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
-  _sem             (new Semaphore(Semaphore::EMPTY))
+  _sem             (new Semaphore(Semaphore::EMPTY)),
+  _throttled       (false)
 {
   setWindowTitle(QString("Environment"));
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -53,7 +56,10 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _control = new Control(*this);
   _status  = new Status;
 
-  _source = new FeatureBox;
+  //  QPushButton* filterB = new QPushButton("Filter");
+  _filter = new Filter     (NULL,_title);
+
+  _source = new QPushButton("Select");
 
   _scalar_plot = new ScalarPlotDesc(this);
 
@@ -69,7 +75,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(_source);
-    //    layout1->addStretch();
+    //    layout1->addWidget(filterB);
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
   { layout->addWidget(_scalar_plot); }
@@ -81,13 +87,22 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     layout->addLayout(layout1); }
   setLayout(layout);
 
+  //  connect(filterB   , SIGNAL(clicked()),   _filter, SLOT(show()));
+  connect(_source   , SIGNAL(clicked()),      this, SLOT(select_source()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
-  connect(this, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect((AbsClient*)this, SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
-EnvClient::~EnvClient() {}
+EnvClient::~EnvClient() 
+{
+  if (_manager) delete _manager;
+  delete[] _iovload;
+  delete[] _description;
+  delete[] _request;
+  delete _filter;
+}
 
 const QString& EnvClient::title() const { return _title; }
 
@@ -95,7 +110,8 @@ void EnvClient::save(char*& p) const
 {
   QtPWidget::save(p);
 
-  _source  ->save(p);
+  QtPersistent::insert(p,_source->text());
+  //  _filter->save(p);
 
   _scalar_plot->save(p);
 
@@ -112,7 +128,8 @@ void EnvClient::load(const char*& p)
 {
   QtPWidget::load(p);
 
-  _source  ->load(p);
+  _source  ->setText(QtPersistent::extract_s(p));
+  //  _filter  ->load(p);
 
   _scalar_plot->load(p);
 
@@ -151,8 +168,10 @@ void EnvClient::reset_plots() { update_configuration(); }
 
 void EnvClient::connected()
 {
-  _status->set_state(Status::Connected);
-  _manager->discover();
+  if (_manager) {
+    _status->set_state(Status::Connected);
+    _manager->discover();
+  }
 }
 
 void EnvClient::discovered(const DiscoveryRx& rx)
@@ -193,13 +212,13 @@ int  EnvClient::configure       (iovec* iov)
 
 int  EnvClient::configured      () 
 {
-  printf("Configured\n");
+  printf("Env Configured\n");
   return 0; 
 }
 
 void EnvClient::read_description(Socket& socket,int len)
 {
-  printf("Described so\n");
+  printf("Env Described so\n");
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -220,7 +239,7 @@ void EnvClient::read_description(Socket& socket,int len)
 
 void EnvClient::_read_description(int size)
 {
-  printf("Described si\n");
+  printf("Env Described si\n");
 
   _cds.reset();
 
@@ -294,9 +313,18 @@ void EnvClient::managed(ClientManager& mgr)
 
 void EnvClient::request_payload()
 {
-  if (_status->state() >= Status::Described) {
-    _manager->request_payload();
+  if (_plots.size()==0) return;
+
+  if (_status->state() == Status::Described ||
+      _status->state() == Status::Processed) {
+    _throttled = false;
     _status->set_state(Status::Requested);
+    _manager->request_payload();
+  }
+  else if (_status->state() == Status::Requested &&
+           !_throttled) {
+    _throttled = true;
+    printf("EnvClient request_payload throttling\n");
   }
 }
 
@@ -308,11 +336,12 @@ void EnvClient::update_configuration()
 
 void EnvClient::plot()
 {
-  QString entry(_source->entry());
+  QString entry(_source->text());
   DescEntry* desc = _scalar_plot->desc(qPrintable(entry));
   
   EnvPlot* plot = new EnvPlot(this,
 			      entry,
+			      *_filter->filter(),
 			      desc);
 
   _plots.push_back(plot);
@@ -330,3 +359,10 @@ void EnvClient::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
+void EnvClient::select_source()
+{
+  FeatureCalculator* c = new FeatureCalculator("Source");
+  if (c->exec()==QDialog::Accepted)
+    _source->setText(c->result());
+  delete c;
+}

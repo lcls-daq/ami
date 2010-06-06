@@ -72,7 +72,7 @@ QtChart::~QtChart()
 void           QtChart::dump  (FILE* f) const
 {
   for(unsigned b=_current; b<_current+_n; b++) {
-    fprintf(f,"%g %g\n",_x[b],_y[b]);
+    fprintf(f,"%.2f %g\n",_x[b],_y[b]);
   }
 }
 
