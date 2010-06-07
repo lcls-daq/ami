@@ -53,6 +53,7 @@ EnvPlot::EnvPlot(QWidget*         parent,
 EnvPlot::EnvPlot(QWidget*     parent,
 		 const char*& p) :
   QtPlot   (parent,p),
+  _filter  (0),
   _output_signature(0),
   _plot    (0)
 {
@@ -79,7 +80,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
 
 EnvPlot::~EnvPlot()
 {
-  delete _filter;
+  if (_filter  ) delete _filter;
   delete _desc;
   if (_plot    ) delete _plot;
 }
