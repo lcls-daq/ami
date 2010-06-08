@@ -34,7 +34,7 @@ void   EncoderHandler::_configure(const void* payload, const Pds::ClockTime& t)
 void   EncoderHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Encoder::DataV1& d = *reinterpret_cast<const Pds::Encoder::DataV1*>(payload);
-  _cache.cache(_index, d._encoder_count);
+  _cache.cache(_index, d.value());
 }
 
 void   EncoderHandler::_damaged  ()
