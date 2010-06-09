@@ -55,8 +55,9 @@ void   EpicsXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
       }
       index -= ctrl.iNumElements-1;
     }
-    else
+    else {
       index = _cache.add(ctrl.sPvName);
+    }
 
     _index[ctrl.iPvId] = index;
   }
@@ -92,6 +93,9 @@ void   EpicsXtcReader::_event    (const void* payload, const Pds::ClockTime& t)
 
 void   EpicsXtcReader::_damaged  ()
 {
+  for(unsigned i=0; i<MaxPvs; i++)
+    if (_index[i]>=0)
+      _cache.cache(_index[i], 0, true);
 }
 
 //  No Entry data
@@ -99,4 +103,6 @@ unsigned     EpicsXtcReader::nentries() const { return 0; }
 const Entry* EpicsXtcReader::entry   (unsigned) const { return 0; }
 void         EpicsXtcReader::reset   () 
 {
+  for(unsigned i=0; i<MaxPvs; i++)
+    _index[i] = -1;
 }

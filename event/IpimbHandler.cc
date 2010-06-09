@@ -55,6 +55,10 @@ void   IpimbHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
 void   IpimbHandler::_damaged  ()
 {
+  _cache.cache(_index[0], 0, true);
+  _cache.cache(_index[1], 0, true);
+  _cache.cache(_index[2], 0, true);
+  _cache.cache(_index[3], 0, true);
 }
 
 //  No Entry data

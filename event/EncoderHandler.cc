@@ -39,6 +39,7 @@ void   EncoderHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
 void   EncoderHandler::_damaged  ()
 {
+  _cache.cache(_index, 0, true);
 }
 
 //  No Entry data

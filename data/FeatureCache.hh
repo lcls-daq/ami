@@ -17,7 +17,7 @@ namespace Ami {
     unsigned    entries() const;
     const char* names  () const;
     double      cache  (int index, bool* damaged=0) const;
-    void        cache  (int index, double, bool damaged=0);
+    void        cache  (int index, double, bool damaged=false);
   private:
     unsigned  _entries;
     unsigned  _max_entries;
