@@ -4,13 +4,16 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <dlfcn.h>
 
 #include "ami/app/XtcClient.hh"
 #include "ami/app/XtcShmClient.hh"
+#include "ami/app/AnalysisFactory.hh"
+
+#include "ami/server/ServerManager.hh"
 
 #include "ami/data/FeatureCache.hh"
-#include "ami/server/ServerManager.hh"
-#include "ami/app/AnalysisFactory.hh"
+#include "ami/data/UserAnalysis.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -25,7 +28,7 @@ static void usage(char* progname) {
 	  "          -n <partitionIndex>\n"
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
-	  "          -c <client mcast group>\n"
+	  "          -L <user plug-in path>\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -37,8 +40,12 @@ int main(int argc, char* argv[]) {
   char* partitionTag = 0;
   int   partitionIndex = 0;
   bool offline=false;
+  //  plug-in module
+  UserAnalysis* user = 0;
+  create_t*  create_user  = 0;
+  destroy_t* destroy_user = 0;
 
-  while ((c = getopt(argc, argv, "?hfp:n:i:s:c:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -83,7 +90,32 @@ int main(int argc, char* argv[]) {
     case 'n':
       partitionIndex = strtoul(optarg,NULL,0);
       break;
-    case 'c': 
+    case 'L': 
+      {
+	void* handle = dlopen(optarg, RTLD_LAZY);
+	if (!handle) break;
+
+	// reset errors
+	const char* dlsym_error;
+	dlerror();
+
+	// load the symbols
+	create_t* c_user = (create_t*) dlsym(handle, "create");
+	if ((dlsym_error = dlerror())) {
+	  fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
+	  break;
+	}
+
+	dlerror();
+	destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
+	if ((dlsym_error = dlerror())) {
+	  fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
+	  break;
+	}
+
+	create_user  = c_user;
+	destroy_user = d_user;
+      }
       break;
     case '?':
     case 'h':
@@ -100,10 +132,13 @@ int main(int argc, char* argv[]) {
 
   ServerManager   srv(interface, serverGroup);
 
-  FeatureCache    features;
-  AnalysisFactory factory(features, srv);
+  if (create_user)
+    user = create_user();
 
-  XtcClient myClient(features, factory, offline);
+  FeatureCache    features;
+  AnalysisFactory factory(features, srv, user);
+
+  XtcClient myClient(features, factory, user, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   srv.manage(input);
@@ -112,5 +147,9 @@ int main(int argc, char* argv[]) {
   srv.routine();  // run in this thread
   //  srv.stop();   // terminate the other thread
   srv.dont_serve();
+
+  if (user)
+    destroy_user(user);
+
   return 1;
 }

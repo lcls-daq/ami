@@ -2,6 +2,7 @@
 
 #include "ami/app/SummaryAnalysis.hh"
 #include "ami/data/Analysis.hh"
+#include "ami/data/UserAnalysis.hh"
 
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Message.hh"
@@ -13,13 +14,15 @@
 using namespace Ami;
 
 
-AnalysisFactory::AnalysisFactory(FeatureCache& cache,
-				 ServerManager& srv) :
+AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
+				 ServerManager& srv,
+				 UserAnalysis*  user) :
   _srv       (srv),
   _cds       ("Analysis"),
   _configured(Semaphore::EMPTY),
   _sem       (Semaphore::FULL),
-  _features  (cache)
+  _features  (cache),
+  _user      (user)
 {
 }
 
@@ -55,7 +58,6 @@ void AnalysisFactory::configure(unsigned       id,
   printf("AnalysisFactory::configure\n");
 
   _sem.take();
-  SummaryAnalysis::instance().clear();
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
@@ -72,8 +74,16 @@ void AnalysisFactory::configure(unsigned       id,
   while(payload < end) {
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
 
-    if (req.source() == ConfigureRequest::Summary)
+    if (req.source() == ConfigureRequest::Summary) {
+      SummaryAnalysis::instance().clear();
       SummaryAnalysis::instance().create(cds);
+    }
+    else if (req.source() == ConfigureRequest::User) {
+      if (_user) {
+	_user->clear();
+	_user->create(cds);
+      }
+    }
     else {
       const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
       const Entry* input = input_cds.entry(req.input());
@@ -99,6 +109,7 @@ void AnalysisFactory::analyze  ()
 {
   _sem.take();
   SummaryAnalysis::instance().analyze();
+  if (_user) _user->analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }

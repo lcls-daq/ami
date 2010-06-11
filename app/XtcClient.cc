@@ -20,6 +20,7 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/UserAnalysis.hh"
 #include "ami/server/Factory.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -29,10 +30,12 @@
 using namespace Ami;
 
 XtcClient::XtcClient(FeatureCache& cache, 
-		     Factory&  factory,
-		     bool      sync) :
+		     Factory&      factory,
+		     UserAnalysis* user,
+		     bool          sync) :
   _cache  (cache),
   _factory(factory),
+  _user   (user),
   _sync   (sync),
   _ready  (false)
 {
@@ -51,6 +54,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
+    if (_user) _user->clock(dg->seq.clock());
+
     iterate(&dg->xtc); 
 
     _entry->valid(_seq->clock());
@@ -65,11 +70,14 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //  Cleanup previous entries
     _factory.discovery().reset();
     SummaryAnalysis::instance().reset();
+    if (_user) _user->reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
+    if (_user) _user->clock(dg->seq.clock());
+    
     iterate(&dg->xtc); 
 
     //  Create and register new entries
@@ -112,11 +120,17 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().event    (xtc->src,
 					    xtc->contains,
 					    xtc->payload());
+      if (_user) _user->event    (xtc->src,
+				  xtc->contains,
+				  xtc->payload());
     }
     else if (_seq->service()==Pds::TransitionId::Configure) {
       SummaryAnalysis::instance().configure(xtc->src,
 					    xtc->contains,
 					    xtc->payload());
+      if (_user) _user->configure(xtc->src,
+				  xtc->contains,
+				  xtc->payload());
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;

@@ -4,6 +4,7 @@
 #include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/ConfigureRequest.hh"
 
 #include <list>
 
@@ -25,7 +26,9 @@ namespace Ami {
     public:
       SummaryClient(QWidget*,
 		    const Pds::DetInfo&,
-		    unsigned);
+		    unsigned,
+		    const QString&,
+		    ConfigureRequest::Source);
       virtual ~SummaryClient();
     public:
       const QString& title() const;
@@ -57,6 +60,7 @@ namespace Ami {
       void _update();
     private:
       QString     _title;
+      ConfigureRequest::Source _source;
       char*       _request;
       char*       _description;
 

@@ -110,6 +110,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
     *new DetectorListItem(_detList, "Summary", noInfo , 0);
+    *new DetectorListItem(_detList, "User",    noInfo , 1);
 
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
@@ -287,7 +288,10 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
 {
   Ami::Qt::AbsClient* client = 0;
   switch(info.device()) {
-  case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, noInfo , 0); break;
+  case Pds::DetInfo::NoDevice : 
+    if (channel==0) client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
+    else            client = new Ami::Qt::SummaryClient (this, noInfo , channel, "User"   , ConfigureRequest::User); 
+    break;
   case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
   case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
   case Pds::DetInfo::Opal1000 : 
@@ -371,8 +375,9 @@ void DetectorSelect::change_detectors(const char* c)
   {
     _detList->clear();
 
-    new DetectorListItem(_detList, "Env", envInfo, 0);
+    new DetectorListItem(_detList, "Env"    , envInfo, 0);
     new DetectorListItem(_detList, "Summary", noInfo , 0);
+    new DetectorListItem(_detList, "User"   , noInfo , 1);
 
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;

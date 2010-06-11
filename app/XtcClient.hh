@@ -17,12 +17,14 @@ namespace Ami {
   class Factory;
   class EventHandler;
   class Entry;
+  class UserAnalysis;
 
   class XtcClient : private XtcIterator {
   public:
     XtcClient(FeatureCache& cache, 
-	      Factory& factory, 
-	      bool sync=false);
+	      Factory&      factory, 
+	      UserAnalysis* user,
+	      bool          sync=false);
     ~XtcClient();
   public:
     void insert(EventHandler*);
@@ -34,7 +36,8 @@ namespace Ami {
   private:
     typedef std::list<EventHandler*> HList;
     FeatureCache& _cache;
-    Factory&  _factory;
+    Factory&      _factory;
+    UserAnalysis* _user;
     const Pds::Sequence* _seq;
     bool      _sync;
     HList     _handlers;

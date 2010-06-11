@@ -14,11 +14,13 @@ namespace Ami {
   class Message;
   class Server;
   class ServerManager;
+  class UserAnalysis;
 
   class AnalysisFactory : public Factory {
   public:
     AnalysisFactory(FeatureCache&,
-		    ServerManager&);
+		    ServerManager&,
+		    UserAnalysis*);
     ~AnalysisFactory();
   public:
     FeatureCache& features();
@@ -35,6 +37,7 @@ namespace Ami {
     Semaphore _configured;
     Semaphore _sem;
     FeatureCache& _features;
+    UserAnalysis* _user;
   };
 
 };

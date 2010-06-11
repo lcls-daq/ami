@@ -58,9 +58,11 @@ static const int BufferSize = 0x8000;
 static NullTransform noTransform;
 
 
-SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel) :
+SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel,
+			     const QString& title, ConfigureRequest::Source source) :
   AbsClient        (parent, info, channel),
-  _title           ("Summary"),
+  _title           (title),
+  _source          (source),
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
   _cds             ("Client"),
@@ -121,7 +123,7 @@ int  SummaryClient::configure       (iovec* iov)
   printf("Summary Configure\n");
 
   char* p = _request;
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create);
+  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create, _source);
   p += r.size();
 
   iov[0].iov_base = _request;
