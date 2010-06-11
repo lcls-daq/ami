@@ -362,7 +362,8 @@ void EnvClient::remove_plot(QObject* obj)
 void EnvClient::select_source()
 {
   FeatureCalculator* c = new FeatureCalculator("Source");
-  if (c->exec()==QDialog::Accepted)
+  if (c->exec()==QDialog::Accepted) {
     _source->setText(c->result());
+  }
   delete c;
 }

@@ -1,6 +1,7 @@
 #include "ami/qt/FeatureCalculator.hh"
 
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/data/Expression.hh"
 
 using namespace Ami::Qt;
 
@@ -23,4 +24,15 @@ FeatureCalculator::FeatureCalculator(const QString& name) :
 	     FeatureRegistry::instance().names(),
 	     vops, ops)
 {
+}
+
+QString FeatureCalculator::result()
+{
+  QString expr(Calculator::result());
+  expr.replace(_exponentiate,Expression::exponentiate());
+  expr.replace(_multiply    ,Expression::multiply());
+  expr.replace(_divide      ,Expression::divide());
+  expr.replace(_add         ,Expression::add());
+  expr.replace(_subtract    ,Expression::subtract());
+  return expr;
 }

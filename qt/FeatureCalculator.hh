@@ -8,6 +8,8 @@ namespace Ami {
     class FeatureCalculator : public Calculator {
     public:
       FeatureCalculator(const QString&     title);
+    public:
+      QString result();
     };
   };
 };
