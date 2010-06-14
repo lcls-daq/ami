@@ -22,7 +22,7 @@ namespace Ami {
     void _configure(const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
-  private:
+  protected:
     FrameHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
     unsigned    _defColumns;

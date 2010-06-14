@@ -11,6 +11,9 @@ namespace Ami {
       FrameHandler(info,
 		   Pds::Pulnix::TM6740ConfigV1::Column_Pixels,
 		   Pds::Pulnix::TM6740ConfigV1::Row_Pixels) {}
+  private:
+    void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _event    (const void* payload, const Pds::ClockTime& t);
   };
 };
 
