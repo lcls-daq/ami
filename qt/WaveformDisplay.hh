@@ -25,7 +25,7 @@ namespace Ami {
       void load(const char*& p);
     public:
       void prototype(const Ami::DescEntry*);
-      void add   (QtBase*);
+      void add   (QtBase*, bool);
       void reset ();
       void show  (QtBase*);
       void hide  (QtBase*);

@@ -88,7 +88,7 @@ void PeakPlot::setup_payload(Cds& cds)
   _frame->reset();
   const EntryImage* entry = static_cast<const EntryImage*>(cds.entry(_signature));
   const DescImage& d = entry->desc();
-  _frame->add(new QtImage(d.name(), *entry, 0, 0, d.nbinsx()-1, d.nbinsy()-1));
+  _frame->add(new QtImage(d.name(), *entry, 0, 0, d.nbinsx()-1, d.nbinsy()-1),true);
 }
 
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,

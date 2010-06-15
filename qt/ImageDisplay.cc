@@ -181,12 +181,17 @@ void Ami::Qt::ImageDisplay::save_reference()
   }
 }
 	  
-void Ami::Qt::ImageDisplay::add   (QtBase* b) 
+void Ami::Qt::ImageDisplay::add   (QtBase* b, bool show) 
 {
-  _curves.push_back(b);
-  b->xscale_update();
-  b->update();
-  b->attach(_plot);
+  if (show) {
+    _curves.push_back(b);
+    b->xscale_update();
+    b->update();
+    b->attach(_plot);
+  }
+  else {
+    _hidden.push_back(b);
+  }
 
   emit redraw();
 }

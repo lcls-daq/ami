@@ -39,15 +39,19 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
   QPushButton* grab = new QPushButton("Grab");
 
   QGridLayout* layout = new QGridLayout;
-  layout->addWidget(new QLabel("c0")    ,0,0);
-  layout->addWidget(_edit_x0            ,0,1);
-  layout->addWidget(_edit_y0            ,0,2);
-
-  layout->addWidget(new QLabel("c1")    ,1,0);
-  layout->addWidget(_edit_x1            ,1,1);
-  layout->addWidget(_edit_y1            ,1,2);
-
-  layout->addWidget(grab                ,0,3,2,1);
+  int row = 0;
+  layout->addWidget(new QLabel("column"),  row, 1, ::Qt::AlignHCenter);
+  layout->addWidget(new QLabel("row")   ,  row, 2, ::Qt::AlignHCenter);
+  row++;
+  layout->addWidget(new QLabel("top-left"),row,0);
+  layout->addWidget(_edit_x0              ,row,1);
+  layout->addWidget(_edit_y0              ,row,2);
+  row++;
+  layout->addWidget(new QLabel("btm-rght"),row,0);
+  layout->addWidget(_edit_x1              ,row,1);
+  layout->addWidget(_edit_y1              ,row,2);
+  
+  layout->addWidget(grab                ,1,3,2,1);
 
   setLayout(layout);
 
@@ -115,8 +119,8 @@ void RectangleCursors::draw(QImage& image)
 
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
-  _xmax = xinfo.position(sz.width());
-  _ymax = yinfo.position(sz.height());
+  _xmax = xinfo.position(sz.width())-1;
+  _ymax = yinfo.position(sz.height())-1;
 
   unsigned jlo = unsigned(xinfo.tick(xlo())), jhi = unsigned(xinfo.tick(xhi()));
   unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));

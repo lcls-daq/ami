@@ -217,18 +217,22 @@ void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
   _xrange->update(*_xinfo);
 }
 
-void Ami::Qt::WaveformDisplay::add   (QtBase* b) 
+void Ami::Qt::WaveformDisplay::add   (QtBase* b, bool show) 
 {
-  _xrange->update(*_xinfo);
-  _curves.push_back(b);
-  b->xscale_update();
-  b->update();
-  b->attach(_plot);
-
-  if (_xrange->isAuto()) {
+  if (show) {
+    _xrange->update(*_xinfo);
+    _curves.push_back(b);
+    b->xscale_update();
+    b->update();
+    b->attach(_plot);
+    emit redraw();
   }
-
-  emit redraw();
+  else {
+    _hidden.push_back(b);
+    b->xscale_update();
+    b->update();
+    b->attach(_plot);
+  }
 }
 
 void Ami::Qt::WaveformDisplay::show(QtBase* b)

@@ -172,7 +172,7 @@ void ChannelDefinition::load(const char*& p)
 
   apply();
 
-  show_plot_changed(show);
+  emit show_plot_changed(show);
 }
 
 void ChannelDefinition::load_reference()
@@ -193,11 +193,11 @@ void ChannelDefinition::load_reference()
 void ChannelDefinition::show_plot(bool s) 
 {
   //  This should be a slot on the display (QwtPlot)
-  if (s != _show) {
+  if (s != _show && _plot!=0) {
     if (s) _frame.show(_plot);
     else   _frame.hide(_plot);
-    _show = s;
   }
+  _show = s;
 }
 
 void ChannelDefinition::apply()
@@ -276,9 +276,10 @@ void ChannelDefinition::setup_payload(Cds& cds)
 {
   Entry* entry = cds.entry(_output_signature);
   if (entry) {
-    _frame.add(_plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color));
-    if (!_show) _frame.hide(_plot);
-    else        _frame.prototype(&entry->desc());
+    _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color);
+    _frame.add(_plot, _show);
+    if (_show) 
+      _frame.prototype(&entry->desc());
   }
   else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);

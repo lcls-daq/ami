@@ -75,13 +75,21 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       default: _default(_buffer,info,channel); break;
       }
       break;
+    case DetInfo::Princeton:
+      strcpy(_buffer,"Princeton"); break;
     default: _default(_buffer,info,channel); break;
     }
     break;
   case DetInfo::SxrEndstation:
-    AcqChannel ("ACQ"); 
-    OpalChannel("OPAL");
-    break;
+    switch(info.device()) {
+    case DetInfo::Acqiris : AppendChannel("ACQ"); break;
+    case DetInfo::Opal1000: AppendChannel("OPAL"); break;
+    case DetInfo::Princeton:
+      sprintf(_buffer,"PTI_%d",info.devId()+1);
+      break;
+    default: _default(_buffer,info,channel); break;
+    }
+    break;    
   default:
     switch(info.device()) {
     case DetInfo::TM6740: sprintf(_buffer,"%sCvd",Pds::DetInfo::name(info.detector())); break;
