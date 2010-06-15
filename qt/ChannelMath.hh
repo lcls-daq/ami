@@ -32,7 +32,6 @@ namespace Ami {
       QLineEdit*    _expr;
       bool          _changed;
       QStringList   _names;
-      QList<int>    _signatures;
       Ami::AbsFilter*   _filter;
       Ami::AbsOperator* _operator;
       QStringList   _uses;

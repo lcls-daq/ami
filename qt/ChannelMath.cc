@@ -75,10 +75,6 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
 			  int nchannels,
 			  const Ami::AbsFilter& f)
 {
-  QStringList names;
-  for(int i=0; i<nchannels; i++)
-    names << channels[i]->name();
-
   QString expr(_expr->text());
   expr.replace(_exponentiate,Expression::exponentiate());
   expr.replace(_multiply    ,Expression::multiply());
@@ -86,40 +82,44 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
 
-  QStringList uses;
-  QRegExp match("[a-zA-Z_]+[0-9]*");
+  printf("CM::resolve in %s\n",qPrintable(expr));
+
+  //
+  //  Replace all channel names with their signatures
+  //
+  unsigned chmask=0;
   int pos=0;
-  while( (pos=match.indexIn(expr,pos)) != -1) {
-    QString use = expr.mid(pos,match.matchedLength());
-    if (!uses.contains(use))
-      uses << use;
-    pos += match.matchedLength();
+  while( pos < expr.length() ) {
+    int mlen=0;
+    int ich=-1;
+    for(int i=0; i<nchannels; i++) {
+      const QString& name = channels[i]->name();
+      if (expr.mid(pos,name.length())==name && name.length()>mlen) {
+	mlen = name.length();
+	ich  = i;
+      }
+    }
+    if (mlen) {
+      chmask |= (1<<ich);
+      QString newstr = QString("[%1]").arg(signatures[ich]);
+      expr.replace(pos,mlen,newstr);
+      pos += newstr.length();
+    }
+    else
+      pos++;
   }
 
-  _signatures.clear();
-  for(QStringList::iterator it=uses.begin(); it!=uses.end(); it++) {
-    int index=names.indexOf(*it);
-    if (index<0) {
-      printf("CM::resolve index not found\n");
-      return false;
-    }
-    if (signatures[index]<0) {
-      printf("CM::resolve signature[%d] not found\n",index);
-      return false;
-    }
-    _signatures << signatures[index];
-  }
+  printf("CM::resolve out %s\n",qPrintable(expr));
 
+  //
+  //    Include filters associated with channels used
+  //
   if (_filter) delete _filter;
   _filter = f.clone();
   for(int i=0; i<nchannels; i++) {
-    if (uses.contains(QString(channels[i]->name())))
+    if (chmask&(1<<i))
       _filter = new LogicAnd(*_filter, *channels[i]->filter().filter()->clone());
   }
-
-  // replace all channel names with their signatures
-  for(int i=0; i<nchannels; i++)
-    expr.replace(channels[i]->name(),QString("[%1]").arg(signatures[i]));
 
   if (_operator) delete _operator;
   _operator = new EntryMath(qPrintable(expr));
