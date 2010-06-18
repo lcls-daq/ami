@@ -11,7 +11,7 @@ static const int PixelsPerBin = 2;
 using namespace Ami;
 
 PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info) : 
-  EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_PrincetonConfig),
+  EventHandler(info, Pds::TypeId::Id_PrincetonFrame, Pds::TypeId::Id_PrincetonConfig),
   _entry(0)
 {
 }
