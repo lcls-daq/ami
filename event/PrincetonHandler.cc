@@ -65,6 +65,7 @@ void PrincetonHandler::_event    (const void* payload, const Pds::ClockTime& t)
       _entry->addcontent(*d, k/ppbx, j/ppby);
 
   //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
+  _entry->info(0,EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }

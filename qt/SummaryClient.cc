@@ -71,7 +71,7 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY))
 {
-  setWindowTitle(QString("Summary"));
+  setWindowTitle(title);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this);

@@ -4,7 +4,6 @@
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/acqiris/ConfigV1.hh"
 #include "pdsdata/acqiris/DataDescV1.hh"
-#include "pdsdata/opal1k/ConfigV1.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
