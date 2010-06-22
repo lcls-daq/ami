@@ -36,14 +36,20 @@ void   EpicsXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
 {
   const Pds::EpicsPvHeader& pvData = *reinterpret_cast<const Pds::EpicsPvHeader*>(payload);
 
-  if (pvData.iPvId >= MaxPvs) {
-    printf("EpicsXtcReader found pv id %d > %d.  Ignoring.\n",pvData.iPvId,MaxPvs);
-    return;
-  }
-
   if (pvData.iDbrType >= DBR_CTRL_SHORT &&
       pvData.iDbrType <= DBR_CTRL_DOUBLE) {
     const Pds::EpicsPvCtrlHeader& ctrl = static_cast<const Pds::EpicsPvCtrlHeader&>(pvData);
+
+    if (pvData.iPvId < 0) {
+      printf("EpicsXtcReader found pv %s id %d.  Ignoring.\n",ctrl.sPvName,pvData.iPvId);
+      return;
+    }
+
+    if (pvData.iPvId >= MaxPvs) {
+      printf("EpicsXtcReader found pv %s id %d > %d.  Ignoring.\n",ctrl.sPvName,pvData.iPvId,MaxPvs);
+      return;
+    }
+
     int index = -1;
     if (ctrl.iNumElements>1) {
       char buffer[64];

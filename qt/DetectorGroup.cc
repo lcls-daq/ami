@@ -49,11 +49,13 @@ DetectorGroup::DetectorGroup(const DetectorGroup& clone) :
       it != _clients.end(); it++) {
     QCheckBox* newbox = new QCheckBox((*it)->title(),this);
     for(QList<QAbstractButton*>::const_iterator bit = clone._buttons->buttons().begin();
-	bit != clone._buttons->buttons().end(); bit++)
-      if (*bit!=0 && (*bit)->text()==(*it)->title()) {
- 	newbox->setChecked((*bit)->isChecked());
+	bit != clone._buttons->buttons().end(); bit++) {
+      QAbstractButton* pbit = *bit;
+      if (pbit!=0 && pbit->text()==(*it)->title()) {
+ 	newbox->setChecked(pbit->isChecked());
  	break;
       }
+    }
     newlist.push_back(newbox);
   }
 

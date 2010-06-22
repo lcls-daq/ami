@@ -6,7 +6,15 @@
 
 #include <string.h>
 
-static const int PixelsPerBin = 2;
+static inline unsigned height(const Pds::Princeton::ConfigV1& c)
+{
+  return (c.height() + c.binY() - 1)/c.binY();
+}
+
+static unsigned width(const Pds::Princeton::ConfigV1& c)
+{
+  return (c.width() + c.binX() - 1)/c.binX();
+}
 
 using namespace Ami;
 
@@ -35,8 +43,8 @@ void PrincetonHandler::reset() { _entry = 0; }
 void PrincetonHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Princeton::ConfigV1& c = *reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload);
-  unsigned columns = c.width();
-  unsigned rows    = c.height();
+  unsigned columns = width (c);
+  unsigned rows    = height(c);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = (pixels-1)/640 + 1;
   columns /= ppb;
@@ -60,8 +68,8 @@ void PrincetonHandler::_event    (const void* payload, const Pds::ClockTime& t)
   unsigned ppby = desc.ppybin();
   memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
   const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data());
-  for(unsigned j=0; j<_config.height(); j++)
-    for(unsigned k=0; k<_config.width(); k++, d++)
+  for(unsigned j=0; j<height(_config); j++)
+    for(unsigned k=0; k<width(_config); k++, d++)
       _entry->addcontent(*d, k/ppbx, j/ppby);
 
   //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
