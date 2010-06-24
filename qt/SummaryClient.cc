@@ -234,9 +234,12 @@ void SummaryClient::read_payload     (Socket& socket,int)
 
 void SummaryClient::process         () 
 {
-  QWidget* w = _tab->currentWidget();
-  if (w)
-    static_cast<PagePlot*>(w)->update();
+//   QWidget* w = _tab->currentWidget();
+//   if (w)
+//     static_cast<PagePlot*>(w)->update();
+
+  for(int i=0; i<_tab->count(); i++)
+    static_cast<PagePlot*>(_tab->widget(i))->update();
 
   _status->set_state(Status::Processed);
 }
