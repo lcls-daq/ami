@@ -19,7 +19,8 @@ namespace Ami {
 		 const QString&     reset,
 		 const QStringList& variables,    // pre-defined variables {cursor bin, filter condition, ..}
 		 const QStringList& var_var_ops,  // binary operations only between variables
-		 const QStringList& var_con_ops); // binary operations between any combination of variables,constants
+		 const QStringList& var_con_ops,  // binary operations between any combination of variables,constants
+		 const QStringList& help = QStringList());
     public:
       QString result() const;
     private slots:
@@ -36,7 +37,12 @@ namespace Ami {
       void varconClicked();
 
     private:
-      CalculatorButton *createButton(const QString &text, const QColor &color,
+      CalculatorButton *createButton(const QString &text, 
+				     const QColor &color,
+				     const char *member);
+      CalculatorButton *createButton(const QString &text, 
+				     const QString &help,
+				     const QColor &color,
 				     const char *member);
 
     private:

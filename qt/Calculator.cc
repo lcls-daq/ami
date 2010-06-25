@@ -1,4 +1,5 @@
 #include "Calculator.hh"
+#include "QHComboBox.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QColor>
@@ -6,7 +7,9 @@
 #include <QtGui/QGridLayout>
 #include <QtGui/QToolButton>
 #include <QtGui/QPushButton>
-#include <QtGui/QComboBox>
+#include <QtGui/QListView>
+#include <QtGui/QHelpEvent>
+#include <QtGui/QToolTip>
 
 #include <math.h>
 
@@ -16,8 +19,12 @@ namespace Ami {
   namespace Qt {
     class CalculatorButton : public QToolButton {
     public:
-      CalculatorButton(const QString &text, const QColor &color, QWidget *parent = 0) :
-	QToolButton(parent)
+      CalculatorButton(const QString &text, 
+		       const QString &help,
+		       const QColor &color,
+		       QWidget *parent = 0) :
+	QToolButton(parent),
+	_help      (help)
       {
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	setText(text);
@@ -39,11 +46,27 @@ namespace Ami {
 	t.replace("&&","&");
 	return t;
       }
+      bool event(QEvent* event)
+      {
+	if (event->type() == QEvent::ToolTip) {
+ 	  if (!_help.isEmpty()) {
+ 	    QHelpEvent* helpEvent = static_cast<QHelpEvent*>(event);
+ 	    const QPoint& p = helpEvent->globalPos();
+ 	    QToolTip::showText(p, _help);
+ 	  }
+ 	  else
+ 	    QToolTip::hideText();
+	}
+	return QToolButton::event(event);
+      }
+    private:
+      QString _help;
     };
   };
 };
 
 using namespace Ami::Qt;
+
 
 static unsigned lengthAtBegin(const QStringList& list, const QString& str)
 {
@@ -79,7 +102,8 @@ Calculator::Calculator(const QString&     title,
 		       const QString&     reset,
 		       const QStringList& variables,
                        const QStringList& var_var_ops,
-                       const QStringList& var_con_ops) :
+                       const QStringList& var_con_ops,
+		       const QStringList& variables_help) :
   QDialog (0),
   _reset  (reset),
   _variables(variables),
@@ -145,13 +169,7 @@ Calculator::Calculator(const QString&     title,
   if (max_row < var_con_ops.size()) max_row = var_con_ops.size();
 
   if (variables.size() > max_row) {  // variables in a box on the bottom
-    QComboBox* box = new QComboBox;
-
-    QPalette newPalette = box->palette();
-    newPalette.setColor(QPalette::Button, operatorColor.light(120));
-    box->setPalette(newPalette);
-
-    box->addItems(variables);
+    QHComboBox* box = new QHComboBox(variables, variables_help, operatorColor.light(120));
     buttonLayout->addWidget(box, max_row+1, 0, 1, 5);
     QFont f = box->font();
     f.setPointSize(f.pointSize()+4);
@@ -159,11 +177,13 @@ Calculator::Calculator(const QString&     title,
     connect(box, SIGNAL(activated(const QString&)), this, SLOT(variableClicked(const QString&)));
   } 
   else {   // variables on the left
-    int row=1;
-    for(QStringList::const_iterator it = variables.constBegin(); 
-	it!=variables.constEnd(); it++)
-      buttonLayout->addWidget(createButton(*it, operatorColor.light(120), SLOT(variableClicked())),
-			      row++,0);
+    for(int row=0; row<variables.size(); row++)
+      buttonLayout->addWidget(createButton(variables[row],
+					   row < variables_help.size() ?
+					   variables_help[row] : QString("No Help"),
+					   operatorColor.light(120), 
+					   SLOT(variableClicked())),
+			      row+1,0);
   }
 
   layout->addLayout(buttonLayout);
@@ -352,10 +372,24 @@ void Calculator::clearAll()
   _display->setText(_reset);
 }
 
-CalculatorButton* Calculator::createButton(const QString &text, const QColor &color,
+CalculatorButton* Calculator::createButton(const QString &text, 
+					   const QColor &color,
 					   const char *member)
 {
-  CalculatorButton* button = new CalculatorButton(text, color);
+  CalculatorButton* button = new CalculatorButton(text, QString(), color);
+  QFont f = button->font();
+  f.setPointSize(f.pointSize()+4);
+  button->setFont(f);
+  connect(button, SIGNAL(clicked()), this, member);
+  return button;
+}
+
+CalculatorButton* Calculator::createButton(const QString &text, 
+					   const QString &help,
+					   const QColor &color,
+					   const char *member)
+{
+  CalculatorButton* button = new CalculatorButton(text, help, color);
   QFont f = button->font();
   f.setPointSize(f.pointSize()+4);
   button->setFont(f);
@@ -364,3 +398,4 @@ CalculatorButton* Calculator::createButton(const QString &text, const QColor &co
 }
 
 QString Calculator::result() const { return _display->text(); }
+

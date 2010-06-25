@@ -8,6 +8,8 @@
 #include "ami/service/Semaphore.hh"
 
 namespace Ami {
+  class DiscoveryRx;
+
   namespace Qt {
     class FeatureRegistry : public QObject {
       Q_OBJECT
@@ -15,11 +17,11 @@ namespace Ami {
       static FeatureRegistry& instance();
     public:
       void               clear   ();
-      void               insert  (const char* names,
-				  unsigned n);
+      void               insert  (const DiscoveryRx&);
     public:
-      QStringList names   () const;
-      int         index   (const QString&) const;
+      const QStringList& names   () const;
+      const QStringList& help    () const;
+      int                index   (const QString&) const;
     signals:
       void changed();
     private:
@@ -27,6 +29,7 @@ namespace Ami {
       ~FeatureRegistry();
     private:
       QStringList _names;
+      QStringList _help;
       Ami::Semaphore _sem;
     };
   };

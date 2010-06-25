@@ -13,6 +13,16 @@ void Path::setBase(const QString& p) { _base=p; }
 
 const QString& Path::base() { return _base; }
 
+FILE* Path::helpFile()
+{
+  QString fname = QString("%1/help.dat").arg(_base);
+
+  if (fname.isNull())
+    return 0;
+
+  return fopen(qPrintable(fname),"r");
+}
+
 FILE* Path::saveDataFile()
 {
   FILE* f = 0;

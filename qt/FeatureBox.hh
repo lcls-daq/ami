@@ -1,13 +1,13 @@
 #ifndef AmiQt_FeatureBox_hh
 #define AmiQt_FeatureBox_hh
 
-#include <QtGui/QComboBox>
+#include "QHComboBox.hh"
 
 #include <QtCore/QString>
 
 namespace Ami {
   namespace Qt {
-    class FeatureBox : public QComboBox {
+    class FeatureBox : public QHComboBox {
       Q_OBJECT
     public:
       FeatureBox();

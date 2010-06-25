@@ -11,6 +11,7 @@ namespace Ami {
     public:
       static void    setBase(const QString&);
       static const QString& base();
+      static FILE*   helpFile();
       static FILE*   saveDataFile();
       static FILE*   saveReferenceFile(const QString&);      
       static QString loadReferenceFile(const QString&);

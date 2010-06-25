@@ -184,7 +184,7 @@ void EnvClient::discovered(const DiscoveryRx& rx)
 
   //  iterate through discovery and print
   FeatureRegistry::instance().clear ();
-  FeatureRegistry::instance().insert(rx.feature_name(0),rx.features());
+  FeatureRegistry::instance().insert(rx);
 
   _manager->configure();
 }

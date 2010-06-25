@@ -1,8 +1,8 @@
 #include "FeatureRegistry.hh"
+#include "Path.hh"
 
 #include "ami/data/FeatureCache.hh"
-
-static int NameSize = Ami::FeatureCache::FEATURE_NAMELEN;
+#include "ami/data/Discovery.hh"
 
 using namespace Ami::Qt;
 
@@ -19,26 +19,50 @@ void               FeatureRegistry::clear ()
   _sem.take();
   _names.clear();
   _sem.give();
+  _help .clear();
 }
 
-void               FeatureRegistry::insert(const char* names,
-					   unsigned n)
+void               FeatureRegistry::insert(const DiscoveryRx& rx)
 {
   _sem.take();
-  for(unsigned k=0; k<n; k++) {
-    _names << QString(names);
-    names += NameSize;
+  for(unsigned k=0; k<rx.features(); k++) {
+    _names << QString(rx.feature_name(k));
+    _help  << QString();
   }
+
+  FILE* f = Path::helpFile();
+  if (f) {
+    char* line = new char[256];
+    while( fgets(line, 256, f) ) {
+      if (line[0]=='#') continue;  // comment field
+      static const char* delim = " \t";
+      char* p = line;
+      strsep(&p,delim);
+      if (p) {
+	p += strspn(p,delim);
+	*strchrnul(p,'\n') = 0;
+	QString name(line);
+	int index = _names.indexOf(name);
+	if (index >= 0)
+	  _help[index] = QString(p);
+      }
+    }
+    delete line;
+    fclose(f);
+  }
+
   _sem.give();
   emit changed();
 }
 
-QStringList FeatureRegistry::names () const
+const QStringList& FeatureRegistry::names () const
 {
-  const_cast<FeatureRegistry*>(this)->_sem.take();
-  QStringList l(_names);
-  const_cast<FeatureRegistry*>(this)->_sem.give();
-  return l;
+  return _names;
+}
+
+const QStringList& FeatureRegistry::help() const
+{
+  return _help;
 }
 
 int FeatureRegistry::index(const QString& name) const

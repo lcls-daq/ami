@@ -172,7 +172,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 
   //  iterate through discovery and print
   FeatureRegistry::instance().clear ();
-  FeatureRegistry::instance().insert(rx.feature_name(0),rx.features());
+  FeatureRegistry::instance().insert(rx);
 
   char channel_name [128]; 
   strcpy(channel_name ,ChannelID::name(info,channel));

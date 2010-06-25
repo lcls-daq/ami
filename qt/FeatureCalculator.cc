@@ -22,7 +22,9 @@ static QStringList vops;
 FeatureCalculator::FeatureCalculator(const QString& name) :
   Calculator(name, "",
 	     FeatureRegistry::instance().names(),
-	     vops, ops)
+	     vops, 
+	     ops,
+	     FeatureRegistry::instance().help())
 {
 }
 

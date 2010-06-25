@@ -5,9 +5,10 @@
 
 using namespace Ami::Qt;
 
-FeatureBox::FeatureBox()
+FeatureBox::FeatureBox() :
+  QHComboBox(FeatureRegistry::instance().names(),
+	     FeatureRegistry::instance().help())
 {
-  addItems(FeatureRegistry::instance().names());
   connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
   connect(this, SIGNAL(activated(const QString&)), this, SLOT(set_entry(const QString&)));
 }
