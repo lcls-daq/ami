@@ -297,6 +297,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
   case Pds::DetInfo::Opal1000 : 
   case Pds::DetInfo::TM6740   : 
   case Pds::DetInfo::pnCCD    :
+  case Pds::DetInfo::Cspad    :
   case Pds::DetInfo::Princeton: 
   case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
   default: printf("Device type %x not recognized\n", info.device()); break;

@@ -25,6 +25,7 @@ Average::Average(const char*& p, const DescEntry& e) :
 {
   _extract(p, &_n, sizeof(_n));
   _entry = EntryFactory::entry(e);
+  _entry->reset();
   if (_n) {
     _cache = EntryFactory::entry(e);
     _cache->desc().aggregate(false);

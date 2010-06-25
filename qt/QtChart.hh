@@ -18,7 +18,7 @@ namespace Ami {
 	      const Ami::EntryScalar&,
 	      unsigned npoints,
 	      const QColor&);
-      ~QtChart();
+      virtual ~QtChart();
     public:
       void        dump  (FILE*   ) const;
       void        attach(QwtPlot*);

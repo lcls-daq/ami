@@ -29,14 +29,15 @@ void SummaryAnalysis::clear    ()
 {
   if (_seconds) {
     _cds->remove(_seconds); 
+    _cds->remove(_minutes); 
     _cds = 0;
   }
 }
 
 void SummaryAnalysis::create   (Cds& cds)
 {
-  _seconds = new EntryScalar(DescScalar("Seconds","Seconds"));
-  _minutes = new EntryScalar(DescScalar("Minutes","Minutes"));
+  _seconds = new EntryScalar(DescScalar("Seconds#Time","Seconds"));
+  _minutes = new EntryScalar(DescScalar("Minutes#Time","Minutes"));
   _cds = &cds; 
   cds.add(_seconds);
   cds.add(_minutes);

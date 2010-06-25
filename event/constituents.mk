@@ -2,7 +2,7 @@
 libnames := event
 
 # List source files for each library
-libsrcs_event := $(filter-out CspadHandler.cc,$(wildcard *.cc))
+libsrcs_event := $(wildcard *.cc)
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

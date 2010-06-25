@@ -31,6 +31,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <list>
+
+static const QChar PageIndex('#');
+
 namespace Ami {
   namespace Qt {
     class NullTransform : public Ami::AbsTransform {
@@ -39,15 +43,39 @@ namespace Ami {
       double operator()(double x) const { return x; }
     };
 
-    class PagePlot : public QtPlot {
+    class QtBasePlot : public QtPlot {
     public:
-      PagePlot(QtBase* plot) : QtPlot(NULL,plot->title()), _plot(plot) { plot->attach(_frame); }
-      ~PagePlot() { delete _plot; }
+      QtBasePlot(QtBase* b) : QtPlot(NULL,b->title()), _base(b) { b->attach(_frame); }
+      virtual ~QtBasePlot() { delete _base; }
     public:
-      void update() { _plot->update(); emit redraw(); }
+      void update() { _base->update(); emit redraw(); }
       void dump(FILE*) const {}
     private:
-      QtBase* _plot;
+      QtBase* _base; 
+    };
+
+    class PagePlot : public QWidget {
+    public:
+      PagePlot(const QString& title) : _title (title),_layout(new QVBoxLayout) {}
+      ~PagePlot() {}
+    public:
+      const QString& title() const { return _title; }
+      void add   (QtBase* plot)
+      {
+	QtBasePlot* frame = new QtBasePlot(plot);
+	_layout->addWidget(frame);
+	_plots.push_back(frame);
+      }
+      void layout() { setLayout(_layout); }
+      void update() 
+      {
+	for(std::list<QtBasePlot*>::iterator it = _plots.begin(); it!=_plots.end(); it++)
+	  (*it)->update(); 
+      }
+    private:
+      QString                _title;
+      QVBoxLayout*           _layout;
+      std::list<QtBasePlot*> _plots;
     };
   };
 };
@@ -167,7 +195,10 @@ void SummaryClient::_read_description(int size)
     _tab->removeTab(0);
     delete w;
   }
+
   _cds.reset();
+
+  std::list<PagePlot*> pages;
 
   const char* payload = _description;
   const char* const end = payload + size;
@@ -183,30 +214,56 @@ void SummaryClient::_read_description(int size)
     Entry* entry = EntryFactory::entry(*desc);
     printf("Summary found entry %s of type %d\n",
 	   desc->name(), desc->type());
+
+    QString page_title, plot_title;
+    { QString title(desc->name());
+      int index = title.indexOf( PageIndex );
+      if (index >= 0) {
+	plot_title = title.left(index);
+	page_title = title.mid(index+1,title.indexOf( PageIndex, index+1 ));
+      }
+      else {
+	plot_title = page_title = title;
+      }
+    }
+
     QtBase* plot;
-    QString title(desc->name());
     switch(desc->type()) {
     case Ami::DescEntry::TH1F: 
-      plot = new QtTH1F(title,*static_cast<const Ami::EntryTH1F*>(entry),
+      plot = new QtTH1F(plot_title,*static_cast<const Ami::EntryTH1F*>(entry),
 			noTransform,noTransform,QColor(0,0,0));
       break;
     case Ami::DescEntry::Scalar:  // create a chart from a scalar
-      plot = new QtChart(title,*static_cast<const Ami::EntryScalar*>(entry),
+      plot = new QtChart(plot_title,*static_cast<const Ami::EntryScalar*>(entry),
 			 400,QColor(0,0,0));
       break;
     case Ami::DescEntry::Prof: 
-      plot = new QtProf(title,*static_cast<const Ami::EntryProf*>(entry),
+      plot = new QtProf(plot_title,*static_cast<const Ami::EntryProf*>(entry),
 			noTransform,noTransform,QColor(0,0,0));
       break;
     case Ami::DescEntry::Scan: 
-      plot = new QtScan(title,*static_cast<const Ami::EntryScan*>(entry),
+      plot = new QtScan(plot_title,*static_cast<const Ami::EntryScan*>(entry),
 			noTransform,noTransform,QColor(0,0,0));
       break;
     default:
       printf("SummaryClient type %d not implemented yet\n",desc->type()); 
       return;
     }
-    _tab->addTab(new PagePlot(plot),title);
+
+    bool lFound=false;
+    for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
+      if ((*it)->title() == page_title) {
+	(*it)->add(plot);
+	lFound=true;
+	break;
+      }
+    }
+    if (!lFound) {
+      PagePlot* page = new PagePlot(page_title);
+      page->add(plot);
+      pages.push_back(page);
+    }
+
     _cds.add(entry, desc->signature());
     payload += desc->size();
   }
@@ -215,6 +272,11 @@ void SummaryClient::_read_description(int size)
     _iovload = new iovec[_niovload=_cds.totalentries()];
   }
   _cds.payload(_iovload);
+
+  for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
+    (*it)->layout();
+    _tab->addTab(*it, (*it)->title());
+  }
 
   _status->set_state(Status::Described);
 

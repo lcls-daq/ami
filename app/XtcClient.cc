@@ -15,6 +15,7 @@
 #include "ami/event/TM6740Handler.hh"
 #include "ami/event/FccdHandler.hh"
 #include "ami/event/PnccdHandler.hh"
+#include "ami/event/CspadHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
 #include "ami/data/FeatureCache.hh"
@@ -165,6 +166,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info); break;
+      case Pds::TypeId::Id_CspadConfig:      h = new CspadHandler      (info); break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader       (_cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;

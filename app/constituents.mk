@@ -20,7 +20,7 @@ tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
 tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
-tgtlibs_ami += pdsdata/appdata
+tgtlibs_ami += pdsdata/cspaddata pdsdata/appdata
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
 tgtlibs_ami += qt/QtCore
 

@@ -35,7 +35,7 @@ tgtlibs_offline_ami += pdsdata/pulnixdata pdsdata/princetondata
 tgtlibs_offline_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_offline_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
-tgtlibs_offline_ami += pdsdata/appdata
+tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/appdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 

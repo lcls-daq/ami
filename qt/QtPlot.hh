@@ -18,7 +18,7 @@ namespace Ami {
 	     const QString& name);
       QtPlot(QWidget*       parent,
 	     const char*&   p);
-      ~QtPlot();
+      virtual ~QtPlot();
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -35,7 +35,7 @@ namespace Ami {
       void set_yaxis_title();
       void yrange_change();
       void update_counts(double);
-    protected:
+    public:
       QString      _name;
       QwtPlot*     _frame;
       QLabel*      _counts;
