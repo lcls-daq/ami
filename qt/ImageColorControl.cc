@@ -1,6 +1,8 @@
 #include "ImageColorControl.hh"
 
 #include <QtGui/QLabel>
+#include <QtGui/QLineEdit>
+#include <QtGui/QDoubleValidator>
 #include <QtGui/QPushButton>
 #include <QtGui/QRadioButton>
 #include <QtGui/QCheckBox>
@@ -38,13 +40,22 @@ static QVector<QRgb>* thermal_palette()
 }
 
 ImageColorControl::ImageColorControl(QWidget* parent,
-				   const QString&  title) :
+				     const QString&  title) :
   QGroupBox(title,parent),
   _scale (0),
-  _scale_min(new QLabel),
+  _pedestal(32),
+  _scale_min(new QLineEdit),
   _scale_mid(new QLabel),
   _scale_max(new QLabel)
 {
+  _scale_min->setMaximumWidth(60);
+  _scale_min->setValidator(new QDoubleValidator(_scale_min));
+  _scale_min->setText(QString::number(_pedestal));
+
+  _scale_min->setAlignment(::Qt::AlignLeft);
+  _scale_mid->setAlignment(::Qt::AlignHCenter);
+  _scale_max->setAlignment(::Qt::AlignRight);
+
   setAlignment(::Qt::AlignHCenter);
 
   QPushButton* autoB = new QPushButton("Reset");
@@ -91,6 +102,13 @@ ImageColorControl::ImageColorControl(QWidget* parent,
       layout2->addWidget(_scale_min,2,1,::Qt::AlignLeft);
       layout2->addWidget(_scale_mid,2,2,::Qt::AlignCenter); 
       layout2->addWidget(_scale_max,2,3,::Qt::AlignRight); 
+      //  Set the columns to equal (dynamic) size
+      layout2->setColumnMinimumWidth(1,60);
+      layout2->setColumnMinimumWidth(2,60);
+      layout2->setColumnMinimumWidth(3,60);
+      layout2->setColumnStretch(1,1);
+      layout2->setColumnStretch(2,1);
+      layout2->setColumnStretch(3,1);
       layout1->addLayout(layout2); }
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -101,6 +119,7 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   connect(zoomB , SIGNAL(clicked()), this, SLOT(zoom()));
   connect(panB  , SIGNAL(clicked()), this, SLOT(pan ()));
   connect(_paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
+  connect(_scale_min, SIGNAL(editingFinished()), this, SLOT(scale_min_changed()));
   connect(_logscale, SIGNAL(clicked()), this, SIGNAL(windowChanged()));
   connect(this  , SIGNAL(windowChanged()), this, SLOT(show_scale()));
 
@@ -130,7 +149,9 @@ void ImageColorControl::load(const char*& p)
 
 bool   ImageColorControl::linear() const { return !_logscale->isChecked(); }
 
-double ImageColorControl::scale() const { return pow(2,0.5*double(-_scale)); }
+float ImageColorControl::pedestal() const { return _pedestal; }
+
+float ImageColorControl::scale() const { return powf(2,0.5*float(-_scale)); }
 
 const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_table; }
 
@@ -146,14 +167,14 @@ void   ImageColorControl::show_scale()
 {
   unsigned v = static_cast<unsigned>(0xff*scale());
   if (_logscale->isChecked()) {
-    _scale_min->setText(QString::number(1));
-    _scale_mid->setText(QString::number(int(sqrt(v)+0.5)));
-    _scale_max->setText(QString::number(v));
+    _scale_min->setText(QString::number(_pedestal+1));
+    _scale_mid->setText(QString::number(_pedestal+int(sqrt(v)+0.5)));
+    _scale_max->setText(QString::number(_pedestal+v));
   }
   else {
-    _scale_min->setText(QString::number(0));
-    _scale_mid->setText(QString::number(v>>1));
-    _scale_max->setText(QString::number(v));
+    _scale_min->setText(QString::number(_pedestal));
+    _scale_mid->setText(QString::number(_pedestal+(v>>1)));
+    _scale_max->setText(QString::number(_pedestal+v));
   }
 }
 
@@ -175,3 +196,8 @@ void   ImageColorControl::pan ()
   emit windowChanged();
 }
 
+void   ImageColorControl::scale_min_changed()
+{
+  _pedestal = _scale_min->text().toFloat();
+  emit windowChanged();
+}

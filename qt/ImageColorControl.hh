@@ -12,6 +12,7 @@
 class QButtonGroup;
 class QCheckBox;
 class QLabel;
+class QLineEdit;
 
 namespace Ami {
   namespace Qt {
@@ -25,8 +26,9 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
-      bool   linear() const;
-      double scale() const;
+      bool   linear  () const;
+      float  pedestal() const;
+      float  scale   () const;
       const QVector<QRgb>& color_table() const;
     public slots:
       void show_scale();
@@ -34,13 +36,16 @@ namespace Ami {
       void zoom();
       void pan ();
       void set_palette(int);
+      void scale_min_changed();
     signals:
       void windowChanged();
     private:
       int     _scale;
+      float   _pedestal;
       QString _title;
       QVector<QRgb>* _color_table;
-      QLabel* _scale_min;
+      //      QLabel* _scale_min;
+      QLineEdit* _scale_min;
       QLabel* _scale_mid;
       QLabel* _scale_max;
       QButtonGroup* _paletteGroup;

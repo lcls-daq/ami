@@ -94,7 +94,7 @@ void           QtImage::update() {}
       src += d.nbinsx()-_nx;				      \
     } }
 
-QImage&        QtImage::image(double s, bool linear)
+QImage&        QtImage::image(float p, float s, bool linear)
 {
   const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
   const Ami::DescImage&  d = _entry.desc();
@@ -103,7 +103,7 @@ QImage&        QtImage::image(double s, bool linear)
 //   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
 //   if (s>0)  n<<= s;
 //   else      n>>=-s;
-  float p = _entry.info(EntryImage::Pedestal);
+//  float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
 
