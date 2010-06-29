@@ -44,7 +44,6 @@ namespace Ami {
       float   _pedestal;
       QString _title;
       QVector<QRgb>* _color_table;
-      //      QLabel* _scale_min;
       QLineEdit* _scale_min;
       QLabel* _scale_mid;
       QLabel* _scale_max;

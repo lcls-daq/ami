@@ -43,7 +43,7 @@ ImageColorControl::ImageColorControl(QWidget* parent,
 				     const QString&  title) :
   QGroupBox(title,parent),
   _scale (0),
-  _pedestal(32),
+  _pedestal(0),
   _scale_min(new QLineEdit),
   _scale_mid(new QLabel),
   _scale_max(new QLabel)
@@ -135,6 +135,7 @@ void ImageColorControl::save(char*& p) const
 {
   QtPersistent::insert(p,_scale);
   QtPersistent::insert(p,_paletteGroup->checkedId());
+  QtPersistent::insert(p,double(_pedestal));
 }
 
 void ImageColorControl::load(const char*& p)
@@ -143,6 +144,7 @@ void ImageColorControl::load(const char*& p)
   int palette = QtPersistent::extract_i(p);
   _paletteGroup->button(palette)->setChecked(true);
   set_palette(palette);
+  _pedestal     = QtPersistent::extract_d(p);
   show_scale();
   emit windowChanged();
 }
