@@ -15,7 +15,8 @@ const QString& Path::base() { return _base; }
 
 FILE* Path::helpFile()
 {
-  QString fname = QString("%1/help.dat").arg(_base);
+  //  QString fname = QString("%1/help.dat").arg(_base);
+  QString fname("/reg/g/pcds/dist/pds/misc/ami_help.dat");
 
   if (fname.isNull())
     return 0;
