@@ -55,6 +55,8 @@ namespace Ami {
       QLineEdit* _edit_y1;
       unsigned   _xmax;
       unsigned   _ymax;
+      QLabel*    _delta_x;
+      QLabel*    _delta_y;
     };
   };
 };

@@ -24,7 +24,9 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
   _edit_x1   (new QLineEdit),
   _edit_y1   (new QLineEdit),
   _xmax      (-1),
-  _ymax      (-1)
+  _ymax      (-1),
+  _delta_x   (new QLabel),
+  _delta_y   (new QLabel)
 {
   _edit_x0->setMaximumWidth(40);
   _edit_y0->setMaximumWidth(40);
@@ -53,6 +55,11 @@ RectangleCursors::RectangleCursors(ImageFrame& f) :
   
   layout->addWidget(grab                ,1,3,2,1);
 
+  row++;
+  layout->addWidget(new QLabel(QString(QChar(0x0394))),row,0);
+  layout->addWidget(_delta_x              ,row,1);
+  layout->addWidget(_delta_y              ,row,2);
+  
   setLayout(layout);
 
   connect(grab, SIGNAL(clicked()), this, SLOT(grab()));
@@ -110,6 +117,8 @@ void RectangleCursors::_set_edits()
   _edit_y0   ->setText(QString::number(_y0));
   _edit_x1   ->setText(QString::number(_x1));
   _edit_y1   ->setText(QString::number(_y1));
+  _delta_x   ->setText(QString::number(_x1-_x0));
+  _delta_y   ->setText(QString::number(_y1-_y0));
 }
 
 void RectangleCursors::draw(QImage& image)
