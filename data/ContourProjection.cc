@@ -156,31 +156,70 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	EntryProf*      o = static_cast<EntryProf*>(_output);
 	o->reset();
 	if (_axis == X) {
-	  unsigned ixlo = inputd.xbin(_xlo);
-	  unsigned ixhi = inputd.xbin(_xhi);
-	  unsigned iylo = inputd.ybin(_ylo);
-	  unsigned iyhi = inputd.ybin(_yhi);
-	  const int16_t* off = _offset;
-	  for(unsigned j=iylo; j<=iyhi; j++,off++) {
-	    for(unsigned i=ixlo; i<ixhi; i++) {
-	      double yp = inputd.binx(i) - double(*off);
-	      if (yp >= d.xlow() && yp <= d.xup())
-		o->addy(_input->content(i,j),yp);
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
+	      int ixlo = inputd.xbin(_xlo);
+	      int ixhi = inputd.xbin(_xhi);
+	      int iylo = inputd.ybin(_ylo);
+	      int iyhi = inputd.ybin(_yhi);
+	      const int16_t* off = _offset;
+	      if (inputd.xy_bounds(ixlo,ixhi,iylo,iyhi,fn))
+		for(int j=iylo; j<iyhi; j++,off++) {
+		  for(int i=ixlo; i<ixhi; i++) {
+		    double yp = inputd.binx(i) - double(*off);
+		    if (yp >= d.xlow() && yp <= d.xup())
+		      o->addy(_input->content(i,j),yp);
+		  }
+		}
+	    }
+	  }
+	  else {
+	    unsigned ixlo = inputd.xbin(_xlo);
+	    unsigned ixhi = inputd.xbin(_xhi);
+	    unsigned iylo = inputd.ybin(_ylo);
+	    unsigned iyhi = inputd.ybin(_yhi);
+	    const int16_t* off = _offset;
+	    for(unsigned j=iylo; j<=iyhi; j++,off++) {
+	      for(unsigned i=ixlo; i<ixhi; i++) {
+		double yp = inputd.binx(i) - double(*off);
+		if (yp >= d.xlow() && yp <= d.xup())
+		  o->addy(_input->content(i,j),yp);
+	      }
 	    }
 	  }
 	}
 	else { // (_axis == Y)
-	  unsigned ixlo = inputd.xbin(_xlo);
-	  unsigned ixhi = inputd.xbin(_xhi);
-	  unsigned iylo = inputd.ybin(_ylo);
-	  unsigned iyhi = inputd.ybin(_yhi);
-	  for(unsigned j=iylo; j<=iyhi; j++) {
-	    const int16_t* off = _offset;
-	    double y = inputd.biny(j);
-	    for(unsigned i=ixlo; i<ixhi; i++) {
-	      double yp = y - double(*off++);
-	      if (yp >= d.xlow() && yp <= d.xup())
-		o->addy(_input->content(i,j),yp);
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
+	      int ixlo = inputd.xbin(_xlo);
+	      int ixhi = inputd.xbin(_xhi);
+	      int iylo = inputd.ybin(_ylo);
+	      int iyhi = inputd.ybin(_yhi);
+	      if (inputd.xy_bounds(ixlo,ixhi,iylo,iyhi,fn))
+		for(int j=iylo; j<iyhi; j++) {
+		  const int16_t* off = _offset;
+		  double y = inputd.biny(j);
+		  for(int i=ixlo; i<ixhi; i++) {
+		    double yp = y - double(*off++);
+		    if (yp >= d.xlow() && yp <= d.xup())
+		      o->addy(_input->content(i,j),yp);
+		  }
+		}
+	    }
+	  }
+	  else {
+	    unsigned ixlo = inputd.xbin(_xlo);
+	    unsigned ixhi = inputd.xbin(_xhi);
+	    unsigned iylo = inputd.ybin(_ylo);
+	    unsigned iyhi = inputd.ybin(_yhi);
+	    for(unsigned j=iylo; j<=iyhi; j++) {
+	      const int16_t* off = _offset;
+	      double y = inputd.biny(j);
+	      for(unsigned i=ixlo; i<ixhi; i++) {
+		double yp = y - double(*off++);
+		if (yp >= d.xlow() && yp <= d.xup())
+		  o->addy(_input->content(i,j),yp);
+	      }
 	    }
 	  }
 	}

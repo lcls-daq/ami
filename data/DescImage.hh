@@ -5,6 +5,14 @@
 
 namespace Ami {
 
+  class SubFrame {
+  public:
+    unsigned short x;
+    unsigned short y;
+    unsigned short nx;
+    unsigned short ny;
+  };
+
   class DescImage : public DescEntry {
   public:
     DescImage(const Pds::DetInfo& info,
@@ -35,11 +43,31 @@ namespace Ami {
 		int ppxbin,
 		int ppybin);
 
+    void add_frame(unsigned x,
+		   unsigned y,
+		   unsigned nx,
+		   unsigned ny);
+
+    unsigned nframes() const;
+
+    const SubFrame& frame(unsigned) const;
+
+    bool xy_bounds(int& x0, int& x1, int& y0, int& y1) const;
+    bool xy_bounds(int& x0, int& x1, int& y0, int& y1, unsigned frame) const;
+
+    bool rphi_bounds(int& x0, int& x1, int& y0, int& y1,
+		     double xc, double yc, double r) const;
+    bool rphi_bounds(int& x0, int& x1, int& y0, int& y1,
+		     double xc, double yc, double r, unsigned frame) const;
+
   private:
     unsigned short _nbinsx;
     unsigned short _nbinsy;
     unsigned short _ppbx;
     unsigned short _ppby;
+    enum { MAX_SUBFRAMES=64 };
+    unsigned _nsubframes;
+    SubFrame _subframes[MAX_SUBFRAMES];
   };
 
   inline unsigned DescImage::nbinsx() const {return _nbinsx;}
@@ -54,6 +82,8 @@ namespace Ami {
   inline int DescImage::ybin(float y) const {return int(y)/_ppby;}
   inline float DescImage::binx(unsigned b) const {return float(b)*_ppbx;}
   inline float DescImage::biny(unsigned b) const {return float(b)*_ppby;}
+  inline unsigned DescImage::nframes() const { return _nsubframes; }
+  inline const SubFrame& DescImage::frame(unsigned i) const { return _subframes[i]; }
 };
 
 #endif

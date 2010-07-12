@@ -44,6 +44,18 @@ namespace CspadGeometry {
   //  When filling the image, compensate data which
   //    only partially fills a pixel (at the edges)
   //
+#define FRAME_BOUNDS {							\
+    const unsigned ColBins = CspadElement::Columns/ppb;			\
+    const unsigned RowBins = CspadElement::Rows   /ppb;			\
+    unsigned x0 = CALC_X(column,0,0);					\
+    unsigned x1 = CALC_X(column,ColBins,RowBins);			\
+    unsigned y0 = CALC_Y(row,0,0);					\
+    unsigned y1 = CALC_Y(row,ColBins,RowBins);				\
+    if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }			\
+    if (y0 > y1) { unsigned t=y0; y0=y1; y1=t; }			\
+    image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+  }
+
 #define BIN_ITER {							\
     const unsigned ColBins = CspadElement::Columns/ppb;			\
     const unsigned RowBins = CspadElement::Rows   /ppb;			\
@@ -100,6 +112,41 @@ namespace CspadGeometry {
       orientation(r) {}
     virtual ~Asic() {}
   public:
+    void fill(Ami::DescImage& image) const
+    {
+      switch(orientation) {
+      case D0:
+#define CALC_X(a,b,c) (a+b)
+#define CALC_Y(a,b,c) (a-c)
+      FRAME_BOUNDS
+#undef CALC_X
+#undef CALC_Y
+	break;
+      case D90:
+#define CALC_X(a,b,c) (a+c)
+#define CALC_Y(a,b,c) (a+b)
+      FRAME_BOUNDS
+#undef CALC_X
+#undef CALC_Y
+	break;
+      case D180:
+#define CALC_X(a,b,c) (a-b)
+#define CALC_Y(a,b,c) (a+c)
+      FRAME_BOUNDS
+#undef CALC_X
+#undef CALC_Y
+	break;
+      case D270:
+#define CALC_X(a,b,c) (a-c)
+#define CALC_Y(a,b,c) (a-b)
+      FRAME_BOUNDS
+#undef CALC_X
+#undef CALC_Y
+	break;
+      default:
+	break;
+      }
+    }
     void fill(Ami::EntryImage& image,
 	      const uint16_t*  data) const
     {
@@ -152,6 +199,13 @@ namespace CspadGeometry {
 	asic[i] = Asic(tx,ty,r);
       }
     }
+    void fill(Ami::DescImage& image) const
+    {
+      asic[0].fill(image);
+      asic[1].fill(image);
+      asic[2].fill(image);
+      asic[3].fill(image);
+    }
     void fill(Ami::EntryImage& image,
 	      const uint16_t*  data) const
     {
@@ -180,6 +234,13 @@ namespace CspadGeometry {
       }
     }
   public:
+    void fill(Ami::DescImage&    image) const
+    {
+      element[0].fill(image);
+      element[1].fill(image);
+      element[2].fill(image);
+      element[3].fill(image);
+    }
     void fill(Ami::EntryImage&    image,
 	      const CspadElement* data) const
     {
@@ -208,6 +269,14 @@ namespace CspadGeometry {
       quad[3] = Quad(x,y,D270);
     }
   public:
+    void fill(Ami::DescImage&    image) const
+    {
+      //
+      //  The configuration should tell us how many elements to view
+      //
+      for(unsigned i=0; i<4; i++)
+	quad[i].fill(image);
+    }
     void fill(Ami::EntryImage&    image,
 	      const CspadElement* data) const
     {
@@ -261,6 +330,8 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   const DetInfo& det = static_cast<const DetInfo&>(info());
   DescImage desc(det, 0, ChannelID::name(det,0),
 		 _detector->xpixels()/ppb, _detector->ypixels()/ppb, ppb, ppb);
+  _detector->fill(desc);
+
   _entry = new EntryImage(desc);
   memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
   _entry->info(0,EntryImage::Pedestal);

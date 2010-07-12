@@ -59,6 +59,9 @@ void*      EdgeFinder::_serialize(void* p) const
 
 Entry&     EdgeFinder::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_output_entry;
+
   const EntryWaveform& entry = static_cast<const EntryWaveform&>(e);
   const DescWaveform& d = entry.desc();
   // find the boundaries where the pulse crosses the threshold
@@ -105,6 +108,6 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   }
   _output_entry->addinfo(entry.info(EntryWaveform::Normalization),
 			 EntryTH1F::Normalization);
-  _output_entry->valid(entry.time());
+  _output_entry->valid(e.time());
   return *_output_entry;
 }

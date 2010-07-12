@@ -34,6 +34,10 @@ QtPlot::QtPlot(QWidget* parent,
 {
   _name  = QtPersistent::extract_s(p);
   _frame = new QwtPlot(_name);
+  _frame->setTitle(QtPersistent::extract_s(p));
+  _frame->setAxisTitle(QwtPlot::xBottom,QtPersistent::extract_s(p));
+  _frame->setAxisTitle(QwtPlot::yLeft  ,QtPersistent::extract_s(p));
+
   _yrange->load(p);
 
   _layout();
@@ -82,6 +86,9 @@ void QtPlot::_layout()
 void QtPlot::save(char*& p) const
 {
   QtPersistent::insert(p,_name);
+  QtPersistent::insert(p,_frame->title().text());
+  QtPersistent::insert(p,_frame->axisTitle(QwtPlot::xBottom).text());
+  QtPersistent::insert(p,_frame->axisTitle(QwtPlot::yLeft).text());
   _yrange->save(p);
   QtPWidget::save(p);
 }

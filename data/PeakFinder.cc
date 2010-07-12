@@ -51,6 +51,9 @@ void*      PeakFinder::_serialize(void* p) const
 
 Entry&     PeakFinder::_operate(const Entry& e) const
 {
+  if (!e.valid()) 
+    return *_output_entry;
+
   const EntryImage& entry = static_cast<const EntryImage&>(e);
   const DescImage& d = entry.desc();
   const unsigned nx = d.nbinsx();
@@ -75,6 +78,6 @@ Entry&     PeakFinder::_operate(const Entry& e) const
 	_output_entry->addcontent(1,j,k);
     }
   }
-  _output_entry->valid(entry.time());
+  _output_entry->valid(e.time());
   return *_output_entry;
 }

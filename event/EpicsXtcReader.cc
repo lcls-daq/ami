@@ -80,7 +80,8 @@ void   EpicsXtcReader::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const EpicsPvHeader& pvData = *reinterpret_cast<const EpicsPvHeader*>(payload);
 
-  if (pvData.iPvId >= MaxPvs)
+  if (pvData.iPvId <  0 || 
+      pvData.iPvId >= MaxPvs)
     return;
 
   if (pvData.iDbrType < DBR_CTRL_STRING) {

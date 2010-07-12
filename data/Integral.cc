@@ -54,6 +54,9 @@ void*      Integral::_serialize(void* p) const
 
 Entry&     Integral::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_entry;
+
   double sum = 0;
   double n   = 0;
   switch(e.desc().type()) {
@@ -75,9 +78,20 @@ Entry&     Integral::_operate(const Entry& e) const
     break;
   case DescEntry::Image:
     { const EntryImage& en = static_cast<const EntryImage&>(e);
-      for(unsigned k=_xlo; k<_xhi; k++)
-	for(unsigned j=_ylo; j<_yhi; j++)
-	  sum += en.content(k,j);
+      const DescImage& d = en.desc();
+      if (d.nframes())
+	for(unsigned fn=0; fn<d.nframes(); fn++) {
+	  int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
+	  if (d.xy_bounds(xlo,xhi,ylo,yhi,fn)) {
+	    for(unsigned k=xlo; k<_xhi; k++)
+	      for(unsigned j=ylo; j<_yhi; j++)
+		sum += en.content(k,j);
+	  }
+	}
+      else
+	for(unsigned k=_xlo; k<_xhi; k++)
+	  for(unsigned j=_ylo; j<_yhi; j++)
+	    sum += en.content(k,j);
       n = en.info(EntryImage::Normalization);
       break; }
   case DescEntry::Waveform:
@@ -103,6 +117,7 @@ Entry&     Integral::_operate(const Entry& e) const
       break; }
   default: break;
   }
+
   _entry->valid(e.time());
   return *_entry;
 }

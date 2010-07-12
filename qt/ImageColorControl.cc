@@ -136,6 +136,7 @@ void ImageColorControl::save(char*& p) const
   QtPersistent::insert(p,_scale);
   QtPersistent::insert(p,_paletteGroup->checkedId());
   QtPersistent::insert(p,double(_pedestal));
+  QtPersistent::insert(p,_logscale->isChecked());
 }
 
 void ImageColorControl::load(const char*& p)
@@ -145,6 +146,7 @@ void ImageColorControl::load(const char*& p)
   _paletteGroup->button(palette)->setChecked(true);
   set_palette(palette);
   _pedestal     = QtPersistent::extract_d(p);
+  _logscale->setChecked(QtPersistent::extract_b(p));
   show_scale();
   emit windowChanged();
 }

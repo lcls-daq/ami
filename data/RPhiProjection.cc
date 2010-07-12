@@ -15,10 +15,6 @@
 
 using namespace Ami;
 
-static bool bounds(int& x0, int& x1, int& y0, int& y1,
-		   double xc, double yc, double r,
-		   const DescImage& d);
-  
 RPhiProjection::RPhiProjection(const DescEntry& output, 
 			       Axis axis, double lo, double hi,
 			       double xc, double yc) :
@@ -82,6 +78,9 @@ void*      RPhiProjection::_serialize(void* p) const
 
 Entry&     RPhiProjection::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_output;
+
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   const DescImage& inputd = _input->desc();
   const double           p = _input->info(EntryImage::Pedestal);
@@ -98,9 +97,8 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	o->reset();
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
-	  if (bounds(x0,x1,y0,y1,
-		     xc,yc, d.xup(),
-		     inputd)) {
+	  if (inputd.rphi_bounds(x0,x1,y0,y1,
+				 xc,yc, d.xup())) {
 	    for(int j=y0; j<y1; j++) {
 	      double dy  = inputd.biny(j)-yc;
 	      double dy2 = dy*dy;
@@ -117,9 +115,8 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	}
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
-	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, hi,
-		     inputd)) {
+	  if (inputd.rphi_bounds(x0,x1,y0,y1,
+				 _xc,_yc, hi)) {
 	    double losq = lo*lo;
 	    double hisq = hi*hi;
 	    for(int j=y0; j<y1; j++) {
@@ -148,9 +145,26 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	o->reset();
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
-	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, d.xup(),
-		     inputd)) {
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
+	      if (inputd.rphi_bounds(x0,x1,y0,y1,
+				     _xc,_yc, d.xup(),fn)) {
+		for(int j=y0; j<y1; j++) {
+		  double dy  = inputd.biny(j)-yc;
+		  double dy2 = dy*dy;
+		  for(int k=x0; k<x1; k++) {
+		    double dx  = inputd.binx(k)-xc;
+		    double dx2 = dx*dx;
+		    double f   = atan2(dy,dx);
+		    if ( (f>=lo && f<=hi) ||
+			 (f+2*M_PI <= hi) )
+		      o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
+		  }
+		}
+	      }
+	  }
+	  else if (inputd.rphi_bounds(x0,x1,y0,y1,
+				      _xc,_yc, d.xup())) {
 	    for(int j=y0; j<y1; j++) {
 	      double dy  = inputd.biny(j)-yc;
 	      double dy2 = dy*dy;
@@ -167,9 +181,31 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	}
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
-	  if (bounds(x0,x1,y0,y1,
-		     _xc,_yc, hi,
-		     inputd)) {
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
+	      if (inputd.rphi_bounds(x0,x1,y0,y1,
+				     _xc,_yc, hi, fn)) {
+		double losq = lo*lo;
+		double hisq = hi*hi;
+		for(int j=y0; j<y1; j++) {
+		  double dy  = inputd.biny(j)-yc;
+		  double dy2 = dy*dy;
+		  for(int k=x0; k<x1; k++) {
+		    double dx  = inputd.binx(k)-xc;
+		    double dx2 = dx*dx;
+		    double rsq = dx2 + dy2;
+		    if (rsq >= losq && rsq <= hisq) {
+		      double f = atan2(dy,dx);
+		      double y = _input->content(k,j)-p;
+		      o->addy(y, f);
+		      o->addy(y, f+2*M_PI);
+		    }
+		  }
+		}
+	      }
+	  }
+	  else if (inputd.rphi_bounds(x0,x1,y0,y1,
+				      _xc,_yc, hi)) {
 	    double losq = lo*lo;
 	    double hisq = hi*hi;
 	    for(int j=y0; j<y1; j++) {
@@ -199,22 +235,3 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
   return *_output;
 }
 
-bool bounds(int& x0, int& x1, int& y0, int& y1,
-	    double xc, double yc, double r,
-	    const DescImage& d)
-{
-  x0 = d.xbin(xc - r);
-  x1 = d.xbin(xc + r);
-  y0 = d.ybin(yc - r);
-  y1 = d.ybin(yc + r);
-  if ((x0 >= (int)d.nbinsx()) ||
-      (x1 < 0) ||
-      (y0 >= (int)d.nbinsy()) || 
-      (y1 < 0))
-    return false;
-  if (x0 < 0) x0=0;
-  if (x1 > (int)d.nbinsx()) x1=d.nbinsx();
-  if (y0 < 0) y0=0;
-  if (y1 > (int)d.nbinsy()) y1=d.nbinsy();
-  return true;
-}

@@ -27,9 +27,6 @@
 #include <stdio.h>
 
 static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
-static bool bounds(int& x0, int& x1, int& y0, int& y1,
-		   double xc, double yc, double r,
-		   const Ami::DescImage& d);
 
 //
 //  this could probably be a template
@@ -68,12 +65,24 @@ namespace Ami {
     public:
       double evaluate() const {
 	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
+	const DescImage&  d = e.desc();
 	double sum = 0;
 	double p   = double(e.info(EntryImage::Pedestal));
-	unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
-	for(unsigned j=ylo; j<=yhi; j++)
-	  for(unsigned i=xlo; i<=xhi; i++)
-	    sum += double(e.content(i,j))-p;
+	if (d.nframes()) {
+	  for(unsigned fn=0; fn<d.nframes(); fn++) {
+	    int xlo(_xlo), xhi(_xhi+1), ylo(_ylo), yhi(_yhi+1);
+	    if (d.xy_bounds(xlo, xhi, ylo, yhi, fn))
+	      for(int j=ylo; j<yhi; j++)
+		for(int i=xlo; i<xhi; i++)
+		  sum += double(e.content(i,j))-p;
+	  }
+	}
+	else {
+	  unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
+	  for(unsigned j=ylo; j<=yhi; j++)
+	    for(unsigned i=xlo; i<=xhi; i++)
+	      sum += double(e.content(i,j))-p;
+	}
 	double n = double(e.info(EntryImage::Normalization));
 	return n > 1 ? sum / n : sum;
       }
@@ -91,32 +100,60 @@ namespace Ami {
       double evaluate() const {
 	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
 	const DescImage& d = e.desc();
+	double sum = 0;
+	const double p = e.info(EntryImage::Pedestal);
 	int ixlo, ixhi, iylo, iyhi;
-	if (bounds(ixlo, ixhi, iylo, iyhi,
-		   _xc, _yc, _r1, d)) {
-	  double sum = 0;
-	  double p   = e.info(EntryImage::Pedestal);
-	  double xc(_xc), yc(_yc);
-	  double r0sq(_r0*_r0), r1sq(_r1*_r1);
-	  for(int j=iylo; j<=iyhi; j++) {
-	    double dy  = d.biny(j)-yc;
-	    double dy2 = dy*dy;
-	    for(int i=ixlo; i<=ixhi; i++) {
-	      double dx  = d.binx(i)-xc;
-	      double dx2 = dx*dx;
-	      double rsq = dx2 + dy2;
-	      double f   = atan2(dy,dx);
-	      if ( (rsq >= r0sq && rsq <= r1sq) &&
-		   ( (f>=_f0 && f<=_f1) ||
-		     (f+2*M_PI <= _f1) ) )
+	if (d.nframes()) {
+	  for(unsigned fn=0; fn<d.nframes(); fn++)
+	    if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
+			      _xc, _yc, _r1, fn)) {
+	      double xc(_xc), yc(_yc);
+	      double r0sq(_r0*_r0), r1sq(_r1*_r1);
+	      for(int j=iylo; j<=iyhi; j++) {
+		double dy  = d.biny(j)-yc;
+		double dy2 = dy*dy;
+		for(int i=ixlo; i<=ixhi; i++) {
+		  double dx  = d.binx(i)-xc;
+		  double dx2 = dx*dx;
+		  double rsq = dx2 + dy2;
+		  double f   = atan2(dy,dx);
+		  if ( (rsq >= r0sq && rsq <= r1sq) &&
+		       ( (f>=_f0 && f<=_f1) ||
+			 (f+2*M_PI <= _f1) ) )
+		    sum += double(e.content(i,j))-p;
+		}
+	      }
+	    }
+	    else
+	      return 0;
+	}
+	else {
+	  if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
+			    _xc, _yc, _r1)) {
+	    double sum = 0;
+	    double p   = e.info(EntryImage::Pedestal);
+	    double xc(_xc), yc(_yc);
+	    double r0sq(_r0*_r0), r1sq(_r1*_r1);
+	    for(int j=iylo; j<=iyhi; j++) {
+	      double dy  = d.biny(j)-yc;
+	      double dy2 = dy*dy;
+	      for(int i=ixlo; i<=ixhi; i++) {
+		double dx  = d.binx(i)-xc;
+		double dx2 = dx*dx;
+		double rsq = dx2 + dy2;
+		double f   = atan2(dy,dx);
+		if ( (rsq >= r0sq && rsq <= r1sq) &&
+		     ( (f>=_f0 && f<=_f1) ||
+		       (f+2*M_PI <= _f1) ) )
 		sum += double(e.content(i,j))-p;
+	      }
 	    }
 	  }
-	  double n = double(e.info(EntryImage::Normalization));
-	  return n > 0 ? sum / n : sum;
+	  else
+	    return 0;
 	}
-	else
-	  return 0;
+	double n = double(e.info(EntryImage::Normalization));
+	return n > 0 ? sum / n : sum;
       }
     private:
       const Entry*& _entry;
@@ -262,7 +299,11 @@ void*      BinMath::_serialize(void* p) const
 
 Entry&     BinMath::_operate(const Entry& e) const
 {
-  if (_term && e.valid()) {
+  _entry->valid(e.time());
+  if (!e.valid())
+    return *_entry;
+
+  if (_term) {
     _input = &e;
     double y = _term->evaluate();
 
@@ -304,7 +345,6 @@ Entry&     BinMath::_operate(const Entry& e) const
       break;
     }
   }
-  _entry->valid(e.time());
   return *_entry;
 }
 
@@ -320,25 +360,3 @@ static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
   }
 }
 
-bool bounds(int& x0, int& x1, int& y0, int& y1,
-	    double xc, double yc, double r,
-	    const DescImage& d)
-{
-  x0 = d.xbin(xc - r);
-  x1 = d.xbin(xc + r);
-  y0 = d.ybin(yc - r);
-  y1 = d.ybin(yc + r);
-  if ((x0 >= (int)d.nbinsx()) ||
-      (x1 < 0) ||
-      (y0 >= (int)d.nbinsy()) || 
-      (y1 < 0)) {
-    x0 = x1 = y0 = y1 = 0; 
-    printf("BinMath failed bounds check %g %g %g %d %d\n",
-	   xc,yc,r,d.nbinsx(),d.nbinsy());
-  }
-  if (x0 < 0) x0=0;
-  if (x1 >= (int)d.nbinsx()) x1=d.nbinsx()-1;
-  if (y0 < 0) y0=0;
-  if (y1 >= (int)d.nbinsy()) y1=d.nbinsy()-1;
-  return true;
-}

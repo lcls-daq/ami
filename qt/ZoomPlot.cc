@@ -52,6 +52,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _frame   (new ImageDisplay)
 {
   load(p);
+  _frame->plot()->autoXYScale(true);
 
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, true);

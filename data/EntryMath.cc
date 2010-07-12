@@ -109,6 +109,10 @@ void*      EntryMath::_serialize(void* p) const
 
 Entry&     EntryMath::_operate(const Entry& e) const
 {
+  _entry->valid(e.time());
+  if (!e.valid())
+    return *_entry;
+
   switch(e.desc().type()) {
     CASE_1D(TH1F    ,content);
     CASE_1D(Waveform,content);
@@ -118,6 +122,5 @@ Entry&     EntryMath::_operate(const Entry& e) const
     printf("EntryMath::_operator no implementation for type %d\n",e.desc().type());
     break;
   }
-  _entry->valid(e.time());
   return *_entry;
 }

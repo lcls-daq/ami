@@ -20,7 +20,7 @@ namespace Ami {
   class EntryAccessor {
   public:
     virtual ~EntryAccessor() {}
-    virtual double bin_value(unsigned) const = 0;
+    virtual double bin_value(unsigned,bool&) const = 0;
     virtual unsigned nbins() const = 0;
     virtual double xlow() const = 0;
     virtual double xup () const = 0;
@@ -28,7 +28,9 @@ namespace Ami {
   class TH1FAccessor : public EntryAccessor {
   public:
     TH1FAccessor(const EntryTH1F& e) : _entry(e) {}
-    double bin_value(unsigned bin) const { return _entry.content(bin); }
+    double bin_value(unsigned bin,
+		     bool& valid) const 
+    { valid=true; return _entry.content(bin); }
     unsigned nbins() const { return _entry.desc().nbins(); }
     double xlow() const { return _entry.desc().xlow(); }
     double xup () const { return _entry.desc().xup (); }
@@ -38,7 +40,13 @@ namespace Ami {
   class ProfAccessor : public EntryAccessor {
   public:
     ProfAccessor(const EntryProf& e) : _entry(e) {}
-    double bin_value(unsigned bin) const { return _entry.ymean(bin); }
+    double bin_value(unsigned bin,
+		     bool& valid) const 
+    {
+      double n=_entry.nentries(bin);
+      if (!(n>0)) { valid=false; return 0; }
+      else { valid = true; return _entry.ysum(bin)/n; } 
+    }
     unsigned nbins() const { return _entry.desc().nbins(); }
     double xlow() const { return _entry.desc().xlow(); }
     double xup () const { return _entry.desc().xup (); }
@@ -120,6 +128,9 @@ void*      PeakFitPlot::_serialize(void* p) const
 
 Entry&     PeakFitPlot::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_entry;
+
   EntryAccessor* acc;
   switch(e.desc().type()) {
   case DescEntry::TH1F: acc = new TH1FAccessor(static_cast<const EntryTH1F&>(e)); break;
@@ -130,11 +141,13 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
   }
 
   double y=0;
+  const unsigned nbins = acc->nbins();
   if (_prm==RMS) {
     double x0=0, x1=0, x2=0;
-    for(unsigned i=0; i<acc->nbins(); i++) {
-      double v  = acc->bin_value(i)-_baseline;
-      if (v>0) {
+    for(unsigned i=0; i<nbins; i++) {
+      bool lv;
+      double v  = acc->bin_value(i,lv)-_baseline;
+      if (v>0 && lv) {
 	double vi = v*double(i);
 	x0 += v;
 	x1 += vi;
@@ -144,45 +157,80 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     if (x0>0) {
       x1 /= x0;
       x2 /= x0;
-      y = sqrt(x2-x1*x1);
+      y = sqrt(x2-x1*x1)*(acc->xup()-acc->xlow())/double(nbins);
     }
+    else
+      return *_entry;
   }
   else {
-    unsigned v=0; y=acc->bin_value(0);
-    for(unsigned i=1; i<acc->nbins(); i++) {
-      double z = acc->bin_value(i);
-      if (z>y) { y=z; v=i; }
+    //
+    //  Find the peak
+    //
+    bool valid;
+    unsigned v=0; y=acc->bin_value(0,valid);
+    for(unsigned i=1; i<nbins; i++) {
+      bool lv;
+      double z = acc->bin_value(i,lv);
+      if (lv) {
+	if (!valid) { y=z; v=i; valid=true; }
+	else if (z>y) { y=z; v=i; }
+      }
     }
+    if (!valid)
+      return *_entry;
 
     if (_prm==FWHM) {  // Find closest edges that fall below half maximum
 
       double y2 = 0.5*(y+_baseline);
-    
-      double x0=0;
-      { unsigned i=v-1; 
+      if (y2 < 0)
+	return *_entry;
+
+      //
+      //  iterate left of the peak 
+      //    
+      double x0=0;      // location of half-maximum left of the peak
+      { double   x =y;  // value of last valid point
+	unsigned xi=v;  // index of last valid point
+	unsigned i=v-1; // test index
 	while(i>0) {
-	  double z = acc->bin_value(i);
-	  if (z < y2) {
-	    x0 = double(i) + (y2-z)/(acc->bin_value(i+1)-z);
-	    break;
+	  bool lv;
+	  double z = acc->bin_value(i,lv);
+	  if (lv) {
+	    if (z < y2) {  // found it. interpolate
+	      x0 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
+	      break;
+	    }
+	    x  = z;
+	    xi = i;
 	  }
 	  i--;
 	}
       }
 
-      double x1=acc->nbins();
-      { unsigned i=v+1; 
-	while(i<acc->nbins()) {
-	  double z = acc->bin_value(i);
-	  if (z < y2) {
-	    x1 = double(i) - (y2-z)/(acc->bin_value(i-1)-z);
-	    break;
+      //
+      //  iterate right of the peak
+      //
+      double x1=nbins;  // location of half-maximum right of the peak
+      { double   x =y;         // value of last valid point
+	unsigned xi=v;         // index of last valid point 
+	unsigned i=v+1;        // test index
+	while(i<nbins) {
+	  bool lv;
+	  double z = acc->bin_value(i,lv);
+	  if (lv) {
+	    if (z < y2) {  // found it. interpolate
+	      x1 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
+	      break;
+	    }
+	    x  = z;
+	    xi = i;
 	  }
 	  i++;
 	}
       }
-      
-      y = (x1-x0)*(acc->xup()-acc->xlow())/double(acc->nbins());
+
+      //  scale the width from bins into physical units      
+      y = (x1-x0)*(acc->xup()-acc->xlow())/double(nbins);
     }
 
     else {  // quadratic fit
@@ -190,22 +238,56 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       if (v == 0) {
 	if (_prm == Position)
 	  y = acc->xlow();
+	else
+	  return *_entry;
       }
-      else if (v == acc->nbins()-1) {
+      else if (v >= nbins-1) {
 	if (_prm == Position)
 	  y = acc->xup();
+	else
+	  return *_entry;
       }
       else {
-	double y1 = acc->bin_value(v-1);
-	double y2 = acc->bin_value(v)  ;
-	double y3 = acc->bin_value(v+1);
-	double a = y2 - 0.5*(y1+y3);
-	double b = 0.25*(y3-y1);
-	double di = a==0 ? 0 : b/a;
+	//
+	//  Find the first valid points left and right of the peak
+	//
+	unsigned il=v-1; // test index
+	double yl;
+	while(il>0) {
+	  bool lv;
+	  yl = acc->bin_value(il,lv);
+	  if (lv) 
+	    break;
+	  il--;
+	}
+	if (il == 0)
+	  return *_entry;
+
+	unsigned ir=v+1; // test index
+	double yr;
+	while(ir<nbins) {
+	  bool lv;
+	  yr = acc->bin_value(ir,lv);
+	  if (lv) 
+	    break;
+	  ir++;
+	}
+	if (ir >= nbins)
+	  return *_entry;
+
+	double di  = double(ir-il);
+	double di2 = double(ir*ir-il*il);
+	double si  = double(v)  -0.5*double(ir+il);
+	double si2 = double(v*v)-0.5*double(ir*ir+il*il);
+	double dy  = yr   -yl;
+	double sy  = y  -0.5*(yr+yl);
+
+	double i0 = 0.5*(si2*dy - di2*sy) / (si*dy-di*sy);
 	if (_prm == Position)
-	  y = acc->xlow() + (double(v) + di)*(acc->xup()-acc->xlow())/double(acc->nbins());
-	else
-	  y = y2 + b*di;
+	  y = acc->xlow() + i0*(acc->xup()-acc->xlow())/double(nbins);
+	else {  // Height
+	  y -= dy*pow(double(v)-i0,2) / (di2 - 2*i0*di);
+	}
       }
       if (_prm == Height)
 	y -= _baseline;

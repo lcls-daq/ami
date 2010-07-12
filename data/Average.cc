@@ -50,7 +50,11 @@ void*      Average::_serialize(void* p) const
 
 Entry&     Average::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_entry;
+
   _entry->valid(e.time());
+
   switch(e.desc().type()) {
   case DescEntry::TH1F:
     { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
@@ -74,9 +78,19 @@ Entry&     Average::_operate(const Entry& e) const
   case DescEntry::Image:
     { const EntryImage& en = static_cast<const EntryImage&>(e);
       EntryImage& _en = static_cast<EntryImage&>(*_entry);
-      for(unsigned j=0; j<en.desc().nbinsy(); j++)
-	for(unsigned k=0; k<en.desc().nbinsx(); k++)
-	  _en.addcontent(en.content(k,j),k,j);
+      const DescImage& d = _en.desc();
+      if (d.nframes()) {
+	for(unsigned fn=0; fn<d.nframes(); fn++) {
+	  const SubFrame& f = d.frame(fn);
+	  for(unsigned j=f.y; j<f.y+f.ny; j++)
+	    for(unsigned k=f.x; k<f.x+f.nx; k++)
+	      _en.addcontent(en.content(k,j),k,j);      
+	}
+      }
+      else
+	for(unsigned j=0; j<d.nbinsy(); j++)
+	  for(unsigned k=0; k<d.nbinsx(); k++)
+	    _en.addcontent(en.content(k,j),k,j);
       for(unsigned j=0; j<EntryImage::InfoSize; j++) {
 	EntryImage::Info i = (EntryImage::Info)j;
 	_en.addinfo(en.info(i),i);
