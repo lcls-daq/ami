@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 using namespace Ami;
 
 SyncAnalysis::SyncAnalysis(const Pds::DetInfo& detInfo, Pds::TypeId::Type dataType,
@@ -14,6 +15,7 @@ SyncAnalysis::SyncAnalysis(const Pds::DetInfo& detInfo, Pds::TypeId::Type dataTy
   _title(title),
   _liteShotsFull(0),
   _darkShotsFull(0),
+  _offByOneStatus(0),
   _arrayBuiltFlag(false),
   _valMin(0.0),
   _valMax(5000.0),
@@ -55,6 +57,9 @@ void SyncAnalysis::logEventDataPayload (void* payload)
 {
    _dataPayload = payload;	
    _newEvent = true;
+  //(reinterpret_cast<acqDataSpace* >(this))->logDetPayload(payload);
+
+   
 }
 
 
@@ -102,10 +107,7 @@ void SyncAnalysis::logDataPoint(double val, bool darkShot)
   }
 
   if (darkShot) 
-    printf("%s - val = %f Gval = %f Dval = %f  diff = %f darkIndex = %u\n",_title,val,_liteShotValue,_darkShotValue,(_liteShotValue-_darkShotValue),_darkShotIndex); 
+    printf("%s - val = %f Gval = %f Dval = %f  diff = %f%% darkIndex = %u\n",_title,val,_liteShotValue,_darkShotValue,((_liteShotValue-_darkShotValue)/(_valMax-_valMin))*100.0,_darkShotIndex); 
 
 }
-
-
-
 

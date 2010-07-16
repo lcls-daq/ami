@@ -7,6 +7,9 @@
 #include "ami/data/EntryTH1F.hh"
 #include "pdsdata/evr/DataV3.hh" 
 
+
+
+
 #include <list>
 
 namespace Pds {
@@ -19,6 +22,7 @@ namespace Ami {
   class Cds;
   class SyncAnalysis;
   class EntryTH1F;
+  //class dataSpace<class CONFIG, class DATA>;
 
   class SummaryAnalysis {
   public:
@@ -50,22 +54,37 @@ namespace Ami {
     void processIpimbData(SyncAnalysis* syncPtr);
     void processFccdData(SyncAnalysis* syncPtr);
     void processPulnixData(SyncAnalysis* syncPtr);
-    void refillSummaryPlot(SyncAnalysis* syncPtr, EntryTH1F* summaryGoodEntry, EntryTH1F* summaryDarkEntry, unsigned points, unsigned refillType) ;
+    void autoOffByOneDetection(SyncAnalysis* syncPtr);
+    void findMinMaxRange(SyncAnalysis* syncPtr, unsigned points);
+    void fillPlots(SyncAnalysis* syncPtr, EntryTH1F* summaryLiteEntry, EntryTH1F* summaryDarkEntry);
+    void refillPlotData(SyncAnalysis* syncPtr, EntryTH1F* summaryGoodEntry, EntryTH1F* summaryDarkEntry, unsigned points, unsigned refillType) ;
 
-  private:
+ 
+
+   private:
     typedef std::list<Ami::SyncAnalysis*> PList;
     typedef std::list<Ami::EntryTH1F*> EList;
     PList _syncAnalysisPList;
     EList _summaryEntryEList;
-	   unsigned _summaryEntries;
-    unsigned _analyzeCount; 
-    unsigned _notRefilledCount;
-	   bool _darkShot;
-    Pds::DetInfo _acqDetInfo;
-    Pds::Acqiris::ConfigV1 _acqConfig;
-    Pds::EvrData::DataV3* _evrEventData;
-    
+    Pds::EvrData::DataV3*  _evrEventData;
+	   bool       _darkShot;
+    double     _minVal;
+    double     _maxVal;
+    double     _range;
+    double     _margin;
+    double     _liteMinVal;
+    double     _liteMaxVal;
+    double     _darkMinVal;
+    double     _darkMaxVal;
+    unsigned   _liteLookUpIndexHigh; 
+    unsigned   _darkLookUpIndexHigh; 
+    unsigned   _liteLookUpIndexLow;
+    unsigned   _darkLookUpIndexLow;
+	   unsigned   _summaryEntries;
+    unsigned   _analyzeCount; 
+    unsigned   _notRefilledCount;
 
+ 
   };
 };
 
