@@ -93,21 +93,25 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  en->addinfo(1.,EntryTH1F::Normalization);
 	  break; }
       case DescEntry::Prof:    
-	{ bool damaged=false; double x=_term->evaluate();
+	if (_term) {
+	  bool damaged=false; double x=_term->evaluate();
 	  if (!damaged) {
 	    EntryProf* en = static_cast<EntryProf*>(_entry);
 	    en->addy(y,x);
 	    en->addinfo(1.,EntryProf::Normalization);
 	  }
-	  break; }
+	}
+	break;
       case DescEntry::Scan:    
-	{ bool damaged=false; double x=_term->evaluate();
+	if (_term) {
+	  bool damaged=false; double x=_term->evaluate();
 	  if (!damaged) {
 	    EntryScan* en = static_cast<EntryScan*>(_entry);
 	    en->addy(y,x);
 	    en->addinfo(1.,EntryScan::Normalization);
 	  }
-	  break; }
+	} 
+	break;
       case DescEntry::Waveform:
       case DescEntry::TH2F:
       case DescEntry::Image:
