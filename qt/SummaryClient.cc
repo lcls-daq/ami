@@ -49,7 +49,7 @@ namespace Ami {
       virtual ~QtBasePlot() { delete _base; }
     public:
       void update() { _base->update(); emit redraw(); }
-      void dump(FILE*) const {}
+      void dump(FILE* f) const { _base->dump(f); }
     private:
       QtBase* _base; 
     };
