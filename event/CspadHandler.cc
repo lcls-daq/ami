@@ -243,13 +243,13 @@ namespace CspadGeometry {
       element[3].fill(image);
     }
     void fill(Ami::EntryImage&    image,
-	      const CspadElement* data) const
+	      const CspadElement* data,
+	      unsigned            mask) const
     {
       const uint16_t* d = data->data();
-      element[0].fill(image,d+         0);
-      element[1].fill(image,d+ 4*185*194);
-      element[2].fill(image,d+ 8*185*194);
-      element[3].fill(image,d+12*185*194);
+      for(unsigned i=0; i<4; i++, 
+	    d+=4*Pds::CsPad::ColumnsPerASIC*Pds::CsPad::MaxRowsPerASIC)
+	if (mask&(1<<i)) element[i].fill(image,d);
     }
   public:
     TwoByTwo element[4];
@@ -273,7 +273,7 @@ namespace CspadGeometry {
     void set_configuration(const Pds::CsPad::ConfigV1& c)
     {
       _config = c;
-      printf("Found configuration with quad mask %x  asic mask %x\n",
+      printf("CspadHandler found configuration with quad mask %x  asic mask %x\n",
 	     c.quadMask(),c.asicMask());
     }
     void fill(Ami::DescImage&    image) const
@@ -293,7 +293,7 @@ namespace CspadGeometry {
       //
       for(unsigned i=0; i<4; i++)
 	if (_config.quadMask() & (1<<i)) {
-	  quad[data->quad()].fill(image,data);
+	  quad[data->quad()].fill(image,data,_config.asicMask());
 	  data = data->next(_config);
 	}
     }
