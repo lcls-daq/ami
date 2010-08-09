@@ -4,13 +4,14 @@
 #include "ami/data/ChannelID.hh"
 
 #include "pdsdata/cspad/ElementV1.hh"
+#include "pdsdata/cspad/ConfigV1.hh"
 
 #include <string.h>
 #include <stdio.h>
 
 //#define ZERO
 
-typedef Pds::Cspad::ElementV1 CspadElement;
+typedef Pds::CsPad::ElementV1 CspadElement;
 
 static const double pixel_size = 110e-6;
 static const unsigned ppb = 4;
@@ -45,8 +46,8 @@ namespace CspadGeometry {
   //    only partially fills a pixel (at the edges)
   //
 #define FRAME_BOUNDS {							\
-    const unsigned ColBins = CspadElement::Columns/ppb;			\
-    const unsigned RowBins = CspadElement::Rows   /ppb;			\
+    const unsigned ColBins = CsPad::ColumnsPerASIC/ppb;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC   /ppb;			\
     unsigned x0 = CALC_X(column,0,0);					\
     unsigned x1 = CALC_X(column,ColBins,RowBins);			\
     unsigned y0 = CALC_Y(row,0,0);					\
@@ -57,8 +58,8 @@ namespace CspadGeometry {
   }
 
 #define BIN_ITER {							\
-    const unsigned ColBins = CspadElement::Columns/ppb;			\
-    const unsigned RowBins = CspadElement::Rows   /ppb;			\
+    const unsigned ColBins = CsPad::ColumnsPerASIC/ppb;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC   /ppb;			\
     /*  zero the target region  */					\
     for(unsigned i=0; i<=ColBins; i++) {				\
       for(unsigned j=0; j<=RowBins; j++) {				\
@@ -82,7 +83,7 @@ namespace CspadGeometry {
 	unsigned v = data[0] + data[1];					\
 	image.addcontent(v*2,x,y);					\
 	data += 2;							\
-	data += CspadElement::Rows;					\
+	data += CsPad::MaxRowsPerASIC;					\
       }									\
     }									\
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
@@ -97,7 +98,7 @@ namespace CspadGeometry {
     unsigned v = data[0] + data[1];					\
     image.addcontent(v*8,x,y);     					\
     data += 2;                     					\
-    data += CspadElement::Rows;    					\
+    data += CsPad::MaxRowsPerASIC;    					\
 }
 
   //
@@ -269,13 +270,20 @@ namespace CspadGeometry {
       quad[3] = Quad(x,y,D270);
     }
   public:
+    void set_configuration(const Pds::CsPad::ConfigV1& c)
+    {
+      _config = c;
+      printf("Found configuration with quad mask %x  asic mask %x\n",
+	     c.quadMask(),c.asicMask());
+    }
     void fill(Ami::DescImage&    image) const
     {
       //
       //  The configuration should tell us how many elements to view
       //
       for(unsigned i=0; i<4; i++)
-	quad[i].fill(image);
+	if (_config.quadMask() & (1<<i))
+	  quad[i].fill(image);
     }
     void fill(Ami::EntryImage&    image,
 	      const CspadElement* data) const
@@ -283,13 +291,17 @@ namespace CspadGeometry {
       //
       //  The configuration should tell us how many elements to view
       //
-      for(unsigned i=0; i<4; i++, data++)
-	quad[data->quad()].fill(image,data);
+      for(unsigned i=0; i<4; i++)
+	if (_config.quadMask() & (1<<i)) {
+	  quad[data->quad()].fill(image,data);
+	  data = data->next(_config);
+	}
     }
     static unsigned xpixels() { return 2048-256; }
     static unsigned ypixels() { return 2048-256; }
-  public:
+  private:
     Quad quad[4];
+    Pds::CsPad::ConfigV1 _config;
   };
 };
 
@@ -324,6 +336,8 @@ void CspadHandler::reset() { _entry = 0; }
 
 void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
+  _detector->set_configuration(*reinterpret_cast<const Pds::CsPad::ConfigV1*>(payload));
+
   if (_entry) 
     delete _entry;
 
@@ -343,7 +357,8 @@ void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  _detector->fill(*_entry,reinterpret_cast<const CspadElement*>(payload));
+  const CspadElement* e = reinterpret_cast<const CspadElement*>(payload);
+  _detector->fill(*_entry,e);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
