@@ -16,10 +16,9 @@ namespace Ami {
     public:
       static FeatureRegistry& instance();
     public:
-      void               clear   ();
       void               insert  (const DiscoveryRx&);
     public:
-      const QStringList& names   () const;
+      QStringList        names   () const;
       const QStringList& help    () const;
       int                index   (const QString&) const;
     signals:
@@ -30,7 +29,7 @@ namespace Ami {
     private:
       QStringList _names;
       QStringList _help;
-      Ami::Semaphore _sem;
+      mutable Ami::Semaphore _sem;
     };
   };
 };

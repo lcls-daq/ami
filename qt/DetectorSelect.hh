@@ -60,7 +60,7 @@ namespace Ami {
       void                _load_setup_from_file(const char*);
       Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned);
       void                _connect_client(Ami::Qt::AbsClient* client);
-      void                _update_groups();
+//       void                _update_groups();
 
     private:
       unsigned       _ppinterface;
@@ -71,8 +71,8 @@ namespace Ami {
       std::list<QtTopWidget*> _client;
       QListWidget*   _detList;
       QPrinter*      _printer;
-      DetectorReset* _reset_box;
-      DetectorSave*  _save_box;
+//       DetectorReset* _reset_box;
+//       DetectorSave*  _save_box;
       QTimer*        _autosave_timer;
     };
   };

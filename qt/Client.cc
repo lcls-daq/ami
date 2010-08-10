@@ -171,7 +171,6 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   printf("%s Discovered\n",qPrintable(title()));
 
   //  iterate through discovery and print
-  FeatureRegistry::instance().clear ();
   FeatureRegistry::instance().insert(rx);
 
   char channel_name [128]; 

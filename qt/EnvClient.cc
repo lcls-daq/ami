@@ -183,7 +183,6 @@ void EnvClient::discovered(const DiscoveryRx& rx)
   _input = e->signature();
 
   //  iterate through discovery and print
-  FeatureRegistry::instance().clear ();
   FeatureRegistry::instance().insert(rx);
 
   _manager->configure();

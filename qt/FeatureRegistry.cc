@@ -14,17 +14,11 @@ FeatureRegistry& FeatureRegistry::instance()
   return *_instance;
 }
 
-void               FeatureRegistry::clear ()
-{
-  _sem.take();
-  _names.clear();
-  _sem.give();
-  _help .clear();
-}
-
 void               FeatureRegistry::insert(const DiscoveryRx& rx)
 {
   _sem.take();
+  _names.clear();
+  _help .clear();
   for(unsigned k=0; k<rx.features(); k++) {
     _names << QString(rx.feature_name(k));
     _help  << QString();
@@ -55,9 +49,12 @@ void               FeatureRegistry::insert(const DiscoveryRx& rx)
   emit changed();
 }
 
-const QStringList& FeatureRegistry::names () const
+QStringList FeatureRegistry::names () const
 {
-  return _names;
+  _sem.take();
+  QStringList n(_names);
+  _sem.give();
+  return n;
 }
 
 const QStringList& FeatureRegistry::help() const
