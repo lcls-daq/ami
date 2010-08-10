@@ -14,6 +14,8 @@ DescImage::DescImage(const char* name,
   _nbinsy(nbinsy ? nbinsy : 1),
   _ppbx  (ppbx),
   _ppby  (ppby),
+  _mmppx (0),
+  _mmppy (0),
   _nsubframes(0)
 {}
 
@@ -29,6 +31,8 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _nbinsy(nbinsy ? nbinsy : 1),
   _ppbx  (ppbx),
   _ppby  (ppby),
+  _mmppx (0),
+  _mmppy (0),
   _nsubframes(0)
 {}
 
@@ -41,6 +45,13 @@ void DescImage::params(unsigned nbinsx,
   _nbinsy = nbinsy ? nbinsy : 1;
   _ppbx = ppxbin;
   _ppby = ppybin;
+}
+
+void DescImage::set_scale(float scalex, 
+			  float scaley)
+{
+  _mmppx = scalex;
+  _mmppy = scaley;
 }
 
 void DescImage::add_frame(unsigned x,

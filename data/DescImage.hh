@@ -43,6 +43,9 @@ namespace Ami {
 		int ppxbin,
 		int ppybin);
 
+    void set_scale(float mmppx,
+		   float mmppy);
+
     void add_frame(unsigned x,
 		   unsigned y,
 		   unsigned nx,
@@ -65,6 +68,8 @@ namespace Ami {
     unsigned short _nbinsy;
     unsigned short _ppbx;
     unsigned short _ppby;
+    float          _mmppx;
+    float          _mmppy;
     enum { MAX_SUBFRAMES=64 };
     unsigned _nsubframes;
     SubFrame _subframes[MAX_SUBFRAMES];
