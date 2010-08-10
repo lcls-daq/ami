@@ -31,10 +31,10 @@ void   IpmFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
   char* iptr = buffer+strlen(buffer);
   
   unsigned i=0;
-  sprintf(iptr,":CHAN0"); _index[i++] = _cache.add(buffer);
-  sprintf(iptr,":CHAN1"); _index[i++] = _cache.add(buffer);
-  sprintf(iptr,":CHAN2"); _index[i++] = _cache.add(buffer);
-  sprintf(iptr,":CHAN3"); _index[i++] = _cache.add(buffer);
+  sprintf(iptr,":CH0"); _index[i++] = _cache.add(buffer);
+  sprintf(iptr,":CH1"); _index[i++] = _cache.add(buffer);
+  sprintf(iptr,":CH2"); _index[i++] = _cache.add(buffer);
+  sprintf(iptr,":CH3"); _index[i++] = _cache.add(buffer);
 
   sprintf(iptr,":SUM");
   _index[i++] = _cache.add(buffer);

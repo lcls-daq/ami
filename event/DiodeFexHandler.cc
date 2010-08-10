@@ -30,7 +30,7 @@ void   DiodeFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
   strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
   char* iptr = buffer+strlen(buffer);
   
-  sprintf(iptr,":DIODE"); 
+  sprintf(iptr,":CH0"); 
   _index = _cache.add(buffer);
 }
 
