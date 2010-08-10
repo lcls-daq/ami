@@ -70,9 +70,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   _clientPort (Port::clientPortBase()),
   _manager    (new ClientManager(ppinterface,
 				 interface, serverGroup, 
-				 _clientPort++,*this)),
-  _reset_box  (new DetectorReset(this, _client)),
-  _save_box   (new DetectorSave (this, _client))
+				 _clientPort++,*this))
 {
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -163,8 +161,8 @@ int DetectorSelect::get_setup(char* buffer) const
   QtPersistent::insert(p,QString("EndDetectorSelect"));
 
   save(p);
-  _save_box ->save(p);
-  _reset_box->save(p);
+  //  _save_box ->save(p);
+  //  _reset_box->save(p);
 
   return p-buffer;
 }
@@ -262,8 +260,8 @@ void DetectorSelect::set_setup(const char* p, int size)
   }
 
   load(p);
-  _save_box ->load(p);
-  _reset_box->load(p);
+  //  _save_box ->load(p);
+  //  _reset_box->load(p);
 }
 
 void DetectorSelect::print_setup()
@@ -275,12 +273,28 @@ void DetectorSelect::print_setup()
 
 void DetectorSelect::reset_plots()
 {
-  _reset_box->show();
+  // _reset_box->apply();
+
+  for(std::list<QtTopWidget*>::iterator it=_client.begin();
+      it!=_client.end(); it++)
+    (*it)->reset_plots();
 }
 
 void DetectorSelect::save_plots()
 {
-  _save_box->show();
+  // _save_box->apply();
+
+  char time_buffer[32];
+  time_t seq_tm = time(NULL);
+  strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
+
+  QString def = QString("%1/%2").arg(Path::base()).arg(time_buffer);
+
+  QString prefix = QFileDialog::getSaveFileName(0,"Save Files with Prefix",
+						def,"*.dat");
+  for(std::list<QtTopWidget*>::iterator it=_client.begin();
+      it!=_client.end(); it++)
+    (*it)->save_plots(QString("%1_%2").arg(prefix).arg((*it)->title()));
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info, 
@@ -314,7 +328,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
 					      *client);	
    client->managed(*manager);					
    _client.push_back(client);
-   _update_groups();
+   //   _update_groups();
 
    connect(client, SIGNAL(changed()), this, SLOT(queue_autosave()));
 }
@@ -394,7 +408,7 @@ void DetectorSelect::change_detectors(const char* c)
     }
     _detList->sortItems();
   }
-  _update_groups();
+  //  _update_groups();
 
   setUpdatesEnabled(true);
 }
@@ -408,6 +422,7 @@ void DetectorSelect::read_payload    (Socket& s,int) {
 void DetectorSelect::process         () {
 }
 
+/*
 void DetectorSelect::_update_groups()
 {
   DetectorReset* reset_box = new DetectorReset(*_reset_box);
@@ -417,6 +432,7 @@ void DetectorSelect::_update_groups()
   delete _save_box;
   _save_box = save_box;
 }
+*/
 
 void DetectorSelect::queue_autosave()
 {
