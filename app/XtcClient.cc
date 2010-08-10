@@ -2,6 +2,7 @@
 
 #include "ami/app/SummaryAnalysis.hh"
 
+#include "ami/event/Composer.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/event/EvrHandler.hh"
 #include "ami/event/FEEGasDetEnergyReader.hh"
@@ -10,6 +11,7 @@
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
+#include "ami/event/IpmFexHandler.hh"
 #include "ami/event/EncoderHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/TM6740Handler.hh"
@@ -18,6 +20,7 @@
 #include "ami/event/CspadHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
+#include "ami/event/PimImageComposer.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -90,6 +93,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       }
     }
 
+    for(CList::iterator it = _composers.begin(); it != _composers.end(); it++)
+      delete (*it);
+    _composers.clear();
+
     printf("XtcClient configure done\n");
 
     //  Advertise
@@ -152,6 +159,8 @@ int XtcClient::process(Pds::Xtc* xtc)
 		 xtc->contains.id()==h->config_type()) {
 	  h->_calibrate(xtc->payload(),_seq->clock());
 	}
+	else
+	  continue;
 	return 1;
       }
     }
@@ -159,6 +168,7 @@ int XtcClient::process(Pds::Xtc* xtc)
     if (_seq->service()==Pds::TransitionId::Configure) {
       const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
       EventHandler* h = 0;
+      Composer*     c = 0;
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
@@ -175,15 +185,37 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,_cache); break;
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
+      case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,_cache); break;
+      case Pds::TypeId::Id_PimImageConfig:   c = new PimImageComposer  (info, xtc->payload()); break;
       default: break;
       }
-      if (!h)
-	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
-      else {
+      if (h) {
 	printf("XtcClient::process adding handler for type %x\n",xtc->contains.id());
 	insert(h);
 	h->_configure(xtc->payload(),_seq->clock());
+	for(CList::iterator it = _composers.begin(); it != _composers.end(); it++) {
+	  c = *it;
+	  if (c->info() == h->info()) {
+	    _composers.remove(c);
+	    c->compose(*h);
+	    delete c;
+	    return 1;
+	  }
+	}
       }
+      else if (c) {
+	for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+	  h = *it;
+	  if (h->info() == c->info()) {
+	    c->compose(*h);
+	    delete c;
+	    return 1;
+	  }
+	}
+	_composers.push_back(c);
+      }
+      else
+	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
     }
   }
   return 1;

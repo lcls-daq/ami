@@ -15,6 +15,7 @@ namespace Ami {
 
   class FeatureCache;
   class Factory;
+  class Composer;
   class EventHandler;
   class Entry;
   class UserAnalysis;
@@ -35,12 +36,14 @@ namespace Ami {
     int  process(Pds::Xtc*);
   private:
     typedef std::list<EventHandler*> HList;
+    typedef std::list<Composer*>     CList;
     FeatureCache& _cache;
     Factory&      _factory;
     UserAnalysis* _user;
     const Pds::Sequence* _seq;
     bool      _sync;
     HList     _handlers;
+    CList     _composers;
     Entry*    _entry;
     bool      _ready;
   };

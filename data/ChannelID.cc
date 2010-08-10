@@ -9,30 +9,25 @@ static char _buffer[128];
 
 #define NoChannel(title) { strcpy(_buffer,title); }
 #define AppendChannel(title) { sprintf(_buffer,"%s_%d",title,channel+1); }
-#define AcqChannel(title) {			\
+#define AcqChannel(title)			\
     if (info.device()==DetInfo::Acqiris)	\
-      AppendChannel(title);			\
-  }
-#define OpalChannel(title) {			\
+      AppendChannel(title)			
+#define OpalChannel(title)  			\
     if (info.device()==DetInfo::Opal1000)	\
-      AppendChannel(title);			\
-  }
-#define AcqDetector(title) {			\
+      AppendChannel(title)			
+#define AcqDetector(title) 			\
     if (info.device()==DetInfo::Acqiris)	\
-      NoChannel(title);				\
-  }
-#define OpalDetector(title) {				\
+      NoChannel(title);				
+#define OpalDetector(title) 				\
     if (info.device()==DetInfo::Opal1000) {		\
       if (info.devId()==0)				\
 	strcpy(_buffer,title);				\
       else						\
 	sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
-    }							\
-  }
-#define PnccdDetector {				     \
+    }							
+#define PnccdDetector 				     \
     if (info.device()==DetInfo::pnCCD)		     \
-      sprintf(_buffer,"pnCCD_%d",info.devId()+1);    \
-  }
+      sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
@@ -61,9 +56,10 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
   case DetInfo::AmoBps   : OpalChannel("BPS"); break;
     //  CAMP Detectors
   case DetInfo::Camp     : 
-    AcqChannel("ACQ"); 
-    OpalDetector("VMI"); 
-    PnccdDetector;
+    AcqChannel("ACQ")
+    else OpalDetector("VMI")
+    else PnccdDetector
+    else _default(_buffer,info,channel);
     break;
     //  Others
   case DetInfo::SxrBeamline:
