@@ -5,12 +5,6 @@
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/DescScalar.hh"
 
-
-
-#include <stdio.h>
-#include <math.h>
-
-
 #define DARK_SHOT_EVENT_CODE    162
 #define DATA_RECORD_POINTS      10000,1000       //LiteShots, DarkShots points 
 #define DISPLAY_N_POINTS        8000
@@ -20,6 +14,8 @@
 #define X_MIN                   0
 #define X_MAX                   100
 #define AUTO_DETECTION_ENB      false
+#define H2D_DET_X_DATATYPE      Pds::TypeId::Id_EBeam
+#define H2D_DET_Y_DATATYPE      Pds::TypeId::Id_PhaseCavity
 
 using namespace Ami;
 
@@ -28,10 +24,6 @@ static EntryScalar* _minutes = 0;
 static Cds* _cds = 0;
 static Pds::ClockTime _clk;
 
-static double ebeamjunk;
-static bool shotCounterEnb = false;
-static unsigned shotCounter = 0;
-
 SummaryAnalysis::SummaryAnalysis():_darkShot(false),_summaryEntries(0),_analyzeCount(0),_notRefilledCount(0) { }
 SummaryAnalysis::~SummaryAnalysis() 
 {
@@ -39,7 +31,13 @@ SummaryAnalysis::~SummaryAnalysis()
     _summaryEntryEList.clear();
 
   if (!_syncAnalysisPList.empty())
-    _syncAnalysisPList.clear();  
+    _syncAnalysisPList.clear(); 
+
+  if (_scatterPlotEntry) {  
+    delete _scatterPlotEntry;
+    _scatterPlotEntry = 0;
+  }
+ 
 }
 
 void SummaryAnalysis::reset () 
@@ -66,24 +64,21 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
   switch(type.id())  {
     case Pds::TypeId::Id_AcqConfig:
       h = new acqDataSpace(detInfo, Pds::TypeId::Id_AcqWaveform,      Pds::TypeId::Id_AcqConfig,       payload, "Acqiris");
-      //memcpy(h->configPayload(), payload, sizeof(AcqConfigType) );
       break;
     case Pds::TypeId::Id_Opal1kConfig:
       h = new opalDataSpace(detInfo, Pds::TypeId::Id_Frame,           Pds::TypeId::Id_Opal1kConfig,    payload, "Opal");
       break; 
     case Pds::TypeId::Id_FccdConfig:
-      h = new SyncAnalysis(detInfo, Pds::TypeId::Id_Frame,           Pds::TypeId::Id_FccdConfig,      payload, "Fccd");
+      h = new fccdDataSpace(detInfo, Pds::TypeId::Id_Frame,           Pds::TypeId::Id_FccdConfig,      payload, "Fccd"); 
       break; 
     case Pds::TypeId::Id_TM6740Config:
       h = new pulnixDataSpace(detInfo, Pds::TypeId::Id_Frame,              Pds::TypeId::Id_TM6740Config,    payload, "Pulnix");
       break; 
     case Pds::TypeId::Id_PrincetonConfig:
       h = new princetonDataSpace(detInfo, Pds::TypeId::Id_PrincetonFrame,  Pds::TypeId::Id_PrincetonConfig, payload, "Princeton");
-      //memcpy(h->configPayload(), payload, sizeof(PrincetonConfigType) );
       break;
     case Pds::TypeId::Id_pnCCDconfig:
       h = new pnccdDataSpace(detInfo, Pds::TypeId::Id_pnCCDframe,          Pds::TypeId::Id_pnCCDconfig,     payload, "PnCCD");
-      //memcpy(h->configPayload(), payload, sizeof(pnCCDConfigType) );
       break;   
     case Pds::TypeId::Id_IpimbConfig:
       h = new ipimbDataSpace(detInfo, Pds::TypeId::Id_IpimbData,           Pds::TypeId::Id_IpimbConfig,     payload, "IPIMB");  
@@ -98,35 +93,29 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
       h = new phaseCavityDataSpace(detInfo, Pds::TypeId::Id_PhaseCavity,    Pds::TypeId::Id_PhaseCavity,     payload, "PhaseCavity"); 
       break;
 
-   	default: break;
-  }
-  if (!h)
-    { }//printf("SummaryAnalysis::not supported configType: %s \n", Pds::TypeId::name(type.id()));
-  else {
+    default: break;
+  } 
+  if (h) {
     //printf("SummaryAnalysis::received configType: %s \n", Pds::TypeId::name(type.id()));
     insert(h);
     printf("%d th Summary Entry made: %s/%d/%s/%d \n",_summaryEntries, detInfo.name(detInfo.detector()),
-                                      detInfo.detId(), detInfo.name(detInfo.device()),detInfo.devId());  
-	   _summaryEntries++;
-    //h->logConfigPayload(payload);
+      detInfo.detId(), detInfo.name(detInfo.device()),detInfo.devId());  
+    _summaryEntries++;
   }
-
 }
   
 
 void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void* payload)
 {
-
   const DetInfo& detInfo = reinterpret_cast<const Pds::DetInfo&>(src); 
   if (type.id() == Pds::TypeId::Id_EvrData) 
-		  _evrEventData = const_cast<Pds::EvrData::DataV3*>(reinterpret_cast<const Pds::EvrData::DataV3*>(payload));
+    _evrEventData = const_cast<Pds::EvrData::DataV3*>(reinterpret_cast<const Pds::EvrData::DataV3*>(payload));
   else if((type.id() == Pds::TypeId::Id_AcqWaveform)     || (type.id() == Pds::TypeId::Id_Frame) || 
           (type.id() == Pds::TypeId::Id_FEEGasDetEnergy) || (type.id() == Pds::TypeId::Id_EBeam) ||
           (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_PrincetonFrame) ||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
     if (_syncAnalysisPList.empty()) 
-      //      printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
-      ;
+      printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
     else {
       bool entryFoundFlag = false;   
       for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++) {
@@ -163,6 +152,12 @@ void SummaryAnalysis::clear ()
   if (!_summaryEntryEList.empty())
     _summaryEntryEList.clear();
 
+  if (_scatterPlotEntry) { 
+    _cds->remove(_scatterPlotEntry); 
+    delete _scatterPlotEntry;
+    _scatterPlotEntry = 0;
+  }
+
    _cds = 0;
 
 }
@@ -173,15 +168,39 @@ void SummaryAnalysis::create   (Cds& cds)
   printf("SummaryAnalysis::create\n");
   _notRefilledCount = 0;
   _analyzeCount = 0;
+  _scatterPlotBinsCount = 0;
+
   _seconds = new EntryScalar(DescScalar("Seconds#Time","Seconds"));
   _minutes = new EntryScalar(DescScalar("Minutes#Time","Minutes"));
   
   _cds = &cds; 
   cds.add(_seconds);
   cds.add(_minutes);
-  
+
+  //check presence of 2 detectors
+  _detXYPresent = false;
+  _syncPtrDetX = 0;
+  _syncPtrDetY = 0;
+  char displayTitle[50]; 
   EntryTH1F* summaryEntry = 0;
-  char displayTitle[50];  
+  _scatterPlotEntry= 0;
+
+  for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++) {
+    SyncAnalysis* syncPtr = *it;
+    if (syncPtr->getDataType() == H2D_DET_X_DATATYPE)   _syncPtrDetX = *it;
+    if (syncPtr->getDataType() == H2D_DET_Y_DATATYPE)   _syncPtrDetY = *it;
+  }
+
+  //for 2-D correleation plot
+  if ( (_syncPtrDetX != 0) && (_syncPtrDetY != 0) ) {				
+    sprintf(displayTitle,"%s/%s#Ebeam-PhCvty",_syncPtrDetY->getTitle(),_syncPtrDetX->getTitle());
+    _scatterPlotEntry = new EntryScan(_syncPtrDetX->detInfo, 0, displayTitle,_syncPtrDetX->getTitle(),_syncPtrDetY->getTitle());
+    _scatterPlotEntry->params(DISPLAY_N_POINTS); 
+    cds.add(_scatterPlotEntry);
+    _detXYPresent = true;
+  } 
+
+  //for 1-D Histogram plot
   for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++) {
     SyncAnalysis* syncPtr = *it;
     if (syncPtr->arrayBuiltFlag())
@@ -195,90 +214,51 @@ void SummaryAnalysis::create   (Cds& cds)
       sprintf(displayTitle,"LightShotsSummary#%s",syncPtr->getTitle());
     else
       sprintf(displayTitle,"LightShotsSummary#%s/%d/%s/%d",syncPtr->detInfo.name(syncPtr->detInfo.detector()), syncPtr->detInfo.detId(),
-                          syncPtr->detInfo.name(syncPtr->detInfo.device()),syncPtr->detInfo.devId());  
+        syncPtr->detInfo.name(syncPtr->detInfo.device()),syncPtr->detInfo.devId());
     summaryEntry = new EntryTH1F(syncPtr->detInfo, 0, displayTitle,"Range","Value");
+    summaryEntry->params(NO_OF_BINS, X_MIN, X_MAX);
     insertEntry(summaryEntry);
-    summaryEntry->params(NO_OF_BINS, X_MIN, X_MAX); 
     cds.add(summaryEntry); 
-
+ 
     //Dark Data Plots Entry
     if( (dataType == Pds::TypeId::Id_FEEGasDetEnergy) || (dataType == Pds::TypeId::Id_EBeam) || (dataType == Pds::TypeId::Id_PhaseCavity) )
       sprintf(displayTitle,"DarkShotsSummary#%s",syncPtr->getTitle());
     else
       sprintf(displayTitle,"DarkShotsSummary#%s/%d/%s/%d",syncPtr->detInfo.name(syncPtr->detInfo.detector()), syncPtr->detInfo.detId(),
-                          syncPtr->detInfo.name(syncPtr->detInfo.device()),syncPtr->detInfo.devId());  
+        syncPtr->detInfo.name(syncPtr->detInfo.device()),syncPtr->detInfo.devId());  
     summaryEntry = new EntryTH1F(syncPtr->detInfo, 0, displayTitle,"Range","Value");
+    summaryEntry->params(NO_OF_BINS, X_MIN, X_MAX);
     insertEntry(summaryEntry);
-    summaryEntry->params(NO_OF_BINS, X_MIN, X_MAX); 
-    cds.add(summaryEntry); 
-
+    cds.add(summaryEntry);     
   }
-
-
 }
 
 void SummaryAnalysis::analyze  () 
 {
   //printf("SummaryAnalysis::analyze \n");
   if (_cds) {
-
     // EVR Data Read for darkShot check
     for(unsigned i=0;i < _evrEventData->numFifoEvents(); i++) {
       if ( _evrEventData->fifoEvent(i).EventCode == DARK_SHOT_EVENT_CODE) { 
         _darkShot = true;
-   	    printf("Dark Shot Found \n");
+   	printf("Dark Shot Found \n");
         break;
-      } else  _darkShot = false;
+      } else  _darkShot = false;      
     }
 
-    // Process detector's data
+    // Process all detector's data
+    double val = 0;
     for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++) {
       SyncAnalysis* syncPtr = *it;
-        
-      switch(syncPtr->getDataType()) {
-
-        case Pds::TypeId::Id_AcqWaveform : 
-          processAcqirisData(syncPtr);
-          break;	 
-        case Pds::TypeId::Id_Frame : 
-          if (syncPtr->getConfigType() == Pds::TypeId::Id_Opal1kConfig)
-            processOpalData(syncPtr);
-          else if (syncPtr->getConfigType() == Pds::TypeId::Id_FccdConfig)
-            processFccdData(syncPtr);
-          else if (syncPtr->getConfigType() == Pds::TypeId::Id_TM6740Config)
-            processPulnixData(syncPtr);
-          else
-            printf("**** ERROR:: Unsupported Detector with Id_frame dataType \n");  
-          break;	
-        case Pds::TypeId::Id_PrincetonFrame :  
-          processPrincetonData(syncPtr);
-          break;	
-        case Pds::TypeId::Id_pnCCDframe :
-          processPnccdData(syncPtr);
-          break;	
-        case Pds::TypeId::Id_IpimbData :
-          processIpimbData(syncPtr);
-          break;	
-        case Pds::TypeId::Id_FEEGasDetEnergy : 
-          processGasDetectorData(syncPtr);
-          break;	
-        case Pds::TypeId::Id_EBeam : 
-          processEBeamData(syncPtr);
-          break;	
-        case Pds::TypeId::Id_PhaseCavity : 
-          processPhaseCavityData(syncPtr);
-          break;	  
-	  
-        default: 
-          printf(" ERROR :: Processing Invalid Type data in analyze()\n");	
-	         break;
-
+      if (syncPtr->newEvent()) {
+        val = syncPtr->processData();
+        syncPtr->logDataPoint(val, _darkShot);
+        syncPtr->setNewEventFlag(false);
       }
     }
-
-
-
-    //Update Plot Data 
+      
+    //Update Plot Data
+    _plot2DRefill = false; 
     PList::iterator it = _syncAnalysisPList.begin();
     for(EList::iterator itSummary = _summaryEntryEList.begin(); itSummary != _summaryEntryEList.end(); itSummary++, it++) {
       SyncAnalysis* syncPtr = *it;
@@ -317,6 +297,22 @@ void SummaryAnalysis::analyze  ()
       }
     }  
 
+    // For 2-D Plot
+    bool includeDarkShot = false;
+    if (_detXYPresent) {
+      if (_plot2DRefill)
+        refill2DPlotData(DISPLAY_N_POINTS,includeDarkShot) ;
+      else { 
+     	  double dataX = fabs( (_syncPtrDetX->getLiteShotVal()-_syncPtrDetX->getValMin()) * _syncPtrDetX->getScalingFactor());
+          double dataY = fabs( (_syncPtrDetY->getLiteShotVal()-_syncPtrDetY->getValMin()) * _syncPtrDetY->getScalingFactor());
+        _scatterPlotEntry->xbin(dataX,_scatterPlotBinsCount);
+        _scatterPlotEntry->ysum(dataY,_scatterPlotBinsCount);    
+        _scatterPlotEntry->nentries(1,_scatterPlotBinsCount);    
+        _scatterPlotBinsCount++;
+        if(_scatterPlotBinsCount >= DISPLAY_N_POINTS) _scatterPlotBinsCount = 0;    
+      }       
+    }
+  
     if(_notRefilledCount >= DISPLAY_N_POINTS)
       _notRefilledCount = 1; 
     else
@@ -330,231 +326,8 @@ void SummaryAnalysis::analyze  ()
     _seconds->valid(_clk);
     _minutes->valid(_clk);
     _seconds->addcontent(_clk.seconds()%60); 
-		  _minutes->addcontent((_clk.seconds()/60)%60);
-
-	
+    _minutes->addcontent((_clk.seconds()/60)%60);
   }
-}
-
-
-void SummaryAnalysis::processAcqirisData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    //const Pds::Acqiris::ConfigV1* acqConfig = reinterpret_cast<const Pds::Acqiris::ConfigV1*>(syncPtr->configPayload()); 
-    //Pds::Acqiris::DataDescV1* acqData = const_cast<Pds::Acqiris::DataDescV1*>(reinterpret_cast<const Pds::Acqiris::DataDescV1*>(syncPtr->dataPayload()));
-    //const Pds::Acqiris::ConfigV1* acqConfig = &(reinterpret_cast<Ami::dataSpace<Pds::Acqiris::ConfigV1, Pds::Acqiris::DataDescV1>* >(syncPtr))->detConfig;
-    //Pds::Acqiris::DataDescV1* acqData = (reinterpret_cast<Ami::dataSpace<Pds::Acqiris::ConfigV1, Pds::Acqiris::DataDescV1>* >(syncPtr))->detData;
-
-    //typedef Ami::dataSpace<Pds::Acqiris::ConfigV1, Pds::Acqiris::DataDescV1> detSpace;
-    //typedef Ami::dataSpace<AcqConfigType, Pds::Acqiris::DataDescV1> detSpace;
-    //detSpace*  detDataSpace = reinterpret_cast<detSpace* >(syncPtr);
-    typedef Pds::Acqiris::DataDescV1 acqDataType;
-    acqDataSpace* detDataSpace = reinterpret_cast<acqDataSpace*>(syncPtr);
-    const Pds::Acqiris::ConfigV1* acqConfig = &(detDataSpace->detConfig);
-    //acqDataType* acqData = detDataSpace->detData;
-    acqDataType* acqData = const_cast<acqDataType*>(reinterpret_cast<const acqDataType*>(syncPtr->dataPayload()));
-
-	   const Pds::Acqiris::HorizV1& h = acqConfig->horiz();
-    unsigned n = acqConfig->nbrChannels();
-    double val = 0;  
-    for (unsigned i=0;i<n;i++) {	
-      const int16_t* data = acqData->waveform(h);
-      data += acqData->indexFirstPoint();
-      float slope = acqConfig->vert(i).slope();
-      float offset = acqConfig->vert(i).offset();
-      unsigned nbrSamples = h.nbrSamples();
-      for (unsigned j=0;j<nbrSamples;j++) {
-        int16_t swap = (data[j]&0xff<<8) | (data[j]&0xff00>>8);
-        val = val + fabs(swap*slope-offset);      //fabs value for area under curve 
-      }
-      acqData = acqData->nextChannel(h);	
-    }
-    syncPtr->logDataPoint(val, _darkShot);
-    syncPtr->setNewEventFlag(false);
-  } 
-
-}
-
-void SummaryAnalysis::processOpalData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    const Pds::Camera::FrameV1& opalFrame = *reinterpret_cast<const Pds::Camera::FrameV1*>(syncPtr->dataPayload());
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(opalFrame.data()); 
-
-    unsigned totalPixels = opalFrame.width()*opalFrame.height();
-    unsigned offset = opalFrame.offset();
-    unsigned val = 0; 
-    for (unsigned i = 0 ; i<totalPixels ; i++)  { 
-      if (*(dataArray+i) > offset)
-        val = val + (*(dataArray+i) );             // opal data with Pedestal/Offset adjustment 
-    }
-    syncPtr->logDataPoint((double)val, _darkShot); 
-    syncPtr->setNewEventFlag(false); 
-  }
-}
-
-void SummaryAnalysis::processFccdData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    //const Pds::FCCD::FccdConfigV2& cfccd = *reinterpret_cast<const Pds::FCCD::FccdConfigV2*>(syncPtr->configPayload()); 
-    const Pds::Camera::FrameV1& fccdFrame = *reinterpret_cast<const Pds::Camera::FrameV1*>(syncPtr->dataPayload());
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(fccdFrame.data());  
-    unsigned totalPixels = fccdFrame.width()*fccdFrame.height();
-    unsigned offset = fccdFrame.offset();
-    unsigned val = 0; 
-    for (unsigned i = 0 ; i<totalPixels ; i++)  { 
-      if (*(dataArray+i) > offset)
-        val = val + (*(dataArray+i) );            // FCCD data with Pedestal/Offset adjustment 
-    }
-    syncPtr->logDataPoint((double)val, _darkShot); 
-    syncPtr->setNewEventFlag(false);
-    //printf("FrData: Width = %u Height= %u depth = %u offset = %u dep_bytes= %u data_size = %u pixel_50.30 = %u val = %u\n",
-    //        fccdFrame.width(), fccdFrame.height(),fccdFrame.depth(),fccdFrame.offset(),fccdFrame.depth_bytes(),fccdFrame.data_size(),*fccdFrame.pixel(50,30) , val ); 
-    //printf("FrData: DWidth = %u DHeight= %u  CWidth = %u CHeight= %u \n", fccdFrame.width(), fccdFrame.height(),cfccd.width(), cfccd.height() );
-
-  }
-}
-
-void SummaryAnalysis::processPulnixData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    const Pds::Camera::FrameV1& pulnixFrame = *reinterpret_cast<const Pds::Camera::FrameV1*>(syncPtr->dataPayload());
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(pulnixFrame.data());  
-    unsigned totalPixels = pulnixFrame.width()*pulnixFrame.height();
-    unsigned offset = pulnixFrame.offset();
-    unsigned val = 0; 
-    for (unsigned i = 0 ; i<totalPixels ; i++)  { 
-      if (*(dataArray+i) > offset)
-        val = val + (*(dataArray+i) );             // Pulnix data with Pedestal/Offset adjustment 
-    }
-    syncPtr->logDataPoint((double)val, _darkShot); 
-    syncPtr->setNewEventFlag(false);
-  }
-}
-
-
-void SummaryAnalysis::processPrincetonData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    //const Pds::Princeton::ConfigV1& princetonConfig = *reinterpret_cast<const Pds::Princeton::ConfigV1*>(syncPtr->configPayload());
-    princetonDataSpace* detDataSpace = reinterpret_cast<princetonDataSpace*>(syncPtr);
-    const PrincetonConfigType& princetonConfig = detDataSpace->detConfig;
- 
-    const Pds::Princeton::FrameV1&  princetonFrame   = *reinterpret_cast<const Pds::Princeton::FrameV1*>(syncPtr->dataPayload());
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(princetonFrame.data());
-    unsigned totalPixels = princetonConfig.width()*princetonConfig.height();
-
-    unsigned val = 0;   
-    for (unsigned i = 0 ; i<totalPixels ; i++) 
-      val = val + (*(dataArray+i) ); 
-    
-    syncPtr->logDataPoint((double)val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-    //printf(" 2 FrData: Width = %u Height= %u pixel_50.30 = %u val = %u\n", princetonConfig.width(), princetonConfig.height(), *(dataArray+ ( princetonConfig.width() *30 + 50) ), val ); 
-
-  }
- 
-}
-
-void SummaryAnalysis::processPnccdData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    //const Pds::PNCCD::ConfigV1& pnccdConfig  = *reinterpret_cast<const Pds::PNCCD::ConfigV1*>(syncPtr->configPayload());
-    pnccdDataSpace* detDataSpace = reinterpret_cast<pnccdDataSpace*>(syncPtr);
-    const pnCCDConfigType& pnccdConfig = detDataSpace->detConfig;
- 
-    const Pds::PNCCD::FrameV1*  pnccdFrame   = reinterpret_cast<const Pds::PNCCD::FrameV1*>(syncPtr->dataPayload());
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(pnccdFrame->data());
-
-    unsigned val = 0;
-    for (unsigned j=0; j<4 ; j++ ) {                // for all 4 quadrants in sequence UpL+LoL+LoR+UpR
-      unsigned dataSize = pnccdFrame->sizeofData(pnccdConfig);
-      for(unsigned i= 0; i< dataSize ; i++) {
-        val = val + ( ((*(dataArray+i) ) & 0x3fff) >>1 ); 
-      }
-      pnccdFrame = pnccdFrame->next(pnccdConfig);
-      dataArray = reinterpret_cast<const uint16_t*>(pnccdFrame->data());
-    }
-  
-    syncPtr->logDataPoint((double)val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-  } 
-}
-
-
-void SummaryAnalysis::processIpimbData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    ipimbDataSpace* detDataSpace = reinterpret_cast<ipimbDataSpace*>(syncPtr);
-    const Pds::Ipimb::ConfigV1* ipimbConfig = &(detDataSpace->detConfig); //*reinterpret_cast<const Pds::Ipimb::ConfigV1*>(payload);
-    //const Pds::Ipimb::ConfigV1& ipimbConfig   = *reinterpret_cast<const Pds::Ipimb::ConfigV1*>(syncPtr->configPayload());
-
-    const Pds::Ipimb::DataV1& ipimbData = *reinterpret_cast<const Pds::Ipimb::DataV1*>(syncPtr->dataPayload());
-    //ipimb all 4 channels voltage abs() addition  -- Do we need average ??
-    double val =  fabs(ipimbData.channel0Volts()) + fabs(ipimbData.channel1Volts()) + fabs(ipimbData.channel2Volts()) + fabs(ipimbData.channel3Volts()) ; 
-    syncPtr->logDataPoint(val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-
-
-  //off by one detection
-  if (_darkShot)  shotCounterEnb = true;
-  if (shotCounterEnb)  shotCounter++;
-  
-  if (shotCounter == 10) {
-    double*   dataArray1 = syncPtr->getLiteShotArray();
-    unsigned  index1     = syncPtr->getLiteShotIndex() - 10; 
-    double*   dataArray2 = syncPtr->getDarkShotArray();
-    unsigned  index2     = syncPtr->getDarkShotIndex(); 
-    if (index1 < 10) printf("$$$$$$$$ index low --  may segfault\n"); 
-    else {
-      printf("\n####Good Prev = \n ");
-      for (int i =-9; i <10;i++)
-        printf(" %dth=%f \t",i,*(dataArray1+index1+i));
-      printf("\n####Dark Prev = \n ");
-      for (unsigned i=0; i<=index2;i++)
-        printf(" %dth=%f \t",i,*(dataArray2+i)); 
-      printf("#### bias = %f \n ",ipimbConfig->diodeBias() );  
-    } 
-    shotCounterEnb = false;
-    shotCounter = 0;
-  }
-
-
-  } 
-}
-
-
-void SummaryAnalysis::processGasDetectorData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    const Pds::BldDataFEEGasDetEnergy& gasDetectorData = *reinterpret_cast<const Pds::BldDataFEEGasDetEnergy*>(syncPtr->dataPayload());
-    //gas detector abs() adddition of 4 energy sensors  -- Do we need average ??
-    double val = fabs(gasDetectorData.f_11_ENRC) + fabs(gasDetectorData.f_12_ENRC) + fabs(gasDetectorData.f_21_ENRC) + fabs(gasDetectorData.f_22_ENRC); 
-    //val = val/4.0;
-    syncPtr->logDataPoint(val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-  } 
-}
-
-void SummaryAnalysis::processEBeamData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    const Pds::BldDataEBeam& EBeamData = *reinterpret_cast<const Pds::BldDataEBeam*>(syncPtr->dataPayload());
-    double val = fabs(EBeamData.fEbeamCharge); 
-    syncPtr->logDataPoint(val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-    ebeamjunk=val;
-  } 
-}
-
-void SummaryAnalysis::processPhaseCavityData(SyncAnalysis* syncPtr)
-{
-  if (syncPtr->newEvent()) {
-    const Pds::BldDataPhaseCavity& phaseCavityData = *reinterpret_cast<const Pds::BldDataPhaseCavity*>(syncPtr->dataPayload());
-    double val = fabs(phaseCavityData.fCharge1) + fabs(phaseCavityData.fCharge2); 
-    syncPtr->logDataPoint(val, _darkShot);
-    syncPtr->setNewEventFlag(false); 
-  } 
 }
 
 
@@ -568,13 +341,16 @@ SummaryAnalysis& SummaryAnalysis::instance()
 }
 
 
-
-
 void SummaryAnalysis::refillPlotData(SyncAnalysis* syncPtr, EntryTH1F* summaryLiteEntry, EntryTH1F* summaryDarkEntry, unsigned points, unsigned refillType)
 {
 
   findMinMaxRange(syncPtr, points);
-
+  if (syncPtr == _syncPtrDetX) {
+    _liteLookUpIndexHighX = _liteLookUpIndexHigh; 
+    _darkLookUpIndexHighX = _darkLookUpIndexHigh; 
+    _liteLookUpIndexLowX  = _liteLookUpIndexLow;
+    _darkLookUpIndexLowX  = _darkLookUpIndexLow;
+  }
 
   if (refillType == ForceRefill)
     fillPlots(syncPtr, summaryLiteEntry, summaryDarkEntry);
@@ -592,8 +368,86 @@ void SummaryAnalysis::refillPlotData(SyncAnalysis* syncPtr, EntryTH1F* summaryLi
   if (AUTO_DETECTION_ENB)
     autoOffByOneDetection(syncPtr);
 
+
  } 
 
+
+
+void SummaryAnalysis::refill2DPlotData(unsigned points, bool includeDarkShot)
+{
+
+  unsigned dataArrayLength  = _syncPtrDetX->liteArrayLength(); 
+  double*  dataArrayX       = _syncPtrDetX->getLiteShotArray();
+  double*  dataArrayY       = _syncPtrDetY->getLiteShotArray();
+  unsigned statShotsFull    = _syncPtrDetX->statLiteShotsFull();
+  unsigned lookUpIndexHigh  = _syncPtrDetX->getLiteShotIndex(); 
+  unsigned lookUpIndexLow   = 0;
+  double minValX = _syncPtrDetX->getValMin();
+  double minValY = _syncPtrDetY->getValMin();
+  double scaleX  = _syncPtrDetX->getScalingFactor();
+  double scaleY  = _syncPtrDetY->getScalingFactor();
+  double dataX = 0;
+  double dataY = 0;
+  unsigned i=0;
+  unsigned darkDataIndex = 0;
+
+  //Find Lower and Upper Look-Up Index
+  if(lookUpIndexHigh >= points)
+    lookUpIndexLow = lookUpIndexHigh - points;
+  else if (statShotsFull == 1)
+    lookUpIndexLow = dataArrayLength - (points-lookUpIndexHigh);
+
+  if( lookUpIndexHigh < lookUpIndexLow) {
+    for (i=lookUpIndexLow; i < dataArrayLength; i++) {
+      dataX = fabs((*(dataArrayX+i) - minValX) * scaleX);
+      dataY = fabs((*(dataArrayY+i) - minValY) * scaleY);
+      _scatterPlotEntry->xbin(dataX,i-lookUpIndexLow);
+      _scatterPlotEntry->ysum(dataY,i-lookUpIndexLow); 
+      _scatterPlotEntry->nentries(1,i-lookUpIndexLow);       
+    }
+    for (i=0; i < lookUpIndexHigh; i++){
+      dataX = fabs((*(dataArrayX+i) - minValX) * scaleX);
+      dataY = fabs((*(dataArrayY+i) - minValY) * scaleY);
+      _scatterPlotEntry->xbin(dataX,lookUpIndexLow+i);
+      _scatterPlotEntry->ysum(dataY,lookUpIndexLow+i); 
+      _scatterPlotEntry->nentries(1,lookUpIndexLow+i);          
+    }
+    if(includeDarkShot) {
+      dataArrayX    = _syncPtrDetX->getDarkShotArray();
+      dataArrayY    = _syncPtrDetY->getDarkShotArray();
+      darkDataIndex = _syncPtrDetX->getDarkShotIndex(); 
+      for (i=0; i < darkDataIndex; i++){
+        dataX = fabs((*(dataArrayX+i) - minValX) * scaleX);
+        dataY = fabs((*(dataArrayY+i) - minValY) * scaleY);
+        _scatterPlotEntry->xbin(dataX,lookUpIndexHigh+i);
+        _scatterPlotEntry->ysum(dataY,lookUpIndexHigh+i); 
+        _scatterPlotEntry->nentries(1,lookUpIndexHigh+i);          
+      }
+    }
+    _scatterPlotBinsCount = lookUpIndexHigh + darkDataIndex;
+  } else {
+    for (i=lookUpIndexLow; i <lookUpIndexHigh; i++){
+      dataX = fabs((*(dataArrayX+i) - minValX) * scaleX);
+      dataY = fabs((*(dataArrayY+i) - minValY) * scaleY);
+      _scatterPlotEntry->xbin(dataX,i-lookUpIndexLow);
+      _scatterPlotEntry->ysum(dataY,i-lookUpIndexLow); 
+      _scatterPlotEntry->nentries(1,i-lookUpIndexLow);          
+    }
+    if(includeDarkShot) {
+      dataArrayX    = _syncPtrDetX->getDarkShotArray();
+      dataArrayY    = _syncPtrDetY->getDarkShotArray();
+      darkDataIndex = _syncPtrDetX->getDarkShotIndex(); 
+      for (i=0; i < darkDataIndex; i++){
+        dataX = fabs((*(dataArrayX+i) - minValX) * scaleX);
+        dataY = fabs((*(dataArrayY+i) - minValY) * scaleY);
+        _scatterPlotEntry->xbin(dataX,(lookUpIndexHigh - lookUpIndexLow)+i);
+        _scatterPlotEntry->ysum(dataY,(lookUpIndexHigh - lookUpIndexLow)+i); 
+        _scatterPlotEntry->nentries(1,(lookUpIndexHigh - lookUpIndexLow)+i);          
+      }
+    }
+    _scatterPlotBinsCount = (lookUpIndexHigh - lookUpIndexLow) + darkDataIndex; 
+  }
+} 
 
 
 void SummaryAnalysis::findMinMaxRange(SyncAnalysis* syncPtr, unsigned points)
@@ -611,8 +465,7 @@ void SummaryAnalysis::findMinMaxRange(SyncAnalysis* syncPtr, unsigned points)
       dataArray   = syncPtr->getDarkShotArray();
       statShotsFull = syncPtr->statDarkShotsFull(); 
       lookUpIndexHigh = syncPtr->getDarkShotIndex(); 
-      lookUpIndexLow  = 0; 
-    
+      lookUpIndexLow  = 0;     
     }   
 
     //Find Lower and Upper Look-Up Index
@@ -672,61 +525,58 @@ void SummaryAnalysis::findMinMaxRange(SyncAnalysis* syncPtr, unsigned points)
   _maxVal = _maxVal + (_margin* _range);
   _minVal = _minVal - (_margin* _range);
 
-  // to avoid min=max=0 and range <1 
   if (_maxVal < 0) _maxVal = 0;
-  //if ( (_maxVal - _minVal) < 1) _minVal = (_maxVal - 1);
-  if (_minVal<0) _minVal = 0;
+  if (_minVal < 0) _minVal = 0;
   _range = _maxVal- _minVal;
 
 }
 
 void SummaryAnalysis::fillPlots(SyncAnalysis* syncPtr, EntryTH1F* summaryLiteEntry, EntryTH1F* summaryDarkEntry)
 {
+  double scalingFactor = (double)(X_MAX - X_MIN)/(_maxVal-_minVal);
+  syncPtr->setValMin(_minVal); 
+  syncPtr->setValMax(_maxVal);
+  syncPtr->setScalingFactor(scalingFactor);    
 
-    double scalingFactor = (double)(X_MAX - X_MIN)/(_maxVal-_minVal);
-    syncPtr->setValMin(_minVal); 
-    syncPtr->setValMax(_maxVal);
-    syncPtr->setScalingFactor(scalingFactor);    
-    //printf("refilling - GMin = %f GMax = %f  GIdxL = %u GIdxH = %u SFctr = %f \n",_liteMinVal,_liteMaxVal,_liteLookUpIndexLow,_liteLookUpIndexHigh,scalingFactor);
-    //printf("          - DMin = %f DMax = %f  DIdxL = %u DIdxH = %u            \n",_darkMinVal,_darkMaxVal,_darkLookUpIndexLow,_darkLookUpIndexHigh);
+  EntryTH1F* summaryEntry = summaryLiteEntry;
+  unsigned dataArrayLength = syncPtr->liteArrayLength(); 
+  double*  dataArray = syncPtr->getLiteShotArray();
+  unsigned lookUpIndexHigh = _liteLookUpIndexHigh;
+  unsigned lookUpIndexLow  = _liteLookUpIndexLow;
+  unsigned i=0;
 
-    EntryTH1F* summaryEntry = summaryLiteEntry;
-    unsigned dataArrayLength = syncPtr->liteArrayLength(); 
-    double*  dataArray = syncPtr->getLiteShotArray();
-    unsigned lookUpIndexHigh = _liteLookUpIndexHigh;
-    unsigned lookUpIndexLow  = _liteLookUpIndexLow;
-    unsigned i=0;
+  for(unsigned j=0; j<2 ; j++) { 
+    if (j == 1) { 
+      summaryEntry = summaryDarkEntry;
+      dataArrayLength = syncPtr->darkArrayLength(); 
+      dataArray = syncPtr->getDarkShotArray();
+      lookUpIndexHigh = _darkLookUpIndexHigh;
+      lookUpIndexLow  = _darkLookUpIndexLow;    
+    }   
+    summaryEntry->clear();
+    if( lookUpIndexHigh < lookUpIndexLow) {
+      for (i=lookUpIndexLow; i < dataArrayLength; i++) 
+        summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
+      for (i=0; i < lookUpIndexHigh; i++) 
+        summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
+    } else {
+      for (i=lookUpIndexLow; i <lookUpIndexHigh; i++) 
+        summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
+    } 
+  }
+
+  //check for 2D Plot refill
+  if (syncPtr->getDataType() == H2D_DET_X_DATATYPE)   _plot2DRefill = true;
+  if (syncPtr->getDataType() == H2D_DET_Y_DATATYPE)   _plot2DRefill = true;
  
-    for(unsigned j=0; j<2 ; j++) {
-      if (j == 1) {
-        summaryEntry = summaryDarkEntry;
-        dataArrayLength = syncPtr->darkArrayLength(); 
-        dataArray = syncPtr->getDarkShotArray();
-        lookUpIndexHigh = _darkLookUpIndexHigh;
-        lookUpIndexLow  = _darkLookUpIndexLow;    
-      }   
-     
-      summaryEntry->clear();
-      if( lookUpIndexHigh < lookUpIndexLow) {
-        for (i=lookUpIndexLow; i < dataArrayLength; i++) 
-          summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
-        for (i=0; i < lookUpIndexHigh; i++) 
-          summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
-      } else {
-        for (i=lookUpIndexLow; i <lookUpIndexHigh; i++) 
-          summaryEntry->addcontent(1.0,fabs((*(dataArray+i) - _minVal) * scalingFactor) );
-      } 
-    }
-
 }
 
-
+ 
 void SummaryAnalysis::autoOffByOneDetection(SyncAnalysis* syncPtr)
 {
     unsigned offByOneStatus = 0;
     double tolerence = _margin * _range;
     if ( (_darkLookUpIndexHigh > 0)  || (syncPtr->statDarkShotsFull() == 1) )  {
-  
       //lite & dark Curve falls in one another by small distance
       if      (fabs(_liteMaxVal- _darkMaxVal) < tolerence) offByOneStatus = 1;
       else if (fabs(_liteMinVal- _darkMinVal) < tolerence) offByOneStatus = 2;
