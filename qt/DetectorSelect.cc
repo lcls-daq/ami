@@ -100,8 +100,8 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     QPushButton* resetB = new QPushButton("Reset Plots");
     QPushButton* saveB  = new QPushButton("Save Plots");
-    //    layout->addWidget(resetB);
-    //    layout->addWidget(saveB);
+    layout->addWidget(resetB);
+    layout->addWidget(saveB);
     connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
     connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
 

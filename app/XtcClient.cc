@@ -11,6 +11,7 @@
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
+#include "ami/event/DiodeFexHandler.hh"
 #include "ami/event/IpmFexHandler.hh"
 #include "ami/event/EncoderHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
@@ -185,6 +186,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,_cache); break;
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
+      case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,_cache); break;
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,_cache); break;
       case Pds::TypeId::Id_PimImageConfig:   c = new PimImageComposer  (info, xtc->payload()); break;
       default: break;
