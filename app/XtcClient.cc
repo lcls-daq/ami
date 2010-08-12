@@ -154,6 +154,8 @@ int XtcClient::process(Pds::Xtc* xtc)
 		 xtc->contains.id()==h->config_type()) {
 	  h->_calibrate(xtc->payload(),_seq->clock());
 	}
+	else 
+	  continue;
 	return 1;
       }
     }
@@ -163,8 +165,12 @@ int XtcClient::process(Pds::Xtc* xtc)
       EventHandler* h = 0;
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
-      case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
-      case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
+      case Pds::TypeId::Id_FrameFexConfig:
+	switch(info.device()) {
+	case Pds::DetInfo::Opal1000:         h = new Opal1kHandler     (info); break;
+	case Pds::DetInfo::TM6740  :         h = new TM6740Handler     (info); break;
+	default: break;
+	} break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info); break;
@@ -184,7 +190,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       if (!h)
 	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
       else {
-	printf("XtcClient::process adding handler for type %x\n",xtc->contains.id());
+	printf("XtcClient::process adding handler for info %s type %s\n",
+	       Pds::DetInfo::name(info), Pds::TypeId::name(xtc->contains.id()));
 	insert(h);
 	h->_configure(xtc->payload(),_seq->clock());
       }
