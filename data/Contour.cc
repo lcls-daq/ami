@@ -10,8 +10,8 @@ Contour::Contour() :
     _c[i++] = 0;
 }
 
-Contour::Contour(float* f, unsigned n) :
-  _n(n)
+Contour::Contour(float* f, unsigned n, double discrimLevel) :
+  _n(n),_discrimLevel(discrimLevel)
 {
   unsigned i=0;
   while(i<n) {
@@ -30,9 +30,12 @@ Contour::Contour(const Contour& p) :
     _c[i] = p._c[i];
     i++;
   }
+  _discrimLevel = p._discrimLevel;
 }
 
 Contour::~Contour() {}
+
+double Contour::discrimLevel() const {return _discrimLevel;}
 
 float Contour::value(float x) const {
   float y=0;

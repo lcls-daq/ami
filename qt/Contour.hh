@@ -31,6 +31,8 @@ namespace Ami {
       const ImageFrame&       _image;
       const RectangleCursors& _frame;
       QLineEdit* _c[Ami::Contour::MaxOrder+1];
+      QLineEdit* _discrimLevelEdit;
+      double     _discrimLevel;
     };
   };
 };

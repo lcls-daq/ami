@@ -130,7 +130,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    for(unsigned i=ixlo; i<ixhi; i++) {
 	      double yp = inputd.binx(i) - double(*off);
 	      if (yp >= d.xlow() && yp <= d.xup())
-		o->addcontent(_input->content(i,j),yp);
+		if (_input->content(i,j)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
 	    }
 	  }
 	}
@@ -145,7 +145,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    for(unsigned i=ixlo; i<ixhi; i++) {
 	      double yp = y - double(*off++);
 	      if (yp >= d.xlow() && yp <= d.xup())
-		o->addcontent(_input->content(i,j),yp);
+		if (_input->content(i,j)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
 	    }
 	  }
 	}
@@ -168,7 +168,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 		  for(int i=ixlo; i<ixhi; i++) {
 		    double yp = inputd.binx(i) - double(*off);
 		    if (yp >= d.xlow() && yp <= d.xup())
-		      o->addy(_input->content(i,j),yp);
+ 		      if (_input->content(i,j)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
 		  }
 		}
 	    }
@@ -183,7 +183,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	      for(unsigned i=ixlo; i<ixhi; i++) {
 		double yp = inputd.binx(i) - double(*off);
 		if (yp >= d.xlow() && yp <= d.xup())
-		  o->addy(_input->content(i,j),yp);
+ 		  if (_input->content(i,j)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
 	      }
 	    }
 	  }
@@ -202,7 +202,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 		  for(int i=ixlo; i<ixhi; i++) {
 		    double yp = y - double(*off++);
 		    if (yp >= d.xlow() && yp <= d.xup())
-		      o->addy(_input->content(i,j),yp);
+ 		      if (_input->content(i,j)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
 		  }
 		}
 	    }
@@ -218,7 +218,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	      for(unsigned i=ixlo; i<ixhi; i++) {
 		double yp = y - double(*off++);
 		if (yp >= d.xlow() && yp <= d.xup())
-		  o->addy(_input->content(i,j),yp);
+ 		  if (_input->content(i,j)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
 	      }
 	    }
 	  }

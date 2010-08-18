@@ -15,7 +15,8 @@ Contour::Contour(const char* x, const char* y,
 		 const ImageFrame&       image,
 		 const RectangleCursors& frame) :
   _image(image),
-  _frame(frame)
+  _frame(frame),
+  _discrimLevel(0.0)
 {
   setup(x,y);
   show();
@@ -83,13 +84,19 @@ void Contour::setup(const char* x, const char* y)
     else
       layout2->addWidget(new QLabel(QString("%1%2").arg(x).arg(QChar(_superscript[i]))));
   }
+  layout2->addWidget(new QLabel("  Discrim"));
+  layout2->addWidget(_discrimLevelEdit = new QLineEdit);
   layout2->addStretch();
   setLayout(layout2);
+
 
   for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++) {
     new QDoubleValidator(_c[i]);
     _c[i]->setMaximumWidth(40);
   }
+  new QDoubleValidator(_discrimLevelEdit);
+  _discrimLevelEdit->setMaximumWidth(40);
+  _discrimLevelEdit->setText(QString::number(0.0));
 }
 
 Ami::Contour Contour::value() const
@@ -97,17 +104,19 @@ Ami::Contour Contour::value() const
   float v[Ami::Contour::MaxOrder+1];
   for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++)
     v[i] = _c[i]->text().toDouble();
-  return Ami::Contour(v,Ami::Contour::MaxOrder+1);
+  return Ami::Contour(v,Ami::Contour::MaxOrder+1,_discrimLevelEdit->text().toDouble());
 }
 
 void Contour::save(char*& p) const 
 {
   for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++)
     QtPersistent::insert(p,_c[i]->text().toDouble());
+  QtPersistent::insert(p,_discrimLevelEdit->text().toDouble());
 }
 
 void Contour::load(const char*& p)
 {
   for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++)
     _c[i]->setText(QString::number(QtPersistent::extract_d(p)));
+  _discrimLevelEdit->setText(QString::number(QtPersistent::extract_d(p)));
 }

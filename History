@@ -1,3 +1,4 @@
+2010-08-18      cpo                     Add discriminator level for Contour projection.
 2010-08-10	weaver	Tag V01-02-00.  Added LUSI diag FEX handlers.
 2010-06-24	waaver			Added Cspad.  Added tool tips for Env scalars.
 2010-06-06	weaver	Tag V01-01-00.	Added static SummaryAnalysis.  Added FeatureCalculator for EnvPlot.
