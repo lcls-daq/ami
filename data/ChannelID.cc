@@ -77,7 +77,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
   case DetInfo::SxrEndstation:
     switch(info.device()) {
     case DetInfo::Acqiris : AppendChannel("ACQ"); break;
-    case DetInfo::Opal1000: AppendChannel("OPAL"); break;
+    case DetInfo::Opal1000: 
+      sprintf(_buffer,"End_Opal_%d",info.devId()+1);
+      break;
     case DetInfo::Princeton:
       sprintf(_buffer,"PI_%d",info.devId()+1);
       break;
