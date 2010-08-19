@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 //#define ZERO
+#define DO_SWAP
 
 typedef Pds::CsPad::ElementV1 CspadElement;
 
@@ -38,6 +39,29 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
   default:                        break;
   }
 }
+
+#ifdef DO_SWAP
+#define SWAP_U16(v) ( ((v&0xff00)>>8) | ((v&0x00ff)<<8) )
+static inline unsigned sum2(const uint16_t* data)
+{
+  return ( SWAP_U16(data[0])+SWAP_U16(data[1]) );
+}
+
+static unsigned sum4(const uint16_t* data)
+{
+  return ( SWAP_U16(data[0])+SWAP_U16(data[1])+SWAP_U16(data[2])+SWAP_U16(data[3]) );
+}
+#else
+static inline unsigned sum2(const uint16_t* data)
+{
+  return data[0]+data[1];
+}
+
+static inline unsigned sum4(const uint16_t* data)
+{
+  return data[0]+data[1]+data[2]+data[3];
+}
+#endif
 
 namespace CspadGeometry {
 
@@ -74,14 +98,12 @@ namespace CspadGeometry {
 	for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */		\
 	  const unsigned x = CALC_X(column,i,j);			\
 	  const unsigned y = CALC_Y(row   ,i,j);			\
-	  unsigned v = data[0] + data[1] + data[2] + data[3];		\
-	  image.addcontent(v,x,y);					\
+	  image.addcontent(sum4(data),x,y);				\
 	  data += ppb;							\
 	}								\
 	const unsigned x = CALC_X(column,i,RowBins);			\
 	const unsigned y = CALC_Y(row   ,i,RowBins);			\
-	unsigned v = data[0] + data[1];					\
-	image.addcontent(v*2,x,y);					\
+	image.addcontent(2*sum2(data),x,y);				\
 	data += 2;							\
 	data += CsPad::MaxRowsPerASIC;					\
       }									\
@@ -89,14 +111,12 @@ namespace CspadGeometry {
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
       const unsigned x = CALC_X(column,ColBins,j);			\
       const unsigned y = CALC_Y(row   ,ColBins,j);			\
-      unsigned v = data[0] + data[1] + data[2] + data[3];		\
-      image.addcontent(v*4,x,y);					\
+      image.addcontent(4*sum4(data),x,y);				\
       data += ppb;							\
     }									\
     const unsigned x = CALC_X(column,ColBins,RowBins);			\
     const unsigned y = CALC_Y(row   ,ColBins,RowBins);			\
-    unsigned v = data[0] + data[1];					\
-    image.addcontent(v*8,x,y);     					\
+    image.addcontent(8*sum2(data),x,y);					\
     data += 2;                     					\
     data += CsPad::MaxRowsPerASIC;    					\
 }
@@ -291,11 +311,12 @@ namespace CspadGeometry {
       //
       //  The configuration should tell us how many elements to view
       //
-      for(unsigned i=0; i<4; i++)
-	if (_config.quadMask() & (1<<i)) {
-	  quad[data->quad()].fill(image,data,_config.asicMask());
-	  data = data->next(_config);
-	}
+      unsigned qmask = _config.quadMask();
+      while(qmask) {
+	quad[data->quad()].fill(image,data,_config.asicMask());
+	qmask &= ~(1<<data->quad());
+	data = data->next(_config);
+      }
     }
     static unsigned xpixels() { return 2048-256; }
     static unsigned ypixels() { return 2048-256; }
