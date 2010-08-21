@@ -83,7 +83,7 @@ namespace CspadGeometry {
 
 #define BIN_ITER {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC/ppb;			\
-    const unsigned RowBins = CsPad::MaxRowsPerASIC   /ppb;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC   /ppb;		\
     /*  zero the target region  */					\
     for(unsigned i=0; i<=ColBins; i++) {				\
       for(unsigned j=0; j<=RowBins; j++) {				\
