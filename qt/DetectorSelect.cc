@@ -10,6 +10,7 @@
 #include "ami/qt/DetectorSave.hh"
 #include "ami/qt/DetectorReset.hh"
 #include "ami/qt/DetectorListItem.hh"
+#include "ami/qt/Defaults.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
@@ -84,15 +85,18 @@ DetectorSelect::DetectorSelect(const QString& label,
     l->addWidget(title,0,::Qt::AlignHCenter); }
   { QGroupBox* setup_box = new QGroupBox("Setup");
     QVBoxLayout* layout = new QVBoxLayout;
-    QPushButton* saveB  = new QPushButton("Save");
-    QPushButton* loadB  = new QPushButton("Load");
-    QPushButton* printB = new QPushButton("Printer");
+    QPushButton* saveB    = new QPushButton("Save");
+    QPushButton* loadB    = new QPushButton("Load");
+    QPushButton* defaultB = new QPushButton("Defaults");
+    QPushButton* printB   = new QPushButton("Printer");
     layout->addWidget(saveB);
     layout->addWidget(loadB);
+    layout->addWidget(defaultB);
     //    layout->addWidget(printB);
-    connect(saveB , SIGNAL(clicked()), this, SLOT(save_setup()));
-    connect(loadB , SIGNAL(clicked()), this, SLOT(load_setup()));
-    connect(printB, SIGNAL(clicked()), this, SLOT(print_setup()));
+    connect(saveB   , SIGNAL(clicked()), this, SLOT(save_setup()));
+    connect(loadB   , SIGNAL(clicked()), this, SLOT(load_setup()));
+    connect(printB  , SIGNAL(clicked()), this, SLOT(print_setup()));
+    connect(defaultB, SIGNAL(clicked()), this, SLOT(default_setup()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
@@ -269,6 +273,11 @@ void DetectorSelect::print_setup()
   QPrintDialog* d = new QPrintDialog(PrintAction::printer(),this);
   d->exec();
   delete d;
+}
+
+void DetectorSelect::default_setup()
+{
+  Defaults::instance()->show();
 }
 
 void DetectorSelect::reset_plots()

@@ -44,6 +44,7 @@ namespace Ami {
       void save_setup();
       void load_setup();
       void print_setup();
+      void default_setup();
 
       void reset_plots();
       void save_plots();

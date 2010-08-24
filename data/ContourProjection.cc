@@ -108,7 +108,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
       }
     }
     else if (_axis==X && _offset==0) {
-      pthis->_offset_len = inputd.ybin(_yhi)-inputd.ybin(_yhi)+1;
+      pthis->_offset_len = inputd.ybin(_yhi)-inputd.ybin(_ylo)+1;
       pthis->_offset = new int16_t[_offset_len];
       for(unsigned i=0,iy=inputd.ybin(_ylo); i<_offset_len; i++,iy++)
 	pthis->_offset[i] = int16_t(_contour.value(inputd.biny(iy)));

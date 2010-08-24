@@ -9,16 +9,17 @@
 #include <sys/uio.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
-#define READ_SIZE(buffer,len,f) { \
-    size = fread(buffer,1,len,f); \
-    printf("reference read %d bytes\n",size); \
+#define READ_SIZE(buffer,len,f) {		       \
+    size = fread(buffer,1,len,f);		       \
+    printf("reference read %d bytes\n",size);	       \
     if ((unsigned)size != len) {		       \
       printf("reference read %d/%d bytes\n",size,len); \
-      return; \
-    } \
+      abort();					       \
+    }						       \
   }
 
 Reference::Reference(const char* path) : 
@@ -33,9 +34,17 @@ Reference::Reference(const char*& p, const DescEntry& e) :
 {
   _extract(p, _path, PATHLEN);
   FILE* f = fopen(_path,"r");
+  if (!f) {
+    printf("reference failed to open %s\n",_path);
+    abort();
+  }
   int size;
   READ_SIZE(_buffer,sizeof(DescEntry),f);
   const DescEntry& d = *reinterpret_cast<const DescEntry*>(_buffer);
+  if (d.size()>sizeof(_buffer)) {
+    printf("reference attempt to read desc size %d from %s\n",d.size(),_path);
+    abort();
+  }
   READ_SIZE(_buffer+sizeof(DescEntry),d.size()-sizeof(DescEntry),f);
   _entry = EntryFactory::entry(d);
   iovec iov;

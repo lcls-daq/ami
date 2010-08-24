@@ -1,6 +1,7 @@
 #include "QtPlot.hh"
 
 #include "ami/qt/AxisControl.hh"
+#include "ami/qt/Defaults.hh"
 #include "ami/qt/Path.hh"
 
 #include <QtGui/QVBoxLayout>
@@ -11,6 +12,7 @@
 #include <QtGui/QLineEdit>
 
 #include "qwt_plot.h"
+#include "qwt_plot_grid.h"
 #include "qwt_scale_engine.h"
 
 using namespace Ami::Qt;
@@ -21,16 +23,26 @@ QtPlot::QtPlot(QWidget* parent,
   _name    (name),
   _frame   (new QwtPlot(name)),
   _counts  (new QLabel("Np 0")),
-  _yrange  (new AxisControl(this,"Y"))
+  _yrange  (new AxisControl(this,"Y")),
+  _grid    (new QwtPlotGrid)
 {
   _layout();
+
+  bool gMajor = Defaults::instance()->show_grid();
+  _grid->enableX   (gMajor);
+  _grid->enableY   (gMajor);
+  bool gMinor = Defaults::instance()->show_minor_grid();
+  _grid->enableXMin(gMinor);
+  _grid->enableYMin(gMinor);
+  _grid->attach(_frame);
 }
 
 QtPlot::QtPlot(QWidget* parent,
-		       const char*& p) :
+	       const char*& p) :
   QtPWidget(parent),
   _counts  (new QLabel("Np 0")),
-  _yrange  (new AxisControl(this,"Y"))
+  _yrange  (new AxisControl(this,"Y")),
+  _grid    (new QwtPlotGrid)
 {
   _name  = QtPersistent::extract_s(p);
   _frame = new QwtPlot(_name);
@@ -41,6 +53,14 @@ QtPlot::QtPlot(QWidget* parent,
   _yrange->load(p);
 
   _layout();
+
+  bool gMajor = QtPersistent::extract_b(p);
+  _grid->enableX   (gMajor);
+  _grid->enableY   (gMajor);
+  bool gMinor = QtPersistent::extract_b(p);
+  _grid->enableXMin(gMinor);
+  _grid->enableYMin(gMinor);
+  _grid->attach(_frame);
 
   QtPWidget::load(p);
 }
@@ -63,6 +83,8 @@ void QtPlot::_layout()
       annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
       annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
       annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
+      annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
+      annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
       menu_bar->addMenu(annotate); }
     l->addWidget(menu_bar);
     l->addStretch();
@@ -90,6 +112,8 @@ void QtPlot::save(char*& p) const
   QtPersistent::insert(p,_frame->axisTitle(QwtPlot::xBottom).text());
   QtPersistent::insert(p,_frame->axisTitle(QwtPlot::yLeft).text());
   _yrange->save(p);
+  QtPersistent::insert(p,_grid->xEnabled());
+  QtPersistent::insert(p,_grid->xMinEnabled());
   QtPWidget::save(p);
 }
 
@@ -131,6 +155,22 @@ void QtPlot::set_yaxis_title()
 				       QLineEdit::Normal, _frame->axisTitle(QwtPlot::yLeft).text(), &ok);
   if (ok)
     _frame->setAxisTitle(QwtPlot::yLeft,text);
+}
+
+void QtPlot::toggle_grid()
+{
+  bool gEnable = !_grid->xEnabled();
+  _grid->enableX(gEnable);
+  _grid->enableY(gEnable);
+  emit redraw();
+}
+
+void QtPlot::toggle_minor_grid()
+{
+  bool gEnable = !_grid->xMinEnabled();
+  _grid->enableXMin(gEnable);
+  _grid->enableYMin(gEnable);
+  emit redraw();
 }
 
 void QtPlot::yrange_change()

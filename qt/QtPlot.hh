@@ -7,6 +7,7 @@
 
 class QLabel;
 class QwtPlot;
+class QwtPlotGrid;
 
 namespace Ami {
   namespace Qt {
@@ -33,6 +34,8 @@ namespace Ami {
       void set_plot_title();
       void set_xaxis_title();
       void set_yaxis_title();
+      void toggle_grid();
+      void toggle_minor_grid();
       void yrange_change();
       void update_counts(double);
     public:
@@ -41,6 +44,7 @@ namespace Ami {
       QLabel*      _counts;
     private:
       AxisControl* _yrange;
+      QwtPlotGrid* _grid;
     };
   };
 };

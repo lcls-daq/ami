@@ -135,6 +135,7 @@ libsrcs_amiqt += DetectorGroup.cc DetectorGroup_moc.cc
 libsrcs_amiqt += DetectorSave.cc
 libsrcs_amiqt += DetectorReset.cc
 libsrcs_amiqt += DetectorListItem.cc
+libsrcs_amiqt += Defaults.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 
 # List special include directories (if any) needed by lib_a as

@@ -30,6 +30,8 @@
 
 using namespace Ami::Qt;
 
+//#define PROJ_Y
+
 ImageContourProjection::ImageContourProjection(QWidget*           parent,
 					       ChannelDefinition* channels[],
 					       unsigned           nchannels, 
@@ -42,7 +44,11 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
   _title    (new QLineEdit("Projection"))
 {
   _rectangle = new RectangleCursors(_frame);
+#ifdef PROJ_Y
   _contour   = new Contour("X","f(X)",frame,*_rectangle);
+#else
+  _contour   = new Contour("Y","f(Y)",frame,*_rectangle);
+#endif
 
   setWindowTitle("Contour Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -96,7 +102,11 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
 	layout3->addWidget(sumB);
 	layout3->addWidget(meanB);
 	layout2->addLayout(layout3); }
+#ifdef PROJ_Y
       layout2->addWidget(new QLabel("onto Y\' Axis : Y' = Y - f(X)"));
+#else
+      layout2->addWidget(new QLabel("onto X\' Axis : X' = X - f(Y)"));
+#endif
 //       layout2->addWidget(new QLabel("onto"));
 //       { QVBoxLayout* layout3 = new QVBoxLayout;
 // 	layout3->addWidget(xaxisB);
@@ -222,29 +232,42 @@ void ImageContourProjection::plot()
   Ami::ContourProjection* proj;
 
 //   if (_axis->checkedId()==0) { // X
-//     unsigned xlo = unsigned(_rectangle->xlo());
-//     unsigned xhi = unsigned(_rectangle->xhi());
-//     unsigned ylo = unsigned(_rectangle->ylo());
-//     unsigned yhi = unsigned(_rectangle->yhi());
-//     if (_norm->checkedId()==0) {
-//       Ami::DescTH1F desc(qPrintable(_title->text()),
-// 			 "pixel", "sum",
-// 			 xhi-xlo+1, xlo, xhi);
-//       proj = new Ami::ContourProjection(desc, 
-// 					Ami::ContourProjection::X, 
-// 					xlo, xhi, ylo, yhi);
-//     }
-//     else {
-//       Ami::DescProf desc(qPrintable(_title->text()),
-// 			 "pixel", "mean",
-// 			 xhi-xlo+1, xlo, xhi, "");
-//       proj = new Ami::ContourProjection(desc, 
-// 					Ami::ContourProjection::X, 
-// 					xlo, xhi, ylo, yhi);
-//     }
+#ifndef PROJ_Y
+    Ami::Contour f = _contour->value();
+    double xmin, xmax;
+    f.extremes(_rectangle->ylo(), _rectangle->yhi(),
+	       xmin, xmax);
+
+    double x0 = (_rectangle->xlo() - xmin);
+    double x1 = (_rectangle->xhi() - xmax+1);
+
+    double xlo = (_rectangle->xlo());
+    double xhi = (_rectangle->xhi());
+    double ylo = (_rectangle->ylo());
+    double yhi = (_rectangle->yhi());
+
+    const AxisInfo& xinfo = *_frame.xinfo();
+    int nbx = xinfo.tick(x1-x0)+1;
+
+    if (_norm->checkedId()==0) {
+      Ami::DescTH1F desc(qPrintable(_title->text()),
+ 			 "pixel", "sum",
+			 nbx, x0, x1);
+      proj = new Ami::ContourProjection(desc, f,
+ 					Ami::ContourProjection::X, 
+ 					xlo, xhi, ylo, yhi);
+    }
+    else {
+      Ami::DescProf desc(qPrintable(_title->text()),
+			 "pixel", "mean",
+			 nbx, x0, x1, "");
+      proj = new Ami::ContourProjection(desc, f,
+ 					Ami::ContourProjection::X, 
+ 					xlo, xhi, ylo, yhi);
+    }
 //   }
 //   else { // Y
-
+#else
 
     Ami::Contour f = _contour->value();
     double ymin, ymax;
@@ -278,6 +301,7 @@ void ImageContourProjection::plot()
 					Ami::ContourProjection::Y, 
 					xlo, xhi, ylo, yhi);
     }
+#endif
 //   }
   
   ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);

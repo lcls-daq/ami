@@ -8,6 +8,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/PrintAction.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescTH1F.hh"
@@ -25,6 +26,7 @@
 #include <QtGui/QMessageBox>
 
 #include "qwt_plot_canvas.h"
+#include "qwt_plot_grid.h"
 #include "qwt_scale_engine.h"
 #include "qwt_scale_draw.h"
 #include "qwt_scale_widget.h"
@@ -37,12 +39,21 @@ using namespace Ami::Qt;
 
 static const double no_scale[] = {0, 1000};
 
-Ami::Qt::WaveformDisplay::WaveformDisplay() :
+WaveformDisplay::WaveformDisplay() :
   QWidget(0)
 {
   _plot = new PlotFrame(this);
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
   _plot->setAxisScaleEngine(QwtPlot::yLeft  , new QwtLinearScaleEngine);
+
+  _grid = new QwtPlotGrid;
+  bool gMajor = Defaults::instance()->show_grid();
+  _grid->enableX   (gMajor);
+  _grid->enableY   (gMajor);
+  bool gMinor = Defaults::instance()->show_minor_grid();
+  _grid->enableXMin(gMinor);
+  _grid->enableYMin(gMinor);
+  _grid->attach(_plot);
 
   _xbins = new AxisBins(0,1000,10);
   _xinfo = _xbins;
@@ -55,15 +66,19 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _xtransform = new Transform(this, "X Transform","x");
 
   QMenuBar* menu_bar = new QMenuBar(this);
-  {
-    QMenu* file_menu = new QMenu("File");
+  { QMenu* file_menu = new QMenu("File");
     file_menu->addAction("Save image"     , this, SLOT(save_image()));
     file_menu->addAction("Save data"      , this, SLOT(save_data ()));
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
-    menu_bar->addMenu(file_menu);
-    menu_bar->addAction(new PrintAction(*this));
-  }
+    menu_bar->addMenu(file_menu); }
+  { QMenu* annotate = new QMenu("Annotate");
+    annotate->addAction("Plot Title"           , this, SLOT(set_plot_title()));
+    annotate->addAction("Y-axis Title (left)"  , this, SLOT(set_yaxis_title()));
+    annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
+    annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
+    annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
+    menu_bar->addMenu(annotate); }
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* plotBox = new QGroupBox("Plot");
@@ -90,26 +105,34 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   connect(_xtransform, SIGNAL(changed()), this, SLOT(xtransform_update()));
 }
 
-Ami::Qt::WaveformDisplay::~WaveformDisplay()
+WaveformDisplay::~WaveformDisplay()
 {
   delete _xbins;
 }
 
-void Ami::Qt::WaveformDisplay::save(char*& p) const
+void WaveformDisplay::save(char*& p) const
 {
   _xtransform->save(p);
   _xrange->save(p);
   _yrange->save(p);
+  QtPersistent::insert(p,_grid->xEnabled());
+  QtPersistent::insert(p,_grid->xMinEnabled());
 }
 
-void Ami::Qt::WaveformDisplay::load(const char*& p)
+void WaveformDisplay::load(const char*& p)
 {
   _xtransform->load(p);
   _xrange->load(p);
   _yrange->load(p);
+  bool gMajor = QtPersistent::extract_b(p);
+  _grid->enableX   (gMajor);
+  _grid->enableY   (gMajor);
+  bool gMinor = QtPersistent::extract_b(p);
+  _grid->enableXMin(gMinor);
+  _grid->enableYMin(gMinor);
 }
 
-void Ami::Qt::WaveformDisplay::save_image()
+void WaveformDisplay::save_image()
 {
   char time_buffer[32];
   time_t seq_tm = time(NULL);
@@ -129,7 +152,7 @@ void Ami::Qt::WaveformDisplay::save_image()
   }
 }
 
-void Ami::Qt::WaveformDisplay::save_plots(const QString& p) const
+void WaveformDisplay::save_plots(const QString& p) const
 {
   QString fname = QString("%1.dat").arg(p);
   FILE* f = fopen(qPrintable(fname),"w");
@@ -145,7 +168,7 @@ void Ami::Qt::WaveformDisplay::save_plots(const QString& p) const
   }
 }
 
-void Ami::Qt::WaveformDisplay::save_data()
+void WaveformDisplay::save_data()
 {
   if (!_curves.size())
     QMessageBox::warning(this, "Save data",
@@ -168,7 +191,7 @@ void Ami::Qt::WaveformDisplay::save_data()
   }
 }
 
-void Ami::Qt::WaveformDisplay::save_reference()
+void WaveformDisplay::save_reference()
 {
   QStringList list;
   for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) 
@@ -199,7 +222,50 @@ void Ami::Qt::WaveformDisplay::save_reference()
   }
 }
 	  
-void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
+void WaveformDisplay::set_plot_title()
+{
+  bool ok;
+  QString text = QInputDialog::getText(this, tr("Plot Title"), tr("Enter new title:"), 
+				       QLineEdit::Normal, _plot->title().text(), &ok);
+  if (ok)
+    _plot->setTitle(text);
+}
+
+void WaveformDisplay::set_xaxis_title()
+{
+  bool ok;
+  QString text = QInputDialog::getText(this, tr("X-Axis Title"), tr("Enter new title:"), 
+				       QLineEdit::Normal, _plot->axisTitle(QwtPlot::xBottom).text(), &ok);
+  if (ok)
+    _plot->setAxisTitle(QwtPlot::xBottom,text);
+}
+
+void WaveformDisplay::set_yaxis_title()
+{
+  bool ok;
+  QString text = QInputDialog::getText(this, tr("Y-Axis Title"), tr("Enter new title:"), 
+				       QLineEdit::Normal, _plot->axisTitle(QwtPlot::yLeft).text(), &ok);
+  if (ok)
+    _plot->setAxisTitle(QwtPlot::yLeft,text);
+}
+
+void WaveformDisplay::toggle_grid()
+{
+  bool gEnable = !_grid->xEnabled();
+  _grid->enableX(gEnable);
+  _grid->enableY(gEnable);
+  emit redraw();
+}
+
+void WaveformDisplay::toggle_minor_grid()
+{
+  bool gEnable = !_grid->xMinEnabled();
+  _grid->enableXMin(gEnable);
+  _grid->enableYMin(gEnable);
+  emit redraw();
+}
+
+void WaveformDisplay::prototype(const Ami::DescEntry* e)
 {
 #define CASETYPE(type)							\
     case Ami::DescEntry::type:						\
@@ -217,7 +283,7 @@ void Ami::Qt::WaveformDisplay::prototype(const Ami::DescEntry* e)
   _xrange->update(*_xinfo);
 }
 
-void Ami::Qt::WaveformDisplay::add   (QtBase* b, bool show) 
+void WaveformDisplay::add   (QtBase* b, bool show) 
 {
   if (show) {
     _xrange->update(*_xinfo);
@@ -235,7 +301,7 @@ void Ami::Qt::WaveformDisplay::add   (QtBase* b, bool show)
   }
 }
 
-void Ami::Qt::WaveformDisplay::show(QtBase* b)
+void WaveformDisplay::show(QtBase* b)
 {
   for(std::list<QtBase*>::iterator it=_hidden.begin(); it!=_hidden.end(); it++) {
     if ((*it)==b) {
@@ -252,7 +318,7 @@ void Ami::Qt::WaveformDisplay::show(QtBase* b)
   }
 }
 
-void Ami::Qt::WaveformDisplay::hide(QtBase* b)
+void WaveformDisplay::hide(QtBase* b)
 {
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
     if ((*it)==b) {
@@ -267,7 +333,7 @@ void Ami::Qt::WaveformDisplay::hide(QtBase* b)
   }
 }
 
-void Ami::Qt::WaveformDisplay::reset()
+void WaveformDisplay::reset()
 {
   _curves.merge(_hidden);
 
@@ -277,7 +343,7 @@ void Ami::Qt::WaveformDisplay::reset()
   _curves.clear();
 }
 
-void Ami::Qt::WaveformDisplay::update()
+void WaveformDisplay::update()
 {
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->update();
@@ -285,7 +351,7 @@ void Ami::Qt::WaveformDisplay::update()
   emit redraw();
 }
 
-void Ami::Qt::WaveformDisplay::xtransform_update()
+void WaveformDisplay::xtransform_update()
 {
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->xscale_update();
@@ -299,7 +365,7 @@ void Ami::Qt::WaveformDisplay::xtransform_update()
   emit redraw();
 }
 
-void Ami::Qt::WaveformDisplay::xrange_change()
+void WaveformDisplay::xrange_change()
 {
   if (_xrange->isAuto()) 
     _plot->setAxisAutoScale  (QwtPlot::xBottom);
@@ -312,7 +378,7 @@ void Ami::Qt::WaveformDisplay::xrange_change()
     _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
 }
 
-void Ami::Qt::WaveformDisplay::yrange_change()
+void WaveformDisplay::yrange_change()
 {
   if (_yrange->isAuto()) 
     _plot->setAxisAutoScale  (QwtPlot::yLeft);
@@ -325,12 +391,12 @@ void Ami::Qt::WaveformDisplay::yrange_change()
     _plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
 }
 
-const Ami::AbsTransform& Ami::Qt::WaveformDisplay::xtransform() const { return *_xtransform; }
+const Ami::AbsTransform& WaveformDisplay::xtransform() const { return *_xtransform; }
 
-const std::list<QtBase*> Ami::Qt::WaveformDisplay::plots() const { return _curves; }
+const std::list<QtBase*> WaveformDisplay::plots() const { return _curves; }
 
-const AxisInfo& Ami::Qt::WaveformDisplay::xinfo() const { return *_xinfo; }
+const AxisInfo& WaveformDisplay::xinfo() const { return *_xinfo; }
 
-PlotFrame* Ami::Qt::WaveformDisplay::plot() const { return _plot; }
+PlotFrame* WaveformDisplay::plot() const { return _plot; }
 
 

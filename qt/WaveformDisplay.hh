@@ -6,6 +6,8 @@
 
 #include <list>
 
+class QwtPlotGrid;
+
 namespace Ami {
   class DescEntry;
   namespace Qt {
@@ -46,10 +48,17 @@ namespace Ami {
       void xtransform_update();
       void xrange_change();
       void yrange_change();
+      void set_plot_title();
+      void set_xaxis_title();
+      void set_yaxis_title();
+      void toggle_grid();
+      void toggle_minor_grid();
     signals:
       void redraw();
     private:
       PlotFrame*   _plot;
+      QwtPlotGrid* _grid;
+
       Transform*   _xtransform;
       AxisControl* _xrange;
       AxisControl* _yrange;
