@@ -30,7 +30,7 @@
 
 using namespace Ami::Qt;
 
-//#define PROJ_Y
+enum { XAxis, YAxis };
 
 ImageContourProjection::ImageContourProjection(QWidget*           parent,
 					       ChannelDefinition* channels[],
@@ -44,11 +44,8 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
   _title    (new QLineEdit("Projection"))
 {
   _rectangle = new RectangleCursors(_frame);
-#ifdef PROJ_Y
-  _contour   = new Contour("X","f(X)",frame,*_rectangle);
-#else
-  _contour   = new Contour("Y","f(Y)",frame,*_rectangle);
-#endif
+  //  _contour   = new Contour("X","f(X)",frame,Ami::ContourProjection::Y,*_rectangle);
+  _contour   = new Contour("Y","f(Y)",Ami::ContourProjection::X,frame,*_rectangle);
 
   setWindowTitle("Contour Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -60,14 +57,14 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
 
-//   QRadioButton* xaxisB = new QRadioButton("X");
-//   QRadioButton* yaxisB = new QRadioButton("Y");
-//   _axis = new QButtonGroup;
-//   _axis->addButton(xaxisB,0);
-//   _axis->addButton(yaxisB,1);
-//   xaxisB->setChecked(true);
-  //  _contour->setup("X","Y");
-//   connect(xaxisB, SIGNAL(toggled(bool)), this, SLOT(use_xaxis(bool)));
+  QRadioButton* xaxisB = new QRadioButton("X\' Axis : X' = X - f(Y)");
+  QRadioButton* yaxisB = new QRadioButton("Y\' Axis : Y' = Y - f(X)");
+  _axis = new QButtonGroup;
+  _axis->addButton(xaxisB,XAxis);
+  _axis->addButton(yaxisB,YAxis);
+  //  yaxisB->setChecked(true);
+  xaxisB->setChecked(true);
+  connect(xaxisB, SIGNAL(toggled(bool)), this, SLOT(use_xaxis(bool)));
 
   QRadioButton* sumB  = new QRadioButton("sum");
   QRadioButton* meanB = new QRadioButton("mean");
@@ -102,17 +99,12 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
 	layout3->addWidget(sumB);
 	layout3->addWidget(meanB);
 	layout2->addLayout(layout3); }
-#ifdef PROJ_Y
-      layout2->addWidget(new QLabel("onto Y\' Axis : Y' = Y - f(X)"));
-#else
-      layout2->addWidget(new QLabel("onto X\' Axis : X' = X - f(Y)"));
-#endif
-//       layout2->addWidget(new QLabel("onto"));
-//       { QVBoxLayout* layout3 = new QVBoxLayout;
-// 	layout3->addWidget(xaxisB);
-// 	layout3->addWidget(yaxisB);
-// 	layout2->addLayout(layout3); }
-//       layout2->addWidget(new QLabel("axis"));
+      layout2->addWidget(new QLabel("onto"));
+      { QVBoxLayout* layout3 = new QVBoxLayout;
+ 	layout3->addWidget(xaxisB);
+ 	layout3->addWidget(yaxisB);
+ 	layout2->addLayout(layout3); }
+      layout2->addWidget(new QLabel("axis"));
       layout2->addStretch();
       layout1->addLayout(layout2); }
     layout1->addWidget(_contour);
@@ -142,7 +134,7 @@ void ImageContourProjection::save(char*& p) const
 
   QtPersistent::insert(p,_channel);
   QtPersistent::insert(p,_title->text());
-//   QtPersistent::insert(p,_axis ->checkedId());
+  QtPersistent::insert(p,_axis ->checkedId());
   QtPersistent::insert(p,_norm ->checkedId());
   _rectangle->save(p);
   _contour->save(p);
@@ -161,7 +153,7 @@ void ImageContourProjection::load(const char*& p)
   
   _channel = QtPersistent::extract_i(p);
   _title->setText(QtPersistent::extract_s(p));
-//   _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
+  _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
   _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
   _rectangle->load(p);
   _contour->load(p);
@@ -231,8 +223,7 @@ void ImageContourProjection::plot()
 {
   Ami::ContourProjection* proj;
 
-//   if (_axis->checkedId()==0) { // X
-#ifndef PROJ_Y
+  if (_axis->checkedId()==0) { // X
     Ami::Contour f = _contour->value();
     double xmin, xmax;
     f.extremes(_rectangle->ylo(), _rectangle->yhi(),
@@ -265,10 +256,8 @@ void ImageContourProjection::plot()
  					Ami::ContourProjection::X, 
  					xlo, xhi, ylo, yhi);
     }
-//   }
-//   else { // Y
-#else
-
+  }
+  else { // Y
     Ami::Contour f = _contour->value();
     double ymin, ymax;
     f.extremes(_rectangle->xlo(), _rectangle->xhi(),
@@ -301,8 +290,7 @@ void ImageContourProjection::plot()
 					Ami::ContourProjection::Y, 
 					xlo, xhi, ylo, yhi);
     }
-#endif
-//   }
+  }
   
   ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
 
@@ -327,8 +315,8 @@ void ImageContourProjection::configure_plot()
   emit changed();
 }
 
-// void ImageContourProject::use_xaxis(bool v)
-// {
-//   if (v) _contour->setup("Y","X");
-//   else   _contour->setup("X","Y");
-// }
+void ImageContourProjection::use_xaxis(bool v)
+{
+  if (v) _contour->setup("Y","f(Y)",Ami::ContourProjection::X);
+  else   _contour->setup("X","f(X)",Ami::ContourProjection::Y);
+}

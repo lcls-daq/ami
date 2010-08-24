@@ -39,6 +39,7 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
     public slots:
+      void use_xaxis(bool);
       void set_channel(int); // set the source
       void plot        ();   // configure the plot
       void configure_plot();
