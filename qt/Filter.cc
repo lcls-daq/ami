@@ -232,7 +232,9 @@ void Filter::clear()
 void Filter::update_features()
 {
   _features->clear();
-  _features->addItems(FeatureRegistry::instance().names());
+  QStringList names = FeatureRegistry::instance().names();
+  if (!names.isEmpty())
+    _features->addItems(names);
 }
 
 const Ami::AbsFilter* Filter::filter() const { return _filter; }

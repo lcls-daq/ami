@@ -33,7 +33,9 @@ const QString& FeatureBox::entry() const { return _entry; }
 void FeatureBox::change_features()
 {
   clear();
-  addItems(FeatureRegistry::instance().names());
+  QStringList names = FeatureRegistry::instance().names();
+  if (!names.isEmpty())
+    addItems(names);
   _seek();
 }
 

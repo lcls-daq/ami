@@ -4,6 +4,7 @@
 #include "ami/qt/Display.hh"
 #include <QtGui/QWidget>
 
+#include "ami/service/Semaphore.hh"
 #include <list>
 
 class QPrinter;
@@ -49,6 +50,7 @@ namespace Ami {
       ImageColorControl* _zrange;
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
+      mutable Ami::Semaphore _sem;
     };
   };
 };

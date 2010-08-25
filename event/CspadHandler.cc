@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 //#define ZERO
-#define DO_SWAP
+//#define DO_SWAP
 
 typedef Pds::CsPad::ElementV1 CspadElement;
 

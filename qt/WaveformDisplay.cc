@@ -39,8 +39,9 @@ using namespace Ami::Qt;
 
 static const double no_scale[] = {0, 1000};
 
-WaveformDisplay::WaveformDisplay() :
-  QWidget(0)
+Ami::Qt::WaveformDisplay::WaveformDisplay() :
+  QWidget(0),
+  _sem   (Ami::Semaphore::FULL)
 {
   _plot = new PlotFrame(this);
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
@@ -160,10 +161,12 @@ void WaveformDisplay::save_plots(const QString& p) const
     QMessageBox::warning(0, "Save data",
 			 QString("Error opening %1 for writing").arg(fname));
   else {
+    _sem.take();
     for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) {
       (*it)->dump(f);
       fprintf(f,"\n");
     }
+    _sem.give();
     fclose(f);
   }
 }
@@ -194,19 +197,23 @@ void WaveformDisplay::save_data()
 void WaveformDisplay::save_reference()
 {
   QStringList list;
+  _sem.take();
   for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) 
     list << (*it)->title();
+  _sem.give();
   
   bool ok;
   QString choice = QInputDialog::getItem(this,"Reference Channel","Input",list,0,false,&ok);
   if (!ok) return;
   
   QtBase* ref = 0;
+  _sem.take();
   for(std::list<QtBase*>::const_iterator it=_curves.begin(); it!=_curves.end(); it++) 
     if ((*it)->title()==choice) {
       ref = (*it);
       break;
     }
+  _sem.give();
 
   if (ref==0) {
     printf("Reference %s not found\n",qPrintable(choice));
@@ -287,7 +294,9 @@ void WaveformDisplay::add   (QtBase* b, bool show)
 {
   if (show) {
     _xrange->update(*_xinfo);
+    _sem.take();
     _curves.push_back(b);
+    _sem.give();
     b->xscale_update();
     b->update();
     b->attach(_plot);
@@ -305,8 +314,10 @@ void WaveformDisplay::show(QtBase* b)
 {
   for(std::list<QtBase*>::iterator it=_hidden.begin(); it!=_hidden.end(); it++) {
     if ((*it)==b) {
+      _sem.take();
       _hidden.remove(b);
       _curves.push_back(b);
+      _sem.give();
 
       b->xscale_update();
       b->update();
@@ -320,6 +331,7 @@ void WaveformDisplay::show(QtBase* b)
 
 void WaveformDisplay::hide(QtBase* b)
 {
+  _sem.take();
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
     if ((*it)==b) {
       _curves.remove(b);
@@ -331,30 +343,37 @@ void WaveformDisplay::hide(QtBase* b)
       break;
     }
   }
+  _sem.give();
 }
 
 void WaveformDisplay::reset()
 {
+  _sem.take();
   _curves.merge(_hidden);
 
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
     delete (*it);
   }
   _curves.clear();
+  _sem.give();
 }
 
 void WaveformDisplay::update()
 {
+  _sem.take();
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->update();
+  _sem.give();
 
   emit redraw();
 }
 
 void WaveformDisplay::xtransform_update()
 {
+  _sem.take();
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->xscale_update();
+  _sem.give();
 
   if (_curves.size())
     _xrange->update(*_xinfo);

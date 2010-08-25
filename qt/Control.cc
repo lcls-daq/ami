@@ -27,11 +27,12 @@ Control::Control(Requestor& c) :
 
   new QDoubleValidator(0.1,5,1,_pRate);
 
-  connect(_pRun   , SIGNAL(clicked(bool)), this, SLOT(run (bool)));
+  connect(_pRun   , SIGNAL(toggled(bool)), this, SLOT(run (bool)));
   connect(_pSingle, SIGNAL(clicked()), this, SLOT(single()));
   connect(_pRate  , SIGNAL(editingFinished()), this, SLOT(set_rate()));
 
   set_rate();
+  _pRun->setChecked(true);
 }
 
 Control::~Control()
