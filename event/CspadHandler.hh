@@ -8,10 +8,11 @@ namespace CspadGeometry { class Detector; };
 
 namespace Ami {
   class EntryImage;
+  class FeatureCache;
 
   class CspadHandler : public EventHandler {
   public:
-    CspadHandler(const Pds::DetInfo& info);
+    CspadHandler(const Pds::DetInfo& info, FeatureCache&);
     ~CspadHandler();
   public:
     unsigned     nentries() const;
@@ -26,6 +27,7 @@ namespace Ami {
     CspadHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
     CspadGeometry::Detector* _detector;
+    FeatureCache&        _cache;
   };
 };
 

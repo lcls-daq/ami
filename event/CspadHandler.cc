@@ -1,7 +1,9 @@
 #include "CspadHandler.hh"
 
+#include "ami/event/CspadTemp.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
+#include "ami/data/FeatureCache.hh"
 
 #include "pdsdata/cspad/ElementV1.hh"
 #include "pdsdata/cspad/ConfigV1.hh"
@@ -296,14 +298,22 @@ namespace CspadGeometry {
       printf("CspadHandler found configuration with quad mask %x  asic mask %x\n",
 	     c.quadMask(),c.asicMask());
     }
-    void fill(Ami::DescImage&    image) const
+    void fill(Ami::DescImage&    image,
+	      Ami::FeatureCache& cache) const
     {
       //
       //  The configuration should tell us how many elements to view
       //
+      char buff[64];
+      _cache = &cache;
       for(unsigned i=0; i<4; i++)
-	if (_config.quadMask() & (1<<i))
+	if (_config.quadMask() & (1<<i)) {
 	  quad[i].fill(image);
+	  for(unsigned a=0; a<4; a++) {
+	    sprintf(buff,"Cspad:Quad[%d]:Temp[%d]",i,a);
+	    _feature[4*i+a] = cache.add(buff);
+	  }
+	}
     }
     void fill(Ami::EntryImage&    image,
 	      const CspadElement* data) const
@@ -315,6 +325,9 @@ namespace CspadGeometry {
       while(qmask) {
 	quad[data->quad()].fill(image,data,_config.asicMask());
 	qmask &= ~(1<<data->quad());
+	for(int a=0; a<4; a++)
+	  _cache->cache(_feature[4*data->quad()+a],
+			CspadTemp::instance().getTemp(data->sb_temp(a)));
 	data = data->next(_config);
       }
     }
@@ -323,24 +336,27 @@ namespace CspadGeometry {
   private:
     Quad quad[4];
     Pds::CsPad::ConfigV1 _config;
+    mutable Ami::FeatureCache* _cache;
+    mutable int _feature[16];
   };
 };
 
 using namespace Ami;
 
-CspadHandler::CspadHandler(const Pds::DetInfo& info) :
+CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
   EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
   _entry(0),
-  _detector(new CspadGeometry::Detector)
+  _detector(new CspadGeometry::Detector),
+  _cache(features)  
 {
 }
 
-CspadHandler::CspadHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
-  EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
-  _entry(entry ? new EntryImage(entry->desc()) : 0),
-  _detector(new CspadGeometry::Detector)
-{
-}
+// CspadHandler::CspadHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
+//   EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
+//   _entry(entry ? new EntryImage(entry->desc()) : 0),
+//   _detector(new CspadGeometry::Detector)
+// {
+// }
 
 CspadHandler::~CspadHandler()
 {
@@ -365,7 +381,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   const DetInfo& det = static_cast<const DetInfo&>(info());
   DescImage desc(det, 0, ChannelID::name(det,0),
 		 _detector->xpixels()/ppb, _detector->ypixels()/ppb, ppb, ppb);
-  _detector->fill(desc);
+  _detector->fill(desc,_cache);
 
   _entry = new EntryImage(desc);
   memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
