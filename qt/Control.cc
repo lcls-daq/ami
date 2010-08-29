@@ -1,6 +1,7 @@
 #include "ami/qt/Control.hh"
 
 #include "ami/qt/Client.hh"
+#include "ami/qt/Defaults.hh"
 #include "ami/service/Task.hh"
 
 #include <QtGui/QPushButton>
@@ -32,7 +33,7 @@ Control::Control(Requestor& c) :
   connect(_pRate  , SIGNAL(editingFinished()), this, SLOT(set_rate()));
 
   set_rate();
-  _pRun->setChecked(true);
+  _pRun->setChecked(Defaults::instance()->select_run());
 }
 
 Control::~Control()

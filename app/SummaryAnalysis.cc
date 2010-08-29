@@ -107,6 +107,7 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
 
 void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void* payload)
 {
+  static bool throttle=false;
   const DetInfo& detInfo = reinterpret_cast<const Pds::DetInfo&>(src); 
   if (type.id() == Pds::TypeId::Id_EvrData) 
     _evrEventData = const_cast<Pds::EvrData::DataV3*>(reinterpret_cast<const Pds::EvrData::DataV3*>(payload));
@@ -114,9 +115,14 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_FEEGasDetEnergy) || (type.id() == Pds::TypeId::Id_EBeam) ||
           (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_PrincetonFrame) ||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
-    if (_syncAnalysisPList.empty()) 
-      printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
+    if (_syncAnalysisPList.empty()) {
+      if (!throttle) {
+	printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
+	throttle=true;
+      }
+    }
     else {
+      throttle=false;
       bool entryFoundFlag = false;   
       for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++) {
         SyncAnalysis* syncPtr = *it;
