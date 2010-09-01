@@ -3,17 +3,19 @@
 
 #include "ami/event/FrameHandler.hh"
 #include "pdsdata/pulnix/TM6740ConfigV1.hh"
+#include "pdsdata/lusi/PimImageConfigV1.hh"
 
 namespace Ami {
   class TM6740Handler : public FrameHandler {
   public:
-    TM6740Handler(const Pds::DetInfo& info) :
-      FrameHandler(info,
-		   Pds::Pulnix::TM6740ConfigV1::Column_Pixels,
-		   Pds::Pulnix::TM6740ConfigV1::Row_Pixels) {}
+    TM6740Handler(const Pds::DetInfo& info);
   private:
+    void   _configure(Pds::TypeId::Type, 
+		      const void* payload, const Pds::ClockTime& t);
     void   _configure(const void* payload, const Pds::ClockTime& t);
     void   _event    (const void* payload, const Pds::ClockTime& t);
+  private:
+    Pds::Lusi::PimImageConfigV1 _scale;
   };
 };
 

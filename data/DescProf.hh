@@ -1,14 +1,15 @@
 #ifndef Pds_DESCPROF_HH
 #define Pds_DESCPROF_HH
 
-#include "ami/data/DescEntry.hh"
+#include "ami/data/DescEntryW.hh"
 
 namespace Ami {
 
-  class DescProf : public DescEntry {
+  class DescProf : public DescEntryW {
   public:
     DescProf(const char* name, const char* xtitle, const char* ytitle, 
-	     unsigned nbins, float xlow, float xup, const char* names);
+	     unsigned nbins, float xlow, float xup, const char* names,
+	     const char* weight="");
 
     DescProf(const Pds::DetInfo& info,
 	     unsigned channel,

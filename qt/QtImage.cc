@@ -125,6 +125,17 @@ QImage&        QtImage::image(float p0, float s, bool linear)
 void QtImage::xscale_update() {}
 void QtImage::yscale_update() {}
 
+float QtImage::value(unsigned x,unsigned y) const
+{
+  const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
+  const Ami::DescImage&  d = _entry.desc();
+  float p = _entry.info(EntryImage::Pedestal);
+  float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
+  n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+  const unsigned* src = _entry.contents() + (_y0+y)*d.nbinsx() + (_x0+x);
+  return (float(*src)-p)/n;
+ }
+
 const AxisInfo* QtImage::xinfo() const { return _xinfo; }
 const AxisInfo* QtImage::yinfo() const { return _yinfo; }
 

@@ -1,3 +1,6 @@
+2010-09-01	weaver	Tag V01-03-00.	EventHandler can now handle multiple configuration types.
+					Added grid, scale, and cursors to images (esp Pim).
+					Added normalization and weighted averages to EnvPlot.
 2010-08-18      cpo                     Add discriminator level for Contour projection.
 2010-08-10	weaver	Tag V01-02-00.  Added LUSI diag FEX handlers.
 2010-06-24	waaver			Added Cspad.  Added tool tips for Env scalars.

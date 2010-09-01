@@ -43,7 +43,7 @@ void EntryScan::build(unsigned nbins)
 const DescScan& EntryScan::desc() const {return _desc;}
 DescScan& EntryScan::desc() {return _desc;}
 
-void EntryScan::addy(double y, double x) 
+void EntryScan::addy(double y, double x, double w) 
 {
   unsigned bin = unsigned(info(Current));
   if (x != _p[bin]._x) {
@@ -52,13 +52,13 @@ void EntryScan::addy(double y, double x)
       bin = 0;
 
     _p[bin]._x        = x;
-    _p[bin]._nentries = 1;
-    _p[bin]._ysum     = y;
-    _p[bin]._y2sum    = y*y;
+    _p[bin]._nentries = w;
+    _p[bin]._ysum     = y*w;
+    _p[bin]._y2sum    = y*y*w;
     info(bin,Current);
   }
   else
-    addy(y,bin);
+    addy(y,bin,w);
 }
 
 void EntryScan::setto(const EntryScan& entry) 

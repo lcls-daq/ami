@@ -21,6 +21,7 @@ namespace Ami {
 
     bool isnormalized() const;
     bool aggregate   () const;
+    bool isweighted_type() const;
 
     void normalize(bool);
     void aggregate(bool);

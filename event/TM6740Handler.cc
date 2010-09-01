@@ -14,6 +14,16 @@ using namespace Ami;
 #define CLKWISE
 //#define OPTROT
 
+
+static std::list<Pds::TypeId::Type> config_type_list()
+{
+  std::list<Pds::TypeId::Type> types;
+  types.push_back(Pds::TypeId::Id_FrameFexConfig);
+  types.push_back(Pds::TypeId::Id_PimImageConfig);
+  return types;
+}
+
+
 template <class T>
 void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
 {
@@ -81,31 +91,59 @@ void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
 #undef CLKWISE
 #undef OPTROT
 
+TM6740Handler::TM6740Handler(const Pds::DetInfo& info) :
+  FrameHandler(info,
+	       config_type_list(),
+	       Pds::Pulnix::TM6740ConfigV1::Column_Pixels,
+	       Pds::Pulnix::TM6740ConfigV1::Row_Pixels) ,
+  _scale(1,1)
+{
+}
+
 void TM6740Handler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  unsigned columns,rows;
-  if (c.forwarding() == Pds::Camera::FrameFexConfigV1::FullFrame) {
-    columns = Pds::Pulnix::TM6740ConfigV1::Column_Pixels;
-    rows    = Pds::Pulnix::TM6740ConfigV1::Row_Pixels;
-  }
-  else {
-    columns = c.roiEnd().column-c.roiBegin().column;
-    rows    = c.roiEnd().row   -c.roiBegin().row   ;
-  }
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = (pixels-1)/640 + 1;
-  columns /= ppb;
-  rows    /= ppb;
-  DescImage desc(det, 0, ChannelID::name(det),
-		 //		 columns, rows, ppb, ppb);
-		 rows, columns, ppb, ppb);
+  printf("TM6740Handler::configure(const void*) called\n");
+}
 
-  if (_entry) 
-    delete _entry;
-  _entry = new EntryImage(desc);
-  _entry->invalid();
+void TM6740Handler::_configure(Pds::TypeId::Type type,
+			       const void* payload, const Pds::ClockTime& t)
+{
+  if (type == Pds::TypeId::Id_FrameFexConfig) {
+    const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+    unsigned columns,rows;
+    if (c.forwarding() == Pds::Camera::FrameFexConfigV1::FullFrame) {
+      columns = Pds::Pulnix::TM6740ConfigV1::Column_Pixels;
+      rows    = Pds::Pulnix::TM6740ConfigV1::Row_Pixels;
+    }
+    else {
+      columns = c.roiEnd().column-c.roiBegin().column;
+      rows    = c.roiEnd().row   -c.roiBegin().row   ;
+    }
+    unsigned pixels  = (columns > rows) ? columns : rows;
+    unsigned ppb     = (pixels-1)/640 + 1;
+    columns = (columns+ppb-1)/ppb;
+    rows    = (rows   +ppb-1)/ppb;
+    DescImage desc(det, 0, ChannelID::name(det),
+		   //		 columns, rows, ppb, ppb);
+		   rows, columns, ppb, ppb); // rotated size
+    desc.set_scale(_scale.xscale,_scale.yscale);
+
+    if (_entry) 
+      delete _entry;
+    _entry = new EntryImage(desc);
+    _entry->invalid();
+  }
+  else if (type == Pds::TypeId::Id_PimImageConfig) {
+    const Pds::Lusi::PimImageConfigV1& c = 
+      *reinterpret_cast<const Pds::Lusi::PimImageConfigV1*>(payload);
+    if (_entry) {
+      _entry->desc().set_scale(c.xscale,c.yscale);
+    }
+    else {
+      _scale = c;
+    }
+  }
 }
 
 void TM6740Handler::_event    (const void* payload, const Pds::ClockTime& t)

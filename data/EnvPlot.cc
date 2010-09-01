@@ -1,7 +1,7 @@
 #include "EnvPlot.hh"
 
 #include "ami/data/FeatureCache.hh"
-#include "ami/data/DescEntry.hh"
+#include "ami/data/DescEntryW.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryTH1F.hh"
@@ -23,6 +23,7 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   AbsOperator(AbsOperator::EnvPlot),
   _cache     (0),
   _term      (0),
+  _weight    (0),
   _entry     (0),
   _input     (0)
 {
@@ -32,7 +33,8 @@ EnvPlot::EnvPlot(const DescEntry& output) :
 EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   AbsOperator(AbsOperator::EnvPlot),
   _cache (&features),
-  _term  (0)
+  _term  (0),
+  _weight(0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
 
@@ -54,13 +56,25 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
     if (!_term)
       printf("EnvPlot failed to parse %s\n",qPrintable(expr));
   }
+
+  if (o.isweighted_type()) {
+    const DescEntryW& w = static_cast<const DescEntryW&>(o);
+    if (w.weighted()) {
+      QString expr(w.weight());
+      printf("%s evaluates to\n",qPrintable(expr));
+      _weight = parser.evaluate(features,expr);
+      if (!_weight)
+	printf("EnvPlot failed to parse %s\n",qPrintable(expr));
+    }
+  }
 }
 
 EnvPlot::~EnvPlot()
 {
-  if (_input) delete _input;
-  if (_term ) delete _term;
-  if (_entry) delete _entry;
+  if (_input ) delete _input;
+  if (_term  ) delete _term;
+  if (_weight) delete _weight;
+  if (_entry ) delete _entry;
 }
 
 DescEntry& EnvPlot::output   () const 
@@ -81,6 +95,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
   if (_input != 0 && e.valid()) {
     Feature::damage(false);
     double y = _input->evaluate();
+    double w = _weight ? _weight->evaluate() : 1;
     if (!Feature::damage()) {
       switch(_entry->desc().type()) {
       case DescEntry::Scalar: 
@@ -107,7 +122,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  bool damaged=false; double x=_term->evaluate();
 	  if (!damaged) {
 	    EntryScan* en = static_cast<EntryScan*>(_entry);
-	    en->addy(y,x);
+	    en->addy(y,x,w);
 	    en->addinfo(1.,EntryScan::Normalization);
 	  }
 	} 

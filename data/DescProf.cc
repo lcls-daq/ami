@@ -8,8 +8,9 @@ DescProf::DescProf(const char* name,
 		   unsigned nbins, 
 		   float xlow, 
 		   float xup, 
-		   const char* names) :
-  DescEntry(name, xtitle, ytitle, Prof, sizeof(DescProf), false),
+		   const char* names,
+		   const char* weight) :
+  DescEntryW(name, xtitle, ytitle, weight, Prof, sizeof(DescProf), false),
   _nbins(nbins ? nbins : 1),
   _xlow(xlow),
   _xup(xup)
@@ -38,7 +39,7 @@ DescProf::DescProf(const Pds::DetInfo& info,
 		   float xlow, 
 		   float xup, 
 		   const char* names) :
-  DescEntry(info, channel, name, xtitle, ytitle, Prof, sizeof(DescProf), false),
+  DescEntryW(info, channel, name, xtitle, ytitle, "", Prof, sizeof(DescProf), false),
   _nbins(nbins ? nbins : 1),
   _xlow(xlow),
   _xup(xup)

@@ -10,11 +10,34 @@ EventHandler::EventHandler(const Pds::Src& info,
 			   Pds::TypeId::Type   data_type,
 			   Pds::TypeId::Type   config_type) :
   _info       (info),
-  _data_type  (data_type),
-  _config_type(config_type)
+  _data_type  (data_type)
 {
+  _config_type.push_back(config_type);
+}
+
+EventHandler::EventHandler(const Pds::Src& info,
+			   Pds::TypeId::Type   data_type,
+			   const std::list<Pds::TypeId::Type>& config_type) :
+  _info       (info),
+  _data_type  (data_type)
+{
+  _config_type.insert(_config_type.begin(),
+		      config_type.begin(),
+		      config_type.end());
 }
 
 EventHandler::~EventHandler()
 {
+}
+
+void   EventHandler::_configure(Pds::TypeId::Type type, 
+				const void* payload, const Pds::ClockTime& t)
+{
+  _configure(payload,t);
+}
+
+void   EventHandler::_calibrate(Pds::TypeId::Type type, 
+				const void* payload, const Pds::ClockTime& t)
+{
+  _configure(payload,t);
 }

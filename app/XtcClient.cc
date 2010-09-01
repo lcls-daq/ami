@@ -145,18 +145,24 @@ int XtcClient::process(Pds::Xtc* xtc)
 	    h->_damaged();
 	  else
 	    h->_event(xtc->payload(),_seq->clock());
+	  return 1;
 	}
-	else if (_seq->service()==Pds::TransitionId::Configure &&
-		 xtc->contains.id()==h->config_type()) {
-	  h->_configure(xtc->payload(),_seq->clock());
+	else {
+	  const std::list<Pds::TypeId::Type>& types = h->config_types();
+	  Pds::TypeId::Type type = xtc->contains.id();
+	  for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+	      it != types.end(); it++) {
+	    if (*it == type) {
+	      if (_seq->service()==Pds::TransitionId::Configure)
+		h->_configure(type, xtc->payload(), _seq->clock());
+	      else if (_seq->service()==Pds::TransitionId::BeginCalibCycle)
+		h->_calibrate(type, xtc->payload(), _seq->clock());
+	      else
+		continue;
+	      return 1;
+	    }
+	  }
 	}
-	else if (_seq->service()==Pds::TransitionId::BeginCalibCycle &&
-		 xtc->contains.id()==h->config_type()) {
-	  h->_calibrate(xtc->payload(),_seq->clock());
-	}
-	else 
-	  continue;
-	return 1;
       }
     }
     //  Wasn't handled
@@ -193,7 +199,7 @@ int XtcClient::process(Pds::Xtc* xtc)
 	printf("XtcClient::process adding handler for info %s type %s\n",
 	       Pds::DetInfo::name(info), Pds::TypeId::name(xtc->contains.id()));
 	insert(h);
-	h->_configure(xtc->payload(),_seq->clock());
+	h->_configure(xtc->contains.id(),xtc->payload(),_seq->clock());
       }
     }
   }

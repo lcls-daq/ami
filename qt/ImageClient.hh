@@ -9,6 +9,7 @@ namespace Ami {
     class ImageRPhiProjection;
     class ImageContourProjection;
     class PeakFinder;
+
     class ImageClient : public Client {
     public:
       ImageClient(QWidget*,const Pds::DetInfo&, unsigned);

@@ -12,6 +12,10 @@ namespace Ami {
     FrameHandler(const Pds::DetInfo& info,
 		 unsigned defColumns,
 		 unsigned defRows);
+    FrameHandler(const Pds::DetInfo& info,
+		 const std::list<Pds::TypeId::Type>& config_types,
+		 unsigned defColumns,
+		 unsigned defRows);
     ~FrameHandler();
   public:
     unsigned     nentries() const;

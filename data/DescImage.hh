@@ -38,6 +38,9 @@ namespace Ami {
     float binx(unsigned) const;
     float biny(unsigned) const;
 
+    float mmppx() const { return _mmppx; }
+    float mmppy() const { return _mmppy; }
+
     void params(unsigned nbinsx,
 		unsigned nbinsy,
 		int ppxbin,

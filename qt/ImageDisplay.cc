@@ -2,6 +2,7 @@
 
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/AxisArray.hh"
+#include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/Transform.hh"
 #include "ami/qt/Cursors.hh"
@@ -36,7 +37,8 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
   _sem   (Ami::Semaphore::FULL)
 {
   _zrange  = new ImageColorControl(this,"Z");
-  _plot = new ImageFrame(this,*_zrange);
+  _plot    = new ImageFrame(this,*_zrange);
+  _units   = new ImageGridScale(*_plot);
 
   QMenuBar* menu_bar = new QMenuBar(this);
   {
@@ -57,6 +59,7 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
     plotBox->setLayout(layout1);
     layout->addWidget(plotBox); }
   { QHBoxLayout* layout2 = new QHBoxLayout;
+    layout2->addWidget(_units );
     layout2->addWidget(_zrange);
     layout->addLayout(layout2); }
   layout->addStretch();
@@ -98,6 +101,8 @@ void ImageDisplay::save_plots(const QString& p) const
 }
 
 const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
+
+ImageGridScale& ImageDisplay::grid_scale() { return *_units; }
 
 void Ami::Qt::ImageDisplay::save_image()
 {

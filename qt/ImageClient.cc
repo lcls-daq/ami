@@ -1,6 +1,7 @@
 #include "ImageClient.hh"
 
 #include "ami/qt/ImageDisplay.hh"
+#include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
 #include "ami/qt/ImageContourProjection.hh"
@@ -95,6 +96,7 @@ void ImageClient::_setup_payload(Cds& cds)
   _rfproj ->setup_payload(cds);
   _cntproj->setup_payload(cds);
   _hit    ->setup_payload(cds);
+  static_cast<ImageDisplay&>(display()).grid_scale().setup_payload(cds);
 }
 
 void ImageClient::_update()

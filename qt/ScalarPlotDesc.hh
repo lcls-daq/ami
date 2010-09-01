@@ -4,6 +4,7 @@
 #include <QtGui/QWidget>
 
 class QButtonGroup;
+class QCheckBox;
 class QString;
 
 namespace Ami {
@@ -13,6 +14,7 @@ namespace Ami {
     class DescChart;
     class DescProf;
     class DescScan;
+    class FeatureBox;
 
     class ScalarPlotDesc : public QWidget {
     public:
@@ -25,6 +27,13 @@ namespace Ami {
     public:
       DescEntry* desc(const char*) const;
     private:
+      QCheckBox*    _xnorm;
+      QCheckBox*    _ynorm;
+      FeatureBox*   _vnorm;
+
+      QCheckBox*    _weightB;
+      FeatureBox*   _vweight;
+
       QButtonGroup* _plot_grp;
       DescTH1F*   _hist;
       DescChart*  _vTime;

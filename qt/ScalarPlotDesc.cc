@@ -4,6 +4,7 @@
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
+#include "ami/qt/FeatureBox.hh"
 #include "ami/qt/QtPersistent.hh"
 
 #include "ami/data/DescTH1F.hh"
@@ -13,7 +14,11 @@
 
 #include <QtGui/QButtonGroup>
 #include <QtGui/QRadioButton>
+#include <QtGui/QCheckBox>
+#include <QtGui/QGroupBox>
+#include <QtGui/QLabel>
 #include <QtGui/QVBoxLayout>
+#include <QtGui/QHBoxLayout>
 
 using namespace Ami::Qt;
 
@@ -32,11 +37,43 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent) :
   _plot_grp->addButton(_vScan   ->button(),(int)vS);
   _hist->button()->setChecked(true);
 
+  _xnorm = new QCheckBox("X");
+  _ynorm = new QCheckBox("Y");
+  _vnorm = new FeatureBox;
+
+  _weightB = new QCheckBox;
+  _vweight = new FeatureBox;
+
   QVBoxLayout* layout1 = new QVBoxLayout;
-  layout1->addWidget(_hist );
-  layout1->addWidget(_vTime);
-  layout1->addWidget(_vFeature);
-  layout1->addWidget(_vScan);
+  { QGroupBox* box = new QGroupBox("Plot Type");
+    QVBoxLayout* vl = new QVBoxLayout;
+    vl->addWidget(_hist );
+    vl->addWidget(_vTime);
+    vl->addWidget(_vFeature);
+    vl->addWidget(_vScan);
+    box->setLayout(vl);
+    layout1->addWidget(box); }
+  { QGroupBox* box = new QGroupBox("Normalization");
+    QHBoxLayout* hl = new QHBoxLayout;
+    hl->addStretch();
+    hl->addWidget(new QLabel("Normalize"));
+    { QVBoxLayout* vl = new QVBoxLayout;
+      vl->addWidget(_xnorm);
+      vl->addWidget(_ynorm);
+      hl->addLayout(vl); }
+    hl->addWidget(new QLabel("variable to"));
+    hl->addWidget(_vnorm);
+    box->setLayout(hl);
+    layout1->addWidget(box); }
+  { QGroupBox* box = new QGroupBox("Weighted Average");
+    QHBoxLayout* hl = new QHBoxLayout;
+    hl->addStretch();
+    hl->addWidget(_weightB);
+    hl->addWidget(new QLabel("Weight by"));
+    hl->addWidget(_vweight); 
+    hl->addStretch();
+    box->setLayout(hl); 
+    layout1->addWidget(box); }
   setLayout(layout1);
 }
 
@@ -65,25 +102,36 @@ void ScalarPlotDesc::load(const char*& p)
 Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 {
   DescEntry* desc = 0;
+
+  QString vn = QString("(%1)/(%2)").arg(title).arg(_vnorm->entry());
+
   switch(_plot_grp->checkedId()) {
   case ScalarPlotDesc::TH1F:
-    desc = new Ami::DescTH1F(title,
-			     title,"events",
+    { QString v = _xnorm->isChecked() ? vn : QString(title);
+      desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
 			     _hist->bins(),_hist->lo(),_hist->hi()); 
-    break;
+      break; }
   case ScalarPlotDesc::vT: 
-    desc = new Ami::DescScalar(title,"mean");
-    break;
+    { QString v = _xnorm->isChecked() ? vn : QString(title);
+      desc = new Ami::DescScalar(qPrintable(v),"mean",
+				 _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+      break; }
   case ScalarPlotDesc::vF:
-    desc = new Ami::DescProf(title,
-			     qPrintable(_vFeature->expr()),"mean",
-			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    break;
+    { QString vy = _ynorm->isChecked() ? vn : QString(title);
+      QString vx = _xnorm->isChecked() ? QString("(%1)/(%2)").arg(_vFeature->expr()).arg(_vnorm->entry()) : _vFeature->expr();
+      desc = new Ami::DescProf(qPrintable(vy),
+			       qPrintable(vx),"mean",
+			       _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean",
+			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+      break; }
   case ScalarPlotDesc::vS:
-    desc = new Ami::DescScan(title,
-			     qPrintable(_vScan->expr()),title,
-			     _vScan->bins());
-    break;
+    { QString vy = _ynorm->isChecked() ? vn : QString(title);
+      QString vx = _xnorm->isChecked() ? QString("(%1)/(%2)").arg(_vScan->expr()).arg(_vnorm->entry()) : _vScan->expr();
+      desc = new Ami::DescScan(qPrintable(vy),
+			       qPrintable(_vScan->expr()),title,
+			       _vScan->bins(),
+			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+      break; }
   default:
     desc = 0;
     break;

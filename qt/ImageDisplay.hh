@@ -11,6 +11,7 @@ class QPrinter;
 
 namespace Ami {
   namespace Qt {
+    class ImageGridScale;
     class ImageColorControl;
     class ImageFrame;
     class ImageDisplay : public QWidget,
@@ -35,6 +36,7 @@ namespace Ami {
       QWidget* widget() { return this; }
     public:
       const ImageColorControl& control() const;
+      ImageGridScale& grid_scale();
     public:
 //       const std::list<QtBase*> plots() const;
 //       const AxisArray&    xinfo     () const;
@@ -47,6 +49,7 @@ namespace Ami {
       void redraw();
     private:
       ImageFrame*  _plot;
+      ImageGridScale*    _units;
       ImageColorControl* _zrange;
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;

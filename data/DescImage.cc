@@ -14,8 +14,8 @@ DescImage::DescImage(const char* name,
   _nbinsy(nbinsy ? nbinsy : 1),
   _ppbx  (ppbx),
   _ppby  (ppby),
-  _mmppx (0),
-  _mmppy (0),
+  _mmppx (1),
+  _mmppy (1),
   _nsubframes(0)
 {}
 
@@ -31,8 +31,8 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _nbinsy(nbinsy ? nbinsy : 1),
   _ppbx  (ppbx),
   _ppby  (ppby),
-  _mmppx (0),
-  _mmppy (0),
+  _mmppx (1),
+  _mmppy (1),
   _nsubframes(0)
 {}
 

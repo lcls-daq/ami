@@ -47,8 +47,8 @@ void PrincetonHandler::_configure(const void* payload, const Pds::ClockTime& t)
   unsigned rows    = height(c);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = (pixels-1)/640 + 1;
-  columns /= ppb;
-  rows    /= ppb;
+  columns = (columns+ppb-1)/ppb;
+  rows    = (rows   +ppb-1)/ppb;
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, 0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);

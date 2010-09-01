@@ -63,6 +63,7 @@ unsigned            DescEntry::channel() const { return _channel; }
 
 bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
 bool DescEntry::aggregate   () const {return _options&(1<<Aggregate);}
+bool DescEntry::isweighted_type() const {return (_type==Scan);}
 
 void DescEntry::normalize(bool v) {
   if (v) _options |=  (1<<Normalized);

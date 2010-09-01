@@ -176,6 +176,10 @@ void DetectorSelect::save_setup ()
   char* buffer = new char[MaxConfigSize];
 
   int len = get_setup(buffer);
+  if (len > MaxConfigSize) {
+    printf("DetectorSelect::save_setup exceeded save buffer size (0x%x/0x%x)\n",
+	   len, MaxConfigSize);
+  }
 
   char time_buffer[32];
   time_t seq_tm = time(NULL);

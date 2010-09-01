@@ -4,6 +4,7 @@
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageMarker.hh"
+#include "ami/qt/ImageGrid.hh"
 #include "ami/qt/QtImage.hh"
 
 #include <QtGui/QMouseEvent>
@@ -46,10 +47,16 @@ ImageFrame::ImageFrame(QWidget* parent,
   _canvas->setMinimumSize(sz,sz);
   _canvas->setAlignment(::Qt::AlignLeft | ::Qt::AlignTop);
 
-  QHBoxLayout* layout = new QHBoxLayout;
-  //  layout->addWidget(_scroll);
-  layout->addWidget(_canvas);
+//   QHBoxLayout* layout = new QHBoxLayout;
+//   layout->addWidget(_canvas);
+  QGridLayout* layout = new QGridLayout;
+  layout->addWidget(_canvas,0,0);
   setLayout(layout);
+
+  _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, CanvasSizeDefault);
+  _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, CanvasSizeDefault);
+
+  show_grid(true);
 
   connect(&_control , SIGNAL(windowChanged()), this , SLOT(scale_changed()));
 }
@@ -86,8 +93,11 @@ void ImageFrame::replot()
       QSize sz = output.size();
       sz.rwidth () += CanvasSizeIncrease;
       sz.rheight() += CanvasSizeIncrease;
-      if (sz != _canvas->size())
+      if (sz != _canvas->size()) {
 	_canvas->setMinimumSize(sz);
+	_xgrid ->resize_grid(sz.width());
+	_ygrid ->resize_grid(sz.height());
+      }
       _canvas->setPixmap(QPixmap::fromImage(output));
     }
   }
@@ -138,3 +148,21 @@ void ImageFrame::autoXYScale(bool v)
   _xyscale = v;
 }
 
+void ImageFrame::set_grid_scale(double scalex, double scaley)
+{
+  _xgrid->set_grid_scale(scalex*(xinfo()->position(1)-xinfo()->position(0)));
+  _ygrid->set_grid_scale(scaley*(yinfo()->position(1)-yinfo()->position(0)));
+}
+
+void ImageFrame::show_grid(bool s)
+{
+  QGridLayout* l = static_cast<QGridLayout*>(layout()); 
+  if (s) {
+    l->addWidget(_xgrid,1,0);
+    l->addWidget(_ygrid,0,1);
+  }
+  else {
+    l->removeWidget(_xgrid);
+    l->removeWidget(_ygrid);
+  }
+}

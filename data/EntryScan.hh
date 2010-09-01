@@ -34,8 +34,8 @@ namespace Ami {
     double xbin(unsigned) const;
     void   xbin(double, unsigned bin);
 
-    void addy(double y, unsigned bin);
-    void addy(double y, double x);
+    void addy(double y, unsigned bin, double w=1);
+    void addy(double y, double x, double w=1);
 
     enum Info { Current, Normalization, InfoSize };
     double info(Info) const;
@@ -100,11 +100,11 @@ namespace Ami {
   inline double EntryScan::nentries(unsigned bin) const {return _p[bin]._nentries;}
   inline void EntryScan::nentries(double nent, unsigned bin) {_p[bin]._nentries=nent;}
 
-  inline void EntryScan::addy(double y, unsigned bin) 
+  inline void EntryScan::addy(double y, unsigned bin, double w) 
   {
-    _p[bin]._nentries += 1;
-    _p[bin]._ysum     += y;
-    _p[bin]._y2sum    += y*y;
+    _p[bin]._nentries += w;
+    _p[bin]._ysum     += y*w;
+    _p[bin]._y2sum    += y*y*w;
   }
 
   inline double EntryScan::xbin(unsigned bin) const {return _p[bin]._x;}

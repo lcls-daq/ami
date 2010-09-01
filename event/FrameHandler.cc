@@ -20,6 +20,17 @@ FrameHandler::FrameHandler(const Pds::DetInfo& info,
 {
 }
 
+FrameHandler::FrameHandler(const Pds::DetInfo& info,
+			   const std::list<Pds::TypeId::Type>& config_types,
+			   unsigned defColumns,
+			   unsigned defRows) : 
+  EventHandler(info, Pds::TypeId::Id_Frame, config_types),
+  _entry(0),
+  _defColumns(defColumns),
+  _defRows   (defRows)
+{
+}
+
 FrameHandler::FrameHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
   EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_FrameFexConfig),
   _entry(entry ? new EntryImage(entry->desc()) : 0)
@@ -53,8 +64,8 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
   }
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = (pixels-1)/640 + 1;
-  columns /= ppb;
-  rows    /= ppb;
+  columns = (columns+ppb-1)/ppb;
+  rows    = (rows   +ppb-1)/ppb;
   DescImage desc(det, 0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);
 
