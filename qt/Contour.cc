@@ -83,11 +83,10 @@ void Contour::draw(QImage& image)
 
     const AxisInfo& xinfo = *_image.xinfo();
     const AxisInfo& yinfo = *_image.yinfo();
-    unsigned w = image.size().width();
   
     for(int ix = xinfo.lo(); ix < xinfo.hi(); ix++) {
       float y = f.value(xinfo.position(ix));
-      *(image.bits() + yinfo.tick(y)*w + ix) = c;
+      *(image.scanLine(yinfo.tick(y)) + ix) = c;
     }
 
     float y0 = _frame.ylo() - ymin;
@@ -95,8 +94,8 @@ void Contour::draw(QImage& image)
     unsigned ixhi = xinfo.tick(_frame.xhi());
     for(unsigned ix = xinfo.tick(_frame.xlo()); ix <= ixhi; ix++) {
       float y = f.value(xinfo.position(ix));
-      *(image.bits() + yinfo.tick(y+y0)*w + ix) = c;
-      *(image.bits() + yinfo.tick(y+y1)*w + ix) = c;
+      *(image.scanLine(yinfo.tick(y+y0)) + ix) = c;
+      *(image.scanLine(yinfo.tick(y+y1)) + ix) = c;
     }
   }
   else {
@@ -122,11 +121,10 @@ void Contour::draw(QImage& image)
 
     const AxisInfo& xinfo = *_image.xinfo();
     const AxisInfo& yinfo = *_image.yinfo();
-    unsigned w = image.size().width();
   
     for(int iy = yinfo.lo(); iy < yinfo.hi(); iy++) {
       float x = f.value(yinfo.position(iy));
-      *(image.bits() + iy*w + xinfo.tick(x)) = c;
+      *(image.scanLine(iy) + xinfo.tick(x)) = c;
     }
 
     float x0 = _frame.xlo() - xmin;
@@ -134,8 +132,8 @@ void Contour::draw(QImage& image)
     unsigned iyhi = yinfo.tick(_frame.yhi());
     for(unsigned iy = yinfo.tick(_frame.ylo()); iy <= iyhi; iy++) {
       float x = f.value(yinfo.position(iy));
-      *(image.bits() + iy*w + xinfo.tick(x+x0)) = c;
-      *(image.bits() + iy*w + xinfo.tick(x+x1)) = c;
+      *(image.scanLine(iy) + xinfo.tick(x+x0)) = c;
+      *(image.scanLine(iy) + xinfo.tick(x+x1)) = c;
     }
   }
 }

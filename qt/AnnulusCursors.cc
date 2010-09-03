@@ -158,10 +158,9 @@ void AnnulusCursors::draw(QImage& image)
   int yc = yinfo.tick(_yc);
 
   // draw center cross
-  unsigned char* cc = image.bits() + yc*sz.width() + xc;
   for(int i=-5; i<=5; i++) {
-    if ((i+xc)>=0 && (i+xc)<sz.width())      *(cc+i) = c;
-    if ((i+yc)>=0 && (i+yc)<sz.height())     *(cc+i*sz.width()) = c;
+    if ((i+xc)>=0 && (i+xc)<sz.width())      *(image.scanLine(yc+0)+xc+i) = c;
+    if ((i+yc)>=0 && (i+yc)<sz.height())     *(image.scanLine(yc+i)+xc+0) = c;
   }
 
   //  Assuming x scale factor is same as y scale factor
@@ -249,24 +248,24 @@ void draw_line(double _xc, double _yc,
     if (dx > 0)
       for(double x=r0*cosf; x<=r1*cosf; x++) {
 	double y=x*tanf;
-	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+	*(image.scanLine(unsigned(y+_yc))+unsigned(x+_xc)) = 0xff;
       }
     else
       for(double x=r1*cosf; x<=r0*cosf; x++) {
 	double y=x*tanf;
-	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+	*(image.scanLine(unsigned(y+_yc))+unsigned(x+_xc)) = 0xff;
       }
   }
   else {
     if (dy > 0)
       for(double y=r0*sinf; y<=r1*sinf; y++) {
 	double x=y*cotf;
-	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+	*(image.scanLine(unsigned(y+_yc))+unsigned(x+_xc)) = 0xff;
       }
     else
       for(double y=r1*sinf; y<=r0*sinf; y++) {
 	double x=y*cotf;
-	*(image.bits()+unsigned(x+_xc)+unsigned(y+_yc)*sz.width()) = 0xff;
+	*(image.scanLine(unsigned(y+_yc))+unsigned(x+_xc)) = 0xff;
       }
   }
 }
@@ -284,7 +283,7 @@ void draw_arc (double _xc, double _yc,
       int iy = int(_r*sin(f)+_yc);
       if (ix>=0 && ix < sz.width() &&
 	  iy>=0 && iy < sz.height())
-	*(image.bits()+ix+iy*sz.width()) = 0xff;
+	*(image.scanLine(iy)+ix) = 0xff;
     }
   }
 }

@@ -137,19 +137,17 @@ void RectangleCursors::draw(QImage& image)
 //   if (jhi > _xmax) jhi=_xmax;
 //   if (khi > _ymax) khi=_ymax;
 
-  { unsigned char* cc0 = image.bits() + klo*sz.width() + jlo;
-    unsigned char* cc1 = image.bits() + khi*sz.width() + jlo;
+  { unsigned char* cc0 = image.scanLine(klo) + jlo;
+    unsigned char* cc1 = image.scanLine(khi) + jlo;
     for(unsigned j=jlo; j<=jhi; j++) {
       *cc0++ = c;
       *cc1++ = c;
     }
   }
 
-  { unsigned char* cc0 = image.bits() + klo*sz.width() + jlo;
-    unsigned char* cc1 = image.bits() + klo*sz.width() + jhi;
-    for(unsigned k=klo; k<khi; k++) {
-      *(cc0 += sz.width()) = c;
-      *(cc1 += sz.width()) = c;
+  { for(unsigned k=klo; k<khi; k++) {
+      *(image.scanLine(k+1)+jlo) = c;
+      *(image.scanLine(k+1)+jhi) = c;
     }
   }
 }

@@ -85,8 +85,8 @@ void           QtImage::update() {}
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
 
 #define COPYIMAGE(type,T,factor) {			      \
-    type* dst = (type*)_qimage->bits();			      \
     for(unsigned k=0; k<_ny; k++) {			      \
+      type* dst = (type*)_qimage->scanLine(k);		      \
       for(unsigned j=0; j<_nx; j++) {			      \
         unsigned sh = static_cast<unsigned>(T(*src));	      \
 	*dst++ = factor*(sh >= 0xff ? 0xff : sh);	      \

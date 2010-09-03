@@ -104,7 +104,6 @@ void CrossHair::draw(QImage& img)
 {
   if (!_visible) return;
 
-  const QSize& sz = img.size();
   double x = _column_edit->value()/_scalex;
   double y = _row_edit   ->value()/_scaley;
   
@@ -119,12 +118,11 @@ void CrossHair::draw(QImage& img)
   unsigned khi = unsigned(yinfo.tick(y+crosshair_size));
 
   const unsigned char c = 0xff;
-  { unsigned char* cc0 = img.bits() + kct*sz.width() + jlo;
-    for(unsigned j=jlo; j<=jhi; j++, cc0++)
-      *cc0 = c; }
-  { unsigned char* cc0 = img.bits() + klo*sz.width() + jct;
-    for(unsigned k=klo; k<=khi; k++, cc0+=sz.width())
-      *cc0 = c; }
+  { unsigned char* cc0 = img.scanLine(kct) + jlo;
+    for(unsigned j=jlo; j<=jhi; j++)
+      *cc0++ = c; }
+  { for(unsigned k=klo; k<=khi; k++)
+      *(img.scanLine(k) + jct) = c; }
   
   _value->setText(QString::number(_frame.value(jct,kct)));
 }
