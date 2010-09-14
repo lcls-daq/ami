@@ -10,6 +10,7 @@
 class QButtonGroup;
 class QComboBox;
 class QPushButton;
+class QLineEdit;
 
 namespace Ami {
   class ClientManager;
@@ -52,6 +53,7 @@ namespace Ami {
       void plot                ();
       void remove_plot         (QObject*);
       void select_source       ();
+      void validate_source     ();
     signals:
       void description_changed(int);
     private:
@@ -79,7 +81,8 @@ namespace Ami {
 
       bool _throttled;
 
-      QPushButton* _source;
+      QLineEdit*   _source_edit;
+      QPushButton* _source_compose;
       Filter*      _filter;
 
       ScalarPlotDesc* _scalar_plot;

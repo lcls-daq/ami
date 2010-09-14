@@ -24,6 +24,8 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
       virtual void dump(FILE*) const=0;
+    public:
+      void edit_xrange(bool);
     private:
       void _layout();
     signals:
@@ -36,6 +38,7 @@ namespace Ami {
       void set_yaxis_title();
       void toggle_grid();
       void toggle_minor_grid();
+      void xrange_change();
       void yrange_change();
       void update_counts(double);
     public:
@@ -43,6 +46,7 @@ namespace Ami {
       QwtPlot*     _frame;
       QLabel*      _counts;
     private:
+      AxisControl* _xrange;
       AxisControl* _yrange;
       QwtPlotGrid* _grid;
     };

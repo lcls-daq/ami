@@ -7,7 +7,6 @@
 class QComboBox;
 class QRadioButton;
 class QLineEdit;
-class QLabel;
 
 namespace Ami {
   namespace Qt {
@@ -30,7 +29,7 @@ namespace Ami {
     private:
       QRadioButton* _button;
       QLineEdit *_bins, *_lo, *_hi;
-      QLabel* _expr;
+      QLineEdit* _expr;
     };
   };
 };

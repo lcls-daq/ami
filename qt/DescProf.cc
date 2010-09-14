@@ -19,7 +19,7 @@ using namespace Ami::Qt;
 DescProf::DescProf(const char* name) :
   QWidget(0), _button(new QRadioButton(name)), 
   _bins(new QLineEdit("100")), _lo(new QLineEdit("0")), _hi(new QLineEdit("1")),
-  _expr(new QLabel)
+  _expr(new QLineEdit)
 {
   QPushButton* calcB = new QPushButton("X Var");
 
@@ -32,7 +32,7 @@ DescProf::DescProf(const char* name) :
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout = new QHBoxLayout;
     layout->addWidget(_button);
-    //    layout->addWidget(_features);
+    layout->addWidget(_expr);
     layout->addWidget(calcB);
     layout->addStretch();
     layout1->addLayout(layout); }
@@ -45,7 +45,6 @@ DescProf::DescProf(const char* name) :
     layout->addWidget(new QLabel("hi"));
     layout->addWidget(_hi);
     layout1->addLayout(layout); }
-  layout1->addWidget(_expr);
   setLayout(layout1);
 
   connect(calcB, SIGNAL(clicked()), this, SLOT(calc()));

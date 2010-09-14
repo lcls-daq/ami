@@ -1,7 +1,7 @@
 #ifndef AmiQt_AxisControl_hh
 #define AmiQt_AxisControl_hh
 
-#include <QtGui/QGroupBox>
+#include <QtGui/QWidget>
 
 #include <QtCore/QString>
 
@@ -11,10 +11,10 @@ class QPushButton;
 namespace Ami {
   namespace Qt {
     class AxisInfo;
-    class AxisControl : public QGroupBox {
+    class AxisControl : public QWidget {
       Q_OBJECT
     public:
-      AxisControl(QWidget*, const QString& title);
+      AxisControl(QWidget*, const QString& title, bool lSlim=true);
       ~AxisControl();
     public:
       void save(char*& p) const;

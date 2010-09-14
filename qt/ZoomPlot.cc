@@ -98,10 +98,11 @@ void ZoomPlot::setup_payload(Cds& cds)
 {
   _frame->reset();
   const Entry* entry = cds.entry(_signature);
-  _frame->add( new QtImage(entry->desc().name(),
-			   *static_cast<const EntryImage*>(entry),
-			   _x0, _y0, _x1, _y1),
-	       true);
+  if (entry)
+    _frame->add( new QtImage(entry->desc().name(),
+			     *static_cast<const EntryImage*>(entry),
+			     _x0, _y0, _x1, _y1),
+		 true);
 }
 
 void ZoomPlot::configure(char*& p, unsigned input, unsigned& output,

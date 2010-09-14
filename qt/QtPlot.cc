@@ -23,6 +23,7 @@ QtPlot::QtPlot(QWidget* parent,
   _name    (name),
   _frame   (new QwtPlot(name)),
   _counts  (new QLabel("Np 0")),
+  _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
@@ -41,6 +42,7 @@ QtPlot::QtPlot(QWidget* parent,
 	       const char*& p) :
   QtPWidget(parent),
   _counts  (new QLabel("Np 0")),
+  _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
@@ -50,6 +52,7 @@ QtPlot::QtPlot(QWidget* parent,
   _frame->setAxisTitle(QwtPlot::xBottom,QtPersistent::extract_s(p));
   _frame->setAxisTitle(QwtPlot::yLeft  ,QtPersistent::extract_s(p));
 
+  //  _xrange->load(p);
   _yrange->load(p);
 
   _layout();
@@ -91,6 +94,12 @@ void QtPlot::_layout()
     l->addWidget(_counts); 
     layout->addLayout(l); }
   layout->addWidget(_frame);
+  layout->setSpacing(0);
+  { QHBoxLayout* layout1 = new QHBoxLayout;
+    layout1->addStretch();
+    layout1->addWidget(_xrange);
+    layout1->addStretch();
+    layout->addLayout(layout1); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(_yrange);
@@ -102,6 +111,7 @@ void QtPlot::_layout()
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
   connect(this, SIGNAL(counts_changed(double)), 
 	  this, SLOT(update_counts(double)));
+  connect(_xrange, SIGNAL(windowChanged()), this , SLOT(xrange_change()));
   connect(_yrange, SIGNAL(windowChanged()), this , SLOT(yrange_change()));
 }
 
@@ -111,6 +121,7 @@ void QtPlot::save(char*& p) const
   QtPersistent::insert(p,_frame->title().text());
   QtPersistent::insert(p,_frame->axisTitle(QwtPlot::xBottom).text());
   QtPersistent::insert(p,_frame->axisTitle(QwtPlot::yLeft).text());
+  //  _xrange->save(p);
   _yrange->save(p);
   QtPersistent::insert(p,_grid->xEnabled());
   QtPersistent::insert(p,_grid->xMinEnabled());
@@ -171,6 +182,24 @@ void QtPlot::toggle_minor_grid()
   _grid->enableXMin(gEnable);
   _grid->enableYMin(gEnable);
   emit redraw();
+}
+
+void QtPlot::edit_xrange(bool v)
+{
+  _xrange->setVisible(v);
+}
+
+void QtPlot::xrange_change()
+{
+  if (_xrange->isAuto())
+    _frame->setAxisAutoScale  (QwtPlot::xBottom);
+  else
+    _frame->setAxisScale      (QwtPlot::xBottom, _xrange->loEdge(), _xrange->hiEdge());
+
+  if (_xrange->isLog())
+    _frame->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
+  else
+    _frame->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
 }
 
 void QtPlot::yrange_change()

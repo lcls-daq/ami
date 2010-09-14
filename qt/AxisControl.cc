@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPersistent.hh"
 
+#include <QtGui/QGroupBox>
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
 #include <QtGui/QPushButton>
@@ -14,12 +15,11 @@ using namespace Ami::Qt;
 
 
 AxisControl::AxisControl(QWidget* parent,
-			 const QString&  title) :
-  QGroupBox(title,parent),
+			 const QString&  title,
+			 bool lSlim) :
+  QWidget(parent),
   _info  (0)
 {
-  setAlignment(::Qt::AlignHCenter);
-
   _autoB = new QPushButton("Auto"); 
   _logB  = new QPushButton("Log Scale"); 
   _loBox = new QLineEdit("0");
@@ -31,6 +31,10 @@ AxisControl::AxisControl(QWidget* parent,
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QHBoxLayout* layout1 = new QHBoxLayout;
+    if (lSlim) {
+      layout1->addWidget(new QLabel(title));
+      layout1->addStretch();
+    }
     layout1->addWidget(_loBox);
     layout1->addStretch();
     layout1->addWidget(_autoB);
@@ -38,7 +42,15 @@ AxisControl::AxisControl(QWidget* parent,
     layout1->addWidget(_hiBox);
     layout1->addStretch();
     layout1->addWidget(_logB);
-    layout->addLayout(layout1); }
+    if (!lSlim) {
+      QGroupBox* w = new QGroupBox(title,this);
+      w->setLayout(layout1);
+      w->setAlignment(::Qt::AlignHCenter);
+      layout->addWidget(w);
+    }
+    else
+      layout->addLayout(layout1);
+  }  
   setLayout(layout);
 
   connect(_loBox , SIGNAL(textEdited(const QString&)), this, SLOT(changeLoEdge(const QString&)));

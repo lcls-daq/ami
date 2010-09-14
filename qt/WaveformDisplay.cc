@@ -18,6 +18,7 @@
 
 #include <QtGui/QMenuBar>
 #include <QtGui/QActionGroup>
+#include <QtGui/QGroupBox>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QGridLayout>
 #include <QtGui/QFileDialog>
@@ -60,8 +61,8 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _xinfo = _xbins;
   _yinfo = 0;
 
-  _xrange = new AxisControl(this,"X");
-  _yrange = new AxisControl(this,"Y");
+  _xrange = new AxisControl(this,"X",false);
+  _yrange = new AxisControl(this,"Y",false);
 
   QPushButton* xtransB = new QPushButton("X Transform");
   _xtransform = new Transform(this, "X Transform","x");

@@ -267,7 +267,8 @@ void Ami::Qt::Client::read_description(Socket& socket, int len)
   }
 
   if (size>BufferSize) {
-    printf("Buffer overflow in Ami::Qt::Client::read_description.  Dying...\n");
+    printf("Buffer overflow [%d/%d] in Ami::Qt::Client::read_description.  Dying...\n",
+	   size,BufferSize);
     abort();
   }
 

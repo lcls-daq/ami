@@ -26,6 +26,7 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
+#include <QtGui/QLineEdit>
 #include <QtGui/QGroupBox>
 #include <QtGui/QComboBox>
 
@@ -59,7 +60,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   //  QPushButton* filterB = new QPushButton("Filter");
   _filter = new Filter     (NULL,_title);
 
-  _source = new QPushButton("Select");
+  _source_edit    = new QLineEdit("");
+  _source_compose = new QPushButton("Select");
 
   _scalar_plot = new ScalarPlotDesc(this);
 
@@ -74,7 +76,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     layout->addLayout(layout1); }
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
     QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(_source);
+    layout1->addWidget(_source_edit);
+    layout1->addWidget(_source_compose);
     //    layout1->addWidget(filterB);
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
@@ -88,7 +91,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   setLayout(layout);
 
   //  connect(filterB   , SIGNAL(clicked()),   _filter, SLOT(show()));
-  connect(_source   , SIGNAL(clicked()),      this, SLOT(select_source()));
+  connect(_source_edit   , SIGNAL(editingFinished()), this, SLOT(validate_source()));
+  connect(_source_compose, SIGNAL(clicked()),         this, SLOT(select_source()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
@@ -110,7 +114,7 @@ void EnvClient::save(char*& p) const
 {
   QtPWidget::save(p);
 
-  QtPersistent::insert(p,_source->text());
+  QtPersistent::insert(p,_source_edit->text());
   //  _filter->save(p);
 
   _scalar_plot->save(p);
@@ -128,7 +132,7 @@ void EnvClient::load(const char*& p)
 {
   QtPWidget::load(p);
 
-  _source  ->setText(QtPersistent::extract_s(p));
+  _source_edit->setText(QtPersistent::extract_s(p));
   //  _filter  ->load(p);
 
   _scalar_plot->load(p);
@@ -335,7 +339,7 @@ void EnvClient::update_configuration()
 
 void EnvClient::plot()
 {
-  QString entry(_source->text());
+  QString entry(_source_edit->text());
   DescEntry* desc = _scalar_plot->desc(qPrintable(entry));
   
   EnvPlot* plot = new EnvPlot(this,
@@ -362,7 +366,12 @@ void EnvClient::select_source()
 {
   FeatureCalculator* c = new FeatureCalculator("Source");
   if (c->exec()==QDialog::Accepted) {
-    _source->setText(c->result());
+    _source_edit->setText(c->result());
   }
   delete c;
+}
+
+void EnvClient::validate_source()
+{
+  //  Don't know how to validate yet
 }

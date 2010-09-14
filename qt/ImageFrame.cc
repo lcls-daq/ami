@@ -150,8 +150,10 @@ void ImageFrame::autoXYScale(bool v)
 
 void ImageFrame::set_grid_scale(double scalex, double scaley)
 {
-  _xgrid->set_grid_scale(scalex*(xinfo()->position(1)-xinfo()->position(0)));
-  _ygrid->set_grid_scale(scaley*(yinfo()->position(1)-yinfo()->position(0)));
+  if (_qimage) {
+    _xgrid->set_grid_scale(scalex*(xinfo()->position(1)-xinfo()->position(0)));
+    _ygrid->set_grid_scale(scaley*(yinfo()->position(1)-yinfo()->position(0)));
+  }
 }
 
 void ImageFrame::show_grid(bool s)

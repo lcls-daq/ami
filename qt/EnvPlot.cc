@@ -108,6 +108,7 @@ void EnvPlot::setup_payload(Cds& cds)
     
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
+    edit_xrange(true);
     switch(entry->desc().type()) {
     case Ami::DescEntry::TH1F: 
       _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
@@ -120,6 +121,7 @@ void EnvPlot::setup_payload(Cds& cds)
 // 	break; }
       _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
 			  400,QColor(0,0,0));
+      edit_xrange(false);
       break;
     case Ami::DescEntry::Prof: 
       _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
