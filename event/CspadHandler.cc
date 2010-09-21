@@ -23,7 +23,6 @@ typedef Pds::CsPad::ElementV2 CspadElement;
 
 static const double pixel_size = 110e-6;
 static unsigned ppb = 4;
-static const unsigned qmask_mask = 0xf;
 
 //
 //  TwoByTwo origins w.r.t. Quadrant origin
@@ -78,17 +77,16 @@ namespace CspadGeometry {
   //  When filling the image, compensate data which
   //    only partially fills a pixel (at the edges)
   //
-#define FRAME_BOUNDS {							\
-    const unsigned ColBins =   CsPad::ColumnsPerASIC/ppb;		\
+#define FRAME_BOUNDS 							\
+  const unsigned ColBins =   CsPad::ColumnsPerASIC/ppb;			\
     const unsigned RowBins = 2*CsPad::MaxRowsPerASIC/ppb;		\
     unsigned x0 = CALC_X(column,0,0);					\
     unsigned x1 = CALC_X(column,ColBins,RowBins);			\
     unsigned y0 = CALC_Y(row,0,0);					\
     unsigned y1 = CALC_Y(row,ColBins,RowBins);				\
     if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }			\
-    if (y0 > y1) { unsigned t=y0; y0=y1; y1=t; }			\
-    image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
-  }
+    if (y0 > y1) { unsigned t=y0; y0=y1; y1=t; }			
+
 
 #define BIN_ITER4 {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC>>2;			\
@@ -150,6 +148,28 @@ namespace CspadGeometry {
     }									\
 }
 
+#define BIN_ITER1 {							\
+    const unsigned ColBins = CsPad::ColumnsPerASIC;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;			\
+    /*  zero the target region  */					\
+    for(unsigned i=0; i<=ColBins; i++) {				\
+      for(unsigned j=0; j<=RowBins; j++) {				\
+	const unsigned x = CALC_X(column,i,j);				\
+	const unsigned y = CALC_Y(row   ,i,j);				\
+	image.content(0,x,y);						\
+      }									\
+    }									\
+    /*  fill the target region  */					\
+    for(unsigned i=0; i<ColBins; i++) {					\
+      for(unsigned j=0; j<RowBins; j++) {				\
+	const unsigned x = CALC_X(column,i,j);				\
+	const unsigned y = CALC_Y(row   ,i,j);				\
+	image.addcontent(*data,x,y);					\
+	data++;								\
+      }									\
+    }									\
+  }
+
   //
   //  This class locates the ASIC data to the binned image grid
   //
@@ -164,39 +184,53 @@ namespace CspadGeometry {
     virtual void fill(Ami::DescImage& image) const = 0;
     virtual void fill(Ami::EntryImage& image,
 		      const uint16_t*  data) const = 0;
+  public:
+    virtual void boundary(unsigned& x0, unsigned& x1, 
+			  unsigned& y0, unsigned& y1) const = 0;
   protected:
     unsigned column, row;
   };
 
-#define AsicTemplate(classname,bi)				\
-  class classname : public Asic {				\
-  public:							\
-    classname(double x, double y) : Asic(x,y) {}		\
-    void fill(Ami::DescImage& image) const { FRAME_BOUNDS }	\
-    void fill(Ami::EntryImage& image,				\
-	      const uint16_t*  data) const { bi }		\
+#define AsicTemplate(classname,bi)					\
+  class classname : public Asic {					\
+  public:								\
+    classname(double x, double y) : Asic(x,y) {}			\
+    void boundary(unsigned& dx0, unsigned& dx1,				\
+		  unsigned& dy0, unsigned& dy1) const {			\
+      FRAME_BOUNDS;							\
+      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }					\
+    void fill(Ami::DescImage& image) const {				\
+      FRAME_BOUNDS;							\
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+    }									\
+    void fill(Ami::EntryImage& image,					\
+	      const uint16_t*  data) const { bi }			\
   }
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
+  AsicTemplate(  AsicD0B1, BIN_ITER1);
   AsicTemplate(  AsicD0B2, BIN_ITER2);
   AsicTemplate(  AsicD0B4, BIN_ITER4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)			    
 #define CALC_Y(a,b,c) (a+b)			     
+  AsicTemplate( AsicD90B1, BIN_ITER1);
   AsicTemplate( AsicD90B2, BIN_ITER2);
   AsicTemplate( AsicD90B4, BIN_ITER4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)			    
 #define CALC_Y(a,b,c) (a+c)			     
+  AsicTemplate(AsicD180B1, BIN_ITER1);
   AsicTemplate(AsicD180B2, BIN_ITER2);
   AsicTemplate(AsicD180B4, BIN_ITER4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)			    
 #define CALC_Y(a,b,c) (a-b)			     
+  AsicTemplate(AsicD270B1, BIN_ITER1);
   AsicTemplate(AsicD270B2, BIN_ITER2);
   AsicTemplate(AsicD270B4, BIN_ITER4);
 #undef CALC_X
@@ -211,22 +245,30 @@ namespace CspadGeometry {
 	double tx(x), ty(y);
 	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
 	switch(r) {
-	case D0:
-	  if (ppb==2) 	  asic[i] = new  AsicD0B2(tx,ty);
-	  else        	  asic[i] = new  AsicD0B4(tx,ty);
-	  break;
+	case D0: 
+	  switch(ppb) {
+	  case 1: 	  asic[i] = new  AsicD0B1(tx,ty); break;
+	  case 2: 	  asic[i] = new  AsicD0B2(tx,ty); break;
+	  default:     	  asic[i] = new  AsicD0B4(tx,ty); break;
+	  } break;
 	case D90:
-	  if (ppb==2) 	  asic[i] = new  AsicD90B2(tx,ty);
-	  else        	  asic[i] = new  AsicD90B4(tx,ty);
-	  break;
+	  switch(ppb) {
+	  case 1: 	  asic[i] = new  AsicD90B1(tx,ty); break;
+	  case 2: 	  asic[i] = new  AsicD90B2(tx,ty); break;
+	  default:     	  asic[i] = new  AsicD90B4(tx,ty); break;
+	  } break;
 	case D180:
-	  if (ppb==2) 	  asic[i] = new  AsicD180B2(tx,ty);
-	  else        	  asic[i] = new  AsicD180B4(tx,ty);
-	  break;
+	  switch(ppb) {
+	  case 1: 	  asic[i] = new  AsicD180B1(tx,ty); break;
+	  case 2: 	  asic[i] = new  AsicD180B2(tx,ty); break;
+	  default:     	  asic[i] = new  AsicD180B4(tx,ty); break;
+	  } break;
 	case D270:
-	  if (ppb==2) 	  asic[i] = new  AsicD270B2(tx,ty);
-	  else        	  asic[i] = new  AsicD270B4(tx,ty);
-	  break;
+	  switch(ppb) {
+	  case 1: 	  asic[i] = new  AsicD270B1(tx,ty); break;
+	  case 2: 	  asic[i] = new  AsicD270B2(tx,ty); break;
+	  default:     	  asic[i] = new  AsicD270B4(tx,ty); break;
+	  } break;
 	default:
 	  break;
 	}
@@ -290,50 +332,64 @@ namespace CspadGeometry {
     Detector(const Pds::CsPad::ConfigV2& c) :
       _config(c)
     {
-      unsigned qmask = _config.quadMask();
-      qmask &= qmask_mask;
+      unsigned smask = 
+	(_config.roiMask(0)<< 0) |
+	(_config.roiMask(1)<< 8) |
+	(_config.roiMask(2)<<16) |
+	(_config.roiMask(3)<<24);
+
+      //  Determine layout : binning, origin
       double x,y;
-      if ((qmask & (qmask-1))==0) {
-	_pixels = 1024-128;
-	ppb = 2;
-	double pbuff = 64*pixel_size;
-	switch(qmask) {
-	case 1:
-	  x =  double(xpixels())*pixel_size - pbuff;
-	  y = -double(ypixels())*pixel_size + pbuff;
-	  break;
-	case 2:
-	  x =  pbuff;
-	  y = -double(ypixels())*pixel_size + pbuff;
-	  break;
-	case 4:
-	  x =  pbuff;
-	  y = -pbuff;
-	  break;
-	case 8:
-	  x =  double(xpixels())*pixel_size - pbuff;
-	  y =  -pbuff;
-	  break;
-	default:
-	  x = y = 0;
-	  break;
-	}
-      }
-      else {
-	_pixels = 2048-256;
-	ppb = 4;
-	x =  0.5*double(xpixels())*pixel_size;
-	y = -0.5*double(ypixels())*pixel_size;
-      }
+
       //
-      //  Stack the quads against each other
+      //  Create a default layout
       //
+      _pixels = 2048-256;
+      ppb = 4;
+      { const double frame = double(_pixels)*pixel_size;
+	x =  0.5*frame;
+	y = -0.5*frame;
+      }
       quad[0] = new Quad(x,y,D0  ,qalign[0]);
       quad[1] = new Quad(x,y,D90 ,qalign[1]);
       quad[2] = new Quad(x,y,D180,qalign[2]);
       quad[3] = new Quad(x,y,D270,qalign[3]);
-      printf("CspadHandler found configuration with quad mask %x  asic mask %x\n",
-	     c.quadMask(),c.asicMask());
+
+      //
+      //  Test extremes and narrow the focus
+      //
+      int xmin(_pixels), xmax(0), ymin(_pixels), ymax(0);
+      for(unsigned i=0; i<32; i++) {
+	if (smask&(1<<i)) {
+	  unsigned x0,x1,y0,y1;
+	  quad[i>>3]->element[(i>>1)&3]->asic[i&1]->boundary(x0,x1,y0,y1);
+	  if (x0<xmin) xmin=x0;
+	  if (x1>xmax) xmax=x1;
+	  if (y0<ymin) ymin=y0;
+	  if (y1>ymax) ymax=y1;
+	}
+      }
+
+      for(int i=0; i<4; i++)
+	delete quad[i];
+
+      int idx = xmax-xmin+1;
+      int idy = ymax-ymin+1;
+      int pixels = ((idx>idy) ? idx : idy);
+      const int bin0 = 4;
+      ppb = 1;
+      while((pixels*4/ppb+2*bin0) > 600)
+	ppb<<=1;
+      
+      x += pixel_size*double(bin0*int(ppb) - xmin*4);
+      y -= pixel_size*double(bin0*int(ppb) - ymin*4);
+
+      _pixels = pixels*4 + 2*bin0*ppb;
+
+      quad[0] = new Quad(x,y,D0  ,qalign[0]);
+      quad[1] = new Quad(x,y,D90 ,qalign[1]);
+      quad[2] = new Quad(x,y,D180,qalign[2]);
+      quad[3] = new Quad(x,y,D270,qalign[3]);
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
@@ -346,7 +402,6 @@ namespace CspadGeometry {
       char buff[64];
       _cache = &cache;
       unsigned qmask = _config.quadMask();
-      qmask &= qmask_mask;
       for(unsigned i=0; i<4; i++)
 	if (qmask & (1<<i)) {
 	  quad[i]->fill(image);
@@ -439,10 +494,12 @@ void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
-  _detector->fill(*_entry,*xtc);
-  _entry->info(1,EntryImage::Normalization);
-  _entry->valid(t);
+  if (_entry) {
+    const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
+    _detector->fill(*_entry,*xtc);
+    _entry->info(1,EntryImage::Normalization);
+    _entry->valid(t);
+  }
 }
 
-void CspadHandler::_damaged() { _entry->invalid(); }
+void CspadHandler::_damaged() { if (_entry) _entry->invalid(); }
