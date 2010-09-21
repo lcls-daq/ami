@@ -18,7 +18,9 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
 }
 
 static const double xAsicOffset = 1.0e-3;
-static const double yAsicOffset = 1.e-3;
+static const double yAsicOffset = 1.0e-3;
+// static const double xAsicOffset = 0;
+// static const double yAsicOffset = 0;
 static const double asicWidth   = 21.335e-3;
 static const double asicHeight  = 22.488e-3;
 

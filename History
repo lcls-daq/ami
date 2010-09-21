@@ -1,3 +1,5 @@
+2010-09-20	weaver	Tag V01-04-00.  CspadHandler now uses pdsdata/cspad/ElementIterator.  
+					Consistent with pds* V02-08-00.
 2010-09-01	weaver	Tag V01-03-00.	EventHandler can now handle multiple configuration types.
 					Added grid, scale, and cursors to images (esp Pim).
 					Added normalization and weighted averages to EnvPlot.

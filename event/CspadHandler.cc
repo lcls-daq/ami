@@ -7,8 +7,11 @@
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/cspad/ElementV1.hh"
-#include "pdsdata/cspad/ConfigV1.hh"
+#include "pdsdata/cspad/ElementIterator.hh"
+#include "pdsdata/cspad/ElementHeader.hh"
+#include "pdsdata/cspad/ConfigV2.hh"
+#include "pdsdata/cspad/ElementV2.hh"
+#include "pdsdata/xtc/Xtc.hh"
 
 #include <string.h>
 #include <stdio.h>
@@ -16,11 +19,11 @@
 //#define ZERO
 //#define DO_SWAP
 
-typedef Pds::CsPad::ElementV1 CspadElement;
+typedef Pds::CsPad::ElementV2 CspadElement;
 
 static const double pixel_size = 110e-6;
 static unsigned ppb = 4;
-static const unsigned qmask_override = 4;
+static const unsigned qmask_mask = 0xf;
 
 //
 //  TwoByTwo origins w.r.t. Quadrant origin
@@ -76,8 +79,8 @@ namespace CspadGeometry {
   //    only partially fills a pixel (at the edges)
   //
 #define FRAME_BOUNDS {							\
-    const unsigned ColBins = CsPad::ColumnsPerASIC/ppb;			\
-    const unsigned RowBins = CsPad::MaxRowsPerASIC/ppb;			\
+    const unsigned ColBins =   CsPad::ColumnsPerASIC/ppb;		\
+    const unsigned RowBins = 2*CsPad::MaxRowsPerASIC/ppb;		\
     unsigned x0 = CALC_X(column,0,0);					\
     unsigned x1 = CALC_X(column,ColBins,RowBins);			\
     unsigned y0 = CALC_Y(row,0,0);					\
@@ -89,7 +92,7 @@ namespace CspadGeometry {
 
 #define BIN_ITER4 {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC>>2;			\
-    const unsigned RowBins = CsPad::MaxRowsPerASIC>>2;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC>>1;			\
     /*  zero the target region  */					\
     for(unsigned i=0; i<=ColBins; i++) {				\
       for(unsigned j=0; j<=RowBins; j++) {				\
@@ -107,11 +110,6 @@ namespace CspadGeometry {
 	  image.addcontent(sum4(data),x,y);				\
 	  data += 4;							\
 	}								\
-	const unsigned x = CALC_X(column,i,RowBins);			\
-	const unsigned y = CALC_Y(row   ,i,RowBins);			\
-	image.addcontent(2*sum2(data),x,y);				\
-	data += 2;							\
-	data += CsPad::MaxRowsPerASIC;					\
       }									\
     }									\
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
@@ -120,16 +118,11 @@ namespace CspadGeometry {
       image.addcontent(4*sum4(data),x,y);				\
       data += 4;							\
     }									\
-    const unsigned x = CALC_X(column,ColBins,RowBins);			\
-    const unsigned y = CALC_Y(row   ,ColBins,RowBins);			\
-    image.addcontent(8*sum2(data),x,y);					\
-    data += 2;                     					\
-    data += CsPad::MaxRowsPerASIC;    					\
 }
 
 #define BIN_ITER2 {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC>>1;			\
-    const unsigned RowBins = CsPad::MaxRowsPerASIC>>1;			\
+    const unsigned RowBins = CsPad::MaxRowsPerASIC;			\
     /*  zero the target region  */					\
     for(unsigned i=0; i<=ColBins; i++) {				\
       for(unsigned j=0; j<=RowBins; j++) {				\
@@ -147,7 +140,6 @@ namespace CspadGeometry {
 	  image.addcontent(sum2(data),x,y);				\
 	  data += 2;							\
 	}								\
-	data += CsPad::MaxRowsPerASIC;					\
       }									\
     }									\
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
@@ -156,7 +148,6 @@ namespace CspadGeometry {
       image.addcontent(2*sum2(data),x,y);				\
       data += 2;							\
     }									\
-    data += CsPad::MaxRowsPerASIC;    					\
 }
 
   //
@@ -216,9 +207,9 @@ namespace CspadGeometry {
     TwoByTwo(double x, double y, Rotation r, 
 	     const Ami::Cspad::TwoByTwoAlignment& a) 
     {
-      for(unsigned i=0; i<4; i++) {
+      for(unsigned i=0; i<2; i++) {
 	double tx(x), ty(y);
-	_transform(tx,ty,a.xAsicOrigin[i],a.yAsicOrigin[i],r);
+	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
 	switch(r) {
 	case D0:
 	  if (ppb==2) 	  asic[i] = new  AsicD0B2(tx,ty);
@@ -241,26 +232,20 @@ namespace CspadGeometry {
 	}
       }
     }
-    ~TwoByTwo() {  for(unsigned i=0; i<4; i++) delete asic[i]; }
+    ~TwoByTwo() {  for(unsigned i=0; i<2; i++) delete asic[i]; }
     void fill(Ami::DescImage& image) const
     {
       asic[0]->fill(image);
       asic[1]->fill(image);
-      asic[2]->fill(image);
-      asic[3]->fill(image);
     }
-    void fill(Ami::EntryImage& image,
-	      const uint16_t*  data) const
+    void fill(Ami::EntryImage&           image,
+	      const Pds::CsPad::Section* sector,
+	      unsigned                   sector_id) const
     {
-      const unsigned nr = Pds::CsPad::MaxRowsPerASIC;
-      const unsigned nc = Pds::CsPad::ColumnsPerASIC;
-      asic[0]->fill(image,data); data += nr;
-      asic[1]->fill(image,data); data += nr*(2*nc-1);
-      asic[2]->fill(image,data); data += nr;
-      asic[3]->fill(image,data);
+      asic[sector_id&1]->fill(image,&(sector->pixel[0][0]));
     }
   public:
-    Asic* asic[4];
+    Asic* asic[2];
   };
 
   class Quad {
@@ -287,26 +272,26 @@ namespace CspadGeometry {
       element[2]->fill(image);
       element[3]->fill(image);
     }
-    void fill(Ami::EntryImage&    image,
-	      const CspadElement* data,
-	      unsigned            mask) const
+    void fill(Ami::EntryImage&             image,
+	      Pds::CsPad::ElementIterator& iter) const
     {
-      const uint16_t* d = data->data();
-      for(unsigned i=0; i<4; i++, 
-	    d+=4*Pds::CsPad::ColumnsPerASIC*Pds::CsPad::MaxRowsPerASIC)
-	if (mask&(1<<i)) element[i]->fill(image,d);
-    }
+      unsigned id;
+      const Pds::CsPad::Section* s;
+      while( (s=iter.next(id)) ) {
+	element[id>>1]->fill(image,s,id);
+      }
+    }      
   public:
     TwoByTwo* element[4];
   };
 
   class Detector {
   public:
-    Detector(const Pds::CsPad::ConfigV1& c) :
+    Detector(const Pds::CsPad::ConfigV2& c) :
       _config(c)
     {
       unsigned qmask = _config.quadMask();
-      //      qmask = qmask_override;
+      qmask &= qmask_mask;
       double x,y;
       if ((qmask & (qmask-1))==0) {
 	_pixels = 1024-128;
@@ -361,7 +346,7 @@ namespace CspadGeometry {
       char buff[64];
       _cache = &cache;
       unsigned qmask = _config.quadMask();
-      //      qmask = qmask_override;
+      qmask &= qmask_mask;
       for(unsigned i=0; i<4; i++)
 	if (qmask & (1<<i)) {
 	  quad[i]->fill(image);
@@ -371,30 +356,23 @@ namespace CspadGeometry {
 	  }
 	}
     }
-    void fill(Ami::EntryImage&    image,
-	      const CspadElement* data) const
+    void fill(Ami::EntryImage& image,
+	      const Xtc&       xtc) const
     {
-      //
-      //  The configuration should tell us how many elements to view
-      //
-      unsigned qmask = _config.quadMask();
-      //      qmask = qmask_override;
-      while(qmask) {
-	if (qmask & (1<<data->quad())) {
-	  quad[data->quad()]->fill(image,data,_config.asicMask());
-	  for(int a=0; a<4; a++)
-	    _cache->cache(_feature[4*data->quad()+a],
-			  CspadTemp::instance().getTemp(data->sb_temp(a)));
-	  qmask &= ~(1<<data->quad());
-	}
-	data = data->next(_config);
+      Pds::CsPad::ElementIterator iter(_config,xtc);
+      const Pds::CsPad::ElementHeader* hdr;
+      while( (hdr=iter.next()) ) {
+	quad[hdr->quad()]->fill(image,iter); 
+	for(int a=0; a<4; a++)
+	  _cache->cache(_feature[4*hdr->quad()+a],
+			CspadTemp::instance().getTemp(hdr->sb_temp(a)));
       }
     }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
   private:
     Quad* quad[4];
-    Pds::CsPad::ConfigV1 _config;
+    Pds::CsPad::ConfigV2 _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[16];
     unsigned _pixels;
@@ -437,7 +415,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   if (_detector)
     delete _detector;
 
-  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV1*>(payload));
+  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload));
 
   if (_entry) 
     delete _entry;
@@ -461,8 +439,8 @@ void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const CspadElement* e = reinterpret_cast<const CspadElement*>(payload);
-  _detector->fill(*_entry,e);
+  const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
+  _detector->fill(*_entry,*xtc);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
