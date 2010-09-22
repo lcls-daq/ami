@@ -31,7 +31,8 @@ namespace Ami {
     class Client : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
-      Client(QWidget*,const Pds::DetInfo&, unsigned, Display*);
+      Client(QWidget*,const Pds::DetInfo&, unsigned, Display*, 
+	     double request_rate=2.5);
       ~Client();
     public:
       const QString& title() const;
@@ -98,6 +99,8 @@ namespace Ami {
       Semaphore*  _sem;
 
       bool _throttled;
+      unsigned _denials;
+      unsigned _attempts;
     };
   };
 };

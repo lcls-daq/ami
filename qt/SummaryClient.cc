@@ -102,7 +102,7 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   setWindowTitle(title);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  _control = new Control(*this);
+  _control = new Control(*this,1);
   _status  = new Status;
 
   QVBoxLayout* layout = new QVBoxLayout;

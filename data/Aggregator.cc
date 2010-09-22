@@ -165,12 +165,14 @@ void Aggregator::read_payload    (Socket& s, int sz)
 	    double* dst = reinterpret_cast<double*>(payload);
 	    const double* src = reinterpret_cast<const double*>(base);
 	    const double* end = reinterpret_cast<const double*>(base+iovl->iov_len);
-// 	    { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
-// 	      const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
-// 	      printf("Agg Std agg %c  dst %08x/%08x  src %08x/%08x\n",
-// 		     desc->aggregate() ? 't':'f', 
-// 		     dst_clk->seconds(), dst_clk->nanoseconds(),
-// 		     src_clk->seconds(), src_clk->nanoseconds()); }
+#if 0
+ 	    { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
+ 	      const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
+ 	      printf("Agg Std agg %c  dst %09u.%09u  src %09u.%09u\n",
+ 		     desc->aggregate() ? 't':'f', 
+ 		     dst_clk->seconds(), dst_clk->nanoseconds(),
+ 		     src_clk->seconds(), src_clk->nanoseconds()); }
+#endif
 	    if (desc->aggregate() && *dst!=0 && *src!=0 ) { // sum them 
 	      if (*dst < *src)
 		*dst = *src;   // record later time
@@ -196,6 +198,8 @@ void Aggregator::read_payload    (Socket& s, int sz)
 	    src = reinterpret_cast<const double*>(t->payload());
 	    while(dst < end)
 	      *dst++ = *src++;
+
+	    delete t;
 	  }	  
 	  break;
 	case DescEntry::TH2F:

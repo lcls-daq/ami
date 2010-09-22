@@ -54,7 +54,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   setWindowTitle(QString("Environment"));
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  _control = new Control(*this);
+  _control = new Control(*this,2.5);
   _status  = new Status;
 
   //  QPushButton* filterB = new QPushButton("Filter");

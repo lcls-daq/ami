@@ -16,7 +16,7 @@ namespace Ami {
 		    public Timer {
       Q_OBJECT
     public:
-      Control(Requestor&);
+      Control(Requestor&,double request_rate);
       ~Control();
     public:
       void save(char*&) const;

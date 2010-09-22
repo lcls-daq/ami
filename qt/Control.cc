@@ -12,7 +12,7 @@
 
 using namespace Ami::Qt;
 
-Control::Control(Requestor& c) :
+Control::Control(Requestor& c, double request_rate) :
   QWidget(0),
   _client(c),
   _task  (new Task(TaskObject("amitmr")))
@@ -22,7 +22,7 @@ Control::Control(Requestor& c) :
   layout->addWidget(_pSingle = new QPushButton("Single"));
   layout->addStretch();
   layout->addWidget(new QLabel("Rate(Hz)"));
-  layout->addWidget(_pRate   = new QLineEdit  ("2.5"));
+  layout->addWidget(_pRate   = new QLineEdit  (QString::number(request_rate)));
   _pRate->setMaximumWidth(40);
   setLayout(layout);
 

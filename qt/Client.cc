@@ -40,7 +40,8 @@ static const int BufferSize = 0x8000;
 Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
-			Display*            frame) :
+			Display*            frame,
+			double              request_rate) :
   Ami::Qt::AbsClient(parent,src,channel),
   _frame           (frame),
   _input_entry     (0),
@@ -54,13 +55,15 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _iovload         (new iovec[_niovload]),
   _layout          (new QVBoxLayout),
   _sem             (new Semaphore(Semaphore::EMPTY)),
-  _throttled       (false)
+  _throttled       (false),
+  _denials         (0),
+  _attempts        (0)
 {
   setWindowTitle(ChannelID::name(src, channel));
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  _control = new Control(*this);
+  _control = new Control(*this,request_rate);
   _status  = new Status;
 
   QButtonGroup* showPlotBoxes = new QButtonGroup;
@@ -328,8 +331,7 @@ void Ami::Qt::Client::_read_description(int size)
 void Ami::Qt::Client::read_payload     (Socket& socket, int size)
 {
   if (_status->state() == Status::Requested) {
-    int sz = socket.readv(_iovload,_cds.totalentries());
-    //    printf("payload read %d bytes\n", sz);
+    socket.readv(_iovload,_cds.totalentries());
   }
   else if (!_one_shot) {
     //
@@ -360,16 +362,20 @@ void Ami::Qt::Client::managed(ClientManager& mgr)
 
 void Ami::Qt::Client::request_payload()
 {
+  _attempts++;
   if (_status->state() == Status::Described ||
       _status->state() == Status::Processed) {
     _throttled = false;
     _status->set_state(Status::Requested);
     _manager->request_payload();
   }
-  else if (_status->state() == Status::Requested &&
-	   !_throttled) {
-    _throttled = true;
-    printf("Client request_payload throttling\n");
+  else if (_status->state() == Status::Requested) {
+    _denials++;
+    if (!_throttled)
+      _throttled = true;
+    if ((_denials%20)==1)
+      printf("Client %s request_payload throttled %d/%d\n",
+	     qPrintable(_title),_denials,_attempts);
   }
 }
 
