@@ -40,14 +40,16 @@ VServerSocket::VServerSocket(const Ins& mcast,
   printf("VServerSocket %d bound to %x/%d\n",
 	 sockfd, ntohl(name.sin_addr.s_addr), ntohs(name.sin_port));
 
-  struct ip_mreq ipMreq;
-  bzero ((char*)&ipMreq, sizeof(ipMreq));
-  ipMreq.imr_multiaddr.s_addr = htonl(mcast.address());
-  ipMreq.imr_interface.s_addr = htonl(interface);
-  int error_join = setsockopt (sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
-			       (char*)&ipMreq, sizeof(ipMreq));
-  if (error_join==-1) {
-    throw Event("VServerSocket failed to join mcast group",strerror(errno));
+  if (mcast.address()&0x10000000) {
+    struct ip_mreq ipMreq;
+    bzero ((char*)&ipMreq, sizeof(ipMreq));
+    ipMreq.imr_multiaddr.s_addr = htonl(mcast.address());
+    ipMreq.imr_interface.s_addr = htonl(interface);
+    int error_join = setsockopt (sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, 
+				 (char*)&ipMreq, sizeof(ipMreq));
+    if (error_join==-1) {
+      throw Event("VServerSocket failed to join mcast group",strerror(errno));
+    }
   }
 
   _socket = sockfd;

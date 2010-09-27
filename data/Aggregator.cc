@@ -148,7 +148,7 @@ void Aggregator::read_payload    (Socket& s, int sz)
     }
     else {  // aggregate
       int niov = _cds.totalentries();
-      int szz = s.readv(_iovload,niov);
+      s.readv(_iovload,niov);
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();

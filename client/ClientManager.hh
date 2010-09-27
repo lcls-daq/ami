@@ -40,8 +40,8 @@ namespace Ami {
     void add_client      (ClientSocket&);
     void remove_client   (ClientSocket&);
     int  handle_client_io(ClientSocket&);
+    int  nconnected      () const;
   private:
-    int  _nconnected() const;
     void _flush_sockets(const Message&, ClientSocket&);
   private:
     enum State { Disconnected, Connected };

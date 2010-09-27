@@ -117,14 +117,14 @@ void ClientManager::connect()
   _state = Connected;
 }
 
-int ClientManager::_nconnected() const { return _poll->nfds()-1; }
+int ClientManager::nconnected() const { return _poll->nfds()-1; }
 
 //
 //  Disconnecting closes the server on the peer
 //
 void ClientManager::disconnect()
 {
-  if (_state != Disconnected && _nconnected()) {
+  if (_state != Disconnected && nconnected()) {
     _request = Message(_request.id()+1,Message::Disconnect);
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
@@ -184,7 +184,7 @@ void ClientManager::routine()
 void ClientManager::add_client(ClientSocket& socket) 
 {
   printf("(%p) ClientManager::add_client %d (skt %d)\n",
-	 this, _nconnected(),socket.socket());
+	 this, nconnected(),socket.socket());
   _poll->manage(socket);
 }
 
@@ -192,13 +192,13 @@ void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
   printf("(%p) ClientManager::remove_client %d\n",
-	 this,_nconnected());
+	 this,nconnected());
 }
 
 void ClientManager::_flush_sockets(const Message& reply,
 				   ClientSocket& socket)
 {
-  for(int i=0; i<_nconnected(); i++) {
+  for(int i=0; i<nconnected(); i++) {
     ClientSocket& s = static_cast<ClientSocket&>(_poll->fds(i));
     if (&s != &socket) {
       Message r(0,Message::NoOp);
