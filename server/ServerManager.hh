@@ -11,6 +11,7 @@ namespace Ami {
   class Factory;
   class Ins;
   class Server;
+  class Socket;
   class VServerSocket;
 
   class ServerManager : public Poll,
@@ -37,7 +38,7 @@ namespace Ami {
     unsigned           _serverGroup;
     unsigned           _ppinterface;
     Factory*           _factory;
-    VServerSocket*     _socket;
+    Socket*            _socket;
     SvList             _servers;
   };
 };

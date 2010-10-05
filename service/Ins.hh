@@ -47,6 +47,9 @@ class Ins
     void                  address(int address);
     unsigned short        portId()      const; 
 
+    static bool           is_multicast(int address);
+    static bool           is_multicast(const Ins& );
+
     int operator==(const Ins& that)  const;
 
   protected:
@@ -190,4 +193,16 @@ inline int Ami::Ins::address() const
   {
     return _address;
   }
+
+inline bool Ami::Ins::is_multicast(int address)
+  {
+    const unsigned MCAST_MASK = 0xe0000000;
+    return (address & MCAST_MASK) == MCAST_MASK;
+  }
+
+inline bool Ami::Ins::is_multicast(const Ins& ins)
+  {
+    return is_multicast(ins.address());
+  }
+
 #endif

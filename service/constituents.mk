@@ -12,3 +12,8 @@ libsrcs_service := $(wildcard *.cc)
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include
 
+tgtnames := tcptest
+
+tgtsrcs_tcptest := tcptest.cc
+tgtlibs_tcptest := ami/service pdsdata/xtcdata
+tgtslib_tcptest := $(USRLIBDIR)/rt

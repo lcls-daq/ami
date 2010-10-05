@@ -2,6 +2,7 @@
 #define Ami_ClientManager_hh
 
 #include "ami/data/Message.hh"
+#include "ami/service/Ins.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Semaphore.hh"
 
@@ -17,6 +18,7 @@ namespace Ami {
   class VClientSocket;
   class Poll;
   class Task;
+  class Socket;
   class TSocket;
 
   class ClientManager : public Routine {
@@ -56,8 +58,9 @@ namespace Ami {
 
     Task*           _task;
     TSocket*        _listen;
-    VClientSocket*  _connect;
+    Socket*         _connect;
     Semaphore       _listen_sem;
+    Ins             _server;
   };
 
 };

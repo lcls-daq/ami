@@ -38,8 +38,15 @@ void ServerManager::serve(Factory& factory)
 {
   _factory = &factory;
   try {
-    _socket = new VServerSocket(Ins(_serverGroup,Port::serverPort()),
-				_interface);
+    if (Ins::is_multicast(_serverGroup))
+      _socket = new VServerSocket(Ins(_serverGroup,Port::serverPort()),
+				  _interface);
+    else {
+      TSocket* so = new TSocket;
+      so->bind(Ins(Port::serverPort()));
+      ::listen(so->socket(),5);
+      _socket = so;
+    }
   } catch (Event& e) {
     printf("SM::serve %s : %s\n",e.who(),e.what());
     return;
@@ -65,18 +72,21 @@ int ServerManager::fd() const { return _socket->socket(); }
 int ServerManager::processIo()
 {
   Message request(0,Message::NoOp);
-  _socket->peek(&request);
 
-  Ins ins(_socket->peer().get());
-  printf("SM request type %d id %d from %x/%d\n",
- 	 request.type(), request.id(),
- 	 ins.address(),ins.portId());
-  
+  if (!(Ins::is_multicast(_serverGroup))) {
+    Sockaddr addr;
+    unsigned length = addr.sizeofName();
+    int s = ::accept(_socket->socket(), addr.name(), &length);
+    ::read(s, &request, sizeof(request));
+    ::close(s);
+  }
+  else
+    _socket->read(&request, sizeof(request));
+
   if (request.type()==Message::Connect) {
     try {
       TSocket* s = new TSocket;
-//       Ins remote(_socket->peer().get().address(),
-// 		 request.payload());
+
       Ins remote(request.payload(),request.offset());
       s->connect(remote);
       Ins local (s->ins());
@@ -92,11 +102,8 @@ int ServerManager::processIo()
      } 
     catch (Event& e) {
       printf("Connect failed: %s\n",e.what());
-      //       Message reply(request.id(),Message::Connect,0);
-      //       _socket->write(&reply,sizeof(reply));
     }
   }
-  _socket->flush();
   return 1;
 }
 

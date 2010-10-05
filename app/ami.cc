@@ -36,7 +36,7 @@ static void usage(char* progname) {
 int main(int argc, char* argv[]) {
   int c;
   unsigned interface   = 0x7f000001;
-  unsigned serverGroup = 0xefff2000;
+  unsigned serverGroup = 0;
   char* partitionTag = 0;
   int   partitionIndex = 0;
   bool offline=false;

@@ -5,7 +5,7 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami
+tgtnames := online_ami offline_ami blviewer
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
@@ -13,6 +13,8 @@ tgtsrcs_online_ami += qtclient.cc
 tgtsrcs_offline_ami := FileSelect.cc FileSelect_moc.cc
 tgtsrcs_offline_ami += XtcFileClient.cc XtcFileClient_moc.cc
 tgtsrcs_offline_ami += qtami.cc
+
+tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
@@ -39,6 +41,11 @@ tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 
+datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata
+tgtlibs_blviewer := $(datalibs) pdsapp/configdb
+tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_blviewer += $(qt_libs)
+
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
@@ -61,6 +68,7 @@ qt_incs += $(qtincdir)/QtXml
 
 tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)
+tgtincs_blviewer    := $(qt_incs)
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
@@ -142,6 +150,7 @@ libsrcs_amiqt += DetectorListItem.cc
 libsrcs_amiqt += Defaults.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 
+libsrcs_amiblv := blv
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.

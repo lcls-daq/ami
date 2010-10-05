@@ -62,19 +62,23 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _discovery (new char[BufferSize]),
   _task      (new Task(TaskObject("lstn"))),
   _listen    (new TSocket),
-  _connect   (new VClientSocket),
-  _listen_sem(Semaphore::EMPTY)
+  _listen_sem(Semaphore::EMPTY),
+  _server    (serverGroup, Port::serverPort())
 {
-  {
-    Ins ins(serverGroup, Port::serverPort());
-    _connect->set_dst(ins, interface);
+  if (Ins::is_multicast(serverGroup)) {
+    VClientSocket* so = new VClientSocket;
+    so->set_dst(_server, interface);
+    _connect = so;
+  }
+  else
+    _connect = 0;
+
+  try {
+    _listen->bind(Ins(ppinterface,port));
+  } catch(Event& e) {
+    printf("bind error : %s\n",e.what());
   }
 
-  //  try {
-  //    _listen->bind(Ins(ppinterface,port));
-  //  } catch(Event& e) {
-  //    printf("bind error : %s\n",e.what());
-  //  }
   _task->call(this);
   _poll->start();
   _listen_sem.take();
@@ -89,7 +93,7 @@ ClientManager::~ClientManager()
   delete[] _discovery;
   _task->destroy();
   delete _listen;
-  delete _connect;
+  if (_connect) delete _connect;
 }
 
 void ClientManager::request_payload()
@@ -113,7 +117,17 @@ void ClientManager::connect()
 		     _listen->ins().portId());
   printf("(%p) CM Request connection from %x/%d\n",
 	 this,_ppinterface,_listen->ins().portId());
-  _connect->write(&_request,sizeof(_request));
+  if (_connect)
+    _connect->write(&_request,sizeof(_request));
+  else {
+    TSocket* s = new TSocket;
+    try {
+      s->connect(_server); 
+      s->write(&_request,sizeof(_request));
+      delete s;
+    }
+    catch (Event& e) { printf("Connection failed: %s\n", e.what()); }
+  }
   _state = Connected;
 }
 
