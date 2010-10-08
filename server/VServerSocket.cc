@@ -40,7 +40,7 @@ VServerSocket::VServerSocket(const Ins& mcast,
   printf("VServerSocket %d bound to %x/%d\n",
 	 sockfd, ntohl(name.sin_addr.s_addr), ntohs(name.sin_port));
 
-  if (mcast.address()&0x10000000) {
+  if (Ins::is_multicast(mcast)) {
     struct ip_mreq ipMreq;
     bzero ((char*)&ipMreq, sizeof(ipMreq));
     ipMreq.imr_multiaddr.s_addr = htonl(mcast.address());
