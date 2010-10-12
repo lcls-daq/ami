@@ -19,9 +19,17 @@ BSocket::~BSocket()
 int BSocket::readv(const iovec* iov, int iovcnt)
 {
   char* data = _buffer;
+  char* end  = _buffer + _size;
   for(int i=0; i<iovcnt; i++) {
-    memcpy(iov[i].iov_base, data, iov[i].iov_len);
-    data += iov[i].iov_len;
+    if (data + iov[i].iov_len > end) {
+      printf("BSocket::readv truncated at %d/%d item %d/%d\n",
+	     data, end, i, iovcnt);
+      break;
+    }
+    else {
+      memcpy(iov[i].iov_base, data, iov[i].iov_len);
+      data += iov[i].iov_len;
+    }
   }
   int bytes = data-_buffer;
 #ifdef DBUG

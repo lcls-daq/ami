@@ -35,7 +35,7 @@ using namespace Ami;
 
 typedef Pds::DetInfo DI;
 
-static const int BufferSize = 0x8000;
+static const int BufferSize = 0x40000; // 256 kB
 
 Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,

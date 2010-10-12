@@ -91,8 +91,9 @@ void Aggregator::read_description(Socket& socket, int len)
 	Entry* entry = EntryFactory::entry(*desc);
 	_cds.add(entry, desc->signature());
 	payload += desc->size();
-	printf("%s  norm %c  agg %c\n",
+	printf("%s[%d]  norm %c  agg %c\n",
 	       desc->name(),
+	       desc->signature(),
 	       desc->isnormalized() ? 't':'f',
 	       desc->aggregate() ? 't':'f');
       }

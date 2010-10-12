@@ -107,7 +107,7 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
 
 void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void* payload)
 {
-  static bool throttle=false;
+  static bool throttle=false, throttle2=false;
   const DetInfo& detInfo = reinterpret_cast<const Pds::DetInfo&>(src); 
   if (type.id() == Pds::TypeId::Id_EvrData) 
     _evrEventData = const_cast<Pds::EvrData::DataV3*>(reinterpret_cast<const Pds::EvrData::DataV3*>(payload));
@@ -135,8 +135,12 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           break;        
         }
       }
-      if(!entryFoundFlag)
-        printf("**** ERROR:: event() called & no Entry Present in List for given detector \n");
+      if(!entryFoundFlag) {
+	if (!throttle2) {
+	  printf("**** ERROR:: event() called & no Entry Present in List for given detector \n");
+	  throttle2=true;
+	}
+      }
     }  
   }
 
