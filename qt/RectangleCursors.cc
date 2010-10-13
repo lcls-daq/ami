@@ -128,8 +128,8 @@ void RectangleCursors::draw(QImage& image)
 
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
-  _xmax = xinfo.position(sz.width())-1;
-  _ymax = yinfo.position(sz.height())-1;
+  _xmax = (unsigned) (xinfo.position(sz.width())-1);
+  _ymax = (unsigned) (yinfo.position(sz.height())-1);
 
   unsigned jlo = unsigned(xinfo.tick(xlo())), jhi = unsigned(xinfo.tick(xhi()));
   unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));

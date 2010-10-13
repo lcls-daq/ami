@@ -358,7 +358,7 @@ namespace CspadGeometry {
       //
       //  Test extremes and narrow the focus
       //
-      int xmin(_pixels), xmax(0), ymin(_pixels), ymax(0);
+      unsigned xmin(_pixels), xmax(0), ymin(_pixels), ymax(0);
       for(unsigned i=0; i<32; i++) {
 	if (smask&(1<<i)) {
 	  unsigned x0,x1,y0,y1;

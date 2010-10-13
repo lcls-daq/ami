@@ -51,7 +51,7 @@ void QtPersistent::insert(char*& p, bool s)
 
 QString QtPersistent::extract_s(const char*& p)
 {
-  const char* t = p;
+  //const char* t = p;
   int sz = *reinterpret_cast<const int*>(p);
   p += sizeof(int);
   const QChar* ch = reinterpret_cast<const QChar*>(p);
