@@ -7,10 +7,12 @@
 
 namespace Ami {
   class EntryImage;
+  class FeatureCache;
+  class PixelCalibration;
 
   class PnccdHandler : public EventHandler {
   public:
-    PnccdHandler(const Pds::DetInfo& info);
+    PnccdHandler(const Pds::DetInfo& info, const FeatureCache&);
     ~PnccdHandler();
   public:
     unsigned     nentries() const;
@@ -22,12 +24,19 @@ namespace Ami {
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    PnccdHandler(const Pds::DetInfo& info, const EntryImage*);
+    //    PnccdHandler(const Pds::DetInfo& info, const EntryImage*);
+    void _begin_calib();
+    void _end_calib();
     void _fillQuadrant (const uint16_t* d, unsigned x, unsigned y);
     void _fillQuadrantR(const uint16_t* d, unsigned x, unsigned y);
   private:
+    const FeatureCache&  _cache;
     Pds::PNCCD::ConfigV1 _config;
-    EntryImage* _entry;
+    EntryImage*          _correct;
+    PixelCalibration*    _calib;
+    bool                 _collect;
+    unsigned             _ncollect;
+    EntryImage*          _entry;
   };
 };
 

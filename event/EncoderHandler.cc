@@ -3,7 +3,7 @@
 #include "ami/data/FeatureCache.hh"
 
 #include "pdsdata/encoder/ConfigV1.hh"
-#include "pdsdata/encoder/DataV1.hh"
+#include "pdsdata/encoder/DataV2.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -27,14 +27,23 @@ void   EncoderHandler::_calibrate(const void* payload, const Pds::ClockTime& t) 
 void   EncoderHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
-  strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
+  strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),59);
+  char* c = buffer+strlen(buffer);
+
+  sprintf(c,":CH0");
   _index = _cache.add(buffer);
+  sprintf(c,":CH1");
+  _cache.add(buffer);
+  sprintf(c,":CH2");
+  _cache.add(buffer);
 }
 
 void   EncoderHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Encoder::DataV1& d = *reinterpret_cast<const Pds::Encoder::DataV1*>(payload);
-  _cache.cache(_index, d.value());
+  const Pds::Encoder::DataV2& d = *reinterpret_cast<const Pds::Encoder::DataV2*>(payload);
+  _cache.cache(_index+0, d.value(0));
+  _cache.cache(_index+1, d.value(1));
+  _cache.cache(_index+2, d.value(2));
 }
 
 void   EncoderHandler::_damaged  ()
