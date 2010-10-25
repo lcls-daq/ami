@@ -16,11 +16,11 @@
 #include <string.h>
 #include <stdio.h>
 
-//#define ZERO
-//#define DO_SWAP
+#define DO_PED_CORR
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 
+static const unsigned Offset = 1024;
 static const double pixel_size = 110e-6;
 static unsigned ppb = 4;
 
@@ -48,28 +48,25 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
   }
 }
 
-#ifdef DO_SWAP
-#define SWAP_U16(v) ( ((v&0xff00)>>8) | ((v&0x00ff)<<8) )
-static inline unsigned sum2(const uint16_t* data)
-{
-  return ( SWAP_U16(data[0])+SWAP_U16(data[1]) );
-}
+//
+//  Much of the "template" code which follows is meant to 
+//  factor the 90-degree rotations
+//
 
-static unsigned sum4(const uint16_t* data)
-{
-  return ( SWAP_U16(data[0])+SWAP_U16(data[1])+SWAP_U16(data[2])+SWAP_U16(data[3]) );
-}
-#else
-static inline unsigned sum2(const uint16_t* data)
-{
-  return data[0]+data[1];
-}
+static inline unsigned sum2(const uint16_t*& data)
+{ return *data++ + *data++; }
 
-static inline unsigned sum4(const uint16_t* data)
-{
-  return data[0]+data[1]+data[2]+data[3];
-}
-#endif
+static inline unsigned sum4(const uint16_t*& data)
+{ return *data++ + *data++ + *data++ + *data++; }
+
+static inline unsigned sum2(const uint16_t*& data,
+                            const uint16_t*& off)
+{ return *data++ + *off++ + *data++ + *off++; }
+
+static inline unsigned sum4(const uint16_t*& data,
+                            const uint16_t*& off)
+{ return *data++ + *off++ + *data++ + *off++ 
+    + *data++ + *off++ + *data++ + *off++; }
 
 namespace CspadGeometry {
 
@@ -105,16 +102,14 @@ namespace CspadGeometry {
 	for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */		\
 	  const unsigned x = CALC_X(column,i,j);			\
 	  const unsigned y = CALC_Y(row   ,i,j);			\
-	  image.addcontent(sum4(data),x,y);				\
-	  data += 4;							\
+	  image.addcontent(F4,x,y);                                     \
 	}								\
       }									\
     }									\
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
       const unsigned x = CALC_X(column,ColBins,j);			\
       const unsigned y = CALC_Y(row   ,ColBins,j);			\
-      image.addcontent(4*sum4(data),x,y);				\
-      data += 4;							\
+      image.addcontent(4*F4,x,y);                                       \
     }									\
 }
 
@@ -135,16 +130,14 @@ namespace CspadGeometry {
 	for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */		\
 	  const unsigned x = CALC_X(column,i,j);			\
 	  const unsigned y = CALC_Y(row   ,i,j);			\
-	  image.addcontent(sum2(data),x,y);				\
-	  data += 2;							\
+	  image.addcontent(F2,x,y);                                     \
 	}								\
       }									\
     }									\
     for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */		\
       const unsigned x = CALC_X(column,ColBins,j);			\
       const unsigned y = CALC_Y(row   ,ColBins,j);			\
-      image.addcontent(2*sum2(data),x,y);				\
-      data += 2;							\
+      image.addcontent(2*F2,x,y);                                       \
     }									\
 }
 
@@ -164,8 +157,7 @@ namespace CspadGeometry {
       for(unsigned j=0; j<RowBins; j++) {				\
 	const unsigned x = CALC_X(column,i,j);				\
 	const unsigned y = CALC_Y(row   ,i,j);				\
-	image.addcontent(*data,x,y);					\
-	data++;								\
+	image.addcontent(F1,x,y);					\
       }									\
     }									\
   }
@@ -194,7 +186,7 @@ namespace CspadGeometry {
 #define AsicTemplate(classname,bi)					\
   class classname : public Asic {					\
   public:								\
-    classname(double x, double y) : Asic(x,y) {}			\
+    classname(double x, double y) : Asic(x,y) {}                        \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -206,6 +198,10 @@ namespace CspadGeometry {
     void fill(Ami::EntryImage& image,					\
 	      const uint16_t*  data) const { bi }			\
   }
+
+#define F1 (*data++)
+#define F2 sum2(data)
+#define F4 sum4(data)
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
@@ -236,42 +232,156 @@ namespace CspadGeometry {
 #undef CALC_X
 #undef CALC_Y
 
+#undef F1
+#undef F2
+#undef F4
+#undef AsicTemplate
+
+  class AsicP : public Asic {
+  public:
+    AsicP(double x, double y, FILE* f) :
+      Asic(x,y)
+    { // load offset-pedestal 
+      char* linep = NULL;
+      size_t sz = 0;
+      char* pEnd;
+      uint16_t* off = _off;
+      for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+	getline(&linep, &sz, f);
+        *off++ = Offset - uint16_t(strtod(linep,&pEnd));
+	for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+          *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+      }
+    }
+  protected:
+    uint16_t _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+  };
+
+#define AsicTemplate(classname,bi)					\
+  class classname : public AsicP {					\
+  public:								\
+    classname(double x, double y, FILE* f) : AsicP(x,y,f) {}            \
+    void boundary(unsigned& dx0, unsigned& dx1,				\
+		  unsigned& dy0, unsigned& dy1) const {			\
+      FRAME_BOUNDS;							\
+      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }					\
+    void fill(Ami::DescImage& image) const {				\
+      FRAME_BOUNDS;							\
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+    }									\
+    void fill(Ami::EntryImage& image,					\
+	      const uint16_t*  data) const {                            \
+      const uint16_t* off = _off;                                       \
+      bi }                                                              \
+  }
+
+#define F1 (*data++ + *off++)
+#define F2 sum2(data,off)
+#define F4 sum4(data,off)
+
+#define CALC_X(a,b,c) (a+b)			    
+#define CALC_Y(a,b,c) (a-c)			     
+  AsicTemplate(  AsicD0B1P, BIN_ITER1);
+  AsicTemplate(  AsicD0B2P, BIN_ITER2);
+  AsicTemplate(  AsicD0B4P, BIN_ITER4);
+#undef CALC_X
+#undef CALC_Y
+#define CALC_X(a,b,c) (a+c)			    
+#define CALC_Y(a,b,c) (a+b)			     
+  AsicTemplate( AsicD90B1P, BIN_ITER1);
+  AsicTemplate( AsicD90B2P, BIN_ITER2);
+  AsicTemplate( AsicD90B4P, BIN_ITER4);
+#undef CALC_X
+#undef CALC_Y
+#define CALC_X(a,b,c) (a-b)			    
+#define CALC_Y(a,b,c) (a+c)			     
+  AsicTemplate(AsicD180B1P, BIN_ITER1);
+  AsicTemplate(AsicD180B2P, BIN_ITER2);
+  AsicTemplate(AsicD180B4P, BIN_ITER4);
+#undef CALC_X
+#undef CALC_Y
+#define CALC_X(a,b,c) (a-c)			    
+#define CALC_Y(a,b,c) (a-b)			     
+  AsicTemplate(AsicD270B1P, BIN_ITER1);
+  AsicTemplate(AsicD270B2P, BIN_ITER2);
+  AsicTemplate(AsicD270B4P, BIN_ITER4);
+#undef CALC_X
+#undef CALC_Y
+
+#undef F1
+#undef F2
+#undef F4
+#undef AsicTemplate
+
   class TwoByTwo {
   public:
     TwoByTwo(double x, double y, Rotation r, 
-	     const Ami::Cspad::TwoByTwoAlignment& a) 
+	     const Ami::Cspad::TwoByTwoAlignment& a,
+             FILE* f) 
     {
       for(unsigned i=0; i<2; i++) {
 	double tx(x), ty(y);
 	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
-	switch(r) {
-	case D0: 
-	  switch(ppb) {
-	  case 1: 	  asic[i] = new  AsicD0B1(tx,ty); break;
-	  case 2: 	  asic[i] = new  AsicD0B2(tx,ty); break;
-	  default:     	  asic[i] = new  AsicD0B4(tx,ty); break;
-	  } break;
-	case D90:
-	  switch(ppb) {
-	  case 1: 	  asic[i] = new  AsicD90B1(tx,ty); break;
-	  case 2: 	  asic[i] = new  AsicD90B2(tx,ty); break;
-	  default:     	  asic[i] = new  AsicD90B4(tx,ty); break;
-	  } break;
-	case D180:
-	  switch(ppb) {
-	  case 1: 	  asic[i] = new  AsicD180B1(tx,ty); break;
-	  case 2: 	  asic[i] = new  AsicD180B2(tx,ty); break;
-	  default:     	  asic[i] = new  AsicD180B4(tx,ty); break;
-	  } break;
-	case D270:
-	  switch(ppb) {
-	  case 1: 	  asic[i] = new  AsicD270B1(tx,ty); break;
-	  case 2: 	  asic[i] = new  AsicD270B2(tx,ty); break;
-	  default:     	  asic[i] = new  AsicD270B4(tx,ty); break;
-	  } break;
-	default:
-	  break;
-	}
+        if (f) {
+          switch(r) {
+          case D0: 
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f); break;
+            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f); break;
+            default:      asic[i] = new  AsicD0B4P(tx,ty,f); break;
+            } break;
+          case D90:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f); break;
+            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f); break;
+            default:      asic[i] = new  AsicD90B4P(tx,ty,f); break;
+            } break;
+          case D180:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f); break;
+            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f); break;
+            default:      asic[i] = new  AsicD180B4P(tx,ty,f); break;
+            } break;
+          case D270:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f); break;
+            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f); break;
+            default:      asic[i] = new  AsicD270B4P(tx,ty,f); break;
+            } break;
+          default:
+            break;
+          }
+        }
+        else {
+          switch(r) {
+          case D0: 
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD0B1(tx,ty); break;
+            case 2:       asic[i] = new  AsicD0B2(tx,ty); break;
+            default:      asic[i] = new  AsicD0B4(tx,ty); break;
+            } break;
+          case D90:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD90B1(tx,ty); break;
+            case 2:       asic[i] = new  AsicD90B2(tx,ty); break;
+            default:      asic[i] = new  AsicD90B4(tx,ty); break;
+            } break;
+          case D180:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD180B1(tx,ty); break;
+            case 2:       asic[i] = new  AsicD180B2(tx,ty); break;
+            default:      asic[i] = new  AsicD180B4(tx,ty); break;
+            } break;
+          case D270:
+            switch(ppb) {
+            case 1:       asic[i] = new  AsicD270B1(tx,ty); break;
+            case 2:       asic[i] = new  AsicD270B2(tx,ty); break;
+            default:      asic[i] = new  AsicD270B4(tx,ty); break;
+            } break;
+          default:
+            break;
+          }
+        }
       }
     }
     ~TwoByTwo() {  for(unsigned i=0; i<2; i++) delete asic[i]; }
@@ -292,7 +402,9 @@ namespace CspadGeometry {
 
   class Quad {
   public:
-    Quad(double x, double y, Rotation r, const Ami::Cspad::QuadAlignment& align)
+    Quad(double x, double y, Rotation r, 
+         const Ami::Cspad::QuadAlignment& align,
+         FILE* pedFile=0)
     {
       static Rotation _tr[] = {  D0  , D90 , D180, D90 ,
 				 D90 , D180, D270, D180,
@@ -302,7 +414,7 @@ namespace CspadGeometry {
 	Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
 	double tx(x), ty(y);
 	_transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
-	element[i] = new TwoByTwo( tx, ty, _tr[r*NPHI+i], ta );
+	element[i] = new TwoByTwo( tx, ty, _tr[r*NPHI+i], ta, pedFile );
       }
     }
     ~Quad() { for(unsigned i=0; i<4; i++) delete element[i]; }
@@ -329,7 +441,8 @@ namespace CspadGeometry {
 
   class Detector {
   public:
-    Detector(const Pds::CsPad::ConfigV2& c) :
+    Detector(const Pds::CsPad::ConfigV2& c,
+             FILE* f) :
       _config(c)
     {
       unsigned smask = 
@@ -386,10 +499,10 @@ namespace CspadGeometry {
 
       _pixels = pixels*4 + 2*bin0*ppb;
 
-      quad[0] = new Quad(x,y,D0  ,qalign[0]);
-      quad[1] = new Quad(x,y,D90 ,qalign[1]);
-      quad[2] = new Quad(x,y,D180,qalign[2]);
-      quad[3] = new Quad(x,y,D270,qalign[3]);
+      quad[0] = new Quad(x,y,D0  ,qalign[0],f);
+      quad[1] = new Quad(x,y,D90 ,qalign[1],f);
+      quad[2] = new Quad(x,y,D180,qalign[2],f);
+      quad[3] = new Quad(x,y,D270,qalign[3],f);
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
@@ -470,7 +583,15 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   if (_detector)
     delete _detector;
 
-  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload));
+  //
+  //  Load pedestals
+  //
+  const int NameSize=128;
+  char oname[NameSize];
+  sprintf(oname,"/tmp/cspad.%08x.dat",info().phy());
+  FILE* f = fopen(oname,"r");
+
+  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload),f);
 
   if (_entry) 
     delete _entry;
@@ -485,9 +606,17 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   _entry = new EntryImage(desc);
   memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-  _entry->info(0,EntryImage::Pedestal);
+
+  if (f)
+    _entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
+  else
+    _entry->info(0,EntryImage::Pedestal);
+
   _entry->info(0,EntryImage::Normalization);
   _entry->invalid();
+
+  if (f)
+    fclose(f);
 }
 
 void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
