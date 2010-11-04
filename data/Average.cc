@@ -50,74 +50,75 @@ void*      Average::_serialize(void* p) const
 
 Entry&     Average::_operate(const Entry& e) const
 {
-  if (!e.valid())
-    return *_entry;
+  if (e.valid()) {
 
-  _entry->valid(e.time());
+    _entry->valid(e.time());
 
-  switch(e.desc().type()) {
-  case DescEntry::TH1F:
-    { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
-      _en.add(static_cast<const EntryTH1F&>(e));
-      if (_n && _en.info(EntryTH1F::Normalization)==_n) {
-	static_cast<EntryTH1F*>(_cache)->setto(_en);
-	_en.reset();
-      }
-      break; }
-  case DescEntry::TH2F:
-    printf("Averaging TH2F not implemented\n");
-    break;
-  case DescEntry::Prof:
-    { EntryProf& _en = static_cast<EntryProf&>(*_entry);
-      _en.sum(_en,static_cast<const EntryProf&>(e));
-      if (_n && _en.info(EntryProf::Normalization)==_n) {
-	static_cast<EntryProf*>(_cache)->setto(_en);
-	_en.reset();
-      }
-      break; }
-  case DescEntry::Image:
-    { const EntryImage& en = static_cast<const EntryImage&>(e);
-      EntryImage& _en = static_cast<EntryImage&>(*_entry);
-      const DescImage& d = _en.desc();
-      if (d.nframes()) {
-	for(unsigned fn=0; fn<d.nframes(); fn++) {
-	  const SubFrame& f = d.frame(fn);
-	  for(unsigned j=f.y; j<f.y+f.ny; j++)
-	    for(unsigned k=f.x; k<f.x+f.nx; k++)
-	      _en.addcontent(en.content(k,j),k,j);      
-	}
-      }
-      else
-	for(unsigned j=0; j<d.nbinsy(); j++)
-	  for(unsigned k=0; k<d.nbinsx(); k++)
-	    _en.addcontent(en.content(k,j),k,j);
-      for(unsigned j=0; j<EntryImage::InfoSize; j++) {
-	EntryImage::Info i = (EntryImage::Info)j;
-	_en.addinfo(en.info(i),i);
-      }
-      if (_n && _en.info(EntryImage::Normalization)==_n) {
-	static_cast<EntryImage*>(_cache)->setto(_en);
-	_en.reset();
-      }
-      break; }
-  case DescEntry::Waveform:
-    { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
-      EntryWaveform& _en = static_cast<EntryWaveform&>(*_entry);
-      _en.valid(e.time());
-      for(unsigned k=0; k<en.desc().nbins(); k++)
-	_en.addcontent(en.content(k),k);
-      for(unsigned j=0; j<EntryWaveform::InfoSize; j++) {
-	EntryWaveform::Info i = (EntryWaveform::Info)j;
-	_en.addinfo(en.info(i),i);
-      }
-      if (_n && _en.info(EntryWaveform::Normalization)==_n) {
-	static_cast<EntryWaveform*>(_cache)->setto(_en);
-	_en.reset();
-      }
-      break; }
-  default:
-    break;
+    switch(e.desc().type()) {
+    case DescEntry::TH1F:
+      { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
+        _en.add(static_cast<const EntryTH1F&>(e));
+        if (_n && _en.info(EntryTH1F::Normalization)==_n) {
+          static_cast<EntryTH1F*>(_cache)->setto(_en);
+          _en.reset();
+        }
+        break; }
+    case DescEntry::TH2F:
+      printf("Averaging TH2F not implemented\n");
+      break;
+    case DescEntry::Prof:
+      { EntryProf& _en = static_cast<EntryProf&>(*_entry);
+        _en.sum(_en,static_cast<const EntryProf&>(e));
+        if (_n && _en.info(EntryProf::Normalization)==_n) {
+          static_cast<EntryProf*>(_cache)->setto(_en);
+          _en.reset();
+        }
+        break; }
+    case DescEntry::Image:
+      { const EntryImage& en = static_cast<const EntryImage&>(e);
+        EntryImage& _en = static_cast<EntryImage&>(*_entry);
+        const DescImage& d = _en.desc();
+        if (d.nframes()) {
+          for(unsigned fn=0; fn<d.nframes(); fn++) {
+            const SubFrame& f = d.frame(fn);
+            for(unsigned j=f.y; j<f.y+f.ny; j++)
+              for(unsigned k=f.x; k<f.x+f.nx; k++)
+                _en.addcontent(en.content(k,j),k,j);      
+          }
+        }
+        else
+          for(unsigned j=0; j<d.nbinsy(); j++)
+            for(unsigned k=0; k<d.nbinsx(); k++)
+              _en.addcontent(en.content(k,j),k,j);
+        for(unsigned j=0; j<EntryImage::InfoSize; j++) {
+          EntryImage::Info i = (EntryImage::Info)j;
+          _en.addinfo(en.info(i),i);
+        }
+        if (_n && _en.info(EntryImage::Normalization)==_n) {
+          static_cast<EntryImage*>(_cache)->setto(_en);
+          _en.reset();
+        }
+        break; }
+    case DescEntry::Waveform:
+      { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
+        EntryWaveform& _en = static_cast<EntryWaveform&>(*_entry);
+        _en.valid(e.time());
+        for(unsigned k=0; k<en.desc().nbins(); k++)
+          _en.addcontent(en.content(k),k);
+        for(unsigned j=0; j<EntryWaveform::InfoSize; j++) {
+          EntryWaveform::Info i = (EntryWaveform::Info)j;
+          _en.addinfo(en.info(i),i);
+        }
+        if (_n && _en.info(EntryWaveform::Normalization)==_n) {
+          static_cast<EntryWaveform*>(_cache)->setto(_en);
+          _en.reset();
+        }
+        break; }
+    default:
+      break;
+    }
   }
+
   if (_n) {
     return *_cache;
   }
