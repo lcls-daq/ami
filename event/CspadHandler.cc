@@ -385,10 +385,11 @@ namespace CspadGeometry {
       }
     }
     ~TwoByTwo() {  for(unsigned i=0; i<2; i++) delete asic[i]; }
-    void fill(Ami::DescImage& image) const
+    void fill(Ami::DescImage& image,
+              unsigned        mask) const
     {
-      asic[0]->fill(image);
-      asic[1]->fill(image);
+      if (mask&1) asic[0]->fill(image);
+      if (mask&2) asic[1]->fill(image);
     }
     void fill(Ami::EntryImage&           image,
 	      const Pds::CsPad::Section* sector,
@@ -419,12 +420,12 @@ namespace CspadGeometry {
     }
     ~Quad() { for(unsigned i=0; i<4; i++) delete element[i]; }
   public:
-    void fill(Ami::DescImage&    image) const
+    void fill(Ami::DescImage&    image,
+              unsigned           mask) const
     {
-      element[0]->fill(image);
-      element[1]->fill(image);
-      element[2]->fill(image);
-      element[3]->fill(image);
+      for(unsigned i=0; i<4; i++, mask>>=2)
+        if (mask&3)
+          element[i]->fill(image, mask&3);
     }
     void fill(Ami::EntryImage&             image,
 	      Pds::CsPad::ElementIterator& iter) const
@@ -517,7 +518,7 @@ namespace CspadGeometry {
       unsigned qmask = _config.quadMask();
       for(unsigned i=0; i<4; i++)
 	if (qmask & (1<<i)) {
-	  quad[i]->fill(image);
+	  quad[i]->fill(image, _config.roiMask(i));
 	  for(unsigned a=0; a<4; a++) {
 	    sprintf(buff,"Cspad:Quad[%d]:Temp[%d]",i,a);
 	    _feature[4*i+a] = cache.add(buff);
