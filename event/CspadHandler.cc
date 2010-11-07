@@ -54,19 +54,30 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
 //
 
 static inline unsigned sum2(const uint16_t*& data)
-{ return *data++ + *data++; }
+{ unsigned v = *data++;
+  v += *data++; 
+  return v; }
 
 static inline unsigned sum4(const uint16_t*& data)
-{ return *data++ + *data++ + *data++ + *data++; }
+{ unsigned v = *data++;
+  v += *data++;
+  v += *data++;
+  v += *data++;
+  return v; }
 
 static inline unsigned sum2(const uint16_t*& data,
                             const uint16_t*& off)
-{ return *data++ + *off++ + *data++ + *off++; }
+{ unsigned v = *data++ + *off++;
+  v += *data++ + *off++;
+  return v; }
 
 static inline unsigned sum4(const uint16_t*& data,
                             const uint16_t*& off)
-{ return *data++ + *off++ + *data++ + *off++ 
-    + *data++ + *off++ + *data++ + *off++; }
+{ unsigned v = *data++ + *off++;
+  v += *data++ + *off++;
+  v += *data++ + *off++;
+  v += *data++ + *off++;
+  return v; }
 
 namespace CspadGeometry {
 
@@ -272,7 +283,8 @@ namespace CspadGeometry {
     void fill(Ami::EntryImage& image,					\
 	      const uint16_t*  data) const {                            \
       const uint16_t* off = _off;                                       \
-      bi }                                                              \
+      bi;                                                               \
+    }                                                                   \
   }
 
 #define F1 (*data++ + *off++)
