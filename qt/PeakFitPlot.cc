@@ -112,9 +112,8 @@ void PeakFitPlot::setup_payload(Cds& cds)
       return;
     }
     _plot->attach(_frame);
-    printf("%s found signature %d created type %d\n",qPrintable(_name),_output_signature,entry->desc().type());
   }
-  else
+  else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }
 

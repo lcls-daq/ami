@@ -15,7 +15,6 @@ namespace Ami {
     class Cursors;
     class ImageColorControl;
     class ImageMarker;
-    class ImageGrid;
     class QtImage;
     class ImageFrame : public QWidget,
 		       public CursorTarget {
@@ -27,7 +26,6 @@ namespace Ami {
       void attach(QtImage*);
       void setXYScale   (int);
       void setZScale    (int);
-      void autoXYScale  (bool);
     public:
       const AxisInfo* xinfo() const { return _qimage->xinfo(); }
       const AxisInfo* yinfo() const { return _qimage->yinfo(); }
@@ -38,7 +36,6 @@ namespace Ami {
     public slots:
       void replot();
       void scale_changed();
-      void show_grid(bool);
     protected:
       void mouseReleaseEvent(QMouseEvent* e);
       void mouseMoveEvent   (QMouseEvent* e);
@@ -51,11 +48,8 @@ namespace Ami {
       QLabel*   _canvas;
       QtImage*  _qimage;
       int       _zshift;
-      bool      _xyscale;
       Cursors*  _c;
       std::list<ImageMarker*> _markers;
-      ImageGrid* _xgrid;
-      ImageGrid* _ygrid;
     };
   };
 };

@@ -15,6 +15,8 @@
 
 using namespace Ami::Qt;
 
+enum { Pixels, Millimeters };
+
 ImageGridScale::ImageGridScale(ImageFrame& frame) :
   _frame    (frame),
   _scaled   (false),
@@ -23,11 +25,11 @@ ImageGridScale::ImageGridScale(ImageFrame& frame) :
 {
   QRadioButton* pixelsB = new QRadioButton("pixels");
   QRadioButton* phyB    = new QRadioButton("mms");
-  QButtonGroup* group   = new QButtonGroup;
+  _group   = new QButtonGroup;
   pixelsB->setChecked(!_scaled);
   phyB   ->setChecked( _scaled);
-  group->addButton(pixelsB);
-  group->addButton(phyB);
+  _group->addButton(pixelsB,Pixels);
+  _group->addButton(phyB   ,Millimeters);
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* w = new QGroupBox("XY Units");
@@ -80,7 +82,14 @@ void ImageGridScale::setup_payload(Cds& cds)
       if (e->desc().type() == Ami::DescEntry::Image) {
 	_scalex = static_cast<const DescImage&>(e->desc()).mmppx();
 	_scaley = static_cast<const DescImage&>(e->desc()).mmppy();
-	printf("ImageGridScale::setup_payload found scale %g/%g\n", _scalex, _scaley);
+        if (_scalex==0) {
+          _group->button(Pixels     )->setChecked(true);
+          _group->button(Millimeters)->setEnabled(false);
+          _scaled=false;
+        }
+        else {
+          _group->button(1)->setEnabled(true);
+        }
 	phy_scale(_scaled);
 	return;
       }

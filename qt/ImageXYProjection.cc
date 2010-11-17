@@ -7,6 +7,7 @@
 #include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/XYProjectionPlotDesc.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/ImageIntegral.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
@@ -61,7 +62,8 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
 
   _plot_tab        = new QTabWidget(0);
   _projection_plot = new XYProjectionPlotDesc(0, *_rectangle);
-  _integral_plot   = new ScalarPlotDesc(0);
+  //  _integral_plot   = new ScalarPlotDesc(0);
+  _integral_plot   = new ImageIntegral(0);
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
   _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
 
@@ -97,8 +99,9 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
     layout->addLayout(layout1); }
 
   setLayout(layout);
-    
+
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
@@ -212,6 +215,7 @@ void ImageXYProjection::setVisible(bool v)
   if (v)    _frame.add_marker(*_rectangle);
   else      _frame.remove_marker(*_rectangle);
   QWidget::setVisible(v);
+  update_range();
 }
 
 void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
@@ -269,17 +273,11 @@ void ImageXYProjection::plot()
       break;
     }
   case PlotIntegral:
-    { QString expr = QString("[%1]%2[%3][%4]%5[%6]").
-	arg(_rectangle->ixlo()).
-	arg(BinMath::integrate()).
-	arg(_rectangle->ixhi()).
-	arg(_rectangle->iylo()).
-	arg(BinMath::integrate()).
-	arg(_rectangle->iyhi());
-      
+    {      
       DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
       CursorPlot* plot = 
- 	new CursorPlot(this, _title->text(), _channel, new BinMath(*desc,qPrintable(expr)));
+ 	new CursorPlot(this, _title->text(), _channel, 
+                       new BinMath(*desc,_integral_plot->expression()));
       delete desc;
       
       _cplots.push_back(plot);
@@ -329,4 +327,12 @@ void ImageXYProjection::remove_plot(QObject* obj)
 void ImageXYProjection::configure_plot()
 {
   emit changed();
+}
+
+void ImageXYProjection::update_range()
+{
+  _integral_plot->update_range(_rectangle->ixlo(),
+                               _rectangle->iylo(),
+                               _rectangle->ixhi(),
+                               _rectangle->iyhi());
 }

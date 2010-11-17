@@ -17,6 +17,9 @@
 
 static const int crosshair_size = 4;
 
+static void _balance(unsigned&,unsigned,unsigned&,
+                     unsigned&,unsigned,unsigned&);
+
 namespace Ami {
   namespace Qt {
     class CrossHairLocation : public QLineEdit {
@@ -116,6 +119,9 @@ void CrossHair::draw(QImage& img)
   unsigned klo = unsigned(yinfo.tick(y-crosshair_size));
   unsigned kct = unsigned(yinfo.tick(y+0));
   unsigned khi = unsigned(yinfo.tick(y+crosshair_size));
+  
+  _balance(jlo,jct,jhi,
+           klo,kct,khi);
 
   const unsigned char c = 0xff;
   { unsigned char* cc0 = img.scanLine(kct) + jlo;
@@ -149,3 +155,17 @@ void CrossHair::set_scale(double sx,double sy)
 
 void CrossHair::setVisible(bool l) { _visible = l; }
 
+
+void _balance(unsigned& jlo, unsigned jct, unsigned& jhi,
+              unsigned& klo, unsigned kct, unsigned& khi)
+{
+  unsigned sz = jhi-jct;
+  if (jct-jlo < sz) sz=jct-jlo;
+  if (khi-kct < sz) sz=khi-kct;
+  if (kct-klo < sz) sz=kct-klo;
+
+  jhi = jct+sz;
+  jlo = jct-sz;
+  khi = kct+sz;
+  klo = kct-sz;
+}

@@ -136,15 +136,13 @@ void EnvPlot::setup_payload(Cds& cds)
       return;
     }
     _plot->attach(_frame);
-    printf("%s found signature %d created type %d\n",qPrintable(_name),_output_signature,entry->desc().type());
   }
-  else
+  else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }
 
 void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 {
-  printf("EnvPlot::configure input %d\n", input);
   Ami::EnvPlot op(*_desc);
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
@@ -153,7 +151,6 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 						  _output_signature = ++output,
 						  RawFilter(), op);
   p += r.size();
-  printf("EnvPlot::configure output %d\n", output);
 }
 
 void EnvPlot::update()

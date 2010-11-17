@@ -9,11 +9,16 @@ using namespace Ami::Qt;
 
 static const unsigned grid_width = 35;
 
-ImageGrid::ImageGrid( Axis a, Origin o, unsigned sz ) : 
+ImageGrid::ImageGrid( Axis     a, 
+                      Origin   o,
+                      double   y0,
+                      double   dy,
+                      unsigned ny ) :
   _axis  (a),
   _origin(o),
-  _size  (sz),
-  _scale (1)
+  _y0    (y0),
+  _dy    (dy),
+  _ny    (ny)
 {
   setAlignment(::Qt::AlignLeft | ::Qt::AlignTop);
   _fill();
@@ -25,26 +30,24 @@ ImageGrid::~ImageGrid()
 
 void ImageGrid::_fill()
 {
-  QImage* image = new QImage(grid_width, _size, QImage::Format_ARGB32);
+  QImage* image = new QImage(grid_width, _ny, QImage::Format_ARGB32);
   
   const double major_width = 2;
 
-  double major_step, fstep, y0;
+  double major_step, fstep;
   if (_origin == Center) {
-    double len = 0.5*double(_size)*_scale;
+    double len = 0.5*_dy;
     major_step = pow(10.,floor(log10(len))-1.);
     const unsigned max_steps = 6;
     fstep = len/(major_step*double(max_steps));
-    y0 = -len;
   }
   else {
-    double len = double(_size)*_scale;
+    double len = _dy;
     major_step = pow(10.,floor(log10(len))-1.);
     const unsigned max_steps = 13;
     fstep = len/(major_step*double(max_steps));
-    y0 = 0;
   }
-
+  
   //  we have step size to within a factor of 10
   if      (fstep > 5)
     major_step *= 10;
@@ -59,13 +62,14 @@ void ImageGrid::_fill()
   QRgb fg = qRgb(0,0,0);
 
   QRgb* b = reinterpret_cast<QRgb*>(image->bits());
-  double y = y0;
-  for(unsigned i=0; i<_size; i++, b+=grid_width) {
+  double  y = _y0;
+  double dy = _dy/double(_ny);
+  for(unsigned i=0; i<_ny; i++, b+=grid_width) {
     b[0] = fg;
     b[1] = fg;
 
     QRgb v;
-    double prox = major_width - fabs(drem(y,major_step))/_scale;
+    double prox = major_width - fabs(drem(y,major_step))/dy;
     if (prox < 0) v = bg;
     else if (prox < 1) {
       int g = int(double(qGray(bg))*(1-prox) + double(qGray(fg))*prox);
@@ -76,7 +80,8 @@ void ImageGrid::_fill()
     b[2] = v;
     b[3] = v;
     b[4] = v;
-    y += _scale;
+
+    y += dy;
   }
   
   //  setMinimumSize(image->size());
@@ -88,40 +93,26 @@ void ImageGrid::_fill()
   f.setPointSize(8);
   painter.setFont(f);
 
-  int nsteps;
-  double g0, v0;
-  if (_origin==Center) {
-    int n  = int(0.5*double(_size)*_scale/major_step);
-    nsteps = 2*n + 1;
-    v0     = double(n)*major_step;
-    g0     = 0.5*double(_size)*_scale - v0;
-  }
-  else {
-    int n  = int(double(_size)*_scale/major_step);
-    nsteps = n + 1;
-    if (_axis == X) {
-      v0     = major_step*double(n);
-      g0     = double(_size)*_scale - double(n)*major_step;
-    }
-    else {
-      v0     = 0;
-      g0     = 0;
-    }
-  }
-  //  int nsteps = int(len/major_step);
-  //  for(int i=-nsteps; i<=nsteps; i++) {
-  for(int i=0; i<nsteps; i++) {
-//     QRectF r(8, (double(i)*major_step+len)/_scale-5,grid_width-8,10);
-//     double v = double(i)*major_step;
-//     if (_axis==X) v = -v;
-//     painter.drawText(r, ::Qt::AlignLeft|::Qt::AlignVCenter, QString::number(v));
-    QRectF r(8, (g0+double(i)*major_step)/_scale-5,grid_width-8,10);
-    double v = double(i)*major_step;
-    if (_axis==X) v = v0-v;
-    else          v = v-v0;
-    painter.drawText(r, ::Qt::AlignLeft|::Qt::AlignVCenter, QString::number(v));
-  }
+  if (_axis==X)
+    y = _y0 + _dy;
+  else
+    y = _y0;
 
+  double pprox = -1;
+  for(unsigned i=0; i<_ny; i++, b+=grid_width) {
+    double prox = major_width - fabs(drem(y,major_step))/dy;
+    if (prox>=0 && pprox<0) {
+      QRectF r(8, i-5, grid_width-8, 10);
+      double v = floor(y/major_step+0.5)*major_step;
+      painter.drawText(r, ::Qt::AlignLeft|::Qt::AlignVCenter, QString::number(v));
+    }
+    pprox = prox;
+    if (_axis==X)
+      y -= dy;
+    else
+      y += dy;
+  }
+  
   if (_axis==X)
     setPixmap(pixmap.transformed(QTransform().rotate(90)));
   else
@@ -130,14 +121,15 @@ void ImageGrid::_fill()
   delete image;
 }
 
-void ImageGrid::resize_grid(unsigned sz)
+void ImageGrid::set_scale(double y0, double dy)
 {
-  _size = sz;
+  _y0 = y0;
+  _dy = dy;
   _fill();
 }
 
-void ImageGrid::set_grid_scale(double s)
+void ImageGrid::resize(unsigned ny)
 {
-  _scale = s;
+  _ny = ny;
   _fill();
 }

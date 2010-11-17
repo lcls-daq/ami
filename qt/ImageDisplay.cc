@@ -40,6 +40,11 @@ Ami::Qt::ImageDisplay::ImageDisplay() :
   _plot    = new ImageFrame(this,*_zrange);
   _units   = new ImageGridScale(*_plot);
 
+  _layout();
+}
+
+void Ami::Qt::ImageDisplay::_layout()
+{
   QMenuBar* menu_bar = new QMenuBar(this);
   {
     QMenu* file_menu = new QMenu("File");

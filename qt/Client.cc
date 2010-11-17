@@ -113,7 +113,6 @@ Ami::Qt::Client::Client(QWidget*            parent,
     layout->addLayout(layout1); }
   setLayout(layout);
 
-  printf("Connection Client::update_config\n");
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()),    this, SLOT(update_configuration()));
 }

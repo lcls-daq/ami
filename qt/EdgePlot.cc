@@ -86,9 +86,8 @@ void EdgePlot::setup_payload(Cds& cds)
     _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
 		       noTransform,noTransform,QColor(0,0,0));
     _plot->attach(_frame);
-    printf("%s found signature %d created type %d\n",qPrintable(_name),_output_signature,entry->desc().type());
   }
-  else
+  else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }
 

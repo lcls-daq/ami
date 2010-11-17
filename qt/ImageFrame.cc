@@ -4,7 +4,6 @@
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageMarker.hh"
-#include "ami/qt/ImageGrid.hh"
 #include "ami/qt/QtImage.hh"
 
 #include <QtGui/QMouseEvent>
@@ -40,7 +39,6 @@ ImageFrame::ImageFrame(QWidget* parent,
   _control(control),
   _canvas(new QLabel),
   _qimage(0),
-  _xyscale(false),
   _c(0)
 {
   unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
@@ -53,11 +51,6 @@ ImageFrame::ImageFrame(QWidget* parent,
   layout->addWidget(_canvas,0,0);
   setLayout(layout);
 
-  _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, CanvasSizeDefault);
-  _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, CanvasSizeDefault);
-
-  show_grid(true);
-
   connect(&_control , SIGNAL(windowChanged()), this , SLOT(scale_changed()));
 }
 
@@ -66,8 +59,14 @@ ImageFrame::~ImageFrame() {}
 void ImageFrame::attach(QtImage* image) 
 {
   _qimage = image; 
-  if (_qimage)
+  if (_qimage) {
     _qimage->set_color_table(_control.color_table());
+    QSize sz(_canvas->size());
+    sz.rwidth()  += CanvasSizeIncrease;
+    sz.rheight() += CanvasSizeIncrease;
+    QGridLayout* l = static_cast<QGridLayout*>(layout()); 
+    _qimage->canvas_size(sz,*l);
+  }
 }
 
 void ImageFrame::scale_changed()
@@ -86,20 +85,12 @@ void ImageFrame::replot()
     for(std::list<ImageMarker*>::const_iterator it=_markers.begin(); it!=_markers.end(); it++) 
       (*it)->draw(output);
 
-    if (_xyscale)
-      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
-							   ::Qt::KeepAspectRatio));
-    else {
-      QSize sz = output.size();
-      sz.rwidth () += CanvasSizeIncrease;
-      sz.rheight() += CanvasSizeIncrease;
-      if (sz != _canvas->size()) {
-	_canvas->setMinimumSize(sz);
-	_xgrid ->resize_grid(sz.width());
-	_ygrid ->resize_grid(sz.height());
-      }
+    if (_qimage->scalexy())
+      //      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
+      //							   ::Qt::KeepAspectRatio));
+      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size()));
+    else
       _canvas->setPixmap(QPixmap::fromImage(output));
-    }
   }
 }
 
@@ -143,28 +134,9 @@ void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
 
 void ImageFrame::set_cursor_input(Cursors* c) { _c=c; }
 
-void ImageFrame::autoXYScale(bool v)
-{
-  _xyscale = v;
-}
-
 void ImageFrame::set_grid_scale(double scalex, double scaley)
-{
+{                                               
   if (_qimage) {
-    _xgrid->set_grid_scale(scalex*(xinfo()->position(1)-xinfo()->position(0)));
-    _ygrid->set_grid_scale(scaley*(yinfo()->position(1)-yinfo()->position(0)));
-  }
-}
-
-void ImageFrame::show_grid(bool s)
-{
-  QGridLayout* l = static_cast<QGridLayout*>(layout()); 
-  if (s) {
-    l->addWidget(_xgrid,1,0);
-    l->addWidget(_ygrid,0,1);
-  }
-  else {
-    l->removeWidget(_xgrid);
-    l->removeWidget(_ygrid);
+    _qimage->set_grid_scale(scalex,scaley);
   }
 }

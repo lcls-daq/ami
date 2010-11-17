@@ -133,6 +133,7 @@ libsrcs_amiqt += ImageScale.cc ImageScale_moc.cc
 libsrcs_amiqt += ImageDisplay.cc ImageDisplay_moc.cc
 libsrcs_amiqt += RectangleCursors.cc RectangleCursors_moc.cc
 libsrcs_amiqt += AnnulusCursors.cc AnnulusCursors_moc.cc
+libsrcs_amiqt += ImageIntegral.cc
 libsrcs_amiqt += ImageContourProjection.cc ImageContourProjection_moc.cc
 libsrcs_amiqt += ImageRPhiProjection.cc ImageRPhiProjection_moc.cc
 libsrcs_amiqt += ImageXYProjection.cc ImageXYProjection_moc.cc

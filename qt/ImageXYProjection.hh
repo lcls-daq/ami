@@ -26,6 +26,7 @@ namespace Ami {
     class ZoomPlot;
     class XYProjectionPlotDesc;
     class ScalarPlotDesc;
+    class ImageIntegral;
 
     class ImageXYProjection : public QtPWidget {
       Q_OBJECT
@@ -44,6 +45,7 @@ namespace Ami {
       void update();
     public slots:
       void set_channel(int); // set the source
+      void update_range();
       void plot        ();   // configure the plot
       void zoom        ();
       void configure_plot();
@@ -63,7 +65,8 @@ namespace Ami {
       QTabWidget*   _plot_tab;
 
       XYProjectionPlotDesc* _projection_plot;
-      ScalarPlotDesc*       _integral_plot;
+      //      ScalarPlotDesc*       _integral_plot;
+      ImageIntegral*        _integral_plot;
 
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;

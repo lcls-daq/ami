@@ -1,11 +1,13 @@
 #include "QtImage.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/ImageFrame.hh"
+#include "ami/qt/ImageGrid.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryImage.hh"
 
 #include <QtGui/QImage>
+#include <QtGui/QGridLayout>
 
 #include <stdio.h>
 
@@ -21,13 +23,17 @@ QtImage::QtImage(const QString&   title,
   const Ami::DescImage& d = entry.desc();
   _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy();
 
-  printf("QtImage 0x%x x 0x%x\n",_nx,_ny);
-
   _qimage = new QImage(_nx, _ny, QImage::Format_Indexed8);
   _qimage->fill(128);
 
   _xinfo = new AxisBins(d.xlow(),d.xup(),d.nbinsx());
   _yinfo = new AxisBins(d.ylow(),d.yup(),d.nbinsy());
+
+  _scalexy = false;
+  _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
+                         _x0*double(d.ppxbin()), double(d.ppxbin()*_nx), _nx);
+  _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
+                         _y0*double(d.ppybin()), double(d.ppybin()*_ny), _ny);
 }
   
   
@@ -47,12 +53,16 @@ QtImage::QtImage(const QString&   title,
 
   if (_qimage->isNull())
     printf("image is null\n");
-  else
-    printf("created with size 0x%x x 0x%x\n",_qimage->size().width(),_qimage->size().height());
 
   const DescImage& d = entry.desc();
   _xinfo = new AxisBins(d.xlow(),d.xlow() + _nx*d.ppxbin(),_nx);
   _yinfo = new AxisBins(d.ylow(),d.ylow() + _ny*d.ppybin(),_ny);
+
+  _scalexy = true;
+  _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
+                         _x0*double(d.ppxbin()), double(d.ppxbin()*_nx), _nx);
+  _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
+                         _y0*double(d.ppybin()), double(d.ppybin()*_ny), _ny);
 }
   
   
@@ -61,6 +71,8 @@ QtImage::~QtImage()
   delete _qimage;
   delete _xinfo;
   delete _yinfo;
+  delete _xgrid;
+  delete _ygrid;
 }
 
 void           QtImage::dump  (FILE* f) const
@@ -80,6 +92,18 @@ void           QtImage::attach(ImageFrame* p)
 }
 
 void           QtImage::update() {}
+
+void           QtImage::canvas_size(const QSize& sz,
+                                    QGridLayout& layout)
+{
+  if (_scalexy) {
+    _xgrid->resize(sz.width ());
+    _ygrid->resize(sz.height());
+  }
+  layout.addWidget(_xgrid,1,0);
+  layout.addWidget(_ygrid,0,1);
+}
+
 
 #define LINTRANS(x) (x > p   ? (x-p)/n : 0)
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
@@ -139,4 +163,15 @@ float QtImage::value(unsigned x,unsigned y) const
 const AxisInfo* QtImage::xinfo() const { return _xinfo; }
 const AxisInfo* QtImage::yinfo() const { return _yinfo; }
 
+bool QtImage::scalexy() const { return _scalexy; }
+
 void QtImage::set_color_table(const QVector<QRgb>& colors) { _qimage->setColorTable(colors); }
+
+void QtImage::set_grid_scale(double scalex, double scaley)
+{
+  const DescImage& d = static_cast<const EntryImage&>(entry()).desc();
+  _xgrid->set_scale(scalex*double(d.ppxbin()*_x0), 
+                    scalex*double(d.ppxbin()*_nx));
+  _ygrid->set_scale(scaley*double(d.ppybin()*_y0), 
+                    scaley*double(d.ppybin()*_ny));
+}

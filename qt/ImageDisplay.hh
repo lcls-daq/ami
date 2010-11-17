@@ -48,6 +48,8 @@ namespace Ami {
     signals:
       void redraw();
     private:
+      void _layout();
+    private:
       ImageFrame*  _plot;
       ImageGridScale*    _units;
       ImageColorControl* _zrange;

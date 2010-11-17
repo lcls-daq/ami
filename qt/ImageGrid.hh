@@ -9,18 +9,19 @@ namespace Ami {
     public:
       enum Axis { X, Y };
       enum Origin { TopLeft, Center };
-      ImageGrid( Axis, Origin, unsigned sz );
+      ImageGrid( Axis, Origin, double y0, double dy, unsigned ny );
       ~ImageGrid();
     public:
-      void resize_grid(unsigned);
-      void set_grid_scale(double);
+      void set_scale(double y0, double dy);
+      void resize   (unsigned ny);
     private:
       void _fill();
     private:
       Axis     _axis;
       Origin   _origin;
-      unsigned _size;
-      double   _scale;
+      double   _y0; // value of bin0
+      double   _dy; // length of axis
+      unsigned _ny; // display pixels
     };
   };
 };

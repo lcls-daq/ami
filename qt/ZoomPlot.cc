@@ -3,6 +3,7 @@
 #include "ami/qt/QtImage.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageFrame.hh"
+#include "ami/qt/ImageGridScale.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
@@ -33,8 +34,6 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _y1     (y1),
   _frame   (new ImageDisplay)
 {
-  _frame->plot()->autoXYScale(true);
-
   setWindowTitle(name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
 
@@ -52,7 +51,6 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _frame   (new ImageDisplay)
 {
   load(p);
-  _frame->plot()->autoXYScale(true);
 
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
@@ -98,11 +96,13 @@ void ZoomPlot::setup_payload(Cds& cds)
 {
   _frame->reset();
   const Entry* entry = cds.entry(_signature);
-  if (entry)
+  if (entry) {
     _frame->add( new QtImage(entry->desc().name(),
 			     *static_cast<const EntryImage*>(entry),
 			     _x0, _y0, _x1, _y1),
 		 true);
+    _frame->grid_scale().setup_payload(cds);
+  }
 }
 
 void ZoomPlot::configure(char*& p, unsigned input, unsigned& output,

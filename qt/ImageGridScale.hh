@@ -4,6 +4,7 @@
 #include <QtGui/QWidget>
 
 class QGridLayout;
+class QButtonGroup;
 
 #include <list>
 
@@ -34,6 +35,7 @@ namespace Ami {
     private:
       ImageFrame& _frame;
       QGridLayout* _clayout;
+      QButtonGroup* _group;
       unsigned _nrows;
       std::list<CrossHair*> _cross_hairs;
       //      CrossHairDelta* _delta;

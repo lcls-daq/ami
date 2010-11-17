@@ -8,6 +8,8 @@
 
 class QwtPlot;
 class QColor;
+class QSize;
+class QGridLayout;
 
 namespace Ami {
   class EntryImage;
@@ -15,6 +17,7 @@ namespace Ami {
   namespace Qt {
     class AxisBins;
     class ImageData;
+    class ImageGrid;
     class QtImage : public QtBase {
     public:
       QtImage(const QString&   title,
@@ -33,12 +36,16 @@ namespace Ami {
       void        update()        ;
       void        xscale_update() ;
       void        yscale_update() ;
+      void        canvas_size(const QSize&,
+                              QGridLayout&);
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
       float           value(unsigned,unsigned) const;
+      bool            scalexy() const;
     public:
       QImage&     image(float pedestal,float scale,bool linear=true);
       void        set_color_table(const QVector<QRgb>&);
+      void        set_grid_scale(double x,double y);
     private:
       unsigned _x0, _y0;
       unsigned _nx, _ny;
@@ -46,6 +53,9 @@ namespace Ami {
       QImage*   _qimage;
       AxisBins* _xinfo;
       AxisBins* _yinfo;
+      bool       _scalexy;
+      ImageGrid* _xgrid;
+      ImageGrid* _ygrid;
     };
   };
 };
