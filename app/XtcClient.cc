@@ -8,6 +8,7 @@
 #include "ami/event/EBeamReader.hh"
 #include "ami/event/PhaseCavityReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
+#include "ami/event/SharedIpimbReader.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/EncoderHandler.hh"
@@ -168,6 +169,7 @@ int XtcClient::process(Pds::Xtc* xtc)
     //  Wasn't handled
     if (_seq->service()==Pds::TransitionId::Configure) {
       const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
+      const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       EventHandler* h = 0;
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
@@ -191,6 +193,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
       case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,_cache); break;
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,_cache); break;
+      case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,_cache); break;
       default: break;
       }
       if (!h)
