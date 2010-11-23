@@ -26,6 +26,10 @@ int main(int argc, char* argv[])
     }
   }
 
+  char        rmsg[32];
+  const char* smsg = "roger wilco...";
+  int slen = strlen(smsg)+1;
+
   if (listener) {
     TSocket _listen;
     Ins ins(_listen.ins().address(),port);
@@ -52,6 +56,13 @@ int main(int argc, char* argv[])
 	       s, 
 	       local .address(), local .portId(),
 	       remote.address(), remote.portId());
+
+          _accepted.write(smsg, slen);
+          printf("sent msg %s\n",smsg);
+
+          int rlen = _accepted.read (rmsg, slen);
+          printf("recv msg %s [%d]\n",rmsg,rlen);
+
 	  sleep(2);
 	  ::close(s);
 	}
@@ -83,6 +94,12 @@ int main(int argc, char* argv[])
 	       _talk.socket(), 
 	       local .address(), local .portId(),
 	       remote.address(), remote.portId());
+
+        int rlen = _talk.read (rmsg, slen);
+        printf("recv msg %s [%d]\n",rmsg,rlen);
+
+        _talk.write(rmsg, rlen);
+        printf("sent msg %s\n",rmsg);
       }
       catch (Event& e) {
 	printf("Connected failed: %s\n", e.what());
