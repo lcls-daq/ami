@@ -5,7 +5,7 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami blviewer
+tgtnames := online_ami offline_ami blviewer bldipimbclient
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
@@ -15,6 +15,8 @@ tgtsrcs_offline_ami += XtcFileClient.cc XtcFileClient_moc.cc
 tgtsrcs_offline_ami += qtami.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
+
+tgtsrcs_bldipimbclient := bldIpimbClient.cc bldIpimbClient_moc.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
@@ -46,6 +48,10 @@ tgtlibs_blviewer := $(datalibs) pdsapp/configdb
 tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_blviewer += $(qt_libs)
 
+tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb
+tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_bldipimbclient += $(qt_libs)
+
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
@@ -69,6 +75,7 @@ qt_incs += $(qtincdir)/QtXml
 tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)
 tgtincs_blviewer    := $(qt_incs)
+tgtincs_bldipimbclient   := $(qt_incs)
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
