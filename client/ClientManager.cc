@@ -112,7 +112,6 @@ void ClientManager::request_payload()
 void ClientManager::connect()
 {
   _request = Message(_request.id()+1,Message::Connect,
-		     //		     _listen->ins().address(),
 		     _ppinterface,
 		     _listen->ins().portId());
   printf("(%p) CM Request connection from %x/%d\n",
@@ -120,7 +119,9 @@ void ClientManager::connect()
   if (_connect)
     _connect->write(&_request,sizeof(_request));
   else {
+    Ins ins(_ppinterface,_listen->ins().portId()+1);
     TSocket* s = new TSocket;
+    s->bind(ins);
     try {
       s->connect(_server); 
       s->write(&_request,sizeof(_request));

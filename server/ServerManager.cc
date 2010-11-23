@@ -86,7 +86,10 @@ int ServerManager::processIo()
   if (request.type()==Message::Connect) {
     try {
       TSocket* s = new TSocket;
-
+      if (!(Ins::is_multicast(_serverGroup))) {
+        unsigned short port = request.offset();
+        s->bind(Ins(port));
+      }
       Ins remote(request.payload(),request.offset());
       s->connect(remote);
       Ins local (s->ins());
