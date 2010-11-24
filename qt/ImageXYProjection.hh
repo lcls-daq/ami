@@ -44,7 +44,7 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
     public slots:
-      void set_channel(int); // set the source
+      void set_channel(int);
       void update_range();
       void plot        ();   // configure the plot
       void zoom        ();
