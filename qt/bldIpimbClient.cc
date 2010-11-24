@@ -26,7 +26,7 @@
 
 #define IPIMB_CONFIG_DB     "/reg/g/pcds/dist/pds/sharedIpimb/configdb"
 #define IPIMB_HOSTNAME      "daq-sxr-nh2sb1ipm01"
-#define CONTROL_PORT        5729
+#define CONTROL_PORT        5727
 
 using namespace Ami::Blv;
 
@@ -205,10 +205,10 @@ void ConfigSelect::_reconfigure()
       Ins ins(ip_host, it->port);
       try {
         s.connect(ins);
-        if(_sendEnb)	
+        //if(_sendEnb)	
           s.write(&msg, sizeof(msg));
-        else
-          _sendEnb = 1;
+        //else
+        //  _sendEnb = 1;
       } 
       catch (Event& e) {
         printf("Failed to reconfigure %s (%s)\n",it->name,it->host);
@@ -321,7 +321,7 @@ int main(int argc, char **argv)
   SList servers;
   Ami::Blv::ServerEntry entry;
   unsigned det;
-  sprintf(entry.name,"BldIpimb");
+  sprintf(entry.name,"NH2-SB1-IPM-01");
   sprintf(entry.host,hostName);
   det = (unsigned) Pds::DetInfo::XppSb1Ipm;
   entry.port = controlPort;
