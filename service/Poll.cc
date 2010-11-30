@@ -156,16 +156,22 @@ int Poll::poll()
 	    if (_ofd[n])
 	      if (cmd==BroadcastOut)
 		::write(_ofd[n]->fd(), payload, size);
-	      else if (!_ofd[n]->processIo(payload,size))
- 		unmanage(*_ofd[n]);
+	      else if (!_ofd[n]->processIo(payload,size)) {
+                Fd* fd = _ofd[n];
+ 		unmanage(*fd);
+                delete fd;
+              }
 	  }
 	}
       }
     }
     for (unsigned short n=1; n<_nfds; n++) {
       if (_ofd[n] && (_pfd[n].revents & (POLLIN | POLLERR)))
-	if (!_ofd[n]->processIo())
-	  unmanage(*_ofd[n]);
+	if (!_ofd[n]->processIo()) {
+          Fd* fd = _ofd[n];
+          unmanage(*fd);
+          delete fd;
+        }
     }
   }
   else {

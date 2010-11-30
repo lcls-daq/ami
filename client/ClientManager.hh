@@ -49,6 +49,7 @@ namespace Ami {
     enum State { Disconnected, Connected };
     AbsClient&      _client;
     int             _ppinterface;
+    unsigned short  _port;
     Poll*           _poll;
     State           _state;
     Message         _request;
@@ -60,6 +61,7 @@ namespace Ami {
     TSocket*        _listen;
     Socket*         _connect;
     Semaphore       _listen_sem;
+    Semaphore       _client_sem;
     Ins             _server;
   };
 

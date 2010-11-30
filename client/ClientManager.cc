@@ -54,6 +54,7 @@ ClientManager::ClientManager(unsigned   ppinterface,
 			     AbsClient& client) :
   _client    (*new Aggregator(client)),
   _ppinterface(ppinterface),
+  _port       (port),
   _poll      (new Poll(1000)),
   _state     (Disconnected),
   _request   (0,Message::NoOp),
@@ -61,27 +62,28 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _buffer    (new char[BufferSize]),
   _discovery (new char[BufferSize]),
   _task      (new Task(TaskObject("lstn"))),
-  _listen    (new TSocket),
   _listen_sem(Semaphore::EMPTY),
+  _client_sem(Semaphore::EMPTY),
   _server    (serverGroup, Port::serverPort())
 {
   if (Ins::is_multicast(serverGroup)) {
     VClientSocket* so = new VClientSocket;
     so->set_dst(_server, interface);
     _connect = so;
+
+    _listen = new TSocket;
+    try             { _listen->bind(Ins(ppinterface,port)); }
+    catch(Event& e) { printf("bind error : %s\n",e.what()); }
+
+    _task->call(this);
+    _listen_sem.take();
   }
-  else
+  else {
     _connect = 0;
-
-  try {
-    _listen->bind(Ins(ppinterface,port));
-  } catch(Event& e) {
-    printf("bind error : %s\n",e.what());
+    _listen  = 0;
   }
 
-  _task->call(this);
   _poll->start();
-  _listen_sem.take();
 }
 
 
@@ -92,7 +94,7 @@ ClientManager::~ClientManager()
   delete[] _buffer;
   delete[] _discovery;
   _task->destroy();
-  delete _listen;
+  if (_listen ) delete _listen ;
   if (_connect) delete _connect;
 }
 
@@ -111,25 +113,30 @@ void ClientManager::request_payload()
 //
 void ClientManager::connect()
 {
-  _request = Message(_request.id()+1,Message::Connect,
-		     _ppinterface,
-		     _listen->ins().portId());
-  printf("(%p) CM Request connection from %x/%d\n",
-	 this,_ppinterface,_listen->ins().portId());
-  if (_connect)
+  if (_connect) {
+    _request = Message(_request.id()+1,Message::Connect,
+                       _ppinterface,
+                       _listen->ins().portId());
+    printf("(%p) CM Request connection from %x/%d\n",
+           this,_ppinterface,_listen->ins().portId());
     _connect->write(&_request,sizeof(_request));
-  else {
-    Ins ins(_ppinterface,_listen->ins().portId()+1);
-    TSocket* s = new TSocket;
-    s->bind(ins);
-    try {
-      s->connect(_server); 
-      s->write(&_request,sizeof(_request));
-      delete s;
-    }
-    catch (Event& e) { printf("Connection failed: %s\n", e.what()); }
   }
-  _state = Connected;
+  else {
+    ClientSocket& cs = *new ClientSocket(*this);
+    try              {
+      cs.bind   (Ins(_ppinterface,_port));
+      Ins remote = _server;
+      cs.connect(remote); 
+      Ins local  = cs.ins();
+      printf("(%p) new ClientSocket %d bound to local: %x/%d  remote: %x/%d\n",
+             this, cs.fd(), 
+             local .address(), local .portId(),
+             remote.address(), remote.portId());
+      _state = Connected;
+      _client.connected();
+    }
+    catch (Event& e) { printf("Connection failed: %s\n", e.what()); delete &cs; }
+  }
 }
 
 int ClientManager::nconnected() const { return _poll->nfds()-1; }
@@ -208,6 +215,7 @@ void ClientManager::remove_client(ClientSocket& socket)
   _poll->unmanage(socket);
   printf("(%p) ClientManager::remove_client %d\n",
 	 this,nconnected());
+  _client_sem.give();
 }
 
 void ClientManager::_flush_sockets(const Message& reply,

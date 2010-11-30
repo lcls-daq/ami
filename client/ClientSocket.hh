@@ -11,6 +11,7 @@ namespace Ami {
   class ClientSocket : public Fd,
 		       public TSocket {
   public:
+    ClientSocket(ClientManager&);
     ClientSocket(ClientManager&, int);
     ~ClientSocket();
   public:

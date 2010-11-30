@@ -76,21 +76,34 @@ int ServerManager::processIo()
   if (!(Ins::is_multicast(_serverGroup))) {
     Sockaddr addr;
     unsigned length = addr.sizeofName();
-    int s = ::accept(_socket->socket(), addr.name(), &length);
-    ::read(s, &request, sizeof(request));
-    ::close(s);
+    int fd = ::accept(_socket->socket(), addr.name(), &length);
+    TSocket* s = new TSocket(fd);
+
+    Ins local (s->ins());
+    Ins remote = addr.get();
+
+    printf("ServerManager::connect new ServerSocket %d bound to local: %x/%d  remote: %x/%d\n",
+           s->socket(), 
+           local .address(), local .portId(),
+           remote.address(), remote.portId());
+
+    Server* srv = new Server(s,*_factory,request);
+    _servers.push_back(srv);
+    manage(*srv);
   }
-  else
+  else {
     _socket->read(&request, sizeof(request));
 
-  if (request.type()==Message::Connect) {
+    if (request.type()!=Message::Connect) {
+      printf("ServerManager::processIo expected Connect received %d\n",
+             request.type());
+      return 1;
+    }
+
+    TSocket* s = new TSocket;
     try {
-      TSocket* s = new TSocket;
-      if (!(Ins::is_multicast(_serverGroup))) {
-        unsigned short port = request.offset();
-        s->bind(Ins(port));
-      }
       Ins remote(request.payload(),request.offset());
+
       s->connect(remote);
       Ins local (s->ins());
 
@@ -105,6 +118,7 @@ int ServerManager::processIo()
      } 
     catch (Event& e) {
       printf("Connect failed: %s\n",e.what());
+      delete s;
     }
   }
   return 1;

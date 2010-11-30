@@ -5,6 +5,12 @@
 
 using namespace Ami;
 
+ClientSocket::ClientSocket(ClientManager& mgr) :
+  _mgr(mgr)
+{
+  _mgr.add_client(*this);
+}
+
 ClientSocket::ClientSocket(ClientManager& mgr, int s) :
   TSocket(s),
   _mgr(mgr)
