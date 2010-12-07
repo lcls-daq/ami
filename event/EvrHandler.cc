@@ -2,7 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/evr/ConfigV4.hh"
+#include "pdsdata/evr/ConfigV5.hh"
 #include "pdsdata/evr/DataV3.hh"
 #include "pdsdata/evr/PulseConfigV3.hh"
 #include "pdsdata/xtc/DetInfo.hh"
@@ -38,7 +38,7 @@ void   EvrHandler::_calibrate(const void* payload, const Pds::ClockTime& t)
 
 void   EvrHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::EvrData::ConfigV4& c = *reinterpret_cast<const Pds::EvrData::ConfigV4*>(payload);
+  const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
 
   char buffer[64];
 
