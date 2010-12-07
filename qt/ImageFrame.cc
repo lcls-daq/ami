@@ -1,6 +1,7 @@
 #include "ImageFrame.hh"
 
 #include "ami/qt/AxisInfo.hh"
+#include "ami/qt/AxisBins.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageMarker.hh"
@@ -139,4 +140,14 @@ void ImageFrame::set_grid_scale(double scalex, double scaley)
   if (_qimage) {
     _qimage->set_grid_scale(scalex,scaley);
   }
+}
+
+static AxisBins _defaultInfo(2,0,1);
+
+const AxisInfo* ImageFrame::xinfo() const { 
+  return _qimage ? _qimage->xinfo() : &_defaultInfo; 
+}
+
+const AxisInfo* ImageFrame::yinfo() const { 
+  return _qimage ? _qimage->yinfo() : &_defaultInfo;
 }

@@ -27,8 +27,8 @@ namespace Ami {
       void setXYScale   (int);
       void setZScale    (int);
     public:
-      const AxisInfo* xinfo() const { return _qimage->xinfo(); }
-      const AxisInfo* yinfo() const { return _qimage->yinfo(); }
+      const AxisInfo* xinfo() const;
+      const AxisInfo* yinfo() const;
       float           value(unsigned x,unsigned y) const { return _qimage->value(x,y); }
     public:
       void add_marker   (ImageMarker&);
