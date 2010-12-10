@@ -89,14 +89,21 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   const int NameSize=128;
   char oname[NameSize];
-  sprintf(oname,"/tmp/pnccd.%08x.dat",info().phy());
+  sprintf(oname,"ped.%08x.dat",info().phy());
   FILE* f = fopen(oname,"r");
+  if (!f) {
+    printf("Failed to open %s\n",oname);
+    sprintf(oname,"/reg/g/pcds/pds/pnccdcalib/ped.%08x.dat",info().phy());
+    f = fopen(oname,"r");
+  }
   if (f) {
+    printf("Loading pedestals from %s\n",oname);
     fread(_correct->contents(), sizeof(unsigned), ArraySize, f);
     fclose(f);
   }
-  else
-    printf("Failed to read %s\n",oname);
+  else {
+    printf("Failed to load pedestals %s\n",oname);
+  }
 
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, 0, ChannelID::name(det),
@@ -198,6 +205,7 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       v += Offset<<2;
       v -= _correct->content(ix, iy);
       _entry->content(v, ix, iy);
+
       d  += 2;
       d1 += 2;
     }
