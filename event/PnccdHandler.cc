@@ -21,6 +21,8 @@ static const unsigned Offset=1024;
 static const unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
 static const unsigned MinCalib=25;
 
+#define TFORM
+
 namespace Ami {
   class PixelCalibration {
   public:
@@ -204,8 +206,11 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 
       v += Offset<<2;
       v -= _correct->content(ix, iy);
+#ifdef TFORM
+      _entry->content(v, iy, 511-ix);
+#else
       _entry->content(v, ix, iy);
-
+#endif
       d  += 2;
       d1 += 2;
     }
@@ -231,7 +236,11 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 
       v += Offset<<2;
       v -= _correct->content(ix, iy);
+#ifdef TFORM
+      _entry->content(v, iy, 511-ix);
+#else
       _entry->content(v, ix, iy);
+#endif
       d  += 2;
       d1 += 2;
     }
