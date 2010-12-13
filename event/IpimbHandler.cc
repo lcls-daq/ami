@@ -34,7 +34,7 @@ void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
   char* iptr = buffer+strlen(buffer);
   
   for(unsigned i=0; i<NChannels; i++) {
-    sprintf(iptr,"[%d]",i);
+    sprintf(iptr,"-Ch%d",i);
     _index[i] = _cache.add(buffer);
   }
 }
