@@ -63,9 +63,4 @@ void ImageIntegral::update_range(double xc, double yc,
 
 
 const char* ImageIntegral::expression() const
-{
-  QString vn = _ynorm->isChecked() ?
-    QString("(%1)/(%2)").arg(_expr_edit->text()).arg(_vnorm->entry()) :
-    _expr_edit->text();
-  return qPrintable(vn);
-}
+{ return expr(_expr_edit->text()); }

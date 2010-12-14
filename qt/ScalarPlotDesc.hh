@@ -25,7 +25,8 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
-      DescEntry* desc(const char*) const;
+      DescEntry*  desc(const char*) const;
+      const char* expr(const QString& e) const;
     protected:
       QCheckBox*    _xnorm;
       QCheckBox*    _ynorm;

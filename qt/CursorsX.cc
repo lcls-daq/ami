@@ -10,11 +10,9 @@
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
+#include "ami/qt/ScalarPlotDesc.hh"
 
-#include "ami/data/DescScalar.hh"
-#include "ami/data/DescTH1F.hh"
-#include "ami/data/DescProf.hh"
-#include "ami/data/DescScan.hh"
+#include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/Expression.hh"
@@ -29,8 +27,6 @@
 #include <QtGui/QGroupBox>
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
-#include <QtGui/QButtonGroup>
-#include <QtGui/QRadioButton>
 #include <QtGui/QComboBox>
 #include <QtGui/QDoubleSpinBox>
 #include <QtCore/QRegExp>
@@ -92,17 +88,7 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _hist   = new DescTH1F   (bold(Sum (1dH)));
-  _vTime  = new DescChart  (bold(Mean v Time),0.2);
-  _vFeature = new DescProf (bold(Mean v Var) );
-  _vScan    = new DescScan (bold(Mean v Scan));
-
-  _plot_grp = new QButtonGroup;
-  _plot_grp->addButton(_hist    ->button(),_TH1F);
-  _plot_grp->addButton(_vTime   ->button(),_vT);
-  _plot_grp->addButton(_vFeature->button(),_vF);
-  _plot_grp->addButton(_vScan   ->button(),_vS);
-  _hist->button()->setChecked(true);
+  _scalar_desc = new ScalarPlotDesc(0);
 
   QPushButton* calcB  = new QPushButton("Enter");
   QPushButton* plotB  = new QPushButton("Plot");
@@ -149,18 +135,7 @@ CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned ncha
     layout1->addWidget(calcB);
     expr_box->setLayout(layout1); 
     layout->addWidget(expr_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
-    QVBoxLayout* layout1 = new QVBoxLayout;
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
-      layout2->addWidget(_title);
-      layout1->addLayout(layout2); }
-    layout1->addWidget(_hist );
-    layout1->addWidget(_vTime);
-    layout1->addWidget(_vFeature);
-    layout1->addWidget(_vScan);
-    plot_box->setLayout(layout1); 
-    layout->addWidget(plot_box); }
+  { layout->addWidget(_scalar_desc); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -188,11 +163,7 @@ void CursorsX::save(char*& p) const
 
   QtPersistent::insert(p,_expr ->text());
   QtPersistent::insert(p,_title->text());
-  _hist    ->save(p);
-  _vTime   ->save(p);
-  _vFeature->save(p);
-  _vScan   ->save(p);
-  QtPersistent::insert(p,_plot_grp->checkedId());
+  _scalar_desc->save(p);
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QtPersistent::insert(p,QString("CursorDef"));
@@ -213,11 +184,7 @@ void CursorsX::load(const char*& p)
 
   _expr ->setText(QtPersistent::extract_s(p));
   _title->setText(QtPersistent::extract_s(p));
-  _hist    ->load(p);
-  _vTime   ->load(p);
-  _vFeature->load(p);
-  _vScan   ->load(p);
-  _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+  _scalar_desc->load(p);
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
@@ -343,30 +310,7 @@ void CursorsX::calc()
 
 void CursorsX::plot()
 {
-  DescEntry* desc;
-  switch(_plot_grp->checkedId()) {
-  case _TH1F:
-    desc = new Ami::DescTH1F(qPrintable(_title->text()),
-			     "projection","events",
-			     _hist->bins(),_hist->lo(),_hist->hi()); 
-    break;
-  case _vT: 
-    desc = new Ami::DescScalar(qPrintable(_title->text()),
-			       "projection");
-    break;
-  case _vF:
-    desc = new Ami::DescProf(qPrintable(_title->text()),
-			     qPrintable(_vFeature->expr()),"mean",
-			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    break;
-  case _vS:
-    desc = new Ami::DescScan(qPrintable(_title->text()),
-			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
-    break;
-  default:
-    desc = 0;
-    break;
-  }
+  DescEntry* desc = _scalar_desc->desc(qPrintable(_title->text()));
 
   // replace cursors with values
   // and integrate symbol with 8-bit char
@@ -396,7 +340,7 @@ void CursorsX::plot()
   CursorPlot* plot = new CursorPlot(this,
 				    _title->text(),
 				    _channel,
-				    new BinMath(*desc,qPrintable(expr)));
+				    new BinMath(*desc,_scalar_desc->expr(expr)));
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));

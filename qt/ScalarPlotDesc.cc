@@ -138,3 +138,10 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
   }
   return desc;
 }
+
+const char* ScalarPlotDesc::expr(const QString& e) const 
+{
+  QString vn = _ynorm->isChecked() ?
+    QString("(%1)/(%2)").arg(e).arg(_vnorm->entry()) : e;
+  return qPrintable(vn);
+}

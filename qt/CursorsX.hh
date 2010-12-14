@@ -7,7 +7,6 @@
 #include <QtCore/QStringList>
 
 class QLineEdit;
-class QButtonGroup;
 class QVBoxLayout;
 
 #include "ami/qt/Cursors.hh"
@@ -28,11 +27,8 @@ namespace Ami {
     class CursorDefinition;
     class CursorLocation;
     class CursorPlot;
-    class DescTH1F;
-    class DescProf;
-    class DescScan;
-    class DescChart;
     class WaveformDisplay;
+    class ScalarPlotDesc;
 
     class CursorsX : public QtPWidget,
 		     public Cursors {
@@ -82,11 +78,7 @@ namespace Ami {
       QLineEdit* _expr;
 
       QLineEdit* _title;
-      QButtonGroup* _plot_grp;
-      DescTH1F*  _hist;
-      DescChart* _vTime;
-      DescProf*  _vFeature;
-      DescScan*  _vScan;
+      ScalarPlotDesc* _scalar_desc;
 
       std::list<CursorDefinition*> _cursors;
       Ami::AbsOperator* _operator;
