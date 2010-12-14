@@ -201,6 +201,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   _entry = EntryFactory::entry(o);
  
   { QString expr(_expression);
+    printf("BinMath input expr %s\n",qPrintable(expr));
     QString new_expr;
     // parse expression for bin indices
     QRegExp match("\\[[0-9,]+\\]");

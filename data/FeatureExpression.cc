@@ -34,7 +34,8 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
 				  const QString& e)
 {
   QString expr;
-  {  //  Translate feature names to feature cache indices
+  { //  Translate feature names to feature cache indices
+    //  enclosed within "{}" braces
     int pos=0;
     while(1) {
       int npos = e.size();
@@ -51,7 +52,7 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
       }
       if (!spos.isEmpty()) {
         expr.append(e.mid(pos,npos-pos));
-        expr.append(QString("[%1]").arg(features.lookup(qPrintable(spos))));
+        expr.append(QString("{%1}").arg(features.lookup(qPrintable(spos))));
 	pos = npos + spos.size();
       }
       else
@@ -62,8 +63,9 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
   }
 
   QString new_expr;
-  {  // parse expression for FeatureCache indices
-    QRegExp match("\\[[0-9]+\\]");
+  { // parse expression for FeatureCache indices
+    // and translate into Term pointers enclosed within "[]" brackets
+    QRegExp match("\\{[0-9]+\\}");
     int last=0;
     int pos=0;
     while( (pos=match.indexIn(expr,pos)) != -1) {

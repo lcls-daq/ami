@@ -1,5 +1,17 @@
 #include "Expression.hh"
 
+//--------------------------------------------------------------
+//  Expression - a class to parse an arithmetic text expression
+//               that includes references to terms.  The text
+//               is composed of character operators:
+//                 addition '+'
+//                 subtraction '-'
+//                 multiplication '*'
+//                 division '/'
+//                 exponentiation '^'
+//               and terms  (pointers enclosed within "[]").
+//--------------------------------------------------------------
+
 #include <QtCore/QRegExp>
 #include <QtCore/QChar>
 
