@@ -26,7 +26,7 @@ namespace Ami {
     class ProjectionPlot;
     class CursorPlot;
     class RPhiProjectionPlotDesc;
-    class ScalarPlotDesc;
+    class ImageIntegral;
 
     class ImageRPhiProjection : public QtPWidget {
       Q_OBJECT
@@ -49,6 +49,7 @@ namespace Ami {
       void configure_plot();
       void remove_plot (QObject*);
       virtual void setVisible(bool);
+      void update_range();
     signals:
       void changed();
     private:
@@ -68,7 +69,7 @@ namespace Ami {
 
       QTabWidget*   _plot_tab;
       RPhiProjectionPlotDesc* _projection_plot;
-      ScalarPlotDesc*         _integral_plot;
+      ImageIntegral*          _integral_plot;
 
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;

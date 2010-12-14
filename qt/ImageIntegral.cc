@@ -1,10 +1,14 @@
 #include "ami/qt/ImageIntegral.hh"
+#include "ami/qt/FeatureBox.hh"
 #include "ami/data/BinMath.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QGroupBox>
+#include <QtGui/QCheckBox>
+
+#include <math.h>
 
 using namespace Ami::Qt;
 
@@ -39,7 +43,29 @@ void ImageIntegral::update_range(int x1, int y1,
   _expr_edit->setText(expr);
 }
 
+void ImageIntegral::update_range(double xc, double yc,
+                                 double r1, double r2,
+                                 double f0, double f1)
+{
+  while (!(f0<f1)) f1 += 2*M_PI;
+  QString expr = QString("[%1]%2[%3][%4]%5[%6][%7]%8[%9]").
+    arg(xc*BinMath::floatPrecision()).
+    arg(BinMath::integrate()).
+    arg(yc*BinMath::floatPrecision()).
+    arg(r1*BinMath::floatPrecision()).
+    arg(BinMath::integrate()).
+    arg(r2*BinMath::floatPrecision()).
+    arg(f0*BinMath::floatPrecision()).
+    arg(BinMath::integrate()).
+    arg(f1*BinMath::floatPrecision());
+  _expr_edit->setText(expr);
+}
+
+
 const char* ImageIntegral::expression() const
 {
-  return qPrintable(_expr_edit->text());
+  QString vn = _ynorm->isChecked() ?
+    QString("(%1)/(%2)").arg(_expr_edit->text()).arg(_vnorm->entry()) :
+    _expr_edit->text();
+  return qPrintable(vn);
 }

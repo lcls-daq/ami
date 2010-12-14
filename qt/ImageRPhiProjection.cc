@@ -5,7 +5,7 @@
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/RPhiProjectionPlotDesc.hh"
-#include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/ImageIntegral.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
@@ -63,7 +63,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
 
   _plot_tab        = new QTabWidget(0);
   _projection_plot = new RPhiProjectionPlotDesc(0, *_annulus);
-  _integral_plot   = new ScalarPlotDesc(0);
+  _integral_plot   = new ImageIntegral(0);
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
   _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
 
@@ -98,6 +98,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_annulus  , SIGNAL(changed()),      this, SLOT(update_range()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }
@@ -193,6 +194,7 @@ void ImageRPhiProjection::setVisible(bool v)
   if (v)  _frame.add_marker(*_annulus);
   else    _frame.remove_marker(*_annulus);
   QWidget::setVisible(v);
+  update_range();
 }
 
 void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
@@ -248,20 +250,11 @@ void ImageRPhiProjection::plot()
       break;
     }
   case PlotIntegral:
-    { QString expr = QString("[%1]%2[%3][%4]%5[%6][%7]%8[%9]").
-	arg(_annulus->xcenter()*BinMath::floatPrecision()).
-	arg(BinMath::integrate()).
-	arg(_annulus->ycenter()*BinMath::floatPrecision()).
-	arg(_annulus->r_inner()*BinMath::floatPrecision()).
-	arg(BinMath::integrate()).
-	arg(_annulus->r_outer()*BinMath::floatPrecision()).
-	arg(f0*BinMath::floatPrecision()).
-	arg(BinMath::integrate()).
-	arg(f1*BinMath::floatPrecision());
-      
+    {
       DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
       CursorPlot* plot = 
- 	new CursorPlot(this, _title->text(), _channel, new BinMath(*desc,qPrintable(expr)));
+ 	new CursorPlot(this, _title->text(), _channel, 
+                       new BinMath(*desc,_integral_plot->expression()));
       
       _cplots.push_back(plot);
 
@@ -289,4 +282,14 @@ void ImageRPhiProjection::remove_plot(QObject* obj)
 void ImageRPhiProjection::configure_plot()
 {
   emit changed();
+}
+
+void ImageRPhiProjection::update_range()
+{
+  _integral_plot->update_range(_annulus->xcenter(),
+                               _annulus->ycenter(),
+                               _annulus->r_inner(),
+                               _annulus->r_outer(),
+                               _annulus->phi0(),
+                               _annulus->phi1());
 }
