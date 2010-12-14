@@ -26,7 +26,9 @@
 
 #include <stdio.h>
 
-static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
+static bool _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
+
+static const unsigned MAX_INDEX = 999999;
 
 //
 //  this could probably be a template
@@ -124,14 +126,12 @@ namespace Ami {
 		}
 	      }
 	    }
-	    else
+          else
 	      return 0;
 	}
 	else {
 	  if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
 			    _xc, _yc, _r1)) {
-	    double sum = 0;
-	    double p   = e.info(EntryImage::Pedestal);
 	    double xc(_xc), yc(_yc);
 	    double r0sq(_r0*_r0), r1sq(_r1*_r1);
 	    for(int j=iylo; j<=iyhi; j++) {
@@ -149,8 +149,9 @@ namespace Ami {
 	      }
 	    }
 	  }
-	  else
-	    return 0;
+	  else {
+            return 0;
+          }
 	}
 	double n = double(e.info(EntryImage::Normalization));
 	return n > 0 ? sum / n : sum;
@@ -209,7 +210,11 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     while( (pos=match.indexIn(expr,pos)) != -1) {
       mlen = match.matchedLength();
       QString use = expr.mid(pos+1,mlen-2);
-      unsigned lo, hi;  _parseIndices(use,lo,hi);
+      unsigned lo, hi;  
+      if (!_parseIndices(use,lo,hi)) {
+        pos += mlen;
+        continue;
+      }
       Term* t;
       switch(input.type()) {
 	CASETERM(Waveform);
@@ -248,9 +253,11 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     }
     new_expr.append(expr.mid(last));
 
-    std::list<Variable*> variables; // none
-    Expression parser(variables);
-    _term = parser.evaluate(new_expr);
+//     std::list<Variable*> variables; // none
+//     Expression parser(variables);
+//     _term = parser.evaluate(new_expr);
+    FeatureExpression parser;
+    _term = parser.evaluate(features,new_expr);
     if (!_term)
       printf("BinMath failed to parse %s (%s)\n",qPrintable(new_expr),_expression);
   }
@@ -320,7 +327,7 @@ Entry&     BinMath::_operate(const Entry& e) const
     case DescEntry::Prof:  
       if (!_fterm)
 	return *_entry;
-      { bool damaged=false; double x=_fterm->evaluate();
+     { bool damaged=false; double x=_fterm->evaluate();
 	if (!damaged) {
 	  EntryProf* en = static_cast<EntryProf*  >(_entry);
 	  en->addy(y,x);
@@ -348,15 +355,19 @@ Entry&     BinMath::_operate(const Entry& e) const
   return *_entry;
 }
 
-static void _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
+static bool _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
 {
   int index = use.indexOf(_integrate);
-  if (index == -1)
+  if (index == -1) {
     lo = hi = use.toInt();
+    if (lo > MAX_INDEX)
+      return false;
+  }
   else {
     lo = use.mid(0,index).toInt();
     hi = use.mid(index+1,-1).toInt();
-    if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
+    //    if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
   }
+  return true;
 }
 
