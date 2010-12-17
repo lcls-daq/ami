@@ -21,6 +21,7 @@ static const unsigned Offset=1024;
 static const unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
 static const unsigned MinCalib=25;
 
+#define COMMONMODE
 #define TFORM
 
 namespace Ami {
@@ -189,6 +190,29 @@ void PnccdHandler::_end_calib()
 
 void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 {
+  //  Common mode
+  int32_t common[256];
+#ifdef COMMONMODE
+  for(unsigned ix=0; ix<256; ) {
+    for(unsigned i=0; i<8; i++,ix++) {
+      const uint16_t* p  = 2*512 + (ix<<1) + d;
+      const uint16_t* p1 = 3*512 + (ix<<1) + d;
+      int32_t v = 0;
+      for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
+        v += 
+          (p [0]&0x3fff) +
+          (p [1]&0x3fff) +
+          (p1[0]&0x3fff) +
+          (p1[1]&0x3fff);
+        v -= _correct->content(ix+(x>>1),iy);
+      }
+      common[ix] = v/16;
+    }
+  }
+#else
+  memset(common, 0, 256*sizeof(int32_t));
+#endif
+
   //  PixelsPerBin = 2
   unsigned iy = y>>1;
   for(unsigned j=0; j<rows_segment; j+=2,iy++,d+=cols_segment) {
@@ -201,11 +225,12 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 	(d1[0]&0x3fff) +
 	(d1[1]&0x3fff);
 
-      if (_collect)
-	_calib[iy*(cols>>1)+ix].add(v);
+//       if (_collect)
+// 	_calib[iy*(cols>>1)+ix].add(v);
 
       v += Offset<<2;
       v -= _correct->content(ix, iy);
+      v -= common[ix-(x>>1)];
 #ifdef TFORM
       _entry->content(v, iy, 511-ix);
 #else
@@ -219,6 +244,28 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 
 void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 {
+  //  Common mode
+  int32_t common[256];
+#ifdef COMMONMODE
+  for(unsigned ix=0; ix<256; ) {
+    for(unsigned i=0; i<8; i++,ix++) {
+      const uint16_t* p  = 2*512 + (ix<<1) + d;
+      const uint16_t* p1 = 3*512 + (ix<<1) + d;
+      int32_t v = 0;
+      for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
+        v += 
+          (p [0]&0x3fff) +
+          (p [1]&0x3fff) +
+          (p1[0]&0x3fff) +
+          (p1[1]&0x3fff);
+        v -= _correct->content((x>>1)-ix,iy);
+      }
+      common[ix] = v/16;
+    }
+  }
+#else
+  memset(common, 0, 256*sizeof(int32_t));
+#endif
   //  PixelsPerBin = 2
   unsigned iy = y>>1;
   for(unsigned j=0; j<rows_segment; j+=2,iy--,d+=cols_segment) {
@@ -231,11 +278,12 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 	(d1[0]&0x3fff) +
 	(d1[1]&0x3fff);
 
-      if (_collect)
-	_calib[iy*(cols>>1)+ix].add(v);
+//       if (_collect)
+// 	_calib[iy*(cols>>1)+ix].add(v);
 
       v += Offset<<2;
       v -= _correct->content(ix, iy);
+      v -= common[(x>>1)-ix];
 #ifdef TFORM
       _entry->content(v, iy, 511-ix);
 #else
