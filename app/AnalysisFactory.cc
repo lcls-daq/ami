@@ -91,11 +91,16 @@ void AnalysisFactory::configure(unsigned       id,
 	printf("AnalysisFactory::configure failed input for configure request:\n");
 	printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
       }
-      else {
+      else if (req.state()==ConfigureRequest::Create) {
 	const char*  p     = reinterpret_cast<const char*>(&req+1);
 	Analysis* a = new Analysis(id, *input, req.output(),
 				   cds, _features, p);
 	_analyses.push_back(a);
+      }
+      else if (req.state()==ConfigureRequest::SetOpt) {
+        unsigned o = *reinterpret_cast<const unsigned*>(&req+1);
+        printf("Set options %x on entry %p\n",o,input);
+        const_cast<Ami::DescEntry&>(input->desc()).options(o);
       }
     }
     payload += req.size();

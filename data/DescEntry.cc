@@ -10,11 +10,12 @@ DescEntry::DescEntry(const char* name,
 		     Type type, 
 		     unsigned short size,
 		     bool isnormalized,
-		     bool doaggregate) :
+		     bool doaggregate,
+                     unsigned options) :
   Desc(name),
   _channel(-1),
   _group(-1),
-  _options(0),
+  _options(options<<User),
   _type(type),
   _size(size)
 { 
@@ -35,12 +36,13 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
 		     Type type, 
 		     unsigned short size,
 		     bool isnormalized,
-		     bool doaggregate) :
+		     bool doaggregate,
+                     unsigned options) :
   Desc(name),
   _info   (info),
   _channel(channel),
   _group(-1),
-  _options(0),
+  _options(options<<User),
   _type(type),
   _size(size)
 { 
@@ -73,6 +75,11 @@ void DescEntry::normalize(bool v) {
 void DescEntry::aggregate(bool v) {
   if (v) _options |=  (1<<Aggregate);
   else   _options &= ~(1<<Aggregate);
+}
+
+void DescEntry::options(unsigned o) {
+  _options &= (1<<User)-1;
+  _options |= o<<User;
 }
 
 void DescEntry::xwarnings(float warn, float err) 

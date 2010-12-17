@@ -11,7 +11,7 @@ namespace Ami {
 
   class ConfigureRequest {
   public:
-    enum State { Create, Destroy };
+    enum State { Create, Destroy, SetOpt };
     enum Source { Discovery, Analysis, Summary, User };
     ConfigureRequest(State        state, 
 		     Source       source,
@@ -28,6 +28,16 @@ namespace Ami {
 		     Source       source) : 
       _state(state), _source(source), _input(-1), _output(-1), _size(sizeof(*this))
     {
+    }
+    ConfigureRequest(int          input,
+                     unsigned     options) :
+      _state (SetOpt),
+      _source(Discovery),
+      _input (input),
+      _output(-1),
+      _size  (sizeof(*this)+sizeof(options))
+    {
+      *reinterpret_cast<unsigned*>(this+1)=options;
     }
   public:
     State  state () const { return _state; }

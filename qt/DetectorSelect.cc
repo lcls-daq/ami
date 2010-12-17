@@ -3,6 +3,7 @@
 #include "ami/qt/QtTopWidget.hh"
 #include "ami/qt/WaveformClient.hh"
 #include "ami/qt/ImageClient.hh"
+#include "ami/qt/CspadClient.hh"
 #include "ami/qt/EnvClient.hh"
 #include "ami/qt/SummaryClient.hh"
 #include "ami/qt/Path.hh"
@@ -324,9 +325,9 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
   case Pds::DetInfo::Opal1000 : 
   case Pds::DetInfo::TM6740   : 
   case Pds::DetInfo::pnCCD    :
-  case Pds::DetInfo::Cspad    :
   case Pds::DetInfo::Princeton: 
   case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
+  case Pds::DetInfo::Cspad    : client = new Ami::Qt::CspadClient   (this, info, channel); break;
   default: printf("Device type %x not recognized\n", info.device()); break;
   }
   return client;

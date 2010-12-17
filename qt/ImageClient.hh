@@ -18,7 +18,7 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
       void save_plots(const QString&) const;
-    private:
+    protected:
       void _configure(char*& p, 
 		      unsigned input, 
 		      unsigned& output,
