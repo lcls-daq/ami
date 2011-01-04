@@ -9,7 +9,7 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
   ImageClient(w, i, u)
 {
   addWidget(_spBox = new QCheckBox("Suppress\nBad Pixels"));
-  addWidget(_fnBox = new QCheckBox("Correct\nFrame Noise"));
+  addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
 }
 
 CspadClient::~CspadClient() {}

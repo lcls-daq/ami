@@ -134,7 +134,7 @@ static double frameNoise(const uint16_t*  data,
   const int fnPixelMin = -100 + Offset;
   const int fnPixelMax =  100 + Offset;
   const int fnPixelBins = fnPixelMax - fnPixelMin;
-
+  const int peakSpace   = 5;
   //  histogram the pixel values
   unsigned hist[fnPixelBins];
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
@@ -165,14 +165,21 @@ static double frameNoise(const uint16_t*  data,
       i++;
     }
 
-    unsigned thresholdPeakBinContent;
-    while( int(i)<fnPixelRange ) {
-      thresholdPeakBinContent = hist[i++];
-      if (hist[i]<thresholdPeakBinContent)
-        break;
+    unsigned thresholdPeakBin=i;
+    unsigned thresholdPeakBinContent=hist[i];
+    while( int(++i)<fnPixelRange ) {
+      if (hist[i]<thresholdPeakBinContent) {
+        if (i > thresholdPeakBin+peakSpace)
+          break;
+      }
+      else {
+        thresholdPeakBin = i;
+        thresholdPeakBinContent = hist[i];
+      }
     }
 
-    if ( int(i)<fnPixelRange ) {
+    i = thresholdPeakBin;
+    if ( int(i)+fnPeakBins<=fnPixelRange ) {
       unsigned s0 = 0;
       unsigned s1 = 0;
       for(unsigned j=i-fnPeakBins-1; j<i+fnPeakBins; j++) {
