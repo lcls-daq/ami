@@ -19,6 +19,7 @@
 #include "ami/event/CspadHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
+#include "ami/event/AcqTdcHandler.hh"
 #include "ami/event/DiodeFexHandler.hh"
 #include "ami/event/IpmFexHandler.hh"
 #include "ami/data/FeatureCache.hh"
@@ -173,6 +174,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       EventHandler* h = 0;
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
+      case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
       case Pds::TypeId::Id_FrameFexConfig:
 	switch(info.device()) {
 	case Pds::DetInfo::Opal1000:         h = new Opal1kHandler     (info); break;

@@ -5,6 +5,7 @@
 #include "ami/qt/ImageClient.hh"
 #include "ami/qt/CspadClient.hh"
 #include "ami/qt/EnvClient.hh"
+#include "ami/qt/TdcClient.hh"
 #include "ami/qt/SummaryClient.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PrintAction.hh"
@@ -322,6 +323,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     break;
   case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
   case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
+  case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
   case Pds::DetInfo::Opal1000 : 
   case Pds::DetInfo::TM6740   : 
   case Pds::DetInfo::pnCCD    :

@@ -29,7 +29,7 @@ qt_libs += qwt/qwt
 # List project libraries (if any) needed by exe_a as <project>/<lib>.
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-tgtlibs_online_ami := pdsdata/xtcdata
+tgtlibs_online_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
 
@@ -151,6 +151,8 @@ libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += CspadClient.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc
 libsrcs_amiqt += EnvClient.cc EnvClient_moc.cc
+libsrcs_amiqt += TdcPlot.cc TdcPlot_moc.cc
+libsrcs_amiqt += TdcClient.cc TdcClient_moc.cc
 libsrcs_amiqt += SummaryClient.cc SummaryClient_moc.cc
 libsrcs_amiqt += DetectorGroup.cc DetectorGroup_moc.cc
 libsrcs_amiqt += DetectorSave.cc

@@ -63,9 +63,16 @@ Expression::~Expression() {}
 
 QString& Expression::_process(QString& text,const QChar& o) 
 {
-  QRegExp constantMatch   ("[\\+\\-]?[0-9]*[\\.]?[0-9]*");
-  QRegExp revConstantMatch("[0-9]*[\\.]?[0-9]*[\\+\\-]?");
-  QRegExp termMatch       ("\\[[0-9a-fA-F]+\\]");
+  static const QRegExp constantMatch   ("[\\+\\-]?[0-9]*[\\.]?[0-9]*");
+  static const QRegExp revConstantMatch("[0-9]*[\\.]?[0-9]*[\\+\\-]?");
+  static const QRegExp termMatch       ("\\[[0-9a-fA-F]+\\]");
+  static const QChar   unaryBoundA[] = {QChar('('),
+					_exponentiate,
+					_multiply,
+					_divide,
+					_add,
+					_subtract};
+  static const QString unaryBound      (unaryBoundA,6);
 
   int index, first = 0, last = 0;
   while( (index=text.indexOf(o))!=-1 ) {  // left-to-right
@@ -162,6 +169,11 @@ QString& Expression::_process(QString& text,const QChar& o)
       int len = revConstantMatch.matchedLength();
       first = index-len;
       QString str = text.mid(first,len);
+      if (str[0]=='+' || str[0]=='-') {  // check for unary +,-
+	if (first>0 && !unaryBound.contains(text[first-1])) {
+	  str = text.mid(++first,--len);
+	}
+      }
       double v = str.toDouble();
       a = new Constant("constant",v);
 #ifdef DBUG

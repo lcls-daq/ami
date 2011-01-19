@@ -6,6 +6,7 @@
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryRef.hh"
 
 #include <stdio.h>
 
@@ -24,6 +25,7 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     CASE_NEW(Scan);
     CASE_NEW(Image);
     CASE_NEW(Waveform);
+    CASE_NEW(Ref);
   default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); break;
   }
   return entry;
