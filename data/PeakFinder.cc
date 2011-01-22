@@ -58,6 +58,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   const DescImage& d = entry.desc();
   const unsigned nx = d.nbinsx();
   const unsigned ny = d.nbinsy();
+  const unsigned threshold = _threshold_value + entry.info(EntryImage::Pedestal);
 
   // find the peak positions which are above the threshold
   const unsigned* a = entry.contents();
@@ -66,7 +67,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
     const unsigned* c = b + nx;
     for(unsigned j=1; j<nx-1; j++) {
       unsigned v = b[j];
-      if (v > _threshold_value &&
+      if (v > threshold &&
 	  v > b[j-1] && 
 	  v > b[j+1] &&
 	  v > a[j-1] && 
