@@ -30,8 +30,8 @@ void Cds::add(Entry* entry, unsigned signature)
   _entries.push_back(entry);
 
 #ifdef DBUG
-  printf("Cds %s added entry %s type %d signature %d nentries %d\n",
-   	 _desc.name(),entry->desc().name(),entry->desc().type(),signature,totalentries());
+  printf("Cds %s added entry %s (%p) type %d signature %d nentries %d\n",
+   	 _desc.name(),entry->desc().name(),entry,entry->desc().type(),signature,totalentries());
 #endif
 }
 
@@ -40,8 +40,8 @@ void Cds::remove(Entry* entry)
   _entries.remove(entry);
 
 #ifdef DBUG
-  printf("Cds %s removed entry %s type %d signature %d nentries %d\n",
-  	 _desc.name(),entry->desc().name(),entry->desc().type(),entry->desc().signature(),totalentries());
+  printf("Cds %s removed entry %s (%p) type %d signature %d nentries %d\n",
+  	 _desc.name(),entry->desc().name(),entry,entry->desc().type(),entry->desc().signature(),totalentries());
 #endif
 }
 

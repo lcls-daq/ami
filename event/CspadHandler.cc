@@ -756,7 +756,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   sprintf(oname,"sta.%08x.dat",info().phy());
   FILE* s = fopen(oname,"r");
-  if (f)
+  if (s)
     printf("Loaded status map from %s\n",oname);
   else
     printf("Failed to load status map\n");
@@ -794,6 +794,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 }
 
 void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void CspadHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {

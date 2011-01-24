@@ -36,7 +36,7 @@ void CspadClient::_configure(char*& p,
                              unsigned nchannels)
 {
   ImageClient::_configure(p,input,output,ch,signatures,nchannels);
-  
+
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= 2;
   if (_spBox->isChecked()) o |= 1;
