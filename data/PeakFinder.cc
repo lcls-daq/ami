@@ -31,6 +31,7 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   _threshold_value(EXTRACT(p, unsigned)),
   _output_entry   (static_cast<EntryImage*>(EntryFactory::entry(e)))
 {
+  _output_entry->info(0,EntryImage::Pedestal);
   _threshold_value *= _output_entry->desc().ppxbin();
   _threshold_value *= _output_entry->desc().ppybin();
 }
