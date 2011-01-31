@@ -6,12 +6,13 @@ namespace Ami {
   class FeatureCache;
   class FilterFactory {
   public:
+    FilterFactory();
     FilterFactory(FeatureCache&);
     ~FilterFactory();
   public:
     AbsFilter* deserialize(const char*&) const;
   private:
-    FeatureCache& _f;
+    FeatureCache* _f;
   };
 };
 

@@ -7,6 +7,7 @@
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
 #include "ami/qt/Path.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include "ami/data/AbsFilter.hh"
 #include "ami/data/FilterFactory.hh"
@@ -19,7 +20,6 @@
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EnvPlot.hh"
-#include "ami/data/RawFilter.hh"
 
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
@@ -57,8 +57,8 @@ EnvPlot::EnvPlot(QWidget*     parent,
   _output_signature(0),
   _plot    (0)
 {
-  //  Ami::FilterFactory factory(FeatureRegistry::instance());
-  //  _filter = factory.deserialize(p);
+  Ami::FilterFactory factory;
+  _filter = factory.deserialize(p);
 
   char* buff = new char[sizeof(DescProf)];
   DescEntry* desc = (DescEntry*)buff;
@@ -88,7 +88,7 @@ EnvPlot::~EnvPlot()
 void EnvPlot::save(char*& p) const
 {
   QtPlot::save(p);
-  //  _filter->serialize(p);
+  p = (char*)_filter->serialize(p);
   memcpy(p, _desc, _desc->size()); p += _desc->size();
 }
 
@@ -149,7 +149,7 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 						  ConfigureRequest::Discovery,
 						  input,
 						  _output_signature = ++output,
-						  RawFilter(), op);
+						  *_filter, op);
   p += r.size();
 }
 

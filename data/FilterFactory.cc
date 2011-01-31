@@ -10,8 +10,10 @@
 
 using namespace Ami;
 
+FilterFactory::FilterFactory() : _f(0) {}
+
 FilterFactory::FilterFactory(FeatureCache& f) :
-  _f(f) {}
+  _f(&f) {}
 
 FilterFactory::~FilterFactory() {}
 
@@ -38,7 +40,7 @@ AbsFilter* FilterFactory::deserialize(const char*& p) const
       r = new LogicOr( *f0, *f1 ); }
     break;
   default:
-    printf("FilterFactory: unknown type %d\n",type);
+    printf("FilterFactory: unknown type %d @ %p\n",type,p-sizeof(uint32_t));
     break;
   }
   return r;

@@ -34,6 +34,8 @@ namespace Ami {
     signals:
       void changed();
     private:
+      void _apply();
+    private:
       QString    _name;
       QLineEdit* _expr;
       QLineEdit* _cond_name;

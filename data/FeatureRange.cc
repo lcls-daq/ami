@@ -18,15 +18,15 @@ FeatureRange::FeatureRange(const char* feature,
   strncpy(_feature, feature, NameSize);
 }
 
-FeatureRange::FeatureRange(const char*& p, FeatureCache& f) :
+FeatureRange::FeatureRange(const char*& p, FeatureCache* f) :
   AbsFilter(AbsFilter::FeatureRange)
 {
   _extract(p, _feature, NameSize);
   _extract(p, &_lo   , sizeof(_lo));
   _extract(p, &_hi   , sizeof(_hi));
-  _cache = &f;
-
-  _index = f.lookup(_feature);
+  _cache = f;
+  if (f)
+    _index = f->lookup(_feature);
 }
 
 FeatureRange::~FeatureRange()

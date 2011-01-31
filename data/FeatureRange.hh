@@ -9,7 +9,7 @@ namespace Ami {
   class FeatureRange : public AbsFilter {
   public:
     FeatureRange(const char* feature, double lo, double hi);
-    FeatureRange(const char*&, FeatureCache&);
+    FeatureRange(const char*&, FeatureCache*);
     ~FeatureRange();
   public:
     bool  accept() const;

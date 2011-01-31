@@ -154,21 +154,21 @@ void Filter::load(const char*& p)
     int index = _features->findText(variable);
     if (index<0)
       printf("Unable to identify %s\n",variable);
-    else {
-      Condition* c = new Condition(condition,
-				   QString("%1 := %2 <= %3 <= %4")
-				   .arg(condition)
-				   .arg(lo)
-				   .arg(variable)
-				   .arg(hi),
-				   new FeatureRange(variable,lo,hi));
-      _conditions.push_back(c);
-      _clayout->addWidget(c);
-      connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
-    }
 
+    Condition* c = new Condition(condition,
+                                 QString("%1 := %2 <= %3 <= %4")
+                                 .arg(condition)
+                                 .arg(lo)
+				   .arg(variable)
+                                 .arg(hi),
+                                 new FeatureRange(variable,lo,hi));
+    _conditions.push_back(c);
+    _clayout->addWidget(c);
+    connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
+    
     name = QtPersistent::extract_s(p);
   }
+  _apply();
 }
 
 void Filter::add  ()
@@ -206,7 +206,7 @@ void Filter::remove(const QString& name)
     }
 }
 
-void Filter::apply()
+void Filter::_apply()
 {
   if (_filter) delete _filter;
 
@@ -217,7 +217,11 @@ void Filter::apply()
     printf("Filter parser failed to evaluate %s\nResetting filter.\n",qPrintable(_expr->text()));
     clear();
   }
+}
 
+void Filter::apply()
+{
+  _apply();
   emit changed();
 }
 

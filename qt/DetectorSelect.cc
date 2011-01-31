@@ -226,7 +226,7 @@ void DetectorSelect::_load_setup_from_file(const char* fname)
   int size = fread(buffer,1,MaxConfigSize,f);
   fclose(f);
 
-  printf("Load %d bytes from %s\n",size,fname);
+  printf("Load %d bytes from %s @ %p\n",size,fname,buffer);
 
   set_setup(buffer, size);
 
