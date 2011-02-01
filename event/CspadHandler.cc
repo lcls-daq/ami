@@ -21,7 +21,7 @@
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 
-static const unsigned Offset = 1024;
+static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
 static unsigned ppb = 4;
 
@@ -125,6 +125,25 @@ static inline unsigned sum4(const uint16_t*& data,
     v -= unsigned(4*fn+0.5); }
   return v; }
 
+#if 1
+static double frameNoise(const uint16_t*  data,
+                         const uint16_t*  off,
+                         const uint16_t* const* sta)
+{
+  double sum = 0;
+  const unsigned ColBins = CsPad::ColumnsPerASIC;
+  const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;
+  const uint16_t* d(data);
+  const uint16_t* o(off );
+  for(unsigned i=0; i<ColBins; i++) {
+    for(unsigned j=0; j<RowBins; j++, d++, o++) {
+      int v = *d + *o - Offset;
+      sum += double(v);
+    }
+  }
+  return sum/double(ColBins*RowBins);
+}
+#else
 static double frameNoise(const uint16_t*  data,
                          const uint16_t*  off,
                          const uint16_t* const* sta)
@@ -190,11 +209,13 @@ static double frameNoise(const uint16_t*  data,
       v =  double(s1)/double(s0) + fnPixelMin - Offset;
     }
     else
-      printf("frameNoise : peak not found\n");
+      //      printf("frameNoise : peak not found\n");
+      ;
   }
 
   return v;
 }
+#endif
 
 namespace CspadGeometry {
 
