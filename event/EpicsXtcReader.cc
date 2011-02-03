@@ -65,7 +65,10 @@ void   EpicsXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
       index = _cache.add(ctrl.sPvName);
     }
 
-    _index[ctrl.iPvId] = index;
+    if (ctrl.iPvId < MaxPvs)
+      _index[ctrl.iPvId] = index;
+    else
+      printf("PV %s truncated from list\n",ctrl.sPvName);
   }
 }
 

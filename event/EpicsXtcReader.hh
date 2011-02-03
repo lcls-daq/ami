@@ -26,7 +26,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
-    enum { MaxPvs=1024 };
+    enum { MaxPvs=256 };
     int           _index[MaxPvs];
   };
 
