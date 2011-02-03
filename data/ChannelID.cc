@@ -37,9 +37,10 @@ static void _default(char* b, const DetInfo& info, unsigned channel)
 	    DetInfo::name(info.device  ()), 
 	    channel+1);
   else
-    sprintf(b,"UNK_%s_%s",
+    sprintf(b,"UNK_%s_%s_%d",
 	    DetInfo::name(info.detector()),
-	    DetInfo::name(info.device  ()));
+	    DetInfo::name(info.device  ()),
+            info.devId());
 }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
@@ -88,8 +89,15 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
     break;    
   default:
     switch(info.device()) {
-    case DetInfo::TM6740: sprintf(_buffer,"%sCvd",Pds::DetInfo::name(info.detector())); break;
-    default: _default(_buffer,info,channel); break;
+    case DetInfo::TM6740: 
+      sprintf(_buffer,"%sCvd",Pds::DetInfo::name(info.detector())); 
+      break;
+    case DetInfo::Princeton:
+      sprintf(_buffer,"PI_%d",info.devId()+1); 
+      break;
+    default: 
+      _default(_buffer,info,channel); 
+      break;
     } 
     break;
   }
