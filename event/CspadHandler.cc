@@ -70,39 +70,50 @@ static inline unsigned sum4(const uint16_t*& data)
 static inline unsigned sum1(const uint16_t*& data,
                             const uint16_t*& off,
                             const uint16_t* const*& psp,
-                            const double fn)
+                            const double fn,
+                            const float*& gn)
 { 
   unsigned v;
   if (off==*psp) { psp++; v = Offset; }
-  else { v = *data + *off - unsigned(fn+0.5); }
+  else { 
+    double d = (*gn)*(double(*data + *off - Offset) - fn);
+    d += Offset; 
+    v = unsigned(d+0.5);
+  }
   data++;
   off++;
+  gn++;
   return v;
 }
 
 static inline unsigned sum2(const uint16_t*& data,
                             const uint16_t*& off,
                             const uint16_t* const*& psp,
-                            const double fn)
+                            const double fn,
+                            const float*& gn)
 {
   unsigned v;
   if (off==*psp) { 
     if (++off==*++psp) psp++;
     off++;
     data+=2; 
+    gn += 2;
     v = 2*Offset;
   }
   else {
-    v  = *data++ + *off++;
-    v += *data++ + *off++;
-    v -= unsigned(2*fn+0.5);
+    double d; 
+    d  = (*gn++)*(double(*data++ + *off++ - Offset)-fn);
+    d += (*gn++)*(double(*data++ + *off++ - Offset)-fn);
+    d += 2*Offset;
+    v = unsigned(d+0.5);
   }
   return v; }
 
 static inline unsigned sum4(const uint16_t*& data,
                             const uint16_t*& off,
                             const uint16_t* const*& psp,
-                            const double fn)
+                            const double fn,
+                            const float*& gn)
 {
   unsigned v;
   if (off==*psp) {
@@ -115,14 +126,17 @@ static inline unsigned sum4(const uint16_t*& data,
     }
     else off+=3;
     data += 4;
+    gn   += 4;
     v = 4*Offset;
   }
   else {
-    v  = *data++ + *off++;
-    v += *data++ + *off++;
-    v += *data++ + *off++;
-    v += *data++ + *off++;
-    v -= unsigned(4*fn+0.5); }
+    double d;
+    d  = (*gn++)*(double(*data++ + *off++ - Offset)-fn);
+    d += (*gn++)*(double(*data++ + *off++ - Offset)-fn);
+    d += (*gn++)*(double(*data++ + *off++ - Offset)-fn);
+    d += (*gn++)*(double(*data++ + *off++ - Offset)-fn); 
+    d += 4*Offset; 
+    v = unsigned(d+0.5); }
   return v; }
 
 #if 1
@@ -388,7 +402,7 @@ namespace CspadGeometry {
 
   class AsicP : public Asic {
   public:
-    AsicP(double x, double y, FILE* ped, FILE* status) :
+    AsicP(double x, double y, FILE* ped, FILE* status, FILE* gain) :
       Asic(x,y)
     { // load offset-pedestal 
       char* linep = NULL;
@@ -418,17 +432,37 @@ namespace CspadGeometry {
             if (strtoul(pEnd,&pEnd,0)) *sta++ = off;
         }
       }
-      _sta[0] = 0;
+      else
+        _sta[0] = 0;
+
+      if (gain) {
+        float* gn = _gn;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          getline(&linep, &sz, gain);
+          *gn++ = strtod(linep,&pEnd);
+          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ = strtod(pEnd,&pEnd);
+        }
+      }
+      else {
+        float* gn = _gn;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ = 1.;
+        }
+      }
     }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
 #define AsicTemplate(classname,bi)					\
   class classname : public AsicP {					\
   public:								\
-    classname(double x, double y, FILE* p, FILE* s) : AsicP(x,y,p,s) {} \
+    classname(double x, double y, FILE* p, FILE* s, FILE* g)            \
+      : AsicP(x,y,p,s,g) {}                                             \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -444,14 +478,15 @@ namespace CspadGeometry {
       uint16_t* zero = 0;                                               \
       const uint16_t*  off = _off;                                      \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
-      double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;             \
+      const float* gn = _gn;                                            \
+      double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
       bi;                                                               \
     }                                                                   \
   }
 
-#define F1 sum1(data,off,sta,fn)
-#define F2 sum2(data,off,sta,fn)
-#define F4 sum4(data,off,sta,fn)
+#define F1 sum1(data,off,sta,fn,gn)
+#define F2 sum2(data,off,sta,fn,gn)
+#define F4 sum4(data,off,sta,fn,gn)
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
@@ -491,7 +526,7 @@ namespace CspadGeometry {
   public:
     TwoByTwo(double x, double y, Rotation r, 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
-             FILE* f, FILE* s) 
+             FILE* f, FILE* s, FILE* g) 
     {
       for(unsigned i=0; i<2; i++) {
 	double tx(x), ty(y);
@@ -500,27 +535,27 @@ namespace CspadGeometry {
           switch(r) {
           case D0: 
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s); break;
-            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s); break;
-            default:      asic[i] = new  AsicD0B4P(tx,ty,f,s); break;
+            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g); break;
+            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g); break;
+            default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g); break;
             } break;
           case D90:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s); break;
-            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s); break;
-            default:      asic[i] = new  AsicD90B4P(tx,ty,f,s); break;
+            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g); break;
+            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g); break;
+            default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g); break;
             } break;
           case D180:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s); break;
-            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s); break;
-            default:      asic[i] = new  AsicD180B4P(tx,ty,f,s); break;
+            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g); break;
+            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g); break;
+            default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g); break;
             } break;
           case D270:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s); break;
-            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s); break;
-            default:      asic[i] = new  AsicD270B4P(tx,ty,f,s); break;
+            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g); break;
+            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g); break;
+            default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g); break;
             } break;
           default:
             break;
@@ -579,7 +614,7 @@ namespace CspadGeometry {
   public:
     Quad(double x, double y, Rotation r, 
          const Ami::Cspad::QuadAlignment& align,
-         FILE* pedFile=0, FILE* staFile=0)
+         FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0)
     {
       static Rotation _tr[] = {  D0  , D90 , D180, D90 ,
 				 D90 , D180, D270, D180,
@@ -589,7 +624,8 @@ namespace CspadGeometry {
 	Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
 	double tx(x), ty(y);
 	_transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
-	element[i] = new TwoByTwo( tx, ty, _tr[r*NPHI+i], ta, pedFile, staFile );
+	element[i] = new TwoByTwo( tx, ty, _tr[r*NPHI+i], ta, 
+                                   pedFile, staFile, gainFile );
       }
     }
     ~Quad() { for(unsigned i=0; i<4; i++) delete element[i]; }
@@ -618,7 +654,8 @@ namespace CspadGeometry {
   public:
     Detector(const Pds::CsPad::ConfigV2& c,
              FILE* f,
-             FILE* s) :
+             FILE* s,
+             FILE* g) :
       _config(c)
     {
       unsigned smask = 
@@ -675,10 +712,10 @@ namespace CspadGeometry {
 
       _pixels = pixels*4 + 2*bin0*ppb;
 
-      quad[0] = new Quad(x,y,D0  ,qalign[0],f,s);
-      quad[1] = new Quad(x,y,D90 ,qalign[1],f,s);
-      quad[2] = new Quad(x,y,D180,qalign[2],f,s);
-      quad[3] = new Quad(x,y,D270,qalign[3],f,s);
+      quad[0] = new Quad(x,y,D0  ,qalign[0],f,s,g);
+      quad[1] = new Quad(x,y,D90 ,qalign[1],f,s,g);
+      quad[2] = new Quad(x,y,D180,qalign[2],f,s,g);
+      quad[3] = new Quad(x,y,D270,qalign[3],f,s,g);
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
@@ -777,12 +814,27 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   sprintf(oname,"sta.%08x.dat",info().phy());
   FILE* s = fopen(oname,"r");
+  if (!s) {
+    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
+    s = fopen(oname,"r");
+  }
   if (s)
     printf("Loaded status map from %s\n",oname);
   else
     printf("Failed to load status map\n");
 
-  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload),f,s);
+  sprintf(oname,"gain.%08x.dat",info().phy());
+  FILE* g = fopen(oname,"r");
+  if (!g) {
+    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
+    g = fopen(oname,"r");
+  }
+  if (g)
+    printf("Loaded gain map from %s\n",oname);
+  else
+    printf("Failed to load gain map\n");
+
+  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload),f,s,g);
 
   if (_entry) 
     delete _entry;
