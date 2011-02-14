@@ -1,6 +1,8 @@
 #ifndef Ami_CspadAlignment_hh
 #define Ami_CspadAlignment_hh
 
+#include <stdio.h>
+
 //
 //  Class to convert optical alignment measurements for display
 //  Optical alignment coordinates assume device in quadrant 1 position
@@ -24,7 +26,9 @@ namespace Ami {
       struct { 
 	struct { double x,y; } _corner[4];
 	struct { double x,y; } _pad;
-      } _twobytwo[8];
+      } _twobyone[8];
+    public:
+      static QuadAlignment* load(FILE*);
     };
   }
 }

@@ -18,23 +18,13 @@
 #include <math.h>
 
 #define DO_PED_CORR
+//#define UNBINNED
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
 static unsigned ppb = 4;
-
-//
-//  TwoByTwo origins w.r.t. Quadrant origin
-//
-static const double _tx0[] = { -44.100e-3, -89.100e-3, -45.100e-3, -44.100e-3 };
-static const double _ty0[] = {   0.      ,  44.700e-3,  90.400e-3,  90.400e-3 };
-//
-//  ASIC origins w.r.t. TwoByTwo origin
-//
-static const double _ax0[] = { 1.000e-3,  1.000e-3, 22.335e-3, 22.335e-3 };
-static const double _ay0[] = { 1.000e-3, 23.488e-3,  1.000e-3, 23.488e-3 };
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
 
@@ -405,7 +395,7 @@ namespace CspadGeometry {
     AsicP(double x, double y, FILE* ped, FILE* status, FILE* gain) :
       Asic(x,y)
     { // load offset-pedestal 
-      char* linep = NULL;
+      char* linep = new char[8*1024];
       size_t sz = 0;
       char* pEnd;
 
@@ -451,6 +441,8 @@ namespace CspadGeometry {
             *gn++ = 1.;
         }
       }
+      
+      delete linep;
     }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
@@ -653,9 +645,10 @@ namespace CspadGeometry {
   class Detector {
   public:
     Detector(const Pds::CsPad::ConfigV2& c,
-             FILE* f,
-             FILE* s,
-             FILE* g) :
+             FILE* f,    // offsets
+             FILE* s,    // status
+             FILE* g,    // gain
+             FILE* gm) : // geometry
       _config(c)
     {
       unsigned smask = 
@@ -666,6 +659,10 @@ namespace CspadGeometry {
 
       //  Determine layout : binning, origin
       double x,y;
+
+      const Ami::Cspad::QuadAlignment* qalign = qalign_def;
+      if (gm) 
+        qalign = Ami::Cspad::QuadAlignment::load(gm);
 
       //
       //  Create a default layout
@@ -704,9 +701,10 @@ namespace CspadGeometry {
       int pixels = ((idx>idy) ? idx : idy);
       const int bin0 = 4;
       ppb = 1;
+#ifndef UNBINNED
       while((pixels*4/ppb+2*bin0) > 600)
 	ppb<<=1;
-      
+#endif      
       x += pixel_size*double(bin0*int(ppb) - xmin*4);
       y -= pixel_size*double(bin0*int(ppb) - ymin*4);
 
@@ -834,7 +832,21 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   else
     printf("Failed to load gain map\n");
 
-  _detector = new CspadGeometry::Detector(*reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload),f,s,g);
+  sprintf(oname,"geo.%08x.dat",info().phy());
+  FILE* gm = fopen(oname,"r");
+  if (!gm) {
+    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
+    gm = fopen(oname,"r");
+  }
+  if (gm)
+    printf("Loaded geometry from %s\n",oname);
+  else
+    printf("Failed to load geometry\n");
+
+  const Pds::CsPad::ConfigV2& cfg =
+    *reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload);
+
+  _detector = new CspadGeometry::Detector(cfg,f,s,g,gm);
 
   if (_entry) 
     delete _entry;
@@ -860,10 +872,10 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   _entry->info(0,EntryImage::Normalization);
   _entry->invalid();
 
-  if (f)
-    fclose(f);
-  if (s)
-    fclose(s);
+  if (f ) fclose(f);
+  if (s ) fclose(s);
+  if (g ) fclose(g);
+  if (gm) fclose(gm);
 }
 
 void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}

@@ -46,5 +46,5 @@ static const Ami::Cspad::QuadAlignment qproto = {
        {89628,	42372} } }
   };
 
-static const Ami::Cspad::QuadAlignment qalign[] = 
+static const Ami::Cspad::QuadAlignment qalign_def[] = 
   { qproto, qproto, qproto, qproto };
