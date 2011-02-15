@@ -18,7 +18,7 @@
 #include <math.h>
 
 #define DO_PED_CORR
-//#define UNBINNED
+#define UNBINNED
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 
