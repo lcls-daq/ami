@@ -129,7 +129,7 @@ static inline unsigned sum4(const uint16_t*& data,
     v = unsigned(d+0.5); }
   return v; }
 
-#if 1
+#if 0
 static double frameNoise(const uint16_t*  data,
                          const uint16_t*  off,
                          const uint16_t* const* sta)
@@ -180,8 +180,8 @@ static double frameNoise(const uint16_t*  data,
   // the first peak from the left above this is the pedestal
   { const int fnPeakBins = 3;
     const int fnPixelRange = fnPixelBins-fnPeakBins-1;
-    const unsigned fnPedestalThreshold = 200;
-
+    const unsigned fnPedestalThreshold = 100;
+    
     unsigned i=fnPeakBins;
     while( int(i)<fnPixelRange ) {
       if (hist[i]>fnPedestalThreshold) break;
@@ -209,8 +209,22 @@ static double frameNoise(const uint16_t*  data,
         s0 += hist[j];
         s1 += hist[j]*j;
       }
+      
+      double binMean = double(s1)/double(s0);
+      v =  binMean + fnPixelMin - Offset;
+      
+      s0 = 0;
+      unsigned s2 = 0;
+      for(unsigned j=i-10; j<i+fnPeakBins; j++) {
+        s0 += hist[j];
+	s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
+      }
+      const double allowedPedestalWidthSquared = 2.5*2.5;
+      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
+      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0; 
+      // this isn't the standard rms around the mean, but should be similar if rms_real < 3
+      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
 
-      v =  double(s1)/double(s0) + fnPixelMin - Offset;
     }
     else
       //      printf("frameNoise : peak not found\n");
