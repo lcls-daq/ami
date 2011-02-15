@@ -22,7 +22,12 @@ Cds::~Cds()
   reset();
 }
 
-void Cds::add(Entry* entry) { add(entry,_signature++); }
+unsigned Cds::add(Entry* entry) 
+{
+  unsigned s = _signature++; 
+  add(entry,s);
+  return s; 
+}
 
 void Cds::add(Entry* entry, unsigned signature)
 {

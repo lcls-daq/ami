@@ -97,6 +97,7 @@ libsrcs_amiqt += DescProf.cc DescProf_moc.cc
 libsrcs_amiqt += DescScan.cc DescScan_moc.cc
 libsrcs_amiqt += DescChart.cc DescChart_moc.cc
 libsrcs_amiqt += ScalarPlotDesc.cc
+libsrcs_amiqt += XYHistogramPlotDesc.cc
 libsrcs_amiqt += XYProjectionPlotDesc.cc
 libsrcs_amiqt += RPhiProjectionPlotDesc.cc
 libsrcs_amiqt += QtPersistent.cc

@@ -5,6 +5,7 @@
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/ZoomPlot.hh"
+#include "ami/qt/XYHistogramPlotDesc.hh"
 #include "ami/qt/XYProjectionPlotDesc.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/ImageIntegral.hh"
@@ -16,6 +17,7 @@
 #include "ami/data/DescProf.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/BinMath.hh"
+#include "ami/data/XYHistogram.hh"
 #include "ami/data/XYProjection.hh"
 
 #include <QtGui/QGridLayout>
@@ -34,7 +36,7 @@
 
 using namespace Ami::Qt;
 
-enum { PlotProjection, PlotIntegral };
+enum { PlotHistogram, PlotProjection, PlotIntegral };
 
 ImageXYProjection::ImageXYProjection(QWidget*           parent,
 				     ChannelDefinition* channels[],
@@ -61,9 +63,11 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
   QPushButton* closeB = new QPushButton("Close");
 
   _plot_tab        = new QTabWidget(0);
+  _histogram_plot  = new XYHistogramPlotDesc (0, *_rectangle);
   _projection_plot = new XYProjectionPlotDesc(0, *_rectangle);
   //  _integral_plot   = new ScalarPlotDesc(0);
   _integral_plot   = new ImageIntegral(0);
+  _plot_tab->insertTab(PlotHistogram ,_histogram_plot ,"Histogram");
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
   _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
 
@@ -119,6 +123,7 @@ void ImageXYProjection::save(char*& p) const
   QtPersistent::insert(p,_title->text());
   QtPersistent::insert(p,_plot_tab->currentIndex());
   
+  _histogram_plot ->save(p);
   _projection_plot->save(p);
   _integral_plot  ->save(p);
 
@@ -150,6 +155,7 @@ void ImageXYProjection::load(const char*& p)
   _title->setText(QtPersistent::extract_s(p));
   _plot_tab->setCurrentIndex(QtPersistent::extract_i(p));
 
+  _histogram_plot ->load(p);
   _projection_plot->load(p);
   _integral_plot  ->load(p);
 
@@ -259,10 +265,14 @@ void ImageXYProjection::set_channel(int c)
 void ImageXYProjection::plot()
 {
   switch(_plot_tab->currentIndex()) {
+  case PlotHistogram:
   case PlotProjection:
-    { ProjectionPlot* plot = 
-	new ProjectionPlot(this,_title->text(), _channel, 
-			   _projection_plot->desc(qPrintable(_title->text())));
+    { AbsOperator* op = _plot_tab->currentIndex()==PlotHistogram ?
+        static_cast<AbsOperator*>(_histogram_plot ->desc(qPrintable(_title->text()))) :
+        static_cast<AbsOperator*>(_projection_plot->desc(qPrintable(_title->text())));
+      ProjectionPlot* plot = 
+	new ProjectionPlot(this,_title->text(), _channel, op);
+                           
       
       _pplots.push_back(plot);
 
@@ -295,6 +305,15 @@ void ImageXYProjection::plot()
 
 void ImageXYProjection::zoom()
 {
+#if 1
+  ZoomPlot* plot = new ZoomPlot(this,
+				_channels[_channel]->name(),
+				_channel,
+				unsigned(_rectangle->xlo()),
+				unsigned(_rectangle->ylo()),
+                                unsigned(_rectangle->xhi()),
+                                unsigned(_rectangle->yhi()));
+#else
   ZoomPlot* plot = new ZoomPlot(this,
 				_channels[_channel]->name(),
 				_channel,
@@ -302,7 +321,7 @@ void ImageXYProjection::zoom()
 				_rectangle->iylo(),
 				_rectangle->ixhi(),
 				_rectangle->iyhi());
-
+#endif
   _zplots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
@@ -312,6 +331,7 @@ void ImageXYProjection::zoom()
 
 void ImageXYProjection::remove_plot(QObject* obj)
 {
+  printf("Removing plot %p\n",obj);
   { ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
     _pplots.remove(plot); }
 
@@ -322,6 +342,8 @@ void ImageXYProjection::remove_plot(QObject* obj)
     _zplots.remove(plot); }
 
   disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+  emit changed();
 }
 
 void ImageXYProjection::configure_plot()

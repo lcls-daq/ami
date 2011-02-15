@@ -250,10 +250,6 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
   }
   else if (_operator) {
     _output_signature = ++output;
-//     if (_changed) {
-//       _changed=false;
-//       _output_signature = ++output;
-//     }
     ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						    source,
 						    input,

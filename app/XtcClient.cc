@@ -74,6 +74,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     //  Cleanup previous entries
     _factory.discovery().reset();
+    _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
     if (_user) _user->reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
@@ -89,10 +90,18 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     Pds::DetInfo noInfo;
     _factory.discovery().add(_entry = new EntryScalar(noInfo,0,"XtcClient","timestamp"));
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-      for(unsigned k=0; k<(*it)->nentries(); k++) {
-	_factory.discovery().add   (const_cast<Entry*>((*it)->entry(k)));
+      for(unsigned k=0; k<(*it)->nentries(); k++) {                     
+        const Entry* e = (*it)->entry(k);
+        if (e) {
+          unsigned signature = _factory.discovery().add   (const_cast<Entry*>(e));
+          const Entry* o = (*it)->hidden_entry(k);
+          if (o) 
+            _factory.hidden().add   (const_cast<Entry*>(o),signature);
+        }
       }
     }
+    _factory.discovery().showentries();
+    _factory.hidden   ().showentries();
 
     printf("XtcClient configure done\n");
 

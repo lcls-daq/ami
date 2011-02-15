@@ -35,7 +35,8 @@ namespace Ami {
 			      const void* payload, const Pds::ClockTime& t);
   public:
     virtual unsigned     nentries() const = 0;
-    virtual const Entry* entry   (unsigned) const = 0;
+    virtual const Entry* entry            (unsigned) const = 0;
+    virtual const Entry* hidden_entry     (unsigned) const { return 0; }
     virtual void         reset   () = 0;
   public:
     const Pds::Src&     info() const { return _info; }

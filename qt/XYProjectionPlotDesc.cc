@@ -23,7 +23,7 @@ XYProjectionPlotDesc::XYProjectionPlotDesc(QWidget* parent,
   _rectangle(r)
 {
   QRadioButton* xaxisB = new QRadioButton("X");
-  QRadioButton* yaxisB = new QRadioButton("Y");
+ QRadioButton* yaxisB = new QRadioButton("Y");
   _axis = new QButtonGroup;
   _axis->addButton(xaxisB,0);
   _axis->addButton(yaxisB,1);

@@ -18,7 +18,7 @@ namespace Ami {
     Cds(const char* name);
     ~Cds();
   
-    void           add         (Entry* entry);
+    unsigned       add         (Entry* entry);
     void           add         (Entry* entry, unsigned signature);
     void           remove      (Entry* entry);
     const Entry*   entry       (int signature) const;

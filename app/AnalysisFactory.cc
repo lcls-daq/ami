@@ -19,6 +19,7 @@ AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
 				 UserAnalysis*  user) :
   _srv       (srv),
   _cds       ("Analysis"),
+  _ocds      ("Hidden"),
   _configured(Semaphore::EMPTY),
   _sem       (Semaphore::FULL),
   _features  (cache),
@@ -33,6 +34,7 @@ AnalysisFactory::~AnalysisFactory()
 FeatureCache& AnalysisFactory::features() { return _features; }
 
 Cds& AnalysisFactory::discovery() { return _cds; }
+Cds& AnalysisFactory::hidden   () { return _ocds; }
 
 //
 //  The discovery cds has changed
@@ -85,11 +87,21 @@ void AnalysisFactory::configure(unsigned       id,
       }
     }
     else {
-      const Cds& input_cds = req.source() == ConfigureRequest::Discovery ? _cds : cds;
+      const Cds* pcds = 0;
+      switch(req.source()) {
+      case ConfigureRequest::Discovery: pcds = &_cds; break;
+      case ConfigureRequest::Analysis : pcds = & cds; break;
+      case ConfigureRequest::Hidden   : pcds = &_ocds; break;
+      default:
+        printf("AnalysisFactory::configure unknown source %d\n",req.source());
+        break;
+      }
+      const Cds& input_cds = *pcds;
       const Entry* input = input_cds.entry(req.input());
       if (!input) {
 	printf("AnalysisFactory::configure failed input for configure request:\n");
 	printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
+        input_cds.showentries();
       }
       else if (req.state()==ConfigureRequest::Create) {
 	const char*  p     = reinterpret_cast<const char*>(&req+1);

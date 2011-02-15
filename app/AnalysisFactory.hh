@@ -25,6 +25,7 @@ namespace Ami {
   public:
     FeatureCache& features();
     Cds& discovery();
+    Cds& hidden   ();
     void discover ();
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
@@ -32,6 +33,7 @@ namespace Ami {
   private:
     ServerManager& _srv;
     Cds       _cds;
+    Cds       _ocds;
     typedef std::list<Analysis*> AnList;
     AnList    _analyses;
     Semaphore _configured;

@@ -4,10 +4,14 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/ImageGridScale.hh"
+#include "ami/qt/ChannelDefinition.hh"
+#include "ami/qt/Filter.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
+#include "ami/data/ConfigureRequest.hh"
+#include "ami/data/Zoom.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -64,6 +68,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 
 ZoomPlot::~ZoomPlot()
 {
+  printf("ZoomPlot %p deleted\n",this);
 }
 
 void ZoomPlot::save(char*& p) const
@@ -105,10 +110,30 @@ void ZoomPlot::setup_payload(Cds& cds)
   }
 }
 
-void ZoomPlot::configure(char*& p, unsigned input, unsigned& output,
-			  ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
+void ZoomPlot::configure(char*& p, 
+                         unsigned input, 
+                         unsigned& output,
+                         ChannelDefinition* input_channels[],
+                         int* input_signatures, 
+                         unsigned input_nchannels)
 {
+#if 1
+  DescImage image(qPrintable(_name),
+                  unsigned(_x1-_x0+1), unsigned(_y1-_y0+1),
+                    1,   1,
+                  _x0, _y0);
+  Ami::Zoom zoom(image, input_channels[_input]->oper());
+
+  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+						  ConfigureRequest::Hidden,
+						  input,
+						  _signature = ++output,
+						  *input_channels[_input]->filter().filter(),
+						  zoom);
+  p += r.size();
+#else
   _signature = input_signatures[_input];
+#endif
 }
 
 void ZoomPlot::update()

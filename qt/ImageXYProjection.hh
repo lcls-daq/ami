@@ -24,6 +24,7 @@ namespace Ami {
     class ProjectionPlot;
     class CursorPlot;
     class ZoomPlot;
+    class XYHistogramPlotDesc;
     class XYProjectionPlotDesc;
     class ScalarPlotDesc;
     class ImageIntegral;
@@ -64,6 +65,7 @@ namespace Ami {
       QLineEdit*    _title;
       QTabWidget*   _plot_tab;
 
+      XYHistogramPlotDesc*  _histogram_plot;
       XYProjectionPlotDesc* _projection_plot;
       //      ScalarPlotDesc*       _integral_plot;
       ImageIntegral*        _integral_plot;

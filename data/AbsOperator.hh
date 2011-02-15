@@ -21,7 +21,8 @@ namespace Ami {
     enum Type { Single, Average, Mean, Integral, Value, 
 		XYProjection, RPhiProjection, 
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
-		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot };
+		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
+                XYHistogram, Zoom };
     AbsOperator(Type t);
     virtual ~AbsOperator() {}
     Entry&       operator ()(const Entry&) const;

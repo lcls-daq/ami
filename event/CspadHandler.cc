@@ -18,13 +18,11 @@
 #include <math.h>
 
 #define DO_PED_CORR
-#define UNBINNED
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
-static unsigned ppb = 4;
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
 
@@ -334,9 +332,10 @@ namespace CspadGeometry {
   //
   class Asic {
   public:
-    Asic(double x, double y) :
-      column(unsigned( x/pixel_size)/ppb),
-      row   (unsigned(-y/pixel_size)/ppb) {}
+    Asic(double x, double y, unsigned ppbin) :
+      column(unsigned( x/pixel_size)/ppbin),
+      row   (unsigned(-y/pixel_size)/ppbin),
+      ppb(ppbin) {}
     virtual ~Asic() {}
   public:
     virtual void fill(Ami::DescImage& image) const = 0;
@@ -347,13 +346,14 @@ namespace CspadGeometry {
 			  unsigned& y0, unsigned& y1) const = 0;
   protected:
     unsigned column, row;
+    unsigned ppb;
     uint16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-#define AsicTemplate(classname,bi)					\
+#define AsicTemplate(classname,bi,PPB)					\
   class classname : public Asic {					\
   public:								\
-    classname(double x, double y) : Asic(x,y) {}                        \
+    classname(double x, double y) : Asic(x,y,PPB) {}                    \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -372,30 +372,30 @@ namespace CspadGeometry {
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
-  AsicTemplate(  AsicD0B1, BIN_ITER1);
-  AsicTemplate(  AsicD0B2, BIN_ITER2);
-  AsicTemplate(  AsicD0B4, BIN_ITER4);
+  AsicTemplate(  AsicD0B1, BIN_ITER1, 1);
+  AsicTemplate(  AsicD0B2, BIN_ITER2, 2);
+  AsicTemplate(  AsicD0B4, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)			    
 #define CALC_Y(a,b,c) (a+b)			     
-  AsicTemplate( AsicD90B1, BIN_ITER1);
-  AsicTemplate( AsicD90B2, BIN_ITER2);
-  AsicTemplate( AsicD90B4, BIN_ITER4);
+  AsicTemplate( AsicD90B1, BIN_ITER1, 1);
+  AsicTemplate( AsicD90B2, BIN_ITER2, 2);
+  AsicTemplate( AsicD90B4, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)			    
 #define CALC_Y(a,b,c) (a+c)			     
-  AsicTemplate(AsicD180B1, BIN_ITER1);
-  AsicTemplate(AsicD180B2, BIN_ITER2);
-  AsicTemplate(AsicD180B4, BIN_ITER4);
+  AsicTemplate(AsicD180B1, BIN_ITER1, 1);
+  AsicTemplate(AsicD180B2, BIN_ITER2, 2);
+  AsicTemplate(AsicD180B4, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)			    
 #define CALC_Y(a,b,c) (a-b)			     
-  AsicTemplate(AsicD270B1, BIN_ITER1);
-  AsicTemplate(AsicD270B2, BIN_ITER2);
-  AsicTemplate(AsicD270B4, BIN_ITER4);
+  AsicTemplate(AsicD270B1, BIN_ITER1, 1);
+  AsicTemplate(AsicD270B2, BIN_ITER2, 2);
+  AsicTemplate(AsicD270B4, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 
@@ -406,8 +406,8 @@ namespace CspadGeometry {
 
   class AsicP : public Asic {
   public:
-    AsicP(double x, double y, FILE* ped, FILE* status, FILE* gain) :
-      Asic(x,y)
+    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain) :
+      Asic(x,y,ppbin)
     { // load offset-pedestal 
       char* linep = new char[8*1024];
       size_t sz = 0;
@@ -464,11 +464,12 @@ namespace CspadGeometry {
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-#define AsicTemplate(classname,bi)					\
+#define AsicTemplate(classname,bi,PPB)					\
   class classname : public AsicP {					\
   public:								\
-    classname(double x, double y, FILE* p, FILE* s, FILE* g)            \
-      : AsicP(x,y,p,s,g) {}                                             \
+    classname(double x, double y,                                       \
+              FILE* p, FILE* s, FILE* g)                                \
+      : AsicP(x,y,PPB,p,s,g) {}                                         \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -496,30 +497,30 @@ namespace CspadGeometry {
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
-  AsicTemplate(  AsicD0B1P, BIN_ITER1);
-  AsicTemplate(  AsicD0B2P, BIN_ITER2);
-  AsicTemplate(  AsicD0B4P, BIN_ITER4);
+  AsicTemplate(  AsicD0B1P, BIN_ITER1, 1);
+  AsicTemplate(  AsicD0B2P, BIN_ITER2, 2);
+  AsicTemplate(  AsicD0B4P, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)			    
 #define CALC_Y(a,b,c) (a+b)			     
-  AsicTemplate( AsicD90B1P, BIN_ITER1);
-  AsicTemplate( AsicD90B2P, BIN_ITER2);
-  AsicTemplate( AsicD90B4P, BIN_ITER4);
+  AsicTemplate( AsicD90B1P, BIN_ITER1, 1);
+  AsicTemplate( AsicD90B2P, BIN_ITER2, 2);
+  AsicTemplate( AsicD90B4P, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)			    
 #define CALC_Y(a,b,c) (a+c)			     
-  AsicTemplate(AsicD180B1P, BIN_ITER1);
-  AsicTemplate(AsicD180B2P, BIN_ITER2);
-  AsicTemplate(AsicD180B4P, BIN_ITER4);
+  AsicTemplate(AsicD180B1P, BIN_ITER1, 1);
+  AsicTemplate(AsicD180B2P, BIN_ITER2, 2);
+  AsicTemplate(AsicD180B4P, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)			    
 #define CALC_Y(a,b,c) (a-b)			     
-  AsicTemplate(AsicD270B1P, BIN_ITER1);
-  AsicTemplate(AsicD270B2P, BIN_ITER2);
-  AsicTemplate(AsicD270B4P, BIN_ITER4);
+  AsicTemplate(AsicD270B1P, BIN_ITER1, 1);
+  AsicTemplate(AsicD270B2P, BIN_ITER2, 2);
+  AsicTemplate(AsicD270B4P, BIN_ITER4, 4);
 #undef CALC_X
 #undef CALC_Y
 
@@ -530,7 +531,7 @@ namespace CspadGeometry {
 
   class TwoByTwo {
   public:
-    TwoByTwo(double x, double y, Rotation r, 
+    TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
              FILE* f, FILE* s, FILE* g) 
     {
@@ -618,7 +619,7 @@ namespace CspadGeometry {
 
   class Quad {
   public:
-    Quad(double x, double y, Rotation r, 
+    Quad(double x, double y, unsigned ppb, Rotation r, 
          const Ami::Cspad::QuadAlignment& align,
          FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0)
     {
@@ -630,7 +631,7 @@ namespace CspadGeometry {
 	Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
 	double tx(x), ty(y);
 	_transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
-	element[i] = new TwoByTwo( tx, ty, _tr[r*NPHI+i], ta, 
+	element[i] = new TwoByTwo( tx, ty, ppb, _tr[r*NPHI+i], ta, 
                                    pedFile, staFile, gainFile );
       }
     }
@@ -662,7 +663,8 @@ namespace CspadGeometry {
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
-             FILE* gm) : // geometry
+             FILE* gm,   // geometry
+             unsigned max_pixels) :
       _config(c)
     {
       unsigned smask = 
@@ -682,15 +684,15 @@ namespace CspadGeometry {
       //  Create a default layout
       //
       _pixels = 2048-256;
-      ppb = 4;
+      _ppb = 4;
       { const double frame = double(_pixels)*pixel_size;
 	x =  0.5*frame;
 	y = -0.5*frame;
       }
-      quad[0] = new Quad(x,y,D0  ,qalign[0]);
-      quad[1] = new Quad(x,y,D90 ,qalign[1]);
-      quad[2] = new Quad(x,y,D180,qalign[2]);
-      quad[3] = new Quad(x,y,D270,qalign[3]);
+      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0]);
+      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1]);
+      quad[2] = new Quad(x,y,_ppb,D180,qalign[2]);
+      quad[3] = new Quad(x,y,_ppb,D270,qalign[3]);
 
       //
       //  Test extremes and narrow the focus
@@ -714,20 +716,18 @@ namespace CspadGeometry {
       int idy = ymax-ymin+1;
       int pixels = ((idx>idy) ? idx : idy);
       const int bin0 = 4;
-      ppb = 1;
-#ifndef UNBINNED
-      while((pixels*4/ppb+2*bin0) > 600)
-	ppb<<=1;
-#endif      
-      x += pixel_size*double(bin0*int(ppb) - xmin*4);
-      y -= pixel_size*double(bin0*int(ppb) - ymin*4);
+      _ppb = 1;
+      while((pixels*4/_ppb+2*bin0) > max_pixels)
+	_ppb<<=1;
+      x += pixel_size*double(bin0*int(_ppb) - xmin*4);
+      y -= pixel_size*double(bin0*int(_ppb) - ymin*4);
 
-      _pixels = pixels*4 + 2*bin0*ppb;
+      _pixels = pixels*4 + 2*bin0*_ppb;
 
-      quad[0] = new Quad(x,y,D0  ,qalign[0],f,s,g);
-      quad[1] = new Quad(x,y,D90 ,qalign[1],f,s,g);
-      quad[2] = new Quad(x,y,D180,qalign[2],f,s,g);
-      quad[3] = new Quad(x,y,D270,qalign[3],f,s,g);
+      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0],f,s,g);
+      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1],f,s,g);
+      quad[2] = new Quad(x,y,_ppb,D180,qalign[2],f,s,g);
+      quad[3] = new Quad(x,y,_ppb,D270,qalign[3],f,s,g);
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
@@ -761,6 +761,7 @@ namespace CspadGeometry {
 			CspadTemp::instance().getTemp(hdr->sb_temp(a)));
       }
     }
+    unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
   private:
@@ -768,46 +769,46 @@ namespace CspadGeometry {
     Pds::CsPad::ConfigV2 _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[16];
+    unsigned _ppb;
     unsigned _pixels;
   };
 };
 
 using namespace Ami;
 
-CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
+CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, unsigned max_pixels) :
   EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
   _entry(0),
+  _unbinned_entry(0),
   _detector(0),
-  _cache(features)  
+  _unbinned_detector(0),
+  _cache(features),
+  _max_pixels(max_pixels)
 {
 }
-
-// CspadHandler::CspadHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
-//   EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
-//   _entry(entry ? new EntryImage(entry->desc()) : 0),
-//   _detector(new CspadGeometry::Detector)
-// {
-// }
 
 CspadHandler::~CspadHandler()
 {
   if (_detector)
     delete _detector;
+  if (_unbinned_detector)
+    delete _unbinned_detector;
   if (_entry)
     delete _entry;
+  if (_unbinned_entry)
+    delete _unbinned_entry;
 }
 
 unsigned CspadHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* CspadHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
-void CspadHandler::reset() { _entry = 0; }
+const Entry* CspadHandler::hidden_entry(unsigned i) const { return i==0 ? _unbinned_entry : 0; }
+
+void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
 
 void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  if (_detector)
-    delete _detector;
-
   //
   //  Load pedestals
   //
@@ -860,31 +861,10 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   const Pds::CsPad::ConfigV2& cfg =
     *reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload);
 
-  _detector = new CspadGeometry::Detector(cfg,f,s,g,gm);
-
-  if (_entry) 
-    delete _entry;
-
-  const DetInfo& det = static_cast<const DetInfo&>(info());
-  DescImage desc(det, 0, ChannelID::name(det,0),
-		 _detector->xpixels()/ppb, _detector->ypixels()/ppb, 
-		 ppb, ppb);
-  desc.set_scale(pixel_size*1e3,pixel_size*1e3);
-
-  _detector->fill(desc,_cache);
-
-  _entry = new EntryImage(desc);
-  memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-
-  printf("CspadHandler created entry %p\n", _entry);
-
-  if (f)
-    _entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
-  else
-    _entry->info(0,EntryImage::Pedestal);
-
-  _entry->info(0,EntryImage::Normalization);
-  _entry->invalid();
+  _create_entry( cfg,f,s,g,gm, 
+                 _detector, _entry, _max_pixels);
+  _create_entry( cfg,f,s,g,gm, 
+                 _unbinned_detector, _unbinned_entry, 1<<12);
 
   if (f ) fclose(f);
   if (s ) fclose(s);
@@ -892,17 +872,71 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   if (gm) fclose(gm);
 }
 
+void CspadHandler::_create_entry(const Pds::CsPad::ConfigV2& cfg, 
+                                 FILE* f, FILE* s, FILE* g, FILE* gm,
+                                 CspadGeometry::Detector*& detector,
+                                 EntryImage*& entry, 
+                                 unsigned max_pixels) 
+{
+  if (f ) rewind(f);
+  if (s ) rewind(s);
+  if (g ) rewind(g);
+  if (gm) rewind(gm);
+
+  if (detector)
+    delete detector;
+
+  detector = new CspadGeometry::Detector(cfg,f,s,g,gm,max_pixels);
+
+  if (entry) 
+    delete entry;
+
+  const unsigned ppb = detector->ppb();
+  const DetInfo& det = static_cast<const DetInfo&>(info());
+  DescImage desc(det, 0, ChannelID::name(det,0),
+                 detector->xpixels()/ppb, detector->ypixels()/ppb, 
+                 ppb, ppb);
+  desc.set_scale(pixel_size*1e3,pixel_size*1e3);
+    
+  detector->fill(desc,_cache);
+
+  entry = new EntryImage(desc);
+  memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
+
+  printf("CspadHandler created entry %p\n", entry);
+    
+  if (f)
+    entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
+  else
+    entry->info(0,EntryImage::Pedestal);
+    
+  entry->info(0,EntryImage::Normalization);
+  entry->invalid();
+}
+
+
 void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void CspadHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
+  const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
   if (_entry) {
-    const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
     _detector->fill(*_entry,*xtc);
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);
   }
+  if (_unbinned_entry) {
+    _unbinned_detector->fill(*_unbinned_entry,*xtc);
+    _unbinned_entry->info(1,EntryImage::Normalization);
+    _unbinned_entry->valid(t);
+  }
 }
 
-void CspadHandler::_damaged() { if (_entry) _entry->invalid(); }
+void CspadHandler::_damaged() 
+{
+  if (_entry) 
+    _entry->invalid(); 
+  if (_unbinned_entry) 
+    _unbinned_entry->invalid(); 
+}

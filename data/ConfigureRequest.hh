@@ -12,7 +12,7 @@ namespace Ami {
   class ConfigureRequest {
   public:
     enum State { Create, Destroy, SetOpt };
-    enum Source { Discovery, Analysis, Summary, User };
+    enum Source { Discovery, Analysis, Summary, User, Hidden };
     ConfigureRequest(State        state, 
 		     Source       source,
 		     int          input,  // signature

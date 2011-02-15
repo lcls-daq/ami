@@ -9,12 +9,14 @@
 #include "ami/data/EdgeFinder.hh"
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/PeakFitPlot.hh"
+#include "ami/data/XYHistogram.hh"
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
 #include "ami/data/ContourProjection.hh"
 #include "ami/data/FFT.hh"
 #include "ami/data/EnvPlot.hh"
 #include "ami/data/TdcPlot.hh"
+#include "ami/data/Zoom.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -52,12 +54,14 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
   case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _f); break;
+  case AbsOperator::XYHistogram   : o = new XYHistogram   (p,input); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::ContourProjection: o = new ContourProjection(p,input); break;
   case AbsOperator::EnvPlot   : o = new EnvPlot(p,_f,output_cds); break;
   case AbsOperator::TdcPlot   : o = new TdcPlot(p,input); break;
   case AbsOperator::FFT       : o = new FFT    (p,input); break;
+  case AbsOperator::Zoom      : o = new Zoom   (p,input); break;
   case AbsOperator::Value     :
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
