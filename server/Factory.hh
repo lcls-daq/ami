@@ -15,6 +15,7 @@ namespace Ami {
   public:
     virtual FeatureCache& features() = 0;
     virtual Cds& discovery() = 0;
+    virtual Cds& hidden   () = 0;
     virtual void configure(unsigned id, const Message&, const char*, Cds&) = 0;
     virtual void analyze  () = 0;
     virtual void discover () = 0;

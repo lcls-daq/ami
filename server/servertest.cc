@@ -67,6 +67,7 @@ namespace Ami {
   public:
     FeatureCache& features() { return _features; }
     Cds& discovery() { return _cds; }
+    Cds& hidden   () { return _ocds; }
     void configure(unsigned id, const Message& cfg, const char* b, Cds& cds)
     {
       printf("Factory::configure payload %d %p\n",cfg.payload(),b);
@@ -109,6 +110,7 @@ namespace Ami {
   private:
     FeatureCache   _features;
     Cds            _cds;
+    Cds            _ocds;
     ServerManager  _srv;
     EntryWaveform* _wf;
     EntryImage*    _im;

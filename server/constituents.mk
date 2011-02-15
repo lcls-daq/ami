@@ -13,7 +13,7 @@ libsrcs_server := Server.cc ServerManager.cc VServerSocket.cc
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include
 
-tgtnames := servertest
+#tgtnames := servertest
 
 tgtsrcs_servertest := servertest.cc
 tgtlibs_servertest := pdsdata/xtcdata pdsdata/camdata pdsdata/acqdata
