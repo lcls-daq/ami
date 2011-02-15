@@ -1,3 +1,5 @@
+2011-02-15	weaver	Tag V01-06-00.	Added hidden CDS to support full resolution zoom plots.
+					Added xy pixel value histograms.
 2011-01-31	weaver			Added filter to EnvClient/Plots.  Fixed filter load.
 2011-01-19	weaver	Tag V01-05-00.  Added EntryRef type to ami/data.  Added TDC support.
 2010-09-20	weaver	Tag V01-04-00.  CspadHandler now uses pdsdata/cspad/ElementIterator.  
