@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <math.h>
 
+#define UNBINNED
 #define DO_PED_CORR
 
 typedef Pds::CsPad::ElementV2 CspadElement;
@@ -717,8 +718,10 @@ namespace CspadGeometry {
       int pixels = ((idx>idy) ? idx : idy);
       const int bin0 = 4;
       _ppb = 1;
+#ifndef UNBINNED
       while((pixels*4/_ppb+2*bin0) > max_pixels)
 	_ppb<<=1;
+#endif
       x += pixel_size*double(bin0*int(_ppb) - xmin*4);
       y -= pixel_size*double(bin0*int(_ppb) - ymin*4);
 
