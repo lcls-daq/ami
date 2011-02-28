@@ -117,7 +117,7 @@ void ZoomPlot::configure(char*& p,
                          int* input_signatures, 
                          unsigned input_nchannels)
 {
-#if 1
+#if 0
   DescImage image(qPrintable(_name),
                   unsigned(_x1-_x0+1), unsigned(_y1-_y0+1),
                     1,   1,
