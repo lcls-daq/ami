@@ -305,7 +305,6 @@ void ImageXYProjection::plot()
 
 void ImageXYProjection::zoom()
 {
-#if 1
   ZoomPlot* plot = new ZoomPlot(this,
 				_channels[_channel]->name(),
 				_channel,
@@ -313,15 +312,6 @@ void ImageXYProjection::zoom()
 				unsigned(_rectangle->ylo()),
                                 unsigned(_rectangle->xhi()),
                                 unsigned(_rectangle->yhi()));
-#else
-  ZoomPlot* plot = new ZoomPlot(this,
-				_channels[_channel]->name(),
-				_channel,
-				_rectangle->ixlo(),
-				_rectangle->iylo(),
-				_rectangle->ixhi(),
-				_rectangle->iyhi());
-#endif
   _zplots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));

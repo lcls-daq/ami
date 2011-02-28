@@ -39,17 +39,15 @@ QtImage::QtImage(const QString&   title,
   
 QtImage::QtImage(const QString&   title,
 		 const Ami::EntryImage& entry,
-		 unsigned x0, unsigned y0,
+		 unsigned x0, unsigned y0,  // absolute pixel indices
 		 unsigned x1, unsigned y1) :
   QtBase(title,entry)
 {
   const DescImage& d = entry.desc();
-
-  unsigned xb = d.xbin(x0);
-  xb = (xb+3)&3; // 32-bit aligned
-  x0 = d.binx(xb);
-
-  _x0 = x0; _y0 = y0; _nx = x1-x0+1; _ny = y1-y0+1; 
+  _x0 = (d.xbin(x0)+3)&~3;
+  _y0 =  d.ybin(y0);
+  _nx =  d.xbin(x1) - _x0 + 1;
+  _ny =  d.xbin(y1) - _y0 + 1;
 
   _nx &= ~3;
 
@@ -59,14 +57,17 @@ QtImage::QtImage(const QString&   title,
   if (_qimage->isNull())
     printf("image is null\n");
 
-  _xinfo = new AxisBins(d.xlow(),d.xlow() + _nx*d.ppxbin(),_nx);
-  _yinfo = new AxisBins(d.ylow(),d.ylow() + _ny*d.ppybin(),_ny);
+  _xinfo = new AxisBins(d.binx(_x0),d.binx(_x0+_nx),_nx);
+  _yinfo = new AxisBins(d.biny(_y0),d.biny(_y0+_ny),_ny);
 
   _scalexy = true;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
-                         _x0*double(d.ppxbin()), double(d.ppxbin()*_nx), _nx);
+                         d.binx(_x0), d.binx(_x0+_nx), _nx);
   _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
-                         _y0*double(d.ppybin()), double(d.ppybin()*_ny), _ny);
+                         d.biny(_y0), d.biny(_y0+_ny), _ny);
+
+  printf("QtImage: xbins %d,%d -> %d,%d  ybins %d,%d -> %d,%d\n",
+         x0,x1,_x0,_nx, y0,y1,_y0,_ny);
 }
   
   
@@ -82,12 +83,9 @@ QtImage::~QtImage()
 void           QtImage::dump  (FILE* f) const
 {
   const EntryImage& _entry = static_cast<const EntryImage&>(entry());
-  const DescImage&  d = _entry.desc();
   fprintf(f,"%d %d\n", _entry.info(EntryImage::Normalization), _entry.info(EntryImage::Pedestal));
-  const unsigned xb = d.xbin(_x0);
-  const unsigned yb = d.ybin(_y0);
-  for(unsigned j=yb; j<yb+_ny; j++) {
-    for(unsigned k=xb; k<xb+_nx; k++)
+  for(unsigned j=_y0; j<_y0+_ny; j++) {
+    for(unsigned k=_x0; k<_x0+_nx; k++)
       fprintf(f,"%d ", _entry.content(k,j));
     fprintf(f,"\n");
   }
@@ -139,7 +137,7 @@ QImage&        QtImage::image(float p0, float s, bool linear)
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
   p += float(n)*p0;
 
-  const unsigned* src = _entry.contents() + d.ybin(_y0)*d.nbinsx() + d.xbin(_x0);
+  const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
   if (linear) {
     n *= double(s);
     COPYIMAGE(uint8_t ,LINTRANS,0x01);
@@ -163,7 +161,9 @@ float QtImage::value(unsigned x,unsigned y) const
   float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  const unsigned* src = _entry.contents() + d.ybin(_y0+y)*d.nbinsx() + d.xbin(_x0+x);
+  const unsigned* src = _entry.contents() + 
+    d.ybin(d.biny(_y0)+y)*d.nbinsx() + 
+    d.xbin(d.binx(_x0)+x);
   return (float(*src)-p)/n;
  }
 
