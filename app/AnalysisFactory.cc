@@ -16,7 +16,7 @@ using namespace Ami;
 
 AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
 				 ServerManager& srv,
-				 UserAnalysis*  user) :
+                                 UList&         user) :
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
@@ -81,9 +81,9 @@ void AnalysisFactory::configure(unsigned       id,
       SummaryAnalysis::instance().create(cds);
     }
     else if (req.source() == ConfigureRequest::User) {
-      if (_user) {
-	_user->clear();
-	_user->create(cds);
+      for(UList::iterator it=_user.begin(); it!=_user.end(); it++) {
+        (*it)->clear();
+        (*it)->create(cds);
       }
     }
     else {
@@ -126,7 +126,8 @@ void AnalysisFactory::analyze  ()
 {
   _sem.take();
   SummaryAnalysis::instance().analyze();
-  if (_user) _user->analyze();
+  for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+    (*it)->analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }

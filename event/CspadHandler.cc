@@ -866,9 +866,10 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   _create_entry( cfg,f,s,g,gm, 
                  _detector, _entry, _max_pixels);
+#ifndef UNBINNED
   _create_entry( cfg,f,s,g,gm, 
                  _unbinned_detector, _unbinned_entry, 1<<12);
-
+#endif
   if (f ) fclose(f);
   if (s ) fclose(s);
   if (g ) fclose(g);

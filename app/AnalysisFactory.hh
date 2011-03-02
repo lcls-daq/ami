@@ -20,7 +20,7 @@ namespace Ami {
   public:
     AnalysisFactory(FeatureCache&,
 		    ServerManager&,
-		    UserAnalysis*);
+		    std::list<UserAnalysis*>&);
     ~AnalysisFactory();
   public:
     FeatureCache& features();
@@ -34,12 +34,13 @@ namespace Ami {
     ServerManager& _srv;
     Cds       _cds;
     Cds       _ocds;
-    typedef std::list<Analysis*> AnList;
+    typedef std::list<Analysis*>     AnList;
     AnList    _analyses;
     Semaphore _configured;
     Semaphore _sem;
     FeatureCache& _features;
-    UserAnalysis* _user;
+    typedef std::list<UserAnalysis*> UList;
+    UList&        _user;
   };
 
 };

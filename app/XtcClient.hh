@@ -24,7 +24,7 @@ namespace Ami {
   public:
     XtcClient(FeatureCache& cache, 
 	      Factory&      factory, 
-	      UserAnalysis* user,
+	      std::list<UserAnalysis*>& user,
 	      bool          sync=false);
     ~XtcClient();
   public:
@@ -37,9 +37,10 @@ namespace Ami {
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;
+    typedef std::list<UserAnalysis*> UList;
     FeatureCache& _cache;
     Factory&      _factory;
-    UserAnalysis* _user;
+    UList&        _user;
     const Pds::Sequence* _seq;
     bool      _sync;
     HList     _handlers;

@@ -36,7 +36,7 @@ using namespace Ami;
 
 XtcClient::XtcClient(FeatureCache& cache, 
 		     Factory&      factory,
-		     UserAnalysis* user,
+		     UList&        user,
 		     bool          sync) :
   _cache  (cache),
   _factory(factory),
@@ -59,7 +59,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
-    if (_user) _user->clock(dg->seq.clock());
+    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+      (*it)->clock(dg->seq.clock());
 
     iterate(&dg->xtc); 
 
@@ -76,13 +77,15 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
-    if (_user) _user->reset();
+    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+      (*it)->reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
-    if (_user) _user->clock(dg->seq.clock());
+    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+      (*it)->clock(dg->seq.clock());
     
     iterate(&dg->xtc); 
 
@@ -134,17 +137,19 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().event    (xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-      if (_user) _user->event    (xtc->src,
-				  xtc->contains,
-				  xtc->payload());
+    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+      (*it)->event    (xtc->src,
+                       xtc->contains,
+                       xtc->payload());
     }
     else if (_seq->service()==Pds::TransitionId::Configure) {
       SummaryAnalysis::instance().configure(xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-      if (_user) _user->configure(xtc->src,
-				  xtc->contains,
-				  xtc->payload());
+    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+      (*it)->configure(xtc->src,
+                       xtc->contains,
+                       xtc->payload());
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;

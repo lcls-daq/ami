@@ -18,6 +18,8 @@
 
 #include "pdsdata/xtc/DetInfo.hh"
 
+#include <list>
+
 using namespace Ami;
 
 typedef Pds::DetInfo DI;
@@ -41,9 +43,7 @@ int main(int argc, char* argv[]) {
   int   partitionIndex = 0;
   bool offline=false;
   //  plug-in module
-  UserAnalysis* user = 0;
-  create_t*  create_user  = 0;
-  destroy_t* destroy_user = 0;
+  std::list<UserAnalysis*> user;
 
   while ((c = getopt(argc, argv, "?hfp:n:i:s:L:")) != -1) {
     switch (c) {
@@ -92,29 +92,33 @@ int main(int argc, char* argv[]) {
       break;
     case 'L': 
       {
-	void* handle = dlopen(optarg, RTLD_LAZY);
-	if (!handle) break;
+        for(const char* p = strtok(optarg,","); p!=NULL; p=strtok(NULL,",")) {
 
-	// reset errors
-	const char* dlsym_error;
-	dlerror();
+          printf("dlopen %s\n",p);
 
-	// load the symbols
-	create_t* c_user = (create_t*) dlsym(handle, "create");
-	if ((dlsym_error = dlerror())) {
-	  fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
-	  break;
-	}
+          void* handle = dlopen(p, RTLD_LAZY);
+          if (!handle) break;
 
-	dlerror();
-	destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
-	if ((dlsym_error = dlerror())) {
-	  fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
-	  break;
-	}
+          // reset errors
+          const char* dlsym_error;
+          dlerror();
 
-	create_user  = c_user;
-	destroy_user = d_user;
+          // load the symbols
+          create_t* c_user = (create_t*) dlsym(handle, "create");
+          if ((dlsym_error = dlerror())) {
+            fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
+            break;
+          }
+          
+          dlerror();
+          destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
+          if ((dlsym_error = dlerror())) {
+            fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
+            break;
+          }
+
+          user.push_back( c_user() );
+        }
       }
       break;
     case '?':
@@ -132,9 +136,6 @@ int main(int argc, char* argv[]) {
 
   ServerManager   srv(interface, serverGroup);
 
-  if (create_user)
-    user = create_user();
-
   FeatureCache    features;
   AnalysisFactory factory(features, srv, user);
 
@@ -148,8 +149,8 @@ int main(int argc, char* argv[]) {
   //  srv.stop();   // terminate the other thread
   srv.dont_serve();
 
-  if (user)
-    destroy_user(user);
+  for(std::list<UserAnalysis*>::iterator it=user.begin(); it!=user.end(); it++)
+    delete (*it);
 
   return 1;
 }
