@@ -241,12 +241,12 @@ namespace CspadGeometry {
   //    only partially fills a pixel (at the edges)
   //
 #define FRAME_BOUNDS 							\
-  const unsigned ColBins =   CsPad::ColumnsPerASIC/ppb;			\
-    const unsigned RowBins = 2*CsPad::MaxRowsPerASIC/ppb;		\
+  const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;              \
+    const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;		\
     unsigned x0 = CALC_X(column,0,0);					\
-    unsigned x1 = CALC_X(column,ColBins,RowBins);			\
+    unsigned x1 = CALC_X(column,ColLen,RowLen);			\
     unsigned y0 = CALC_Y(row,0,0);					\
-    unsigned y1 = CALC_Y(row,ColBins,RowBins);				\
+    unsigned y1 = CALC_Y(row,ColLen,RowLen);				\
     if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }			\
     if (y0 > y1) { unsigned t=y0; y0=y1; y1=t; }			
 

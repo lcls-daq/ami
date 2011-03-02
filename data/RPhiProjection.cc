@@ -97,8 +97,26 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	o->reset();
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
-	  if (inputd.rphi_bounds(x0,x1,y0,y1,
-				 xc,yc, d.xup())) {
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
+	      if (inputd.rphi_bounds(x0,x1,y0,y1,
+				     xc,yc, d.xup(),fn)) {
+		for(int j=y0; j<y1; j++) {
+		  double dy  = inputd.biny(j)-yc;
+		  double dy2 = dy*dy;
+		  for(int k=x0; k<x1; k++) {
+		    double dx  = inputd.binx(k)-xc;
+		    double dx2 = dx*dx;
+		    double f   = atan2(dy,dx);
+		    if ( (f>=lo && f<=hi) ||
+			 (f+2*M_PI <= hi) )
+		      o->addcontent(_input->content(k,j)-p,sqrt(dx2+dy2));
+		  }
+		}
+	      }
+	  }
+	  else if (inputd.rphi_bounds(x0,x1,y0,y1,
+                                      xc,yc, d.xup())) {
 	    for(int j=y0; j<y1; j++) {
 	      double dy  = inputd.biny(j)-yc;
 	      double dy2 = dy*dy;
@@ -115,7 +133,30 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	}
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
-	  if (inputd.rphi_bounds(x0,x1,y0,y1,
+	  if (inputd.nframes()) {
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
+	      if (inputd.rphi_bounds(x0,x1,y0,y1,
+				     _xc,_yc, hi, fn)) {
+		double losq = lo*lo;
+		double hisq = hi*hi;
+		for(int j=y0; j<y1; j++) {
+		  double dy  = inputd.biny(j)-yc;
+		  double dy2 = dy*dy;
+		  for(int k=x0; k<x1; k++) {
+		    double dx  = inputd.binx(k)-xc;
+		    double dx2 = dx*dx;
+		    double rsq = dx2 + dy2;
+		    if (rsq >= losq && rsq <= hisq) {
+		      double f = atan2(dy,dx);
+		      double y = _input->content(k,j)-p;
+		      o->addcontent(y, f);
+		      o->addcontent(y, f+2*M_PI);
+		    }
+		  }
+		}
+	      }
+	  }
+	  else if (inputd.rphi_bounds(x0,x1,y0,y1,
 				 _xc,_yc, hi)) {
 	    double losq = lo*lo;
 	    double hisq = hi*hi;

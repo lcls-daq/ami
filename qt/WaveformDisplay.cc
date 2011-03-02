@@ -396,6 +396,7 @@ void WaveformDisplay::xrange_change()
     _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLog10ScaleEngine);
   else
     _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
+  emit redraw();
 }
 
 void WaveformDisplay::yrange_change()
@@ -409,6 +410,7 @@ void WaveformDisplay::yrange_change()
     _plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLog10ScaleEngine);
   else
     _plot->setAxisScaleEngine(QwtPlot::yLeft, new QwtLinearScaleEngine);
+  emit redraw();
 }
 
 const Ami::AbsTransform& WaveformDisplay::xtransform() const { return *_xtransform; }

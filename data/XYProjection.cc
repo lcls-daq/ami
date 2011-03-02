@@ -78,32 +78,66 @@ Entry&     XYProjection::_operate(const Entry& e) const
     case DescEntry::TH1F:  // unnormalized
       { const DescTH1F& d = static_cast<const DescTH1F&>(output());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
+	const double    p = _input->info(EntryImage::Pedestal);
 
 	if (_axis == X) {
-	  unsigned ilo = unsigned((d.xlow()-inputd.xlow())/inputd.ppxbin());
-	  unsigned ihi = unsigned((d.xup ()-inputd.xlow())/inputd.ppxbin());
-	  unsigned jlo = unsigned((_lo-inputd.ylow())/inputd.ppybin());
-	  unsigned jhi = unsigned((_hi-inputd.ylow())/inputd.ppybin());
-	  for(unsigned i=ilo; i<ihi; i++) {
-	    unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
-	    unsigned z=0;
-	    for(unsigned j=jlo; j<jhi; j++)
-	      z += _input->content(i,j);
-	    o->content(double(z)-double(_input->info(EntryImage::Pedestal)*(jhi-jlo)),k);
-		       
+	  if (inputd.nframes()) {
+            o->reset();
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
+	      int ilo = int((d.xlow()-inputd.xlow())/inputd.ppxbin());
+	      int ihi = int((d.xup ()-inputd.xlow())/inputd.ppxbin());
+	      int jlo = int((_lo-inputd.ylow())/inputd.ppybin());
+	      int jhi = int((_hi-inputd.ylow())/inputd.ppybin());
+	      if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn))
+		for(int i=ilo; i<ihi; i++) {
+		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
+		  for(int j=jlo; j<jhi; j++)
+		    o->addcontent(double(_input->content(i,j))-p,k);
+		}
+	    }
+	  }
+          else {
+            unsigned ilo = unsigned((d.xlow()-inputd.xlow())/inputd.ppxbin());
+            unsigned ihi = unsigned((d.xup ()-inputd.xlow())/inputd.ppxbin());
+            unsigned jlo = unsigned((_lo-inputd.ylow())/inputd.ppybin());
+            unsigned jhi = unsigned((_hi-inputd.ylow())/inputd.ppybin());
+            for(unsigned i=ilo; i<ihi; i++) {
+              unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
+              unsigned z=0;
+              for(unsigned j=jlo; j<jhi; j++)
+                z += _input->content(i,j);
+              o->content(double(z)-p*double(jhi-jlo),k);
+            }
 	  }
 	}
 	else {
-	  unsigned ilo = unsigned((d.xlow()-inputd.ylow())/inputd.ppybin());
-	  unsigned ihi = unsigned((d.xup ()-inputd.ylow())/inputd.ppybin());
-	  unsigned jlo = unsigned((_lo-inputd.xlow())/inputd.ppxbin());
-	  unsigned jhi = unsigned((_hi-inputd.xlow())/inputd.ppxbin());
-	  for(unsigned i=ilo; i<ihi; i++) {
-	    unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
-	    unsigned z=0;
-	    for(unsigned j=jlo; j<jhi; j++)
-	      z += _input->content(j,i);
-	    o->content(double(z)-double(_input->info(EntryImage::Pedestal)*(jhi-jlo)),k);
+	  if (inputd.nframes()) {
+            o->reset();
+	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
+	      int ilo = int((d.xlow()-inputd.ylow())/inputd.ppybin());
+	      int ihi = int((d.xup ()-inputd.ylow())/inputd.ppybin());
+	      int jlo = int((_lo-inputd.xlow())/inputd.ppxbin());
+	      int jhi = int((_hi-inputd.xlow())/inputd.ppxbin());
+	      if (inputd.xy_bounds(jlo,jhi,ilo,ihi,fn))
+		for(int i=ilo; i<ihi; i++) {
+		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
+		  for(int j=jlo; j<jhi; j++)
+		    o->addcontent(double(_input->content(j,i))-p,k);
+		}
+	    }
+	  }
+          else {
+            unsigned ilo = unsigned((d.xlow()-inputd.ylow())/inputd.ppybin());
+            unsigned ihi = unsigned((d.xup ()-inputd.ylow())/inputd.ppybin());
+            unsigned jlo = unsigned((_lo-inputd.xlow())/inputd.ppxbin());
+            unsigned jhi = unsigned((_hi-inputd.xlow())/inputd.ppxbin());
+            for(unsigned i=ilo; i<ihi; i++) {
+              unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
+              unsigned z=0;
+              for(unsigned j=jlo; j<jhi; j++)
+                z += _input->content(j,i);
+              o->content(double(z)-p*double(jhi-jlo),k);
+            }
 	  }
 	}
 	o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
