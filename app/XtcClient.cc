@@ -42,7 +42,9 @@ XtcClient::XtcClient(FeatureCache& cache,
   _factory(factory),
   _user   (user),
   _sync   (sync),
-  _ready  (false)
+  _ready  (false),
+  _ptime_index(-1),
+  _pltnc_index(-1)
 {
 }
 
@@ -55,6 +57,9 @@ void XtcClient::remove(EventHandler* h) { _handlers.remove(h); }
 
 void XtcClient::processDgram(Pds::Dgram* dg) 
 {
+  timespec tp;
+  clock_gettime(CLOCK_REALTIME, &tp);
+
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
@@ -106,6 +111,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().showentries();
     _factory.hidden   ().showentries();
 
+    _ptime_index = _cache.add("ProcTime");
+    _pltnc_index = _cache.add("ProcLatency");
+
     printf("XtcClient configure done\n");
 
     //  Advertise
@@ -120,6 +128,17 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _seq = &dg->seq;
     iterate(&dg->xtc); 
+  }
+  timespec tq;
+  clock_gettime(CLOCK_REALTIME, &tq);
+  if (_ptime_index>=0) {
+    double dt = (tq.tv_sec-tp.tv_sec) + 1.e-9*(tq.tv_nsec-tp.tv_nsec);
+    _cache.cache(_ptime_index,dt);
+  }
+  if (_pltnc_index>=0) {
+    double dt = (tq.tv_sec-dg->seq.clock().seconds()) + 
+      1.e-9*(tq.tv_nsec-dg->seq.clock().nanoseconds());
+    _cache.cache(_pltnc_index,dt);
   }
 }
 

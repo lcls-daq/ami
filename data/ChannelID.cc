@@ -87,7 +87,7 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       sprintf(_buffer,"End_Opal_%d",info.devId()+1);
       break;
     case DetInfo::Princeton:
-      sprintf(_buffer,"PI_%d",info.devId()+1);
+      sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId());
       break;
     default: _default(_buffer,info,channel); break;
     }
@@ -95,10 +95,12 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
   default:
     switch(info.device()) {
     case DetInfo::TM6740: 
-      sprintf(_buffer,"%sCvd",Pds::DetInfo::name(info.detector())); 
+      sprintf(_buffer,"%sCvd.%d.%d",
+              Pds::DetInfo::name(info.detector()),
+              info.detId(),info.devId()); 
       break;
     case DetInfo::Princeton:
-      sprintf(_buffer,"PI_%d",info.devId()+1); 
+      sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId()); 
       break;
     default: 
       _default(_buffer,info,channel); 

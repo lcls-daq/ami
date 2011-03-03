@@ -47,6 +47,8 @@ namespace Ami {
     CList     _composers;
     Entry*    _entry;
     bool      _ready;
+    int       _ptime_index;    
+    int       _pltnc_index;
   };
 }
 

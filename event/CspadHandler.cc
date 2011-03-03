@@ -17,6 +17,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #define UNBINNED
 #define DO_PED_CORR
 
@@ -244,7 +248,7 @@ namespace CspadGeometry {
   const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;              \
     const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;		\
     unsigned x0 = CALC_X(column,0,0);					\
-    unsigned x1 = CALC_X(column,ColLen,RowLen);			\
+    unsigned x1 = CALC_X(column,ColLen,RowLen);                         \
     unsigned y0 = CALC_Y(row,0,0);					\
     unsigned y1 = CALC_Y(row,ColLen,RowLen);				\
     if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }			\
@@ -755,6 +759,32 @@ namespace CspadGeometry {
     void fill(Ami::EntryImage& image,
 	      const Xtc&       xtc) const
     {
+#ifdef _OPENMP
+      Pds::CsPad::ElementIterator      iters[5];
+      int niters=0;
+      {
+        Pds::CsPad::ElementIterator iter(_config,xtc);
+        do {
+          iters[niters++] = iter;
+        } while( iter.next() );
+      }
+      niters--;
+
+      int i;
+      Quad* const* quad = this->quad;
+      Ami::FeatureCache* cache = _cache;
+#pragma omp parallel shared(iters,quad,cache) private(i) num_threads(4)
+      {
+#pragma omp for schedule(dynamic,1) nowait
+        for(i=0; i<niters; i++) {
+          const Pds::CsPad::ElementHeader* hdr = iters[i].next();
+          quad[hdr->quad()]->fill(image,iters[i]); 
+          for(int a=0; a<4; a++)
+            cache->cache(_feature[4*hdr->quad()+a],
+                         CspadTemp::instance().getTemp(hdr->sb_temp(a)));
+        }
+      }
+#else
       Pds::CsPad::ElementIterator iter(_config,xtc);
       const Pds::CsPad::ElementHeader* hdr;
       while( (hdr=iter.next()) ) {
@@ -763,6 +793,7 @@ namespace CspadGeometry {
 	  _cache->cache(_feature[4*hdr->quad()+a],
 			CspadTemp::instance().getTemp(hdr->sb_temp(a)));
       }
+#endif
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
