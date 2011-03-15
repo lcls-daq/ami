@@ -132,12 +132,12 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   timespec tq;
   clock_gettime(CLOCK_REALTIME, &tq);
   if (_ptime_index>=0) {
-    double dt = (tq.tv_sec-tp.tv_sec) + 1.e-9*(tq.tv_nsec-tp.tv_nsec);
+    double dt = double(tq.tv_sec-tp.tv_sec) + 1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
     _cache.cache(_ptime_index,dt);
   }
   if (_pltnc_index>=0) {
-    double dt = (tq.tv_sec-dg->seq.clock().seconds()) + 
-      1.e-9*(tq.tv_nsec-dg->seq.clock().nanoseconds());
+    double dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
+      1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
     _cache.cache(_pltnc_index,dt);
   }
 }

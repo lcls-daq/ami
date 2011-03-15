@@ -11,6 +11,9 @@ using namespace Ami;
 
 static const int BufferSize = 0x800000;
 
+template <class T>
+static void agg(iovec*, iovec*, char*);
+
 Aggregator::Aggregator(AbsClient& client) :
   _client          (client),
   _n               (0),
@@ -160,30 +163,10 @@ void Aggregator::read_payload    (Socket& s, int sz)
 	case DescEntry::TH1F:
 	case DescEntry::Waveform:
 	case DescEntry::Prof:
+          agg<double>(iovd,iovl,payload);
+	  break;
 	case DescEntry::Image:
-	  { const char* base = (const char*)iovl->iov_base;
-	    //  the first word is the valid flag (update time)
-	    double* dst = reinterpret_cast<double*>(payload);
-	    const double* src = reinterpret_cast<const double*>(base);
-	    const double* end = reinterpret_cast<const double*>(base+iovl->iov_len);
-#if 0
- 	    { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
- 	      const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
- 	      printf("Agg Std agg %c  dst %09u.%09u  src %09u.%09u\n",
- 		     desc->aggregate() ? 't':'f', 
- 		     dst_clk->seconds(), dst_clk->nanoseconds(),
- 		     src_clk->seconds(), src_clk->nanoseconds()); }
-#endif
-	    if (desc->aggregate() && *dst!=0 && *src!=0 ) { // sum them 
-	      if (*dst < *src)
-		*dst = *src;   // record later time
-	      while (++src < end)
-		*++dst += *src;  
-	    }
-	    else if (*dst < *src)  // copy most recent (including time)
-	      while (src < end)
-		*dst++  = *src++;  
-	  } 
+          agg<unsigned>(iovd,iovl,payload);
 	  break;
 	case DescEntry::Scan:  // This one's hard
 // 	  printf("Agg Scan\n");
@@ -227,3 +210,31 @@ void Aggregator::process         ()
   if (_state==Described && _remaining==0)
     _client.process();
 }
+
+template <class T>
+void agg(iovec* iovd, iovec* iovl, char* payload)
+{
+  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+  const char* base = (const char*)iovl->iov_base;
+  //  the first word is the valid flag (update time)
+  T* dst = reinterpret_cast<T*>(payload);
+  const T* src = reinterpret_cast<const T*>(base);
+  const T* end = reinterpret_cast<const T*>(base+iovl->iov_len);
+#if 0
+  { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
+    const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
+    printf("Agg Std agg %c  dst %09u.%09u  src %09u.%09u\n",
+           desc->aggregate() ? 't':'f', 
+           dst_clk->seconds(), dst_clk->nanoseconds(),
+           src_clk->seconds(), src_clk->nanoseconds()); }
+#endif
+  if (desc->aggregate() && *dst!=0 && *src!=0 ) { // sum them 
+    if (*dst < *src)
+      *dst = *src;   // record later time
+    while (++src < end)
+      *++dst += *src;  
+  }
+  else if (*dst < *src)  // copy most recent (including time)
+    while (src < end)
+      *dst++  = *src++;  
+} 
