@@ -34,8 +34,8 @@ namespace Ami {
     unsigned bin(float) const;
 
   private:
-    unsigned short _nbins;
-    unsigned short _unused;
+    uint16_t _nbins;
+    uint16_t _unused;
     float _xlow;
     float _xup;
   };

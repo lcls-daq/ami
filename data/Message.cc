@@ -15,7 +15,7 @@ unsigned Message::id() const { return _id; }
 
 void Message::id(unsigned i) { _id = i; }
 
-Message::Type Message::type() const {return _type;}
+Message::Type Message::type() const {return (Type)_type;}
 
 void Message::type(Type t) {_type = t;}
 

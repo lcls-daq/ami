@@ -20,8 +20,9 @@ Entry&                 AbsOperator::operator()(const Entry& i) const
 
 void*                  AbsOperator::serialize(void* p) const 
 { 
+  static const uint32_t zero(0), one(1);
   _insert(p, &_type, sizeof(_type));
-  _insert(p, &_next, sizeof(_next));
+  _insert(p, _next ? &one : &zero, sizeof(uint32_t));
   p = _serialize(p);
   return _next ? _next->serialize(p) : p;
 }

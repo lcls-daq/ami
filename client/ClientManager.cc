@@ -117,8 +117,6 @@ void ClientManager::connect()
     _request = Message(_request.id()+1,Message::Connect,
                        _ppinterface,
                        _listen->ins().portId());
-    printf("(%p) CM Request connection from %x/%d\n",
-           this,_ppinterface,_listen->ins().portId());
     _connect->write(&_request,sizeof(_request));
   }
   else {
@@ -128,10 +126,6 @@ void ClientManager::connect()
       Ins remote = _server;
       cs.connect(remote); 
       Ins local  = cs.ins();
-      printf("(%p) new ClientSocket %d bound to local: %x/%d  remote: %x/%d\n",
-             this, cs.fd(), 
-             local .address(), local .portId(),
-             remote.address(), remote.portId());
       _state = Connected;
       _client.connected();
     }
@@ -192,10 +186,6 @@ void ClientManager::routine()
 	ClientSocket* cs = new ClientSocket(*this,s);
 	Ins local  = cs->ins();
 	Ins remote = name.get();
-	printf("(%p) new ClientSocket %d bound to local: %x/%d  remote: %x/%d\n",
-	       this, s, 
-	       local .address(), local .portId(),
-	       remote.address(), remote.portId());
 	_state = Connected;
 	_client.connected();
       }
@@ -205,16 +195,12 @@ void ClientManager::routine()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
-  printf("(%p) ClientManager::add_client %d (skt %d)\n",
-	 this, nconnected(),socket.socket());
   _poll->manage(socket);
 }
 
 void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
-  printf("(%p) ClientManager::remove_client %d\n",
-	 this,nconnected());
   _client_sem.give();
 }
 

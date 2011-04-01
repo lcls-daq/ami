@@ -45,13 +45,11 @@ void TSocket::bind(const Ins& insb) throw(Event)
   if (setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) < 0)
     throw Event("TSocket failed to set reuseaddr",strerror(errno));
 
-  printf("Binding to %x/%d\n",insb.address(),insb.portId());
   Sockaddr sa(insb);
   if (::bind(_socket, sa.name(), sa.sizeofName()) < 0)
     throw Event("TSocket failed to bind to port",strerror(errno));
 
   Ins src = ins();
-  printf("TSocket bound to %x/%d\n",src.address(),src.portId());
 }
 
 Ins TSocket::ins() const throw(Event)
@@ -68,7 +66,6 @@ Ins TSocket::ins() const throw(Event)
 //
 void TSocket::connect(const Ins& peer) throw(Event) 
 {
-  printf("Connecting to %x/%d\n",peer.address(),peer.portId());
   Sockaddr sa(peer);
   if (::connect(_socket, sa.name(), sa.sizeofName())<0)
     throw Event("TSocket failed to connect to peer",strerror(errno));
@@ -104,8 +101,8 @@ int TSocket::readv(const iovec* iov, int iovcnt)
   }
 #endif
   if (bytes<0) {
-    printf("Error reading from skt %d : %s\n",
-	   socket(), strerror(errno));
+    //    printf("Error reading from skt %d : %s\n",
+    //	   socket(), strerror(errno));
     //    abort();
   }
   return bytes;

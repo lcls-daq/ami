@@ -40,7 +40,7 @@ namespace Ami {
     unsigned    payload_size() const { return _size; }
   private:
     const char* _p;
-    unsigned    _size;
+    uint32_t    _size;
   };
 };
 #endif

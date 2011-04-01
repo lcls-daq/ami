@@ -51,14 +51,14 @@ namespace Ami {
 
   private:
     Pds::DetInfo _info;
-    unsigned     _channel;
+    uint32_t     _channel;
     enum {TitleSize=128};
     char _xtitle[TitleSize];
     char _ytitle[TitleSize];
-    int short _group;
-    int short _options;
-    unsigned short _type;
-    unsigned short _size;
+    int16_t   _group;
+    int16_t   _options;
+    uint16_t  _type;
+    uint16_t  _size;
     float _xwarn;
     float _xerr;
     float _ywarn;

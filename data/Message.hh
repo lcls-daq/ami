@@ -1,6 +1,8 @@
 #ifndef Ami_MESSAGE_HH
 #define Ami_MESSAGE_HH
 
+#include <stdint.h>
+
 class iovec;
 
 namespace Ami {
@@ -35,10 +37,10 @@ namespace Ami {
     void     offset (unsigned size);
     
   private:
-    volatile unsigned  _id;
-    Type      _type;
-    unsigned  _offset;
-    unsigned  _payload;
+    volatile uint32_t  _id;
+    uint32_t  _type;
+    uint32_t  _offset;
+    uint32_t  _payload;
   };
 };
 

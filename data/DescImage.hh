@@ -7,10 +7,10 @@ namespace Ami {
 
   class SubFrame {
   public:
-    unsigned short x;
-    unsigned short y;
-    unsigned short nx;
-    unsigned short ny;
+    uint16_t x;
+    uint16_t y;
+    uint16_t nx;
+    uint16_t ny;
   };
 
   class DescImage : public DescEntry {
@@ -68,16 +68,16 @@ namespace Ami {
 		     double xc, double yc, double r, unsigned frame) const;
 
   private:
-    unsigned short _nbinsx;
-    unsigned short _nbinsy;
-    unsigned short _ppbx;
-    unsigned short _ppby;
-    unsigned       _xp0;
-    unsigned       _yp0;
-    float          _mmppx;
-    float          _mmppy;
+    uint16_t _nbinsx;
+    uint16_t _nbinsy;
+    uint16_t _ppbx;
+    uint16_t _ppby;
+    uint32_t _xp0;
+    uint32_t _yp0;
+    float    _mmppx;
+    float    _mmppy;
     enum { MAX_SUBFRAMES=64 };
-    unsigned _nsubframes;
+    uint32_t _nsubframes;
     SubFrame _subframes[MAX_SUBFRAMES];
   };
 

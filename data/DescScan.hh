@@ -19,8 +19,8 @@ namespace Ami {
     void params(unsigned nbins);
 
   private:
-    unsigned short _nbins;
-    unsigned short _unused;
+    uint16_t _nbins;
+    uint16_t _unused;
   };
 
   inline unsigned    DescScan::nbins   () const { return _nbins; }

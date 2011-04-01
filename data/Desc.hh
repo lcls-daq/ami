@@ -1,6 +1,8 @@
 #ifndef Pds_DESC_HH
 #define Pds_DESC_HH
 
+#include <stdint.h>
+
 namespace Ami {
 
   class Desc {
@@ -20,8 +22,8 @@ namespace Ami {
   private:
     enum {NameSize=128};
     char     _name[NameSize];
-    int      _signature;
-    unsigned _nentries;
+    int32_t  _signature;
+    uint32_t _nentries;
   };
 };
 

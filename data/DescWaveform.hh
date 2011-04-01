@@ -23,7 +23,7 @@ namespace Ami {
     float xup() const;
 
   private:
-    unsigned _nbins;
+    uint32_t _nbins;
     float _xlow;
     float _xup;
   };

@@ -40,17 +40,17 @@ namespace Ami {
       *reinterpret_cast<unsigned*>(this+1)=options;
     }
   public:
-    State  state () const { return _state; }
-    Source source() const { return _source; }
+    State  state () const { return State (_state); }
+    Source source() const { return Source(_source); }
     int    input () const { return _input; }
     int    output() const { return _output; }
     int    size  () const { return _size; }
   private:
-    State    _state;
-    Source   _source;
-    int      _input;
-    int      _output;
-    int      _size;
+    uint32_t _state;
+    uint32_t _source;
+    int32_t  _input;
+    int32_t  _output;
+    int32_t  _size;
   };
 
 };

@@ -27,8 +27,8 @@ namespace Ami {
   private:
     enum {NamesSize=256};
     char _names[NamesSize];
-    unsigned short _nbins;
-    unsigned short _unused;
+    uint16_t _nbins;
+    uint16_t _unused;
     float _xlow;
     float _xup;
   };
