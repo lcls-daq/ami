@@ -48,8 +48,6 @@ void TSocket::bind(const Ins& insb) throw(Event)
   Sockaddr sa(insb);
   if (::bind(_socket, sa.name(), sa.sizeofName()) < 0)
     throw Event("TSocket failed to bind to port",strerror(errno));
-
-  Ins src = ins();
 }
 
 Ins TSocket::ins() const throw(Event)

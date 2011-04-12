@@ -6,6 +6,8 @@
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageMarker.hh"
 #include "ami/qt/QtImage.hh"
+#include "ami/data/Entry.hh"
+#include "pdsdata/xtc/ClockTime.hh"
 
 #include <QtGui/QMouseEvent>
 
@@ -150,4 +152,10 @@ const AxisInfo* ImageFrame::xinfo() const {
 
 const AxisInfo* ImageFrame::yinfo() const { 
   return _qimage ? _qimage->yinfo() : &_defaultInfo;
+}
+
+static Pds::ClockTime _defaultTime(0,0);
+
+const Pds::ClockTime& ImageFrame::time() const {
+  return _qimage ? _qimage->entry().time() : _defaultTime;
 }

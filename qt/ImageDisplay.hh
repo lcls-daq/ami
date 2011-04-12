@@ -7,6 +7,7 @@
 #include "ami/service/Semaphore.hh"
 #include <list>
 
+class QLabel;
 class QPrinter;
 
 namespace Ami {
@@ -50,6 +51,7 @@ namespace Ami {
     private:
       void _layout();
     private:
+      QLabel* _time_display;
       ImageFrame*  _plot;
       ImageGridScale*    _units;
       ImageColorControl* _zrange;

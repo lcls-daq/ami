@@ -13,6 +13,8 @@
 #include "ami/service/TSocket.hh"
 #include "ami/service/Exception.hh"
 
+#include "ami/client/VClientSocket.hh"
+
 #include <errno.h>
 #include <string.h>
 
@@ -52,6 +54,14 @@ void ServerManager::serve(Factory& factory)
     return;
   }
   manage(*this);
+  
+  if (Ins::is_multicast(_serverGroup)) {
+    VClientSocket s;
+    s.set_dst(Ins(_serverGroup,Port::serverPort()),_interface);
+    Message msg(0,Message::Hello);
+    s.write(&msg,sizeof(msg));
+    printf("Hello %x.%d\n",_serverGroup,Port::serverPort());
+  }
 }
 
 void ServerManager::dont_serve()

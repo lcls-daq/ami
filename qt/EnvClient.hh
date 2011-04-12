@@ -38,7 +38,7 @@ namespace Ami {
     public:
       void managed         (ClientManager&);
       void request_payload ();
-      void one_shot        (bool) {}
+      void one_shot        (bool);
     public: // AbsClient interface
       void connected       ();
       int  configure       (iovec*);

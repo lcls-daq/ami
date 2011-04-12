@@ -21,7 +21,7 @@ tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
 tgtlibs_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
-tgtlibs_ami += ami/service ami/data ami/server ami/event ami/app
+tgtlibs_ami += ami/service ami/data ami/server ami/event ami/client ami/app
 tgtlibs_ami += qt/QtCore
 
 # List special include directories (if any) needed by exe_a as

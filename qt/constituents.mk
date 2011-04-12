@@ -1,5 +1,5 @@
 ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-qtincdir  := qt/include64
+qtincdir  := qt/include_64
 else
 qtincdir  := qt/include
 endif

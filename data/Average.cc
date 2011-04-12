@@ -10,6 +10,10 @@
 
 #include <stdio.h>
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 using namespace Ami;
 
 Average::Average(unsigned n) : 
@@ -79,17 +83,36 @@ Entry&     Average::_operate(const Entry& e) const
         EntryImage& _en = static_cast<EntryImage&>(*_entry);
         const DescImage& d = _en.desc();
         if (d.nframes()) {
-          for(unsigned fn=0; fn<d.nframes(); fn++) {
-            const SubFrame& f = d.frame(fn);
-            for(unsigned j=f.y; j<f.y+f.ny; j++)
-              for(unsigned k=f.x; k<f.x+f.nx; k++)
-                _en.addcontent(en.content(k,j),k,j);      
+          int fn;
+#ifdef _OPENMP
+#pragma omp parallel private(fn) num_threads(4)
+          {
+#pragma omp for schedule(dynamic,1) nowait
+#else
+          {
+#endif
+            for(fn=0; fn<int(d.nframes()); fn++) {
+              const SubFrame& f = d.frame(fn);
+              for(unsigned j=f.y; j<f.y+f.ny; j++)
+                for(unsigned k=f.x; k<f.x+f.nx; k++)
+                  _en.addcontent(en.content(k,j),k,j);      
+            }
           }
         }
-        else
-          for(unsigned j=0; j<d.nbinsy(); j++)
-            for(unsigned k=0; k<d.nbinsx(); k++)
-              _en.addcontent(en.content(k,j),k,j);
+        else {
+          int j;
+#ifdef _OPENMP
+#pragma omp parallel private(j) num_threads(4)
+          {
+#pragma omp for schedule(dynamic,128) nowait
+#else
+          {
+#endif
+            for(j=0; j<int(d.nbinsy()); j++)
+              for(unsigned k=0; k<d.nbinsx(); k++)
+                _en.addcontent(en.content(k,j),k,j);
+          }
+        }
         for(unsigned j=0; j<EntryImage::InfoSize; j++) {
           EntryImage::Info i = (EntryImage::Info)j;
           _en.addinfo(en.info(i),i);

@@ -1,6 +1,7 @@
 #include "XtcClient.hh"
 
 #include "ami/app/SummaryAnalysis.hh"
+#include "ami/app/EventFilter.hh"
 
 #include "ami/event/EventHandler.hh"
 #include "ami/event/EvrHandler.hh"
@@ -26,6 +27,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/UserAnalysis.hh"
+#include "ami/data/UserFilter.hh"
 #include "ami/server/Factory.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -36,13 +38,15 @@ using namespace Ami;
 
 XtcClient::XtcClient(FeatureCache& cache, 
 		     Factory&      factory,
-		     UList&        user,
+		     UList&        user_ana,
+		     FList&        user_flt,
 		     bool          sync) :
-  _cache  (cache),
-  _factory(factory),
-  _user   (user),
-  _sync   (sync),
-  _ready  (false),
+  _cache   (cache),
+  _factory (factory),
+  _user_ana(user_ana),
+  _user_flt(user_flt),
+  _sync    (sync),
+  _ready   (false),
   _ptime_index(-1),
   _pltnc_index(-1)
 {
@@ -63,14 +67,19 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
-    SummaryAnalysis::instance().clock(dg->seq.clock());
-    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
-      (*it)->clock(dg->seq.clock());
 
-    iterate(&dg->xtc); 
+    EventFilter filter(_user_flt);
+    if (filter.accept(dg)) {
 
-    _entry->valid(_seq->clock());
-    _factory.analyze();
+      SummaryAnalysis::instance().clock(dg->seq.clock());
+      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
+        (*it)->clock(dg->seq.clock());
+      
+      iterate(&dg->xtc); 
+      
+      _entry->valid(_seq->clock());
+      _factory.analyze();
+    }
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 
@@ -82,14 +91,14 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
-    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
-    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->clock(dg->seq.clock());
     
     iterate(&dg->xtc); 
@@ -132,7 +141,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   timespec tq;
   clock_gettime(CLOCK_REALTIME, &tq);
   if (_ptime_index>=0) {
-    double dt = double(tq.tv_sec-tp.tv_sec) + 1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
+    double dt = double(tq.tv_sec-tp.tv_sec) + 
+      1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
     _cache.cache(_ptime_index,dt);
   }
   if (_pltnc_index>=0) {
@@ -156,7 +166,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().event    (xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
+    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->event    (xtc->src,
                        xtc->contains,
                        xtc->payload());
@@ -165,10 +175,14 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().configure(xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-    for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
-      (*it)->configure(xtc->src,
-                       xtc->contains,
-                       xtc->payload());
+      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
+        (*it)->configure(xtc->src,
+                         xtc->contains,
+                         xtc->payload());
+      for(FList::iterator it=_user_flt.begin(); it!=_user_flt.end(); it++)
+        (*it)->configure(xtc->src,
+                         xtc->contains,
+                         xtc->payload());
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;

@@ -14,7 +14,10 @@
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
 
+#include "pdsdata/xtc/ClockTime.hh"
+
 #include <QtGui/QMenuBar>
+#include <QtGui/QLabel>
 #include <QtGui/QActionGroup>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QGridLayout>
@@ -59,7 +62,10 @@ void Ami::Qt::ImageDisplay::_layout()
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* plotBox = new QGroupBox("Plot");
     QVBoxLayout* layout1 = new QVBoxLayout;
-    layout1->addWidget(menu_bar);
+    { QHBoxLayout* hl = new QHBoxLayout;
+      hl->addWidget(menu_bar);
+      hl->addWidget(_time_display=new QLabel("Time: Seconds . nseconds"));
+      layout1->addLayout(hl); }
     layout1->addWidget(_plot);
     plotBox->setLayout(layout1);
     layout->addWidget(plotBox); }
@@ -269,6 +275,11 @@ void Ami::Qt::ImageDisplay::update()
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->update();
   _sem.give();
+
+  const Pds::ClockTime& time = _plot->time();
+  _time_display->setText(QString("Time:%1.%2")
+                         .arg(QString::number(time.seconds()))
+                         .arg(QString::number(time.nanoseconds()),9,QChar('0')));
 
   emit redraw();
 }

@@ -14,6 +14,7 @@ namespace Ami {
 
     virtual void managed         (ClientManager&) {}
     virtual void connected       () = 0;
+    virtual void disconnected    () {}
     virtual int  configure       (iovec*) = 0;
     virtual int  configured      () = 0;
     virtual void discovered      (const DiscoveryRx&) = 0;

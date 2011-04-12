@@ -14,6 +14,7 @@
 
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/UserAnalysis.hh"
+#include "ami/data/UserFilter.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -23,6 +24,38 @@
 using namespace Ami;
 
 typedef Pds::DetInfo DI;
+
+template <class U, class C>
+static void load_syms(std::list<U*> user, char* arg)
+{
+  for(const char* p = strtok(arg,","); p!=NULL; p=strtok(NULL,",")) {
+    
+    printf("dlopen %s\n",p);
+
+    void* handle = dlopen(p, RTLD_LAZY);
+    if (!handle) break;
+
+    // reset errors
+    const char* dlsym_error;
+    dlerror();
+
+    // load the symbols
+    C* c_user = (C*) dlsym(handle, "create");
+    if ((dlsym_error = dlerror())) {
+      fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
+      break;
+    }
+          
+//     dlerror();
+//     destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
+//     if ((dlsym_error = dlerror())) {
+//       fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
+//       break;
+//     }
+
+    user.push_back( c_user() );
+  }
+}
 
 static void usage(char* progname) {
   fprintf(stderr,
@@ -43,9 +76,10 @@ int main(int argc, char* argv[]) {
   int   partitionIndex = 0;
   bool offline=false;
   //  plug-in module
-  std::list<UserAnalysis*> user;
+  std::list<UserAnalysis*> user_ana;
+  std::list<UserFilter*  > user_flt;
 
-  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:F:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -91,35 +125,10 @@ int main(int argc, char* argv[]) {
       partitionIndex = strtoul(optarg,NULL,0);
       break;
     case 'L': 
-      {
-        for(const char* p = strtok(optarg,","); p!=NULL; p=strtok(NULL,",")) {
-
-          printf("dlopen %s\n",p);
-
-          void* handle = dlopen(p, RTLD_LAZY);
-          if (!handle) break;
-
-          // reset errors
-          const char* dlsym_error;
-          dlerror();
-
-          // load the symbols
-          create_t* c_user = (create_t*) dlsym(handle, "create");
-          if ((dlsym_error = dlerror())) {
-            fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
-            break;
-          }
-          
-          dlerror();
-          destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
-          if ((dlsym_error = dlerror())) {
-            fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
-            break;
-          }
-
-          user.push_back( c_user() );
-        }
-      }
+      load_syms<UserAnalysis,create_t>(user_ana, optarg);
+      break;
+    case 'F': 
+      load_syms<UserFilter  ,create_f>(user_flt, optarg);
       break;
     case '?':
     case 'h':
@@ -137,9 +146,9 @@ int main(int argc, char* argv[]) {
   ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
-  AnalysisFactory factory(features, srv, user);
+  AnalysisFactory factory(features, srv, user_ana);
 
-  XtcClient myClient(features, factory, user, offline);
+  XtcClient myClient(features, factory, user_ana, user_flt, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   srv.manage(input);
@@ -149,7 +158,11 @@ int main(int argc, char* argv[]) {
   //  srv.stop();   // terminate the other thread
   srv.dont_serve();
 
-  for(std::list<UserAnalysis*>::iterator it=user.begin(); it!=user.end(); it++)
+  for(std::list<UserAnalysis*>::iterator it=user_ana.begin(); 
+      it!=user_ana.end(); it++)
+    delete (*it);
+  for(std::list<UserFilter*>::iterator it=user_flt.begin(); 
+      it!=user_flt.end(); it++)
     delete (*it);
 
   return 1;

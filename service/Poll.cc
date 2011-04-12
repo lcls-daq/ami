@@ -191,7 +191,15 @@ void Poll::routine()
   _sem.give();
 }
 
-int  Poll::nfds() const { return _nfds; }
+int  Poll::nfds() const 
+{
+  int nfds(0);
+  for(unsigned short i=1; i<_nfds; i++) {
+    if (_ofd[i])
+      nfds++;
+  }
+  return nfds;
+}
 
 Fd&  Poll::fds (int i) const { return *_ofd[i]; }
 

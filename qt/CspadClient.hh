@@ -22,6 +22,7 @@ namespace Ami {
 		      ChannelDefinition* ch[], 
 		      int* signatures, 
 		      unsigned nchannels);
+      void _setup_payload(Cds&);
     private:
       //  Specialization widgets
       QCheckBox* _fnBox;

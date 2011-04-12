@@ -16,6 +16,7 @@ namespace Ami {
     ~Aggregator();
   public:
     void connected       () ;
+    void disconnected    () ;
     int  configure       (iovec*) ;
     int  configured      () ;
     void discovered      (const DiscoveryRx&) ;

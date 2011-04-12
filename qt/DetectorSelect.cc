@@ -131,12 +131,14 @@ DetectorSelect::DetectorSelect(const QString& label,
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
 
+#if 0
   {
     timespec ts;
     ts.tv_sec = 3;
     ts.tv_nsec = 0;
     nanosleep(&ts, 0);
   }
+#endif
   _manager->connect();
 }
 
@@ -416,10 +418,13 @@ void DetectorSelect::change_detectors(const char* c)
       n = reinterpret_cast<const Ami::DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size());
 
-      if (e->info() == noInfo)   // Skip unknown devices 
-	continue;
-
       printf("Discovered %s\n",e->name());
+
+      if (e->info() == noInfo) {  // Skip unknown devices 
+        printf("\tSkip.\n");
+	continue;
+      }
+
       new DetectorListItem(_detList, e->name(), e->info(), e->channel());
     }
     _detList->sortItems();

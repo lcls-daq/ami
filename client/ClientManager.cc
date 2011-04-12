@@ -23,11 +23,60 @@
 #include "ami/client/ClientSocket.hh"
 #include "ami/client/VClientSocket.hh"
 
+#include "ami/server/VServerSocket.hh"
+
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+
+namespace Ami {
+  //
+  //  A class to listen for servers that come online
+  //
+  class ConnectRoutine : public Routine {
+  public:
+    ConnectRoutine(ClientManager& mgr,
+                   const Ins&     ins,
+                   unsigned       interface) :
+      _task(new Task(TaskObject("cmco"))),
+      _mgr(mgr), _skt(ins,interface), _found(false) 
+    { _task->call(this); }
+    ~ConnectRoutine() {
+      _task->destroy();
+    }
+  public:
+    void routine()
+    {
+      pollfd fds[1];
+      fds[0].fd = _skt.socket();
+      fds[0].events = POLLIN;
+
+      if (poll(fds, 1, 1000)>0) {
+        Message msg(0,Message::NoOp);
+        if (_skt.read(&msg,sizeof(msg))==sizeof(msg))
+          if (msg.type()==Message::Hello) {
+            Ins peer = _skt.peer().get();
+            printf("Hello from %x.%d\n",
+                   peer.address(),
+                   peer.portId());
+            _found = true;
+          }
+      }
+      else if (_found) {
+        _found = false;
+        _mgr.connect();
+      }
+      _task->call(this);
+    }
+  private:
+    Task*          _task;
+    ClientManager& _mgr;
+    VServerSocket  _skt;
+    bool           _found;
+  };
+};
 
 using namespace Ami;
 
@@ -77,6 +126,8 @@ ClientManager::ClientManager(unsigned   ppinterface,
 
     _task->call(this);
     _listen_sem.take();
+    
+    _reconn = new ConnectRoutine(*this, _server, interface);
   }
   else {
     _connect = 0;
@@ -94,6 +145,7 @@ ClientManager::~ClientManager()
   delete[] _buffer;
   delete[] _discovery;
   _task->destroy();
+  if (_reconn ) delete _reconn ;
   if (_listen ) delete _listen ;
   if (_connect) delete _connect;
 }
@@ -113,6 +165,11 @@ void ClientManager::request_payload()
 //
 void ClientManager::connect()
 {
+  //  Remove previous connections
+  unsigned n = nconnected();
+  while(n)
+    delete &_poll->fds(n--);
+
   if (_connect) {
     _request = Message(_request.id()+1,Message::Connect,
                        _ppinterface,
@@ -127,13 +184,12 @@ void ClientManager::connect()
       cs.connect(remote); 
       Ins local  = cs.ins();
       _state = Connected;
-      _client.connected();
     }
     catch (Event& e) { printf("Connection failed: %s\n", e.what()); delete &cs; }
   }
 }
 
-int ClientManager::nconnected() const { return _poll->nfds()-1; }
+int ClientManager::nconnected() const { return _poll->nfds(); }
 
 //
 //  Disconnecting closes the server on the peer
@@ -187,7 +243,6 @@ void ClientManager::routine()
 	Ins local  = cs->ins();
 	Ins remote = name.get();
 	_state = Connected;
-	_client.connected();
       }
     }
   }
@@ -195,12 +250,18 @@ void ClientManager::routine()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
+  printf("(%p) ClientManager::add_client %d (skt %d)\n",
+	 this, nconnected(),socket.socket());
+  _client.connected();
   _poll->manage(socket);
 }
 
 void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
+  _client.disconnected();
+  printf("(%p) ClientManager::remove_client %d (skt %d)\n",
+	 this,nconnected(),socket.fd());
   _client_sem.give();
 }
 

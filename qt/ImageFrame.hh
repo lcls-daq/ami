@@ -10,6 +10,8 @@ class QLabel;
 
 #include <list>
 
+namespace Pds { class ClockTime; };
+
 namespace Ami {
   namespace Qt {
     class Cursors;
@@ -30,6 +32,7 @@ namespace Ami {
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
       float           value(unsigned x,unsigned y) const { return _qimage->value(x,y); }
+      const Pds::ClockTime& time() const;
     public:
       void add_marker   (ImageMarker&);
       void remove_marker(ImageMarker&);

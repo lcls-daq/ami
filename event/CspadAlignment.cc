@@ -91,7 +91,7 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g)
 
   char* linep = new char[256];
   char* pEnd;
-  unsigned sz=256;
+  size_t sz=256;
 
   while(1) {
     getline(&linep, &sz, g);

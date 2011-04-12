@@ -37,6 +37,8 @@ Aggregator::~Aggregator()
 //
 void Aggregator::connected       () { _n++; _client.connected(); }
 
+void Aggregator::disconnected    () { _n--; _client.disconnected(); }
+
 //
 //  Scale down the statistics required from each server
 //

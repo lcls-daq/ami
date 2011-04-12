@@ -1,5 +1,6 @@
 #include "ami/qt/CspadClient.hh"
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/DescEntry.hh"
 
 #include <QtGui/QCheckBox>
 
@@ -43,4 +44,14 @@ void CspadClient::_configure(char*& p,
   ConfigureRequest& req = *new(p) ConfigureRequest(input,o);
   p += req.size();
 }
-      
+
+void CspadClient::_setup_payload(Cds& cds)
+{
+  if (_input_entry) {
+    //  Multiple display clients compete for these options
+    unsigned o = _input_entry->options();
+    _fnBox->setChecked(o&2);
+    _spBox->setChecked(o&1);
+  }
+  ImageClient::_setup_payload(cds);
+}      

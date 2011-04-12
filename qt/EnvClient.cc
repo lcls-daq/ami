@@ -331,6 +331,8 @@ void EnvClient::request_payload()
   }
 }
 
+void EnvClient::one_shot        (bool) {}
+
 void EnvClient::update_configuration()
 {
   if (_manager)
