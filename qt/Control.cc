@@ -26,7 +26,7 @@ Control::Control(Requestor& c, double request_rate) :
   _pRate->setMaximumWidth(40);
   setLayout(layout);
 
-  new QDoubleValidator(0.1,5,1,_pRate);
+  _pRate->setValidator(new QDoubleValidator(0.1,5,1,_pRate));
 
   connect(_pRun   , SIGNAL(toggled(bool)), this, SLOT(run (bool)));
   connect(_pSingle, SIGNAL(clicked()), this, SLOT(single()));

@@ -14,6 +14,7 @@ SyncAnalysis::SyncAnalysis(const Pds::DetInfo& detInfo, Pds::TypeId::Type dataTy
   _darkShotsFull(0),
   _offByOneStatus(0),
   _arrayBuiltFlag(false),
+  _newEvent(false),
   _valMin(0.0),
   _valMax(5000.0),
   _scalingFactor(0.02)
