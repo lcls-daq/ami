@@ -35,9 +35,19 @@ Aggregator::~Aggregator()
 //
 //  Add another server
 //
-void Aggregator::connected       () { _n++; _client.connected(); }
+void Aggregator::connected       () 
+{
+  //  printf("Agg connect %d %p\n",_n,&_client);
+  _n++; 
+  _client.connected(); 
+}
 
-void Aggregator::disconnected    () { _n--; _client.disconnected(); }
+void Aggregator::disconnected    () 
+{
+  //  printf("Agg disconnect %d %p\n",_n,&_client);
+  _n--;
+  _client.disconnected(); 
+}
 
 //
 //  Scale down the statistics required from each server

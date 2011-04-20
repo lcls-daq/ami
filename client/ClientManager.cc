@@ -42,16 +42,18 @@ namespace Ami {
                    unsigned       interface) :
       _task(new Task(TaskObject("cmco"))),
       _mgr(mgr), _skt(ins,interface), _found(false) 
-    { _task->call(this); }
+    {
+      _task->call(this); 
+    }
     ~ConnectRoutine() {
-      _task->destroy();
+      _task->destroy_b();
     }
   public:
     void routine()
     {
       pollfd fds[1];
       fds[0].fd = _skt.socket();
-      fds[0].events = POLLIN;
+      fds[0].events = POLLIN | POLLERR;
 
       if (poll(fds, 1, 1000)>0) {
         Message msg(0,Message::NoOp);
@@ -145,6 +147,8 @@ ClientManager::~ClientManager()
   delete[] _buffer;
   delete[] _discovery;
   _task->destroy();
+  _poll->stop();
+  delete _poll;
   if (_reconn ) delete _reconn ;
   if (_listen ) delete _listen ;
   if (_connect) delete _connect;
@@ -250,8 +254,8 @@ void ClientManager::routine()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
-  printf("(%p) ClientManager::add_client %d (skt %d)\n",
-	 this, nconnected(),socket.socket());
+//   printf("(%p) ClientManager::add_client %d (skt %d)\n",
+// 	 this, nconnected(),socket.socket());
   _client.connected();
   _poll->manage(socket);
 }
@@ -260,8 +264,8 @@ void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
   _client.disconnected();
-  printf("(%p) ClientManager::remove_client %d (skt %d)\n",
-	 this,nconnected(),socket.fd());
+//   printf("(%p) ClientManager::remove_client %d (skt %d)\n",
+// 	 this,nconnected(),socket.fd());
   _client_sem.give();
 }
 
@@ -286,8 +290,8 @@ int ClientManager::handle_client_io(ClientSocket& socket)
 {
   Message reply(0,Message::NoOp);
   if (socket.read(&reply,sizeof(reply))!=sizeof(reply)) {
-    printf("Error reading from skt %d : %s\n",
-	   socket.socket(), strerror(errno));
+//     printf("Error reading from skt %d : %s\n",
+// 	   socket.socket(), strerror(errno));
     return 0;
   }
 

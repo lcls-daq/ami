@@ -1,3 +1,4 @@
+2011-04-20	weaver			Fixed task destruction for python interface.
 2011-04-12	weaver	Tag V01-07-00.  Added "Hello" multicast from server to clients to
 					trigger connect/discovery.  Removed qtclient sleep
 					prior to connect.  Fixed x86_64 build.

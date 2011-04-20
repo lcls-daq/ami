@@ -24,10 +24,11 @@ extern "C" {
 class Task;
 class TaskDelete : public Routine {
  public:
-  TaskDelete(Task* t) { _taskToKill = t; }
+  TaskDelete(Task* t, Semaphore* s=0) { _taskToKill = t; _sem=s; }
   void routine(void);
  private:
   Task* _taskToKill;
+  Semaphore* _sem;
 };
 
 /*
@@ -52,6 +53,7 @@ class Task {
   const TaskObject& parameters() const;
   void call(Routine*);
   void destroy();
+  void destroy_b();
   void mainLoop();
   void signal(int signal);
 

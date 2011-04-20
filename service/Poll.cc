@@ -37,7 +37,7 @@ Poll::Poll(int timeout) :
 
 Poll::~Poll()
 {
-  _task->destroy();
+  _task->destroy_b();
   delete[] _ofd;
   delete[] _pfd;
   delete[] _buffer;

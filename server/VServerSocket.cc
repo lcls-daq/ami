@@ -37,8 +37,8 @@ VServerSocket::VServerSocket(const Ins& mcast,
   sockaddr_in name;
   socklen_t name_len=sizeof(name);
   getsockname(sockfd,(sockaddr*)&name,&name_len);
-  printf("VServerSocket %d bound to %x/%d\n",
-	 sockfd, ntohl(name.sin_addr.s_addr), ntohs(name.sin_port));
+//   printf("VServerSocket %d bound to %x/%d\n",
+// 	 sockfd, ntohl(name.sin_addr.s_addr), ntohs(name.sin_port));
 
   if (Ins::is_multicast(mcast)) {
     struct ip_mreq ipMreq;

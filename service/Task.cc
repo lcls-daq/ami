@@ -89,6 +89,23 @@ void Task::destroy()
   }
 }
 
+void Task::destroy_b()
+{
+  --*_refCount;
+  if (*_refCount > 0) {
+    delete this;
+  }
+  if (*_refCount == 0) {
+    Semaphore sem(Semaphore::EMPTY);
+    _destroyRoutine = new TaskDelete(this,&sem);
+    call(_destroyRoutine);
+    sem.take();
+  }
+  else {
+    // severe error, probably bug check (assert)
+  }
+}
+
 
 
 
@@ -157,6 +174,7 @@ void Task::mainLoop()
 
 void TaskDelete::routine(void) 
 { 
+  if (_sem) _sem->give();
   _taskToKill->deleteTask(); 
 }
 
