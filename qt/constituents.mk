@@ -44,11 +44,11 @@ tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/
 tgtlibs_offline_ami += $(qt_libs)
 
 datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata
-tgtlibs_blviewer := $(datalibs) pdsapp/configdb
+tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg
 tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_blviewer += $(qt_libs)
 
-tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb
+tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg
 tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_bldipimbclient += $(qt_libs)
 
