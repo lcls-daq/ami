@@ -8,6 +8,7 @@
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
 #include "ami/app/AnalysisFactory.hh"
+#include "ami/app/EventFilter.hh"
 #include "ami/app/XtcClient.hh"
 #include "ami/server/ServerManager.hh"
 #include "ami/service/Ins.hh"
@@ -112,9 +113,10 @@ int main(int argc, char* argv[]) {
   ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
-  AnalysisFactory factory(features, srv, user_ana);
-
-  XtcClient     myClient(features, factory, user_ana, user_flt, offline);
+  EventFilter     filter (user_flt, features);
+  AnalysisFactory factory(features, srv, user_ana, filter);
+  
+  XtcClient     myClient(features, factory, user_ana, filter, offline);
   Ami::Qt::XtcFileClient input(myClient, path);
 
   srv.serve(factory);
@@ -133,9 +135,6 @@ int main(int argc, char* argv[]) {
 
   for(std::list<UserAnalysis*>::iterator it=user_ana.begin(); 
       it!=user_ana.end(); it++)
-    delete (*it);
-  for(std::list<UserFilter*>::iterator it=user_flt.begin(); 
-      it!=user_flt.end(); it++)
     delete (*it);
 
   return 1;

@@ -9,6 +9,7 @@
 #include "ami/app/XtcClient.hh"
 #include "ami/app/XtcShmClient.hh"
 #include "ami/app/AnalysisFactory.hh"
+#include "ami/app/EventFilter.hh"
 
 #include "ami/server/ServerManager.hh"
 
@@ -26,7 +27,7 @@ using namespace Ami;
 typedef Pds::DetInfo DI;
 
 template <class U, class C>
-static void load_syms(std::list<U*> user, char* arg)
+static void load_syms(std::list<U*>& user, char* arg)
 {
   for(const char* p = strtok(arg,","); p!=NULL; p=strtok(NULL,",")) {
     
@@ -63,7 +64,8 @@ static void usage(char* progname) {
 	  "          -n <partitionIndex>\n"
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
-	  "          -L <user plug-in path>\n"
+	  "          -L <user analysis plug-in path>\n"
+	  "          -F <user filter plug-in path>\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -146,9 +148,10 @@ int main(int argc, char* argv[]) {
   ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
-  AnalysisFactory factory(features, srv, user_ana);
+  EventFilter     filter(user_flt,features);
+  AnalysisFactory factory(features, srv, user_ana, filter);
 
-  XtcClient myClient(features, factory, user_ana, user_flt, offline);
+  XtcClient myClient(features, factory, user_ana, filter, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   srv.manage(input);
@@ -160,9 +163,6 @@ int main(int argc, char* argv[]) {
 
   for(std::list<UserAnalysis*>::iterator it=user_ana.begin(); 
       it!=user_ana.end(); it++)
-    delete (*it);
-  for(std::list<UserFilter*>::iterator it=user_flt.begin(); 
-      it!=user_flt.end(); it++)
     delete (*it);
 
   return 1;

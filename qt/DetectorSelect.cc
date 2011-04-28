@@ -13,9 +13,11 @@
 #include "ami/qt/DetectorReset.hh"
 #include "ami/qt/DetectorListItem.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/FilterSetup.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
+#include "ami/data/ConfigureRequest.hh"
 #include "ami/service/Port.hh"
 
 #include <QtGui/QGridLayout>
@@ -73,7 +75,9 @@ DetectorSelect::DetectorSelect(const QString& label,
   _clientPort (Port::clientPortBase()),
   _manager    (new ClientManager(ppinterface,
 				 interface, serverGroup, 
-				 _clientPort++,*this))
+				 _clientPort++,*this)),
+  _filters    (new FilterSetup(*_manager)),
+  _request    (new char[sizeof(ConfigureRequest)+4*sizeof(uint32_t)])
 {
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -104,12 +108,15 @@ DetectorSelect::DetectorSelect(const QString& label,
   { QGroupBox* data_box  = new QGroupBox("Data");
     QVBoxLayout* layout = new QVBoxLayout;    
 
-    QPushButton* resetB = new QPushButton("Reset Plots");
-    QPushButton* saveB  = new QPushButton("Save Plots");
+    QPushButton* resetB  = new QPushButton("Reset Plots");
+    QPushButton* saveB   = new QPushButton("Save Plots");
+    QPushButton* filterB = new QPushButton("Event Filter"); 
     layout->addWidget(resetB);
     layout->addWidget(saveB);
-    connect(resetB, SIGNAL(clicked()), this, SLOT(reset_plots()));
-    connect(saveB , SIGNAL(clicked()), this, SLOT(save_plots()));
+    layout->addWidget(filterB);
+    connect(resetB , SIGNAL(clicked()), this, SLOT(reset_plots()));
+    connect(saveB  , SIGNAL(clicked()), this, SLOT(save_plots()));
+    connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
 
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
@@ -151,7 +158,9 @@ DetectorSelect::~DetectorSelect()
       delete (*it);
     }
 
+  delete _filters;
   delete _manager;
+  delete[] _request;
 }
 
 int DetectorSelect::get_setup(char* buffer) const
@@ -288,6 +297,11 @@ void DetectorSelect::default_setup()
   Defaults::instance()->show();
 }
 
+void DetectorSelect::set_filters()
+{
+  _filters->show();
+}
+
 void DetectorSelect::reset_plots()
 {
   // _reset_box->apply();
@@ -366,7 +380,16 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
 
 void DetectorSelect::connected       () { _manager->discover(); }
 
-int DetectorSelect:: configure       (iovec* iov) { return 0; }
+int DetectorSelect:: configure       (iovec* iov) 
+{ 
+  ConfigureRequest& req = 
+    *new(_request) ConfigureRequest(ConfigureRequest::Filter,
+                                    _filters->selected());
+
+  iov[0].iov_base = _request;
+  iov[0].iov_len  = req.size();
+  return 1; 
+}
 
 int DetectorSelect:: configured      () { return 0; }
 
@@ -429,6 +452,10 @@ void DetectorSelect::change_detectors(const char* c)
     }
     _detList->sortItems();
   }
+
+  //  Register filters
+  _filters->update(rx);
+
   //  _update_groups();
 
   setUpdatesEnabled(true);

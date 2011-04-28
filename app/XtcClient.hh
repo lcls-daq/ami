@@ -3,6 +3,8 @@
 
 #include "pdsdata/xtc/XtcIterator.hh"
 
+#include "ami/app/EventFilter.hh"
+
 #include <list>
 
 namespace Pds {
@@ -17,16 +19,16 @@ namespace Ami {
   class Factory;
   class Composer;
   class EventHandler;
+  class EventFilter;
   class Entry;
   class UserAnalysis;
-  class UserFilter;
 
   class XtcClient : private XtcIterator {
   public:
     XtcClient(FeatureCache& cache, 
 	      Factory&      factory, 
 	      std::list<UserAnalysis*>& user_ana,
-	      std::list<UserFilter*  >& user_flt,
+	      EventFilter&  filter,
 	      bool          sync=false);
     ~XtcClient();
   public:
@@ -40,11 +42,10 @@ namespace Ami {
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;
     typedef std::list<UserAnalysis*> UList;
-    typedef std::list<UserFilter*  > FList;
     FeatureCache& _cache;
     Factory&      _factory;
     UList&        _user_ana;
-    FList&        _user_flt;
+    EventFilter&  _filter;
     const Pds::Sequence* _seq;
     bool      _sync;
     HList     _handlers;

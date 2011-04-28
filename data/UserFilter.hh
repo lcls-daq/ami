@@ -1,16 +1,16 @@
 #ifndef UserFilter_hh
 #define UserFilter_hh
 
-namespace Pds {
-  class Src;
-  class TypeId;
-};
+#include "pdsdata/xtc/ClockTime.hh"
+#include "pdsdata/xtc/Src.hh"
+#include "pdsdata/xtc/TypeId.hh"
 
 namespace Ami {
   class UserFilter {
   public:
     virtual ~UserFilter() {}
   public:  // Handler functions
+    virtual void clock    (const Pds::ClockTime& clk) = 0;
     virtual void configure(const Pds::Src&       src,
 			   const Pds::TypeId&    type,
 			   void*                 payload) = 0;
@@ -18,6 +18,7 @@ namespace Ami {
 			   const Pds::TypeId&    type,
 			   void*                 payload) = 0;
   public:
+    virtual const char* name() const = 0;
     virtual bool accept () = 0;
   };
 };

@@ -258,7 +258,7 @@ void XtcFileClient::routine()
   _client.processDgram(dg);
 
   for(unsigned i=0; i<nfiles; i++) {
-    printf("Closing file %s at position %d\n",
+    printf("Closing file %s at position %lld\n",
 	   qPrintable(files.at(i)),
 	   lseek64(fd[i],off_t(0),SEEK_CUR));
     ::close(fd[i]);

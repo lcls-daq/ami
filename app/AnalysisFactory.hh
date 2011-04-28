@@ -15,12 +15,14 @@ namespace Ami {
   class Server;
   class ServerManager;
   class UserAnalysis;
+  class EventFilter;
 
   class AnalysisFactory : public Factory {
   public:
     AnalysisFactory(FeatureCache&,
 		    ServerManager&,
-		    std::list<UserAnalysis*>&);
+		    std::list<UserAnalysis*>&,
+                    EventFilter&);
     ~AnalysisFactory();
   public:
     FeatureCache& features();
@@ -41,6 +43,7 @@ namespace Ami {
     FeatureCache& _features;
     typedef std::list<UserAnalysis*> UList;
     UList&        _user;
+    EventFilter&  _filter;
   };
 
 };

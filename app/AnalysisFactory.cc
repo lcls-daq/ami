@@ -1,6 +1,7 @@
 #include "AnalysisFactory.hh"
 
 #include "ami/app/SummaryAnalysis.hh"
+#include "ami/app/EventFilter.hh"
 #include "ami/data/Analysis.hh"
 #include "ami/data/UserAnalysis.hh"
 
@@ -16,14 +17,16 @@ using namespace Ami;
 
 AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
 				 ServerManager& srv,
-                                 UList&         user) :
+                                 UList&         user,
+                                 EventFilter&   filter) :
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
   _configured(Semaphore::EMPTY),
   _sem       (Semaphore::FULL),
   _features  (cache),
-  _user      (user)
+  _user      (user),
+  _filter    (filter)
 {
 }
 
@@ -86,6 +89,10 @@ void AnalysisFactory::configure(unsigned       id,
         (*it)->create(cds);
       }
     }
+    else if (req.source() == ConfigureRequest::Filter) {
+      unsigned o = *reinterpret_cast<const uint32_t*>(&req+1);
+      _filter.enable(o);
+    }
     else {
       const Cds* pcds = 0;
       switch(req.source()) {
@@ -110,7 +117,7 @@ void AnalysisFactory::configure(unsigned       id,
 	_analyses.push_back(a);
       }
       else if (req.state()==ConfigureRequest::SetOpt) {
-        unsigned o = *reinterpret_cast<const unsigned*>(&req+1);
+        unsigned o = *reinterpret_cast<const uint32_t*>(&req+1);
         printf("Set options %x on entry %p\n",o,input);
         const_cast<Ami::DescEntry&>(input->desc()).options(o);
       }

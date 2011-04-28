@@ -27,7 +27,6 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/UserAnalysis.hh"
-#include "ami/data/UserFilter.hh"
 #include "ami/server/Factory.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -39,12 +38,12 @@ using namespace Ami;
 XtcClient::XtcClient(FeatureCache& cache, 
 		     Factory&      factory,
 		     UList&        user_ana,
-		     FList&        user_flt,
+                     EventFilter&  filter,
 		     bool          sync) :
   _cache   (cache),
   _factory (factory),
   _user_ana(user_ana),
-  _user_flt(user_flt),
+  _filter  (filter),
   _sync    (sync),
   _ready   (false),
   _ptime_index(-1),
@@ -68,9 +67,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
 
-    EventFilter filter(_user_flt);
-    if (filter.accept(dg)) {
-
+    if (_filter.accept(dg)) {
       SummaryAnalysis::instance().clock(dg->seq.clock());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
@@ -119,6 +116,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     }
     _factory.discovery().showentries();
     _factory.hidden   ().showentries();
+
+    _filter.add_to_cache();
 
     _ptime_index = _cache.add("ProcTime");
     _pltnc_index = _cache.add("ProcLatency");
@@ -179,10 +178,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         (*it)->configure(xtc->src,
                          xtc->contains,
                          xtc->payload());
-      for(FList::iterator it=_user_flt.begin(); it!=_user_flt.end(); it++)
-        (*it)->configure(xtc->src,
-                         xtc->contains,
-                         xtc->payload());
+      _filter.configure(*xtc);
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;

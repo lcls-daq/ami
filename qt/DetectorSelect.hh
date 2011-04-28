@@ -20,6 +20,7 @@ namespace Ami {
     class QtTopWidget;
     class DetectorReset;
     class DetectorSave;
+    class FilterSetup;
     class DetectorSelect : public QtPWidget,
 			   public Ami::AbsClient {
       Q_OBJECT
@@ -52,6 +53,8 @@ namespace Ami {
       void autosave();
       void autoload();
 
+      void set_filters();
+
       void show_detector(QListWidgetItem*);
       void change_detectors (const char*);
     signals:
@@ -69,6 +72,8 @@ namespace Ami {
       unsigned       _serverGroup;
       unsigned short _clientPort;
       ClientManager* _manager;
+      FilterSetup*   _filters;
+      char*          _request;
       std::list<QtTopWidget*> _client;
       QListWidget*   _detList;
       QPrinter*      _printer;
