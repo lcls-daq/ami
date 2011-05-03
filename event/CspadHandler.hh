@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
-#include "pdsdata/cspad/ConfigV2.hh"
+#include "pds/config/CsPadConfigType.hh"
 
 namespace CspadGeometry { class Detector; };
 
@@ -28,7 +28,7 @@ namespace Ami {
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    void _create_entry(const Pds::CsPad::ConfigV2& cfg, 
+    void _create_entry(const CsPadConfigType& cfg,
                        FILE* f, FILE* s, FILE* g, FILE* gm,
                        CspadGeometry::Detector*& detector,
                        EntryImage*& entry, 

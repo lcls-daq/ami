@@ -9,7 +9,7 @@
 
 #include "pdsdata/cspad/ElementIterator.hh"
 #include "pdsdata/cspad/ElementHeader.hh"
-#include "pdsdata/cspad/ConfigV2.hh"
+#include "pds/config/CsPadConfigType.hh"
 #include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
 
@@ -664,7 +664,7 @@ namespace CspadGeometry {
 
   class Detector {
   public:
-    Detector(const Pds::CsPad::ConfigV2& c,
+    Detector(const CsPadConfigType& c,
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
@@ -800,7 +800,7 @@ namespace CspadGeometry {
     unsigned ypixels() { return _pixels; }
   private:
     Quad* quad[4];
-    Pds::CsPad::ConfigV2 _config;
+    CsPadConfigType _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[16];
     unsigned _ppb;
@@ -892,8 +892,8 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   else
     printf("Failed to load geometry\n");
 
-  const Pds::CsPad::ConfigV2& cfg =
-    *reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload);
+  const CsPadConfigType& cfg =
+    *reinterpret_cast<const CsPadConfigType*>(payload);
 
   _create_entry( cfg,f,s,g,gm, 
                  _detector, _entry, _max_pixels);
@@ -907,7 +907,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   if (gm) fclose(gm);
 }
 
-void CspadHandler::_create_entry(const Pds::CsPad::ConfigV2& cfg, 
+void CspadHandler::_create_entry(const CsPadConfigType& cfg,
                                  FILE* f, FILE* s, FILE* g, FILE* gm,
                                  CspadGeometry::Detector*& detector,
                                  EntryImage*& entry, 
