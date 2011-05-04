@@ -189,7 +189,7 @@ int XtcClient::process(Pds::Xtc* xtc)
 	  if (xtc->damage.value())
 	    h->_damaged();
 	  else
-	    h->_event(xtc->payload(),_seq->clock());
+	    h->_event(xtc->contains,xtc->payload(),_seq->clock());
 	  return 1;
 	}
 	else {
@@ -199,9 +199,9 @@ int XtcClient::process(Pds::Xtc* xtc)
 	      it != types.end(); it++) {
 	    if (*it == type) {
 	      if (_seq->service()==Pds::TransitionId::Configure)
-		h->_configure(type, xtc->payload(), _seq->clock());
+		h->_configure(xtc->contains, xtc->payload(), _seq->clock());
 	      else if (_seq->service()==Pds::TransitionId::BeginCalibCycle)
-		h->_calibrate(type, xtc->payload(), _seq->clock());
+		h->_calibrate(xtc->contains, xtc->payload(), _seq->clock());
 	      else
 		continue;
 	      return 1;
@@ -247,7 +247,7 @@ int XtcClient::process(Pds::Xtc* xtc)
 	printf("XtcClient::process adding handler for info %s type %s\n",
 	       Pds::DetInfo::name(info), Pds::TypeId::name(xtc->contains.id()));
 	insert(h);
-	h->_configure(xtc->contains.id(),xtc->payload(),_seq->clock());
+	h->_configure(xtc->contains,xtc->payload(),_seq->clock());
       }
     }
   }

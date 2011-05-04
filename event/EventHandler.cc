@@ -30,14 +30,21 @@ EventHandler::~EventHandler()
 {
 }
 
-void   EventHandler::_configure(Pds::TypeId::Type type, 
+void   EventHandler::_configure(Pds::TypeId type, 
 				const void* payload, const Pds::ClockTime& t)
 {
   _configure(payload,t);
 }
 
-void   EventHandler::_calibrate(Pds::TypeId::Type type, 
+void   EventHandler::_calibrate(Pds::TypeId type, 
 				const void* payload, const Pds::ClockTime& t)
 {
   _configure(payload,t);
 }
+
+void   EventHandler::_event(Pds::TypeId type, 
+                            const void* payload, const Pds::ClockTime& t)
+{
+  _event(payload,t);
+}
+

@@ -38,9 +38,6 @@ void AcqTdcHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 void AcqTdcHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const DetInfo& dinfo = static_cast<const DetInfo&>(info());
-  const AcqTdcConfigType& c = *reinterpret_cast<const AcqTdcConfigType*>(payload);
-
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   _entry = new EntryRef(DescRef(det,0,ChannelID::name(det,0),"Hits"));
 }

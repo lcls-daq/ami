@@ -10,7 +10,7 @@ namespace Ami {
   public:
     TM6740Handler(const Pds::DetInfo& info);
   private:
-    void   _configure(Pds::TypeId::Type, 
+    void   _configure(Pds::TypeId, 
 		      const void* payload, const Pds::ClockTime& t);
     void   _configure(const void* payload, const Pds::ClockTime& t);
     void   _event    (const void* payload, const Pds::ClockTime& t);

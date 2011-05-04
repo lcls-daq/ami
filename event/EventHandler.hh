@@ -29,10 +29,12 @@ namespace Ami {
     virtual void   _event    (const void* payload, const Pds::ClockTime& t) = 0;
     virtual void   _damaged  () = 0;
   public:
-    virtual void   _configure(Pds::TypeId::Type, 
+    virtual void   _configure(Pds::TypeId, 
 			      const void* payload, const Pds::ClockTime& t);
-    virtual void   _calibrate(Pds::TypeId::Type, 
+    virtual void   _calibrate(Pds::TypeId, 
 			      const void* payload, const Pds::ClockTime& t);
+    virtual void   _event    (Pds::TypeId,
+                              const void* payload, const Pds::ClockTime& t);
   public:
     virtual unsigned     nentries() const = 0;
     virtual const Entry* entry            (unsigned) const = 0;

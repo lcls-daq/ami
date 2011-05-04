@@ -5,7 +5,10 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pds/config/CsPadConfigType.hh"
 
-namespace CspadGeometry { class Detector; };
+namespace CspadGeometry { 
+  class Detector; 
+  class ConfigCache;
+};
 
 namespace Ami {
   class EntryImage;
@@ -23,12 +26,13 @@ namespace Ami {
     void         reset();
   protected:
     void _calibrate(const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t);
+    void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void _configure(const void* payload, const Pds::ClockTime& t) {}
     void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    void _create_entry(const CsPadConfigType& cfg,
+    void _create_entry(const CspadGeometry::ConfigCache& cfg,
                        FILE* f, FILE* s, FILE* g, FILE* gm,
                        CspadGeometry::Detector*& detector,
                        EntryImage*& entry, 

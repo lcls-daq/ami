@@ -9,6 +9,8 @@
 
 #include "pdsdata/cspad/ElementIterator.hh"
 #include "pdsdata/cspad/ElementHeader.hh"
+#include "pdsdata/cspad/ConfigV1.hh"
+#include "pdsdata/cspad/ConfigV2.hh"
 #include "pds/config/CsPadConfigType.hh"
 #include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -662,9 +664,92 @@ namespace CspadGeometry {
     TwoByTwo* element[4];
   };
 
+  class ConfigCache {
+  public:
+    ConfigCache(Pds::TypeId type, const void* payload) : _type(type)
+    {
+      unsigned size;
+      switch(type.version()) {
+      case 1:  
+        { const Pds::CsPad::ConfigV1& c = 
+            *reinterpret_cast<const Pds::CsPad::ConfigV1*>(payload); 
+          size = sizeof(c);
+          _quadMask   = c.quadMask();
+          for(unsigned i=0; i<4; i++)
+            _roiMask[i] = (_quadMask&(1<<i)) ? 0xff : 0;
+          break; }
+      case 2:
+        { const Pds::CsPad::ConfigV2& c = 
+            *reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload); 
+          size = sizeof(c);
+          _quadMask   = c.quadMask();
+          for(unsigned i=0; i<4; i++)
+            _roiMask[i] = c.roiMask(i);
+          break; }
+      default:
+        { const CsPadConfigType& c = 
+            *reinterpret_cast<const CsPadConfigType*>(payload); 
+          size = sizeof(c);
+          _quadMask   = c.quadMask();
+          for(unsigned i=0; i<4; i++)
+            _roiMask[i] = c.roiMask(i);
+          break; }
+      }
+      _payload = new char[size];
+      memcpy(_payload,payload,size);
+    }
+    ConfigCache(const ConfigCache& c) : _type(c._type)
+    { 
+      unsigned size;
+      switch(_type.version()) {
+      case 1:  size = sizeof(Pds::CsPad::ConfigV1); break;
+      case 2:  size = sizeof(Pds::CsPad::ConfigV2); break;
+      default: size = sizeof(CsPadConfigType); break;
+      }
+      _payload = new char[size];
+      memcpy(_payload,c._payload,size);
+      _quadMask = c._quadMask;
+      for(unsigned i=0; i<4; i++)
+        _roiMask[i] = c._roiMask[i];
+    }
+    ~ConfigCache() 
+    { delete[] _payload; }
+  public:
+    Pds::CsPad::ElementIterator* iter(const Xtc& xtc) const
+    {
+      Pds::CsPad::ElementIterator* iter;
+      switch(_type.version()) {
+      case 1: 
+        { const Pds::CsPad::ConfigV1& c = 
+            *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
+          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          break; }
+      case 2: 
+        { const Pds::CsPad::ConfigV2& c = 
+            *reinterpret_cast<Pds::CsPad::ConfigV2*>(_payload);
+          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          break; }
+      default:
+        { const CsPadConfigType& c = 
+            *reinterpret_cast<CsPadConfigType*>(_payload);
+          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          break; }
+      }
+      return iter;
+    }
+  public:
+    unsigned quadMask()           const { return _quadMask; }
+    unsigned roiMask (unsigned i) const { return _roiMask[i]; }
+  private:
+    Pds::TypeId _type;
+    char*       _payload;
+    unsigned    _quadMask;
+    unsigned    _roiMask[4];
+  };
+
   class Detector {
   public:
-    Detector(const CsPadConfigType& c,
+    Detector(const ConfigCache& c,
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
@@ -760,12 +845,11 @@ namespace CspadGeometry {
 	      const Xtc&       xtc) const
     {
 #ifdef _OPENMP
-      Pds::CsPad::ElementIterator      iters[5];
+      Pds::CsPad::ElementIterator*     iters[5];
       int niters=0;
       {
-        Pds::CsPad::ElementIterator iter(_config,xtc);
         do {
-          iters[niters++] = iter;
+          iters[niters++] = _config.iter(xtc);
         } while( iter.next() );
       }
       niters--;
@@ -777,22 +861,24 @@ namespace CspadGeometry {
       {
 #pragma omp for schedule(dynamic,1) nowait
         for(i=0; i<niters; i++) {
-          const Pds::CsPad::ElementHeader* hdr = iters[i].next();
-          quad[hdr->quad()]->fill(image,iters[i]); 
+          const Pds::CsPad::ElementHeader* hdr = iters[i]->next();
+          quad[hdr->quad()]->fill(image,*iters[i]); 
           for(int a=0; a<4; a++)
             cache->cache(_feature[4*hdr->quad()+a],
                          CspadTemp::instance().getTemp(hdr->sb_temp(a)));
+          delete iters[i];
         }
       }
 #else
-      Pds::CsPad::ElementIterator iter(_config,xtc);
+      Pds::CsPad::ElementIterator* iter = _config.iter(xtc);
       const Pds::CsPad::ElementHeader* hdr;
-      while( (hdr=iter.next()) ) {
-	quad[hdr->quad()]->fill(image,iter); 
+      while( (hdr=iter->next()) ) {
+	quad[hdr->quad()]->fill(image,*iter); 
 	for(int a=0; a<4; a++)
 	  _cache->cache(_feature[4*hdr->quad()+a],
 			CspadTemp::instance().getTemp(hdr->sb_temp(a)));
       }
+      delete iter;
 #endif
     }
     unsigned ppb() const { return _ppb; }
@@ -800,7 +886,7 @@ namespace CspadGeometry {
     unsigned ypixels() { return _pixels; }
   private:
     Quad* quad[4];
-    CsPadConfigType _config;
+    ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[16];
     unsigned _ppb;
@@ -841,7 +927,7 @@ const Entry* CspadHandler::hidden_entry(unsigned i) const { return i==0 ? _unbin
 
 void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
 
-void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   //
   //  Load pedestals
@@ -892,8 +978,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   else
     printf("Failed to load geometry\n");
 
-  const CsPadConfigType& cfg =
-    *reinterpret_cast<const CsPadConfigType*>(payload);
+  CspadGeometry::ConfigCache cfg(type,payload);
 
   _create_entry( cfg,f,s,g,gm, 
                  _detector, _entry, _max_pixels);
@@ -907,7 +992,7 @@ void CspadHandler::_configure(const void* payload, const Pds::ClockTime& t)
   if (gm) fclose(gm);
 }
 
-void CspadHandler::_create_entry(const CsPadConfigType& cfg,
+void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
                                  FILE* f, FILE* s, FILE* g, FILE* gm,
                                  CspadGeometry::Detector*& detector,
                                  EntryImage*& entry, 

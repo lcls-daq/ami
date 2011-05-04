@@ -105,9 +105,10 @@ void TM6740Handler::_configure(const void* payload, const Pds::ClockTime& t)
   printf("TM6740Handler::configure(const void*) called\n");
 }
 
-void TM6740Handler::_configure(Pds::TypeId::Type type,
+void TM6740Handler::_configure(Pds::TypeId tid,
 			       const void* payload, const Pds::ClockTime& t)
 {
+  Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_FrameFexConfig) {
     const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());

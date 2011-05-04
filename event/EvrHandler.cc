@@ -25,8 +25,8 @@ EvrHandler::~EvrHandler()
 {
 }
 
-void   EvrHandler::_calibrate(const void* payload, const Pds::ClockTime& t) 
-{ _configure(payload,t); }
+void   EvrHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t) 
+{ _configure(type,payload,t); }
 
 #define REGISTER_CODE(evtcode) {		\
     unsigned code = evtcode;			\
@@ -36,7 +36,7 @@ void   EvrHandler::_calibrate(const void* payload, const Pds::ClockTime& t)
     _index[code] = index;			\
   }
 
-void   EvrHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   EvrHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
 
@@ -64,17 +64,19 @@ void   EvrHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
 #undef REGISTER_CODE
 
-void   EvrHandler::_event    (const void* payload, const Pds::ClockTime& t) 
+void   EvrHandler::_event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t) 
 {
   for(unsigned i=0; i<256; i++)
     if (_index[i]>=0)
       _cache.cache(_index[i],0);
 
-  const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
+  if (type.version()==3) {
+    const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
 
-  for(unsigned i=0; i<d.numFifoEvents(); i++) {
-    int index = _index[d.fifoEvent(i).EventCode];
-    if (index >=0) _cache.cache(index, 1);
+    for(unsigned i=0; i<d.numFifoEvents(); i++) {
+      int index = _index[d.fifoEvent(i).EventCode];
+      if (index >=0) _cache.cache(index, 1);
+    }
   }
 }
 
