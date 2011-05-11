@@ -22,8 +22,8 @@
 #include "pdsdata/princeton/ConfigV1.hh"
 #include "pdsdata/pnCCD/FrameV1.hh"
 #include "pdsdata/pnCCD/ConfigV1.hh"
-#include "pdsdata/ipimb/DataV1.hh"
-#include "pdsdata/ipimb/ConfigV1.hh"
+#include "pdsdata/ipimb/DataV2.hh"
+#include "pdsdata/ipimb/ConfigV2.hh"
 #include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/bld/bldData.hh"
 #include "pds/config/AcqConfigType.hh"
@@ -35,7 +35,7 @@
 #include "pds/camera/FrameType.hh"
 #include "pds/config/FrameFccdConfigType.hh"
 #include "pds/config/IpimbDataType.hh"
-#include "pdsdata/ipimb/ConfigV1.hh"
+#include "pdsdata/ipimb/ConfigV2.hh"
 
 namespace Pds {
   class ClockTime;

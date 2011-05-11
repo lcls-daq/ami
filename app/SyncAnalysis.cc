@@ -224,7 +224,7 @@ namespace Ami {
 
   template<> double ipimbDataSpace::processData() 
   { 
-    Pds::Ipimb::DataV1* ipimbData = detDataPtr; 
+    Pds::Ipimb::DataV2* ipimbData = detDataPtr; 
     double val =  fabs(ipimbData->channel0Volts()) + fabs(ipimbData->channel1Volts()) + fabs(ipimbData->channel2Volts()) + fabs(ipimbData->channel3Volts()) ; 
     return val;
   }

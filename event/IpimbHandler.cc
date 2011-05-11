@@ -2,7 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/ipimb/DataV1.hh"
+#include "pdsdata/ipimb/DataV2.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -25,7 +25,7 @@ IpimbHandler::~IpimbHandler()
 void   IpimbHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Ipimb::ConfigV1& c = *reinterpret_cast<const Pds::Ipimb::ConfigV1*>(payload);
+  const Pds::Ipimb::ConfigV2& c = *reinterpret_cast<const Pds::Ipimb::ConfigV2*>(payload);
   _config = c;
 
   char buffer[64];
@@ -41,7 +41,7 @@ void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
 void   IpimbHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Ipimb::DataV1& d = *reinterpret_cast<const Pds::Ipimb::DataV1*>(payload);
+  const Pds::Ipimb::DataV2& d = *reinterpret_cast<const Pds::Ipimb::DataV2*>(payload);
 
 //   _cache.cache(_index[0], d.channel0());
 //   _cache.cache(_index[1], d.channel1());

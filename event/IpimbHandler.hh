@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 
-#include "pdsdata/ipimb/ConfigV1.hh"
+#include "pdsdata/ipimb/ConfigV2.hh"
 
 namespace Pds {
   class DetInfo;
@@ -27,7 +27,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache&        _cache;
-    Pds::Ipimb::ConfigV1 _config;
+    Pds::Ipimb::ConfigV2 _config;
     enum { NChannels=4 };
     int                  _index[NChannels];
   };
