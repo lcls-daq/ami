@@ -1,0 +1,5 @@
+Requires the following environment:
+
+setenv DAQREL /reg/neh/home/weaver/release (for example)
+setenv PYTHONPATH ${DAQREL}/build/ami/lib/x86_64-linux
+setenv LD_LIBRARY_PATH /reg/g/pcds/package/python-2.5.2/lib:${DAQREL}/build/pdsdata/lib/x86_64-linux:${DAQREL}/build/ami/lib/x86_64-linux
