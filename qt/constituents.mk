@@ -160,6 +160,7 @@ libsrcs_amiqt += DetectorSave.cc
 libsrcs_amiqt += DetectorReset.cc
 libsrcs_amiqt += DetectorListItem.cc
 libsrcs_amiqt += Defaults.cc
+libsrcs_amiqt += RateDisplay.cc
 libsrcs_amiqt += FilterSetup.cc FilterSetup_moc.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 

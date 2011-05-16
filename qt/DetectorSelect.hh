@@ -3,12 +3,14 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
+
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <QtCore/QString>
 #include <list>
 
 class QPrinter;
+class QLabel;
 class QListWidget;
 class QListWidgetItem;
 class QTimer;
@@ -21,6 +23,7 @@ namespace Ami {
     class DetectorReset;
     class DetectorSave;
     class FilterSetup;
+    class RateDisplay;
     class DetectorSelect : public QtPWidget,
 			   public Ami::AbsClient {
       Q_OBJECT
@@ -80,8 +83,10 @@ namespace Ami {
 //       DetectorReset* _reset_box;
 //       DetectorSave*  _save_box;
       QTimer*        _autosave_timer;
+      RateDisplay*   _rate_display;
     };
   };
 };
 
 #endif
+

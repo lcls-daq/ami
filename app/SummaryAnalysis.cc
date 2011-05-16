@@ -17,6 +17,8 @@
 #define H2D_DET_X_DATATYPE      Pds::TypeId::Id_EBeam
 #define H2D_DET_Y_DATATYPE      Pds::TypeId::Id_PhaseCavity
 
+//#define VERBOSE
+
 using namespace Ami;
 
 static EntryScalar* _seconds = 0;
@@ -42,7 +44,9 @@ SummaryAnalysis::~SummaryAnalysis()
 
 void SummaryAnalysis::reset () 
 { 
+#ifdef VERBOSE
   printf("SummaryAnalysis::reset \n");
+#endif
   if (!_syncAnalysisPList.empty())
     _syncAnalysisPList.clear();  
   _summaryEntries = 0;  
@@ -57,7 +61,9 @@ void SummaryAnalysis::clock (const Pds::ClockTime& clk)
 
 void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, void* payload)
 {
+#ifdef VERBOSE
   printf("SummaryAnalysis::Configure  %s \n", Pds::TypeId::name(type.id()));
+#endif
   SyncAnalysis* h = 0;  
   const DetInfo& detInfo = reinterpret_cast<const Pds::DetInfo&>(src); 
 
@@ -98,8 +104,10 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
   if (h) {
     //printf("SummaryAnalysis::received configType: %s \n", Pds::TypeId::name(type.id()));
     insert(h);
+#ifdef VERBOSE
     printf("%d th Summary Entry made: %s/%d/%s/%d \n",_summaryEntries, detInfo.name(detInfo.detector()),
       detInfo.detId(), detInfo.name(detInfo.device()),detInfo.devId());  
+#endif
     _summaryEntries++;
   }
 }
@@ -117,7 +125,9 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
+#ifdef VERBOSE
 	printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
+#endif
 	throttle=true;
       }
     }
@@ -137,7 +147,9 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
       }
       if(!entryFoundFlag) {
 	if (!throttle2) {
+#ifdef VERBOSE
 	  printf("**** ERROR:: event() called & no Entry Present in List for given detector \n");
+#endif
 	  throttle2=true;
 	}
       }
@@ -148,7 +160,9 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
 
 void SummaryAnalysis::clear () 
 {
+#ifdef VERBOSE
   printf("SummaryAnalysis::clear\n");
+#endif
   if (_seconds) 
     _cds->remove(_seconds);     
   if(_minutes)
@@ -175,7 +189,9 @@ void SummaryAnalysis::clear ()
 
 void SummaryAnalysis::create   (Cds& cds)
 {
+#ifdef VERBOSE
   printf("SummaryAnalysis::create\n");
+#endif
   _notRefilledCount = 0;
   _analyzeCount = 0;
   _scatterPlotBinsCount = 0;

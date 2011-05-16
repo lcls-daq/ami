@@ -1,6 +1,7 @@
 #ifndef Ami_XtcClient_hh
 #define Ami_XtcClient_hh
 
+#include "pdsdata/xtc/ClockTime.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
 #include "ami/app/EventFilter.hh"
@@ -54,6 +55,8 @@ namespace Ami {
     bool      _ready;
     int       _ptime_index;    
     int       _pltnc_index;
+    int       _prate_index, _prate_acc_index;
+    Pds::ClockTime _clk, _clk_acc;
   };
 }
 

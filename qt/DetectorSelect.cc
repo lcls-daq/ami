@@ -14,6 +14,7 @@
 #include "ami/qt/DetectorListItem.hh"
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/FilterSetup.hh"
+#include "ami/qt/RateDisplay.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
@@ -40,6 +41,7 @@ static const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr
 static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
 
 static const int MaxConfigSize = 0x100000;
+static const int BufferSize = 0x8000;
 
 static void insertInfo(char*& p, const Pds::DetInfo& info, unsigned channel)
 {
@@ -77,7 +79,8 @@ DetectorSelect::DetectorSelect(const QString& label,
 				 interface, serverGroup, 
 				 _clientPort++,*this)),
   _filters    (new FilterSetup(*_manager)),
-  _request    (new char[sizeof(ConfigureRequest)+4*sizeof(uint32_t)])
+  _request    (new char[BufferSize]),
+  _rate_display(new RateDisplay(_manager))
 {
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -128,6 +131,7 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     data_box->setLayout(layout);
     l->addWidget(data_box); }
+  _rate_display->addLayout(l);
   setLayout(l);
 
   connect(this, SIGNAL(detectors_discovered(const char*)), this, SLOT(change_detectors(const char*)));
@@ -380,21 +384,26 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
 
 void DetectorSelect::connected       () { _manager->discover(); }
 
-int DetectorSelect:: configure       (iovec* iov) 
+int  DetectorSelect::configure       (iovec* iov) 
 { 
-  ConfigureRequest& req = 
-    *new(_request) ConfigureRequest(ConfigureRequest::Filter,
-                                    _filters->selected());
+  char* p = _request;
+  { ConfigureRequest& r = 
+      *new(p) ConfigureRequest(ConfigureRequest::Filter,
+                               _filters->selected());
+    p += r.size(); }
+
+  _rate_display->configure(p);
 
   iov[0].iov_base = _request;
-  iov[0].iov_len  = req.size();
+  iov[0].iov_len  = p-_request;
   return 1; 
 }
 
-int DetectorSelect:: configured      () { return 0; }
+int  DetectorSelect::configured      () { return 0; }
 
 void DetectorSelect::discovered      (const DiscoveryRx& rx) 
 { 
+  _rate_display->discovered(rx);
   emit detectors_discovered(reinterpret_cast<const char*>(&rx));
 }
 
@@ -459,15 +468,20 @@ void DetectorSelect::change_detectors(const char* c)
   //  _update_groups();
 
   setUpdatesEnabled(true);
+
+  _manager->configure();
 }
 
-void DetectorSelect::read_description(Socket& s,int) {
+void DetectorSelect::read_description(Socket& s,int len) {
+  _rate_display->read_description(s,len);
 }
 
-void DetectorSelect::read_payload    (Socket& s,int) {
+void DetectorSelect::read_payload    (Socket& s,int len) {
+  _rate_display->read_payload(s,len);
 }
 
 void DetectorSelect::process         () {
+  _rate_display->process();
 }
 
 /*

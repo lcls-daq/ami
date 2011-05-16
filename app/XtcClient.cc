@@ -47,7 +47,10 @@ XtcClient::XtcClient(FeatureCache& cache,
   _sync    (sync),
   _ready   (false),
   _ptime_index(-1),
-  _pltnc_index(-1)
+  _pltnc_index(-1),
+  _prate_index(-1),
+  _prate_acc_index(-1),
+  _clk(0,0)
 {
 }
 
@@ -60,6 +63,8 @@ void XtcClient::remove(EventHandler* h) { _handlers.remove(h); }
 
 void XtcClient::processDgram(Pds::Dgram* dg) 
 {
+  bool accept=false;
+
   timespec tp;
   clock_gettime(CLOCK_REALTIME, &tp);
 
@@ -68,6 +73,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _seq = &dg->seq;
 
     if (_filter.accept(dg)) {
+      accept = true;
       SummaryAnalysis::instance().clock(dg->seq.clock());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
@@ -121,6 +127,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _ptime_index = _cache.add("ProcTime");
     _pltnc_index = _cache.add("ProcLatency");
+    _prate_index = _cache.add("ProcPeriod");
+    _prate_acc_index = _cache.add("ProcPeriodAcc");
 
     printf("XtcClient configure done\n");
 
@@ -140,14 +148,27 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   timespec tq;
   clock_gettime(CLOCK_REALTIME, &tq);
   if (_ptime_index>=0) {
-    double dt = double(tq.tv_sec-tp.tv_sec) + 
+    double dt;
+    dt = double(tq.tv_sec-tp.tv_sec) + 
       1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
     _cache.cache(_ptime_index,dt);
-  }
-  if (_pltnc_index>=0) {
-    double dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
+
+    dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
       1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
     _cache.cache(_pltnc_index,dt);
+
+    dt = double(dg->seq.clock().seconds())-double(_clk.seconds()) + 
+      1.e-9*(double(dg->seq.clock().nanoseconds())-double(_clk.nanoseconds()));
+    _cache.cache(_prate_index,dt);
+    _clk = dg->seq.clock();
+
+    if (accept) {
+      dt = double(dg->seq.clock().seconds())-double(_clk_acc.seconds()) + 
+        1.e-9*(double(dg->seq.clock().nanoseconds())-double(_clk_acc.nanoseconds()));
+      _cache.cache(_prate_acc_index,dt);
+      _clk_acc = dg->seq.clock();
+
+    }
   }
 }
 
@@ -241,8 +262,12 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,_cache); break;
       default: break;
       }
-      if (!h)
-	printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
+      if (!h) {
+        if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config)
+          ;
+        else
+          printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
+      }
       else {
 	printf("XtcClient::process adding handler for info %s type %s\n",
 	       Pds::DetInfo::name(info), Pds::TypeId::name(xtc->contains.id()));

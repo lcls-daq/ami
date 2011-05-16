@@ -3,8 +3,6 @@
 
 #include "ami/event/EventHandler.hh"
 
-#include "pdsdata/ipimb/ConfigV2.hh"
-
 namespace Pds {
   class DetInfo;
 };
@@ -16,10 +14,12 @@ namespace Ami {
   public:
     IpimbHandler(const DetInfo&, FeatureCache&);
     ~IpimbHandler();
-  public:
+  protected:
     void   _calibrate(const void* payload, const Pds::ClockTime& t);
     void   _configure(const void* payload, const Pds::ClockTime& t);
-    void   _event    (const void* payload, const Pds::ClockTime& t);
+    void   _event    (const void* payload, const Pds::ClockTime& t) {}
+    void   _event    (Pds::TypeId,
+                      const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;
@@ -27,7 +27,6 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache&        _cache;
-    Pds::Ipimb::ConfigV2 _config;
     enum { NChannels=4 };
     int                  _index[NChannels];
   };
