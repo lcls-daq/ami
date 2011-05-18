@@ -29,20 +29,15 @@ public:
 public:
   QLabel* display() { return _display; }
 
-  void set_entry(Ami::Entry* entry) {
-    _entry   = static_cast<Ami::EntryScalar*>(entry);
-    _entries = _sum = _last = 0;
+  bool set_entry(Ami::Entry* entry) {
+    _entries = _last = 0;
+    return (_entry   = static_cast<Ami::EntryScalar*>(entry));
   }
   void update() { 
-    if (_entry->valid()) {
-      double n =  _entry->entries() - _entries;
-      if (n > 0) {
-        double v = n/(_entry->sum() - _sum);
-        _entries = _entry->entries();
-        _sum     = _entry->sum();
-        _last    = v;
-      }
-      _display->setText(QString::number(_last,'f',1));
+    if (_entry && _entry->valid()) {
+      _last    = _entry->entries() - _entries;
+      _entries = _entry->entries();
+      _display->setText(QString::number(_last,'f',0));
     }
     else
       _display->setText(QString("."));
@@ -51,7 +46,6 @@ private:
   Ami::EntryScalar* _entry;
   double   _last;
   double   _entries;
-  double   _sum;
   QLabel*  _display;
 };
 
@@ -64,7 +58,8 @@ RateDisplay::RateDisplay(ClientManager* manager) :
   _iovload         (new iovec[_niovload]),
   _inputCalc       (new RateCalculator),
   _acceptCalc      (new RateCalculator),
-  _task            (new Task(TaskObject("rattmr")))
+  _task            (new Task(TaskObject("rattmr"))),
+  _ready           (false)
 {
   Timer::start();
 }
@@ -79,7 +74,12 @@ RateDisplay::~RateDisplay()
 
 void RateDisplay::expired()
 {
-  _manager->request_payload();
+  if (_ready)
+    _manager->request_payload();
+  else
+    process();
+
+  _ready = false;
 }
 
 void RateDisplay::addLayout(QVBoxLayout* l)
@@ -97,28 +97,28 @@ void RateDisplay::addLayout(QVBoxLayout* l)
 
 int  RateDisplay::configure       (char*& p)
 { 
-  { Ami::EnvPlot op(Ami::DescScalar("ProcPeriod","mean",""));
-    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-                                                    ConfigureRequest::Discovery,
-                                                    _input,
-                                                    InputRateSignature,
-                                                    RawFilter(), op);
-    p += r.size(); }
+  if (_input) {
+    { Ami::EnvPlot op(Ami::DescScalar("ProcTime","mean",""));
+      ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                      ConfigureRequest::Discovery,
+                                                      _input,
+                                                      InputRateSignature,
+                                                      RawFilter(), op);
+      p += r.size(); }
 
-  { Ami::EnvPlot op(Ami::DescScalar("ProcPeriodAcc","mean",""));
-    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-                                                    ConfigureRequest::Discovery,
-                                                    _input,
-                                                    AcceptRateSignature,
-                                                    RawFilter(), op);
-    p += r.size(); }
-
+    { Ami::EnvPlot op(Ami::DescScalar("ProcTimeAcc","mean",""));
+      ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                      ConfigureRequest::Discovery,
+                                                      _input,
+                                                      AcceptRateSignature,
+                                                      RawFilter(), op);
+      p += r.size(); }
+  }
   return 1;
 }
 
 void RateDisplay::discovered      (const DiscoveryRx& rx) 
 { 
-  printf("RD discovered payload %p  size %u\n",rx.payload(),rx.payload_size());
   _input = rx.entries()->signature();
 }
 
@@ -152,8 +152,9 @@ void RateDisplay::read_description(Socket& s,int len) {
   }
   _cds.payload(_iovload);
 
-  _inputCalc ->set_entry(_cds.entry(InputRateSignature));
-  _acceptCalc->set_entry(_cds.entry(AcceptRateSignature));
+  _ready = 
+    _inputCalc ->set_entry(_cds.entry(InputRateSignature)) &&
+    _acceptCalc->set_entry(_cds.entry(AcceptRateSignature));
 }
 
 void RateDisplay::read_payload    (Socket& s,int) {
@@ -163,4 +164,5 @@ void RateDisplay::read_payload    (Socket& s,int) {
 void RateDisplay::process         () {
   _inputCalc ->update();
   _acceptCalc->update();
+  _ready = true;
 }

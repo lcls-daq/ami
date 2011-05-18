@@ -80,7 +80,8 @@ DetectorSelect::DetectorSelect(const QString& label,
 				 _clientPort++,*this)),
   _filters    (new FilterSetup(*_manager)),
   _request    (new char[BufferSize]),
-  _rate_display(new RateDisplay(_manager))
+  _rate_display(new RateDisplay(_manager)),
+  _sem        (Semaphore::EMPTY)
 {
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -382,7 +383,10 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
     _connect_client(c);
 }
 
-void DetectorSelect::connected       () { _manager->discover(); }
+void DetectorSelect::connected       () 
+{
+  _manager->discover(); 
+}
 
 int  DetectorSelect::configure       (iovec* iov) 
 { 
@@ -405,6 +409,8 @@ void DetectorSelect::discovered      (const DiscoveryRx& rx)
 { 
   _rate_display->discovered(rx);
   emit detectors_discovered(reinterpret_cast<const char*>(&rx));
+  _sem.take();
+  _manager->configure();
 }
 
 void DetectorSelect::change_detectors(const char* c)
@@ -469,7 +475,7 @@ void DetectorSelect::change_detectors(const char* c)
 
   setUpdatesEnabled(true);
 
-  _manager->configure();
+  _sem.give();
 }
 
 void DetectorSelect::read_description(Socket& s,int len) {

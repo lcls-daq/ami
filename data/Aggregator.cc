@@ -106,11 +106,11 @@ void Aggregator::read_description(Socket& socket, int len)
 	Entry* entry = EntryFactory::entry(*desc);
 	_cds.add(entry, desc->signature());
 	payload += desc->size();
-	printf("%s[%d]  norm %c  agg %c\n",
-	       desc->name(),
-	       desc->signature(),
-	       desc->isnormalized() ? 't':'f',
-	       desc->aggregate() ? 't':'f');
+// 	printf("%s[%d]  norm %c  agg %c\n",
+// 	       desc->name(),
+// 	       desc->signature(),
+// 	       desc->isnormalized() ? 't':'f',
+// 	       desc->aggregate() ? 't':'f');
       }
 
       if (_cds.totalentries()>_niovload) {

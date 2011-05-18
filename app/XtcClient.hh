@@ -53,10 +53,8 @@ namespace Ami {
     CList     _composers;
     Entry*    _entry;
     bool      _ready;
-    int       _ptime_index;    
+    int       _ptime_index, _ptime_acc_index;    
     int       _pltnc_index;
-    int       _prate_index, _prate_acc_index;
-    Pds::ClockTime _clk, _clk_acc;
   };
 }
 

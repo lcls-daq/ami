@@ -225,7 +225,7 @@ static PyObject* get(PyObject* self, PyObject* args)
 	  PyObject* o = Py_BuildValue("d",s->content(i));
 	  PyTuple_SetItem(t,i,o);
 	}
-	PyObject* result = Py_BuildValue("sddO",
+	PyObject* result = Py_BuildValue("sdddO",
 					 "Waveform",
 					 s->info(Ami::EntryWaveform::Normalization),
 					 s->desc().xlow(),

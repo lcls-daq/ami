@@ -46,11 +46,9 @@ XtcClient::XtcClient(FeatureCache& cache,
   _filter  (filter),
   _sync    (sync),
   _ready   (false),
-  _ptime_index(-1),
-  _pltnc_index(-1),
-  _prate_index(-1),
-  _prate_acc_index(-1),
-  _clk(0,0)
+  _ptime_index    (-1),
+  _ptime_acc_index(-1),
+  _pltnc_index    (-1)
 {
 }
 
@@ -125,10 +123,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _filter.add_to_cache();
 
-    _ptime_index = _cache.add("ProcTime");
-    _pltnc_index = _cache.add("ProcLatency");
-    _prate_index = _cache.add("ProcPeriod");
-    _prate_acc_index = _cache.add("ProcPeriodAcc");
+    _ptime_index     = _cache.add("ProcTime");
+    _ptime_acc_index = _cache.add("ProcTimeAcc");
+    _pltnc_index     = _cache.add("ProcLatency");
 
     printf("XtcClient configure done\n");
 
@@ -152,23 +149,12 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     dt = double(tq.tv_sec-tp.tv_sec) + 
       1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
     _cache.cache(_ptime_index,dt);
+    if (accept)
+      _cache.cache(_ptime_acc_index,dt);
 
     dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
       1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
     _cache.cache(_pltnc_index,dt);
-
-    dt = double(dg->seq.clock().seconds())-double(_clk.seconds()) + 
-      1.e-9*(double(dg->seq.clock().nanoseconds())-double(_clk.nanoseconds()));
-    _cache.cache(_prate_index,dt);
-    _clk = dg->seq.clock();
-
-    if (accept) {
-      dt = double(dg->seq.clock().seconds())-double(_clk_acc.seconds()) + 
-        1.e-9*(double(dg->seq.clock().nanoseconds())-double(_clk_acc.nanoseconds()));
-      _cache.cache(_prate_acc_index,dt);
-      _clk_acc = dg->seq.clock();
-
-    }
   }
 }
 

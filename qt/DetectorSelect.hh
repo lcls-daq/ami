@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
+#include "ami/service/Semaphore.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -84,6 +85,7 @@ namespace Ami {
 //       DetectorSave*  _save_box;
       QTimer*        _autosave_timer;
       RateDisplay*   _rate_display;
+      Semaphore      _sem;
     };
   };
 };

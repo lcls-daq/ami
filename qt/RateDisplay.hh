@@ -40,6 +40,7 @@ namespace Ami {
       RateCalculator* _inputCalc;
       RateCalculator* _acceptCalc;
       Task*           _task;
+      volatile bool   _ready;
     };
   };
 };
