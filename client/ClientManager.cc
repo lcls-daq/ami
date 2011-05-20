@@ -123,9 +123,15 @@ ClientManager::ClientManager(unsigned   ppinterface,
     _connect = so;
 
     _listen = new TSocket;
-    try             { _listen->bind(Ins(ppinterface,port)); }
-    catch(Event& e) { printf("bind error : %s\n",e.what()); }
-
+    _port   = 0;
+    while(_port!=port) {
+      _port = port;
+      try             { _listen->bind(Ins(ppinterface,_port)); }
+      catch(Event& e) { 
+        //        printf("bind error : %s : trying port %d\n",e.what(),++port); 
+        ++port;
+      }
+    }
     _task->call(this);
     _listen_sem.take();
     
@@ -320,8 +326,8 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     }
   }
   else {
-    printf("(%p) received id %d/%d type %d/%d\n",
-	   this, reply.id(),_request.id(),reply.type(),_request.type());
+//     printf("(%p) received id %d/%d type %d/%d\n",
+//  	   this, reply.id(),_request.id(),reply.type(),_request.type());
     switch (reply.type()) {
     case Message::Description: 
     case Message::Payload:     

@@ -6,25 +6,25 @@ setenv LD_LIBRARY_PATH /reg/g/pcds/package/python-2.5.2/lib:${DAQREL}/build/pdsd
 
 -- pyami module --
 
-connect(CDS_interface, FEZ_interface, Server_Group)
+connect(Server_Group)
 	Connects the module to the group of monitoring servers.
-	The input parameters are specific to the hutch.
+	The Server_Group parameter is specific to the hutch.
 	This must be called before any of the following class methods.
 
 class pyami.Entry(name,'Scalar')
-	Monitors data from the scalar variable 'name'.  A tuple of 
+	Monitors data from the scalar variable 'name'.  A dictionary of 
 	('Scalar', n_events, mean, rms) is accumulated.
 
 class pyami.Entry(name,'TH1F',nbins,xlo,xhi)
-	Monitors data from the scalar variable 'name'.  A tuple of 
+	Monitors data from the scalar variable 'name'.  A dictionary of 
 	('TH1F', underflows, overflows, ( n_bin0, n_bin1, ...)) is accumulated.
 
 class pyami.Entry(det_identifier) or 
 class pyami.Entry(det_identifier,channel)
 	Monitors the data from the detector associated with 'det_identifier' and
-	'channel'.  A tuple of data averaged over events is accumulated.  The 
+	'channel'.  A dictionary of data averaged over events is accumulated.  The 
 	dimensions and binning of the data are determined from the detector.
-	The tuple format is
+	The dictionary format is
 	('Waveform', events, xlow, xhigh, (y0, y1, ...)) or
 	('Image', events, dark_level, ppxbin, ppybin, 
 		((row0col0,row0col1,...),(row1col0,row1col1,...))) or

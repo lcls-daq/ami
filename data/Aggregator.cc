@@ -38,8 +38,12 @@ Aggregator::~Aggregator()
 void Aggregator::connected       () 
 {
   //  printf("Agg connect %d %p\n",_n,&_client);
-  _n++; 
-  _client.connected(); 
+  //
+  //  Only forward a connection if it is the first, or it
+  //    requires a resync of server states
+  //
+  if (_n++==0 || _state!=Init)
+    _client.connected(); 
 }
 
 void Aggregator::disconnected    () 

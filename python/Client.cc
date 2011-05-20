@@ -43,12 +43,14 @@ Client::Client(const Pds::DetInfo& info,
   _niovload        (5),
   _iovload         (new iovec[_niovload])
 {
-  sem_init(&_sem, 0, 0);
+  sem_init(&_initial_sem, 0, 0);
+  sem_init(&_payload_sem, 0, 0);
 }
 
 Client::~Client() 
 {
-  sem_destroy(&_sem);
+  sem_destroy(&_initial_sem);
+  sem_destroy(&_payload_sem);
 
   if (_manager) delete _manager;
   delete[] _iovload;
@@ -181,6 +183,8 @@ void Client::read_description(Socket& socket,int len)
     _iovload = new iovec[_niovload=_cds.totalentries()];
   }
   _cds.payload(_iovload);
+
+  sem_post(&_initial_sem);
 }
 
 void Client::read_payload     (Socket& socket,int)
@@ -190,7 +194,7 @@ void Client::read_payload     (Socket& socket,int)
 
 void Client::process         () 
 {
-  sem_post(&_sem);
+  sem_post(&_payload_sem);
 }
 
 void Client::managed(ClientManager& mgr)
@@ -199,14 +203,44 @@ void Client::managed(ClientManager& mgr)
   _manager->connect();
 }
 
+int  Client::initialize(ClientManager& mgr)
+{
+  managed(mgr);
+
+  timespec tmo;
+  clock_gettime(CLOCK_REALTIME, &tmo);
+#ifdef DBUG
+  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
+  tmo.tv_sec+=5;
+  int result = sem_timedwait(&_initial_sem, &tmo);
+
+  clock_gettime(CLOCK_REALTIME, &tmo);
+  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
+#else
+  tmo.tv_sec+=5;
+  int result = sem_timedwait(&_initial_sem, &tmo);
+#endif
+  return result;
+}
+
 int Client::request_payload()
 {
   _manager->request_payload();
 
   timespec tmo;
   clock_gettime(CLOCK_REALTIME, &tmo);
-  tmo.tv_sec++;
-  return sem_timedwait(&_sem, &tmo);
+#ifdef DBUG
+  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
+  tmo.tv_sec+=2;
+  int result = sem_timedwait(&_payload_sem, &tmo);
+
+  clock_gettime(CLOCK_REALTIME, &tmo);
+  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
+#else
+  tmo.tv_sec+=2;
+  int result = sem_timedwait(&_payload_sem, &tmo);
+#endif
+  return result;
 }
 
 const Ami::Entry* Client::payload() const 

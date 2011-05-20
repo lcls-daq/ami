@@ -1,3 +1,6 @@
+2011-05-20	weaver			Modified ClientManager to seek an unused port for connection to servers.
+					Changed use of Tuples to Dictionarys in pyami.  Removed unnecessary 
+					parameters from pyami::connect.
 2011-05-04	weaver			Modified EventHandler interface to allow configure version tracking for
 					maintaining readback of old data.
 2011-04-28	weaver			Added UserFilter plug-in handling.

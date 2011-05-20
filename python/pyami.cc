@@ -26,7 +26,20 @@
 #include "ami/data/Single.hh"
 #include "ami/data/Average.hh"
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+
 #include <string>
+
+static const unsigned CDS_SUBNET_LO = 37;
+static const unsigned CDS_SUBNET_HI = 44;
+
+static const unsigned FEZ_SUBNET_LO = 20;
+static const unsigned FEZ_SUBNET_HI = 27;
 
 static PyObject* AmiError;
 
@@ -181,7 +194,11 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
 						    filter,
 						    op);
   
-  cl->managed(*_discovery->allocate(*cl));
+  if (cl->initialize(*_discovery->allocate(*cl))) {
+    printf("Configure timeout\n");
+    PyErr_SetString(PyExc_RuntimeError,"Configure timeout");
+    return -1;
+  }
 
   self->client = cl;
 
@@ -198,95 +215,96 @@ static PyObject* get(PyObject* self, PyObject* args)
     switch(entry->desc().type()) {
     case Ami::DescEntry::Scalar:
       { const Ami::EntryScalar* s = static_cast<const Ami::EntryScalar*>(entry);
-	return Py_BuildValue("sIdd",
-			     "Scalar",
-			     unsigned(s->entries()),
-			     s->mean(),
-			     s->rms()); }
+        PyObject* o = PyDict_New();
+        PyDict_SetItemString(o,"type"   ,PyString_FromString("Scalar"));
+        PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->entries()));
+        PyDict_SetItemString(o,"mean"   ,PyFloat_FromDouble(s->mean()));
+        PyDict_SetItemString(o,"rms"    ,PyFloat_FromDouble(s->rms()));
+        return o; }
     case Ami::DescEntry::TH1F:
       { const Ami::EntryTH1F* s = static_cast<const Ami::EntryTH1F*>(entry);
-	PyObject* t = PyTuple_New(s->desc().nbins());
-	for(unsigned i=0; i<s->desc().nbins();i++) {
-	  PyObject* o = Py_BuildValue("d",s->content(i));
-	  PyTuple_SetItem(t,i,o);
-	}
-	PyObject* result = Py_BuildValue("sddO",
-					 "TH1F",
-					 s->info(Ami::EntryTH1F::Underflow),
-					 s->info(Ami::EntryTH1F::Overflow),
-					 t);
+	PyObject* t = PyList_New(s->desc().nbins());
+	for(unsigned i=0; i<s->desc().nbins();i++)
+	  PyList_SetItem(t,i,PyFloat_FromDouble(s->content(i)));
+
+	PyObject* o = PyDict_New();
+        PyDict_SetItemString(o,"type",   PyString_FromString("TH1F"));
+        PyDict_SetItemString(o,"uflow",  PyLong_FromDouble(s->info(Ami::EntryTH1F::Underflow)));
+        PyDict_SetItemString(o,"oflow",  PyLong_FromDouble(s->info(Ami::EntryTH1F::Overflow)));
+        PyDict_SetItemString(o,"data",   t);
+
 	Py_DECREF(t);
-	return result;
+	return o;
       }
     case Ami::DescEntry::Waveform:
       { const Ami::EntryWaveform* s = static_cast<const Ami::EntryWaveform*>(entry);
-	PyObject* t = PyTuple_New(s->desc().nbins());
-	for(unsigned i=0; i<s->desc().nbins();i++) {
-	  PyObject* o = Py_BuildValue("d",s->content(i));
-	  PyTuple_SetItem(t,i,o);
-	}
-	PyObject* result = Py_BuildValue("sdddO",
-					 "Waveform",
-					 s->info(Ami::EntryWaveform::Normalization),
-					 s->desc().xlow(),
-					 s->desc().xup(),
-					 t);
+	PyObject* t = PyList_New(s->desc().nbins());
+	for(unsigned i=0; i<s->desc().nbins();i++)
+	  PyList_SetItem(t,i,PyFloat_FromDouble(s->content(i)));
+
+	PyObject* o = PyDict_New();
+        PyDict_SetItemString(o,"type",   PyString_FromString("Waveform"));
+        PyDict_SetItemString(o,"entries",PyLong_FromDouble(s->info(Ami::EntryWaveform::Normalization)));
+        PyDict_SetItemString(o,"xlow",   PyFloat_FromDouble(s->desc().xlow()));
+        PyDict_SetItemString(o,"xhigh",  PyFloat_FromDouble(s->desc().xup ()));
+        PyDict_SetItemString(o,"data",   t);
+
 	Py_DECREF(t);
-	return result;
+	return o;
       }
     case Ami::DescEntry::Image:
       { const Ami::EntryImage* s = static_cast<const Ami::EntryImage*>(entry);
 	PyObject* t;
-	PyObject* result;
+	PyObject* o;
 
 	if (s->desc().nframes()<=1) {
-	  t = PyTuple_New(s->desc().nbinsy());  // rows
+	  t = PyList_New(s->desc().nbinsy());  // rows
 	  for(unsigned i=0; i<s->desc().nbinsy();i++) {
-	    PyObject* col = PyTuple_New(s->desc().nbinsx());
+	    PyObject* col = PyList_New(s->desc().nbinsx());
 	    for(unsigned j=0; j<s->desc().nbinsx();j++)
-	      PyTuple_SetItem(col,j,Py_BuildValue("d",s->content(j,i)));
-	    PyTuple_SetItem(t,i,col);
+	      PyList_SetItem(col,j,PyFloat_FromDouble(s->content(j,i)));
+	    PyList_SetItem(t,i,col);
 	  }
-	  result = Py_BuildValue("sddddO",
-				 "Image",
-				 s->info(Ami::EntryImage::Normalization),
-				 s->info(Ami::EntryImage::Pedestal),
-				 s->desc().ppxbin(),
-				 s->desc().ppybin(),
-				 t);
+          o = PyDict_New();
+          PyDict_SetItemString(o,"type",   PyString_FromString("Image"));
+          PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->info(Ami::EntryImage::Normalization)));
+          PyDict_SetItemString(o,"offset", PyFloat_FromDouble(s->info(Ami::EntryImage::Pedestal)));
+          PyDict_SetItemString(o,"ppxbin", PyLong_FromLong(s->desc().ppxbin()));
+          PyDict_SetItemString(o,"ppybin", PyLong_FromLong(s->desc().ppybin()));
+          PyDict_SetItemString(o,"data",   t);
 	}
 	else {
-	  t = PyTuple_New(s->desc().nframes());
+	  t = PyList_New(s->desc().nframes());
 	  for(unsigned k=0; k<s->desc().nframes(); k++) {
 	    const Ami::SubFrame& f = s->desc().frame(k);
-	    PyObject* rows = PyTuple_New(f.ny);
+	    PyObject* rows = PyList_New(f.ny);
 	    for(unsigned i=0; i<f.ny;i++) {
-	      PyObject* col = PyTuple_New(f.nx);
+	      PyObject* col = PyList_New(f.nx);
 	      for(unsigned j=0; j<f.nx;j++)
-		PyTuple_SetItem(col,j,Py_BuildValue("d",s->content(f.x+j,f.y+i)));
-	      PyTuple_SetItem(rows,i,col);
+		PyList_SetItem(col,j,PyFloat_FromDouble(s->content(f.x+j,f.y+i)));
+	      PyList_SetItem(rows,i,col);
 	    }
-	    PyTuple_SetItem(t,k,Py_BuildValue("ddO",f.x,f.y,rows));
+	    PyList_SetItem(t,k,Py_BuildValue("ddO",f.x,f.y,rows));
 	  }
-	  result = Py_BuildValue("sddddO",
-				 "ImageArray",
-				 s->info(Ami::EntryImage::Normalization),
-				 s->info(Ami::EntryImage::Pedestal),
-				 s->desc().ppxbin(),
-				 s->desc().ppybin(),
-				 t);
+          o = PyDict_New();
+          PyDict_SetItemString(o,"type",   PyString_FromString("ImageArray"));
+          PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->info(Ami::EntryImage::Normalization)));
+          PyDict_SetItemString(o,"offset", PyFloat_FromDouble(s->info(Ami::EntryImage::Pedestal)));
+          PyDict_SetItemString(o,"ppxbin", PyLong_FromLong(s->desc().ppxbin()));
+          PyDict_SetItemString(o,"ppybin", PyLong_FromLong(s->desc().ppybin()));
+          PyDict_SetItemString(o,"data",   t);
+
 	}
-	Py_DECREF(t);
-	return result;
+        Py_DECREF(t);
+        return o;
       }
     default:
       break;
     }
   }
 
-  return Py_BuildValue("s","None");
-//   Py_INCREF(Py_None);
-//   return Py_None;
+  PyErr_SetString(PyExc_RuntimeError,"get timedout");
+  return NULL;
 }
 
 //
@@ -359,9 +377,67 @@ static PyTypeObject amientry_type = {
 static PyObject*
 pyami_connect(PyObject *self, PyObject *args)
 {
-  unsigned ppinterface, mcinterface, servergroup;
+  unsigned ppinterface(0), mcinterface(0), servergroup;
 
-  if (!PyArg_ParseTuple(args, "III", &ppinterface, &mcinterface, &servergroup))
+  int fd;  
+  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+    PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interface");
+    return NULL;
+  }
+
+  const int MaxRoutes = 5;
+  struct ifreq ifrarray[MaxRoutes];
+  memset(ifrarray, 0, sizeof(ifreq)*MaxRoutes);
+
+  struct ifconf ifc;
+  ifc.ifc_len = MaxRoutes * sizeof(struct ifreq);
+  ifc.ifc_buf = (char*)ifrarray;
+  
+  if (ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
+    PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interfaces");
+    close(fd);
+    return NULL;
+  }
+
+  for (int i=0; i<MaxRoutes; i++) {
+    struct ifreq* ifr = ifrarray+i;
+    if (!ifr || !(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr)) break;
+
+    struct ifreq ifreq_flags = *ifr;
+    if (ioctl(fd, SIOCGIFFLAGS, &ifreq_flags) < 0) {
+      PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interfaces");
+      close(fd);
+      return NULL;
+    }
+
+    int flags = ifreq_flags.ifr_flags;
+    if ((flags & IFF_UP) && (flags & IFF_BROADCAST)) {
+      struct ifreq ifreq_hwaddr = *ifr;
+      if (ioctl(fd, SIOCGIFHWADDR, &ifreq_hwaddr) < 0) 
+        continue;
+
+      unsigned addr = htonl(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr);
+      unsigned subn = (addr>>8)&0xff;
+      //      printf("Found addr %08x  subn %d\n",addr,subn);
+      if (subn>=CDS_SUBNET_LO &&
+          subn<=CDS_SUBNET_HI)
+        ppinterface = addr;
+      else if (subn>=FEZ_SUBNET_LO && 
+               subn<=FEZ_SUBNET_HI)
+        mcinterface = addr;
+    }
+  }
+
+  if (ppinterface==0) {
+    PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interface");
+    return NULL;
+  }
+  if (mcinterface==0) {
+    PyErr_SetString(PyExc_RuntimeError,"failed to lookup group interface");
+    return NULL;
+  }
+
+  if (!PyArg_ParseTuple(args, "I", &servergroup))
     return NULL;
 
   if (_discovery)

@@ -25,10 +25,11 @@ namespace Ami {
 	     AbsOperator*        op);
       virtual ~Client();
     public:
-      void managed         (ClientManager&);
+      int  initialize      (ClientManager&);
       int  request_payload ();
       const Entry* payload() const;
     public: // AbsClient interface
+      void managed         (ClientManager&);
       void connected       ();
       int  configure       (iovec*);
       int  configured      ();
@@ -52,7 +53,8 @@ namespace Ami {
       unsigned        _niovload;
       iovec*          _iovload;
 
-      sem_t           _sem;
+      sem_t           _initial_sem;
+      sem_t           _payload_sem;
     };
   };
 };
