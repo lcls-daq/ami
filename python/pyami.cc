@@ -379,52 +379,61 @@ pyami_connect(PyObject *self, PyObject *args)
 {
   unsigned ppinterface(0), mcinterface(0), servergroup;
 
-  int fd;  
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-    PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interface");
+  if (!PyArg_ParseTuple(args, "I|II", &servergroup,
+                        &ppinterface, &mcinterface))
     return NULL;
-  }
 
-  const int MaxRoutes = 5;
-  struct ifreq ifrarray[MaxRoutes];
-  memset(ifrarray, 0, sizeof(ifreq)*MaxRoutes);
+  if (ppinterface==0 || mcinterface==0) {
+    //
+    //  Lookup these parameters from the available network interfaces
+    //
+    int fd;  
+    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+      PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interface");
+      return NULL;
+    }
 
-  struct ifconf ifc;
-  ifc.ifc_len = MaxRoutes * sizeof(struct ifreq);
-  ifc.ifc_buf = (char*)ifrarray;
+    const int MaxRoutes = 5;
+    struct ifreq ifrarray[MaxRoutes];
+    memset(ifrarray, 0, sizeof(ifreq)*MaxRoutes);
+
+    struct ifconf ifc;
+    ifc.ifc_len = MaxRoutes * sizeof(struct ifreq);
+    ifc.ifc_buf = (char*)ifrarray;
   
-  if (ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
-    PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interfaces");
-    close(fd);
-    return NULL;
-  }
-
-  for (int i=0; i<MaxRoutes; i++) {
-    struct ifreq* ifr = ifrarray+i;
-    if (!ifr || !(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr)) break;
-
-    struct ifreq ifreq_flags = *ifr;
-    if (ioctl(fd, SIOCGIFFLAGS, &ifreq_flags) < 0) {
+    if (ioctl(fd, SIOCGIFCONF, &ifc) < 0) {
       PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interfaces");
       close(fd);
       return NULL;
     }
 
-    int flags = ifreq_flags.ifr_flags;
-    if ((flags & IFF_UP) && (flags & IFF_BROADCAST)) {
-      struct ifreq ifreq_hwaddr = *ifr;
-      if (ioctl(fd, SIOCGIFHWADDR, &ifreq_hwaddr) < 0) 
-        continue;
+    for (int i=0; i<MaxRoutes; i++) {
+      struct ifreq* ifr = ifrarray+i;
+      if (!ifr || !(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr)) break;
 
-      unsigned addr = htonl(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr);
-      unsigned subn = (addr>>8)&0xff;
-      //      printf("Found addr %08x  subn %d\n",addr,subn);
-      if (subn>=CDS_SUBNET_LO &&
-          subn<=CDS_SUBNET_HI)
-        ppinterface = addr;
-      else if (subn>=FEZ_SUBNET_LO && 
-               subn<=FEZ_SUBNET_HI)
-        mcinterface = addr;
+      struct ifreq ifreq_flags = *ifr;
+      if (ioctl(fd, SIOCGIFFLAGS, &ifreq_flags) < 0) {
+        PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interfaces");
+        close(fd);
+        return NULL;
+      }
+
+      int flags = ifreq_flags.ifr_flags;
+      if ((flags & IFF_UP) && (flags & IFF_BROADCAST)) {
+        struct ifreq ifreq_hwaddr = *ifr;
+        if (ioctl(fd, SIOCGIFHWADDR, &ifreq_hwaddr) < 0) 
+          continue;
+
+        unsigned addr = htonl(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr);
+        unsigned subn = (addr>>8)&0xff;
+        //      printf("Found addr %08x  subn %d\n",addr,subn);
+        if (subn>=CDS_SUBNET_LO &&
+            subn<=CDS_SUBNET_HI)
+          ppinterface = addr;
+        else if (subn>=FEZ_SUBNET_LO && 
+                 subn<=FEZ_SUBNET_HI)
+          mcinterface = addr;
+      }
     }
   }
 
@@ -436,9 +445,6 @@ pyami_connect(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_RuntimeError,"failed to lookup group interface");
     return NULL;
   }
-
-  if (!PyArg_ParseTuple(args, "I", &servergroup))
-    return NULL;
 
   if (_discovery)
     delete _discovery;
