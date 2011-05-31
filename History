@@ -1,3 +1,4 @@
+2011-05-31	weaver	Tag V01-08-00.	
 2011-05-20	weaver			Modified ClientManager to seek an unused port for connection to servers.
 					Changed use of Tuples to Dictionarys in pyami.  Removed unnecessary 
 					parameters from pyami::connect.
