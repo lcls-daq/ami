@@ -44,6 +44,9 @@ void Aggregator::connected       ()
   //
   if (_n++==0 || _state!=Init)
     _client.connected(); 
+  else
+    printf("Agg conn suppressed n (%d) _state (%d)\n",
+           _n, _state);
 }
 
 void Aggregator::disconnected    () 

@@ -4,6 +4,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/NullTransform.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
@@ -18,6 +19,9 @@
 #include "qwt_plot.h"
 
 using namespace Ami::Qt;
+
+static NullTransform _noTransform;
+static QColor _noColor;
 
 PeakPlot::PeakPlot(QWidget*         parent,
 		   const QString&   name,
@@ -88,7 +92,7 @@ void PeakPlot::setup_payload(Cds& cds)
   _frame->reset();
   const EntryImage* entry = static_cast<const EntryImage*>(cds.entry(_signature));
   const DescImage& d = entry->desc();
-  _frame->add(new QtImage(d.name(), *entry, 0, 0, d.nbinsx()-1, d.nbinsy()-1),true);
+  _frame->add(new QtImage(d.name(), *entry, _noTransform, _noTransform, _noColor), true);
 }
 
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,

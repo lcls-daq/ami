@@ -32,13 +32,14 @@ static char _buffer[128];
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
   if (info.device()==DetInfo::Acqiris)
-    sprintf(b,"UNK_%s_%s_%d",
+    sprintf(b,"%s_%s_%d",
 	    DetInfo::name(info.detector()),
 	    DetInfo::name(info.device  ()), 
 	    channel+1);
   else
-    sprintf(b,"UNK_%s_%s_%d",
+    sprintf(b,"%s_%d_%s_%d",
 	    DetInfo::name(info.detector()),
+            info.detId(),
 	    DetInfo::name(info.device  ()),
             info.devId());
 }
