@@ -666,7 +666,8 @@ namespace CspadGeometry {
 
   class ConfigCache {
   public:
-    ConfigCache(Pds::TypeId type, const void* payload) : _type(type)
+    ConfigCache(Pds::TypeId type, const void* payload) : 
+      _type(type)
     {
       unsigned size;
       switch(type.version()) {
@@ -749,12 +750,14 @@ namespace CspadGeometry {
 
   class Detector {
   public:
-    Detector(const ConfigCache& c,
+    Detector(const Src& src,
+             const ConfigCache& c,
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
              FILE* gm,   // geometry
              unsigned max_pixels) :
+      _src   (src),
       _config(c)
     {
       unsigned smask = 
@@ -832,11 +835,12 @@ namespace CspadGeometry {
       char buff[64];
       _cache = &cache;
       unsigned qmask = _config.quadMask();
+      const char* detname = DetInfo::name(static_cast<const DetInfo&>(_src).detector());
       for(unsigned i=0; i<4; i++)
 	if (qmask & (1<<i)) {
 	  quad[i]->fill(image, _config.roiMask(i));
 	  for(unsigned a=0; a<4; a++) {
-	    sprintf(buff,"Cspad:Quad[%d]:Temp[%d]",i,a);
+	    sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
 	    _feature[4*i+a] = cache.add(buff);
 	  }
 	}
@@ -886,6 +890,7 @@ namespace CspadGeometry {
     unsigned ypixels() { return _pixels; }
   private:
     Quad* quad[4];
+    const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[16];
@@ -903,7 +908,8 @@ CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, uns
   _detector(0),
   _unbinned_detector(0),
   _cache(features),
-  _max_pixels(max_pixels)
+  _max_pixels(max_pixels),
+  _options   (0)
 {
 }
 
@@ -1006,7 +1012,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(cfg,f,s,g,gm,max_pixels);
+  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,gm,max_pixels);
 
   if (entry) 
     delete entry;
@@ -1042,6 +1048,12 @@ void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
   if (_entry) {
+    unsigned o = _entry->desc().options();
+    if (_options != o) {
+      printf("CspadHandler::event options %x -> %x\n", _options, o);
+      _options = o;
+    }
+
     _detector->fill(*_entry,*xtc);
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);

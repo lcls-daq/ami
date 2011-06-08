@@ -45,6 +45,7 @@ namespace Ami {
     CspadGeometry::Detector* _unbinned_detector;
     FeatureCache&        _cache;
     unsigned             _max_pixels;
+    unsigned             _options;
   };
 };
 
