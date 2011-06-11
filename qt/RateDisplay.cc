@@ -136,6 +136,8 @@ void RateDisplay::read_description(Socket& s,int len) {
     abort();
   }
 
+  _cds.reset();
+
   const char* payload = _description;
   const char* const end = payload + size;
   payload += sizeof(Desc);
