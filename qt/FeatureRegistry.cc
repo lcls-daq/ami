@@ -41,7 +41,7 @@ void               FeatureRegistry::insert(const DiscoveryRx& rx)
 	  _help[index] = QString(p);
       }
     }
-    delete line;
+    delete[] line;
     fclose(f);
   }
 

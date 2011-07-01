@@ -463,7 +463,7 @@ namespace CspadGeometry {
         }
       }
       
-      delete linep;
+      delete[] linep;
     }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
