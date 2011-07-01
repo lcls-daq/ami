@@ -37,6 +37,7 @@ namespace Ami {
     bool                 _collect;
     unsigned             _ncollect;
     EntryImage*          _entry;
+    bool                 _tform;
   };
 };
 

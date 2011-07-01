@@ -22,7 +22,6 @@ static const unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
 static const unsigned MinCalib=25;
 
 #define COMMONMODE
-#define TFORM
 
 namespace Ami {
   class PixelCalibration {
@@ -67,7 +66,8 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
   _calib   (new PixelCalibration[ArraySize]),
   _collect (false),
   _ncollect(0),
-  _entry   (0)
+  _entry   (0),
+  _tform   (true)
 {
 }
   
@@ -107,6 +107,15 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
   else {
     printf("Failed to load pedestals %s\n",oname);
   }
+
+  sprintf(oname,"rot.%08x.dat",info().phy());
+  f = fopen(oname,"r");
+  if (f) {
+    _tform = false;
+    fclose(f);
+  }
+  else
+    _tform = true;
 
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, 0, ChannelID::name(det),
@@ -231,11 +240,10 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       v += Offset<<2;
       v -= _correct->content(ix, iy);
       v -= common[ix-(x>>1)];
-#ifdef TFORM
-      _entry->content(v, iy, 511-ix);
-#else
-      _entry->content(v, ix, iy);
-#endif
+      if (_tform)
+        _entry->content(v, iy, 511-ix);
+      else
+        _entry->content(v, ix, iy);
       d  += 2;
       d1 += 2;
     }
@@ -284,11 +292,10 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
       v += Offset<<2;
       v -= _correct->content(ix, iy);
       v -= common[(x>>1)-ix];
-#ifdef TFORM
-      _entry->content(v, iy, 511-ix);
-#else
-      _entry->content(v, ix, iy);
-#endif
+      if (_tform)
+        _entry->content(v, iy, 511-ix);
+      else
+        _entry->content(v, ix, iy);
       d  += 2;
       d1 += 2;
     }
