@@ -46,6 +46,7 @@ namespace Ami {
       void save_image();
       void save_data();
       void save_reference();
+      void update_timedisplay();
     signals:
       void redraw();
     private:

@@ -77,6 +77,7 @@ void Ami::Qt::ImageDisplay::_layout()
   setLayout(layout);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
+  connect(this   , SIGNAL(redraw()) , this       , SLOT(update_timedisplay()));
 }
 
 Ami::Qt::ImageDisplay::~ImageDisplay()
@@ -276,11 +277,6 @@ void Ami::Qt::ImageDisplay::update()
     (*it)->update();
   _sem.give();
 
-  const Pds::ClockTime& time = _plot->time();
-  _time_display->setText(QString("Time:%1.%2")
-                         .arg(QString::number(time.seconds()))
-                         .arg(QString::number(time.nanoseconds()),9,QChar('0')));
-
   emit redraw();
 }
 
@@ -288,4 +284,10 @@ const Ami::AbsTransform& Ami::Qt::ImageDisplay::xtransform() const { return null
 
 ImageFrame* Ami::Qt::ImageDisplay::plot() const { return _plot; }
 
-
+void Ami::Qt::ImageDisplay::update_timedisplay()
+{
+  const Pds::ClockTime& time = _plot->time();
+  _time_display->setText(QString("Time:%1.%2")
+                         .arg(QString::number(time.seconds()))
+                         .arg(QString::number(time.nanoseconds()),9,QChar('0')));
+}
