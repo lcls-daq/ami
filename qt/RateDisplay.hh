@@ -13,6 +13,7 @@ namespace Ami {
   class Socket;
   class ClientManager;
   namespace Qt {
+    class RateCalculator;
     class RateDisplay : public Timer {
     public:
       RateDisplay(ClientManager*);
@@ -36,7 +37,6 @@ namespace Ami {
       Cds             _cds;
       unsigned        _niovload;
       iovec*          _iovload;
-      class RateCalculator;
       RateCalculator* _inputCalc;
       RateCalculator* _acceptCalc;
       Task*           _task;

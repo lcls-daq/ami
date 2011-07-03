@@ -1,4 +1,5 @@
 #include "ami/qt/RateDisplay.hh"
+#include "ami/qt/RateCalculator.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
@@ -21,33 +22,6 @@ static const unsigned InputRateSignature  = 1;
 static const unsigned AcceptRateSignature = 2;
 
 using namespace Ami::Qt;
-
-class RateDisplay::RateCalculator {
-public:
-  RateCalculator() : _entry(0), _last(0), _display(new QLabel("0")) {}
-  ~RateCalculator() {}
-public:
-  QLabel* display() { return _display; }
-
-  bool set_entry(Ami::Entry* entry) {
-    _entries = _last = 0;
-    return (_entry   = static_cast<Ami::EntryScalar*>(entry));
-  }
-  void update() { 
-    if (_entry && _entry->valid()) {
-      _last    = _entry->entries() - _entries;
-      _entries = _entry->entries();
-      _display->setText(QString::number(_last,'f',0));
-    }
-    else
-      _display->setText(QString("."));
-  }
-private:
-  Ami::EntryScalar* _entry;
-  double   _last;
-  double   _entries;
-  QLabel*  _display;
-};
 
 RateDisplay::RateDisplay(ClientManager* manager) :
   _manager         (manager),
@@ -87,10 +61,10 @@ void RateDisplay::addLayout(QVBoxLayout* l)
   QGroupBox* rate_box  = new QGroupBox("Rates");
   QHBoxLayout* layout = new QHBoxLayout;    
   layout->addWidget(new QLabel("Input:"));
-  layout->addWidget(_inputCalc->display());
+  layout->addWidget(_inputCalc);
   layout->addStretch();
   layout->addWidget(new QLabel("Filtered:"));
-  layout->addWidget(_acceptCalc->display());
+  layout->addWidget(_acceptCalc);
   rate_box->setLayout(layout);
   l->addWidget(rate_box); 
 }

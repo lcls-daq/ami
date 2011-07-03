@@ -110,6 +110,10 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   sprintf(oname,"rot.%08x.dat",info().phy());
   f = fopen(oname,"r");
+  if (!f) {
+    sprintf(oname,"/reg/g/pcds/pds/pnccdcalib/ped.%08x.dat",info().phy());
+    f = fopen(oname,"r");
+  }
   if (f) {
     _tform = false;
     fclose(f);

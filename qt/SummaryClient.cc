@@ -56,14 +56,18 @@ namespace Ami {
 
     class PagePlot : public QWidget {
     public:
-      PagePlot(const QString& title) : _title (title),_layout(new QVBoxLayout) {}
+      PagePlot(const QString& title) : _title (title),_layout(new QGridLayout) {}
       ~PagePlot() {}
     public:
       const QString& title() const { return _title; }
-      void add   (QtBase* plot)
+      void add   (QtBase* plot, int row, int col)
       {
 	QtBasePlot* frame = new QtBasePlot(plot);
-	_layout->addWidget(frame);
+        if (row<0 || col<0) {
+          row = _layout->rowCount();
+          col = 0;
+        }
+	_layout->addWidget(frame, row, col);
 	_plots.push_back(frame);
       }
       void layout() { setLayout(_layout); }
@@ -74,7 +78,7 @@ namespace Ami {
       }
     private:
       QString                _title;
-      QVBoxLayout*           _layout;
+      QGridLayout*           _layout;
       std::list<QtBasePlot*> _plots;
     };
   };
@@ -216,11 +220,24 @@ void SummaryClient::_read_description(int size)
 	   desc->name(), desc->type());
 
     QString page_title, plot_title;
+    int row=-1, col=-1;
     { QString title(desc->name());
       int index = title.indexOf( PageIndex );
       if (index >= 0) {
 	plot_title = title.left(index);
-	page_title = title.mid(index+1,title.indexOf( PageIndex, index+1 ));
+        int rIndex = title.indexOf( PageIndex, index+1 );
+        if (rIndex >= 0) {
+          page_title = title.mid(index+1,rIndex-index-1);
+          int cIndex = title.indexOf( PageIndex, rIndex+1 );
+          if (cIndex >= 0) {
+            row = title.mid( rIndex+1, cIndex-rIndex-1).toInt();
+            col = title.mid( cIndex+1 ).toInt();
+          }
+          else
+            row = title.mid( rIndex+1 ).toInt();
+        }
+        else
+          page_title = title.mid(index+1);
       }
       else {
 	plot_title = page_title = title;
@@ -253,14 +270,14 @@ void SummaryClient::_read_description(int size)
     bool lFound=false;
     for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
       if ((*it)->title() == page_title) {
-	(*it)->add(plot);
+	(*it)->add(plot,row,col);
 	lFound=true;
 	break;
       }
     }
     if (!lFound) {
       PagePlot* page = new PagePlot(page_title);
-      page->add(plot);
+      page->add(plot,row,col);
       pages.push_back(page);
     }
 
