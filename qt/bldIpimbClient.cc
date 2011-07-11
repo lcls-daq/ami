@@ -30,74 +30,6 @@
 
 using namespace Ami::Blv;
 
-DetectorListItem::DetectorListItem(QListWidget*        parent,
-				   const QString&      dlabel,
-				   const Pds::DetInfo& dinfo, 
-				   unsigned            interface,
-				   const char*         host,
-				   unsigned            port ) :
-  QListWidgetItem(dlabel, parent),
-  info           (dinfo),
-  _parent        (parent),
-  _interface     (interface),
-  _port          (port),
-  _client        (0),
-  _manager       (0)
-{
-  setTextAlignment(::Qt::AlignHCenter);
-
-  struct hostent* hent = gethostbyname(host);
-  if (!hent) 
-    printf("Failed to lookup entry for host %s\n",host);
-  else
-    _ip_host = ntohl(*(unsigned*)hent->h_addr);
-}
-
-void DetectorListItem::show() { 
-  if (_client)
-    _client->show();
-  else {
-
-    _client = new Ami::Qt::ImageClient(_parent, info, 0);
-    
-    _manager = new ClientManager(_interface, _interface, _ip_host, _port,
-				 *_client);
-    _client->managed(*_manager);
-  }
-}
-
-void DetectorListItem::hide() { if (_client) _client->hide(); }
-
-DetectorSelect::DetectorSelect(unsigned interface,
-			       const SList& servers) :
-  QGroupBox   ("Data"),
-  _clientPort (Port::clientPortBase()),
-  _last_item  (0)
-{
-  QVBoxLayout* layout = new QVBoxLayout;    
-
-  layout->addWidget(_detList = new QListWidget(this));
-  for(SList::const_iterator it = servers.begin(); it != servers.end(); it++)
-    if (strcmp(it->name,"EVR"))
-      new DetectorListItem(_detList, it->name, it->info, 
-			   interface, it->host, _clientPort++);
-
-  connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
-	  this, SLOT(show_detector(QListWidgetItem*)));
-
-  setLayout(layout);
-
-  _reconnect_timer = new QTimer(this);
-  connect(_reconnect_timer, SIGNAL(timeout()), this, SLOT(reconnect()));
-  _reconnect_timer->setSingleShot(false);
-  _reconnect_timer->start(5000);
-}
-
-DetectorSelect::~DetectorSelect() 
-{
-}
-
-
 ConfigSelect::ConfigSelect(unsigned     interface,
 			   const SList& servers,
 			   const char*  db_path) :
@@ -236,7 +168,6 @@ Control::Control(const QString& label,
     l->addWidget(title,0,::Qt::AlignHCenter); }
 
   l->addWidget(new ConfigSelect  (interface, servers, db));
-  l->addWidget(new DetectorSelect(interface, servers));
   setLayout(l);
 }
 
@@ -282,7 +213,7 @@ static void showUsage()
       "   -i <Interface Name/IP>    : Set the network Interface/IP for communication. Default: 'eth0' \n"
       "   -c <Config DB Path>       : Path for IPIMB Config DB. Default@ [%s] \n"
       "   -p <Control Port>         : Control Port for Remote Configuration over Cds Interface.Default: %u \n"
-      "   -H <IPIMB Hostname>       : Hostname to communicate to. Default : %s\n",IPIMB_CONFIG_DB,CONTROL_PORT,IPIMB_HOSTNAME );
+      "   -H <IPIMB Hostnames>      : Hostnames to communicate to (comma-separated list. Default : %s\n",IPIMB_CONFIG_DB,CONTROL_PORT,IPIMB_HOSTNAME );
     
 }
 
@@ -290,8 +221,8 @@ int main(int argc, char **argv)
 {
   unsigned interface   = parse_interface("eth0"); //0x7f000001;
   unsigned controlPort = CONTROL_PORT;
-  char* configdb = new char[100]; sprintf(configdb,IPIMB_CONFIG_DB);
-  char* hostName = new char[100]; sprintf(hostName,IPIMB_HOSTNAME);  
+  char* configdb = IPIMB_CONFIG_DB;
+  char* hostName = IPIMB_HOSTNAME;
   
   extern char* optarg;
   int c;
@@ -301,10 +232,10 @@ int main(int argc, char **argv)
       interface = parse_interface(optarg);
       break;
     case 'c':
-      sprintf(configdb,optarg);
+      configdb = optarg;
       break;
     case 'H':
-      sprintf(hostName,optarg);
+      hostName = optarg;
       break;
     case 'p':
       controlPort = strtoul(optarg, NULL, 0);
@@ -321,12 +252,15 @@ int main(int argc, char **argv)
   SList servers;
   Ami::Blv::ServerEntry entry;
   unsigned det;
-  sprintf(entry.name,"NH2-SB1-IPM-01");
-  sprintf(entry.host,hostName);
-  det = (unsigned) Pds::DetInfo::XppSb1Ipm;
-  entry.port = controlPort;
-  entry.info = Pds::DetInfo(0,(Pds::DetInfo::Detector)det,1,Pds::DetInfo::Ipimb,0);
-  servers.push_back(entry);  
+  char* host = strtok(hostName,",");
+  do {
+    sprintf(entry.name,host);
+    sprintf(entry.host,host);
+    det = (unsigned) Pds::DetInfo::XppSb1Ipm;
+    entry.port = controlPort;
+    entry.info = Pds::DetInfo(0,(Pds::DetInfo::Detector)det,1,Pds::DetInfo::Ipimb,0);
+    servers.push_back(entry);  
+  } while((host=strtok(NULL,",")));
 
   Control* control = new Control("BLD IPIMB Configuration", interface,servers,configdb);
   control->show();

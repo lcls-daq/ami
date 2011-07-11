@@ -21,48 +21,6 @@ namespace Pds_ConfigDb {
 
 namespace Ami {
   namespace Blv {
-    class DetectorListItem : public QObject, 
-			     public QListWidgetItem {
-      Q_OBJECT
-    public:
-      DetectorListItem(QListWidget*        parent,
-		       const QString&      dlabel,
-		       const Pds::DetInfo& dinfo, 
-		       unsigned            interface,
-		       const char*         host,
-		       unsigned            port );
-      ~DetectorListItem() {}
-    public:
-      Pds::DetInfo    info;
-    public slots:
-      void enable (bool v) {
-	if (v)
-	  setFlags(flags() |  ::Qt::ItemIsEnabled); 
-	else
-	  setFlags(flags() & ~::Qt::ItemIsEnabled); 
-      }
-      void hide();
-      void show();
-    public:
-      void reconnect() {
-	if (_manager) {
-	  if (_manager->nconnected()==0) {
-	    enable(false);
-	    _manager->connect();
-	  }
-	  else
-	    enable(true);
-	}
-      }
-    private:
-      QWidget*           _parent;
-      unsigned           _interface;
-      unsigned           _port;
-      Qt::ImageClient*   _client;
-      unsigned           _ip_host;
-      ClientManager*     _manager;
-    };
-
     class ServerEntry {
     public:
       char            name[32];
@@ -72,29 +30,6 @@ namespace Ami {
     };
 
     typedef std::list<ServerEntry> SList;
-
-    class DetectorSelect : public QGroupBox {
-      Q_OBJECT
-    public:
-      DetectorSelect(unsigned interface,
-		     const SList& servers);
-      ~DetectorSelect();
-    public slots:
-      void show_detector(QListWidgetItem*item) {
-	if (_last_item)  _last_item->hide();
-	_last_item = static_cast<DetectorListItem*>(item);
-	_last_item->show();
-      }
-      void reconnect    () {
-	for(int i=0; i<_detList->count(); i++)
-	  static_cast<DetectorListItem*>(_detList->item(i))->reconnect();
-      }
-    private:
-      unsigned short               _clientPort;
-      QListWidget*                 _detList;
-      DetectorListItem*            _last_item;
-      QTimer*                      _reconnect_timer;
-    };
 
     class ConfigSelect : public QGroupBox {
       Q_OBJECT

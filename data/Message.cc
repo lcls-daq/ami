@@ -11,6 +11,13 @@ Message::Message(unsigned id, Type type, unsigned payload, unsigned offset) :
   _payload(payload)
 {}
 
+Message::Message(const Message& o) :
+  _id     (o._id),
+  _type   (o._type),
+  _offset (o._offset),
+  _payload(o._payload)
+{}
+
 unsigned Message::id() const { return _id; }
 
 void Message::id(unsigned i) { _id = i; }

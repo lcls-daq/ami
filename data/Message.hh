@@ -24,6 +24,7 @@ namespace Ami {
 	      PayloadFragment};
 
     Message(unsigned id, Type type, unsigned payload=0, unsigned offset=0);
+    Message(const Message&);
   public:
     unsigned id     () const;
     Type     type   () const;

@@ -68,7 +68,7 @@ unsigned    FeatureCache::entries() const { return _entries; }
 const char* FeatureCache::names  () const { return _names; }
 double      FeatureCache::cache  (int index, bool* damaged) const 
 {
-  if (damaged) *damaged = (index<0) | ((_damaged[index>>5]>>(index&0x1f)) & 1);
+  if (damaged) *damaged = (index<0) || ((_damaged[index>>5]>>(index&0x1f)) & 1);
   return index>=0 ? _cache[index] : 0;
 }
 

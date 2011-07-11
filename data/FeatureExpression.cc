@@ -15,7 +15,7 @@ Feature::~Feature() {}
 
 double Feature::evaluate() const
 {
-  bool dmg;
+  bool dmg(false);
   double v = _features.cache(_index,&dmg);
   if (dmg) damage(true);
   return v;
