@@ -10,6 +10,7 @@
 #include <QtGui/QInputDialog>
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
+#include <QtGui/QPen>
 
 #include "qwt_plot.h"
 #include "qwt_plot_grid.h"
@@ -35,6 +36,8 @@ QtPlot::QtPlot(QWidget* parent,
   bool gMinor = Defaults::instance()->show_minor_grid();
   _grid->enableXMin(gMinor);
   _grid->enableYMin(gMinor);
+  _grid->setMajPen(QPen(QColor(0x808080)));
+  _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_frame);
 }
 

@@ -55,6 +55,8 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   bool gMinor = Defaults::instance()->show_minor_grid();
   _grid->enableXMin(gMinor);
   _grid->enableYMin(gMinor);
+  _grid->setMajPen(QPen(QColor(0x808080)));
+  _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_plot);
 
   _xbins = new AxisBins(0,1000,10);
