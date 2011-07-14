@@ -298,7 +298,7 @@ int main(int argc, char **argv)
     }
 
     size_t line_sz = 256;
-    char*  line = new char[line_sz];
+    char*  line = (char *)malloc(line_sz);
     Ami::Blv::ServerEntry entry;
     unsigned det;
 
@@ -312,7 +312,9 @@ int main(int argc, char **argv)
 	  servers.push_back(entry);
 	}
       }
-      line_sz = 256;
+    }
+    if (line) {
+      free(line);
     }
   }
     
