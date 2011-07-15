@@ -21,6 +21,8 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/service/Port.hh"
 
+#include "pdsdata/xtc/BldInfo.hh"
+
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QPushButton>
@@ -337,21 +339,36 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
 						   unsigned channel)
 {
   Ami::Qt::AbsClient* client = 0;
-  switch(info.device()) {
-  case Pds::DetInfo::NoDevice : 
-    if (channel==0) client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
-    else            client = new Ami::Qt::SummaryClient (this, noInfo , channel, "User"   , ConfigureRequest::User); 
-    break;
-  case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
-  case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
-  case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
-  case Pds::DetInfo::Opal1000 : 
-  case Pds::DetInfo::TM6740   : 
-  case Pds::DetInfo::pnCCD    :
-  case Pds::DetInfo::Princeton: 
-  case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
-  case Pds::DetInfo::Cspad    : client = new Ami::Qt::CspadClient   (this, info, channel); break;
-  default: printf("Device type %x not recognized\n", info.device()); break;
+  if (info.level()==Pds::Level::Source) {
+    switch(info.device()) {
+    case Pds::DetInfo::NoDevice : 
+      if (channel==0) client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
+      else            client = new Ami::Qt::SummaryClient (this, noInfo , channel, "User"   , ConfigureRequest::User); 
+      break;
+    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
+    case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
+    case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
+    case Pds::DetInfo::Opal1000 : 
+    case Pds::DetInfo::TM6740   : 
+    case Pds::DetInfo::pnCCD    :
+    case Pds::DetInfo::Princeton: 
+    case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
+    case Pds::DetInfo::Cspad    : client = new Ami::Qt::CspadClient   (this, info, channel); break;
+    default: printf("Device type %x not recognized\n", info.device()); break;
+    }
+  }
+  else if (info.level()==Pds::Level::Reporter) {
+    const Pds::BldInfo& bld = reinterpret_cast<const Pds::BldInfo&>(info);
+    switch(bld.type()) {
+    case Pds::BldInfo::HxxDg1Cam:
+    case Pds::BldInfo::HfxDg2Cam:
+    case Pds::BldInfo::HfxDg3Cam:
+    case Pds::BldInfo::XcsDg3Cam:
+    case Pds::BldInfo::HfxMonCam:
+      client = new Ami::Qt::ImageClient(this, info, channel); break;
+    default: 
+      printf("Bld type %x not recognized\n", bld.type()); break;
+    }
   }
   return client;
  }
@@ -456,7 +473,7 @@ void DetectorSelect::change_detectors(const char* c)
       n = reinterpret_cast<const Ami::DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size());
 
-      printf("Discovered %s\n",e->name());
+      printf("Discovered %s [%08x.%08x]\n",e->name(),e->info().log(),e->info().phy());
 
       if (e->info() == noInfo) {  // Skip unknown devices 
         printf("\tSkip.\n");

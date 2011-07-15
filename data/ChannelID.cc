@@ -1,5 +1,7 @@
 #include "ChannelID.hh"
 
+#include "pdsdata/xtc/BldInfo.hh"
+
 #include <string.h>
 #include <stdio.h>
 
@@ -48,66 +50,72 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
 				 unsigned channel)
 {
   *_buffer = 0;
-  switch(info.detector()) {
-    //  AMO Detectors
-  case DetInfo::AmoITof  : AcqChannel("ITOF"); break;
-  case DetInfo::AmoIms   : AcqChannel("IMS"); break;
-  case DetInfo::AmoETof  : AcqChannel("ETOF"); break;
-  case DetInfo::AmoGasdet: AcqChannel("GASDET"); break;
-  case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
-  case DetInfo::AmoBps   : OpalChannel("BPS"); break;
-    //  CAMP Detectors
-  case DetInfo::Camp     : 
-    AcqChannel("ACQ")
-    else OpalDetector("VMI")
-    else PnccdDetector
-    else _default(_buffer,info,channel);
-    break;
-    //  Others
-  case DetInfo::SxrBeamline:
-    switch(info.device()) {
-    case DetInfo::Opal1000:
-      switch(info.devId()) {
-      case 0 : strcpy(_buffer,"TSS_Opal"); break;
-      case 1 : strcpy(_buffer,"EXS_Opal"); break;
+  if (info.level()==Pds::Level::Source) {
+    switch(info.detector()) {
+      //  AMO Detectors
+    case DetInfo::AmoITof  : AcqChannel("ITOF"); break;
+    case DetInfo::AmoIms   : AcqChannel("IMS"); break;
+    case DetInfo::AmoETof  : AcqChannel("ETOF"); break;
+    case DetInfo::AmoGasdet: AcqChannel("GASDET"); break;
+    case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
+    case DetInfo::AmoBps   : OpalChannel("BPS"); break;
+      //  CAMP Detectors
+    case DetInfo::Camp     : 
+      AcqChannel("ACQ")
+      else OpalDetector("VMI")
+      else PnccdDetector
+      else _default(_buffer,info,channel);
+      break;
+      //  Others
+    case DetInfo::SxrBeamline:
+      switch(info.device()) {
+      case DetInfo::Opal1000:
+        switch(info.devId()) {
+        case 0 : strcpy(_buffer,"TSS_Opal"); break;
+        case 1 : strcpy(_buffer,"EXS_Opal"); break;
+        default: _default(_buffer,info,channel); break;
+        }
+        break;
       default: _default(_buffer,info,channel); break;
       }
       break;
-    default: _default(_buffer,info,channel); break;
-    }
-    break;
-  case DetInfo::SxrEndstation:
-    switch(info.device()) {
-    case DetInfo::Acqiris : {
-      char buff[32];
-      sprintf(buff,"ACQ%d",info.devId());
-      AppendChannel(buff); 
+    case DetInfo::SxrEndstation:
+      switch(info.device()) {
+      case DetInfo::Acqiris : {
+        char buff[32];
+        sprintf(buff,"ACQ%d",info.devId());
+        AppendChannel(buff); 
+        break;
+      }
+      case DetInfo::Opal1000: 
+        sprintf(_buffer,"End_Opal_%d",info.devId()+1);
+        break;
+      case DetInfo::Princeton:
+        sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId());
+        break;
+      default: _default(_buffer,info,channel); break;
+      }
+      break;    
+    default:
+      switch(info.device()) {
+      case DetInfo::TM6740: 
+        sprintf(_buffer,"%sCvd.%d.%d",
+                Pds::DetInfo::name(info.detector()),
+                info.detId(),info.devId()); 
+        break;
+      case DetInfo::Princeton:
+        sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId()); 
+        break;
+      default: 
+        _default(_buffer,info,channel); 
+        break;
+      } 
       break;
     }
-    case DetInfo::Opal1000: 
-      sprintf(_buffer,"End_Opal_%d",info.devId()+1);
-      break;
-    case DetInfo::Princeton:
-      sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId());
-      break;
-    default: _default(_buffer,info,channel); break;
-    }
-    break;    
-  default:
-    switch(info.device()) {
-    case DetInfo::TM6740: 
-      sprintf(_buffer,"%sCvd.%d.%d",
-              Pds::DetInfo::name(info.detector()),
-              info.detId(),info.devId()); 
-      break;
-    case DetInfo::Princeton:
-      sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId()); 
-      break;
-    default: 
-      _default(_buffer,info,channel); 
-      break;
-    } 
-    break;
+  }
+  else if (info.level()==Pds::Level::Reporter) {
+    const Pds::BldInfo& bld = reinterpret_cast<const Pds::BldInfo&>(info);
+    sprintf(_buffer,"%s",Pds::BldInfo::name(bld));
   }
   return _buffer;
 }   

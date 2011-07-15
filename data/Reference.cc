@@ -13,13 +13,13 @@
 
 using namespace Ami;
 
-#define READ_SIZE(buffer,len,f) {		       \
-    size = fread(buffer,1,len,f);		       \
-    printf("reference read %d bytes\n",size);	       \
-    if ((unsigned)size != len) {		       \
-      printf("reference read %d/%d bytes\n",size,len); \
-      abort();					       \
-    }						       \
+#define READ_SIZE(buffer,len,f) {                                       \
+    size = fread(buffer,1,len,f);                                       \
+    printf("reference read %d bytes\n",int(size));                      \
+    if ((unsigned)size != len) {                                        \
+      printf("reference read %d/%d bytes\n",int(size),int(len));        \
+      abort();                                                          \
+    }                                                                   \
   }
 
 Reference::Reference(const char* path) : 

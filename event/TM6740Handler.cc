@@ -4,7 +4,7 @@
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/camera/FrameV1.hh"
 #include "pdsdata/camera/FrameFexConfigV1.hh"
-#include "pdsdata/opal1k/ConfigV1.hh"
+#include "pds/config/TM6740ConfigType.hh"
 
 #include <string.h>
 
@@ -20,6 +20,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
   std::list<Pds::TypeId::Type> types;
   types.push_back(Pds::TypeId::Id_FrameFexConfig);
   types.push_back(Pds::TypeId::Id_PimImageConfig);
+  types.push_back(Pds::TypeId::Id_TM6740Config);
   return types;
 }
 
@@ -110,16 +111,15 @@ void TM6740Handler::_configure(Pds::TypeId tid,
 {
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_FrameFexConfig) {
-    const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-    unsigned columns,rows;
-    if (c.forwarding() == Pds::Camera::FrameFexConfigV1::FullFrame) {
-      columns = Pds::Pulnix::TM6740ConfigV1::Column_Pixels;
-      rows    = Pds::Pulnix::TM6740ConfigV1::Row_Pixels;
-    }
-    else {
-      columns = c.roiEnd().column-c.roiBegin().column;
-      rows    = c.roiEnd().row   -c.roiBegin().row   ;
+    unsigned columns = TM6740ConfigType::Column_Pixels;
+    unsigned rows    = TM6740ConfigType::Row_Pixels;
+    if (info().level()==Pds::Level::Source) {
+      const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
+      if (c.forwarding() != Pds::Camera::FrameFexConfigV1::FullFrame) {
+        columns = c.roiEnd().column-c.roiBegin().column;
+        rows    = c.roiEnd().row   -c.roiBegin().row   ;
+      }
     }
     unsigned pixels  = (columns > rows) ? columns : rows;
     unsigned ppb     = (pixels-1)/640 + 1;
@@ -136,13 +136,15 @@ void TM6740Handler::_configure(Pds::TypeId tid,
     _entry->invalid();
   }
   else if (type == Pds::TypeId::Id_PimImageConfig) {
-    const Pds::Lusi::PimImageConfigV1& c = 
-      *reinterpret_cast<const Pds::Lusi::PimImageConfigV1*>(payload);
-    if (_entry) {
-      _entry->desc().set_scale(c.xscale,c.yscale);
-    }
-    else {
-      _scale = c;
+    if (info().level()==Pds::Level::Source) {
+      const Pds::Lusi::PimImageConfigV1& c = 
+        *reinterpret_cast<const Pds::Lusi::PimImageConfigV1*>(payload);
+      if (_entry) {
+        _entry->desc().set_scale(c.xscale,c.yscale);
+      }
+      else {
+        _scale = c;
+      }
     }
   }
 }

@@ -172,10 +172,13 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().event    (xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-      (*it)->event    (xtc->src,
-                       xtc->contains,
-                       xtc->payload());
+
+      printf("L1 type %08x  [%08x.%08x]\n", xtc->contains.value(), xtc->src.log(), xtc->src.phy());
+
+      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
+        (*it)->event    (xtc->src,
+                         xtc->contains,
+                         xtc->payload());
     }
     else if (_seq->service()==Pds::TransitionId::Configure) {
       SummaryAnalysis::instance().configure(xtc->src,
@@ -225,12 +228,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
-      case Pds::TypeId::Id_FrameFexConfig:
-	switch(info.device()) {
-	case Pds::DetInfo::Opal1000:         h = new Opal1kHandler     (info); break;
-	case Pds::DetInfo::TM6740  :         h = new TM6740Handler     (info); break;
-	default: break;
-	} break;
+      case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
+      case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,_cache); break;
