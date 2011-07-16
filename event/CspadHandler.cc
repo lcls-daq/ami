@@ -416,8 +416,8 @@ namespace CspadGeometry {
     AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
-      char* linep = new char[8*1024];
-      size_t sz = 0;
+      size_t sz = 8 * 1024;
+      char* linep = (char *)malloc(sz);
       char* pEnd;
 
       if (ped) {
@@ -463,7 +463,9 @@ namespace CspadGeometry {
         }
       }
       
-      delete[] linep;
+      if (linep) {
+        free(linep);
+      }
     }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];

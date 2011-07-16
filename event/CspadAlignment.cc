@@ -89,9 +89,9 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g)
 
   double bx,by;
 
-  char* linep = new char[256];
-  char* pEnd;
   size_t sz=256;
+  char* linep = (char *)malloc(sz);
+  char* pEnd;
 
   while(1) {
     getline(&linep, &sz, g);
@@ -188,6 +188,9 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g)
                    qr);
       }
     }
+  }
+  if (linep) {
+    free(linep);
   }
   return nq;
 }
