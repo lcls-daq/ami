@@ -27,7 +27,8 @@ namespace Ami {
     public:
       int  initialize      (ClientManager&);
       int  request_payload ();
-      const Entry* payload() const;
+      const Entry* payload () const;
+      void reset           ();
     public: // AbsClient interface
       void managed         (ClientManager&);
       void connected       ();

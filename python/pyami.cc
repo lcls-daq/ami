@@ -307,11 +307,20 @@ static PyObject* get(PyObject* self, PyObject* args)
   return NULL;
 }
 
+static PyObject* clear(PyObject* self, PyObject* args)
+{
+  amientry* e = reinterpret_cast<amientry*>(self);
+  e->client->reset();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 //
 //  Register amientry methods
 //
 static PyMethodDef amientry_methods[] = {
   {"get"   , get   , METH_VARARGS, "Return the accumulated data"},
+  {"clear" , clear , METH_VARARGS, "Clear the accumulated data"},
   {NULL},
 };
 

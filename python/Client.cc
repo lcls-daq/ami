@@ -248,3 +248,8 @@ const Ami::Entry* Client::payload() const
   return _cds.entry(_output_signature);
 }
 
+void Client::reset()
+{
+  if (_manager)
+    _manager->configure();
+}

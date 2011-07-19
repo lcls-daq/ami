@@ -173,8 +173,6 @@ int XtcClient::process(Pds::Xtc* xtc)
 					    xtc->contains,
 					    xtc->payload());
 
-      printf("L1 type %08x  [%08x.%08x]\n", xtc->contains.value(), xtc->src.log(), xtc->src.phy());
-
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->event    (xtc->src,
                          xtc->contains,
