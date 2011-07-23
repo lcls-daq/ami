@@ -1,5 +1,4 @@
 #include "ami/qt/ImageIntegral.hh"
-#include "ami/qt/FeatureBox.hh"
 #include "ami/data/BinMath.hh"
 
 #include <QtGui/QLineEdit>

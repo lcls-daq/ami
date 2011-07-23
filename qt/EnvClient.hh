@@ -22,7 +22,6 @@ namespace Ami {
     class Status;
     class EnvPlot;
     class ScalarPlotDesc;
-    class FeatureBox;
     class Filter;
     class EnvClient : public Ami::Qt::AbsClient {
       Q_OBJECT

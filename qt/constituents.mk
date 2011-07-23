@@ -5,7 +5,7 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami blviewer bldipimbclient
+tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
@@ -17,6 +17,8 @@ tgtsrcs_offline_ami += qtami.cc
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
 
 tgtsrcs_bldipimbclient := bldIpimbClient.cc bldIpimbClient_moc.cc
+
+tgtsrcs_qttest := qttest.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
@@ -52,6 +54,10 @@ tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg
 tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_bldipimbclient += $(qt_libs)
 
+tgtlibs_qttest := $(datalibs)
+tgtlibs_qttest += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_qttest += $(qt_libs)
+
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
@@ -76,6 +82,7 @@ tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)
 tgtincs_blviewer    := $(qt_incs)
 tgtincs_bldipimbclient   := $(qt_incs)
+tgtincs_qttest := $(qt_incs)
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
@@ -89,6 +96,7 @@ libsrcs_amiqt += Path.cc
 libsrcs_amiqt += FeatureRegistry.cc FeatureRegistry_moc.cc
 libsrcs_amiqt += QHComboBox.cc QHComboBox_moc.cc
 libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
+libsrcs_amiqt += FeatureTree.cc FeatureTree_moc.cc
 libsrcs_amiqt += CExpression.cc
 libsrcs_amiqt += Calculator.cc Calculator_moc.cc
 libsrcs_amiqt += FeatureCalculator.cc

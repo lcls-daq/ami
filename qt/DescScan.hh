@@ -1,6 +1,8 @@
 #ifndef AmiQt_DescScan_hh
 #define AmiQt_DescScan_hh
 
+#include "ami/qt/FeatureList.hh"
+
 #include <QtGui/QWidget>
 #include <QtCore/QString>
 
@@ -9,7 +11,6 @@ class QLineEdit;
 
 namespace Ami {
   namespace Qt {
-    class FeatureBox;
     class DescScan : public QWidget {
       Q_OBJECT
     public:
@@ -25,7 +26,7 @@ namespace Ami {
     private:
       QRadioButton* _button;
       QLineEdit*  _bins;
-      FeatureBox* _features;
+      FeatureList* _features;
     };
   };
 };

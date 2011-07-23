@@ -1,5 +1,6 @@
 #include "Calculator.hh"
 #include "QHComboBox.hh"
+#include "FeatureTree.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QColor>
@@ -164,11 +165,20 @@ Calculator::Calculator(const QString&     title,
     buttonLayout->addWidget(createButton(*it, operatorColor, SLOT(varconClicked())),
 			  row++,5);
 
+  const int max_calc_row = 25;
   int max_row = 4;
   if (max_row < var_var_ops.size()) max_row = var_var_ops.size();
   if (max_row < var_con_ops.size()) max_row = var_con_ops.size();
 
-  if (variables.size() > max_row) {  // variables in a box on the bottom
+  if (variables.size() > max_calc_row) {
+    FeatureTree* box = new FeatureTree(variables, variables_help, operatorColor.light(120));
+    buttonLayout->addWidget(box, max_row+1, 0, 1, 5);
+    QFont f = box->font();
+    f.setPointSize(f.pointSize()+4);
+    box->setFont(f);
+    connect(box, SIGNAL(activated(const QString&)), this, SLOT(variableClicked(const QString&)));
+  }
+  else if (variables.size() > max_row) {  // variables in a box on the bottom
     QHComboBox* box = new QHComboBox(variables, variables_help, operatorColor.light(120));
     buttonLayout->addWidget(box, max_row+1, 0, 1, 5);
     QFont f = box->font();

@@ -1,6 +1,8 @@
 #ifndef AmiQt_ScalarPlotDesc_hh
 #define AmiQt_ScalarPlotDesc_hh
 
+#include "ami/qt/FeatureList.hh"
+
 #include <QtGui/QWidget>
 
 class QButtonGroup;
@@ -14,7 +16,6 @@ namespace Ami {
     class DescChart;
     class DescProf;
     class DescScan;
-    class FeatureBox;
 
     class ScalarPlotDesc : public QWidget {
     public:
@@ -30,10 +31,10 @@ namespace Ami {
     protected:
       QCheckBox*    _xnorm;
       QCheckBox*    _ynorm;
-      FeatureBox*   _vnorm;
+      FeatureList*   _vnorm;
 
       QCheckBox*    _weightB;
-      FeatureBox*   _vweight;
+      FeatureList*  _vweight;
 
       QButtonGroup* _plot_grp;
       DescTH1F*   _hist;

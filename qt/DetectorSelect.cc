@@ -101,14 +101,17 @@ DetectorSelect::DetectorSelect(const QString& label,
     QPushButton* loadB    = new QPushButton("Load");
     QPushButton* defaultB = new QPushButton("Defaults");
     QPushButton* printB   = new QPushButton("Printer");
+    QPushButton* testB    = new QPushButton("Test");
     layout->addWidget(saveB);
     layout->addWidget(loadB);
     layout->addWidget(defaultB);
+    layout->addWidget(testB);
     //    layout->addWidget(printB);
     connect(saveB   , SIGNAL(clicked()), this, SLOT(save_setup()));
     connect(loadB   , SIGNAL(clicked()), this, SLOT(load_setup()));
     connect(printB  , SIGNAL(clicked()), this, SLOT(print_setup()));
     connect(defaultB, SIGNAL(clicked()), this, SLOT(default_setup()));
+    connect(testB   , SIGNAL(clicked()), this, SLOT(run_test()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
@@ -302,6 +305,14 @@ void DetectorSelect::print_setup()
 void DetectorSelect::default_setup()
 {
   Defaults::instance()->show();
+}
+
+#include "ami/qt/FeatureTree.hh"
+
+void DetectorSelect::run_test()
+{
+  FeatureTree* tree = new FeatureTree;
+  tree->show();
 }
 
 void DetectorSelect::set_filters()

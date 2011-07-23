@@ -1,6 +1,6 @@
 #include "DescScan.hh"
 #include "ami/qt/QtPersistent.hh"
-#include "ami/qt/FeatureBox.hh"
+#include "ami/qt/FeatureList.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
@@ -16,7 +16,7 @@ DescScan::DescScan(const char* name) :
   QWidget(0), _button(new QRadioButton(name)),
   _bins(new QLineEdit("200"))
 {
-  _features = new FeatureBox;
+  _features = new FeatureList;
 
   _bins->setMaximumWidth(60);
   new QIntValidator   (_bins);

@@ -2,7 +2,6 @@
 
 #include "ami/qt/Control.hh"
 #include "ami/qt/Status.hh"
-#include "ami/qt/FeatureBox.hh"
 #include "ami/qt/FeatureCalculator.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/Filter.hh"

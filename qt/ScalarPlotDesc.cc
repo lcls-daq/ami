@@ -4,7 +4,6 @@
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
-#include "ami/qt/FeatureBox.hh"
 #include "ami/qt/QtPersistent.hh"
 
 #include "ami/data/DescTH1F.hh"
@@ -39,10 +38,10 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent) :
 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
-  _vnorm = new FeatureBox;
+  _vnorm = new FeatureList;
 
   _weightB = new QCheckBox;
-  _vweight = new FeatureBox;
+  _vweight = new FeatureList;
 
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QGroupBox* box = new QGroupBox("Plot Type");

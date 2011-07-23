@@ -50,6 +50,7 @@ namespace Ami {
       void load_setup();
       void print_setup();
       void default_setup();
+      void run_test();
 
       void reset_plots();
       void save_plots();
