@@ -273,6 +273,9 @@ void Calculator::variableClicked()
 
 void Calculator::variableClicked(const QString& v)
 {
+  if (!_variables.contains(v))
+    return;
+
   QString text = _display->text();
 
   int len;
@@ -282,7 +285,7 @@ void Calculator::variableClicked(const QString& v)
              lengthAtEnd(_varvarops,text) ||
              lengthAtEnd(_varconops,text)))
     return;
-  
+
   text.append(v);
   _display->setText(text);
 }
