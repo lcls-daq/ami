@@ -342,4 +342,4 @@ void SummaryClient::request_payload()
 const QString& SummaryClient::title() const { return _title; }
 
 void SummaryClient::save_plots(const QString&) const {}
-void SummaryClient::reset_plots() {}
+void SummaryClient::reset_plots() { if (_manager) _manager->configure(); }

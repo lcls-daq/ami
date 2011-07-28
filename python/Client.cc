@@ -87,8 +87,15 @@ void Client::discovered(const DiscoveryRx& rx)
     for(  const DescEntry* e = rx.entries(); e < rx.end(); 
 	  e = reinterpret_cast<const DescEntry*>
 	    (reinterpret_cast<const char*>(e) + e->size())) {
-      if (e->info   ()==_info &&
-	  e->channel()==_channel) {
+
+#ifdef DBUG
+      printf("Client Discovered info(%08x/%08x), channel(%d)\n",
+             e->info().log(),e->info().phy(), e->channel());
+#endif
+
+      if (e->info().level()==_info.level() &&
+          e->info().phy  ()==_info.phy() &&
+	  e->channel     ()==_channel) {
 	_input = e->signature();
 	break;
       }
@@ -220,7 +227,13 @@ int  Client::initialize(ClientManager& mgr)
   tmo.tv_sec+=5;
   int result = sem_timedwait(&_initial_sem, &tmo);
 #endif
-  return result;
+
+  if (result<0)
+    return TimedOut;
+  if (_input==0)
+    return NoEntry;
+
+  return Success;
 }
 
 int Client::request_payload()

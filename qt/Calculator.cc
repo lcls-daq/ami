@@ -268,28 +268,21 @@ void Calculator::changeSignClicked()
 
 void Calculator::variableClicked()
 {
-  QString text = _display->text();
-
-  if (!(text.isEmpty() ||
-	lengthAtEnd(_varvarops,text) ||
-	lengthAtEnd(_varconops,text)))
-    return;
-
-  //  CalculatorButton* clickedButton = qobject_cast<CalculatorButton* >(sender());
-  QToolButton* clickedButton = qobject_cast<QToolButton* >(sender());
-  text.append(clickedButton->text());
-  _display->setText(text);
+  variableClicked(qobject_cast<QToolButton* >(sender())->text());
 }
 
 void Calculator::variableClicked(const QString& v)
 {
   QString text = _display->text();
 
-  if (!(text.isEmpty() ||
-	lengthAtEnd(_varvarops,text) ||
-	lengthAtEnd(_varconops,text)))
+  int len;
+  if ((len = lengthAtEnd(_variables,text)))
+    text.chop(len);
+  else if (!(text.isEmpty() ||
+             lengthAtEnd(_varvarops,text) ||
+             lengthAtEnd(_varconops,text)))
     return;
-
+  
   text.append(v);
   _display->setText(text);
 }

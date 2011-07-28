@@ -122,7 +122,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
   PyObject* t;
   int sts;
 
-  static const unsigned channel_default=1024;
+  static const unsigned channel_default=0;
   unsigned phy=0, channel=channel_default;
   Info_pyami info(0x100);
   Ami::AbsOperator* op = 0;
@@ -189,20 +189,26 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
     filter = parse_filter(filter_str);
   }
 
+  PyErr_Clear();
+
   Ami::Python::Client* cl = new Ami::Python::Client(info, 
 						    channel,
 						    filter,
 						    op);
-  
-  if (cl->initialize(*_discovery->allocate(*cl))) {
-    printf("Configure timeout\n");
-    PyErr_SetString(PyExc_RuntimeError,"Configure timeout");
-    return -1;
+
+  int result = cl->initialize(*_discovery->allocate(*cl));
+
+  if (result == Ami::Python::Client::Success) {
+    self->client = cl;
+    return 0;
   }
-
-  self->client = cl;
-
-  return 0;
+  else if (result == Ami::Python::Client::TimedOut) {
+    PyErr_SetString(PyExc_RuntimeError,"Ami configure timeout");
+  }
+  else if (result == Ami::Python::Client::NoEntry) {
+    PyErr_SetString(PyExc_RuntimeError,"Detector entry not found");
+  }
+  return -1;
 }
 
 static PyObject* get(PyObject* self, PyObject* args)

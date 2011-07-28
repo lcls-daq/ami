@@ -25,6 +25,7 @@ namespace Ami {
 	     AbsOperator*        op);
       virtual ~Client();
     public:
+      enum { Success, TimedOut, NoEntry };
       int  initialize      (ClientManager&);
       int  request_payload ();
       const Entry* payload () const;
