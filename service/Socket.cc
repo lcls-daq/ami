@@ -17,6 +17,7 @@ Socket::Socket(int socket) :
   _hdr.msg_namelen    = 0;
   _hdr.msg_control    = 0;
   _hdr.msg_controllen = 0;
+  _hdr.msg_flags      = 0;
 }
 
 Socket::~Socket()
@@ -37,10 +38,10 @@ int Socket::read(void* buffer, int size)
 int Socket::write(const void* data, int size)
 {
   if (size==1) abort();
-  iovec iov;
-  iov.iov_base = const_cast<void*>(data);
-  iov.iov_len  = size;
-  return writev(&iov,1);
+  iovec iov[1];
+  iov[0].iov_base = const_cast<void*>(data);
+  iov[0].iov_len  = size;
+  return writev(&iov[0],1);
 }
 
 #include "pds/service/Sockaddr.hh"

@@ -96,6 +96,19 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       default: _default(_buffer,info,channel); break;
       }
       break;    
+    case DetInfo::XcsBeamline:
+      if (info.device() == DetInfo::Ipimb) {
+        sprintf(_buffer,"SB%d-%s-%02d",
+                info.detId(),
+                (info.devId()&2) ? "IPM":"DIO",
+                (info.devId()+1)/2);
+        break;
+      }
+      else if (info.device() == DetInfo::TM6740) {
+        sprintf(_buffer,"SB%d-YAG",
+                info.detId());
+        break;
+      }
     default:
       switch(info.device()) {
       case DetInfo::TM6740: 

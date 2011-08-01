@@ -3,6 +3,7 @@
 #include "ami/data/DescEntry.hh"
 
 using namespace Ami;
+using Pds::DetInfo;
 
 DescEntry::DescEntry(const char* name,
 		     const char* xtitle, 
@@ -13,6 +14,7 @@ DescEntry::DescEntry(const char* name,
 		     bool doaggregate,
                      unsigned options) :
   Desc(name),
+  _info(0,DetInfo::NoDetector,0,DetInfo::NoDevice,0),
   _channel(-1),
   _group(-1),
   _options(options<<User),
