@@ -41,12 +41,16 @@ void FilterSetup::update(const Ami::DiscoveryRx& rx)
   for(unsigned i=0; i<rx.features(); i++) {
     const char* name = rx.feature_name(i);
     if (strncmp(name,"UF:",3)==0) {
-      QListWidgetItem* item = new QListWidgetItem(tr(name+3),_list);
+      ::Qt::CheckState check(::Qt::Unchecked);
+      QString qname(tr(name+3));
       for(int j=0; j<n; j++) {
         QListWidgetItem* o = _list->item(j);
-        if (o->text()==item->text())
-          item->setCheckState(o->checkState());
+        if (o->text()==qname) {
+          check = o->checkState();
+          break;
+        }
       }
+      (new QListWidgetItem(qname,_list))->setCheckState(check);
     }
   }
   for(int i=0; i<n; i++)
