@@ -148,14 +148,6 @@ DetectorSelect::DetectorSelect(const QString& label,
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
 
-#if 0
-  {
-    timespec ts;
-    ts.tv_sec = 3;
-    ts.tv_nsec = 0;
-    nanosleep(&ts, 0);
-  }
-#endif
   _manager->connect();
 }
 
@@ -280,7 +272,7 @@ void DetectorSelect::set_setup(const char* p, int size)
       }
 
     if (!lFound) {
-      Ami::Qt::AbsClient* c = _create_client(info,channel);
+      Ami::Qt::AbsClient* c = _create_client(info,channel,name);
       if (c) {
 	c->load(p);
 	_connect_client(c);
@@ -347,14 +339,17 @@ void DetectorSelect::save_plots()
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info, 
-						   unsigned channel)
+						   unsigned channel,
+                                                   const QString& name)
 {
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
     case Pds::DetInfo::NoDevice : 
-      if (channel==0) client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
-      else            client = new Ami::Qt::SummaryClient (this, noInfo , channel, "User"   , ConfigureRequest::User); 
+      if (channel==0)
+        client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
+      else
+        client = new Ami::Qt::SummaryClient (this, noInfo , channel, name, ConfigureRequest::User); 
       break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
@@ -406,7 +401,7 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
       (*it)->show();
       return;
     }
-  Ami::Qt::AbsClient* c = _create_client(ditem->info,ditem->channel);
+  Ami::Qt::AbsClient* c = _create_client(ditem->info,ditem->channel,ditem->text());
   if (c)
     _connect_client(c);
 }
@@ -476,7 +471,7 @@ void DetectorSelect::change_detectors(const char* c)
 
     new DetectorListItem(_detList, "Env"    , envInfo, 0);
     new DetectorListItem(_detList, "Summary", noInfo , 0);
-    new DetectorListItem(_detList, "User"   , noInfo , 1);
+    //    new DetectorListItem(_detList, "User"   , noInfo , 1);
 
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;

@@ -14,8 +14,7 @@
 #include "ami/server/ServerManager.hh"
 
 #include "ami/data/FeatureCache.hh"
-#include "ami/data/UserAnalysis.hh"
-#include "ami/data/UserFilter.hh"
+#include "ami/data/UserModule.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -64,8 +63,7 @@ static void usage(char* progname) {
 	  "          -n <partitionIndex>\n"
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
-	  "          -L <user analysis plug-in path>\n"
-	  "          -F <user filter plug-in path>\n"
+	  "          -L <user module plug-in path>\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -78,10 +76,9 @@ int main(int argc, char* argv[]) {
   int   partitionIndex = 0;
   bool offline=false;
   //  plug-in module
-  std::list<UserAnalysis*> user_ana;
-  std::list<UserFilter*  > user_flt;
+  std::list<UserModule*> user_mod;
 
-  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:F:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -127,10 +124,7 @@ int main(int argc, char* argv[]) {
       partitionIndex = strtoul(optarg,NULL,0);
       break;
     case 'L': 
-      load_syms<UserAnalysis,create_t>(user_ana, optarg);
-      break;
-    case 'F': 
-      load_syms<UserFilter  ,create_f>(user_flt, optarg);
+      load_syms<UserModule,create_m>(user_mod, optarg);
       break;
     case '?':
     case 'h':
@@ -148,10 +142,10 @@ int main(int argc, char* argv[]) {
   ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
-  EventFilter     filter(user_flt,features);
-  AnalysisFactory factory(features, srv, user_ana, filter);
+  EventFilter     filter(user_mod,features);
+  AnalysisFactory factory(features, srv, user_mod, filter);
 
-  XtcClient myClient(features, factory, user_ana, filter, offline);
+  XtcClient myClient(features, factory, user_mod, filter, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   srv.manage(input);
@@ -161,8 +155,8 @@ int main(int argc, char* argv[]) {
   //  srv.stop();   // terminate the other thread
   srv.dont_serve();
 
-  for(std::list<UserAnalysis*>::iterator it=user_ana.begin(); 
-      it!=user_ana.end(); it++)
+  for(std::list<UserModule*>::iterator it=user_mod.begin(); 
+      it!=user_mod.end(); it++)
     delete (*it);
 
   return 1;

@@ -67,7 +67,7 @@ namespace Ami {
 
     private:
       void                _load_setup_from_file(const char*);
-      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned);
+      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned, const QString&);
       void                _connect_client(Ami::Qt::AbsClient* client);
 //       void                _update_groups();
 

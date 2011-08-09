@@ -22,13 +22,13 @@ namespace Ami {
   class EventHandler;
   class EventFilter;
   class Entry;
-  class UserAnalysis;
+  class UserModule;
 
   class XtcClient : private XtcIterator {
   public:
     XtcClient(FeatureCache& cache, 
 	      Factory&      factory, 
-	      std::list<UserAnalysis*>& user_ana,
+	      std::list<UserModule*>& user_ana,
 	      EventFilter&  filter,
 	      bool          sync=false);
     ~XtcClient();
@@ -42,7 +42,8 @@ namespace Ami {
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;
-    typedef std::list<UserAnalysis*> UList;
+    typedef std::list<UserModule*>   UList;
+    typedef std::list<Entry*>        EList;
     FeatureCache& _cache;
     Factory&      _factory;
     UList&        _user_ana;
@@ -51,7 +52,7 @@ namespace Ami {
     bool      _sync;
     HList     _handlers;
     CList     _composers;
-    Entry*    _entry;
+    EList     _entry;
     bool      _ready;
     int       _ptime_index, _ptime_acc_index;    
     int       _pltnc_index;

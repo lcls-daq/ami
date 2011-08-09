@@ -18,6 +18,7 @@
 #include "ami/event/FccdHandler.hh"
 #include "ami/event/PnccdHandler.hh"
 #include "ami/event/CspadHandler.hh"
+#include "ami/event/CspadMiniHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
 #include "ami/event/AcqTdcHandler.hh"
@@ -26,7 +27,7 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
-#include "ami/data/UserAnalysis.hh"
+#include "ami/data/UserModule.hh"
 #include "ami/server/Factory.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -78,7 +79,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       
       iterate(&dg->xtc); 
       
-      _entry->valid(_seq->clock());
+      _entry.front()->valid(_seq->clock());
       _factory.analyze();
     }
   }
@@ -92,10 +93,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
-    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-      (*it)->reset();
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
+
+    _filter.configure(dg);
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
@@ -106,7 +107,16 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     //  Create and register new entries
     Pds::DetInfo noInfo;
-    _factory.discovery().add(_entry = new EntryScalar(noInfo,0,"XtcClient","timestamp"));
+    _entry.clear();
+    Entry* e = new EntryScalar(noInfo,0,"XtcClient","timestamp");
+    _factory.discovery().add(e);
+    _entry.push_back(e);
+    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++) {
+      e = new EntryScalar(noInfo,_entry.size(),(*it)->name(),"module");
+      _factory.discovery().add(e);
+      _entry.push_back(e);
+    }
+
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       for(unsigned k=0; k<(*it)->nentries(); k++) {                     
         const Entry* e = (*it)->entry(k);
@@ -120,8 +130,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     }
     _factory.discovery().showentries();
     _factory.hidden   ().showentries();
-
-    _filter.add_to_cache();
 
     _ptime_index     = _cache.add("ProcTime");
     _ptime_acc_index = _cache.add("ProcTimeAcc");
@@ -172,21 +180,11 @@ int XtcClient::process(Pds::Xtc* xtc)
       SummaryAnalysis::instance().event    (xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-
-      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-        (*it)->event    (xtc->src,
-                         xtc->contains,
-                         xtc->payload());
     }
     else if (_seq->service()==Pds::TransitionId::Configure) {
       SummaryAnalysis::instance().configure(xtc->src,
 					    xtc->contains,
 					    xtc->payload());
-      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-        (*it)->configure(xtc->src,
-                         xtc->contains,
-                         xtc->payload());
-      _filter.configure(*xtc);
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
@@ -220,7 +218,7 @@ int XtcClient::process(Pds::Xtc* xtc)
     }
     //  Wasn't handled
     if (_seq->service()==Pds::TransitionId::Configure) {
-      const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
+      const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       EventHandler* h = 0;
       switch(xtc->contains.id()) {
@@ -231,7 +229,10 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,_cache); break;
-      case Pds::TypeId::Id_CspadConfig:      h = new CspadHandler    (info,_cache); break;
+      case Pds::TypeId::Id_CspadConfig:      
+        if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,_cache);
+        else                                 h = new CspadMiniHandler(info,_cache);
+        break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader       (_cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;

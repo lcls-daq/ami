@@ -10,18 +10,17 @@ using std::string;
 using std::list;
 using namespace Ami;
 
-EventFilter::EventFilter(list<UserFilter*>& filters,
+EventFilter::EventFilter(list<UserModule*>& filters,
                          FeatureCache& cache) :
   _filters(filters),
   _cache  (cache),
   _enable (0)
 {
-  _index.resize(filters.size(),-1);
 }
 
 EventFilter::~EventFilter()
 {
-  for(list<UserFilter*>::iterator it=_filters.begin(); 
+  for(list<UserModule*>::iterator it=_filters.begin(); 
       it!=_filters.end(); it++)
     delete (*it);
 
@@ -32,22 +31,20 @@ void EventFilter::enable (unsigned o)
   _enable = o;
 }
 
-void EventFilter::configure   (const Xtc& xtc)
+void EventFilter::reset  ()
 {
-  for(list<UserFilter*>::iterator it=_filters.begin(); it!=_filters.end(); it++)
-    (*it)->configure(xtc.src,
-                     xtc.contains,
-                     xtc.payload());
+  for(list<UserModule*>::iterator it=_filters.begin(); it!=_filters.end(); it++)
+    (*it)->reset(_cache);
 }
 
-void Ami::EventFilter::add_to_cache()
+void EventFilter::configure   (Dgram* dg)
 {
-  int i=0;
-  for(list<Ami::UserFilter*>::iterator it=_filters.begin();
-      it!=_filters.end(); it++) {
-    string fname = string("UF:") + (*it)->name();
-    _index[i++] = _cache.add(fname.c_str());
-  }
+  for(list<Ami::UserModule*>::iterator it=_filters.begin();
+      it!=_filters.end(); it++)
+    (*it)-> clock(dg->seq.clock());
+
+  _seq = &dg->seq;
+  iterate(&dg->xtc);
 }
 
 bool Ami::EventFilter::accept(Dgram* dg)
@@ -55,22 +52,19 @@ bool Ami::EventFilter::accept(Dgram* dg)
   if (_filters.empty())
     return true;
 
-  for(list<Ami::UserFilter*>::iterator it=_filters.begin();
+  for(list<Ami::UserModule*>::iterator it=_filters.begin();
       it!=_filters.end(); it++)
     (*it)-> clock(dg->seq.clock());
 
+  _seq = &dg->seq;
   iterate(&dg->xtc);
 
   bool result=true;
   int i=0;
-  for(list<Ami::UserFilter*>::iterator it=_filters.begin();
+  for(list<Ami::UserModule*>::iterator it=_filters.begin();
       it!=_filters.end(); it++) {
-    if ((*it)->accept())
-      _cache.cache(_index[i++],1);
-    else {
+    if (!(*it)->accept())
       result = result && ((_enable&(1<<i))==0);
-      _cache.cache(_index[i++],0);
-    }
   }
   return result;
 }
@@ -83,11 +77,21 @@ int Ami::EventFilter::process(Xtc* xtc)
 
   if (xtc->contains.id()==TypeId::Id_Xtc)
     iterate(xtc);
-  else
-    for(list<Ami::UserFilter*>::iterator it=_filters.begin();
+  else if (_seq->service()==TransitionId::L1Accept) {
+    for(list<Ami::UserModule*>::iterator it=_filters.begin();
         it!=_filters.end(); it++)
       (*it)-> event(xtc->src,
                     xtc->contains,
                     xtc->payload());
+  }
+  else if (_seq->service()==TransitionId::Configure) {
+    for(list<Ami::UserModule*>::iterator it=_filters.begin();
+        it!=_filters.end(); it++)
+      (*it)-> configure(xtc->src,
+                        xtc->contains,
+                        xtc->payload());
+  }
+  else
+    ;
   return 1;
 }

@@ -14,14 +14,14 @@ namespace Ami {
   class Message;
   class Server;
   class ServerManager;
-  class UserAnalysis;
+  class UserModule;
   class EventFilter;
 
   class AnalysisFactory : public Factory {
   public:
     AnalysisFactory(FeatureCache&,
 		    ServerManager&,
-		    std::list<UserAnalysis*>&,
+		    std::list<UserModule*>&,
                     EventFilter&);
     ~AnalysisFactory();
   public:
@@ -41,7 +41,7 @@ namespace Ami {
     Semaphore _configured;
     Semaphore _sem;
     FeatureCache& _features;
-    typedef std::list<UserAnalysis*> UList;
+    typedef std::list<UserModule*> UList;
     UList&        _user;
     EventFilter&  _filter;
   };

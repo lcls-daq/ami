@@ -3,7 +3,7 @@
 #include "ami/app/SummaryAnalysis.hh"
 #include "ami/app/EventFilter.hh"
 #include "ami/data/Analysis.hh"
-#include "ami/data/UserAnalysis.hh"
+#include "ami/data/UserModule.hh"
 
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Message.hh"
@@ -133,8 +133,6 @@ void AnalysisFactory::analyze  ()
 {
   _sem.take();
   SummaryAnalysis::instance().analyze();
-  for(UList::iterator it=_user.begin(); it!=_user.end(); it++)
-    (*it)->analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }

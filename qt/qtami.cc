@@ -14,8 +14,7 @@
 #include "ami/service/Ins.hh"
 
 #include "ami/data/FeatureCache.hh"
-#include "ami/data/UserAnalysis.hh"
-#include "ami/data/UserFilter.hh"
+#include "ami/data/UserModule.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -73,10 +72,9 @@ int main(int argc, char* argv[]) {
   bool offline=false;
   const char* path = "/reg/d/pcds/amo/offline";
   //  plug-in module
-  std::list<UserAnalysis*> user_ana;
-  std::list<UserFilter*  > user_flt;
+  std::list<UserModule*> user_ana;
 
-  while ((c = getopt(argc, argv, "?hs:L:F:f:p:")) != -1) {
+  while ((c = getopt(argc, argv, "?hs:L:f:p:")) != -1) {
     switch (c) {
     case 's':
       { in_addr inp;
@@ -84,10 +82,7 @@ int main(int argc, char* argv[]) {
 	  serverGroup = ntohl(inp.s_addr);
 	break; }
     case 'L': 
-      load_syms<UserAnalysis,create_t>(user_ana,optarg);
-      break;
-    case 'F': 
-      load_syms<UserFilter  ,create_f>(user_flt,optarg);
+      load_syms<UserModule,create_m>(user_ana,optarg);
       break;
     case 'f':
       Ami::Qt::Path::setBase(optarg);
@@ -113,7 +108,7 @@ int main(int argc, char* argv[]) {
   ServerManager   srv(interface, serverGroup);
 
   FeatureCache    features;
-  EventFilter     filter (user_flt, features);
+  EventFilter     filter (user_ana, features);
   AnalysisFactory factory(features, srv, user_ana, filter);
   
   XtcClient     myClient(features, factory, user_ana, filter, offline);
@@ -133,7 +128,7 @@ int main(int argc, char* argv[]) {
   srv.stop();   // terminate the other thread
   srv.dont_serve();
 
-  for(std::list<UserAnalysis*>::iterator it=user_ana.begin(); 
+  for(std::list<UserModule*>::iterator it=user_ana.begin(); 
       it!=user_ana.end(); it++)
     delete (*it);
 

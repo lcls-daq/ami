@@ -3,32 +3,32 @@
 
 #include "pdsdata/xtc/XtcIterator.hh"
 
-#include "ami/data/UserFilter.hh"
+#include "ami/data/UserModule.hh"
 #include <list>
 #include <vector>
 
-namespace Pds { class Dgram; class Xtc; };
+namespace Pds { class Dgram; class Xtc; class Sequence; };
 
 namespace Ami {
   class FeatureCache;
 
   class EventFilter : private Pds::XtcIterator {
   public:
-    EventFilter(std::list<UserFilter*>& filters,
+    EventFilter(std::list<UserModule*>& filters,
                 FeatureCache&           cache);
     ~EventFilter();
   public:
+    void reset       ();
     void enable      (unsigned);
-    void configure   (const Xtc&);
-    void add_to_cache();
+    void configure   (Dgram*);
     bool accept      (Dgram*);
   private:
     int process(Xtc*);
   private:
-    std::list<UserFilter*>& _filters;
+    std::list<UserModule*>& _filters;
     FeatureCache&           _cache;
-    std::vector<int>        _index;
     unsigned                _enable;
+    const Pds::Sequence*    _seq;
   };
 };
 
