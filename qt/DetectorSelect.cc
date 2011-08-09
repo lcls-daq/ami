@@ -359,7 +359,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     case Pds::DetInfo::pnCCD    :
     case Pds::DetInfo::Princeton: 
     case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
-    case Pds::DetInfo::Cspad    : client = new Ami::Qt::CspadClient   (this, info, channel); break;
+    case Pds::DetInfo::Cspad    :
+    case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel); break;
     default: printf("Device type %x not recognized\n", info.device()); break;
     }
   }
