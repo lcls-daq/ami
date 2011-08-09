@@ -68,15 +68,13 @@ static double frameNoise(const uint16_t*  data,
   const int fnPixelBins = fnPixelMax - fnPixelMin;
   const int peakSpace   = 5;
   
-  int dstep=1;
-
   //  histogram the pixel values
   unsigned hist[fnPixelBins];
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
     const uint16_t* d(data);
     const uint16_t* o(off );
     for(unsigned i=0; i<ColBins; i++) {
-      for(unsigned j=0; j<RowBins; j++, d+=dstep, dstep^=2, o++) {
+      for(unsigned j=0; j<RowBins; j++, d+=2, o++) {
         if (*sta == o)
           sta++;
         else {
@@ -176,8 +174,7 @@ namespace CspadMiniGeometry {
     }									\
     /*  fill the target region  */					\
     for(unsigned i=0; i<ColBins; i++) {					\
-      int dstep=1;                                                      \
-      for(unsigned j=0; j<RowBins; j++, data+=dstep, dstep^=2) {        \
+      for(unsigned j=0; j<RowBins; j++, data+=2) {                      \
 	const unsigned x = CALC_X(column,i,j);				\
 	const unsigned y = CALC_Y(row   ,i,j);				\
 	image.addcontent(F1,x,y);					\
@@ -404,8 +401,8 @@ namespace CspadMiniGeometry {
     void fill(Ami::EntryImage&           image,
 	      const CspadElement&        element) const
     {
-      asic[0]->fill(image,&element.pair[0][0].s0_a);
-      asic[1]->fill(image,&element.pair[0][0].s1_a);
+      asic[0]->fill(image,&element.pair[0][0].s0);
+      asic[1]->fill(image,&element.pair[0][0].s1);
     }
   public:
     Asic* asic[2];
