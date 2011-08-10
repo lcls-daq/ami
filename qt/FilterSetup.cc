@@ -1,7 +1,10 @@
 #include "ami/qt/FilterSetup.hh"
 
 #include "ami/client/ClientManager.hh"
+#include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
+
+#include "pdsdata/xtc/DetInfo.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QListWidget>
@@ -38,6 +41,7 @@ FilterSetup::~FilterSetup()
 void FilterSetup::update(const Ami::DiscoveryRx& rx)
 {
   int n = _list->count();
+#if 0
   for(unsigned i=0; i<rx.features(); i++) {
     const char* name = rx.feature_name(i);
     if (strncmp(name,"UF:",3)==0) {
@@ -53,6 +57,28 @@ void FilterSetup::update(const Ami::DiscoveryRx& rx)
       (new QListWidgetItem(qname,_list))->setCheckState(check);
     }
   }
+#else
+  const Pds::DetInfo noInfo;
+  const Ami::DescEntry* nxt;
+  for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = nxt) {
+    nxt = reinterpret_cast<const Ami::DescEntry*>
+      (reinterpret_cast<const char*>(e) + e->size());
+    
+    if (e->info().level() == Pds::Level::Event) {
+      const char* name = e->name();
+      ::Qt::CheckState check(::Qt::Unchecked);
+      QString qname(name);
+      for(int j=0; j<n; j++) {
+        QListWidgetItem* o = _list->item(j);
+        if (o->text()==qname) {
+          check = o->checkState();
+          break;
+        }
+      }
+      (new QListWidgetItem(qname,_list))->setCheckState(check);
+    }
+  }
+#endif
   for(int i=0; i<n; i++)
     delete _list->takeItem(0);
 }

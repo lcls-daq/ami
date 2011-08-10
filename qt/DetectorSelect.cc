@@ -130,7 +130,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
     *new DetectorListItem(_detList, "Summary", noInfo , 0);
-    *new DetectorListItem(_detList, "User",    noInfo , 1);
 
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
@@ -345,12 +344,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
-    case Pds::DetInfo::NoDevice : 
-      if (channel==0)
-        client = new Ami::Qt::SummaryClient (this, noInfo , channel, "Summary", ConfigureRequest::Summary); 
-      else
-        client = new Ami::Qt::SummaryClient (this, noInfo , channel, name, ConfigureRequest::User); 
-      break;
+    case Pds::DetInfo::NoDevice :  client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
@@ -376,6 +370,12 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     default: 
       printf("Bld type %x not recognized\n", bld.type()); break;
     }
+  }
+  else if (info.level()==Pds::Level::Event) {
+    client = new Ami::Qt::SummaryClient (this, info , channel, name, ConfigureRequest::User); 
+  }
+  else {
+    printf("Ignoring %s [%08x.%08x]\n",qPrintable(name), info.log(), info.phy());
   }
   return client;
  }
@@ -472,7 +472,6 @@ void DetectorSelect::change_detectors(const char* c)
 
     new DetectorListItem(_detList, "Env"    , envInfo, 0);
     new DetectorListItem(_detList, "Summary", noInfo , 0);
-    //    new DetectorListItem(_detList, "User"   , noInfo , 1);
 
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;
@@ -482,9 +481,9 @@ void DetectorSelect::change_detectors(const char* c)
 
       printf("Discovered %s [%08x.%08x]\n",e->name(),e->info().log(),e->info().phy());
 
-      if (e->info() == noInfo) {  // Skip unknown devices 
+      if (e->info().level() == Pds::Level::Control) {
         printf("\tSkip.\n");
-	continue;
+        continue;
       }
 
       new DetectorListItem(_detList, e->name(), e->info(), e->channel());

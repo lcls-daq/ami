@@ -31,6 +31,7 @@
 #include "ami/server/Factory.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 #include "pdsdata/xtc/Dgram.hh"
 
@@ -96,6 +97,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
       (*it)->reset();
 
+    _filter.reset();
     _filter.configure(dg);
 
     _seq = &dg->seq;
@@ -106,13 +108,14 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     iterate(&dg->xtc); 
 
     //  Create and register new entries
-    Pds::DetInfo noInfo;
     _entry.clear();
-    Entry* e = new EntryScalar(noInfo,0,"XtcClient","timestamp");
+    ProcInfo info(Pds::Level::Control,0,0);
+    Entry* e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),0,"XtcClient","timestamp");
     _factory.discovery().add(e);
     _entry.push_back(e);
     for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++) {
-      e = new EntryScalar(noInfo,_entry.size(),(*it)->name(),"module");
+      info = ProcInfo(Pds::Level::Event,_entry.size(),0);
+      e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),_entry.size(),(*it)->name(),"module");
       _factory.discovery().add(e);
       _entry.push_back(e);
     }

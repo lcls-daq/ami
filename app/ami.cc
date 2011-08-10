@@ -33,7 +33,10 @@ static void load_syms(std::list<U*>& user, char* arg)
     printf("dlopen %s\n",p);
 
     void* handle = dlopen(p, RTLD_LAZY);
-    if (!handle) break;
+    if (!handle) {
+      printf("dlopen failed : %s\n",dlerror());
+      break;
+    }
 
     // reset errors
     const char* dlsym_error;
