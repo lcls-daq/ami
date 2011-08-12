@@ -191,7 +191,9 @@ BinMath::BinMath(const DescEntry& output,
 
 BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features) :
   AbsOperator(AbsOperator::BinMath),
-  _cache (&features)
+  _cache (&features),
+  _term  (0),
+  _fterm (0)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);

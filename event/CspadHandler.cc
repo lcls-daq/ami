@@ -418,7 +418,7 @@ namespace CspadGeometry {
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
       char* linep = (char *)malloc(sz);
-      char* pEnd;
+      char* pEnd = linep;
 
       if (ped) {
         uint16_t* off = _off;
@@ -825,6 +825,9 @@ namespace CspadGeometry {
       quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1],f,s,g);
       quad[2] = new Quad(x,y,_ppb,D180,qalign[2],f,s,g);
       quad[3] = new Quad(x,y,_ppb,D270,qalign[3],f,s,g);
+
+      if (gm)
+        delete[] qalign;
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 

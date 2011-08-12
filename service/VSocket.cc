@@ -19,6 +19,7 @@ VSocket::VSocket() :
 
 VSocket::~VSocket()
 {
+  delete[] _iovs;
 }
 
 int VSocket::readv(const iovec* iov, int iovcnt)

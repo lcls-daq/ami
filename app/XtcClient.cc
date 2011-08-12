@@ -10,6 +10,7 @@
 #include "ami/event/PhaseCavityReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/SharedIpimbReader.hh"
+#include "ami/event/SharedPimHandler.hh"
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/EncoderHandler.hh"
@@ -247,6 +248,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,_cache); break;
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,_cache); break;
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,_cache); break;
+      case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
       default: break;
       }
       if (!h) {
