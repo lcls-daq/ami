@@ -4,6 +4,7 @@
 #include "ami/data/Average.hh"
 #include "ami/data/Integral.hh"
 #include "ami/data/Reference.hh"
+#include "ami/data/EntryRefOp.hh"
 #include "ami/data/EntryMath.hh"
 #include "ami/data/BinMath.hh"
 #include "ami/data/EdgeFinder.hh"
@@ -44,13 +45,14 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   
   AbsOperator* o = 0;
   switch(type) {
-  case AbsOperator::Single    : o = new Single   (p,input); break;
-  case AbsOperator::Average   : o = new Average  (p,input); break;
+  case AbsOperator::Single    : o = new Single    (p,input); break;
+  case AbsOperator::Average   : o = new Average   (p,input); break;
   case AbsOperator::Mean      :
-  case AbsOperator::Integral  : o = new Integral (p,input); break;
-  case AbsOperator::Reference : o = new Reference(p,input); break;
-  case AbsOperator::EntryMath : o = new EntryMath(p,input,output_cds); break;
-  case AbsOperator::BinMath   : o = new BinMath  (p,input,_f); break;
+  case AbsOperator::Integral  : o = new Integral  (p,input); break;
+  case AbsOperator::Reference : o = new Reference (p,input); break;
+  case AbsOperator::EntryRefOp: o = new EntryRefOp(p,input); break;
+  case AbsOperator::EntryMath : o = new EntryMath (p,input,output_cds); break;
+  case AbsOperator::BinMath   : o = new BinMath   (p,input,_f); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
   case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _f); break;

@@ -34,6 +34,10 @@ Analysis::Analysis(unsigned      id,
 Analysis::~Analysis() 
 {
   _cds.remove(_cds.entry(output().signature()));
+  delete _filter;
+  // bug, possibly double free of entries
+  // consequence of not deleting is a small mem-leak
+  //  delete _op;
 }
 
 unsigned   Analysis::id() const { return _id; }

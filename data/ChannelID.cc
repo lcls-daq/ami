@@ -12,14 +12,15 @@ static char _buffer[128];
 #define NoChannel(title) { strcpy(_buffer,title); }
 #define AppendChannel(title) { sprintf(_buffer,"%s_%d",title,channel+1); }
 #define AcqChannel(title)			\
-    if (info.device()==DetInfo::Acqiris)	\
-      AppendChannel(title)			
+  if (info.device()==DetInfo::Acqiris) {        \
+    if (channel>>16)                            \
+      strcpy(_buffer,title);                    \
+    else                                        \
+      AppendChannel(title)			\
+        }
 #define OpalChannel(title)  			\
     if (info.device()==DetInfo::Opal1000)	\
       AppendChannel(title)			
-#define AcqDetector(title) 			\
-    if (info.device()==DetInfo::Acqiris)	\
-      NoChannel(title);				
 #define OpalDetector(title) 				\
     if (info.device()==DetInfo::Opal1000) {		\
       if (info.devId()==0)				\
@@ -33,11 +34,17 @@ static char _buffer[128];
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
-  if (info.device()==DetInfo::Acqiris)
-    sprintf(b,"%s_%s_%d",
-	    DetInfo::name(info.detector()),
-	    DetInfo::name(info.device  ()), 
-	    channel+1);
+  if (info.device()==DetInfo::Acqiris) {
+    if ((channel>>16)==0)
+      sprintf(b,"%s_%s_%d",
+              DetInfo::name(info.detector()),
+              DetInfo::name(info.device  ()), 
+              channel+1);
+    else
+      sprintf(b,"%s_%s",
+              DetInfo::name(info.detector()),
+              DetInfo::name(info.device  ()));
+  }
   else
     sprintf(b,"%s_%d_%s_%d",
 	    DetInfo::name(info.detector()),

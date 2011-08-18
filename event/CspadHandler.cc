@@ -418,6 +418,7 @@ namespace CspadGeometry {
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
       char* linep = (char *)malloc(sz);
+      memset(linep, 0, sz);
       char* pEnd = linep;
 
       if (ped) {

@@ -16,6 +16,7 @@
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/EntryRefOp.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
@@ -28,6 +29,7 @@
 #include <QtGui/QFileDialog>
 #include <QtGui/QMessageBox>
 #include <QtGui/QIntValidator>
+#include <QtGui/QComboBox>
 
 
 #define bold(t) #t
@@ -42,7 +44,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
 				     const QStringList& names,
 				     Display& frame, 
 				     const QColor& color, 
-				     bool init) :
+				     bool init,
+                                     QStringList refnames) :
   QtPWidget        (parent),
   _name            (name),
   _frame           (frame),
@@ -83,7 +86,16 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   QPushButton* closeB   = new QPushButton("Close");
 
   QVBoxLayout* l = new QVBoxLayout;
-  { QGroupBox* plot_box = new QGroupBox("Plot");
+  { if (!refnames.empty()) {
+      _refBox = new QComboBox;
+      _refBox->addItems(refnames);
+      _refBox->setCurrentIndex(0);
+      l->addWidget(_refBox);
+    }
+    else {
+      _refBox = 0;
+    }
+    QGroupBox* plot_box = new QGroupBox("Plot");
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(noneB);
     layout->addWidget(singleB);
@@ -146,6 +158,7 @@ void ChannelDefinition::save(char*& p) const
   QtPersistent::insert(p,_math->expr());
   QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString(""));
   QtPersistent::insert(p,_show);
+  QtPersistent::insert(p,_refBox ? _refBox->currentIndex() : -1);
   _filter   ->save(p);
   _transform->save(p);
 }
@@ -165,6 +178,11 @@ void ChannelDefinition::load(const char*& p)
   else
     _plot_grp->button(_Reference)->setEnabled(false);
   bool show = QtPersistent::extract_b(p);
+
+  int index = QtPersistent::extract_i(p);
+  if (index >= 0) 
+    _refBox->setCurrentIndex(index);
+
   _filter   ->load(p);
   _transform->load(p);
 
@@ -200,6 +218,9 @@ void ChannelDefinition::show_plot(bool s)
   _show = s;
 }
 
+/**
+ **  Prepend operator with channel selection
+ */
 void ChannelDefinition::apply()
 {
   // Form _operator
@@ -207,9 +228,21 @@ void ChannelDefinition::apply()
 
   switch(_mode = _plot_grp->checkedId()) {
   case _Single:
-    _operator = new Single ; break;
+    if (_refBox) {
+      _operator = new EntryRefOp(_refBox->currentIndex());
+      _operator->next(new Single);
+    }
+    else
+      _operator = new Single;
+    break;
   case _Average     : 
-    _operator = new Average(_interval->text().toInt()); break;
+    if (_refBox) {
+      _operator = new EntryRefOp(_refBox->currentIndex());
+      _operator->next(new Average(_interval->text().toInt()));
+    }
+    else
+      _operator = new Average(_interval->text().toInt()); 
+    break;
   case _Reference:
     _operator = new Reference(qPrintable(_ref_file)); break;
   case _Math:

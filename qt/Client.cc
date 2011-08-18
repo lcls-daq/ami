@@ -73,6 +73,14 @@ Ami::Qt::Client::Client(QWidget*            parent,
   for(unsigned i=0; i<NCHANNELS; i++)
     names << QString("%1_Ch%2").arg(_title).arg(char('A'+i));
 
+  QStringList refnames;
+  unsigned ref_mask = channel>>16;
+  for(unsigned i=0; ref_mask!=0; i++) {
+    if (ref_mask&1)
+      refnames << QString("Chan %1").arg(i+1);
+    ref_mask>>=1;
+  }
+  
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
     { QGroupBox* chanBox = new QGroupBox("Channels");
@@ -81,7 +89,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       QColor color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
       for(int i=0; i<NCHANNELS; i++) {
 	QString title = names[i];
-	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0);
+	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0, refnames);
 	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;

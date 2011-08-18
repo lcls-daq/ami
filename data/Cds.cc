@@ -42,6 +42,9 @@ void Cds::add(Entry* entry, unsigned signature)
 
 void Cds::remove(Entry* entry)
 {
+  if (!entry)
+    return;
+
   _entries.remove(entry);
 
 #ifdef DBUG

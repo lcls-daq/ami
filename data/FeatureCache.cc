@@ -46,6 +46,7 @@ unsigned FeatureCache::add(const char* name)
 
     unsigned* damaged = new unsigned[max_entries>>5];
     memcpy(damaged,_damaged,_max_entries>>5);
+    memset(damaged+(_max_entries>>5),0,_max_entries>>5); // for valgrind only
     delete[] _damaged;
     _damaged = damaged;
 

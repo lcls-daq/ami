@@ -5,12 +5,13 @@
 
 #include <QtGui/QColor>
 #include <QtCore/QString>
+#include <QtCore/QStringList>
 
 #include "ami/data/ConfigureRequest.hh"
 
 class QButtonGroup;
 class QLineEdit;
-class QStringList;
+class QComboBox;
 
 namespace Ami {
   class AbsOperator;
@@ -29,7 +30,9 @@ namespace Ami {
       ChannelDefinition(QWidget* parent,
 			const QString& name, 
 			const QStringList& names,
-			Display& frame, const QColor&, bool init=false);
+			Display& frame, const QColor&, 
+                        bool init,
+                        QStringList ref = QStringList());
       ~ChannelDefinition();
     public:
       void save(char*& p) const;
@@ -70,6 +73,7 @@ namespace Ami {
       QString       _ref_file;
       bool          _show;
       QtBase*       _plot;
+      QComboBox*    _refBox;
     };
   };
 };
