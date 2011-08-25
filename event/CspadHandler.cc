@@ -27,6 +27,7 @@
 #define DO_PED_CORR
 
 typedef Pds::CsPad::ElementV2 CspadElement;
+using Pds::CsPad::ElementIterator;
 
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
@@ -655,7 +656,7 @@ namespace CspadGeometry {
           element[i]->fill(image, mask&3);
     }
     void fill(Ami::EntryImage&             image,
-	      Pds::CsPad::ElementIterator& iter) const
+	      ElementIterator& iter) const
     {
       unsigned id;
       const Pds::CsPad::Section* s;
@@ -719,24 +720,24 @@ namespace CspadGeometry {
     ~ConfigCache() 
     { delete[] _payload; }
   public:
-    Pds::CsPad::ElementIterator* iter(const Xtc& xtc) const
+    ElementIterator* iter(const Xtc& xtc) const
     {
-      Pds::CsPad::ElementIterator* iter;
+      ElementIterator* iter;
       switch(_type.version()) {
       case 1: 
         { const Pds::CsPad::ConfigV1& c = 
             *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
-          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          iter = new ElementIterator(c,xtc);
           break; }
       case 2: 
         { const Pds::CsPad::ConfigV2& c = 
             *reinterpret_cast<Pds::CsPad::ConfigV2*>(_payload);
-          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          iter = new ElementIterator(c,xtc);
           break; }
       default:
         { const CsPadConfigType& c = 
             *reinterpret_cast<CsPadConfigType*>(_payload);
-          iter = new Pds::CsPad::ElementIterator(c,xtc);
+          iter = new ElementIterator(c,xtc);
           break; }
       }
       return iter;
@@ -855,12 +856,13 @@ namespace CspadGeometry {
 	      const Xtc&       xtc) const
     {
 #ifdef _OPENMP
-      Pds::CsPad::ElementIterator*     iters[5];
+      ElementIterator* iter = _config.iter(xtc);
+      ElementIterator* iters[5];
       int niters=0;
       {
         do {
-          iters[niters++] = _config.iter(xtc);
-        } while( iter.next() );
+          iters[niters++] = new ElementIterator(*iter);
+        } while( iter->next() );
       }
       niters--;
 
@@ -880,7 +882,7 @@ namespace CspadGeometry {
         }
       }
 #else
-      Pds::CsPad::ElementIterator* iter = _config.iter(xtc);
+      ElementIterator* iter = _config.iter(xtc);
       const Pds::CsPad::ElementHeader* hdr;
       while( (hdr=iter->next()) ) {
 	quad[hdr->quad()]->fill(image,*iter); 
