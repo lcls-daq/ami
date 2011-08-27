@@ -78,18 +78,20 @@ int Ami::EventFilter::process(Xtc* xtc)
   if (xtc->contains.id()==TypeId::Id_Xtc)
     iterate(xtc);
   else if (_seq->service()==TransitionId::L1Accept) {
-    for(list<Ami::UserModule*>::iterator it=_filters.begin();
-        it!=_filters.end(); it++)
-      (*it)-> event(xtc->src,
-                    xtc->contains,
-                    xtc->payload());
+    if (xtc->damage.value()==0)
+      for(list<Ami::UserModule*>::iterator it=_filters.begin();
+          it!=_filters.end(); it++)
+        (*it)-> event(xtc->src,
+                      xtc->contains,
+                      xtc->payload());
   }
   else if (_seq->service()==TransitionId::Configure) {
     for(list<Ami::UserModule*>::iterator it=_filters.begin();
         it!=_filters.end(); it++)
-      (*it)-> configure(xtc->src,
-                        xtc->contains,
-                        xtc->payload());
+      if (xtc->damage.value()==0)
+        (*it)-> configure(xtc->src,
+                          xtc->contains,
+                          xtc->payload());
   }
   else
     ;
