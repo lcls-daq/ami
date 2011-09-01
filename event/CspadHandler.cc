@@ -29,6 +29,8 @@
 typedef Pds::CsPad::ElementV2 CspadElement;
 using Pds::CsPad::ElementIterator;
 
+using Pds::CsPad::ElementIterator;
+
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
 
@@ -856,15 +858,15 @@ namespace CspadGeometry {
 	      const Xtc&       xtc) const
     {
 #ifdef _OPENMP
-      ElementIterator* iter = _config.iter(xtc);
       ElementIterator* iters[5];
       int niters=0;
       {
+	ElementIterator* iter = _config.iter(xtc);
         do {
           iters[niters++] = new ElementIterator(*iter);
         } while( iter->next() );
+	delete iter;
       }
-      niters--;
 
       int i;
       Quad* const* quad = this->quad;
