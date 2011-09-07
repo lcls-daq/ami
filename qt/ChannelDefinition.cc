@@ -6,6 +6,7 @@
 #include "ami/qt/Transform.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/Path.hh"
+#include "ami/qt/FeatureCalculator.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -58,7 +59,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _output_signature((unsigned)-1),
   _changed         (false),
   _show            (false),
-  _plot            (0)
+  _plot            (0),
+  _scale           (new QLineEdit)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -84,6 +86,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   QPushButton* yfuncB   = new QPushButton("Y Transform");
   QPushButton* applyB   = new QPushButton("OK");
   QPushButton* closeB   = new QPushButton("Close");
+  QPushButton* scaleB   = new QPushButton("Enter");
 
   QVBoxLayout* l = new QVBoxLayout;
   { if (!refnames.empty()) {
@@ -97,6 +100,11 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     }
     QGroupBox* plot_box = new QGroupBox("Plot");
     QVBoxLayout* layout = new QVBoxLayout;
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addWidget(new QLabel("Normalize to"));
+      layout1->addWidget(_scale);
+      layout1->addWidget(scaleB);
+      layout->addLayout(layout1); }
     layout->addWidget(noneB);
     layout->addWidget(singleB);
     { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -138,6 +146,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(applyB  , SIGNAL(clicked()), this, SLOT(apply()));
   connect(_filter , SIGNAL(changed()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
+  connect(scaleB  , SIGNAL(clicked()), this, SLOT(set_scale()));
 
   noneB  ->setChecked(!init);
   singleB->setChecked(init);
@@ -161,6 +170,7 @@ void ChannelDefinition::save(char*& p) const
   QtPersistent::insert(p,_refBox ? _refBox->currentIndex() : -1);
   _filter   ->save(p);
   _transform->save(p);
+  QtPersistent::insert(p,_scale->text());
 }
 
 void ChannelDefinition::load(const char*& p)
@@ -185,6 +195,7 @@ void ChannelDefinition::load(const char*& p)
 
   _filter   ->load(p);
   _transform->load(p);
+  _scale    ->setText(QtPersistent::extract_s(p));
 
   _plot_grp->button(id)->setChecked(true);
 
@@ -226,22 +237,24 @@ void ChannelDefinition::apply()
   // Form _operator
   if (_operator) delete _operator;
 
+  const char* scale = qPrintable(_scale->text());
+
   switch(_mode = _plot_grp->checkedId()) {
   case _Single:
     if (_refBox) {
       _operator = new EntryRefOp(_refBox->currentIndex());
-      _operator->next(new Single);
+      _operator->next(new Single(scale));
     }
     else
-      _operator = new Single;
+      _operator = new Single(scale);
     break;
   case _Average     : 
     if (_refBox) {
       _operator = new EntryRefOp(_refBox->currentIndex());
-      _operator->next(new Average(_interval->text().toInt()));
+      _operator->next(new Average(_interval->text().toInt(),scale));
     }
     else
-      _operator = new Average(_interval->text().toInt()); 
+      _operator = new Average(_interval->text().toInt(),scale);
     break;
   case _Reference:
     _operator = new Reference(qPrintable(_ref_file)); break;
@@ -312,4 +325,13 @@ void ChannelDefinition::setup_payload(Cds& cds)
   }
   else if (_output_signature>=0)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+}
+
+void ChannelDefinition::set_scale()
+{
+  FeatureCalculator* c = new FeatureCalculator("%1 : Scale");
+  if (c->exec()==QDialog::Accepted) {
+    _scale->setText(c->result());
+  }
+  delete c;
 }

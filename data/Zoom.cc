@@ -58,8 +58,9 @@ Entry&     Zoom::_operate(const Entry& e) const
         for(unsigned k=0; k<desc.nbinsx(); k++)
           *p++ = *qr++;
       }
+      float* f = reinterpret_cast<float*>(p);
       for(unsigned j=0; j<EntryImage::InfoSize; j++)
-        *p++ = en.info(EntryImage::Info(j));
+        *f++ = en.info(EntryImage::Info(j));
       break; }
   default:
     printf("Zoom: unknown input type %d\n",e.desc().type());

@@ -86,7 +86,7 @@ namespace Ami {
 	      sum += double(e.content(i,j))-p;
 	}
 	double n = double(e.info(EntryImage::Normalization));
-	return n > 1 ? sum / n : sum;
+	return n > 0 ? sum / n : sum;
       }
     private:
       const Entry*& _entry;

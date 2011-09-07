@@ -52,6 +52,7 @@ namespace Ami {
       void load_reference();
       void show_plot(bool);
       void apply();
+      void set_scale();
     signals:
       void reference_loaded(bool);
       void changed();
@@ -74,6 +75,7 @@ namespace Ami {
       bool          _show;
       QtBase*       _plot;
       QComboBox*    _refBox;
+      QLineEdit*    _scale;
     };
   };
 };

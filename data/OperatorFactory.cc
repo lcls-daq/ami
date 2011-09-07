@@ -45,8 +45,8 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   
   AbsOperator* o = 0;
   switch(type) {
-  case AbsOperator::Single    : o = new Single    (p,input); break;
-  case AbsOperator::Average   : o = new Average   (p,input); break;
+  case AbsOperator::Single    : o = new Single    (p,input,_f); break;
+  case AbsOperator::Average   : o = new Average   (p,input,_f); break;
   case AbsOperator::Mean      :
   case AbsOperator::Integral  : o = new Integral  (p,input); break;
   case AbsOperator::Reference : o = new Reference (p,input); break;

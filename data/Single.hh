@@ -7,11 +7,13 @@ namespace Ami {
 
   class DescEntry;
   class Entry;
+  class FeatureCache;
+  class Term;
 
   class Single : public AbsOperator {
   public:
-    Single();
-    Single(const char*&, const DescEntry&);
+    Single(const char* =0);
+    Single(const char*&, const DescEntry&, FeatureCache&);
     ~Single();
   public:
     DescEntry& output   () const;
@@ -19,7 +21,10 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
   private:
+    enum { SCALE_LEN=256 };
+    char           _scale_buffer[SCALE_LEN];
     Entry*         _entry;
+    Term*          _term ;
   };
 
 };

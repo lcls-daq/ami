@@ -28,9 +28,9 @@ namespace Ami {
     const unsigned* contents() const;
 
     enum Info { Pedestal, Normalization, InfoSize };
-    unsigned info   (Info) const;
-    void     info   (unsigned y, Info);
-    void     addinfo(unsigned y, Info);
+    double   info   (Info) const;
+    void     info   (double y, Info);
+    void     addinfo(double y, Info);
 
     void setto(const EntryImage& entry);
     void setto(const EntryImage& curr, const EntryImage& prev);
@@ -74,17 +74,17 @@ namespace Ami {
   {
     return _y;
   }
-  inline unsigned EntryImage::info(Info i) const 
+  inline double EntryImage::info(Info i) const 
   {
-    return *(_y+_desc.nbinsx()*_desc.nbinsy()+int(i));
+    return reinterpret_cast<float*>(_y+_desc.nbinsx()*_desc.nbinsy())[i];
   }
-  inline void EntryImage::info(unsigned y, Info i) 
+  inline void EntryImage::info(double y, Info i) 
   {
-    *(_y+_desc.nbinsx()*_desc.nbinsy()+int(i)) = y;
+    reinterpret_cast<float*>(_y+_desc.nbinsx()*_desc.nbinsy())[i] = y;
   }
-  inline void EntryImage::addinfo(unsigned y, Info i) 
+  inline void EntryImage::addinfo(double y, Info i) 
   {
-    *(_y+_desc.nbinsx()*_desc.nbinsy()+int(i)) += y;
+    reinterpret_cast<float*>(_y+_desc.nbinsx()*_desc.nbinsy())[i] += y;
   }
 };
 

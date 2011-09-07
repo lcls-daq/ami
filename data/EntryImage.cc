@@ -7,7 +7,7 @@ static const unsigned DefaultPedestal = 128;
 
 using namespace Ami;
 
-#define SIZE(nx,ny) (nx*ny+InfoSize)
+#define SIZE(nx,ny) (nx*ny+InfoSize*sizeof(float)/sizeof(unsigned))
 
 EntryImage::~EntryImage() {}
 
