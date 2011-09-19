@@ -30,6 +30,9 @@ Aggregator::Aggregator(AbsClient& client) :
 
 Aggregator::~Aggregator()
 {
+  delete _buffer;
+  delete[] _iovdesc;
+  delete[] _iovload;
 }
 
 //

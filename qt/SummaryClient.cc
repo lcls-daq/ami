@@ -6,7 +6,9 @@
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtScan.hh"
+#include "ami/qt/QtImage.hh"
 #include "ami/qt/QtPlot.hh"
+#include "ami/qt/ImageDisplay.hh"
 
 #include "ami/client/ClientManager.hh"
 
@@ -18,6 +20,7 @@
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
+#include "ami/data/EntryImage.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/RawFilter.hh"
 
@@ -70,16 +73,30 @@ namespace Ami {
 	_layout->addWidget(frame, row, col);
 	_plots.push_back(frame);
       }
+      void add   (QtImage* plot, int row, int col)
+      {
+        ImageDisplay* frame = new ImageDisplay;
+        frame->add(plot,true);
+        if (row<0 || col<0) {
+          row = _layout->rowCount();
+          col = 0;
+        }
+        _layout->addWidget(frame, row, col);
+        _images.push_back(frame);
+      }
       void layout() { setLayout(_layout); }
       void update() 
       {
 	for(std::list<QtBasePlot*>::iterator it = _plots.begin(); it!=_plots.end(); it++)
 	  (*it)->update(); 
+	for(std::list<ImageDisplay*>::iterator it = _images.begin(); it!=_images.end(); it++)
+	  (*it)->update(); 
       }
     private:
-      QString                _title;
-      QGridLayout*           _layout;
-      std::list<QtBasePlot*> _plots;
+      QString                  _title;
+      QGridLayout*             _layout;
+      std::list<QtBasePlot*>   _plots;
+      std::list<ImageDisplay*> _images;
     };
   };
 };
@@ -244,7 +261,8 @@ void SummaryClient::_read_description(int size)
       }
     }
 
-    QtBase* plot;
+    QtBase* plot = 0;
+    QtImage* img = 0;
     switch(desc->type()) {
     case Ami::DescEntry::TH1F: 
       plot = new QtTH1F(plot_title,*static_cast<const Ami::EntryTH1F*>(entry),
@@ -262,6 +280,10 @@ void SummaryClient::_read_description(int size)
       plot = new QtScan(plot_title,*static_cast<const Ami::EntryScan*>(entry),
 			noTransform,noTransform,QColor(0,0,0));
       break;
+    case Ami::DescEntry::Image:
+      img  = new QtImage(plot_title,*static_cast<const Ami::EntryImage*>(entry),
+                         noTransform,noTransform,QColor(0,0,0));
+      break;
     default:
       printf("SummaryClient type %d not implemented yet\n",desc->type()); 
       return;
@@ -270,14 +292,20 @@ void SummaryClient::_read_description(int size)
     bool lFound=false;
     for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
       if ((*it)->title() == page_title) {
-	(*it)->add(plot,row,col);
-	lFound=true;
-	break;
+        if (plot)
+          (*it)->add(plot,row,col);
+        else
+          (*it)->add(img ,row,col);
+        lFound=true;
+        break;
       }
     }
     if (!lFound) {
       PagePlot* page = new PagePlot(page_title);
-      page->add(plot,row,col);
+      if (plot)
+        page->add(plot,row,col);
+      else
+        page->add(img ,row,col);
       pages.push_back(page);
     }
 

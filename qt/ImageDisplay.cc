@@ -60,6 +60,7 @@ void Ami::Qt::ImageDisplay::_layout()
   }
 
   QVBoxLayout* layout = new QVBoxLayout;
+  layout->setSpacing(1);
   { QGroupBox* plotBox = new QGroupBox("Plot");
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* hl = new QHBoxLayout;

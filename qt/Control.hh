@@ -1,7 +1,6 @@
 #ifndef AmiQt_Control_hh
 #define AmiQt_Control_hh
 
-
 #include <QtGui/QWidget>
 #include "ami/service/Timer.hh"
 
@@ -16,7 +15,7 @@ namespace Ami {
 		    public Timer {
       Q_OBJECT
     public:
-      Control(Requestor&,double request_rate);
+      Control(Requestor&,double request_rate,bool lHLayout=true);
       ~Control();
     public:
       void save(char*&) const;

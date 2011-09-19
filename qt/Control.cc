@@ -12,19 +12,32 @@
 
 using namespace Ami::Qt;
 
-Control::Control(Requestor& c, double request_rate) :
+Control::Control(Requestor& c, double request_rate, bool hLayout) :
   QWidget(0),
   _client(c),
   _task  (new Task(TaskObject("amitmr")))
 {
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(_pRun    = new QPushButton("Run")); _pRun->setCheckable(true);
-  layout->addWidget(_pSingle = new QPushButton("Single"));
-  layout->addStretch();
-  layout->addWidget(new QLabel("Rate(Hz)"));
-  layout->addWidget(_pRate   = new QLineEdit  (QString::number(request_rate)));
-  _pRate->setMaximumWidth(40);
-  setLayout(layout);
+  if (hLayout) {
+    QHBoxLayout* layout = new QHBoxLayout;
+    layout->addWidget(_pRun    = new QPushButton("Run")); _pRun->setCheckable(true);
+    layout->addWidget(_pSingle = new QPushButton("Single"));
+    layout->addStretch();
+    layout->addWidget(new QLabel("Rate(Hz)"));
+    layout->addWidget(_pRate   = new QLineEdit  (QString::number(request_rate)));
+    _pRate->setMaximumWidth(40);
+    setLayout(layout);
+  }
+  else {
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(_pRun    = new QPushButton("Run")); _pRun->setCheckable(true);
+    layout->addWidget(_pSingle = new QPushButton("Single"));
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addWidget(new QLabel("Rate(Hz)"));
+      layout1->addWidget(_pRate   = new QLineEdit  (QString::number(request_rate)));
+      _pRate->setMaximumWidth(40);
+      layout->addLayout(layout1); }
+    setLayout(layout);
+  }
 
   _pRate->setValidator(new QDoubleValidator(0.1,5,1,_pRate));
 

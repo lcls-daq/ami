@@ -44,12 +44,10 @@ ImageFrame::ImageFrame(QWidget* parent,
   _qimage(0),
   _c(0)
 {
-  unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
-  _canvas->setMinimumSize(sz,sz);
+  //  const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
+  //  _canvas->setMinimumSize(sz,sz);
   _canvas->setAlignment(::Qt::AlignLeft | ::Qt::AlignTop);
 
-//   QHBoxLayout* layout = new QHBoxLayout;
-//   layout->addWidget(_canvas);
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(_canvas,0,0);
   setLayout(layout);
@@ -64,6 +62,12 @@ void ImageFrame::attach(QtImage* image)
   _qimage = image; 
   if (_qimage) {
     _qimage->set_color_table(_control.color_table());
+
+    if (_qimage->scalexy()) {
+      const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
+      _canvas->setMinimumSize(sz,sz);
+    }
+
     QSize sz(_canvas->size());
     sz.rwidth()  += CanvasSizeIncrease;
     sz.rheight() += CanvasSizeIncrease;

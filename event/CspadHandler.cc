@@ -867,13 +867,14 @@ namespace CspadGeometry {
         } while( iter->next() );
 	delete iter;
       }
+      niters--;
 
       int i;
       Quad* const* quad = this->quad;
       Ami::FeatureCache* cache = _cache;
 #pragma omp parallel shared(iters,quad,cache) private(i) num_threads(4)
       {
-#pragma omp for schedule(dynamic,1) nowait
+#pragma omp for schedule(dynamic,1)
         for(i=0; i<niters; i++) {
           const Pds::CsPad::ElementHeader* hdr = iters[i]->next();
           quad[hdr->quad()]->fill(image,*iters[i]); 

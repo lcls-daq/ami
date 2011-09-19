@@ -67,7 +67,6 @@ static void extractInfo(const char*& p, Pds::DetInfo& info, unsigned& channel)
   channel = QtPersistent::extract_i(p);
 }
 
-
 DetectorSelect::DetectorSelect(const QString& label,
 			       unsigned ppinterface,
 			       unsigned interface,
@@ -89,29 +88,23 @@ DetectorSelect::DetectorSelect(const QString& label,
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   QVBoxLayout* l = new QVBoxLayout;
-  { QLabel* title = new QLabel(label);
-    title->setWordWrap(true);
-    QFont font = title->font();
-    font.setPointSize(font.pointSize()+8);
-    title->setFont(font);
-    l->addWidget(title,0,::Qt::AlignHCenter); }
   { QGroupBox* setup_box = new QGroupBox("Setup");
     QVBoxLayout* layout = new QVBoxLayout;
     QPushButton* saveB    = new QPushButton("Save");
     QPushButton* loadB    = new QPushButton("Load");
     QPushButton* defaultB = new QPushButton("Defaults");
-    QPushButton* printB   = new QPushButton("Printer");
-    QPushButton* testB    = new QPushButton("Test");
+    //    QPushButton* printB   = new QPushButton("Printer");
+    //    QPushButton* testB    = new QPushButton("Test");
     layout->addWidget(saveB);
     layout->addWidget(loadB);
     layout->addWidget(defaultB);
-    layout->addWidget(testB);
+    //    layout->addWidget(testB);
     //    layout->addWidget(printB);
     connect(saveB   , SIGNAL(clicked()), this, SLOT(save_setup()));
     connect(loadB   , SIGNAL(clicked()), this, SLOT(load_setup()));
-    connect(printB  , SIGNAL(clicked()), this, SLOT(print_setup()));
+    //    connect(printB  , SIGNAL(clicked()), this, SLOT(print_setup()));
     connect(defaultB, SIGNAL(clicked()), this, SLOT(default_setup()));
-    connect(testB   , SIGNAL(clicked()), this, SLOT(run_test()));
+    //    connect(testB   , SIGNAL(clicked()), this, SLOT(run_test()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
@@ -130,7 +123,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
     *new DetectorListItem(_detList, "Summary", noInfo , 0);
-
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
 
@@ -159,6 +151,7 @@ DetectorSelect::~DetectorSelect()
       delete (*it);
     }
 
+  delete _rate_display;
   delete _filters;
   delete _manager;
   delete[] _request;

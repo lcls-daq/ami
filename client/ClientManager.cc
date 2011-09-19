@@ -158,6 +158,7 @@ ClientManager::~ClientManager()
   if (_reconn ) delete _reconn ;
   if (_listen ) delete _listen ;
   if (_connect) delete _connect;
+  delete &_client;
 }
 
 void ClientManager::request_payload()

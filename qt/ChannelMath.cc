@@ -100,6 +100,10 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
       }
     }
     if (mlen) {
+      //  Check for dependence upon an undefined channel
+      int isig = signatures[ich];
+      if (isig<0) 
+        return false;
       chmask |= (1<<ich);
       QString newstr = QString("[%1]").arg(signatures[ich]);
       expr.replace(pos,mlen,newstr);

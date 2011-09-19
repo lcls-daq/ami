@@ -14,6 +14,7 @@ BSocket::BSocket(unsigned size) :
 
 BSocket::~BSocket()
 {
+  delete[] _buffer;
 }
 
 int BSocket::readv(const iovec* iov, int iovcnt)

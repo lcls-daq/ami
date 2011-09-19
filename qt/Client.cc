@@ -37,6 +37,8 @@ typedef Pds::DetInfo DI;
 
 static const int BufferSize = 0x40000; // 256 kB
 
+static const bool oldLayout=false;
+
 Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
@@ -63,7 +65,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  _control = new Control(*this,request_rate);
+  _control = new Control(*this,request_rate,oldLayout);
   _status  = new Status;
 
   QButtonGroup* showPlotBoxes = new QButtonGroup;
@@ -83,6 +85,14 @@ Ami::Qt::Client::Client(QWidget*            parent,
   
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
+    if (!oldLayout) {
+      { QGroupBox* ctrlBox = new QGroupBox("Control");
+        QVBoxLayout* layout1 = new QVBoxLayout;
+        layout1->addWidget(_control);
+        layout1->addWidget(_status); 
+        ctrlBox->setLayout(layout1);
+        layout3->addWidget(ctrlBox); }
+    }
     { QGroupBox* chanBox = new QGroupBox("Channels");
       QVBoxLayout* layout1 = new QVBoxLayout;
       QPushButton* chanB[NCHANNELS];
@@ -111,14 +121,19 @@ Ami::Qt::Client::Client(QWidget*            parent,
     layout3->addLayout(_layout);
     layout3->addStretch();
     layout->addLayout(layout3); }
-  { QVBoxLayout* layout1 = new QVBoxLayout;
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(_control);
-      layout2->addStretch();
-      layout2->addWidget(_status);
-      layout1->addLayout(layout2); }
-    layout1->addWidget(_frame->widget());
-    layout->addLayout(layout1); }
+  if (oldLayout) {
+    { QVBoxLayout* layout1 = new QVBoxLayout;
+      { QHBoxLayout* layout2 = new QHBoxLayout;
+        layout2->addWidget(_control);
+        layout2->addStretch();
+        layout2->addWidget(_status);
+        layout1->addLayout(layout2); }
+      layout1->addWidget(_frame->widget());
+      layout->addLayout(layout1); }
+  }
+  else {
+    layout->addWidget(_frame->widget());
+  }
   setLayout(layout);
 
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
@@ -131,6 +146,7 @@ Ami::Qt::Client::~Client()
   delete[] _iovload;
   delete[] _description;
   delete[] _request; 
+  delete _sem;
 }
 
 const QString& Ami::Qt::Client::title() const { return _title; }

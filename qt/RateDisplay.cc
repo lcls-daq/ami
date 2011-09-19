@@ -42,8 +42,13 @@ RateDisplay::~RateDisplay()
 {
   Timer::cancel();
 
+  _cds.reset();
+
+  delete _manager;
   delete _inputCalc;
   delete _acceptCalc;
+  delete[] _iovload;
+  delete[] _description;
 }
 
 void RateDisplay::expired()

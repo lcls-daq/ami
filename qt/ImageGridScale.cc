@@ -35,16 +35,14 @@ ImageGridScale::ImageGridScale(ImageFrame& frame) :
   { QGroupBox* w = new QGroupBox("XY Units");
     w->setAlignment(::Qt::AlignHCenter);
     QHBoxLayout* lh = new QHBoxLayout;
+    lh->addWidget(pixelsB);
     lh->addStretch();
-    { QVBoxLayout* lw = new QVBoxLayout;
-      lw->addWidget(pixelsB);
-      lw->addWidget(phyB);
-      lh->addLayout(lw); }
-    lh->addStretch();
+    lh->addWidget(phyB);
     w->setLayout(lh);
     layout->addWidget(w); }
 
   layout->addLayout(_clayout = new QGridLayout);
+  _clayout->setVerticalSpacing(0);
 
   setLayout(layout);
 

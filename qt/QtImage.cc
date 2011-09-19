@@ -107,6 +107,14 @@ void           QtImage::canvas_size(const QSize& sz,
   }
   layout.addWidget(_xgrid,1,0);
   layout.addWidget(_ygrid,0,1);
+#if 0
+  layout.addItem(new QSpacerItem(0,0),2,0);
+  layout.addItem(new QSpacerItem(0,0),0,2);
+  layout.addItem(new QSpacerItem(0,0),1,1);
+  layout.addItem(new QSpacerItem(0,0),2,2);
+  layout.setColumnStretch(2,2);
+  layout.setRowStretch(2,2);
+#endif
 }
 
 
@@ -154,16 +162,14 @@ QImage&        QtImage::image(float p0, float s, bool linear)
 void QtImage::xscale_update() {}
 void QtImage::yscale_update() {}
 
-float QtImage::value(unsigned x,unsigned y) const
+float QtImage::value(unsigned x,unsigned y) const // units are bins
 {
   const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
   const Ami::DescImage&  d = _entry.desc();
   float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  const unsigned* src = _entry.contents() + 
-    d.ybin(d.biny(_y0)+y)*d.nbinsx() + 
-    d.xbin(d.binx(_x0)+x);
+  const unsigned* src = _entry.contents() + (_y0+y)*d.nbinsx() + (_x0+x);
   return (float(*src)-p)/n;
  }
 
