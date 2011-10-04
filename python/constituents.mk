@@ -13,4 +13,4 @@ liblibs_pyami += pdsdata/controldata pdsdata/epics
 liblibs_pyami += pdsdata/cspaddata pdsdata/lusidata
 liblibs_pyami += ami/service ami/data ami/server ami/client
 liblibs_pyami += qt/QtCore
-libslib_pyami := $(USRLIBDIR)/rt
+libslib_pyami := $(USRLIBDIR)/rt gomp
