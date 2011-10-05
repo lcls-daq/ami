@@ -189,9 +189,11 @@ void ChannelDefinition::load(const char*& p)
     _plot_grp->button(_Reference)->setEnabled(false);
   bool show = QtPersistent::extract_b(p);
 
-  int index = QtPersistent::extract_i(p);
-  if (index >= 0) 
-    _refBox->setCurrentIndex(index);
+  if (_refBox) {
+    int index = QtPersistent::extract_i(p);
+    if (index >= 0) 
+      _refBox->setCurrentIndex(index);
+  }
 
   _filter   ->load(p);
   _transform->load(p);

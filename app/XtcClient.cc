@@ -238,7 +238,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         else                                 h = new CspadMiniHandler(info,_cache);
         break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;
-      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader       (_cache); break;
+      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,_cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
