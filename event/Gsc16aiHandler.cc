@@ -47,7 +47,7 @@ void   Gsc16aiHandler::_configure(const void* payload, const Pds::ClockTime& t)
     default:
       _voltsMin = _voltsPerCount = 0.0;
       fprintf(stderr, "Error: gsc16ai data voltage range %hd not recognized\n",
-              _config.dataFormat());
+              _config.voltageRange());
       break;
   }
 
