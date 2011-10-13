@@ -53,7 +53,11 @@ void   Gsc16aiHandler::_configure(const void* payload, const Pds::ClockTime& t)
 
   for (ii = _config.firstChan(); ii <= _config.lastChan(); ii++) {
     sprintf(cc, ":Ch%02d", ii);
-    _cache.add(buffer);
+    if (ii == _config.firstChan()) {
+      _index = _cache.add(buffer);
+    } else {
+      (void) _cache.add(buffer);
+    }
   }
 }
 
