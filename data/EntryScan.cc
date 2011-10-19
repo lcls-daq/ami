@@ -47,7 +47,8 @@ void EntryScan::addy(double y, double x, double w)
 {
   unsigned bin = unsigned(info(Current));
   if (x != _p[bin]._x) {
-    bin++;
+    if (_p[bin]._nentries!=0)
+      bin++;
     if (bin == _desc.nbins())
       bin = 0;
 

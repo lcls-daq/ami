@@ -19,11 +19,16 @@ QtScan::QtScan(const QString&   title,
   _yscale(y),
   _curve(entry.desc().name())
 {
-  _curve.setStyle(QwtPlotCurve::Dots);
-  QwtSymbol symbol(QwtSymbol::Diamond,QBrush(c),QPen(c),QSize(5,5));
-  _curve.setSymbol(symbol);
+  if (entry.desc().scatter()) {
+    _curve.setStyle(QwtPlotCurve::Dots);
+    QwtSymbol symbol(QwtSymbol::Diamond,QBrush(c),QPen(c),QSize(5,5));
+    _curve.setSymbol(symbol);
+  }
+  else {
+    _curve.setStyle(QwtPlotCurve::Lines);
+  }
   _curve.setPen  (QPen(c));
-  _curve.setCurveAttribute(QwtPlotCurve::Inverted,true);
+  //  _curve.setCurveAttribute(QwtPlotCurve::Inverted,true);
   
   unsigned nb = entry.desc().nbins();
   _xa = new double[nb];

@@ -11,9 +11,11 @@ DescScan::DescScan(const char* name,
 		   const char* xtitle, 
 		   const char* ytitle, 
 		   unsigned nbins,
-		   const char* weight) :
+		   const char* weight,
+                   bool scatter) :
   DescEntryW( name, xtitle, ytitle, weight, Scan, sizeof(DescScan)),
-  _nbins(nbins)
+  _nbins  (nbins),
+  _details(scatter ? 1:0)
 {
 }
 
@@ -22,9 +24,11 @@ DescScan::DescScan(const Pds::DetInfo& info,
  		   const char* name, 
  		   const char* xtitle, 
  		   const char* ytitle, 
- 		   unsigned nbins) :
+ 		   unsigned nbins,
+                   bool scatter) :
   DescEntryW(info, channel, name, xtitle, ytitle, "", Scan, sizeof(DescScan)),
-  _nbins(nbins)
+  _nbins(nbins),
+  _details(scatter ? 1:0)
 {
 }
 

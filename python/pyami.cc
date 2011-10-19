@@ -131,9 +131,10 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
   while(1) {
     { char* kwlist[] = {"name","entry_type",NULL};
       const char *name = 0, *entry_type=0;
-      t = PyTuple_GetSlice(args,index,index_n+=2);
+      t = PyTuple_GetSlice(args,index,index_n=2);
       sts = PyArg_ParseTupleAndKeywords(t,kwds,"s|s",kwlist,
 					&name, &entry_type);
+
       Py_DECREF(t);
       //
       //  Handle scalar variables (like diodes and BLD)
@@ -163,15 +164,12 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
       }
     }
     { char* kwlist[] = {"det_id","channel",NULL};
-      t = PyTuple_GetSlice(args,index,index_n+=2);
-      sts = PyArg_ParseTupleAndKeywords(t,kwds,"I|I",kwlist,
+      t = PyTuple_GetSlice(args,index,index_n=2);
+      sts = PyArg_ParseTupleAndKeywords(t,kwds,"II",kwlist,
 					&phy, &channel);
       Py_DECREF(t);
       if (sts) {
-	if (channel==channel_default)
-	  index++;
-	else
-	  index = index_n;
+        index = index_n;
 
 	info = Info_pyami(phy);
 	op   = new Ami::Average;
@@ -187,6 +185,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
     sts = PyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
     Py_DECREF(t);
     filter = parse_filter(filter_str);
+    printf("parsed filter from %s\n",filter_str);
   }
 
   PyErr_Clear();

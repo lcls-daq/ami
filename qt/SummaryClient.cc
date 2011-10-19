@@ -3,6 +3,7 @@
 #include "ami/qt/Control.hh"
 #include "ami/qt/Status.hh"
 #include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtScan.hh"
@@ -17,6 +18,7 @@
 #include "ami/data/Discovery.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
@@ -284,8 +286,11 @@ void SummaryClient::_read_description(int size)
       img  = new QtImage(plot_title,*static_cast<const Ami::EntryImage*>(entry),
                          noTransform,noTransform,QColor(0,0,0));
       break;
+    case Ami::DescEntry::TH2F:
+      plot = new QtTH2F(plot_title,*static_cast<const Ami::EntryTH2F*>(entry));
+      break;
     default:
-      printf("SummaryClient type %d not implemented yet\n",desc->type()); 
+      printf("Summary type %d not implemented yet\n",desc->type()); 
       return;
     }
 
