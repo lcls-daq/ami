@@ -120,7 +120,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       layout3->addWidget(chanBox); }
     layout3->addLayout(_layout);
     layout3->addStretch();
-    layout->addLayout(layout3); }
+    layout->addLayout(layout3,0); }
   if (oldLayout) {
     { QVBoxLayout* layout1 = new QVBoxLayout;
       { QHBoxLayout* layout2 = new QHBoxLayout;
@@ -129,10 +129,10 @@ Ami::Qt::Client::Client(QWidget*            parent,
         layout2->addWidget(_status);
         layout1->addLayout(layout2); }
       layout1->addWidget(_frame->widget());
-      layout->addLayout(layout1); }
+      layout->addLayout(layout1,1); }
   }
   else {
-    layout->addWidget(_frame->widget());
+    layout->addWidget(_frame->widget(),1);
   }
   setLayout(layout);
 
