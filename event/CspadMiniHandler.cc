@@ -88,9 +88,9 @@ static double frameNoise(const uint16_t*  data,
 
   double v = 0;
   // the first peak from the left above this is the pedestal
-  { const int fnPeakBins = 3;
+  { const int fnPeakBins = 5;
     const int fnPixelRange = fnPixelBins-fnPeakBins-1;
-    const unsigned fnPedestalThreshold = 100;
+    const unsigned fnPedestalThreshold = 1000;
     
     unsigned i=fnPeakBins;
     while( int(i)<fnPixelRange ) {
@@ -131,14 +131,13 @@ static double frameNoise(const uint16_t*  data,
       }
       const double allowedPedestalWidthSquared = 2.5*2.5;
       //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
-      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0; 
+//      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0;
       // this isn't the standard rms around the mean, but should be similar if rms_real < 3
       //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
 
     }
-    else
-      //      printf("frameNoise : peak not found\n");
-      ;
+    else printf("frameNoise : peak not found\n");
+//    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
   }
 
   return v;
