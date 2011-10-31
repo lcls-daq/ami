@@ -210,6 +210,11 @@ void Filter::_apply()
 {
   if (_filter) delete _filter;
 
+  if (_expr->text().isEmpty()) {
+    _filter = new RawFilter;
+    return;
+  }
+
   CExpression parser(_conditions);
   _filter = parser.evaluate(_expr->text());
 

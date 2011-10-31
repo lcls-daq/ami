@@ -17,6 +17,7 @@
 #include "ami/data/XYProjection.hh"
 #include "ami/data/RPhiProjection.hh"
 #include "ami/data/ContourProjection.hh"
+#include "ami/data/XYHistogram.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -147,6 +148,7 @@ void ProjectionPlot::load(const char*& p)
     case AbsOperator::XYProjection     : _proj = new XYProjection     (p); break;
     case AbsOperator::RPhiProjection   : _proj = new RPhiProjection   (p); break;
     case AbsOperator::ContourProjection: _proj = new ContourProjection(p); break;
+    case AbsOperator::XYHistogram      : _proj = new XYHistogram      (p); break;
     default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
     }
   }

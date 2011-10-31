@@ -180,6 +180,7 @@ void ChannelDefinition::load(const char*& p)
   int id = QtPersistent::extract_i(p);
   _interval->setText(QtPersistent::extract_s(p));
   _math->expr(QtPersistent::extract_s(p));
+
   QString rfile = QtPersistent::extract_s(p);
   if (!rfile.isEmpty()) {
     _ref_file = rfile;
@@ -187,13 +188,12 @@ void ChannelDefinition::load(const char*& p)
   }
   else
     _plot_grp->button(_Reference)->setEnabled(false);
+
   bool show = QtPersistent::extract_b(p);
 
-  if (_refBox) {
-    int index = QtPersistent::extract_i(p);
-    if (index >= 0) 
-      _refBox->setCurrentIndex(index);
-  }
+  int index = QtPersistent::extract_i(p);
+  if (_refBox && index >= 0)
+    _refBox->setCurrentIndex(index);
 
   _filter   ->load(p);
   _transform->load(p);
