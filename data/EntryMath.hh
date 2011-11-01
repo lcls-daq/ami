@@ -9,11 +9,12 @@ namespace Ami {
   class DescEntry;
   class Entry;
   class Term;
+  class FeatureCache;
 
   class EntryMath : public AbsOperator {
   public:
     EntryMath(const char* expr);
-    EntryMath(const char*&, const DescEntry&, const Cds&);
+    EntryMath(const char*&, const DescEntry&, const Cds&, FeatureCache&);
     ~EntryMath();
   public:
     DescEntry& output   () const;

@@ -98,7 +98,7 @@ void CursorPlot::setup_payload(Cds& cds)
       break;
     case Ami::DescEntry::Scalar:  // create a chart from a scalar
       _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  400,QColor(0,0,0));
+			  QColor(0,0,0));
       break;
     case Ami::DescEntry::Prof: 
       _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),

@@ -3,6 +3,7 @@
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include "ami/data/LogicAnd.hh"
 #include "ami/data/AbsFilter.hh"
@@ -60,8 +61,11 @@ void ChannelMath::calc()
 
   QStringList vops;
 
+  QStringList names(_names);
+  names << FeatureRegistry::instance().names();
+
   Calculator* c = new Calculator(tr("Channel Math"),"",
-				 _names, vops, ops);
+				 names, vops, ops);
   if (c->exec()==QDialog::Accepted) {
     _expr->setText(c->result());
     _changed = true;

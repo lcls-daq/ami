@@ -120,7 +120,7 @@ void EnvPlot::setup_payload(Cds& cds)
 // 			    d.pts(),QColor(0,0,0));
 // 	break; }
       _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  400,QColor(0,0,0));
+			  QColor(0,0,0));
       edit_xrange(false);
       break;
     case Ami::DescEntry::Prof: 

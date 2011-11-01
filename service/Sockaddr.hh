@@ -16,6 +16,7 @@ public:
     _sockaddr.sin_family      = AF_INET;
     _sockaddr.sin_addr.s_addr = htonl(ins.address());
     _sockaddr.sin_port        = htons(ins.portId()); 
+    memset(_sockaddr.sin_zero,0,sizeof(_sockaddr.sin_zero));
   }
   
   void get(const Ins& ins) {

@@ -72,7 +72,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   qtyBox->addItems(q);
 
   _hist   = new DescTH1F (bold(Sum (1dH)));
-  _vTime  = new DescChart(bold(Mean v Time),0.2);
+  _vTime  = new DescChart(bold(Mean v Time));
   _vFeature = new DescProf (bold(Mean v Var) );
   _vScan    = new DescScan (bold(Mean v Scan));
 

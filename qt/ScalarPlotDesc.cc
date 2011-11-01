@@ -25,7 +25,7 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent) :
   QWidget(parent)
 {
   _hist   = new DescTH1F  ("Sum (1dH)");
-  _vTime  = new DescChart ("Mean v Time",0.2);
+  _vTime  = new DescChart ("v Time");
   _vFeature = new DescProf("Mean v Var" );
   _vScan    = new DescScan("Mean v Scan");
 
@@ -112,8 +112,20 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       break; }
   case ScalarPlotDesc::vT: 
     { QString v = _xnorm->isChecked() ? vn : QString(title);
-      desc = new Ami::DescScalar(qPrintable(v),"mean",
-				 _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+      switch(_vTime->stat()) {
+      case Ami::DescScalar::StdDev:
+        desc = new Ami::DescScalar(qPrintable(v),"stddev", Ami::DescScalar::StdDev,
+                                   _weightB->isChecked() ? qPrintable(_vweight->entry()) : "",
+                                   _vTime->pts(),
+                                   _vTime->dpt());
+        break;
+      case Ami::DescScalar::Mean:
+      default:
+        desc = new Ami::DescScalar(qPrintable(v),"mean", Ami::DescScalar::Mean,
+                                   _weightB->isChecked() ? qPrintable(_vweight->entry()) : "",
+                                   _vTime->pts(),
+                                   _vTime->dpt());
+        break; }
       break; }
   case ScalarPlotDesc::vF:
     { QString vy = _ynorm->isChecked() ? vn : QString(title);

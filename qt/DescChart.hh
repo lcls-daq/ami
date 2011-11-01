@@ -1,8 +1,11 @@
 #ifndef AmiQt_DescChart_hh
 #define AmiQt_DescChart_hh
 
+#include "ami/data/DescScalar.hh"
+
 #include <QtGui/QWidget>
 
+class QComboBox;
 class QRadioButton;
 class QLineEdit;
 
@@ -14,15 +17,17 @@ namespace Ami {
       void save(char*&) const;
       void load(const char*&);
     public:
-      DescChart(const char* name, double dpt);
+      DescChart(const char* name);
     public:
       QRadioButton* button();
+      Ami::DescScalar::Stat stat() const;
       unsigned pts() const;
-      double   dpt() const;
+      unsigned dpt() const;
     private:
       QRadioButton* _button;
+      QComboBox*    _stat;
       QLineEdit *_pts;
-      double     _dpt;
+      QLineEdit* _dpt;
     };
   };
 };

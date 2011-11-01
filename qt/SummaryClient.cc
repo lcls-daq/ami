@@ -272,7 +272,7 @@ void SummaryClient::_read_description(int size)
       break;
     case Ami::DescEntry::Scalar:  // create a chart from a scalar
       plot = new QtChart(plot_title,*static_cast<const Ami::EntryScalar*>(entry),
-			 400,QColor(0,0,0));
+			 QColor(0,0,0));
       break;
     case Ami::DescEntry::Prof: 
       plot = new QtProf(plot_title,*static_cast<const Ami::EntryProf*>(entry),

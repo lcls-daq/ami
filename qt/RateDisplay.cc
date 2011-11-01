@@ -77,7 +77,7 @@ void RateDisplay::addLayout(QVBoxLayout* l)
 int  RateDisplay::configure       (char*& p)
 { 
   if (_input) {
-    { Ami::EnvPlot op(Ami::DescScalar("ProcTime","mean",""));
+    { Ami::EnvPlot op(Ami::DescScalar("ProcTime","mean"));
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                       ConfigureRequest::Discovery,
                                                       _input,
@@ -85,7 +85,7 @@ int  RateDisplay::configure       (char*& p)
                                                       RawFilter(), op);
       p += r.size(); }
 
-    { Ami::EnvPlot op(Ami::DescScalar("ProcTimeAcc","mean",""));
+    { Ami::EnvPlot op(Ami::DescScalar("ProcTimeAcc","mean"));
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                       ConfigureRequest::Discovery,
                                                       _input,

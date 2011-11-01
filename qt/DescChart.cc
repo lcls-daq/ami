@@ -3,6 +3,7 @@
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>
+#include <QtGui/QComboBox>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QIntValidator>
 #include <QtGui/QDoubleValidator>
@@ -10,33 +11,53 @@
 
 using namespace Ami::Qt;
 
-DescChart::DescChart(const char* name, double dpt) : 
-  QWidget(0), _button(new QRadioButton(name)), _pts(new QLineEdit("100")), _dpt(dpt)
+DescChart::DescChart(const char* name) :
+  QWidget(0), 
+  _button(new QRadioButton), 
+  _stat  (new QComboBox),
+  _pts(new QLineEdit("100")), 
+  _dpt(new QLineEdit("1"))
 {
+  _stat->addItem("Mean");
+  _stat->addItem("StdDev");
+  _stat->setCurrentIndex(0);
+
   _pts->setMaximumWidth(60);
   new QIntValidator   (_pts);
+  _dpt->setMaximumWidth(60);
+  new QIntValidator   (1,(1<<16 -1),_dpt);
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(_button);
+  layout->addWidget(_stat);
+  layout->addWidget(new QLabel(name));
   layout->addStretch();
   layout->addWidget(new QLabel("points"));
   layout->addWidget(_pts);
-  _pts->setEnabled(false);
-  //  layout->addWidget(new QLabel(QString("%1 seconds/pt").arg(dpt)));
+  layout->addWidget(new QLabel("prescale"));
+  layout->addWidget(_dpt);
+  _pts->setEnabled(true);
+  _dpt->setEnabled(true);
   setLayout(layout);
 }
 
 QRadioButton* DescChart::button() { return _button; }
+
+Ami::DescScalar::Stat DescChart::stat() const
+{
+  return Ami::DescScalar::Stat(_stat->currentIndex());
+}
+
 unsigned DescChart::pts() const { return _pts->text().toInt(); }
-double   DescChart::dpt() const { return _dpt; }
+unsigned DescChart::dpt() const { return _dpt->text().toInt(); }
 
 void DescChart::save(char*& p) const
 {
   QtPersistent::insert(p,_pts->text());
-  QtPersistent::insert(p,_dpt);
+  QtPersistent::insert(p,_dpt->text());
 }
 
 void DescChart::load(const char*& p)
 {
   _pts->setText(QtPersistent::extract_s(p));
-  _dpt = QtPersistent::extract_d(p);
+  _dpt->setText(QtPersistent::extract_s(p));
 }

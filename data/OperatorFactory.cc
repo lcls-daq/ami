@@ -51,7 +51,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Integral  : o = new Integral  (p,input); break;
   case AbsOperator::Reference : o = new Reference (p,input); break;
   case AbsOperator::EntryRefOp: o = new EntryRefOp(p,input); break;
-  case AbsOperator::EntryMath : o = new EntryMath (p,input,output_cds); break;
+  case AbsOperator::EntryMath : o = new EntryMath (p,input,output_cds,_f); break;
   case AbsOperator::BinMath   : o = new BinMath   (p,input,_f); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;

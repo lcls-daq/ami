@@ -31,11 +31,11 @@ using namespace Ami::Qt;
 
 QtChart::QtChart(const QString&   title,
 		 const Ami::EntryScalar& entry,
-		 unsigned npoints,
 		 const QColor& c) :
   QtBase  (title,entry),
   _cache  (*new EntryScalar(entry.desc())),
-  _n      (npoints),
+  _n      (entry.desc().npoints()),
+  _skip   (0),
   _current(0),
   _curve  (entry.desc().name()),
   _pts    (0)
@@ -83,11 +83,18 @@ void           QtChart::attach(QwtPlot* p)
   p->setAxisLabelRotation (QwtPlot::xBottom, -50.0);
   p->setAxisLabelAlignment(QwtPlot::xBottom, ::Qt::AlignLeft | ::Qt::AlignBottom);
   p->setAxisTitle(QwtPlot::xBottom,"Time [sec]");
+
+  p->setAxisTitle(QwtPlot::yLeft,entry().desc().ytitle());
 }
 
 void           QtChart::update()
 {
+  if (_skip--)
+    return;
+
   const EntryScalar& entry = static_cast<const EntryScalar&>(QtBase::entry());
+  _skip = entry.desc().prescale()-1;
+
   if (!entry.valid())
     return;
 
@@ -107,7 +114,23 @@ void           QtChart::update()
     _x[_current+_n] = time;
     
     // calculate y
-    double y = (n>0) ? (entry.sum() - _cache.sum())/n : 0;
+    double y;
+    if (n>0) {
+      switch(entry.desc().stat()) {
+      case Ami::DescScalar::StdDev:
+        y = (entry.sum() - _cache.sum());
+        y = (entry.sqsum() - _cache.sqsum() - y*y/n)/n;
+        y = (y>0) ? sqrt(y) : 0;
+        break;
+      case Ami::DescScalar::Mean:
+      default:
+        y = (entry.sum() - _cache.sum())/n;
+        break;
+      }
+    }
+    else
+      y = 0;
+
     _cache.setto(entry);
     _y[_current]    = y;
     _y[_current+_n] = y;

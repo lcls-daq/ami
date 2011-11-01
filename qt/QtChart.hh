@@ -16,7 +16,6 @@ namespace Ami {
     public:
       QtChart(const QString&   title,
 	      const Ami::EntryScalar&,
-	      unsigned npoints,
 	      const QColor&);
       virtual ~QtChart();
     public:
@@ -29,6 +28,7 @@ namespace Ami {
     private:
       EntryScalar&     _cache;
       unsigned         _n;  // max # of pts
+      unsigned         _skip;
       unsigned         _current;
       QwtPlotCurve     _curve;
       unsigned         _pts; // accumulate # of pts

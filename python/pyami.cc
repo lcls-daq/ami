@@ -142,7 +142,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
       if (sts) {
 	index = index_n;
 	if (entry_type==0 || strcmp(entry_type,"Scalar")==0) {
-	  op = new Ami::EnvPlot(Ami::DescScalar(name,"mean",""));
+	  op = new Ami::EnvPlot(Ami::DescScalar(name,"mean"));
 	  break;
 	}
 	else if (strcmp(entry_type,"TH1F")==0) {

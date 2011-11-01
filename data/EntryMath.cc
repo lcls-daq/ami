@@ -8,9 +8,11 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryTerm.hh"
+#include "ami/data/FeatureCache.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
+#include "ami/data/FeatureExpression.hh"
 
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -32,7 +34,7 @@ EntryMath::EntryMath(const char* expr) :
 #define CASETERM(type) case DescEntry::type: \
   t = new Entry##type##Term(static_cast<const Entry##type&>(*entry),_index); break;
 
-EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds) :
+EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds, FeatureCache& features) :
   AbsOperator(AbsOperator::EntryMath)
 {
   _extract(p, _expression, EXPRESSION_LEN);
@@ -69,9 +71,14 @@ EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds) :
   }
   new_expr.append(expr.mid(last));
 
+#if 0
   std::list<Variable*> variables; // none
   Expression parser(variables);
   _term = parser.evaluate(new_expr);
+#else
+  FeatureExpression parser;
+  _term = parser.evaluate(features,new_expr);
+#endif
 }
 
 EntryMath::~EntryMath()
