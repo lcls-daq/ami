@@ -4,6 +4,7 @@
 #include "ami/service/Ins.hh"
 
 #include <sys/socket.h>
+#include <string.h> // for memset()
 
 namespace Ami {
 class Sockaddr {
