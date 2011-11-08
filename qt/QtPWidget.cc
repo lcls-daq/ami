@@ -21,13 +21,13 @@ QtPWidget::~QtPWidget()
 
 void QtPWidget::save(char*& p) const
 {
-  QtPersistent::insert(p,pos().x());
-  QtPersistent::insert(p,pos().y());
+  XML_insert(p, "int", "x", QtPersistent::insert(p,pos().x()) );
+  XML_insert(p, "int", "y", QtPersistent::insert(p,pos().y()) );
 
-  QtPersistent::insert(p,size().width());
-  QtPersistent::insert(p,size().height());
+  XML_insert(p, "int", "width", QtPersistent::insert(p,size().width()) );
+  XML_insert(p, "int", "height",QtPersistent::insert(p,size().height()) );
 
-  QtPersistent::insert(p,isVisible());
+  XML_insert(p, "bool", "visible", QtPersistent::insert(p,isVisible()) );
 
   if (isVisible())
     printf("QtP save %d,%d %d,%d %c\n",
@@ -39,19 +39,26 @@ void QtPWidget::save(char*& p) const
 void QtPWidget::load(const char*& p)
 {
   QPoint r;
-  r.setX(QtPersistent::extract_i(p));
-  r.setY(QtPersistent::extract_i(p));
-
   QSize s;
-  s.setWidth (QtPersistent::extract_i(p));
-  s.setHeight(QtPersistent::extract_i(p));
+  bool v = false;
 
-  bool v=QtPersistent::extract_b(p);
+  XML_iterate_open(p,tag)
+    if (tag.name == "x")
+      r.setX(QtPersistent::extract_i(p));
+    else if (tag.name == "y")
+      r.setY(QtPersistent::extract_i(p));
+    else if (tag.name == "width")
+      s.setWidth (QtPersistent::extract_i(p));
+    else if (tag.name == "height")
+      s.setHeight(QtPersistent::extract_i(p));
+    else if (tag.name == "visible")
+      v=QtPersistent::extract_b(p);
+  XML_iterate_close(AnnulusCursors,tag);
 
   setVisible(v);
   if (v) {
     move  (r);
     resize(s);
-    printf("QtP load %d,%d %d,%d %c\n",r.x(),r.y(),s.width(),s.height(),v?'t':'f');
   }
+  printf("QtP load %d,%d %d,%d %c\n",r.x(),r.y(),s.width(),s.height(),v?'t':'f');
 }

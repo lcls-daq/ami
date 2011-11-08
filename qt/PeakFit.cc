@@ -143,47 +143,49 @@ PeakFit::~PeakFit()
 
 void PeakFit::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_baseline ->value());
-  QtPersistent::insert(p,_title->text());
-  _hist->save(p);
-  _vTime->save(p);
-  _vFeature->save(p);
-  _vScan->save(p);
+  XML_insert(p, "QLineEdit", "_baseline", QtPersistent::insert(p,_baseline ->value()) );
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+  XML_insert(p, "DescTH1F", "_hist", _hist->save(p) );
+  XML_insert(p, "DescChart", "_vTime", _vTime->save(p) );
+  XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
+  XML_insert(p, "DescScan", "_vScan", _vScan->save(p) );
 
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QtPersistent::insert(p,QString("PeakFitPlot"));
-    (*it)->save(p);
+    XML_insert(p, "PeakFitPlot", "_plots", (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndPeakFitPlot"));
 }
 
 void PeakFit::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _baseline->value(QtPersistent::extract_d(p));
-  _title->setText(QtPersistent::extract_s(p));
-  _hist->load(p);
-  _vTime->load(p);
-  _vFeature->load(p);
-  _vScan->load(p);
-
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
   }
   _plots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("PeakFitPlot")) {
-    PeakFitPlot* plot = new PeakFitPlot(this, p);
-    _plots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_baseline")
+      _baseline->value(QtPersistent::extract_d(p));
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_hist")
+      _hist->load(p);
+    else if (tag.name == "_vTime")
+      _vTime->load(p);
+    else if (tag.name == "_vFeature")
+      _vFeature->load(p);
+    else if (tag.name == "_vScan")
+      _vScan->load(p);
+    else if (tag.name == "_plots") {
+      PeakFitPlot* plot = new PeakFitPlot(this, p);
+      _plots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void PeakFit::save_plots(const QString& p) const

@@ -78,18 +78,25 @@ RectangleCursors::~RectangleCursors()
 
 void RectangleCursors::save(char*& p) const
 {
-  QtPersistent::insert(p,_x0);
-  QtPersistent::insert(p,_y0);
-  QtPersistent::insert(p,_x1);
-  QtPersistent::insert(p,_y1);
+  XML_insert(p, "int", "_x0", QtPersistent::insert(p,_x0) );
+  XML_insert(p, "int", "_y0", QtPersistent::insert(p,_y0) );
+  XML_insert(p, "int", "_x1", QtPersistent::insert(p,_x1) );
+  XML_insert(p, "int", "_y1", QtPersistent::insert(p,_y1) );
 }
 
 void RectangleCursors::load(const char*& p)
 {
-  _x0 = QtPersistent::extract_i(p);
-  _y0 = QtPersistent::extract_i(p);
-  _x1 = QtPersistent::extract_i(p);
-  _y1 = QtPersistent::extract_i(p);
+  XML_iterate_open(p,tag)
+    if (tag.name == "_x0")
+      _x0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_y0")
+      _y0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_x1")
+      _x1 = QtPersistent::extract_i(p);
+    else if (tag.name == "_y1")
+      _y1 = QtPersistent::extract_i(p);
+  XML_iterate_close(AnnulusCursors,tag);
+
   _set_edits();
 }
 

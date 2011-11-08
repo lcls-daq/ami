@@ -72,19 +72,32 @@ PeakPlot::~PeakPlot()
 
 void PeakPlot::save(char*& p) const
 {
-  QtPersistent::insert(p,_name);
-  QtPersistent::insert(p,_input);
-  QtPersistent::insert(p,_threshold);
-  _frame->save(p);
-  QtPWidget::save(p);
+  XML_insert( p, "QString", "_name",
+              QtPersistent::insert(p,_name) );
+  XML_insert( p, "unsigned", "_input",
+              QtPersistent::insert(p,_input) );
+  XML_insert( p, "unsigned", "_threshold",
+              QtPersistent::insert(p,_threshold) );
+  XML_insert( p, "ImageDisplay", "_frame",
+              _frame->save(p) );
+  XML_insert( p, "QtPWidget", "self",
+              QtPWidget::save(p) );
 }
 
 void PeakPlot::load(const char*& p)
 {
-  _name  = QtPersistent::extract_s(p);
-  _input = QtPersistent::extract_i(p);
-  _threshold = QtPersistent::extract_i(p);
-  _frame->load(p);
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QString")
+      _name  = QtPersistent::extract_s(p);
+    else if (tag.element == "unsigned") {
+      if      (tag.name == "_input")
+        _input = QtPersistent::extract_i(p);
+      else if (tag.name == "_threshold")
+        _threshold = QtPersistent::extract_i(p);
+    }
+    else if (tag.element == "ImageDisplay")
+      _frame->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void PeakPlot::setup_payload(Cds& cds)

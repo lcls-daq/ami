@@ -18,10 +18,16 @@ namespace Ami {
 		       double    location,
 		       CursorsX& parent,
 		       QwtPlot*  plot);
+      CursorDefinition(const char*&,
+		       CursorsX& parent,
+		       QwtPlot*  plot);
       ~CursorDefinition();
     public:
       const QString& name() const { return _name; }
       double location() const { return _location; }
+    public:
+      void save(char*&) const;
+      void load(const char*&);
     public slots:
       void show_in_plot(bool);
       void remove();	  

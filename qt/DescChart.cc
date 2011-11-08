@@ -52,12 +52,16 @@ unsigned DescChart::dpt() const { return _dpt->text().toInt(); }
 
 void DescChart::save(char*& p) const
 {
-  QtPersistent::insert(p,_pts->text());
-  QtPersistent::insert(p,_dpt->text());
+  XML_insert(p, "QLineEdit", "_pts", QtPersistent::insert(p,_pts->text()) );
+  XML_insert(p, "QLineEdit", "_dpt", QtPersistent::insert(p,_dpt->text()) );
 }
 
 void DescChart::load(const char*& p)
 {
-  _pts->setText(QtPersistent::extract_s(p));
-  _dpt->setText(QtPersistent::extract_s(p));
+  XML_iterate_open(p,tag)
+    if (tag.name == "_pts")
+      _pts->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_dpt")
+      _dpt->setText(QtPersistent::extract_s(p));
+  XML_iterate_close(AnnulusCursors,tag);
 }

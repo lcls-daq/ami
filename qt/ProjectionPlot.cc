@@ -122,47 +122,70 @@ void ProjectionPlot::_layout()
 
 void ProjectionPlot::save(char*& p) const
 {
-  QtPWidget::save(p);
+  char* buff = new char[8*1024];
 
-  QtPersistent::insert(p,_name);
-  QtPersistent::insert(p,_input);
-  p = (char*)_proj->serialize(p);
+  XML_insert( p, "QtPWidget", "self",
+              QtPWidget::save(p) );
 
-  for(unsigned i=0; i<NCHANNELS; i++) _channels[i]->save(p);
+  XML_insert( p, "QString", "_name",
+              QtPersistent::insert(p,_name) );
+  XML_insert( p, "unsigned", "_input", 
+              QtPersistent::insert(p,_input) );
 
-  _frame  ->save(p);
-  _cursors->save(p);
-  _peakfit->save(p);
+  XML_insert( p, "Ami::AbsOperator", "_proj", 
+              QtPersistent::insert(p,buff,(char*)_proj->serialize(buff)-buff) );
+
+  for(unsigned i=0; i<NCHANNELS; i++)
+    XML_insert( p, "ChannelDefinition", "_channels",
+                _channels[i]->save(p) );
+
+  XML_insert( p, "WaveformDisplay", "_frame",
+              _frame  ->save(p) );
+  XML_insert( p, "CursorsX", "_cursors",
+              _cursors->save(p) );
+  XML_insert( p, "PeakFit", "_peakfit",
+              _peakfit->save(p) );
+
+  delete[] buff;
 }
 
 void ProjectionPlot::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _name  = QtPersistent::extract_s(p);
-  _input = QtPersistent::extract_i(p);
-
-  { uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(p);
-    p+=2*sizeof(uint32_t); // type and next
-    switch(type) {
-    case AbsOperator::XYProjection     : _proj = new XYProjection     (p); break;
-    case AbsOperator::RPhiProjection   : _proj = new RPhiProjection   (p); break;
-    case AbsOperator::ContourProjection: _proj = new ContourProjection(p); break;
-    case AbsOperator::XYHistogram      : _proj = new XYHistogram      (p); break;
-    default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
-    }
-  }
-  
   _showMask = 0;
-  for(unsigned i=0; i<NCHANNELS; i++) {
-    _channels[i]->load(p);
-    if (_channels[i]->is_shown())
-      _showMask |= 1<<i;
-  }
+  unsigned nchannels=0;
 
-  _frame  ->load(p);
-  _cursors->load(p);
-  _peakfit->load(p);
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_name")
+      _name  = QtPersistent::extract_s(p);
+    else if (tag.name == "_input")
+      _input = QtPersistent::extract_i(p);
+    else if (tag.name == "_channels") {
+      _channels[nchannels]->load(p);
+      if (_channels[nchannels]->is_shown())
+        _showMask |= 1<<nchannels;
+      nchannels++;
+    }
+    else if (tag.name == "_proj") {
+      const char* v = (const char*)QtPersistent::extract_op(p);
+      uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(v);
+      v+=2*sizeof(uint32_t); // type and next
+      switch(type) {
+      case AbsOperator::XYProjection     : _proj = new XYProjection     (v); break;
+      case AbsOperator::RPhiProjection   : _proj = new RPhiProjection   (v); break;
+      case AbsOperator::ContourProjection: _proj = new ContourProjection(v); break;
+      case AbsOperator::XYHistogram      : _proj = new XYHistogram      (v); break;
+      default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
+      }
+    }
+    else if (tag.name == "_frame")
+      _frame  ->load(p);
+    else if (tag.name == "_cursors")
+      _cursors->load(p);
+    else if (tag.name == "_peakfit")
+      _peakfit->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void ProjectionPlot::save_plots(const QString& p) const

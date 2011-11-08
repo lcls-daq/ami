@@ -133,20 +133,28 @@ ImageColorControl::~ImageColorControl()
 
 void ImageColorControl::save(char*& p) const
 {
-  QtPersistent::insert(p,_scale);
-  QtPersistent::insert(p,_paletteGroup->checkedId());
-  QtPersistent::insert(p,double(_pedestal));
-  QtPersistent::insert(p,_logscale->isChecked());
+  XML_insert(p, "int", "scale", QtPersistent::insert(p,_scale) );
+  XML_insert(p, "QButtonGroup", "_paletteGroup", QtPersistent::insert(p,_paletteGroup->checkedId()) );
+  XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,double(_pedestal)) );
+  XML_insert(p, "QCheckBox", "_logscale", QtPersistent::insert(p,_logscale->isChecked()) );
 }
 
 void ImageColorControl::load(const char*& p)
 {
-  _scale = QtPersistent::extract_i(p);
-  int palette = QtPersistent::extract_i(p);
-  _paletteGroup->button(palette)->setChecked(true);
-  set_palette(palette);
-  _pedestal     = QtPersistent::extract_d(p);
-  _logscale->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_open(p,tag)
+    if (tag.name == "_scale")
+      _scale = QtPersistent::extract_i(p);
+    else if (tag.name == "_paletteGroup") {
+      int palette = QtPersistent::extract_i(p);
+      _paletteGroup->button(palette)->setChecked(true);
+      set_palette(palette);
+    }
+    else if (tag.name == "_pedestal")
+      _pedestal     = QtPersistent::extract_d(p);
+    else if (tag.name == "_logscale")
+      _logscale->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_close(AnnulusCursors,tag);
+
   show_scale();
   emit windowChanged();
 }

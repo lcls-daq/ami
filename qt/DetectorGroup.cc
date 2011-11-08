@@ -122,7 +122,7 @@ DetectorGroup::~DetectorGroup()
 
 void DetectorGroup::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
   int i=0;
   for(std::list<QtTopWidget*>::const_iterator it = _snapshot.begin();
       it != _snapshot.end(); it++,i++) {

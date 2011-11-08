@@ -21,8 +21,6 @@ namespace Ami {
   namespace Qt {
     class AbsClient;
     class QtTopWidget;
-    class DetectorReset;
-    class DetectorSave;
     class FilterSetup;
     class RateDisplay;
     class DetectorSelect : public QtPWidget,
@@ -82,8 +80,6 @@ namespace Ami {
       std::list<QtTopWidget*> _client;
       QListWidget*   _detList;
       QPrinter*      _printer;
-//       DetectorReset* _reset_box;
-//       DetectorSave*  _save_box;
       QTimer*        _autosave_timer;
       RateDisplay*   _rate_display;
       Semaphore      _sem;

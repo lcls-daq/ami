@@ -160,13 +160,21 @@ Ami::Contour Contour::value() const
 void Contour::save(char*& p) const 
 {
   for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++)
-    QtPersistent::insert(p,_c[i]->text().toDouble());
-  QtPersistent::insert(p,_discrimLevelEdit->text().toDouble());
+    XML_insert(p, "double", "coefficient", QtPersistent::insert(p,_c[i]->text().toDouble()) );
+  XML_insert(p, "QLineEdit", "_discrimLevelEdit", QtPersistent::insert(p,_discrimLevelEdit->text()) );
 }
 
 void Contour::load(const char*& p)
 {
-  for(unsigned i=0; i<Ami::Contour::MaxOrder+1; i++)
-    _c[i]->setText(QString::number(QtPersistent::extract_d(p)));
-  _discrimLevelEdit->setText(QString::number(QtPersistent::extract_d(p)));
+  unsigned order = 0;
+
+  XML_iterate_open(p,tag)
+    if (tag.name == "coefficient")
+      _c[order++]->setText(QString::number(QtPersistent::extract_d(p)));
+    else if (tag.name == "_discrimLevelEdit")
+      _discrimLevelEdit->setText(QtPersistent::extract_s(p));
+  XML_iterate_close(AnnulusCursors,tag);
+
+  while(order < Ami::Contour::MaxOrder+1)
+    _c[order++]->setText(QString("0"));
 }

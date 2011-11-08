@@ -9,8 +9,6 @@
 #include "ami/qt/SummaryClient.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PrintAction.hh"
-#include "ami/qt/DetectorSave.hh"
-#include "ami/qt/DetectorReset.hh"
 #include "ami/qt/DetectorListItem.hh"
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/FilterSetup.hh"
@@ -44,28 +42,6 @@ static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoD
 
 static const int MaxConfigSize = 0x100000;
 static const int BufferSize = 0x8000;
-
-static void insertInfo(char*& p, const Pds::DetInfo& info, unsigned channel)
-{
-  QtPersistent::insert(p,(unsigned)info.detector());
-  QtPersistent::insert(p,(unsigned)info.detId());
-  QtPersistent::insert(p,(unsigned)info.device());
-  QtPersistent::insert(p,(unsigned)info.devId());
-  QtPersistent::insert(p,(unsigned)channel);
-}
-
-
-static void extractInfo(const char*& p, Pds::DetInfo& info, unsigned& channel) 
-{
-  unsigned det   = QtPersistent::extract_i(p);
-  unsigned detId = QtPersistent::extract_i(p);
-  unsigned dev   = QtPersistent::extract_i(p);
-  unsigned devId = QtPersistent::extract_i(p);
-  info = Pds::DetInfo(0,
-		      Pds::DetInfo::Detector(det), detId,
-		      Pds::DetInfo::Device  (dev), devId);
-  channel = QtPersistent::extract_i(p);
-}
 
 DetectorSelect::DetectorSelect(const QString& label,
 			       unsigned ppinterface,
@@ -159,21 +135,18 @@ DetectorSelect::~DetectorSelect()
 
 int DetectorSelect::get_setup(char* buffer) const
 {
+  char id[64];
+
   char* p = buffer;
 
   for(std::list<QtTopWidget*>::const_iterator it = _client.begin();
       it != _client.end(); it++)
     if ((*it)) {
-      QtPersistent::insert(p,QString("DetectorSelect"));
-      insertInfo(p, (*it)->info, (*it)->channel);
-      QtPersistent::insert(p,QString((*it)->title()));
-      (*it)->save(p);
+      sprintf(id, "%08x.%d", (*it)->info.phy(), (*it)->channel);
+      XML_insert( p, id, qPrintable((*it)->title()), (*it)->save(p) );
     }
-  QtPersistent::insert(p,QString("EndDetectorSelect"));
 
-  save(p);
-  //  _save_box ->save(p);
-  //  _reset_box->save(p);
+  XML_insert( p, "QtTopWidget", "self", save(p) );
 
   return p-buffer;
 }
@@ -233,6 +206,11 @@ void DetectorSelect::_load_setup_from_file(const char* fname)
 
   printf("Load %d bytes from %s @ %p\n",size,fname,buffer);
 
+  //
+  //  Terminate the file
+  //
+  size += sprintf(buffer+size,"</Document>");
+
   set_setup(buffer, size);
 
   delete[] buffer;
@@ -240,43 +218,51 @@ void DetectorSelect::_load_setup_from_file(const char* fname)
 
 void DetectorSelect::set_setup(const char* p, int size)
 {
+  const char* start = p;
+  //
   // parse the input
   //
   //  Create the clients, if necessary, load them, and connect
   //
-  QString name = QtPersistent::extract_s(p);
-  Pds::DetInfo info;
-  unsigned     channel;
+  for(Ami::XML::TagIterator it(p); !it.end(); it++) {
+    const Ami::XML::StartTag& tag = *it;
 
-  while(name==QString("DetectorSelect")) {
-    extractInfo(p, info, channel);
-    name = QtPersistent::extract_s(p);
-    printf("Seeking %s\n",qPrintable(name));
+    printf("DetectorSelect tag %s/%s [%d]\n",
+           tag.element.c_str(),tag.name.c_str(),p-start);
 
-    bool lFound=false;
-    for(std::list<QtTopWidget*>::iterator it = _client.begin();
-	it != _client.end(); it++)
-      if ((*it)->info == info && (*it)->channel == channel) {
-	printf("Loading %s\n",qPrintable(name));
-	lFound=true;
-	(*it)->load(p);
-	break;
-      }
+    if (tag.name == "self")
+      load(p);
+    else {
 
-    if (!lFound) {
-      Ami::Qt::AbsClient* c = _create_client(info,channel,name);
-      if (c) {
-	c->load(p);
-	_connect_client(c);
+      uint32_t phy, channel;
+      sscanf(tag.element.c_str(),"%08x.%d",&phy,&channel);
+
+      printf("Seeking %s (%08x.%d)\n",tag.name.c_str(),phy,channel);
+
+      Pds::DetInfo info( 0, 
+                         Pds::DetInfo::Detector((phy>>24)&0xff), (phy>>16)&0xff, 
+                         Pds::DetInfo::Device  ((phy>> 8)&0xff), (phy>> 0)&0xff );
+
+      bool lFound=false;
+      for(std::list<QtTopWidget*>::iterator it = _client.begin();
+          it != _client.end(); it++)
+        if ((*it)->info == info && (*it)->channel == channel) {
+          printf("Loading %s\n",tag.name.c_str());
+          lFound=true;
+          (*it)->load(p);
+          break;
+        }
+    
+      if (!lFound) {
+        Ami::Qt::AbsClient* c = _create_client(info,channel,tag.name.c_str());
+        if (c) {
+          c->load(p);
+          _connect_client(c);
+        }
       }
     }
-
-    name=QtPersistent::extract_s(p);
   }
 
-  load(p);
-  //  _save_box ->load(p);
-  //  _reset_box->load(p);
 }
 
 void DetectorSelect::print_setup()
@@ -505,18 +491,6 @@ void DetectorSelect::read_payload    (Socket& s,int len) {
 void DetectorSelect::process         () {
   _rate_display->process();
 }
-
-/*
-void DetectorSelect::_update_groups()
-{
-  DetectorReset* reset_box = new DetectorReset(*_reset_box);
-  delete _reset_box;
-  _reset_box = reset_box;
-  DetectorSave * save_box  = new DetectorSave (*_save_box);
-  delete _save_box;
-  _save_box = save_box;
-}
-*/
 
 void DetectorSelect::queue_autosave()
 {

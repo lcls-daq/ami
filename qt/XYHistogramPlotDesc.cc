@@ -32,12 +32,15 @@ XYHistogramPlotDesc::~XYHistogramPlotDesc()
 
 void XYHistogramPlotDesc::save(char*& p) const
 {
-  _desc->save(p);
+  XML_insert( p, "DescTH1F", "_desc", _desc->save(p) );
 }
 
 void XYHistogramPlotDesc::load(const char*& p)
 {
-  _desc->load(p);
+  XML_iterate_open(p,tag)
+    if (tag.name == "_desc")
+      _desc->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const

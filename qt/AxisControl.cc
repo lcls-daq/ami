@@ -71,22 +71,30 @@ AxisControl::~AxisControl()
 
 void AxisControl::save(char*& p) const
 {
-  QtPersistent::insert(p,_loBox->text());
-  QtPersistent::insert(p,_hiBox->text());
-  QtPersistent::insert(p,_autoB->isChecked());
-  QtPersistent::insert(p,_logB ->isChecked());
+  XML_insert(p, "QLineEdit", "_loBox", QtPersistent::insert(p,_loBox->text()) );
+  XML_insert(p, "QLineEdit", "_hiBox", QtPersistent::insert(p,_hiBox->text()) );
+  XML_insert(p, "QPushButton", "_autoB", QtPersistent::insert(p,_autoB->isChecked()) );
+  XML_insert(p, "QPushButton", "_logB" , QtPersistent::insert(p,_logB ->isChecked()) );
 }
 
 void AxisControl::load(const char*& p)
 {
-  QString s,t;
   bool b;
-  _loBox->setText(s=QtPersistent::extract_s(p));
-  _hiBox->setText(t=QtPersistent::extract_s(p));
-  _autoB->setChecked(b=QtPersistent::extract_b(p));
-  auto_scale(b);
-  _logB ->setChecked(b=QtPersistent::extract_b(p));
-  log_scale(b);
+
+  XML_iterate_open(p,tag)
+    if (tag.name == "_loBox")
+      _loBox->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_loBox")  
+      _hiBox->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_autoB") {
+      _autoB->setChecked(b=QtPersistent::extract_b(p));
+      auto_scale(b);
+    }
+    else if (tag.name == "_logB") {
+      _logB ->setChecked(b=QtPersistent::extract_b(p));
+      log_scale(b);
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void   AxisControl::update(const AxisInfo& info) 

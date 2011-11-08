@@ -62,14 +62,18 @@ XYProjectionPlotDesc::~XYProjectionPlotDesc()
 
 void XYProjectionPlotDesc::save(char*& p) const
 {
-  QtPersistent::insert(p, _axis->checkedId());
-  QtPersistent::insert(p, _norm->checkedId());
+  XML_insert(p, "QButtonGroup", "_axis", QtPersistent::insert(p, _axis->checkedId()) );
+  XML_insert(p, "QButtonGroup", "_norm", QtPersistent::insert(p, _norm->checkedId()) );
 }
 
 void XYProjectionPlotDesc::load(const char*& p)
 {
-  _axis->button(QtPersistent::extract_i(p))->setChecked(true);
-  _norm->button(QtPersistent::extract_i(p))->setChecked(true);
+  XML_iterate_open(p,tag)
+    if (tag.name == "_axis")
+      _axis->button(QtPersistent::extract_i(p))->setChecked(true);
+    else if (tag.name == "_norm")
+      _norm->button(QtPersistent::extract_i(p))->setChecked(true);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 Ami::XYProjection* XYProjectionPlotDesc::desc(const char* title) const

@@ -2,6 +2,7 @@
 
 #include "ami/qt/Client.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/QtPersistent.hh"
 #include "ami/service/Task.hh"
 
 #include <QtGui/QPushButton>
@@ -86,13 +87,18 @@ void Control::set_rate() {
 
 void Control::save(char*& p) const
 {
-  QtPersistent::insert(p,_pRun   ->isChecked());
+  XML_insert( p, "QPushButton", "_pRun",
+              QtPersistent::insert(p,_pRun   ->isChecked()) );
 }
 
 void Control::load(const char*& p)
 {
-  bool b = QtPersistent::extract_b(p);
-  printf("Extract RUN state %c\n",b?'t':'f');
-  _pRun   ->setChecked(b);
-  run(b);
+  XML_iterate_open(p,tag)
+    if (tag.name == "_pRun") {
+      bool b = QtPersistent::extract_b(p);
+      printf("Extract RUN state %c\n",b?'t':'f');
+      _pRun   ->setChecked(b);
+      run(b);
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }

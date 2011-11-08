@@ -9,6 +9,7 @@
 #include "ami/data/EntryRef.hh"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
@@ -26,7 +27,7 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     CASE_NEW(Image);
     CASE_NEW(Waveform);
     CASE_NEW(Ref);
-  default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); break;
+  default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); abort(); break;
   }
   return entry;
 }

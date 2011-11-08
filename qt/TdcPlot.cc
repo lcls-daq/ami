@@ -48,7 +48,7 @@ TdcPlot::TdcPlot(QWidget*         parent,
 
 TdcPlot::TdcPlot(QWidget*     parent,
 		 const char*& p) :
-  QtPlot   (parent,p),
+  QtPlot   (parent),
   _filter  (0),
   _output_signature(0),
   _plot    (0)
@@ -65,10 +65,10 @@ TdcPlot::~TdcPlot()
 
 void TdcPlot::save(char*& p) const
 {
-  QtPlot::save(p);
+  XML_insert(p, "QtPlot", "self", QtPlot::save(p) );
   //  _filter->serialize(p);
-  memcpy(p, _desc, _desc->size()); p += _desc->size();
-  QtPersistent::insert(p,_expr);
+  XML_insert(p, "DescEntry", "_desc", QtPersistent::insert(p, _desc, _desc->size()) );
+  XML_insert(p, "QString", "_expr", QtPersistent::insert(p,_expr) );
 }
 
 
@@ -77,17 +77,14 @@ void TdcPlot::load(const char*& p)
   //  Ami::FilterFactory factory(FeatureRegistry::instance());
   //  _filter = factory.deserialize(p);
 
-  char* buff = new char[sizeof(DescTH1F)];
-  DescEntry* desc = (DescEntry*)buff;
-  memcpy(buff, p, sizeof(DescEntry));
-  memcpy(buff+sizeof(DescEntry), p+sizeof(DescEntry), desc->size()-sizeof(DescEntry));
-  p += desc->size();
-
-  _desc = new DescTH1F(*static_cast<DescTH1F*>(desc));
-
-  _expr = QtPersistent::extract_s(p);
-
-  delete[] buff;
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPlot")
+      QtPlot::load(p);
+    else if (tag.name == "_desc")
+      _desc = new DescTH1F(*reinterpret_cast<DescTH1F*>(QtPersistent::extract_op(p)));
+    else if (tag.name == "_expr")
+      _expr = QtPersistent::extract_s(p);
+  XML_iterate_close(TdcPlot,tag);
 }
 
 void TdcPlot::dump(FILE* f) const { _plot->dump(f); }

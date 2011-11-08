@@ -121,53 +121,50 @@ Filter::~Filter()
 
 void Filter::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_expr->text());
+  XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr->text()) );
   for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++) {
-    QtPersistent::insert(p,QString("Condition"));
-    QtPersistent::insert(p,(*it)->label());
+    XML_insert(p, "Condition", "_conditions", QtPersistent::insert(p,(*it)->label()) );
   }
-  QtPersistent::insert(p,QString("EndCondition"));
 }
 
 void Filter::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _expr->setText(QtPersistent::extract_s(p));
-
   for(std::list<Condition*>::const_iterator it=_conditions.begin(); it!=_conditions.end(); it++)
     delete *it;
   _conditions.clear();
     
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("Condition")) {
-    name = QtPersistent::extract_s(p);
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_expr")
+      _expr->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_conditions") {
+      QString name = QtPersistent::extract_s(p);
+      
+      char condition[64],variable[64];
+      double lo, hi;
+      sscanf(qPrintable(name),"%s := %lg <= %s <= %lg", condition, &lo, variable, &hi);
 
-    char condition[64],variable[64];
-    double lo, hi;
-    sscanf(qPrintable(name),"%s := %lg <= %s <= %lg", condition, &lo, variable, &hi);
+      printf("new condition %s := %g <= %s <= %g\n",
+             condition, lo, variable, hi);
+      int index = _features->findText(variable);
+      if (index<0)
+        printf("Unable to identify %s\n",variable);
 
-    printf("new condition %s := %g <= %s <= %g\n",
-	   condition, lo, variable, hi);
-    int index = _features->findText(variable);
-    if (index<0)
-      printf("Unable to identify %s\n",variable);
-
-    Condition* c = new Condition(condition,
-                                 QString("%1 := %2 <= %3 <= %4")
-                                 .arg(condition)
-                                 .arg(lo)
+      Condition* c = new Condition(condition,
+                                   QString("%1 := %2 <= %3 <= %4")
+                                   .arg(condition)
+                                   .arg(lo)
 				   .arg(variable)
-                                 .arg(hi),
-                                 new FeatureRange(variable,lo,hi));
-    _conditions.push_back(c);
-    _clayout->addWidget(c);
-    connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
-    
-    name = QtPersistent::extract_s(p);
-  }
+                                   .arg(hi),
+                                   new FeatureRange(variable,lo,hi));
+      _conditions.push_back(c);
+      _clayout->addWidget(c);
+      connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
   _apply();
 }
 

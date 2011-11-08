@@ -73,28 +73,37 @@ ZoomPlot::~ZoomPlot()
 
 void ZoomPlot::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_name);
-  QtPersistent::insert(p,_input);
-  QtPersistent::insert(p,_x0);
-  QtPersistent::insert(p,_y0);
-  QtPersistent::insert(p,_x1);
-  QtPersistent::insert(p,_y1);
-  _frame->save(p);
+  XML_insert(p, "QString", "_name", QtPersistent::insert(p,_name) );
+  XML_insert(p, "unsigned", "_input", QtPersistent::insert(p,_input) );
+  XML_insert(p, "unsigned", "_x0", QtPersistent::insert(p,_x0) );
+  XML_insert(p, "unsigned", "_y0", QtPersistent::insert(p,_y0) );
+  XML_insert(p, "unsigned", "_x1", QtPersistent::insert(p,_x1) );
+  XML_insert(p, "unsigned", "_y1", QtPersistent::insert(p,_y1) );
+  XML_insert(p, "ImageDisplay", "_frame", _frame->save(p) );
 }
 
 void ZoomPlot::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _name  = QtPersistent::extract_s(p);
-  _input = QtPersistent::extract_i(p);
-  _x0 = QtPersistent::extract_i(p);
-  _y0 = QtPersistent::extract_i(p);
-  _x1 = QtPersistent::extract_i(p);
-  _y1 = QtPersistent::extract_i(p);
-  _frame->load(p);
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_name")
+      _name  = QtPersistent::extract_s(p);
+    else if (tag.name == "_input")
+      _input = QtPersistent::extract_i(p);
+    else if (tag.name == "_x0")
+      _x0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_y0")
+      _y0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_x1")
+      _x1 = QtPersistent::extract_i(p);
+    else if (tag.name == "_y1")
+      _y1 = QtPersistent::extract_i(p);
+    else if (tag.name == "_frame")
+      _frame->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void ZoomPlot::setup_payload(Cds& cds)

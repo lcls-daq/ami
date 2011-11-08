@@ -47,14 +47,18 @@ EdgeCursor::~EdgeCursor()
 
 void EdgeCursor::load(const char*& p)
 {
-  value(QtPersistent::extract_d(p));
-  _showB->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_open(p,tag)
+    if (tag.element == "Cursors")
+      value(QtPersistent::extract_d(p));
+    else if (tag.name == "_showB")
+      _showB->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void EdgeCursor::save(char*& p) const 
 {
-  QtPersistent::insert(p,value());
-  QtPersistent::insert(p,_showB->isChecked());
+  XML_insert(p, "Cursors", "self", QtPersistent::insert(p,value()) );
+  XML_insert(p, "QPushButton", "_showB", QtPersistent::insert(p,_showB->isChecked()) );
 }
 
 double EdgeCursor::value() const { return _input->text().toDouble(); }

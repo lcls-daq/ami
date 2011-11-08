@@ -104,42 +104,44 @@ EdgeFinder::~EdgeFinder()
 
 void EdgeFinder::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  _baseline ->save(p);
-  _threshold->save(p);
+  XML_insert(p, "EdgeCursor", "_baseline", _baseline ->save(p) );
+  XML_insert(p, "EdgeCursor", "_threshold",_threshold->save(p) );
 
-  QtPersistent::insert(p,_title->text());
-  _hist->save(p);
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+  XML_insert(p, "DescTH1F", "_hist", _hist->save(p) );
 
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QtPersistent::insert(p,QString("EdgePlot"));
-    (*it)->save(p);
+    XML_insert(p, "EdgePlot", "_plots", (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndEdgePlot"));
 }
 
 void EdgeFinder::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _baseline ->load(p);
-  _threshold->load(p);
-  _title->setText(QtPersistent::extract_s(p));
-  _hist->load(p);
-
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
 
-  QString name=QtPersistent::extract_s(p);
-  while(name==QString("EdgePlot")) {
-    EdgePlot* plot = new EdgePlot(this, p);
-    _plots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  XML_iterate_open(p,tag)
 
-    name=QtPersistent::extract_s(p);
-  }
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_baseline")
+      _baseline ->load(p);
+    else if (tag.name == "_threshold")
+      _threshold->load(p);
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_hist")
+      _hist->load(p);
+    else if (tag.name == "_plots") {
+      EdgePlot* plot = new EdgePlot(this, p);
+      _plots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+
+  XML_iterate_close(EdgeFinder,tag);
 
   emit changed();
 }

@@ -102,17 +102,29 @@ double   DescProf::hi  () const { return _hi->text().toDouble(); }
 
 void DescProf::save(char*& p) const
 {
-  QtPersistent::insert(p,_expr ->text());
-  QtPersistent::insert(p,_bins->text());
-  QtPersistent::insert(p,_lo  ->text());
-  QtPersistent::insert(p,_hi  ->text());
+  XML_insert( p, "QString", "_expr",
+              QtPersistent::insert(p,_expr ->text()) );
+  XML_insert( p, "QString", "_bins",
+              QtPersistent::insert(p,_bins->text()) );
+  XML_insert( p, "QString", "_lo",
+              QtPersistent::insert(p,_lo  ->text()) );
+  XML_insert( p, "QString", "_hi",
+              QtPersistent::insert(p,_hi  ->text()) );
 }
 
 void DescProf::load(const char*& p)
 {
-  _expr->setText(QtPersistent::extract_s(p));
-  _bins->setText(QtPersistent::extract_s(p));
-  _lo  ->setText(QtPersistent::extract_s(p));
-  _hi  ->setText(QtPersistent::extract_s(p));
+  XML_iterate_open(p,tag)
+    if (tag.element == "QString") {
+      if      (tag.name == "_expr")
+        _expr->setText(QtPersistent::extract_s(p));
+      else if (tag.name == "_bins")
+        _bins->setText(QtPersistent::extract_s(p));
+      else if (tag.name == "_lo")
+        _lo  ->setText(QtPersistent::extract_s(p));
+      else if (tag.name == "_hi")
+        _hi  ->setText(QtPersistent::extract_s(p));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 

@@ -28,8 +28,6 @@ QtPlot::QtPlot(QWidget* parent,
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
-  _layout();
-
   bool gMajor = Defaults::instance()->show_grid();
   _grid->enableX   (gMajor);
   _grid->enableY   (gMajor);
@@ -39,36 +37,17 @@ QtPlot::QtPlot(QWidget* parent,
   _grid->setMajPen(QPen(QColor(0x808080)));
   _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_frame);
+
+  _layout();
 }
 
-QtPlot::QtPlot(QWidget* parent,
-	       const char*& p) :
+QtPlot::QtPlot(QWidget* parent) :
   QtPWidget(parent),
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
-  _name  = QtPersistent::extract_s(p);
-  _frame = new QwtPlot(_name);
-  _frame->setTitle(QtPersistent::extract_s(p));
-  _frame->setAxisTitle(QwtPlot::xBottom,QtPersistent::extract_s(p));
-  _frame->setAxisTitle(QwtPlot::yLeft  ,QtPersistent::extract_s(p));
-
-  //  _xrange->load(p);
-  _yrange->load(p);
-
-  _layout();
-
-  bool gMajor = QtPersistent::extract_b(p);
-  _grid->enableX   (gMajor);
-  _grid->enableY   (gMajor);
-  bool gMinor = QtPersistent::extract_b(p);
-  _grid->enableXMin(gMinor);
-  _grid->enableYMin(gMinor);
-  _grid->attach(_frame);
-
-  QtPWidget::load(p);
 }
 
 QtPlot::~QtPlot()
@@ -120,19 +99,50 @@ void QtPlot::_layout()
 
 void QtPlot::save(char*& p) const
 {
-  QtPersistent::insert(p,_name);
-  QtPersistent::insert(p,_frame->title().text());
-  QtPersistent::insert(p,_frame->axisTitle(QwtPlot::xBottom).text());
-  QtPersistent::insert(p,_frame->axisTitle(QwtPlot::yLeft).text());
+  XML_insert(p, "QString", "_name", QtPersistent::insert(p,_name) );
+  XML_insert(p, "QString", "_frame_title", QtPersistent::insert(p,_frame->title().text()) );
+  XML_insert(p, "QString", "_frame_xtitle", QtPersistent::insert(p,_frame->axisTitle(QwtPlot::xBottom).text()) );
+  XML_insert(p, "QString", "_frame_ytitle", QtPersistent::insert(p,_frame->axisTitle(QwtPlot::yLeft).text()) );
   //  _xrange->save(p);
-  _yrange->save(p);
-  QtPersistent::insert(p,_grid->xEnabled());
-  QtPersistent::insert(p,_grid->xMinEnabled());
-  QtPWidget::save(p);
+  XML_insert(p, "AxisControl", "_yrange", _yrange->save(p) );
+  XML_insert(p, "bool", "_grid_xenabled", QtPersistent::insert(p,_grid->xEnabled()) );
+  XML_insert(p, "bool", "_grid_xminenabled", QtPersistent::insert(p,_grid->xMinEnabled()) );
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 }
 
 void QtPlot::load(const char*& p)
 {
+  XML_iterate_open(p,tag)
+
+    if (tag.name == "_name") {
+      _name  = QtPersistent::extract_s(p);
+      _frame = new QwtPlot(_name);
+      _grid->attach(_frame);
+    }
+    else if (tag.name == "_frame_title")
+      _frame->setTitle(QtPersistent::extract_s(p));
+    else if (tag.name == "_frame_xtitle")
+      _frame->setAxisTitle(QwtPlot::xBottom,QtPersistent::extract_s(p));
+    else if (tag.name == "_frame_ytitle")
+      _frame->setAxisTitle(QwtPlot::yLeft  ,QtPersistent::extract_s(p));
+    else if (tag.name == "_yrange")
+      _yrange->load(p);
+    else if (tag.name == "_grid_xenabled") {
+      bool gMajor = QtPersistent::extract_b(p);
+      _grid->enableX   (gMajor);
+      _grid->enableY   (gMajor);
+    }
+    else if (tag.name == "_grid_xminenabled") {
+      bool gMinor = QtPersistent::extract_b(p);
+      _grid->enableXMin(gMinor);
+      _grid->enableYMin(gMinor);
+    }
+    else if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+
+  XML_iterate_close(QtPlot,tag);
+
+  _layout();
 }
 
 void QtPlot::save_data()

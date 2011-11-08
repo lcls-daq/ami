@@ -97,22 +97,30 @@ AnnulusCursors::~AnnulusCursors()
 
 void AnnulusCursors::save(char*& p) const
 {
-  QtPersistent::insert(p,_xc);
-  QtPersistent::insert(p,_yc);
-  QtPersistent::insert(p,_r0);
-  QtPersistent::insert(p,_r1);
-  QtPersistent::insert(p,_f0);
-  QtPersistent::insert(p,_f1);
+  XML_insert(p, "double", "_xc", QtPersistent::insert(p,_xc) );
+  XML_insert(p, "double", "_yc", QtPersistent::insert(p,_yc) );
+  XML_insert(p, "double", "_r0", QtPersistent::insert(p,_r0) );
+  XML_insert(p, "double", "_r1", QtPersistent::insert(p,_r1) );
+  XML_insert(p, "double", "_f0", QtPersistent::insert(p,_f0) );
+  XML_insert(p, "double", "_f1", QtPersistent::insert(p,_f1) );
 }
 
 void AnnulusCursors::load(const char*& p)
 {
-  _xc = QtPersistent::extract_i(p);
-  _yc = QtPersistent::extract_i(p);
-  _r0 = QtPersistent::extract_i(p);
-  _r1 = QtPersistent::extract_i(p);
-  _f0 = QtPersistent::extract_i(p);
-  _f1 = QtPersistent::extract_i(p);
+  XML_iterate_open(p,tag)
+    if      (tag.name == "_xc")
+      _xc = QtPersistent::extract_i(p);
+    else if (tag.name == "_yc")
+      _yc = QtPersistent::extract_i(p);
+    else if (tag.name == "_r0")
+      _r0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_r1")
+      _r1 = QtPersistent::extract_i(p);
+    else if (tag.name == "_f0")
+      _f0 = QtPersistent::extract_i(p);
+    else if (tag.name == "_f1")
+      _f1 = QtPersistent::extract_i(p);
+  XML_iterate_close(AnnulusCursors,tag);
   _set_edits();
 }
 

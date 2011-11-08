@@ -136,38 +136,33 @@ Transform::~Transform()
 
 void Transform::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_expr->text());
+  XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr->text()) );
 
   for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++) {
-    QtPersistent::insert(p,QString("Constant"));
-    QtPersistent::insert(p,(*it)->name());
-    QtPersistent::insert(p,(*it)->value());
+    XML_insert(p, "TransformConstant", "_constants", (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndTransform"));
 }
 
 void Transform::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _expr->setText(QtPersistent::extract_s(p));
-
   for(std::list<TransformConstant*>::const_iterator it=_constants.begin(); it!=_constants.end(); it++)
     delete *it;
   _constants.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("Constant")) {
-    name = QtPersistent::extract_s(p);
-    TransformConstant* c = new TransformConstant(name,QtPersistent::extract_d(p));
-    _constants.push_back(c);
-    _clayout->addWidget(c);
-    connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
-
-    name = QtPersistent::extract_s(p);
-  }
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_expr")
+      _expr->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_constants") {
+      TransformConstant* c = new TransformConstant(p);
+      _constants.push_back(c);
+      _clayout->addWidget(c);
+      connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 
   apply();
 }

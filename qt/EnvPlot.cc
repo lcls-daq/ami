@@ -52,30 +52,37 @@ EnvPlot::EnvPlot(QWidget*         parent,
 
 EnvPlot::EnvPlot(QWidget*     parent,
 		 const char*& p) :
-  QtPlot   (parent,p),
+  QtPlot   (parent),
   _filter  (0),
   _output_signature(0),
   _plot    (0)
 {
-  Ami::FilterFactory factory;
-  _filter = factory.deserialize(p);
+  XML_iterate_open(p,tag)
+    
+    if (tag.element == "QtPlot")
+      QtPlot::load(p);
+    else if (tag.name == "_filter") {
+      Ami::FilterFactory factory;
+      const char* b = (const char*)QtPersistent::extract_op(p);
+      _filter = factory.deserialize(b);
+    }
+    else if (tag.name == "_desc") {
+      DescEntry* desc = (DescEntry*)QtPersistent::extract_op(p);
 
-  char* buff = new char[sizeof(DescProf)];
-  DescEntry* desc = (DescEntry*)buff;
-  memcpy(buff, p, sizeof(DescEntry));
-  memcpy(buff+sizeof(DescEntry), p+sizeof(DescEntry), desc->size()-sizeof(DescEntry));
-  p += desc->size();
+      printf("EnvPlot desc %p type %d\n",desc, desc->type());
 
 #define CASEENTRY(type) case DescEntry::type: _desc = new Desc##type(*static_cast<Desc##type*>(desc)); break;
 
-  switch(desc->type()) {
-    CASEENTRY(TH1F)
-    CASEENTRY(Prof)
-    CASEENTRY(Scan)
-    CASEENTRY(Scalar)
-    default: break;
-  }
-  delete[] buff;
+      switch(desc->type()) {
+        CASEENTRY(TH1F)
+          CASEENTRY(Prof)
+          CASEENTRY(Scan)
+          CASEENTRY(Scalar)
+          default: break;
+      }
+    }
+
+  XML_iterate_close(EnvPlot,tag);
 }
 
 EnvPlot::~EnvPlot()
@@ -87,9 +94,11 @@ EnvPlot::~EnvPlot()
 
 void EnvPlot::save(char*& p) const
 {
-  QtPlot::save(p);
-  p = (char*)_filter->serialize(p);
-  memcpy(p, _desc, _desc->size()); p += _desc->size();
+  char* buff = new char[8*1024];
+  XML_insert( p, "QtPlot", "self", QtPlot::save(p) );
+  XML_insert( p, "AbsFilter", "_filter", QtPersistent::insert(p, buff, (char*)_filter->serialize(buff)-buff) );
+  XML_insert( p, "DescEntry", "_desc", QtPersistent::insert(p, _desc, _desc->size()) );
+  delete[] buff;
 }
 
 
@@ -109,6 +118,10 @@ void EnvPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     edit_xrange(true);
+
+    printf("EnvPlot::setup_payload %s %d\n",
+           entry->desc().name(), entry->desc().type());
+
     switch(entry->desc().type()) {
     case Ami::DescEntry::TH1F: 
       _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),

@@ -160,44 +160,56 @@ ChannelDefinition::~ChannelDefinition()
 
 void ChannelDefinition::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert( p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_plot_grp->checkedId());
-  QtPersistent::insert(p,_interval->text());
-  QtPersistent::insert(p,_math->expr());
-  QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString(""));
-  QtPersistent::insert(p,_show);
-  QtPersistent::insert(p,_refBox ? _refBox->currentIndex() : -1);
-  _filter   ->save(p);
-  _transform->save(p);
-  QtPersistent::insert(p,_scale->text());
+  XML_insert( p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->checkedId()) );
+  XML_insert( p, "QLineEdit"   , "_interval", QtPersistent::insert(p,_interval->text()) );
+  XML_insert( p, "ChannelMath" , "_math"    , QtPersistent::insert(p,_math->expr()) );
+  XML_insert( p, "QString"     , "_ref_file", QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString("")) );
+  XML_insert( p, "bool"        , "_show"    , QtPersistent::insert(p,_show) );
+  XML_insert( p, "QComboBox"   , "_refBox"  , QtPersistent::insert(p,_refBox ? _refBox->currentIndex() : -1) );
+  XML_insert( p, "Filter"      , "_filter"  , _filter   ->save(p) );
+  XML_insert( p, "Transform"   , "_transform",_transform->save(p) );
+  XML_insert( p, "QLineEdit"   , "_scale"   , QtPersistent::insert(p,_scale->text()) );
 }
 
 void ChannelDefinition::load(const char*& p)
 {
-  QtPWidget::load(p);
-  
-  int id = QtPersistent::extract_i(p);
-  _interval->setText(QtPersistent::extract_s(p));
-  _math->expr(QtPersistent::extract_s(p));
+  int  id   = 0;
+  bool show = false;
 
-  QString rfile = QtPersistent::extract_s(p);
-  if (!rfile.isEmpty()) {
-    _ref_file = rfile;
-    _plot_grp->button(_Reference)->setEnabled(true);
-  }
-  else
-    _plot_grp->button(_Reference)->setEnabled(false);
-
-  bool show = QtPersistent::extract_b(p);
-
-  int index = QtPersistent::extract_i(p);
-  if (_refBox && index >= 0)
-    _refBox->setCurrentIndex(index);
-
-  _filter   ->load(p);
-  _transform->load(p);
-  _scale    ->setText(QtPersistent::extract_s(p));
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_plot_grp")
+      id = QtPersistent::extract_i(p);
+    else if (tag.name == "_interval")
+      _interval->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_math")
+      _math->expr(QtPersistent::extract_s(p));
+    else if (tag.name == "_ref_file") {
+      QString rfile = QtPersistent::extract_s(p);
+      if (!rfile.isEmpty()) {
+        _ref_file = rfile;
+        _plot_grp->button(_Reference)->setEnabled(true);
+      }
+      else
+        _plot_grp->button(_Reference)->setEnabled(false);
+    }
+    else if (tag.name == "_show")
+      show = QtPersistent::extract_b(p);
+    else if (tag.name == "_refBox") {
+      int index = QtPersistent::extract_i(p);
+      if (_refBox && index >= 0)
+        _refBox->setCurrentIndex(index);
+    }
+    else if (tag.name == "_filter")
+      _filter   ->load(p);
+    else if (tag.name == "_transform")
+      _transform->load(p);
+    else if (tag.name == "_scale")
+      _scale    ->setText(QtPersistent::extract_s(p));
+  XML_iterate_close(AnnulusCursors,tag);
 
   _plot_grp->button(id)->setChecked(true);
 

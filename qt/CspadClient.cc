@@ -19,16 +19,21 @@ CspadClient::~CspadClient() {}
 
 void CspadClient::save(char*& p) const
 {
-  ImageClient::save(p);
-  QtPersistent::insert(p,_fnBox->isChecked());
-  QtPersistent::insert(p,_spBox->isChecked());
+  XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
+  XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_spBox", QtPersistent::insert(p,_spBox->isChecked()) );
 }
 
 void CspadClient::load(const char*& p)
 {
-  ImageClient::load(p);
-  _fnBox->setChecked(QtPersistent::extract_b(p));
-  _spBox->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_open(p,tag)
+    if (tag.element == "ImageClient")
+      ImageClient::load(p);
+    else if (tag.name == "_fnBox")
+      _fnBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_spBox")
+      _spBox->setChecked(QtPersistent::extract_b(p));
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void CspadClient::_configure(char*& p, 

@@ -50,14 +50,10 @@ CursorPlot::CursorPlot(QWidget* parent,
 
 CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
-  QtPlot   (parent,p),
+  QtPlot   (parent),
   _plot    (0)
 {
-  _channel = QtPersistent::extract_i(p);
-
-  p += 2*sizeof(uint32_t);
-  _input = new BinMath(p);
-  _output_signature=0;
+  load(p);
 }
 
 CursorPlot::~CursorPlot()
@@ -68,13 +64,28 @@ CursorPlot::~CursorPlot()
 
 void CursorPlot::save(char*& p) const
 {
-  QtPlot::save(p);
-  QtPersistent::insert(p,(int)_channel);
-  p = (char*)_input->serialize(p);
+  char* buff = new char[8*1024];
+  XML_insert(p, "QtPlot", "self", QtPlot::save(p) );
+  XML_insert(p, "int", "_channel", QtPersistent::insert(p,(int)_channel) );
+  XML_insert(p, "BinMath", "_input", QtPersistent::insert(p,buff,(char*)_input->serialize(buff)-buff) );
+  delete[] buff;
 }
 
 void CursorPlot::load(const char*& p)
 {
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPlot")
+      QtPlot::load(p);
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_input") {
+      const char* b = (const char*)QtPersistent::extract_op(p);
+      b += 2*sizeof(uint32_t);
+      _input = new BinMath(b);
+    }
+  XML_iterate_close(CursorPlot,tag);
+
+  _output_signature=0;
 }
 
 void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
@@ -169,9 +180,10 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
     }
     end_expr.append(new_expr.mid(last));
   }
-  //  printf("CursorPlot %s\n",qPrintable(expr));
-  //  printf("CursorPlot %s\n",qPrintable(new_expr));
-  //  printf("CursorPlot %s\n",qPrintable(end_expr));
+
+  printf("CursorPlot %s\n",qPrintable(expr));
+  printf("CursorPlot %s\n",qPrintable(new_expr));
+  printf("CursorPlot %s\n",qPrintable(end_expr));
 
   Ami::BinMath op(_input->output(), qPrintable(end_expr));
   

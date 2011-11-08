@@ -111,45 +111,48 @@ const QString& EnvClient::title() const { return _title; }
 
 void EnvClient::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert( p, "QtPWidget", "self", 
+              QtPWidget::save(p) );
+  XML_insert( p, "QLineEdit", "_source_edit", 
+              QtPersistent::insert(p,_source_edit->text()) );
+  XML_insert( p, "Filter", "_filter",
+              _filter->save(p) );
 
-  QtPersistent::insert(p,_source_edit->text());
-  _filter->save(p);
-
-  _scalar_plot->save(p);
+  XML_insert( p, "ScalarPlotDesc", "_scalar_plot",
+              _scalar_plot->save(p) );
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QtPersistent::insert(p,QString("EnvPlot"));
-    (*it)->save(p);
+    XML_insert( p, "EnvPlot", "_plots",
+                (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndEnvPlot"));
 
-  _control->save(p);
+  XML_insert( p, "Control", "_control", 
+              _control->save(p) );
 }
 
 void EnvClient::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _source_edit->setText(QtPersistent::extract_s(p));
-  _filter  ->load(p);
-
-  _scalar_plot->load(p);
-
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("EnvPlot")) {
-    EnvPlot* plot = new EnvPlot(this, p);
-    _plots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
-
-  _control->load(p);
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.element == "QLineEdit")
+      _source_edit->setText(QtPersistent::extract_s(p));
+    else if (tag.element == "Filter")
+      _filter  ->load(p);
+    else if (tag.element == "ScalarPlotDesc")
+      _scalar_plot->load(p);
+    else if (tag.element == "EnvPlot") {
+      EnvPlot* plot = new EnvPlot(this, p);
+      _plots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.element == "Control")
+      _control->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 
   update_configuration();
 }

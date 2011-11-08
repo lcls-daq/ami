@@ -40,6 +40,36 @@ CursorDefinition::CursorDefinition(const QString& name,
   showB->click();
 }
 
+CursorDefinition::CursorDefinition(const char*& p,
+				   CursorsX& parent,
+				   QwtPlot*  plot) :
+  QWidget  (0),
+  _parent  (parent),
+  _plot    (plot)
+{
+  load(p);
+
+  _marker = new QwtPlotMarker;
+  _marker->setLabel    (_name);
+  _marker->setLineStyle(QwtPlotMarker::VLine);
+  _marker->setXValue   (_location);
+  
+  QPushButton* showB = new QPushButton("Show"); showB->setCheckable(true);
+  QPushButton* delB  = new QPushButton("Delete");
+
+  QHBoxLayout* layout = new QHBoxLayout;
+  layout->addWidget(new QLabel(QString("%1 @ %2").arg(_name).arg(_location)));
+  layout->addStretch();
+  layout->addWidget(showB);
+  layout->addWidget(delB);
+  setLayout(layout);
+
+  connect(delB, SIGNAL(clicked()), this, SLOT(remove()));
+  connect(showB, SIGNAL(clicked(bool)), this, SLOT(show_in_plot(bool)));
+
+  showB->click();
+}
+
 CursorDefinition::~CursorDefinition()
 {
   delete _marker;
@@ -57,4 +87,20 @@ void CursorDefinition::remove()
 {
   _marker->attach(NULL);
   _parent.remove(*this);
+}
+
+void CursorDefinition::save(char*& p) const
+{
+  XML_insert(p, "QString", "_name", QtPersistent::insert(p, _name) );
+  XML_insert(p, "double", "_location", QtPersistent::insert(p, _location) );
+}
+
+void CursorDefinition::load(const char*& p)
+{
+  XML_iterate_open(p,tag)
+    if (tag.name == "_name")
+      _name = QtPersistent::extract_s(p);
+    else if (tag.name == "_location")
+      _location = QtPersistent::extract_d(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }

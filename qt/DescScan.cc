@@ -39,13 +39,17 @@ unsigned DescScan::bins() const { return _bins->text().toInt(); }
 
 void DescScan::save(char*& p) const
 {
-  _features->save(p);
-  QtPersistent::insert(p,_bins->text());
+  XML_insert(p, "FeatureList", "_features", _features->save(p) );
+  XML_insert(p, "QLineEdit", "_bins", QtPersistent::insert(p,_bins->text()) );
 }
 
 void DescScan::load(const char*& p)
 {
-  _features->load(p);
-  _bins->setText(QtPersistent::extract_s(p));
+  XML_iterate_open(p,tag)
+    if (tag.name == "_features")
+      _features->load(p);
+    else if (tag.name == "_bins")
+      _bins->setText(QtPersistent::extract_s(p));
+  XML_iterate_close(AnnulusCursors,tag);
 }
 

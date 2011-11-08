@@ -43,14 +43,21 @@ EdgePlot::EdgePlot(QWidget*         parent,
 
 EdgePlot::EdgePlot(QWidget* parent,
 		   const char*& p) :
-  QtPlot   (parent,p),
+  QtPlot   (parent),
   _finder  (0),
   _plot    (0)
 {
-  _channel = QtPersistent::extract_i(p);
-
-  p += 2*sizeof(uint32_t);
-  _finder = new Ami::EdgeFinder(p);
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPlot")
+      QtPlot::load(p);
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_finder") {
+      const char* b = (const char*)QtPersistent::extract_op(p);
+      b += 2*sizeof(uint32_t);
+      _finder = new Ami::EdgeFinder(b);
+    }
+  XML_iterate_close(EdgePlot,tag);
 }
 
 EdgePlot::~EdgePlot()
@@ -61,11 +68,18 @@ EdgePlot::~EdgePlot()
 
 void EdgePlot::save(char*& p) const
 {
-  QtPlot::save(p);
+  char* buff = new char[8*1024];
 
-  QtPersistent::insert(p,(int)_channel);
+  XML_insert( p, "QtPlot", "self",
+              QtPlot::save(p) );
 
-  p = (char*)_finder->serialize(p);
+  XML_insert( p, "int", "_channel",
+              QtPersistent::insert(p,(int)_channel) );
+
+  XML_insert( p, "EdgeFinder", "_finder",
+              QtPersistent::insert(p, buff, (char*)_finder->serialize(buff)-buff) );
+
+  delete[] buff;
 }
 
 void EdgePlot::load(const char*& p) 

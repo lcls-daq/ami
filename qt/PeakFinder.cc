@@ -78,37 +78,35 @@ PeakFinder::~PeakFinder()
 
 void PeakFinder::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_channel);
-  QtPersistent::insert(p,_threshold->value());
+  XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "QLineEdit", "_threshold", QtPersistent::insert(p,_threshold->value()) );
 
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QtPersistent::insert(p,QString("PeakPlot"));
-    (*it)->save(p);
+    XML_insert(p, "PeakPlot", "_plots", (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndPeakPlot"));
 }
 
 void PeakFinder::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _channel = QtPersistent::extract_i(p);
-  _threshold->value(QtPersistent::extract_i(p));
-
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("PeakPlot")) {
-    PeakPlot* plot = new PeakPlot(this, p);
-    _plots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_threshold")
+      _threshold->value(QtPersistent::extract_i(p));
+    else if (tag.name == "_plots") {
+      PeakPlot* plot = new PeakPlot(this, p);
+      _plots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void PeakFinder::save_plots(const QString& p) const

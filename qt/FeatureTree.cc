@@ -119,12 +119,16 @@ FeatureTree::~FeatureTree()
 
 void FeatureTree::save(char*& p) const
 {
-  QtPersistent::insert(p, _entry);
+  XML_insert( p, "QString", "_entry",
+              QtPersistent::insert(p, _entry) );
 }
 
 void FeatureTree::load(const char*& p)
 {
-  set_entry(QtPersistent::extract_s(p));
+  XML_iterate_open(p,tag)
+    if (tag.element == "QString")
+      set_entry(QtPersistent::extract_s(p));
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 const QString& FeatureTree::entry() const { return _entry; }

@@ -117,50 +117,33 @@ ImageXYProjection::~ImageXYProjection()
 
 void ImageXYProjection::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_channel);
-  QtPersistent::insert(p,_title->text());
-  QtPersistent::insert(p,_plot_tab->currentIndex());
+  XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+  XML_insert(p, "QComboBox", "_plot_tab", QtPersistent::insert(p,_plot_tab->currentIndex()) );
   
-  _histogram_plot ->save(p);
-  _projection_plot->save(p);
-  _integral_plot  ->save(p);
+  XML_insert(p, "XYHistogramPlotDesc", "_histogram_plot", _histogram_plot ->save(p) );
+  XML_insert(p, "XYProjectionPlotDesc", "_projection_plot", _projection_plot->save(p) );
+  XML_insert(p, "ImageIntegral", "_integral_plot", _integral_plot  ->save(p) );
 
-  _rectangle->save(p);
+  XML_insert(p, "RectangleCursors", "_rectangle", _rectangle->save(p) );
 
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
-    QtPersistent::insert(p,QString("ProjectionPlot"));
-    (*it)->save(p);
+    XML_insert(p, "ProjectionPlot", "_pplots", (*it)->save(p) );
   }
 
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
-    QtPersistent::insert(p,QString("CursorPlot"));
-    (*it)->save(p);
+    XML_insert(p, "CursorPlot", "_cplots", (*it)->save(p) );
   }
 
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
-    QtPersistent::insert(p,QString("ZoomPlot"));
-    (*it)->save(p);
+    XML_insert(p, "ZoomPlot", "_zplots", (*it)->save(p) );
   }
-
-  QtPersistent::insert(p,QString("EndImageXYProjection"));
 }
 
 void ImageXYProjection::load(const char*& p) 
 {
-  QtPWidget::load(p);
-  
-  _channel = QtPersistent::extract_i(p);
-  _title->setText(QtPersistent::extract_s(p));
-  _plot_tab->setCurrentIndex(QtPersistent::extract_i(p));
-
-  _histogram_plot ->load(p);
-  _projection_plot->load(p);
-  _integral_plot  ->load(p);
-
-  _rectangle->load(p);
-
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
@@ -173,32 +156,40 @@ void ImageXYProjection::load(const char*& p)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _zplots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("ProjectionPlot")) {
-    ProjectionPlot* plot = new ProjectionPlot(this, p);
-    _pplots.push_back(plot);
-    connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
-    connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
-  while(name == QString("CursorPlot")) {
-    CursorPlot* plot = new CursorPlot(this, p);
-    _cplots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
-  while(name == QString("ZoomPlot")) {
+  XML_iterate_open(p,tag)
+   if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_plot_tab")
+      _plot_tab->setCurrentIndex(QtPersistent::extract_i(p));
+    else if (tag.name == "_histogram_plot")
+      _histogram_plot ->load(p);
+    else if (tag.name == "_projection_plot")
+      _projection_plot->load(p);
+    else if (tag.name == "_integral_plot")
+      _integral_plot  ->load(p);
+    else if (tag.name == "_rectangle")
+      _rectangle->load(p);
+    else if (tag.name == "_pplots") {
+      ProjectionPlot* plot = new ProjectionPlot(this, p);
+      _pplots.push_back(plot);
+      connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
+      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_cplots") {
+      CursorPlot* plot = new CursorPlot(this, p);
+      _cplots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_zplots") {
     ZoomPlot* plot = new ZoomPlot(this, p);
     _zplots.push_back(plot);
     connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
-
-  if (name != QString("EndImageXYProjection"))
-    printf("Error loading ImageXYProjection\n");
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void ImageXYProjection::save_plots(const QString& p) const

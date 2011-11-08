@@ -15,10 +15,9 @@ namespace Ami {
     class QtPlot : public QtPWidget {
       Q_OBJECT
     public:
-      QtPlot(QWidget*       parent,
-	     const QString& name);
-      QtPlot(QWidget*       parent,
-	     const char*&   p);
+      explicit QtPlot(QWidget*       parent,
+                      const QString& name);
+      QtPlot(QWidget*       parent);
       virtual ~QtPlot();
     public:
       void save(char*& p) const;

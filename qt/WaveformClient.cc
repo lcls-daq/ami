@@ -31,10 +31,10 @@ WaveformClient::~WaveformClient() {}
 
 void WaveformClient::save(char*& p) const
 {
-  Client::save(p);
+  XML_insert(p, "Client", "self", Client::save(p) );
   
-  _edges  ->save(p);
-  _cursors->save(p);
+  XML_insert(p, "EdgeFinder", "_edges", _edges  ->save(p) );
+  XML_insert(p, "CursorsX", "_cursors", _cursors->save(p) );
 }
 
 void WaveformClient::load(const char*& p)
@@ -44,10 +44,16 @@ void WaveformClient::load(const char*& p)
   disconnect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   disconnect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
   
-  Client::load(p);
+  XML_iterate_open(p,tag)
 
-  _edges  ->load(p);
-  _cursors->load(p);
+    if (tag.element == "Client")
+      Client::load(p);
+    else if (tag.name == "_edges")
+      _edges  ->load(p);
+    else if (tag.name == "_cursors")
+      _cursors->load(p);
+
+  XML_iterate_close(WaveformClient,tag);
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));

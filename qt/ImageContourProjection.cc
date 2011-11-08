@@ -130,49 +130,47 @@ ImageContourProjection::~ImageContourProjection()
 
 void ImageContourProjection::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_channel);
-  QtPersistent::insert(p,_title->text());
-  QtPersistent::insert(p,_axis ->checkedId());
-  QtPersistent::insert(p,_norm ->checkedId());
-  _rectangle->save(p);
-  _contour->save(p);
+  XML_insert(p, "unsigned", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+  XML_insert(p, "QButtonGroup", "_axis", QtPersistent::insert(p,_axis ->checkedId()) );
+  XML_insert(p, "QButtonGroup", "_norm", QtPersistent::insert(p,_norm ->checkedId()) );
+  XML_insert(p, "RectangleCursors", "_rectangle", _rectangle->save(p) );
+  XML_insert(p, "Contour", "_contour", _contour->save(p) );
 
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
-    QtPersistent::insert(p,QString("ProjectionPlot"));
-    (*it)->save(p);
+    XML_insert(p, "ProjectionPlot", "_pplots", (*it)->save(p) );
   }
-
-  QtPersistent::insert(p,QString("EndImageContourProjection"));
 }
 
 void ImageContourProjection::load(const char*& p) 
 {
-  QtPWidget::load(p);
-  
-  _channel = QtPersistent::extract_i(p);
-  _title->setText(QtPersistent::extract_s(p));
-  _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
-  _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
-  _rectangle->load(p);
-  _contour->load(p);
-
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("ProjectionPlot")) {
-    ProjectionPlot* plot = new ProjectionPlot(this, p);
-    _pplots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
-
-  if (name != QString("EndImageContourProjection"))
-    printf("Error loading ImageContourProjection\n");
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_axis")
+      _axis ->button(QtPersistent::extract_i(p))->setChecked(true);
+    else if (tag.name == "_norm")
+      _norm ->button(QtPersistent::extract_i(p))->setChecked(true);
+    else if (tag.name == "_rectangle")
+      _rectangle->load(p);
+    else if (tag.name == "_contour")
+      _contour->load(p);
+    else if (tag.name == "_pplots") {
+      ProjectionPlot* plot = new ProjectionPlot(this, p);
+      _pplots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void ImageContourProjection::save_plots(const QString& p) const

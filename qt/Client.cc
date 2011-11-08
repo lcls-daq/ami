@@ -153,26 +153,36 @@ const QString& Ami::Qt::Client::title() const { return _title; }
 
 void Ami::Qt::Client::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  for(unsigned i=0; i<NCHANNELS; i++) _channels[i]->save(p);
+  for(unsigned i=0; i<NCHANNELS; i++) 
+    XML_insert(p, "ChannelDef", "_channels", _channels[i]->save(p) );
 
-  _frame->save(p);
-  _control->save(p);
+  XML_insert(p, "Display", "_frame", _frame->save(p) );
+  XML_insert(p, "Control", "_control", _control->save(p) );
 }
 
 void Ami::Qt::Client::load(const char*& p)
 {
-  QtPWidget::load(p);
-
   for(unsigned i=0; i<NCHANNELS; i++) {
     disconnect(_channels[i], SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
-    _channels[i]->load(p);
-    connect(_channels[i], SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
   }
 
-  _frame->load(p);
-  _control->load(p);
+  unsigned nchannels = 0;
+
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_channels") {
+      _channels[nchannels]->load(p);
+      connect(_channels[nchannels], SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
+      nchannels++;
+    }
+    else if (tag.name == "_frame")
+      _frame->load(p);
+    else if (tag.name == "_control")
+      _control->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void Ami::Qt::Client::reset_plots() { update_configuration(); }

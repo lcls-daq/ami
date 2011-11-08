@@ -65,7 +65,10 @@ static QChar _divide      (0x00F7);
 static QChar _add         (0x002B);
 static QChar _subtract    (0x002D);
 
-CursorsX::CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
+CursorsX::CursorsX(QWidget* parent, 
+                   ChannelDefinition* channels[], 
+                   unsigned nchannels, 
+                   WaveformDisplay& frame) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
@@ -159,33 +162,23 @@ CursorsX::~CursorsX()
 
 void CursorsX::save(char*& p) const
 {
-  QtPWidget::save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  QtPersistent::insert(p,_expr ->text());
-  QtPersistent::insert(p,_title->text());
-  _scalar_desc->save(p);
+  XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr ->text()) );
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+  XML_insert(p, "ScalarPlotDesc", "_scalar_desc", _scalar_desc->save(p) );
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
-    QtPersistent::insert(p,QString("CursorDef"));
-    QtPersistent::insert(p,(*it)->name());
-    QtPersistent::insert(p,(*it)->location());
+    XML_insert(p, "CursorDefinition", "_cursors", (*it)->save(p) );
   }
 
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QtPersistent::insert(p,QString("CursorPlot"));
-    (*it)->save(p);
+    XML_insert(p, "CursorPlot", "_plots", (*it)->save(p) );
   }
-  QtPersistent::insert(p,QString("EndCursorX"));
 }
 
 void CursorsX::load(const char*& p)
 {
-  QtPWidget::load(p);
-
-  _expr ->setText(QtPersistent::extract_s(p));
-  _title->setText(QtPersistent::extract_s(p));
-  _scalar_desc->load(p);
-
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
     delete *it;
@@ -198,25 +191,28 @@ void CursorsX::load(const char*& p)
   }
   _plots.clear();
 
-  QString name = QtPersistent::extract_s(p);
-  while(name == QString("CursorDef")) {
-    QString n = QtPersistent::extract_s(p);
-    double  v = QtPersistent::extract_d(p);
-    _names.removeAll(n);
-    CursorDefinition* d = new CursorDefinition(n, v, *this, _frame.plot());
-    _cursors.push_back(d);
-    _clayout->addWidget(d);
-    
-    name = QtPersistent::extract_s(p);
-  }
-
-  while(name == QString("CursorPlot")) {
-    CursorPlot* plot = new CursorPlot(this, p);
-    _plots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-    name = QtPersistent::extract_s(p);
-  }
+  XML_iterate_open(p,tag)
+    if      (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_expr")
+      _expr ->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_scalar_desc")
+      _scalar_desc->load(p);
+    else if (tag.name == "_cursors") {
+      CursorDefinition* d = new CursorDefinition(p, *this, _frame.plot());
+      _cursors.push_back(d);
+      _clayout->addWidget(d);
+      _names.removeAll(d->name());
+      printf("Added cursor %s at %g\n",qPrintable(d->name()), d->location());
+    }    
+    else if (tag.name == "_plots") {
+      CursorPlot* plot = new CursorPlot(this, p);
+      _plots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+  XML_iterate_close(CursorsX,tag);
 }
 
 void CursorsX::save_plots(const QString& p) const

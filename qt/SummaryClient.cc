@@ -144,14 +144,18 @@ SummaryClient::~SummaryClient() {}
 
 void SummaryClient::save(char*& p) const
 {
-  QtPWidget::save(p);
-  _control->save(p);
+  XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
+  XML_insert(p, "Control", "_control", _control->save(p) );
 }
 
 void SummaryClient::load(const char*& p)
 {
-  QtPWidget::load(p);
-  _control->load(p);
+  XML_iterate_open(p,tag)
+    if (tag.element == "QtPWidget")
+      QtPWidget::load(p);
+    else if (tag.name == "_control")
+      _control->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 void SummaryClient::connected()

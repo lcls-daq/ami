@@ -19,12 +19,15 @@ FeatureBox::~FeatureBox()
 
 void FeatureBox::save(char*& p) const
 {
-  QtPersistent::insert(p, _entry);
+  XML_insert(p, "QString", "_entry", QtPersistent::insert(p, _entry) );
 }
 
 void FeatureBox::load(const char*& p)
 {
-  _entry = QtPersistent::extract_s(p);
+  XML_iterate_open(p,tag)
+    if (tag.name == "_entry")
+      _entry = QtPersistent::extract_s(p);
+  XML_iterate_close(AnnulusCursors,tag);
   _seek();
 }
 

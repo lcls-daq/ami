@@ -82,20 +82,25 @@ ScalarPlotDesc::~ScalarPlotDesc()
 
 void ScalarPlotDesc::save(char*& p) const
 {
-  _hist    ->save(p);
-  _vTime   ->save(p);
-  _vFeature->save(p);
+  XML_insert(p, "DescTH1F", "_hist", _hist    ->save(p) );
+  XML_insert(p, "DescChart", "_vTime", _vTime   ->save(p) );
+  XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
 
-  QtPersistent::insert(p,_plot_grp->checkedId ());
+  XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->checkedId ()) );
 }
 
 void ScalarPlotDesc::load(const char*& p)
 {
-  _hist    ->load(p);
-  _vTime   ->load(p);
-  _vFeature->load(p);
-
-  _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+  XML_iterate_open(p,tag)
+   if (tag.name == "_hist")
+      _hist    ->load(p);
+    else if (tag.name == "_vTime")
+      _vTime   ->load(p);
+    else if (tag.name == "_vFeature")
+      _vFeature->load(p);
+    else if (tag.name == "_plot_grp")
+      _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+  XML_iterate_close(AnnulusCursors,tag);
 }
 
 Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const

@@ -47,22 +47,28 @@ ImageClient::~ImageClient() {}
 
 void ImageClient::save(char*& p) const
 {
-  Client::save(p);
+  XML_insert(p, "Client", "self", Client::save(p) );
 
-  _xyproj ->save(p);
-  _rfproj ->save(p);
-  _cntproj->save(p);
-  _hit    ->save(p);
+  XML_insert(p, "ImageXYProjection", "_xyproj", _xyproj ->save(p) );
+  XML_insert(p, "ImageRPhiProjection", "_rfproj", _rfproj ->save(p) );
+  XML_insert(p, "ImageContourProjection", "_cntproj", _cntproj->save(p) );
+  XML_insert(p, "PeakFinder", "_hit", _hit    ->save(p) );
 }
 
 void ImageClient::load(const char*& p)
 {
-  Client::load(p);
-
-  _xyproj ->load(p);
-  _rfproj ->load(p);
-  _cntproj->load(p);
-  _hit    ->load(p);
+  XML_iterate_open(p,tag)
+    if      (tag.element == "Client")
+      Client::load(p);
+    else if (tag.name == "_xyproj")
+      _xyproj ->load(p);
+    else if (tag.name == "_rfproj")
+      _rfproj ->load(p);
+    else if (tag.name == "_cntproj")
+      _cntproj->load(p);
+    else if (tag.name == "_hit")
+      _hit    ->load(p);
+  XML_iterate_close(AnnulusCursors,tag);
 
   update_configuration();
 }

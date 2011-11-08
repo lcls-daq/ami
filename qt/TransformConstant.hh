@@ -10,10 +10,15 @@ namespace Ami {
       Q_OBJECT
     public:
       TransformConstant(const QString& name, double value);
+      TransformConstant(const char*&);
       ~TransformConstant();
     public:
       const QString& name () const;
       double         value() const;
+    public:
+      void save(char*& p) const;
+    private:
+      void load(const char*& p);
     public slots:
       void remove();
     signals:

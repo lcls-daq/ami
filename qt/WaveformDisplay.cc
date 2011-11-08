@@ -116,24 +116,35 @@ WaveformDisplay::~WaveformDisplay()
 
 void WaveformDisplay::save(char*& p) const
 {
-  _xtransform->save(p);
-  _xrange->save(p);
-  _yrange->save(p);
-  QtPersistent::insert(p,_grid->xEnabled());
-  QtPersistent::insert(p,_grid->xMinEnabled());
+  XML_insert(p, "Transform", "_xtransform", _xtransform->save(p) );
+  XML_insert(p, "AxisControl", "_xrange", _xrange->save(p) );
+  XML_insert(p, "AxisControl", "_yrange", _yrange->save(p) );
+  XML_insert(p, "bool", "_grid_xenabled", QtPersistent::insert(p,_grid->xEnabled()) );
+  XML_insert(p, "bool", "_grid_xminenabled", QtPersistent::insert(p,_grid->xMinEnabled()) );
 }
 
 void WaveformDisplay::load(const char*& p)
 {
-  _xtransform->load(p);
-  _xrange->load(p);
-  _yrange->load(p);
-  bool gMajor = QtPersistent::extract_b(p);
-  _grid->enableX   (gMajor);
-  _grid->enableY   (gMajor);
-  bool gMinor = QtPersistent::extract_b(p);
-  _grid->enableXMin(gMinor);
-  _grid->enableYMin(gMinor);
+  XML_iterate_open(p,tag)
+
+    if (tag.name == "_xtransform")
+      _xtransform->load(p);
+    else if (tag.name == "_xrange")
+      _xrange->load(p);
+    else if (tag.name == "_yrange")
+      _yrange->load(p);
+    else if (tag.name == "_grid_xenabled") {
+      bool gMajor = QtPersistent::extract_b(p);
+      _grid->enableX   (gMajor);
+      _grid->enableY   (gMajor);
+    }
+    else if (tag.name == "_grid_xminenabled") {
+      bool gMinor = QtPersistent::extract_b(p);
+      _grid->enableXMin(gMinor);
+      _grid->enableYMin(gMinor);
+    }
+
+  XML_iterate_close(WaveformDisplay,tag);
 }
 
 void WaveformDisplay::save_image()
