@@ -52,7 +52,8 @@ XtcClient::XtcClient(FeatureCache& cache,
   _ready   (false),
   _ptime_index    (-1),
   _ptime_acc_index(-1),
-  _pltnc_index    (-1)
+  _pltnc_index    (-1),
+  _event_index    (-1)
 {
 }
 
@@ -76,6 +77,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     if (_filter.accept(dg)) {
       accept = true;
+
+      _cache.cache(_event_index,_seq->stamp().vector());
       SummaryAnalysis::instance().clock(dg->seq.clock());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
@@ -140,6 +143,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _ptime_index     = _cache.add("ProcTime");
     _ptime_acc_index = _cache.add("ProcTimeAcc");
     _pltnc_index     = _cache.add("ProcLatency");
+    _event_index     = _cache.add("EventId");
 
     printf("XtcClient configure done\n");
 

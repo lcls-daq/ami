@@ -56,6 +56,7 @@ namespace Ami {
     bool      _ready;
     int       _ptime_index, _ptime_acc_index;    
     int       _pltnc_index;
+    int       _event_index;
   };
 }
 

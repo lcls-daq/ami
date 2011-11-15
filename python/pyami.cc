@@ -22,6 +22,9 @@
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
 
+#include "ami/data/DescScan.hh"
+#include "ami/data/EntryScan.hh"
+
 #include "ami/data/EnvPlot.hh"
 #include "ami/data/Single.hh"
 #include "ami/data/Average.hh"
@@ -145,6 +148,20 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
 	  op = new Ami::EnvPlot(Ami::DescScalar(name,"mean"));
 	  break;
 	}
+        else if (strcmp(entry_type,"Scan")==0) {
+	  unsigned nbins = 0;
+          char* xtitle = 0;
+	  char* ekwlist[] = {"xtitle","nbins",NULL};
+	  t = PyTuple_GetSlice(args,index,index_n+=2);
+	  sts = PyArg_ParseTupleAndKeywords(t,kwds,"sI",ekwlist,
+					    &xtitle, &nbins);
+          if (sts) {
+            printf( "Creating Scan %s, %s, %d\n" , name,xtitle,nbins);
+            op = new Ami::EnvPlot(Ami::DescScan(name,xtitle,"mean",nbins));
+            break;
+          }
+          return -1;
+        }
 	else if (strcmp(entry_type,"TH1F")==0) {
 	  unsigned nbins = 0;
 	  float    range_lo = 0;
@@ -302,6 +319,39 @@ static PyObject* get(PyObject* self, PyObject* args)
 	}
         Py_DECREF(t);
         return o;
+      }
+    case Ami::DescEntry::Scan:
+      { const Ami::EntryScan* s = static_cast<const Ami::EntryScan*>(entry);
+
+	PyObject* o = PyDict_New();
+        PyDict_SetItemString(o,"type",   PyString_FromString("Scan"));
+        PyDict_SetItemString(o,"nbins",  PyLong_FromDouble(s->desc().nbins()));
+        PyDict_SetItemString(o,"current",PyLong_FromDouble(s->info(Ami::EntryScan::Current)));
+	{ PyObject* t = PyList_New(s->desc().nbins());
+          for(unsigned i=0; i<s->desc().nbins();i++)
+            PyList_SetItem(t,i,PyFloat_FromDouble(s->xbin(i)));
+          PyDict_SetItemString(o,"xbins",   t);
+          Py_DECREF(t);
+        }
+	{ PyObject* t = PyList_New(s->desc().nbins());
+          for(unsigned i=0; i<s->desc().nbins();i++)
+            PyList_SetItem(t,i,PyFloat_FromDouble(s->nentries(i)));
+          PyDict_SetItemString(o,"yentries",   t);
+          Py_DECREF(t);
+        }
+	{ PyObject* t = PyList_New(s->desc().nbins());
+          for(unsigned i=0; i<s->desc().nbins();i++)
+            PyList_SetItem(t,i,PyFloat_FromDouble(s->ysum(i)));
+          PyDict_SetItemString(o,"ysum",   t);
+          Py_DECREF(t);
+        }
+	{ PyObject* t = PyList_New(s->desc().nbins());
+          for(unsigned i=0; i<s->desc().nbins();i++)
+            PyList_SetItem(t,i,PyFloat_FromDouble(s->y2sum(i)));
+          PyDict_SetItemString(o,"y2sum",   t);
+          Py_DECREF(t);
+        }
+	return o;
       }
     default:
       break;
