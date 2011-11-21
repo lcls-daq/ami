@@ -40,7 +40,7 @@ void XYHistogramPlotDesc::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_desc")
       _desc->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(XYHistogramPlotDesc,tag);
 }
 
 Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const

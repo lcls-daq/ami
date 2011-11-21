@@ -53,7 +53,7 @@ void QtPWidget::load(const char*& p)
       s.setHeight(QtPersistent::extract_i(p));
     else if (tag.name == "visible")
       v=QtPersistent::extract_b(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(QtPWidget,tag);
 
   setVisible(v);
   if (v) {

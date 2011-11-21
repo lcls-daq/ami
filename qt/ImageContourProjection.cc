@@ -170,7 +170,7 @@ void ImageContourProjection::load(const char*& p)
       _pplots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ImageContourProjection,tag);
 }
 
 void ImageContourProjection::save_plots(const QString& p) const

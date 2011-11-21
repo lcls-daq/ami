@@ -95,7 +95,7 @@ void ImageDisplay::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_zrange")
       _zrange->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ImageDisplay,tag);
 }
 
 void ImageDisplay::save_plots(const QString& p) const

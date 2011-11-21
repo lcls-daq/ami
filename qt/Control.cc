@@ -100,5 +100,5 @@ void Control::load(const char*& p)
       _pRun   ->setChecked(b);
       run(b);
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(Control,tag);
 }

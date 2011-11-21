@@ -164,7 +164,7 @@ void Filter::load(const char*& p)
       _clayout->addWidget(c);
       connect(c, SIGNAL(removed(const QString&)), this, SLOT(remove(const QString&)));
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(Filter,tag);
   _apply();
 }
 

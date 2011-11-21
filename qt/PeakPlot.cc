@@ -97,7 +97,7 @@ void PeakPlot::load(const char*& p)
     }
     else if (tag.element == "ImageDisplay")
       _frame->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(PeakPlot,tag);
 }
 
 void PeakPlot::setup_payload(Cds& cds)

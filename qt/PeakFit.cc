@@ -185,7 +185,7 @@ void PeakFit::load(const char*& p)
       _plots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(PeakFit,tag);
 }
 
 void PeakFit::save_plots(const QString& p) const

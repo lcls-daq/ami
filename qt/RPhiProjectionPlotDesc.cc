@@ -78,7 +78,7 @@ void RPhiProjectionPlotDesc::load(const char*& p)
       _axis->button(QtPersistent::extract_i(p))->setChecked(true);
     else if (tag.name == "_norm")
       _norm->button(QtPersistent::extract_i(p))->setChecked(true);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(RPhiProjectionPlotDesc,tag);
 }
 
 Ami::RPhiProjection* RPhiProjectionPlotDesc::desc(const char* title) const

@@ -209,7 +209,7 @@ void ChannelDefinition::load(const char*& p)
       _transform->load(p);
     else if (tag.name == "_scale")
       _scale    ->setText(QtPersistent::extract_s(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ChannelDefinition,tag);
 
   _plot_grp->button(id)->setChecked(true);
 

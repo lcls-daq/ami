@@ -155,7 +155,7 @@ void SummaryClient::load(const char*& p)
       QtPWidget::load(p);
     else if (tag.name == "_control")
       _control->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(SummaryClient,tag);
 }
 
 void SummaryClient::connected()

@@ -152,7 +152,7 @@ void ImageRPhiProjection::load(const char*& p)
       _projection_plot->load(p);
     else if (tag.name == "_integral_plot")
       _integral_plot  ->load(p);
-    else if (tag.name == "_annulus_plot")
+    else if (tag.name == "_annulus")
       _annulus->load(p);
     else if (tag.name == "_pplots") {
       ProjectionPlot* plot = new ProjectionPlot(this, p);
@@ -164,7 +164,7 @@ void ImageRPhiProjection::load(const char*& p)
       _cplots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ImageRPhiProjection,tag);
 }
 
 void ImageRPhiProjection::save_plots(const QString& p) const

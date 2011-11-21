@@ -153,7 +153,7 @@ void ImageColorControl::load(const char*& p)
       _pedestal     = QtPersistent::extract_d(p);
     else if (tag.name == "_logscale")
       _logscale->setChecked(QtPersistent::extract_b(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ImageColorControl,tag);
 
   show_scale();
   emit windowChanged();

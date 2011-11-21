@@ -95,7 +95,7 @@ void RectangleCursors::load(const char*& p)
       _x1 = QtPersistent::extract_i(p);
     else if (tag.name == "_y1")
       _y1 = QtPersistent::extract_i(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(RectangleCursors,tag);
 
   _set_edits();
 }

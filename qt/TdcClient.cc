@@ -150,7 +150,7 @@ void TdcClient::load(const char*& p)
     }
     else if (tag.name == "_control")
       _control->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(TdcClient,tag);
 
   update_configuration();
 }

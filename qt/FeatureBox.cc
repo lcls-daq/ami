@@ -27,7 +27,7 @@ void FeatureBox::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_entry")
       _entry = QtPersistent::extract_s(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(FeatureBox,tag);
   _seek();
 }
 

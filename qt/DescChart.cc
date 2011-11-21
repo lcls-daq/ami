@@ -63,5 +63,5 @@ void DescChart::load(const char*& p)
       _pts->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_dpt")
       _dpt->setText(QtPersistent::extract_s(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(DescChart,tag);
 }

@@ -152,7 +152,7 @@ void EnvClient::load(const char*& p)
     }
     else if (tag.element == "Control")
       _control->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(EnvClient,tag);
 
   update_configuration();
 }

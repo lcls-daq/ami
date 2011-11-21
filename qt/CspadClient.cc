@@ -33,7 +33,7 @@ void CspadClient::load(const char*& p)
       _fnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_spBox")
       _spBox->setChecked(QtPersistent::extract_b(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(CspadClient,tag);
 }
 
 void CspadClient::_configure(char*& p, 

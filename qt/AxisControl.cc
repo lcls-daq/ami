@@ -84,7 +84,7 @@ void AxisControl::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_loBox")
       _loBox->setText(QtPersistent::extract_s(p));
-    else if (tag.name == "_loBox")  
+    else if (tag.name == "_hiBox")  
       _hiBox->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_autoB") {
       _autoB->setChecked(b=QtPersistent::extract_b(p));
@@ -94,7 +94,7 @@ void AxisControl::load(const char*& p)
       _logB ->setChecked(b=QtPersistent::extract_b(p));
       log_scale(b);
     }
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(AxisControl,tag);
 }
 
 void   AxisControl::update(const AxisInfo& info) 

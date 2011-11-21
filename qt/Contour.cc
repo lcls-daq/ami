@@ -173,7 +173,7 @@ void Contour::load(const char*& p)
       _c[order++]->setText(QString::number(QtPersistent::extract_d(p)));
     else if (tag.name == "_discrimLevelEdit")
       _discrimLevelEdit->setText(QtPersistent::extract_s(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(Contour,tag);
 
   while(order < Ami::Contour::MaxOrder+1)
     _c[order++]->setText(QString("0"));

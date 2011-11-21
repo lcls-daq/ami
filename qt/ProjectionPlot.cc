@@ -185,7 +185,7 @@ void ProjectionPlot::load(const char*& p)
       _cursors->load(p);
     else if (tag.name == "_peakfit")
       _peakfit->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ProjectionPlot,tag);
 }
 
 void ProjectionPlot::save_plots(const QString& p) const

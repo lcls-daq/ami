@@ -100,7 +100,7 @@ void ScalarPlotDesc::load(const char*& p)
       _vFeature->load(p);
     else if (tag.name == "_plot_grp")
       _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ScalarPlotDesc,tag);
 }
 
 Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const

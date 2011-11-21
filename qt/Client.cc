@@ -182,7 +182,7 @@ void Ami::Qt::Client::load(const char*& p)
       _frame->load(p);
     else if (tag.name == "_control")
       _control->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(Client,tag);
 }
 
 void Ami::Qt::Client::reset_plots() { update_configuration(); }

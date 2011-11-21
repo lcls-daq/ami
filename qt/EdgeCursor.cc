@@ -52,7 +52,7 @@ void EdgeCursor::load(const char*& p)
       value(QtPersistent::extract_d(p));
     else if (tag.name == "_showB")
       _showB->setChecked(QtPersistent::extract_b(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(EdgeCursor,tag);
 }
 
 void EdgeCursor::save(char*& p) const 

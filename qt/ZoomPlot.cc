@@ -103,7 +103,7 @@ void ZoomPlot::load(const char*& p)
       _y1 = QtPersistent::extract_i(p);
     else if (tag.name == "_frame")
       _frame->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ZoomPlot,tag);
 }
 
 void ZoomPlot::setup_payload(Cds& cds)

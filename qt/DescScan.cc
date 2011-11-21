@@ -50,6 +50,6 @@ void DescScan::load(const char*& p)
       _features->load(p);
     else if (tag.name == "_bins")
       _bins->setText(QtPersistent::extract_s(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(DescScan,tag);
 }
 

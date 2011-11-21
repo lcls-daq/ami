@@ -128,7 +128,7 @@ void FeatureTree::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.element == "QString")
       set_entry(QtPersistent::extract_s(p));
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(FeatureTree,tag);
 }
 
 const QString& FeatureTree::entry() const { return _entry; }

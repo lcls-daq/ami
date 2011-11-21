@@ -60,5 +60,5 @@ void TransformConstant::load(const char*& p)
       _name = QtPersistent::extract_s(p);
     else if (tag.name == "value")
       _value = QtPersistent::extract_d(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(TransformConstant,tag);
 }

@@ -68,7 +68,7 @@ void ImageClient::load(const char*& p)
       _cntproj->load(p);
     else if (tag.name == "_hit")
       _hit    ->load(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(ImageClient,tag);
 
   update_configuration();
 }

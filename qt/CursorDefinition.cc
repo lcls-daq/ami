@@ -102,5 +102,5 @@ void CursorDefinition::load(const char*& p)
       _name = QtPersistent::extract_s(p);
     else if (tag.name == "_location")
       _location = QtPersistent::extract_d(p);
-  XML_iterate_close(AnnulusCursors,tag);
+  XML_iterate_close(CursorDefinition,tag);
 }
