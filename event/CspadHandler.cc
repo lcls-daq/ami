@@ -319,20 +319,12 @@ namespace CspadGeometry {
 #define BIN_ITER1 {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC;			\
     const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;			\
-    /*  zero the target region  */					\
-    for(unsigned i=0; i<=ColBins; i++) {				\
-      for(unsigned j=0; j<=RowBins; j++) {				\
-	const unsigned x = CALC_X(column,i,j);				\
-	const unsigned y = CALC_Y(row   ,i,j);				\
-	image.content(0,x,y);						\
-      }									\
-    }									\
     /*  fill the target region  */					\
     for(unsigned i=0; i<ColBins; i++) {					\
       for(unsigned j=0; j<RowBins; j++) {				\
 	const unsigned x = CALC_X(column,i,j);				\
 	const unsigned y = CALC_Y(row   ,i,j);				\
-	image.addcontent(F1,x,y);					\
+	image.content(F1,x,y);                                          \
       }									\
     }									\
   }
