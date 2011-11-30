@@ -42,6 +42,31 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _nsubframes(0)
 {}
 
+DescImage::DescImage(const Pds::DetInfo& info,
+		     const char* name, 
+                     const char* zunits,
+		     unsigned nbinsx, 
+		     unsigned nbinsy, 
+		     int ppbx,
+		     int ppby,
+                     bool pedCalib,
+                     bool gainCalib,
+                     bool rmsCalib) :
+  DescEntry(info, 0, name, "x", "y", zunits, 
+            Image, sizeof(DescImage),
+            true, true, 
+            pedCalib, gainCalib, rmsCalib),
+  _nbinsx(nbinsx ? nbinsx : 1),
+  _nbinsy(nbinsy ? nbinsy : 1),
+  _ppbx  (ppbx),
+  _ppby  (ppby),
+  _xp0   (0),
+  _yp0   (0),
+  _mmppx (0),
+  _mmppy (1),
+  _nsubframes(0)
+{}
+
 void DescImage::params(unsigned nbinsx,
 		       unsigned nbinsy,
 		       int ppxbin,

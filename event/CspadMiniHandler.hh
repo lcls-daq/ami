@@ -30,7 +30,7 @@ namespace Ami {
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    void _create_entry(FILE* f, FILE* s, FILE* g, FILE* gm,
+    void _create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                        CspadMiniGeometry::Detector*& detector,
                        EntryImage*& entry, 
                        unsigned max_pixels); 

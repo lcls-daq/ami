@@ -3,9 +3,12 @@
 #include "CspadAlignment_Commissioning.hh"
 
 #include "ami/event/CspadTemp.hh"
+#include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/PeakFinder.hh"
+#include "ami/data/PeakFinderFn.hh"
 
 #include "pdsdata/cspad/MiniElementV1.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -195,6 +198,8 @@ namespace CspadMiniGeometry {
   public:
     virtual void fill(Ami::DescImage& image) const = 0;
     virtual void fill(Ami::EntryImage& image,
+		      double, double) const = 0;
+    virtual void fill(Ami::EntryImage& image,
 		      const uint16_t*  data) const = 0;
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
@@ -216,6 +221,20 @@ namespace CspadMiniGeometry {
     void fill(Ami::DescImage& image) const {				\
       FRAME_BOUNDS;							\
       image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+    }									\
+    void fill(Ami::EntryImage& image,                                   \
+              double v0, double v1) const {                             \
+      const unsigned ColBins = CsPad::ColumnsPerASIC;			\
+      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
+                                                                        \
+      int k=0;                                                          \
+      for(unsigned i=0; i<=ColBins; i++) {				\
+        for(unsigned j=0; j<=RowBins; j++,k++) {                        \
+          const unsigned x = CALC_X(column,i,j);                        \
+          const unsigned y = CALC_Y(row   ,i,j);                        \
+          image.content(unsigned(v0),x,y);                              \
+        }                                                               \
+      }									\
     }									\
     void fill(Ami::EntryImage& image,					\
 	      const uint16_t*  data) const { bi }                       \
@@ -249,7 +268,8 @@ namespace CspadMiniGeometry {
 
   class AsicP : public Asic {
   public:
-    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain) :
+    AsicP(double x, double y, unsigned ppbin, 
+          FILE* ped, FILE* status, FILE* gain, FILE* sigma) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
@@ -299,6 +319,23 @@ namespace CspadMiniGeometry {
         }
       }
       
+      if (sigma) {
+        float* sg = _sg;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          getline(&linep, &sz, sigma);
+          *sg++ = strtod(linep,&pEnd);
+          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *sg++ = strtod(pEnd,&pEnd);
+        }
+      }
+      else {
+        float* sg = _sg;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *sg++ = 0.;
+        }
+      }
+      
       if (linep) {
         free(linep);
       }
@@ -306,14 +343,15 @@ namespace CspadMiniGeometry {
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    float     _sg [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
 #define AsicTemplate(classname,bi,PPB)					\
   class classname : public AsicP {					\
   public:								\
     classname(double x, double y,                                       \
-              FILE* p, FILE* s, FILE* g)                                \
-      : AsicP(x,y,PPB,p,s,g) {}                                         \
+              FILE* p, FILE* s, FILE* g, FILE* r)                       \
+      : AsicP(x,y,PPB,p,s,g,r) {}                                       \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -321,6 +359,27 @@ namespace CspadMiniGeometry {
     void fill(Ami::DescImage& image) const {				\
       FRAME_BOUNDS;							\
       image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+    }									\
+    void fill(Ami::EntryImage& image,                                   \
+              double v0, double v1) const {                             \
+      const unsigned ColBins = CsPad::ColumnsPerASIC;			\
+      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
+                                                                        \
+      uint16_t* const* sta = &_sta[0];                                  \
+      int k=0;                                                          \
+      for(unsigned i=0; i<=ColBins; i++) {				\
+        for(unsigned j=0; j<=RowBins; j++,k++) {                        \
+          const unsigned x = CALC_X(column,i,j);                        \
+          const unsigned y = CALC_Y(row   ,i,j);                        \
+          if (*sta == _off+k) {                                         \
+            image.content(-1UL,x,y);                                    \
+            sta++;                                                      \
+          }                                                             \
+          else {                                                        \
+            image.content(unsigned(v0 + v1*_sg[k]*_gn[k]),x,y);         \
+          }                                                             \
+        }                                                               \
+      }									\
     }									\
     void fill(Ami::EntryImage& image,					\
 	      const uint16_t*  data) const {                            \
@@ -365,17 +424,17 @@ namespace CspadMiniGeometry {
   public:
     TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
-             FILE* f=0, FILE* s=0, FILE* g=0) 
+             FILE* f=0, FILE* s=0, FILE* g=0, FILE* rms=0) 
     {
       for(unsigned i=0; i<2; i++) {
 	double tx(x), ty(y);
 	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
         if (f) {
           switch(r) {
-          case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g); break;
-          case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g); break;
-          case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g); break;
-          case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g); break;
+          case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms); break;
+          case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms); break;
+          case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
+          case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
           default  : break;
           }
         }
@@ -397,6 +456,13 @@ namespace CspadMiniGeometry {
       if (mask&1) asic[0]->fill(image);
       if (mask&2) asic[1]->fill(image);
     }
+    void fill(Ami::EntryImage& image,
+              unsigned mask,
+              double v0, double v1) const
+    {
+      if (mask&1) asic[0]->fill(image,v0,v1);
+      if (mask&2) asic[1]->fill(image,v0,v1);
+    }
     void fill(Ami::EntryImage&           image,
 	      const CspadElement&        element) const
     {
@@ -413,6 +479,7 @@ namespace CspadMiniGeometry {
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
+             FILE* rms,  // noise
              FILE* gm,   // geometry
              unsigned max_pixels) :
       _src   (src)
@@ -461,7 +528,7 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,D0,qalign, f,s,g);
+      mini = new TwoByTwo(x,y,_ppb,D0,qalign, f,s,g,rms);
     }
     ~Detector() { delete mini; }
 
@@ -486,6 +553,11 @@ namespace CspadMiniGeometry {
         _cache->cache(_feature[a],
                       CspadTemp::instance().getTemp(elem->sb_temp(a)));
     }
+    void fill(Ami::EntryImage& image, 
+              double v0,double v1) const
+    {
+      mini->fill(image, (1<<2)-1, v0, v1);
+    }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
@@ -496,6 +568,53 @@ namespace CspadMiniGeometry {
     mutable int _feature[4];
     unsigned _ppb;
     unsigned _pixels;
+  };
+
+  class CspadMiniPFF : public Ami::PeakFinderFn {
+  public:
+    CspadMiniPFF(FILE* gain,
+                 FILE* rms,
+                 const Detector*  detector,
+                 Ami::DescImage& image) :
+      _detector(*detector),
+      _nbinsx  (image.nbinsx()),
+      _nbinsy  (image.nbinsy()),
+      _values  (new Ami::EntryImage(image))
+    {
+      image.pedcalib (true);
+      image.gaincalib(gain!=0);
+      image.rmscalib (rms !=0);
+    }
+    virtual ~CspadMiniPFF()
+    {
+      delete _values;
+    }
+  public:
+    void     setup(double v0,
+                   double v1)
+    {
+      for(unsigned k=0; k<_nbinsy; k++)
+        for(unsigned j=0; j<_nbinsx; j++)
+          _values->content(-1UL,j,k);
+
+      _detector.fill(*_values,v0,v1);
+    }
+    unsigned value(unsigned j, unsigned k) const
+    {
+      return _values->content(j,k);
+    }
+    Ami::PeakFinderFn* clone() const { return new CspadMiniPFF(*this); }
+  private:
+    CspadMiniPFF(const CspadMiniPFF& o) :
+      _detector(o._detector),
+      _nbinsx  (o._nbinsx),
+      _nbinsy  (o._nbinsy),
+      _values  (new Ami::EntryImage(o._values->desc())) {}
+  private:
+    const Detector&  _detector;
+    unsigned         _nbinsx;
+    unsigned         _nbinsy;
+    Ami::EntryImage* _values;
   };
 };
 
@@ -567,6 +686,17 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   else
     printf("Failed to load gain map\n");
 
+  sprintf(oname,"res.%08x.dat",info().phy());
+  FILE* rms = fopen(oname,"r");
+  if (!rms) {
+    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
+    rms = fopen(oname,"r");
+  }
+  if (rms)
+    printf("Loaded noise from %s\n",oname);
+  else
+    printf("Failed to load noise\n");
+
   sprintf(oname,"geo.%08x.dat",info().phy());
   FILE* gm = fopen(oname,"r");
   if (!gm) {
@@ -578,7 +708,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   else
     printf("Failed to load geometry\n");
 
-  _create_entry( f,s,g,gm, 
+  _create_entry( f,s,g,rms,gm, 
                  _detector, _entry, _max_pixels);
 
   if (f ) fclose(f);
@@ -587,7 +717,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   if (gm) fclose(gm);
 }
 
-void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* gm,
+void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                                      CspadMiniGeometry::Detector*& detector,
                                      EntryImage*& entry, 
                                      unsigned max_pixels) 
@@ -600,19 +730,23 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* gm,
   if (detector)
     delete detector;
 
-  detector = new CspadMiniGeometry::Detector(info(),f,s,g,gm,max_pixels);
+  detector = new CspadMiniGeometry::Detector(info(),f,s,g,rms,gm,max_pixels);
 
   if (entry) 
     delete entry;
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());
-  DescImage desc(det, 0, ChannelID::name(det,0),
+  DescImage desc(det, ChannelID::name(det,0), "photons",
                  detector->xpixels()/ppb, detector->ypixels()/ppb, 
-                 ppb, ppb);
+                 ppb, ppb,
+                 f!=0, g!=0, false);
   desc.set_scale(pixel_size*1e3,pixel_size*1e3);
     
   detector->fill(desc,_cache);
+
+  Ami::PeakFinder::register_(info().phy(),   
+                             new CspadMiniGeometry::CspadMiniPFF(g,rms,detector,desc));
 
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));

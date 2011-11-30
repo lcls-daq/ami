@@ -30,7 +30,9 @@ Ami::XML::TagIterator::operator const Ami::XML::StartTag*() const
 Ami::XML::TagIterator& Ami::XML::TagIterator::operator++(int)
 {
   if (!end()) {
-    QtPersistent::extract_tag(_p);
+    std::string stop_tag = QtPersistent::extract_tag(_p).element.substr(1);
+    if (stop_tag != _tag.element)
+      printf("Mismatch tags %s/%s\n",_tag.element.c_str(),stop_tag.c_str());
     const char* p = _p;
     _tag = QtPersistent::extract_tag(p);
     if (!end())

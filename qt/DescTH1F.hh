@@ -23,6 +23,8 @@ namespace Ami {
       void bins(unsigned);
       void lo  (double);
       void hi  (double);
+    public slots:
+      void validate();
     private:
       QRadioButton* _button;
       QLineEdit *_bins, *_lo, *_hi;

@@ -2,32 +2,33 @@
 #define AmiQt_ImageScale_hh
 
 #include <QtGui/QWidget>
+#include <QtCore/QString>
 
-class QString;
-class QSpinBox;
-class QLabel;
-class QPixmap;
+class QLineEdit;
 
 namespace Ami {
+  class DescEntry;
   namespace Qt {
-    class ImageColorControl;
     class ImageScale : public QWidget {
       Q_OBJECT
     public:
-      ImageScale(const QString& title,
-		 const ImageColorControl&);
+      ImageScale(const QString& title);
       ~ImageScale();
     public:
-      unsigned value() const;
-      void     value(unsigned);
+      void     prototype(const Ami::DescEntry&);
+      double   value(unsigned) const;
+      void     value(unsigned,double);
     public slots:
-      void value_change(int);
-      void scale_change();
+      void     redo_layout();
+    signals:
+      void     changed();
     private:
-      QSpinBox* _input;
-      QLabel*   _canvas;
-      const ImageColorControl& _color;
-      QPixmap*  _pixmap;
+      QString    _title;
+      QString    _zunits;
+      QLineEdit* _input0;
+      QLineEdit* _input1;
+      bool       _hasGain;
+      bool       _hasSigma;
     };
   };
 };

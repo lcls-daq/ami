@@ -20,7 +20,7 @@ DescTH1F::DescTH1F(const char* name) :
   _bins->setMaximumWidth(60);
   _lo  ->setMaximumWidth(60);
   _hi  ->setMaximumWidth(60);
-  new QIntValidator   (_bins);
+  new QIntValidator   (1,100000,_bins);
   new QDoubleValidator(_lo);
   new QDoubleValidator(_hi);
   QHBoxLayout* layout = new QHBoxLayout;
@@ -33,6 +33,10 @@ DescTH1F::DescTH1F(const char* name) :
   layout->addWidget(new QLabel("hi"));
   layout->addWidget(_hi);
   setLayout(layout);
+  validate();
+
+  connect(_lo, SIGNAL(editingFinished()), this, SLOT(validate()));
+  connect(_hi, SIGNAL(editingFinished()), this, SLOT(validate()));
 }
 
 QRadioButton* DescTH1F::button() { return _button; }
@@ -43,6 +47,18 @@ double   DescTH1F::hi  () const { return _hi->text().toDouble(); }
 void DescTH1F::bins(unsigned b) { _bins->setText(QString::number(b)); }
 void DescTH1F::lo  (double   v) { _lo  ->setText(QString::number(v)); }
 void DescTH1F::hi  (double   v) { _hi  ->setText(QString::number(v)); }
+
+void DescTH1F::validate()
+{
+  QPalette p(palette());
+  if (lo() < hi())
+    p.setColor(QPalette::Text, QColor(0,0,0));
+  else
+    p.setColor(QPalette::Text, QColor(0xc0,0,0));
+
+  _lo->setPalette(p);
+  _hi->setPalette(p);
+}
 
 void DescTH1F::save(char*& p) const
 {

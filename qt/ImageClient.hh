@@ -27,6 +27,9 @@ namespace Ami {
 		      unsigned nchannels);
       void _setup_payload(Cds&);
       void _update();
+      void _prototype(const DescEntry&);
+    protected:
+      
     private:
       ImageXYProjection*      _xyproj;
       ImageRPhiProjection*    _rfproj;

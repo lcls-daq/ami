@@ -1,61 +1,78 @@
 #include "ImageScale.hh"
-
-#include "ami/qt/ImageColorControl.hh"
+#include "ami/data/DescEntry.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
-#include <QtGui/QSpinBox>
-#include <QtGui/QPixmap>
-#include <QtCore/QString>
+#include <QtGui/QLineEdit>
+#include <QtGui/QDoubleValidator>
 
 using namespace Ami::Qt;
 
-ImageScale::ImageScale(const QString& title,
-		       const ImageColorControl& color) :
-  _input (new QSpinBox),
-  _canvas(new QLabel),
-  _color (color),
-  _pixmap(new QPixmap(1,1))
+ImageScale::ImageScale(const QString& title) :
+  _title(title)
 {
-  _input->setRange(0,0xffff);
-  _canvas->setScaledContents(true);
+  QHBoxLayout* l = new QHBoxLayout;
+  l->addWidget(new QLabel(_title));
+  l->addStretch(1);
+  l->addWidget(_input0=new QLineEdit("0"));
+  l->addWidget(new QLabel("ADU"));
+  _input0->setMaximumWidth(40);
+  new QDoubleValidator(_input0);
 
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(title));
-  layout->addWidget(_input);
-  layout->addWidget(_canvas);
-  setLayout(layout);
+  l->addWidget(new QLabel("+"));
+  l->addWidget(_input1=new QLineEdit("0"));
+  l->addWidget(new QLabel("sigma"));
+  _input1->setMaximumWidth(40);
+  new QDoubleValidator(_input1);
 
-  connect(_input, SIGNAL(valueChanged(int)), this, SLOT(value_change(int)));
-  connect(&color, SIGNAL(windowChanged())  , this, SLOT(scale_change()));
+  setLayout(l);
 
-  _input->setValue(0);
-  value_change(0);
+  connect(this, SIGNAL(changed()), this, SLOT(redo_layout()));
 }
 
 ImageScale::~ImageScale() 
 {
 }
 
-unsigned ImageScale::value() const 
+double ImageScale::value(unsigned i) const 
 {
-  return _input->value();
+  switch(i) {
+  case  0: return _input0->text().toDouble();
+  case  1: return _input1->text().toDouble();
+  default: break;
+  }
+  return 0;
 }
 
-void ImageScale::value(unsigned v)
+void ImageScale::value(unsigned i,double v)
 {
-  _input->setValue(v);
+  switch(i) {
+  case  0:
+    _input0->setText(QString::number(v)); 
+    break;
+  case  1: 
+    _input1->setText(QString::number(v)); 
+    break;
+  default: break;
+  }
 }
 
-void ImageScale::value_change(int v)
+void ImageScale::prototype(const Ami::DescEntry& e)
 {
-  v = int(double(v)/_color.scale());
-  if (v > 0xff) v = 0xff;
-  _pixmap->fill(_color.color_table()[v]);
-  _canvas->setPixmap(*_pixmap);
+  _hasGain  = e.hasGainCalib();
+  _hasSigma = e.hasRmsCalib();
+  _zunits   = QString(e.zunits());
+  emit changed();
 }
 
-void ImageScale::scale_change()
+void ImageScale::redo_layout()
 {
-  value_change(_input->value());
+  QHBoxLayout* l = static_cast<QHBoxLayout*>(layout());
+  
+  if (_hasGain)
+    static_cast<QLabel*>(l->itemAt(3)->widget())->setText(_zunits);
+
+  for(int i=4; i<7; i++) {
+    l->itemAt(i)->widget()->setVisible(_hasSigma);
+  }
 }

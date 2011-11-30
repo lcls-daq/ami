@@ -1022,7 +1022,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());
-  DescImage desc(det, 0, ChannelID::name(det,0),
+  DescImage desc(det, (unsigned)0, ChannelID::name(det,0),
                  detector->xpixels()/ppb, detector->ypixels()/ppb, 
                  ppb, ppb);
   desc.set_scale(pixel_size*1e3,pixel_size*1e3);

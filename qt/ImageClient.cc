@@ -112,3 +112,8 @@ void ImageClient::_update()
   _cntproj->update();
   _hit    ->update();
 }
+
+void ImageClient::_prototype(const DescEntry& e)
+{
+  _hit    ->prototype(e);
+}

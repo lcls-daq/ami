@@ -18,6 +18,7 @@ namespace Ami {
   class AbsOperator;
   class Cds;
   class Entry;
+  class DescEntry;
 
   namespace Qt {
     class ChannelDefinition;
@@ -41,6 +42,7 @@ namespace Ami {
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
       void setup_payload(Cds&);
       void update();
+      void prototype(const DescEntry&);
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot

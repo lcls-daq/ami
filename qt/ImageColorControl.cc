@@ -142,7 +142,7 @@ void ImageColorControl::save(char*& p) const
 void ImageColorControl::load(const char*& p)
 {
   XML_iterate_open(p,tag)
-    if (tag.name == "_scale")
+    if (tag.name == "scale")
       _scale = QtPersistent::extract_i(p);
     else if (tag.name == "_paletteGroup") {
       int palette = QtPersistent::extract_i(p);
