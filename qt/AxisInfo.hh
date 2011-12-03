@@ -11,6 +11,7 @@ namespace Ami {
       virtual int    hi      () const = 0;
       virtual int    center  () const = 0;
       virtual int    tick    (double pos ) const = 0;
+      virtual int    tick_u  (double pos ) const { return tick(pos); }
       virtual double position(int    tick) const = 0;
     };
   };

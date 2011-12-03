@@ -162,13 +162,16 @@ void AnnulusCursors::draw(QImage& image)
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
 
-  int xc = xinfo.tick(_xc);
-  int yc = yinfo.tick(_yc);
+  int xc = xinfo.tick_u(_xc);
+  int yc = yinfo.tick_u(_yc);
 
-  // draw center cross
-  for(int i=-5; i<=5; i++) {
-    if ((i+xc)>=0 && (i+xc)<sz.width())      *(image.scanLine(yc+0)+xc+i) = c;
-    if ((i+yc)>=0 && (i+yc)<sz.height())     *(image.scanLine(yc+i)+xc+0) = c;
+  if (xc >= 5 && (xc+5)<sz.width() &&
+      yc >= 5 && (yc+5)<sz.height()) {
+    // draw center cross
+    for(int i=-5; i<=5; i++) {
+      if ((i+xc)>=0 && (i+xc)<sz.width())      *(image.scanLine(yc+0)+xc+i) = c;
+      if ((i+yc)>=0 && (i+yc)<sz.height())     *(image.scanLine(yc+i)+xc+0) = c;
+    }
   }
 
   //  Assuming x scale factor is same as y scale factor

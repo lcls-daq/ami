@@ -116,7 +116,7 @@ Ami::RPhiProjection* RPhiProjectionPlotDesc::desc(const char* title) const
 				     _annulus.xcenter(), _annulus.ycenter());
     }
     else {
-      Ami::DescProf desc(title, "azimuth", "sum", nfbins, f0, f1, "");
+      Ami::DescProf desc(title, "azimuth", "mean", nfbins, f0, f1, "");
       proj = new Ami::RPhiProjection(desc, Ami::RPhiProjection::Phi,
 				     _annulus.r_inner(), _annulus.r_outer(),
 				     _annulus.xcenter(), _annulus.ycenter());

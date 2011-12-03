@@ -77,10 +77,10 @@ namespace Ami {
   private:
     uint16_t _nbinsx;
     uint16_t _nbinsy;
-    uint16_t _ppbx;
-    uint16_t _ppby;
-    uint32_t _xp0;
-    uint32_t _yp0;
+    int16_t  _ppbx;
+    int16_t  _ppby;
+    int32_t  _xp0;
+    int32_t  _yp0;
     float    _mmppx;
     float    _mmppy;
     enum { MAX_SUBFRAMES=64 };
