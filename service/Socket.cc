@@ -44,7 +44,7 @@ int Socket::write(const void* data, int size)
   return writev(&iov[0],1);
 }
 
-#include "pds/service/Sockaddr.hh"
+#include "ami/service/Sockaddr.hh"
 
 int Socket::writev(const iovec* iov, int iovcnt)
 {
