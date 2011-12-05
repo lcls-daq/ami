@@ -32,10 +32,16 @@
 #include "pds/config/PrincetonConfigType.hh"
 #include "pds/config/TM6740ConfigType.hh"
 #include "pds/config/pnCCDConfigType.hh"
-#include "pds/camera/FrameType.hh"
 #include "pds/config/FrameFccdConfigType.hh"
 #include "pds/config/IpimbDataType.hh"
 #include "pdsdata/ipimb/ConfigV2.hh"
+#include "pdsdata/xtc/TypeId.hh"
+#include "pdsdata/camera/FrameV1.hh"
+
+typedef Pds::Camera::FrameV1 FrameType;
+
+static Pds::TypeId _frameType(Pds::TypeId::Id_Frame,
+			      FrameType::Version);
 
 namespace Pds {
   class ClockTime;
