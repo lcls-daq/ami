@@ -82,21 +82,11 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   if (_fn) {
     // find the peak positions which are above the threshold
     const unsigned* a = entry.contents();
-    for(unsigned k=1; k<ny-1; k++, a+=nx) {
-      const unsigned* b = a + nx;
-      const unsigned* c = b + nx;
-      for(unsigned j=1; j<nx-1; j++) {
+    for(unsigned k=0; k<ny; k++) {
+      for(unsigned j=0; j<nx; j++) {
         const unsigned threshold = _fn->value(j,k) + unsigned(entry.info(EntryImage::Pedestal));
-        unsigned v = b[j];
-        if (v > threshold &&
-            v > b[j-1] && 
-            v > b[j+1] &&
-            v > a[j-1] && 
-            v > a[j+0] &&
-            v > a[j+1] &&
-            v > c[j-1] && 
-            v > c[j+0] &&
-            v > c[j+1])
+        unsigned v = *a++;
+        if (v > threshold)
           _output_entry->addcontent(1,j,k);
       }
     }
