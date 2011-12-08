@@ -225,11 +225,31 @@ void AnnulusCursors::mouseReleaseEvent(double x,double y)
   emit changed();
 }
 
-static double clip_r(double r, double a, double x0, double x1)
+//
+//  
+//
+static bool clip_r(double& r, 
+                   double cosf, double sinf, 
+                   double x0, double x1,
+                   double y0, double y1)
 {
-  if (r*a < x0 ) r = x0/a;
-  if (r*a > x1)  r = x1/a;
-  return r;
+  double rx = r*cosf;
+  double ry = r*sinf;
+
+  if (cosf != 0) {
+    if      (rx < x0) r = x0/cosf;
+    else if (rx > x1) r = x1/cosf;
+  }
+  if (sinf != 0) {
+    if      (ry < y0) r = y0/sinf;
+    else if (ry > y1) r = y1/sinf;
+  }
+
+  rx = r*cosf;
+  ry = r*sinf;
+
+  return (rx >= x0 && rx <= x1 &&
+          ry >= y0 && ry <= y1);
 }
 
 void draw_line(double _xc, double _yc,
@@ -238,24 +258,25 @@ void draw_line(double _xc, double _yc,
 {
   const QSize& sz = image.size();
   double cosf = cos(_f);
-  double tanf = tan(_f);
-  double sinf = tanf*cosf;
-  double cotf = 1./tanf;
+  double sinf = sin(_f);
 
   //  clip to image size
   double xmax = double(sz.width() -1) - _xc;
   double ymax = double(sz.height()-1) - _yc;
-  double r0;
-  r0 = clip_r (_r0, cosf, -_xc, xmax);
-  r0 = clip_r ( r0, sinf, -_yc, ymax);
-  double r1;
-  r1 = clip_r (_r1, cosf, -_xc, xmax);
-  r1 = clip_r ( r1, sinf, -_yc, ymax);
+
+  double r0 (_r0);
+  if (!clip_r ( r0, cosf, sinf, -_xc, xmax, -_yc, ymax) )
+    return;
+
+  double r1 (_r1);
+  if (!clip_r ( r1, cosf, sinf, -_xc, xmax, -_yc, ymax) )
+    return;
   
   //  draw
   double dx = (r1-r0)*cosf;
   double dy = (r1-r0)*sinf;
   if (fabs(dx) > fabs(dy)) {
+    double tanf = sinf/cosf;
     if (dx > 0)
       for(double x=r0*cosf; x<=r1*cosf; x++) {
 	double y=x*tanf;
@@ -268,6 +289,7 @@ void draw_line(double _xc, double _yc,
       }
   }
   else {
+    double cotf = cosf/sinf;
     if (dy > 0)
       for(double y=r0*sinf; y<=r1*sinf; y++) {
 	double x=y*cotf;

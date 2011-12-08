@@ -166,14 +166,6 @@ namespace CspadMiniGeometry {
 #define BIN_ITER1 {							\
     const unsigned ColBins = CsPad::ColumnsPerASIC;			\
     const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;			\
-    /*  zero the target region  */					\
-    for(unsigned i=0; i<=ColBins; i++) {				\
-      for(unsigned j=0; j<=RowBins; j++) {				\
-	const unsigned x = CALC_X(column,i,j);				\
-	const unsigned y = CALC_Y(row   ,i,j);				\
-	image.content(0,x,y);						\
-      }									\
-    }									\
     /*  fill the target region  */					\
     for(unsigned i=0; i<ColBins; i++) {					\
       for(unsigned j=0; j<RowBins; j++, data+=2) {                      \
@@ -228,8 +220,8 @@ namespace CspadMiniGeometry {
       const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
                                                                         \
       int k=0;                                                          \
-      for(unsigned i=0; i<=ColBins; i++) {				\
-        for(unsigned j=0; j<=RowBins; j++,k++) {                        \
+      for(unsigned i=0; i<ColBins; i++) {				\
+        for(unsigned j=0; j<RowBins; j++,k++) {                         \
           const unsigned x = CALC_X(column,i,j);                        \
           const unsigned y = CALC_Y(row   ,i,j);                        \
           image.content(unsigned(v0),x,y);                              \
@@ -367,8 +359,8 @@ namespace CspadMiniGeometry {
                                                                         \
       uint16_t* const* sta = &_sta[0];                                  \
       int k=0;                                                          \
-      for(unsigned i=0; i<=ColBins; i++) {				\
-        for(unsigned j=0; j<=RowBins; j++,k++) {                        \
+      for(unsigned i=0; i<ColBins; i++) {				\
+        for(unsigned j=0; j<RowBins; j++,k++) {                         \
           const unsigned x = CALC_X(column,i,j);                        \
           const unsigned y = CALC_Y(row   ,i,j);                        \
           if (*sta == _off+k) {                                         \
