@@ -171,7 +171,7 @@ namespace CspadMiniGeometry {
       for(unsigned j=0; j<RowBins; j++, data+=2) {                      \
 	const unsigned x = CALC_X(column,i,j);				\
 	const unsigned y = CALC_Y(row   ,i,j);				\
-	image.addcontent(F1,x,y);					\
+	image.content(F1,x,y);                                          \
       }									\
     }									\
   }
