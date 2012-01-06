@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
+#include "ami/data/EntryCache.hh"
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/data/Cds.hh"
@@ -45,6 +46,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   FeatureExpression parser;
   { QString expr(o.name());
     _input = parser.evaluate(features,expr);
+    printf("EnvPlot input %p\n",_input);
     if (!_input)
       printf("EnvPlot failed to parse %s\n",qPrintable(expr));
   }
@@ -53,6 +55,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
       o.type()==DescEntry::Scan) {
     QString expr(o.xtitle());
     _term = parser.evaluate(features,expr);
+    printf("EnvPlot term %p\n",_term);
     if (!_term)
       printf("EnvPlot failed to parse %s\n",qPrintable(expr));
   }
@@ -127,6 +130,10 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  }
 	} 
 	break;
+      case DescEntry::Cache:
+        { EntryCache* en = static_cast<EntryCache*>(_entry);
+          en->set(y,false); 
+          break; }
       case DescEntry::Waveform:
       case DescEntry::TH2F:
       case DescEntry::Image:

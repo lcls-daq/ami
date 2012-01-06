@@ -25,6 +25,7 @@ namespace Ami {
     class ImageFrame;
     class ProjectionPlot;
     class CursorPlot;
+    class CursorPost;
     class RPhiProjectionPlotDesc;
     class ImageIntegral;
 
@@ -50,6 +51,7 @@ namespace Ami {
       void remove_plot (QObject*);
       virtual void setVisible(bool);
       void update_range();
+      void add_post    ();
     signals:
       void changed();
     private:
@@ -73,6 +75,7 @@ namespace Ami {
 
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
+      std::list<CursorPost*>     _posts;
     };
   };
 };

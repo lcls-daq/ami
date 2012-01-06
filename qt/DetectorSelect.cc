@@ -80,7 +80,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(loadB   , SIGNAL(clicked()), this, SLOT(load_setup()));
     //    connect(printB  , SIGNAL(clicked()), this, SLOT(print_setup()));
     connect(defaultB, SIGNAL(clicked()), this, SLOT(default_setup()));
-    //    connect(testB   , SIGNAL(clicked()), this, SLOT(run_test()));
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
@@ -98,6 +97,7 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
+    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     *new DetectorListItem(_detList, "Summary", noInfo , 0);
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
@@ -254,11 +254,7 @@ void DetectorSelect::set_setup(const char* p, int size)
         }
     
       if (!lFound) {
-        Ami::Qt::AbsClient* c = _create_client(info,channel,tag.name.c_str());
-        if (c) {
-          c->load(p);
-          _connect_client(c);
-        }
+        _create_client(info,channel,tag.name.c_str(),p);
       }
     }
   }
@@ -275,14 +271,6 @@ void DetectorSelect::print_setup()
 void DetectorSelect::default_setup()
 {
   Defaults::instance()->show();
-}
-
-#include "ami/qt/FeatureTree.hh"
-
-void DetectorSelect::run_test()
-{
-  FeatureTree* tree = new FeatureTree;
-  tree->show();
 }
 
 void DetectorSelect::set_filters()
@@ -318,13 +306,14 @@ void DetectorSelect::save_plots()
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info, 
 						   unsigned channel,
-                                                   const QString& name)
+                                                   const QString& name,
+                                                   const char*& p)
 {
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
-    case Pds::DetInfo::NoDevice :  client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
-    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, envInfo, 0); break;
+    case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
+    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel); break;
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
     case Pds::DetInfo::Opal1000 : 
@@ -357,6 +346,12 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
   else {
     printf("Ignoring %s [%08x.%08x]\n",qPrintable(name), info.log(), info.phy());
   }
+
+  if (client) {
+    if (p) client->load(p);
+    _connect_client(client);
+  }
+
   return client;
  }
 
@@ -382,9 +377,8 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
       (*it)->show();
       return;
     }
-  Ami::Qt::AbsClient* c = _create_client(ditem->info,ditem->channel,ditem->text());
-  if (c)
-    _connect_client(c);
+  const char* p=0;
+  _create_client(ditem->info,ditem->channel,ditem->text(),p);
 }
 
 void DetectorSelect::connected       () 
@@ -433,7 +427,7 @@ void DetectorSelect::change_detectors(const char* c)
 	  e = reinterpret_cast<const Ami::DescEntry*>
 	    (reinterpret_cast<const char*>(e) + e->size()))
 	if (((*it)->info == e->info() && (*it)->channel == e->channel()) ||
-	    ((*it)->info == envInfo   && (*it)->channel == 0)) {
+	    ((*it)->info == envInfo   && (*it)->channel <= 1)) {
 	  lFound=true;
 	  break;
 	}
@@ -451,6 +445,7 @@ void DetectorSelect::change_detectors(const char* c)
     _detList->clear();
 
     new DetectorListItem(_detList, "Env"    , envInfo, 0);
+    new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     const Pds::DetInfo noInfo;

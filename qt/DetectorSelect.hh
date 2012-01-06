@@ -48,7 +48,6 @@ namespace Ami {
       void load_setup();
       void print_setup();
       void default_setup();
-      void run_test();
 
       void reset_plots();
       void save_plots();
@@ -65,7 +64,7 @@ namespace Ami {
 
     private:
       void                _load_setup_from_file(const char*);
-      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned, const QString&);
+      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned, const QString&, const char*&);
       void                _connect_client(Ami::Qt::AbsClient* client);
 //       void                _update_groups();
 

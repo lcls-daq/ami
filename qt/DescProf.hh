@@ -10,10 +10,11 @@ class QLineEdit;
 
 namespace Ami {
   namespace Qt {
+    class FeatureRegistry;
     class DescProf : public QWidget {
       Q_OBJECT
     public:
-      DescProf(const char*);
+      DescProf(const char*, FeatureRegistry*);
     public:
       void save(char*&) const;
       void load(const char*&);
@@ -30,6 +31,7 @@ namespace Ami {
       QRadioButton* _button;
       QLineEdit *_bins, *_lo, *_hi;
       QLineEdit* _expr;
+      FeatureRegistry* _registry;
     };
   };
 };

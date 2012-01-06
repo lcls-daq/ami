@@ -4,69 +4,52 @@
 
 using namespace Ami;
 
-FeatureCache::FeatureCache() : 
-  _entries(0),
-  _max_entries(8*sizeof(unsigned)),
-  _names  (new char    [_max_entries*FEATURE_NAMELEN]),
-  _cache  (new double  [_max_entries]),
-  _damaged(new unsigned[_max_entries>>5])
+FeatureCache::FeatureCache() :
+  _update(false)
 {
 }
 
 FeatureCache::~FeatureCache()
 {
-  delete[] _names;
-  delete[] _cache;
-  delete[] _damaged;
 }
 
 void     FeatureCache::clear()
 {
-  _entries = 0;
+  _names.clear();
+  _cache.clear();
+  _damaged.clear();
 }
 
 unsigned FeatureCache::add(const char* name)
 {
-  for(unsigned k=0; k<_entries; k++)
-    if (strcmp(_names+k*FEATURE_NAMELEN,name)==0)
+  _update=true;
+
+  std::string sname(name);
+  
+  for(unsigned k=0; k<_names.size(); k++)
+    if (sname==_names[k])
       return k;
 
-  if (_entries == _max_entries) {
-    unsigned max_entries = 2*_max_entries;
-
-    char* names = new char[max_entries*FEATURE_NAMELEN];
-    memcpy(names,_names,_max_entries*FEATURE_NAMELEN);
-    delete[] _names;
-    _names = names;
-
-    double* cache = new double[max_entries];
-    memcpy(cache,_cache,_max_entries*sizeof(double));
-    delete[] _cache;
-    _cache = cache;
-
-    unsigned* damaged = new unsigned[max_entries>>5];
-    memcpy(damaged,_damaged,_max_entries>>5);
-    memset(damaged+(_max_entries>>5),0,_max_entries>>5); // for valgrind only
-    delete[] _damaged;
-    _damaged = damaged;
-
-    _max_entries = max_entries;
-  }
-  strncpy(_names + _entries*FEATURE_NAMELEN, name, FEATURE_NAMELEN);
-  return _entries++;
+  _names.push_back(sname);
+  unsigned len = _names.size();
+  _cache  .resize(len);
+  _damaged.resize((len+0x1f)>>5);
+  return len-1;
 }
 
 int         FeatureCache::lookup(const char* name) const
 {
-  for(int k=0; k<static_cast<int>(_entries); k++)
-    if (strcmp(_names+k*FEATURE_NAMELEN,name)==0)
-      return k;
+  std::string sname(name);
+
+  for(unsigned k=0; k<_names.size(); k++)
+    if (sname==_names[k])
+      return int(k);
 
   return -1;
 }
 
-unsigned    FeatureCache::entries() const { return _entries; }
-const char* FeatureCache::names  () const { return _names; }
+unsigned    FeatureCache::entries() const { return _names.size(); }
+const std::vector<std::string>& FeatureCache::names  () const { return _names; }
 double      FeatureCache::cache  (int index, bool* damaged) const 
 {
   if (damaged) *damaged = (index<0) || ((_damaged[index>>5]>>(index&0x1f)) & 1);
@@ -83,4 +66,22 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
     else
       _damaged[index>>5] &= ~mask;
   }
+}
+
+char*  FeatureCache::serialize(int& len) const
+{
+  len = _names.size()*FEATURE_NAMELEN;
+  char* result = new char[len];
+  char* p = result;
+  for(unsigned k=0; k<_names.size(); k++, p+=FEATURE_NAMELEN) {
+    strncpy(p, _names[k].c_str(), FEATURE_NAMELEN);
+  }
+  return result;
+}
+
+bool   FeatureCache::update()
+{
+  bool upd(_update);
+  _update=false;
+  return upd;
 }

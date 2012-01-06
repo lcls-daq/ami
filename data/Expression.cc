@@ -240,8 +240,10 @@ Term* Expression::evaluate(const QString& e)
 
   _process(text);
 
-  bool ok;
-  Term* t = reinterpret_cast<Term*>(text.mid(1,text.size()-2).toULong(&ok,16));
+  bool ok(false);
+  Term* t = 0;
+  if (text[0]=='[' && text[text.size()-1]==']')
+    t = reinterpret_cast<Term*>(text.mid(1,text.size()-2).toULong(&ok,16));
 #ifdef DBUG
   printf("Result is (%s) %p %s\n",ok ? "OK" : "Not OK", t,qPrintable(text));
 #endif

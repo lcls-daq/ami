@@ -68,22 +68,24 @@ static void push(QStandardItem& root, const QString& name, int level)
 }
 
 
-FeatureTree::FeatureTree() :
+FeatureTree::FeatureTree(FeatureRegistry* r) :
   QPushButton(),
-  _entry     ()
+  _entry     (),
+  _registry  (r ? r : &FeatureRegistry::instance())
 {
   _view.setModel(&_model);
 
-  fill(FeatureRegistry::instance().names());
+  fill(_registry->names());
 
   connect(this, SIGNAL(clicked()), &_view, SLOT(show()));
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()), this, SLOT(change_features()));
+  connect(_registry, SIGNAL(changed()), this, SLOT(change_features()));
   connect(&_view, SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
 
 FeatureTree::FeatureTree(const QStringList& names, const QStringList& help, const QColor& color) :
   QPushButton(),
-  _entry     ()
+  _entry     (),
+  _registry  (0)
 {
   QPalette newPalette = palette();
   newPalette.setColor(QPalette::Button, color);
@@ -136,7 +138,7 @@ const QString& FeatureTree::entry() const { return _entry; }
 void FeatureTree::change_features()
 {
   clear();
-  fill(FeatureRegistry::instance().names());
+  fill(_registry->names());
 }
 
 void FeatureTree::clear()
@@ -153,7 +155,7 @@ void FeatureTree::set_entry(const QModelIndex& e) {
 
 void FeatureTree::set_entry(const QString& e) { 
   QPalette p(palette());
-  if (FeatureRegistry::instance().names().contains(e))
+  if (_registry==0 || _registry->names().contains(e))
     p.setColor(QPalette::ButtonText, QColor(0,0,0));
   else
     p.setColor(QPalette::ButtonText, QColor(0xc0,0,0));

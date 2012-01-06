@@ -86,8 +86,6 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
 
-  printf("CM::resolve in %s\n",qPrintable(expr));
-
   //
   //  Replace all channel names with their signatures
   //
@@ -116,8 +114,6 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
     else
       pos++;
   }
-
-  printf("CM::resolve out %s\n",qPrintable(expr));
 
   //
   //    Include filters associated with channels used

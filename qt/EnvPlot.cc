@@ -41,10 +41,12 @@ static NullTransform noTransform;
 EnvPlot::EnvPlot(QWidget*         parent,
 		 const QString&   name,
 		 const Ami::AbsFilter&  filter,
-		 DescEntry*       desc) :
+		 DescEntry*       desc,
+                 Ami::ScalarSet   set) :
   QtPlot   (parent, name),
   _filter  (filter.clone()),
   _desc    (desc),
+  _set     (set),
   _output_signature  (0),
   _plot    (0)
 {
@@ -69,8 +71,6 @@ EnvPlot::EnvPlot(QWidget*     parent,
     else if (tag.name == "_desc") {
       DescEntry* desc = (DescEntry*)QtPersistent::extract_op(p);
 
-      printf("EnvPlot desc %p type %d\n",desc, desc->type());
-
 #define CASEENTRY(type) case DescEntry::type: _desc = new Desc##type(*static_cast<Desc##type*>(desc)); break;
 
       switch(desc->type()) {
@@ -80,6 +80,9 @@ EnvPlot::EnvPlot(QWidget*     parent,
           CASEENTRY(Scalar)
           default: break;
       }
+    }
+    else if (tag.name == "_set") {
+      _set = Ami::ScalarSet(QtPersistent::extract_i(p));
     }
 
   XML_iterate_close(EnvPlot,tag);
@@ -98,6 +101,7 @@ void EnvPlot::save(char*& p) const
   XML_insert( p, "QtPlot", "self", QtPlot::save(p) );
   XML_insert( p, "AbsFilter", "_filter", QtPersistent::insert(p, buff, (char*)_filter->serialize(buff)-buff) );
   XML_insert( p, "DescEntry", "_desc", QtPersistent::insert(p, _desc, _desc->size()) );
+  XML_insert( p, "ScalarSet", "_set" , QtPersistent::insert(p, int(_set)) );
   delete[] buff;
 }
 
@@ -118,9 +122,6 @@ void EnvPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     edit_xrange(true);
-
-    printf("EnvPlot::setup_payload %s %d\n",
-           entry->desc().name(), entry->desc().type());
 
     switch(entry->desc().type()) {
     case Ami::DescEntry::TH1F: 
@@ -162,7 +163,7 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 						  ConfigureRequest::Discovery,
 						  input,
 						  _output_signature = ++output,
-						  *_filter, op);
+						  *_filter, op, _set);
   p += r.size();
 }
 

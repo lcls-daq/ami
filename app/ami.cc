@@ -144,8 +144,10 @@ int main(int argc, char* argv[]) {
 
   ServerManager   srv(interface, serverGroup);
 
-  FeatureCache    features;
-  EventFilter     filter(user_mod,features);
+  std::vector<FeatureCache*> features;
+  for(unsigned i=0; i<Ami::NumberOfSets; i++)
+    features.push_back(new FeatureCache);
+  EventFilter     filter(user_mod,*features[PostAnalysis]);
   AnalysisFactory factory(features, srv, user_mod, filter);
 
   XtcClient myClient(features, factory, user_mod, filter, offline);

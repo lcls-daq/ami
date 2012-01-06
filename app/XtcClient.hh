@@ -26,7 +26,7 @@ namespace Ami {
 
   class XtcClient : private XtcIterator {
   public:
-    XtcClient(FeatureCache& cache, 
+    XtcClient(std::vector<FeatureCache*>& cache, 
 	      Factory&      factory, 
 	      std::list<UserModule*>& user_ana,
 	      EventFilter&  filter,
@@ -44,7 +44,7 @@ namespace Ami {
     typedef std::list<Composer*>     CList;
     typedef std::list<UserModule*>   UList;
     typedef std::list<Entry*>        EList;
-    FeatureCache& _cache;
+    std::vector<FeatureCache*>& _cache;
     Factory&      _factory;
     UList&        _user_ana;
     EventFilter&  _filter;

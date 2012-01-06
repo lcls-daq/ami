@@ -6,28 +6,43 @@
 
 using namespace Ami;
 
-DiscoveryTx::DiscoveryTx(const FeatureCache& f,
+static const unsigned FEATURE_NAMELEN = FeatureCache::FEATURE_NAMELEN;
+
+DiscoveryTx::DiscoveryTx(const std::vector<FeatureCache*>& f,
 			 const Cds&          cds) :
   _features(f),
   _cds     (cds)
 {
 }
 
-DiscoveryTx::~DiscoveryTx() {}
+DiscoveryTx::~DiscoveryTx() 
+{
+  for(unsigned i=0; i<_cache.size(); i++)
+    delete[] _cache[i];
+}
 
 unsigned DiscoveryTx::niovs() const
 {
-  return _cds.description()+2;
+  return _cds.description()+_features.size()+1;
 }
 
-void DiscoveryTx::serialize(iovec* iov) const
+void DiscoveryTx::serialize(iovec* iov)
 {
-  _header = _features.entries();
-  iov[0].iov_base = &_header;
-  iov[0].iov_len  = sizeof(_header);
-  iov[1].iov_base = const_cast<char*>(_features.names());
-  iov[1].iov_len  = _header*FeatureCache::FEATURE_NAMELEN;
-  _cds.description(iov+2);
+  iov[0].iov_base = &_header[0];
+  iov[0].iov_len  = NumberOfSets*sizeof(uint32_t);
+
+  for(unsigned i=0; i<_features.size(); i++) {
+
+    _header[i] = _features[i]->entries();
+    
+    int   len;
+    char* buff = _features[i]->serialize(len);
+    _cache.push_back(buff);
+
+    iov[i+1].iov_base = buff;
+    iov[i+1].iov_len  = len;
+  }
+  _cds.description(iov+_features.size()+1);
 }
 
 
@@ -38,20 +53,30 @@ DiscoveryRx::DiscoveryRx(const char* msg, unsigned size) :
 
 DiscoveryRx::~DiscoveryRx() {}
 
-unsigned    DiscoveryRx::features() const
+std::vector<std::string> DiscoveryRx::features(ScalarSet set) const
 {
-  return reinterpret_cast<const uint32_t*>(_p)[0];
+  const char* p = _p + sizeof(uint32_t)*NumberOfSets;
+  for(unsigned i=0; i<unsigned(set); i++)
+    p += reinterpret_cast<const uint32_t*>(_p)[i]*FEATURE_NAMELEN;
+
+  unsigned n = reinterpret_cast<const uint32_t*>(_p)[set];
+
+  std::vector<std::string> v;
+  v.reserve(n);
+  for(unsigned i=0; i<n; i++, p+=FEATURE_NAMELEN) {
+    v.push_back(std::string(p));
+  }
+    
+  return v;
 }
 
-const char* DiscoveryRx::feature_name(unsigned i) const
-{
-  const char* name = _p + sizeof(uint32_t);
-  return name + i*FeatureCache::FEATURE_NAMELEN;
-}
-    
 const Desc*      DiscoveryRx::title_desc() const
 {
-  return reinterpret_cast<const Desc*>(feature_name(features()));
+  const char* p = _p + sizeof(uint32_t)*NumberOfSets;
+  for(unsigned i=0; i<NumberOfSets; i++)
+    p += reinterpret_cast<const uint32_t*>(_p)[i]*FEATURE_NAMELEN;
+  
+  return reinterpret_cast<const Desc*>(p);
 }
 
 const DescEntry* DiscoveryRx::entries() const

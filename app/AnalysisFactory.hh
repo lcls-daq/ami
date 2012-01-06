@@ -19,19 +19,20 @@ namespace Ami {
 
   class AnalysisFactory : public Factory {
   public:
-    AnalysisFactory(FeatureCache&,
+    AnalysisFactory(std::vector<FeatureCache*>&,
 		    ServerManager&,
 		    std::list<UserModule*>&,
                     EventFilter&);
     ~AnalysisFactory();
   public:
-    FeatureCache& features();
+    std::vector<FeatureCache*>& features();
     Cds& discovery();
     Cds& hidden   ();
     void discover ();
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void wait_for_configure();
+    void remove   (unsigned);
   private:
     ServerManager& _srv;
     Cds       _cds;
@@ -40,7 +41,7 @@ namespace Ami {
     AnList    _analyses;
     Semaphore _configured;
     Semaphore _sem;
-    FeatureCache& _features;
+    std::vector<FeatureCache*>& _features;
     typedef std::list<UserModule*> UList;
     UList&        _user;
     EventFilter&  _filter;

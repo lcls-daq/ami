@@ -2,6 +2,7 @@
 #define Ami_Factory_hh
 
 class iovec;
+#include <vector>
 
 namespace Ami {
 
@@ -13,13 +14,14 @@ namespace Ami {
   public:
     virtual ~Factory() {}
   public:
-    virtual FeatureCache& features() = 0;
+    virtual std::vector<FeatureCache*>& features() = 0;
     virtual Cds& discovery() = 0;
     virtual Cds& hidden   () = 0;
     virtual void configure(unsigned id, const Message&, const char*, Cds&) = 0;
     virtual void analyze  () = 0;
     virtual void discover () = 0;
     virtual void wait_for_configure() = 0;
+    virtual void remove   (unsigned id) = 0;
   };
 
 };

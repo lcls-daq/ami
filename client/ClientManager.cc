@@ -101,7 +101,7 @@ static void dump(const char* payload, unsigned size)
 ClientManager::ClientManager(unsigned   ppinterface,
 			     unsigned   interface,
 			     unsigned   serverGroup,
-			     unsigned short port,
+			     unsigned   short port,
 			     AbsClient& client) :
   _client    (*new Aggregator(client)),
   _ppinterface(ppinterface),
@@ -174,7 +174,7 @@ void ClientManager::request_payload()
 //  Connecting involves negotiating a destination port with the server group
 //  and allocating a server on the peer connected to that port.  
 //
-void ClientManager::connect()
+void ClientManager::connect(bool svc)
 {
   //  Remove previous connections
   unsigned n = nconnected();
@@ -182,7 +182,7 @@ void ClientManager::connect()
     delete &_poll->fds(n--);
 
   if (_connect) {
-    _request = Message(_request.id()+1,Message::Connect,
+    _request = Message(svc ? 1:0,Message::Connect,
                        _ppinterface,
                        _listen->ins().portId());
     _connect->write(&_request,sizeof(_request));
@@ -195,6 +195,9 @@ void ClientManager::connect()
       cs.connect(remote); 
       Ins local  = cs.ins();
       _state = Connected;
+
+      Message msg(svc ? 1:0,Message::Connect,0,0);
+      cs.write(&msg,sizeof(msg));
     }
     catch (Event& e) { printf("Connection failed: %s\n", e.what()); delete &cs; }
   }

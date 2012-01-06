@@ -6,21 +6,21 @@
 
 using namespace Ami::Qt;
 
-static FeatureRegistry* _instance=0;
+static FeatureRegistry* _instance[Ami::NumberOfSets] = {0,0};
 
-FeatureRegistry& FeatureRegistry::instance() 
+FeatureRegistry& FeatureRegistry::instance(Ami::ScalarSet t) 
 {
-  if (!_instance) _instance = new FeatureRegistry;
-  return *_instance;
+  if (!_instance[t]) _instance[t] = new FeatureRegistry;
+  return *(_instance[t]);
 }
 
-void               FeatureRegistry::insert(const DiscoveryRx& rx)
+void               FeatureRegistry::insert(const std::vector<std::string>& rx)
 {
   _sem.take();
   _names.clear();
   _help .clear();
-  for(unsigned k=0; k<rx.features(); k++) {
-    _names << QString(rx.feature_name(k));
+  for(unsigned i=0; i<rx.size(); i++) {
+    _names << QString(rx[i].c_str());
     _help  << QString();
   }
 
@@ -73,3 +73,4 @@ int FeatureRegistry::index(const QString& name) const
 FeatureRegistry::FeatureRegistry() : _sem(Ami::Semaphore::FULL) {}
 
 FeatureRegistry::~FeatureRegistry() {}
+

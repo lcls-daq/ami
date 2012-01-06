@@ -34,7 +34,10 @@ void add(FeatureCache& cache, const char* name, bool show=false)
       iov[i].iov_len  = bufsiz;
     }
 
-    DiscoveryTx tx(cache,cds);
+    std::vector<FeatureCache*> features;
+    features.push_back(&cache);
+
+    DiscoveryTx tx(features,cds);
     tx.serialize(iov);
 
     char* buff = new char[niov*bufsiz];
@@ -46,7 +49,7 @@ void add(FeatureCache& cache, const char* name, bool show=false)
 
     DiscoveryRx rx(buff, p-buff);
 
-    Ami::Qt::FeatureRegistry::instance().insert(rx);
+    Ami::Qt::FeatureRegistry::instance().insert(rx.features());
 
     Ami::Qt::FeatureTree* tree = new Ami::Qt::FeatureTree;
     tree->setWindowTitle(name);

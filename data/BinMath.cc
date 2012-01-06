@@ -13,6 +13,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
+#include "ami/data/EntryCache.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/DescImage.hh"
@@ -57,7 +58,25 @@ namespace Ami {
   namespace BinMathC {
     CLASSTERM(Waveform,content);
     CLASSTERM(TH1F    ,content);
-    CLASSTERM(Prof    ,ymean  );
+    //    CLASSTERM(Prof    ,ymean  );
+
+    class EntryProfTerm  : public Ami::Term {
+    public:
+    EntryProfTerm(const Entry*& e, unsigned lo, unsigned hi) :
+      _entry(e), _lo(lo), _hi(hi) {}
+      ~EntryProfTerm() {}
+    public:
+      double evaluate() const
+      { double sum=0;
+	unsigned lo=_lo, hi=_hi;
+	const EntryProf* e = static_cast<const EntryProf*>(_entry);
+	for(unsigned i=lo; i<=hi; i++)
+	  sum += e->ymean(i);
+        return sum; }
+  private:
+      const Entry*& _entry;
+      unsigned _lo, _hi;
+    };
 
     class EntryImageTerm : public Ami::Term {
     public:
@@ -347,6 +366,10 @@ Entry&     BinMath::_operate(const Entry& e) const
 	  en->addinfo(1.,EntryScan::Normalization);
 	}
 	break; }
+    case DescEntry::Cache:
+      { EntryCache* en = static_cast<EntryCache*>(_entry);
+        en->set(y,false);
+        break; }
     case DescEntry::Waveform:
     case DescEntry::TH2F:
     case DescEntry::Image:

@@ -5,10 +5,12 @@ namespace Ami {
 
   class Entry;
   class DescEntry;
+  class FeatureCache;
 
   class EntryFactory {
   public:
-    static Entry* entry(const DescEntry& desc);
+    static Entry* entry (const DescEntry& desc);
+    static void   source(FeatureCache& cache);
   };
 };
 

@@ -27,6 +27,7 @@ namespace Ami {
     class CursorDefinition;
     class CursorLocation;
     class CursorPlot;
+    class CursorPost;
     class WaveformDisplay;
     class ScalarPlotDesc;
 
@@ -58,6 +59,7 @@ namespace Ami {
       void plot        ();   // configure the plot
       void remove_plot (QObject*);
       void grab_cursorx();
+      void add_post    ();
     signals:
       void changed();
       void grabbed();
@@ -77,13 +79,15 @@ namespace Ami {
 
       QLineEdit* _expr;
 
-      QLineEdit* _title;
       ScalarPlotDesc* _scalar_desc;
 
       std::list<CursorDefinition*> _cursors;
       Ami::AbsOperator* _operator;
 
       std::list<CursorPlot*> _plots;
+      std::list<CursorPost*> _posts;
+
+      bool _force;
     };
   };
 };

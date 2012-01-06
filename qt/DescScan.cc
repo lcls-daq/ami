@@ -12,11 +12,11 @@
 
 using namespace Ami::Qt;
 
-DescScan::DescScan(const char* name) :
+DescScan::DescScan(const char* name, FeatureRegistry* registry) :
   QWidget(0), _button(new QRadioButton(name)),
   _bins(new QLineEdit("200"))
 {
-  _features = new FeatureList;
+  _features = new FeatureList(registry);
 
   _bins->setMaximumWidth(60);
   new QIntValidator   (_bins);

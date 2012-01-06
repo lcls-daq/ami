@@ -40,7 +40,7 @@
 
 using namespace Ami;
 
-XtcClient::XtcClient(FeatureCache& cache, 
+XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
 		     Factory&      factory,
 		     UList&        user_ana,
                      EventFilter&  filter,
@@ -72,6 +72,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   timespec tp;
   clock_gettime(CLOCK_REALTIME, &tp);
 
+  FeatureCache& cache = *_cache[PreAnalysis];
+
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
@@ -79,7 +81,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     if (_filter.accept(dg)) {
       accept = true;
 
-      _cache.cache(_event_index,_seq->stamp().vector());
+      cache.cache(_event_index,_seq->stamp().vector());
       SummaryAnalysis::instance().clock(dg->seq.clock());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
@@ -94,7 +96,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     printf("XtcClient configure\n");
 
-    _cache.clear();
+    _cache[ PreAnalysis]->clear();
+    _cache[PostAnalysis]->clear();
 
     //  Cleanup previous entries
     _factory.discovery().reset();
@@ -141,10 +144,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().showentries();
     _factory.hidden   ().showentries();
 
-    _ptime_index     = _cache.add("ProcTime");
-    _ptime_acc_index = _cache.add("ProcTimeAcc");
-    _pltnc_index     = _cache.add("ProcLatency");
-    _event_index     = _cache.add("EventId");
+    _ptime_index     = cache.add("ProcTime");
+    _ptime_acc_index = cache.add("ProcTimeAcc");
+    _pltnc_index     = cache.add("ProcLatency");
+    _event_index     = cache.add("EventId");
 
     printf("XtcClient configure done\n");
 
@@ -167,13 +170,13 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     double dt;
     dt = double(tq.tv_sec-tp.tv_sec) + 
       1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
-    _cache.cache(_ptime_index,dt);
+    cache.cache(_ptime_index,dt);
     if (accept)
-      _cache.cache(_ptime_acc_index,dt);
+      cache.cache(_ptime_acc_index,dt);
 
     dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
       1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
-    _cache.cache(_pltnc_index,dt);
+    cache.cache(_pltnc_index,dt);
   }
 }
 
@@ -231,6 +234,7 @@ int XtcClient::process(Pds::Xtc* xtc)
     if (_seq->service()==Pds::TransitionId::Configure) {
       const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
+      FeatureCache& cache = *_cache[PreAnalysis];
       EventHandler* h = 0;
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
@@ -240,23 +244,23 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
-      case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,_cache); break;
+      case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,cache); break;
       case Pds::TypeId::Id_CspadConfig:      
-        if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,_cache);
-        else                                 h = new CspadMiniHandler(info,_cache);
+        if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,cache);
+        else                                 h = new CspadMiniHandler(info,cache);
         break;
-      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (_cache); break;
-      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,_cache); break;
-      case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(_cache); break;
-      case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (_cache); break;
-      case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (_cache); break;
-      case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,_cache); break;
-      case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,_cache); break;
-      case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,_cache); break;
-      case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,_cache); break;
-      case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,_cache); break;
-      case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,_cache); break;
-      case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,_cache); break;
+      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (cache); break;
+      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,cache); break;
+      case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
+      case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
+      case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
+      case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
+      case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
+      case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
+      case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
+      case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
+      case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
+      case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
       default: break;
       }

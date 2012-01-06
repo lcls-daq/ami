@@ -23,6 +23,7 @@ namespace Ami {
     class ImageFrame;
     class ProjectionPlot;
     class CursorPlot;
+    class CursorPost;
     class ZoomPlot;
     class XYHistogramPlotDesc;
     class XYProjectionPlotDesc;
@@ -52,6 +53,7 @@ namespace Ami {
       void configure_plot();
       void remove_plot (QObject*);
       virtual void setVisible(bool);
+      void add_post    ();
     signals:
       void changed();
     private:
@@ -73,6 +75,7 @@ namespace Ami {
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
       std::list<ZoomPlot*>       _zplots;
+      std::list<CursorPost*>     _posts;
     };
   };
 };

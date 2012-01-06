@@ -77,6 +77,20 @@ void ServerManager::discover()
   bcast_in(reinterpret_cast<const char*>(&msg),sizeof(msg));
 }
 
+void ServerManager::discover_post()
+{
+  Message msg(0,Message::DiscoverReq);
+  post(reinterpret_cast<const char*>(&msg),sizeof(msg));
+}
+
+void ServerManager::unmanage(Fd& fd)
+{
+  Server* srv = reinterpret_cast<Server*>(&fd);
+  _servers.remove(srv);
+
+  Poll::unmanage(fd);
+}
+
 int ServerManager::fd() const { return _socket->socket(); }
 
 int ServerManager::processIo()
@@ -98,7 +112,14 @@ int ServerManager::processIo()
            remote.address(), remote.portId());
 
     Server* srv = new Server(s,*_factory,request);
-    _servers.push_back(srv);
+    //
+    //  Register for special service?
+    //
+    { Message msg(0,Message::NoOp);
+      ::read(srv->fd(),&msg,sizeof(msg));
+      if (msg.type()==Ami::Message::Connect && msg.id())
+        _servers.push_back(srv);
+    }
     manage(*srv);
   }
   else {
@@ -123,7 +144,8 @@ int ServerManager::processIo()
 	     remote.address(), remote.portId());
 
       Server* srv = new Server(s,*_factory,request);
-      _servers.push_back(srv);
+      if (request.id())
+        _servers.push_back(srv);
       manage(*srv);
      } 
     catch (Event& e) {
@@ -135,3 +157,13 @@ int ServerManager::processIo()
 }
 
 int ServerManager::processTmo() { return 1; }
+
+//
+//  Command to special set of servers
+//
+int ServerManager::processIn (const char* payload, int size) 
+{
+  for(SvList::iterator it=_servers.begin(); it!=_servers.end(); it++)
+    (*it)->processIo(payload,size);
+  return 1;
+}

@@ -6,12 +6,15 @@
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryCache.hh"
 #include "ami/data/EntryRef.hh"
 
 #include <stdio.h>
 #include <stdlib.h>
 
 using namespace Ami;
+
+static FeatureCache* _cache  = 0;
 
 #define CASE_NEW(type) { case DescEntry::type: entry = new Entry##type((const Desc##type&)desc); break; }
 
@@ -27,7 +30,11 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     CASE_NEW(Image);
     CASE_NEW(Waveform);
     CASE_NEW(Ref);
+  case DescEntry::Cache: 
+    { entry = new EntryCache((const DescCache&)desc, _cache); break; }
   default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); abort(); break;
   }
   return entry;
 }
+
+void EntryFactory::source(FeatureCache& cache) { _cache = &cache; }

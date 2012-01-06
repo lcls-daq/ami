@@ -6,6 +6,7 @@
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/EnvPlot.hh"
+#include "ami/qt/EnvPost.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 
 #include "ami/client/ClientManager.hh"
@@ -13,6 +14,7 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EnvPlot.hh"
 
@@ -38,8 +40,8 @@ static const int BufferSize = 0x8000;
 
 EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel) :
   Ami::Qt::AbsClient(parent,info,channel),
-  _title           ("Env"),
   _input           (0),
+  _set             (Ami::ScalarSet(channel)),
   _output_signature(0),
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
@@ -50,7 +52,12 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false)
 {
-  setWindowTitle(QString("Environment"));
+  switch(_set) {
+  case Ami::PreAnalysis : _title = QString("Env"); break;
+  case Ami::PostAnalysis: _title = QString("PostAnalysis"); break;
+  default:                _title = QString("Environment"); break;
+  }
+  setWindowTitle(_title);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this,2.5);
@@ -62,7 +69,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _source_edit    = new QLineEdit("");
   _source_compose = new QPushButton("Select");
 
-  _scalar_plot = new ScalarPlotDesc(this);
+  _scalar_plot = new ScalarPlotDesc(this, &FeatureRegistry::instance(_set));
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -96,10 +103,18 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()), this, SLOT(update_configuration()));
+
+  if (_set!=Ami::PostAnalysis)
+    _scalar_plot->post(this, SLOT(add_post()));
 }
 
 EnvClient::~EnvClient() 
 {
+  for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
+
   if (_manager) delete _manager;
   delete[] _iovload;
   delete[] _description;
@@ -125,6 +140,9 @@ void EnvClient::save(char*& p) const
     XML_insert( p, "EnvPlot", "_plots",
                 (*it)->save(p) );
   }
+  for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    XML_insert(p, "EnvPost", "_posts", (*it)->save(p) );
+  }
 
   XML_insert( p, "Control", "_control", 
               _control->save(p) );
@@ -132,9 +150,15 @@ void EnvClient::save(char*& p) const
 
 void EnvClient::load(const char*& p)
 {
-  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    delete *it;
+  }
   _plots.clear();
+  for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
@@ -149,6 +173,10 @@ void EnvClient::load(const char*& p)
       EnvPlot* plot = new EnvPlot(this, p);
       _plots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_posts") {
+      EnvPost* post = new EnvPost(p);
+      _posts.push_back(post);
     }
     else if (tag.element == "Control")
       _control->load(p);
@@ -183,13 +211,12 @@ void EnvClient::connected()
 void EnvClient::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
-  printf("Env Discovered\n");
 
   const DescEntry* e = rx.entries();
   _input = e->signature();
 
   //  iterate through discovery and print
-  FeatureRegistry::instance().insert(rx);
+  FeatureRegistry::instance(_set).insert(rx.features(_set));
 
   _manager->configure();
 }
@@ -197,11 +224,12 @@ void EnvClient::discovered(const DiscoveryRx& rx)
 int  EnvClient::configure       (iovec* iov) 
 {
   _status->set_state(Status::Configured);
-  printf("Configure\n");
 
   char* p = _request;
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->configure(p,_input,_output_signature);
+  for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,_input,_output_signature);
 
   if (p > _request+BufferSize) {
@@ -217,13 +245,11 @@ int  EnvClient::configure       (iovec* iov)
 
 int  EnvClient::configured      () 
 {
-  printf("Env Configured\n");
   return 0; 
 }
 
 void EnvClient::read_description(Socket& socket,int len)
 {
-  printf("Env Described so\n");
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -244,8 +270,6 @@ void EnvClient::read_description(Socket& socket,int len)
 
 void EnvClient::_read_description(int size)
 {
-  printf("Env Described si\n");
-
   _cds.reset();
 
   const char* payload = _description;
@@ -312,8 +336,7 @@ void EnvClient::managed(ClientManager& mgr)
 {
   _manager = &mgr;
   show();
-  printf("EnvClient connecting\n");
-  _manager->connect();
+  _manager->connect(_set==Ami::PostAnalysis);
 }
 
 void EnvClient::request_payload()
@@ -329,7 +352,7 @@ void EnvClient::request_payload()
   else if (_status->state() == Status::Requested &&
            !_throttled) {
     _throttled = true;
-    printf("EnvClient request_payload throttling\n");
+    printf("%s request_payload throttling\n",qPrintable(_title));
   }
 }
 
@@ -349,11 +372,27 @@ void EnvClient::plot()
   EnvPlot* plot = new EnvPlot(this,
 			      entry,
 			      *_filter->filter(),
-			      desc);
+			      desc,
+                              _set);
 
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+  emit changed();
+}
+
+void EnvClient::add_post()
+{
+  DescCache* desc = new DescCache(qPrintable(_source_edit->text()),
+                                  _scalar_plot->title(),
+                                  Ami::PostAnalysis);
+
+  EnvPost* post = new EnvPost(*_filter->filter(),
+                              desc,
+                              _set);
+
+  _posts.push_back(post);
 
   emit changed();
 }
@@ -368,7 +407,7 @@ void EnvClient::remove_plot(QObject* obj)
 
 void EnvClient::select_source()
 {
-  FeatureCalculator* c = new FeatureCalculator("Source");
+  FeatureCalculator* c = new FeatureCalculator("Source", FeatureRegistry::instance(_set));
   if (c->exec()==QDialog::Accepted) {
     _source_edit->setText(c->result());
   }

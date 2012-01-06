@@ -7,12 +7,14 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/CursorPlot.hh"
+#include "ami/qt/CursorPost.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 
 #include "ami/data/DescEntry.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/Expression.hh"
@@ -76,7 +78,7 @@ CursorsX::CursorsX(QWidget* parent,
   _frame    (frame),
   _clayout  (new QVBoxLayout),
   _expr     (new QLineEdit("1")),
-  _title    (new QLineEdit("Cursor plot"))
+  _force    (false)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
@@ -154,10 +156,16 @@ CursorsX::CursorsX(QWidget* parent,
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(grabB     , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
+
+  _scalar_desc->post(this, SLOT(add_post()));
 }
   
 CursorsX::~CursorsX()
 {
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 }
 
 void CursorsX::save(char*& p) const
@@ -165,7 +173,6 @@ void CursorsX::save(char*& p) const
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
   XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr ->text()) );
-  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
   XML_insert(p, "ScalarPlotDesc", "_scalar_desc", _scalar_desc->save(p) );
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
@@ -174,6 +181,9 @@ void CursorsX::save(char*& p) const
 
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "CursorPlot", "_plots", (*it)->save(p) );
+  }
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
   }
 }
 
@@ -191,13 +201,16 @@ void CursorsX::load(const char*& p)
   }
   _plots.clear();
 
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
+
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
       QtPWidget::load(p);
     else if (tag.name == "_expr")
       _expr ->setText(QtPersistent::extract_s(p));
-    else if (tag.name == "_title")
-      _title->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_scalar_desc")
       _scalar_desc->load(p);
     else if (tag.name == "_cursors") {
@@ -211,6 +224,10 @@ void CursorsX::load(const char*& p)
       CursorPlot* plot = new CursorPlot(this, p);
       _plots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_posts") {
+      CursorPost* post = new CursorPost(p);
+      _posts.push_back(post);
     }
   XML_iterate_close(CursorsX,tag);
 }
@@ -233,6 +250,8 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
 			 ConfigureRequest::Source source)
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
@@ -306,7 +325,7 @@ void CursorsX::calc()
 
 void CursorsX::plot()
 {
-  DescEntry* desc = _scalar_desc->desc(qPrintable(_title->text()));
+  DescEntry* desc = _scalar_desc->desc(0);
 
   // replace cursors with values
   // and integrate symbol with 8-bit char
@@ -334,12 +353,52 @@ void CursorsX::plot()
   expr.replace(_subtract    ,Expression::subtract());
 
   CursorPlot* plot = new CursorPlot(this,
-				    _title->text(),
+				    desc->name(),
 				    _channel,
 				    new BinMath(*desc,_scalar_desc->expr(expr)));
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+  emit changed();
+}
+
+void CursorsX::add_post()
+{
+  // replace cursors with values
+  // and integrate symbol with 8-bit char
+  QString expr = _expr->text();
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
+    QString new_expr;
+    const QString match = (*it)->name();
+    int last=0;
+    int pos=0;
+    while( (pos=expr.indexOf(match,pos)) != -1) {
+      new_expr.append(expr.mid(last,pos-last));
+      new_expr.append(QString("[%1]").arg((*it)->location()));
+      pos += match.size();
+      last = pos;
+    }
+    new_expr.append(expr.mid(last));
+    expr = new_expr;
+  }
+  expr.replace(_integrate   ,BinMath::integrate());
+  expr.replace(_range       ,BinMath::range    ());
+  expr.replace(_exponentiate,Expression::exponentiate());
+  expr.replace(_multiply    ,Expression::multiply());
+  expr.replace(_divide      ,Expression::divide());
+  expr.replace(_add         ,Expression::add());
+  expr.replace(_subtract    ,Expression::subtract());
+
+  Ami::DescCache* desc = new Ami::DescCache(_scalar_desc->title(),
+                                            _scalar_desc->title(), 
+                                            Ami::PostAnalysis);
+
+  CursorPost* post = new CursorPost(_channel,
+				    new BinMath(*desc,_scalar_desc->expr(expr)));
+  _posts.push_back(post);
+
+  delete desc;
 
   emit changed();
 }

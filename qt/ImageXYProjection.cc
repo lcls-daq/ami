@@ -4,10 +4,11 @@
 #include "ami/qt/RectangleCursors.hh"
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
+#include "ami/qt/CursorPost.hh"
 #include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/XYHistogramPlotDesc.hh"
 #include "ami/qt/XYProjectionPlotDesc.hh"
-#include "ami/qt/ScalarPlotDesc.hh"
+//#include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/ImageIntegral.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
@@ -15,6 +16,7 @@
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/BinMath.hh"
 #include "ami/data/XYHistogram.hh"
@@ -109,10 +111,16 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+
+  _integral_plot->post(this, SLOT(add_post()));
 }
   
 ImageXYProjection::~ImageXYProjection()
 {
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 }
 
 void ImageXYProjection::save(char*& p) const
@@ -140,6 +148,9 @@ void ImageXYProjection::save(char*& p) const
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
     XML_insert(p, "ZoomPlot", "_zplots", (*it)->save(p) );
   }
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
+  }
 }
 
 void ImageXYProjection::load(const char*& p) 
@@ -155,6 +166,11 @@ void ImageXYProjection::load(const char*& p)
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _zplots.clear();
+
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 
   XML_iterate_open(p,tag)
    if (tag.element == "QtPWidget")
@@ -188,6 +204,10 @@ void ImageXYProjection::load(const char*& p)
     ZoomPlot* plot = new ZoomPlot(this, p);
     _zplots.push_back(plot);
     connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_posts") {
+      CursorPost* post = new CursorPost(p);
+      _posts.push_back(post);
     }
   XML_iterate_close(ImageXYProjection,tag);
 }
@@ -226,6 +246,9 @@ void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
 		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,
+		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
 }
 
 void ImageXYProjection::setup_payload(Cds& cds)
@@ -292,6 +315,20 @@ void ImageXYProjection::plot()
     return;
   }
 
+}
+
+void ImageXYProjection::add_post()
+{
+  Ami::DescCache*  desc = new Ami::DescCache(_integral_plot->title(),
+                                             _integral_plot->title(),
+                                             Ami::PostAnalysis);
+  CursorPost* post = new CursorPost(_channel,
+				    new BinMath(*desc,_integral_plot->expression()));
+  _posts.push_back(post);
+
+  delete desc;
+
+  emit changed();
 }
 
 void ImageXYProjection::zoom()

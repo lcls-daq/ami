@@ -16,10 +16,11 @@
 using namespace Ami::Qt;
 
 
-DescProf::DescProf(const char* name) :
+DescProf::DescProf(const char* name, FeatureRegistry* registry) :
   QWidget(0), _button(new QRadioButton(name)), 
   _bins(new QLineEdit("100")), _lo(new QLineEdit("0")), _hi(new QLineEdit("1")),
-  _expr(new QLineEdit)
+  _expr(new QLineEdit),
+  _registry(registry)
 {
   QPushButton* calcB = new QPushButton("X Var");
 
@@ -53,7 +54,7 @@ DescProf::DescProf(const char* name) :
 
 void DescProf::calc()
 {
-  FeatureCalculator* c = new FeatureCalculator(tr("X Var Math"));
+  FeatureCalculator* c = new FeatureCalculator(tr("X Var Math"),*_registry);
   if (c->exec()==QDialog::Accepted)
     _expr->setText(c->result());
 
@@ -70,7 +71,7 @@ QString  DescProf::feature() const
   QString new_expr;
   {
     int pos=0;
-    const QStringList& slist = FeatureRegistry::instance().names();
+    const QStringList& slist = _registry->names();
     while(1) {
       int npos = e.size();
       const QString* spos = 0;

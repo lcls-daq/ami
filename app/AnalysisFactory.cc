@@ -9,13 +9,15 @@
 #include "ami/data/Message.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
+#include "ami/data/EntryFactory.hh"
 #include "ami/server/ServerManager.hh"
 
 using namespace Ami;
 
 
-AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
+AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
 				 ServerManager& srv,
                                  UList&         user,
                                  EventFilter&   filter) :
@@ -28,13 +30,14 @@ AnalysisFactory::AnalysisFactory(FeatureCache&  cache,
   _user      (user),
   _filter    (filter)
 {
+  EntryFactory::source(*_features[PostAnalysis]);
 }
 
 AnalysisFactory::~AnalysisFactory()
 {
 }
 
-FeatureCache& AnalysisFactory::features() { return _features; }
+std::vector<FeatureCache*>& AnalysisFactory::features() { return _features; }
 
 Cds& AnalysisFactory::discovery() { return _cds; }
 Cds& AnalysisFactory::hidden   () { return _ocds; }
@@ -52,7 +55,6 @@ void AnalysisFactory::discover ()
   _analyses.clear();
   _sem.give();
   _srv.discover(); 
-  printf("AnalysisFactory::discover complete\n");
 }
 
 void AnalysisFactory::configure(unsigned       id,
@@ -60,8 +62,6 @@ void AnalysisFactory::configure(unsigned       id,
 				const char*    payload, 
 				Cds&           cds)
 {
-  printf("AnalysisFactory::configure\n");
-
   _sem.take();
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
@@ -113,7 +113,7 @@ void AnalysisFactory::configure(unsigned       id,
       else if (req.state()==ConfigureRequest::Create) {
 	const char*  p     = reinterpret_cast<const char*>(&req+1);
 	Analysis* a = new Analysis(id, *input, req.output(),
-				   cds, _features, p);
+				   cds, *_features[req.scalars()], p);
 	_analyses.push_back(a);
       }
       else if (req.state()==ConfigureRequest::SetOpt) {
@@ -126,6 +126,14 @@ void AnalysisFactory::configure(unsigned       id,
   }
   _sem.give();
 
+  //
+  //  Reconfigure Post Analyses whenever the PostAnalysis variable cache changes
+  //    This guarantees that the post analyses are performed after the variables
+  //      they depend upon are cached.
+  //
+  if (_features[PostAnalysis]->update())
+    _srv.discover_post();
+
   _configured.give();
 }
 
@@ -136,7 +144,26 @@ void AnalysisFactory::analyze  ()
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }
+  //
+  //  Post-analyses go here
+  //
   _sem.give();
 }
 
 void AnalysisFactory::wait_for_configure() { _configured.take(); }
+
+void AnalysisFactory::remove(unsigned id)
+{
+  _sem.take();
+  AnList newlist;
+  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
+    Analysis* a = *it;
+    if (a->id() == id) {
+      delete a;
+    }
+    else
+      newlist.push_back(a);
+  }
+  _analyses = newlist;
+  _sem.give();
+}

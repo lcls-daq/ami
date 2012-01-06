@@ -2,28 +2,35 @@
 #define Ami_FeatureCache_hh
 
 #include <stdint.h>
+#include <vector>
+#include <string>
 
 namespace Ami {
+
+  enum ScalarSet { PreAnalysis, PostAnalysis, NumberOfSets };
+
   class FeatureCache {
   public:
     enum { FEATURE_NAMELEN=64 };
     FeatureCache();
     ~FeatureCache();
   public:
-    void     clear();
-    unsigned add(const char* name);
+    void     clear ();
+    unsigned add   (const char* name);
     int      lookup(const char* name) const;
+    bool     update();
   public:
     unsigned    entries() const;
-    const char* names  () const;
+    const std::vector<std::string>& names() const;
     double      cache  (int index, bool* damaged=0) const;
     void        cache  (int index, double, bool damaged=false);
+  public:
+    char*  serialize(int& len) const;
   private:
-    unsigned  _entries;
-    unsigned  _max_entries;
-    char*     _names;
-    double*   _cache;
-    uint32_t* _damaged;
+    std::vector<std::string> _names;
+    std::vector<double>      _cache;
+    std::vector<uint32_t>    _damaged;
+    bool                     _update;
   };
 };
 

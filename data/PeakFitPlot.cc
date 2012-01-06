@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
+#include "ami/data/EntryCache.hh"
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/data/Cds.hh"
@@ -30,7 +31,7 @@ namespace Ami {
     TH1FAccessor(const EntryTH1F& e) : _entry(e) {}
     double bin_value(unsigned bin,
 		     bool& valid) const 
-    { valid=true; return _entry.content(bin); }
+    { valid=true; return _entry.content(bin)/_entry.info(EntryTH1F::Normalization); }
     unsigned nbins() const { return _entry.desc().nbins(); }
     double xlow() const { return _entry.desc().xlow(); }
     double xup () const { return _entry.desc().xup (); }
@@ -71,7 +72,8 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   memcpy (_desc_buffer, &output, output.size());
 }
 
-PeakFitPlot::PeakFitPlot(const char*& p, FeatureCache& features) :
+PeakFitPlot::PeakFitPlot(const char*& p, 
+                         FeatureCache& features) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache (&features),
   _term  (0)
@@ -324,6 +326,10 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 	en->addy(y,x);
 	en->addinfo(1.,EntryScan::Normalization);
       }
+      break; }
+  case DescEntry::Cache:
+    { EntryCache* en = static_cast<EntryCache*>(_entry);
+      en->set(y,damaged);
       break; }
   case DescEntry::Waveform:
   case DescEntry::TH2F:

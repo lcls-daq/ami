@@ -5,9 +5,10 @@
 
 namespace Ami {
   namespace Qt {
+    class FeatureRegistry;
     class FeatureCalculator : public Calculator {
     public:
-      FeatureCalculator(const QString&     title);
+      FeatureCalculator(const QString&     title, FeatureRegistry&);
     public:
       QString result();
     };

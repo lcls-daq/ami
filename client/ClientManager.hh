@@ -31,7 +31,7 @@ namespace Ami {
 		  AbsClient& client);
     ~ClientManager();
   public:
-    void connect   ();  // Connect to a server group
+    void connect   (bool svc=false);  // Connect to a server group
     void disconnect();  // Disconnect from a server group
     void discover  ();
     void configure ();

@@ -14,7 +14,7 @@ namespace Ami {
     class DescScan : public QWidget {
       Q_OBJECT
     public:
-      DescScan(const char*);
+      DescScan(const char*, FeatureRegistry* =0);
     public:
       void save(char*&) const;
       void load(const char*&);

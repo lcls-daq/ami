@@ -184,7 +184,7 @@ void TdcClient::discovered(const DiscoveryRx& rx)
   printf("Tdc Discovered\n");
 
   //  iterate through discovery and print
-  FeatureRegistry::instance().insert(rx);
+  FeatureRegistry::instance().insert(rx.features());
 
   char channel_name [128];
   strcpy(channel_name ,ChannelID::name(info,channel));

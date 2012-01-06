@@ -7,6 +7,7 @@
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/FeatureCalculator.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -40,6 +41,8 @@ using namespace Ami::Qt;
 enum { _None, _Single, _Average, _Math, _Reference };
 enum { REFERENCE_BUFFER_SIZE = 0x1000 };
 
+static const unsigned NOT_INIT = (unsigned)-1;
+
 ChannelDefinition::ChannelDefinition(QWidget* parent,
 				     const QString& name, 
 				     const QStringList& names,
@@ -56,7 +59,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _transform       (new Transform(this,QString("%1 : Y Transform").arg(name),"y")),
   _math            (new ChannelMath(names)),
   _interval        (new QLineEdit),
-  _output_signature((unsigned)-1),
+  _output_signature(NOT_INIT),
   _changed         (false),
   _show            (false),
   _plot            (0),
@@ -337,13 +340,13 @@ void ChannelDefinition::setup_payload(Cds& cds)
     if (_show) 
       _frame.prototype(&entry->desc());
   }
-  else if (_output_signature>=0)
+  else if (_output_signature!=NOT_INIT)
     printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
 }
 
 void ChannelDefinition::set_scale()
 {
-  FeatureCalculator* c = new FeatureCalculator("%1 : Scale");
+  FeatureCalculator* c = new FeatureCalculator("%1 : Scale", FeatureRegistry::instance());
   if (c->exec()==QDialog::Accepted) {
     _scale->setText(c->result());
   }

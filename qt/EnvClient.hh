@@ -4,6 +4,7 @@
 #include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/FeatureCache.hh"
 
 #include <list>
 
@@ -21,6 +22,7 @@ namespace Ami {
     class Control;
     class Status;
     class EnvPlot;
+    class EnvPost;
     class ScalarPlotDesc;
     class Filter;
     class EnvClient : public Ami::Qt::AbsClient {
@@ -53,6 +55,7 @@ namespace Ami {
       void remove_plot         (QObject*);
       void select_source       ();
       void validate_source     ();
+      void add_post            ();
     signals:
       void description_changed(int);
     private:
@@ -64,6 +67,8 @@ namespace Ami {
     private:
       QString     _title;
       unsigned    _input;
+      Ami::ScalarSet _set;
+
       unsigned    _output_signature;
       char*       _request;
       char*       _description;
@@ -87,6 +92,7 @@ namespace Ami {
       ScalarPlotDesc* _scalar_plot;
 
       std::list<EnvPlot*> _plots;
+      std::list<EnvPost*> _posts;
     };
   };
 };

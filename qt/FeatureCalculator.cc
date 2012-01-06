@@ -19,12 +19,12 @@ static QStringList ops = QStringList() << _exponentiate
 
 static QStringList vops;
 
-FeatureCalculator::FeatureCalculator(const QString& name) :
+FeatureCalculator::FeatureCalculator(const QString& name, FeatureRegistry& r) :
   Calculator(name, "",
-	     FeatureRegistry::instance().names(),
+	     r.names(),
 	     vops, 
 	     ops,
-	     FeatureRegistry::instance().help())
+	     r.help())
 {
 }
 

@@ -1,31 +1,22 @@
-#ifndef AmiQt_CursorPlot_hh
-#define AmiQt_CursorPlot_hh
+#ifndef AmiQt_CursorPost_hh
+#define AmiQt_CursorPost_hh
 
-#include "ami/qt/QtPlot.hh"
-
-#include <QtCore/QString>
-
-#include "ami/data/BinMath.hh"
 #include "ami/data/ConfigureRequest.hh"
 
 namespace Ami {
   class Cds;
   class DescEntry;
+  class BinMath;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
     class CursorDefinition;
-    class QtBase;
-    class CursorPlot : public QtPlot {
-      Q_OBJECT
+    class CursorPost {
     public:
-      CursorPlot(QWidget*       parent,
-		 const QString& name,
-		 unsigned       channel,
+      CursorPost(unsigned       channel,
 		 BinMath*       desc);
-      CursorPlot(QWidget*       parent,
-		 const char*&   p);
-      ~CursorPlot();
+      CursorPost(const char*&   p);
+      ~CursorPost();
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -33,14 +24,10 @@ namespace Ami {
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
 		     const AxisInfo&, ConfigureRequest::Source);
-      void setup_payload(Cds&);
-      void update();
-      void dump(FILE*) const;
     private:
       unsigned _channel;
-      BinMath* _input;
       unsigned _output_signature;
-      QtBase*  _plot;
+      BinMath* _input;
     };
   };
 };

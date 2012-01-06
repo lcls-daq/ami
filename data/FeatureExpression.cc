@@ -40,15 +40,14 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
     while(1) {
       int npos = e.size();
       QString spos;
-      const char* p = features.names();
+      const std::vector<std::string> names = features.names();
       for(unsigned i=0; i<features.entries(); i++) {
-	QString it(p);
+	QString it(names[i].c_str());
         int np = e.indexOf(it, pos);
         if ((np >=0 && np < npos) || (np==npos && it.size()>spos.size())) {
           npos = np;
           spos = it;
         }
-	p += FeatureCache::FEATURE_NAMELEN;
       }
       if (!spos.isEmpty()) {
         expr.append(e.mid(pos,npos-pos));

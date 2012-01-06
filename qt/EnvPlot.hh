@@ -23,7 +23,8 @@ namespace Ami {
       EnvPlot(QWidget*,
 	      const QString&  name,
 	      const Ami::AbsFilter& filter,
-	      DescEntry*      desc);
+	      DescEntry*      desc,
+              Ami::ScalarSet  set);
       EnvPlot(QWidget*,const char*&);
       ~EnvPlot();
     public:
@@ -37,7 +38,8 @@ namespace Ami {
     private:
       Ami::AbsFilter* _filter;
       DescEntry* _desc;
-      
+      Ami::ScalarSet _set;
+
       unsigned _output_signature;
 
       QtBase*  _plot;

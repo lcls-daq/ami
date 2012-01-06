@@ -4,17 +4,21 @@
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
 #include "ami/qt/DescChart.hh"
+
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/PeakFitPlot.hh"
+#include "ami/qt/PeakFitPost.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/DescScan.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/PeakFitPlot.hh"
@@ -53,8 +57,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
-  _frame    (frame),
-  _title    (new QLineEdit("Peak plot"))
+  _frame    (frame)
 {
   setWindowTitle("PeakFit Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -71,9 +74,12 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   QComboBox* qtyBox = new QComboBox;
   qtyBox->addItems(q);
 
+  _title    = new QLineEdit("Peak plot");
+  QPushButton* addPostB = new QPushButton("Post");
+
   _hist   = new DescTH1F (bold(Sum (1dH)));
   _vTime  = new DescChart(bold(Mean v Time));
-  _vFeature = new DescProf (bold(Mean v Var) );
+  _vFeature = new DescProf (bold(Mean v Var) , &FeatureRegistry::instance());
   _vScan    = new DescScan (bold(Mean v Scan));
 
   _plot_grp = new QButtonGroup;
@@ -101,19 +107,21 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
     layout->addWidget(channel_box); }
   { QGroupBox* locations_box = new QGroupBox("Define PeakFit");
     locations_box->setToolTip("Define baseline value.");
-    QVBoxLayout* layout2 = new QVBoxLayout;
-    layout2->addWidget(_baseline);
-    locations_box->setLayout(layout2);
+    QVBoxLayout* layout1 = new QVBoxLayout;
+    layout1->addWidget(_baseline);
+    { QHBoxLayout* layout2 = new QHBoxLayout;
+      layout2->addWidget(new QLabel("Quantity"));
+      layout2->addWidget(qtyBox);
+      layout1->addLayout(layout2); }
+    locations_box->setLayout(layout1);
     layout->addWidget(locations_box); }
   { QGroupBox* plot_box = new QGroupBox("Plot");
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
       layout2->addWidget(new QLabel("Title"));
       layout2->addWidget(_title);
-      layout1->addLayout(layout2); }
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Quantity"));
-      layout2->addWidget(qtyBox);
+      layout2->addStretch();
+      layout2->addWidget(addPostB);
       layout1->addLayout(layout2); }
     layout1->addWidget(_hist );
     layout1->addWidget(_vTime);
@@ -134,11 +142,17 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(qtyBox    , SIGNAL(activated(int)), this, SLOT(set_quantity(int)));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
+  connect(addPostB  , SIGNAL(clicked()),      this, SLOT(add_post()));
+
   set_quantity(0);
 }
   
 PeakFit::~PeakFit()
 {
+  for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 }
 
 void PeakFit::save(char*& p) const
@@ -155,6 +169,10 @@ void PeakFit::save(char*& p) const
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakFitPlot", "_plots", (*it)->save(p) );
   }
+
+  for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    XML_insert(p, "PeakFitPost", "_posts", (*it)->save(p) );
+  }
 }
 
 void PeakFit::load(const char*& p)
@@ -164,6 +182,11 @@ void PeakFit::load(const char*& p)
     delete *it;
   }
   _plots.clear();
+
+  for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
@@ -184,6 +207,10 @@ void PeakFit::load(const char*& p)
       PeakFitPlot* plot = new PeakFitPlot(this, p);
       _plots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_posts") {
+      PeakFitPost* post = new PeakFitPost(p);
+      _posts.push_back(post);
     }
   XML_iterate_close(PeakFit,tag);
 }
@@ -206,6 +233,8 @@ void PeakFit::configure(char*& p, unsigned input, unsigned& output,
 			 ConfigureRequest::Source source)
 {
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
@@ -280,3 +309,22 @@ void PeakFit::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
+void PeakFit::add_post()
+{
+  //
+  //  Check that a post variable by the same name doesn't already exist
+  //
+
+  //
+  //  Add to the list of post variables
+  //
+  const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
+  Ami::DescCache* desc = new Ami::DescCache(name, qPrintable(_title->text()), Ami::PostAnalysis);
+  PeakFitPost* post = new PeakFitPost(_channel,
+                                      new Ami::PeakFitPlot(*desc,_baseline->value(),
+							   (Ami::PeakFitPlot::Parameter)_quantity));
+							   
+  _posts.push_back(post);
+
+  emit changed();
+}

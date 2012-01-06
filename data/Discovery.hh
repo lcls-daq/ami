@@ -1,9 +1,13 @@
 #ifndef Ami_Discovery_hh
 #define Ami_Discovery_hh
 
+#include "ami/data/DescCache.hh"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <stdint.h>
+#include <vector>
+#include <string>
 
 namespace Ami {
   class FeatureCache;
@@ -13,15 +17,16 @@ namespace Ami {
 
   class DiscoveryTx {
   public:
-    DiscoveryTx(const FeatureCache&, const Cds&);
+    DiscoveryTx(const std::vector<FeatureCache*>&, const Cds&);
     ~DiscoveryTx();
   public:
     unsigned niovs() const;
-    void     serialize(iovec*) const;
+    void     serialize(iovec*);
   private:
-    const FeatureCache& _features;
+    const std::vector<FeatureCache*>& _features;
     const Cds&          _cds;
-    mutable uint32_t    _header;
+    mutable uint32_t    _header[NumberOfSets];
+    std::vector<const char*> _cache;
   };
 
   class DiscoveryRx {
@@ -29,8 +34,7 @@ namespace Ami {
     DiscoveryRx(const char* msg, unsigned size);
     ~DiscoveryRx();
   public:
-    unsigned    features    () const;
-    const char* feature_name(unsigned i) const;
+    std::vector<std::string> features(ScalarSet =PreAnalysis) const;
     
     const Desc*      title_desc() const;
     const DescEntry* entries() const;

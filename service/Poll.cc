@@ -16,7 +16,7 @@ using namespace Ami;
 const int Step=32;
 const int BufferSize=0x100000;
 
-enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown };
+enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn };
 
 Poll::Poll(int timeout) :
   _timeout (timeout),
@@ -103,6 +103,21 @@ void Poll::bcast    (const iovec* iov, int len, int hdr)
 }
 
 //
+//  Post a message to ourselves in the polling thread
+//
+void Poll::post    (const char* msg, int size)
+{
+  printf("Poll::post\n");
+  int hdr = PostIn;
+  int iovcnt=2;
+  iovec* iov = new iovec[iovcnt];
+  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
+  iov[1].iov_base = (void*)msg; iov[1].iov_len = size;
+  _loopback->writev(iov,iovcnt);
+  delete[] iov;
+}
+
+//
 //  Should only be called before "start" or within poll thread;
 //  i.e. from processIo()
 //
@@ -146,22 +161,26 @@ int Poll::poll()
 	printf("Error reading loopback\n");
       else if (cmd==Shutdown)
 	result = 0;
-      else if (cmd==BroadcastIn || cmd==BroadcastOut) {
+      else {
 	size -= sizeof(int);
 	if (size<0)
 	  printf("Error reading bcast\n");
 	else {
 	  const char* payload = _buffer+sizeof(int);
-	  for (unsigned short n=1; n<_nfds; n++) {
-	    if (_ofd[n])
-	      if (cmd==BroadcastOut)
-		::write(_ofd[n]->fd(), payload, size);
-	      else if (!_ofd[n]->processIo(payload,size)) {
-                Fd* fd = _ofd[n];
- 		unmanage(*fd);
-                delete fd;
-              }
-	  }
+          if (cmd==BroadcastIn || cmd==BroadcastOut) {
+            for (unsigned short n=1; n<_nfds; n++) {
+              if (_ofd[n])
+                if (cmd==BroadcastOut)
+                  ::write(_ofd[n]->fd(), payload, size);
+                else if (!_ofd[n]->processIo(payload,size)) {
+                  Fd* fd = _ofd[n];
+                  unmanage(*fd);
+                  delete fd;
+                }
+            }
+          }
+          else if (cmd==PostIn)
+            processIn(payload,size);
 	}
       }
     }
@@ -183,6 +202,11 @@ int Poll::poll()
 int Poll::processTmo() 
 {
   return 1; 
+}
+
+int Poll::processIn(const char*, int)
+{
+  return 1;
 }
 
 void Poll::routine()

@@ -9,6 +9,7 @@
 class QLineEdit;
 class QButtonGroup;
 class QVBoxLayout;
+class QComboBox;
 
 #include "ami/data/ConfigureRequest.hh"
 
@@ -25,6 +26,7 @@ namespace Ami {
     class ChannelDefinition;
     class EdgeCursor;
     class PeakFitPlot;
+    class PeakFitPost;
     class DescTH1F;
     class DescProf;
     class DescScan;
@@ -51,6 +53,7 @@ namespace Ami {
       void set_quantity(int); // set the parameter
       void plot        ();   // configure the plot
       void remove_plot (QObject*);
+      void add_post    ();
     signals:
       void changed();
     private:
@@ -70,6 +73,7 @@ namespace Ami {
       DescScan*  _vScan;
 
       std::list<PeakFitPlot*> _plots;
+      std::list<PeakFitPost*> _posts;
     };
   };
 };

@@ -181,10 +181,6 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
     end_expr.append(new_expr.mid(last));
   }
 
-  printf("CursorPlot %s\n",qPrintable(expr));
-  printf("CursorPlot %s\n",qPrintable(new_expr));
-  printf("CursorPlot %s\n",qPrintable(end_expr));
-
   Ami::BinMath op(_input->output(), qPrintable(end_expr));
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,

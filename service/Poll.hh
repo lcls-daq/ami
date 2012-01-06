@@ -26,10 +26,11 @@ namespace Ami {
     int  nfds() const;
     Fd&  fds(int) const;
     void manage  (Fd&);
-    void unmanage(Fd&);
+    virtual void unmanage(Fd&);
     void bcast_in (const char*,int);
     void bcast_out(const char*,int);
     void bcast_out(const iovec*,int);
+    void post     (const char*,int);
   private:
     void bcast   (const char*,int,int);
     void bcast   (const iovec*,int,int);
@@ -40,6 +41,7 @@ namespace Ami {
     void timeout(int);
   private:
     virtual int processTmo();
+    virtual int processIn (const char*,int);
   private:
     int        _timeout;
     Task*      _task;

@@ -39,7 +39,7 @@ Server::Server(Socket*         socket,
 
 Server::~Server()
 {
-  _factory.configure(fd(),Message(0,Message::ConfigReq),0,_cds);
+  _factory.remove(fd());
   delete _socket;
   delete[] _buffer;
   delete[] _iov;

@@ -25,10 +25,12 @@ namespace Ami {
     void dont_serve();
   public:
     void discover  ();
+    void discover_post();
   public:
-    void remove    (Server*);
+    void unmanage  (Fd&);
   private:   // Poll interface
     virtual int processTmo();
+    virtual int processIn (const char*, int);
   public:    // Fd interface
     virtual int fd() const;
     virtual int processIo();

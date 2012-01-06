@@ -11,10 +11,12 @@ class QColor;
 
 namespace Ami {
   namespace Qt {
+    class FeatureRegistry;
+
     class FeatureTree : public QPushButton {
       Q_OBJECT
     public:
-      FeatureTree();
+      FeatureTree(FeatureRegistry* =0);
       FeatureTree(const QStringList&, const QStringList&, const QColor&);
       ~FeatureTree();
     public:
@@ -34,6 +36,7 @@ namespace Ami {
       QStandardItemModel _model;
       QTreeView          _view;
       QString            _entry;
+      FeatureRegistry*   _registry;
     };
   };
 };

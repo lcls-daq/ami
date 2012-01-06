@@ -4,6 +4,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
+#include "ami/qt/CursorPost.hh"
 #include "ami/qt/RPhiProjectionPlotDesc.hh"
 #include "ami/qt/ImageIntegral.hh"
 #include "ami/qt/Display.hh"
@@ -13,6 +14,7 @@
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
+#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/RPhiProjection.hh"
 #include "ami/data/FFT.hh"
@@ -101,10 +103,16 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   connect(_annulus  , SIGNAL(changed()),      this, SLOT(update_range()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+
+  _integral_plot->post(this, SLOT(add_post()));
 }
   
 ImageRPhiProjection::~ImageRPhiProjection()
 {
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 }
 
 void ImageRPhiProjection::save(char*& p) const
@@ -127,6 +135,9 @@ void ImageRPhiProjection::save(char*& p) const
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
     XML_insert( p, "CursorPlot", "_cplots", (*it)->save(p) );
   }
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
+  }
 }
 
 void ImageRPhiProjection::load(const char*& p)
@@ -138,6 +149,10 @@ void ImageRPhiProjection::load(const char*& p)
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _cplots.clear();
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+    delete *it;
+  }
+  _posts.clear();
 
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
@@ -163,6 +178,10 @@ void ImageRPhiProjection::load(const char*& p)
       CursorPlot* plot = new CursorPlot(this, p);
       _cplots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_posts") {
+      CursorPost* post = new CursorPost(p);
+      _posts.push_back(post);
     }
   XML_iterate_close(ImageRPhiProjection,tag);
 }
@@ -197,6 +216,9 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,
+		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,
 		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
 }
@@ -259,6 +281,20 @@ void ImageRPhiProjection::plot()
   default:
     break;
   }
+}
+
+void ImageRPhiProjection::add_post()
+{
+  Ami::DescCache*  desc = new Ami::DescCache(_integral_plot->title(),
+                                             _integral_plot->title(),
+                                             Ami::PostAnalysis);
+  CursorPost* post = new CursorPost(_channel,
+				    new BinMath(*desc,_integral_plot->expression()));
+  _posts.push_back(post);
+
+  delete desc;
+
+  emit changed();
 }
 
 void ImageRPhiProjection::remove_plot(QObject* obj)
