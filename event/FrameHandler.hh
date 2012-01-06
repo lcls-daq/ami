@@ -21,7 +21,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
-  private:
+  protected:
     void _calibrate(const void* payload, const Pds::ClockTime& t);
     void _configure(const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
