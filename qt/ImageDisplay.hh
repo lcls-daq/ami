@@ -19,7 +19,7 @@ namespace Ami {
 			 public Display {
       Q_OBJECT
     public:
-      ImageDisplay();
+      ImageDisplay(bool grab=true);
       ~ImageDisplay();
     public:
       void save(char*& p) const;

@@ -50,13 +50,13 @@ static void dumpCursorSize(::Qt::CursorShape shape)
 	 shape,c.width(),c.height());
 }
 
-CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row) :
+CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, bool grab) :
   _parent      ( parent ),
   _frame       ( parent.frame() ),
   _column_edit ( new CrossHairLocation ),
   _row_edit    ( new CrossHairLocation ),
   _value       ( new CrossHairLocation ),
-  _visible     ( true ),
+  _visible     ( grab ),
   _scalex      ( 1 ),
   _scaley      ( 1 )
 {
@@ -67,17 +67,21 @@ CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row) 
 //   grab_button->setIcon(QCursor(::Qt::ArrowCursor).pixmap());
 //   QPushButton* grab_button = new QPushButton(QCursor(::Qt::ArrowCursor).pixmap(),
 // 					     QString());
-  QPushButton* grab_button = new QPushButton(QChar(0x271b));
-  grab_button->setMaximumWidth(20);
-
   layout.addWidget(_column_edit, row, 1, ::Qt::AlignHCenter);
   layout.addWidget(_row_edit   , row, 2, ::Qt::AlignHCenter);
   layout.addWidget(_value      , row, 3, ::Qt::AlignHCenter);
-  layout.addWidget( grab_button, row, 4, ::Qt::AlignHCenter);
+
+  if (grab) {
+    QPushButton* grab_button = new QPushButton(QChar(0x271b));
+    grab_button->setMaximumWidth(20);
+
+    layout.addWidget( grab_button, row, 4, ::Qt::AlignHCenter);
+    
+    connect(grab_button, SIGNAL(clicked()), this, SLOT(grab_cursor()));
+  }
 
   _frame.add_marker(*this);
 
-  connect(grab_button, SIGNAL(clicked()), this, SLOT(grab_cursor()));
   connect(_column_edit, SIGNAL(editingFinished()), this, SIGNAL(changed()));
   connect(_row_edit   , SIGNAL(editingFinished()), this, SIGNAL(changed()));
 }
@@ -105,19 +109,21 @@ void CrossHair::mousePressEvent  (double x, double y)
 
 void CrossHair::draw(QImage& img) 
 {
-  if (!_visible) return;
-
   double x = _column_edit->value()/_scalex;
   double y = _row_edit   ->value()/_scaley;
   
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
   
-  unsigned jlo = unsigned(xinfo.tick(x-crosshair_size));
   unsigned jct = unsigned(xinfo.tick(x+0));
+  unsigned kct = unsigned(yinfo.tick(y+0));
+  _value->setText(QString::number(_frame.value(jct,kct)));
+
+  if (!_visible) return;
+
+  unsigned jlo = unsigned(xinfo.tick(x-crosshair_size));
   unsigned jhi = unsigned(xinfo.tick(x+crosshair_size));
   unsigned klo = unsigned(yinfo.tick(y-crosshair_size));
-  unsigned kct = unsigned(yinfo.tick(y+0));
   unsigned khi = unsigned(yinfo.tick(y+crosshair_size));
   
   _balance(jlo,jct,jhi,
@@ -129,8 +135,6 @@ void CrossHair::draw(QImage& img)
       *cc0++ = c; }
   { for(unsigned k=klo; k<=khi; k++)
       *(img.scanLine(k) + jct) = c; }
-  
-  _value->setText(QString::number(_frame.value(jct,kct)));
 }
 
 void CrossHair::layoutHeader(QGridLayout& layout)

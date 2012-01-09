@@ -17,7 +17,7 @@ using namespace Ami::Qt;
 
 enum { Pixels, Millimeters };
 
-ImageGridScale::ImageGridScale(ImageFrame& frame) :
+ImageGridScale::ImageGridScale(ImageFrame& frame, bool grab) :
   _frame    (frame),
   _scaled   (false),
   _scalex   (1),
@@ -47,8 +47,8 @@ ImageGridScale::ImageGridScale(ImageFrame& frame) :
   setLayout(layout);
 
   CrossHair::layoutHeader(*_clayout); _nrows=1;
-  _cross_hairs.push_back( new CrossHair(*this, *_clayout, _nrows++) );
-  _cross_hairs.push_back( new CrossHair(*this, *_clayout, _nrows++) );
+  _cross_hairs.push_back( new CrossHair(*this, *_clayout, _nrows++, grab) );
+  _cross_hairs.push_back( new CrossHair(*this, *_clayout, _nrows++, grab) );
 //   _delta = new CrossHairDelta(*_clayout, _nrows++,
 // 			      *_cross_hairs.front(),
 // 			      *_cross_hairs.back());
@@ -115,10 +115,13 @@ void ImageGridScale::phy_scale(bool v)
 
 void ImageGridScale::setVisible(bool v)
 {
+  /*
   for(std::list<CrossHair*>::iterator it=_cross_hairs.begin();
       it!=_cross_hairs.end(); it++)
     (*it)->setVisible(v);
+  */
   QWidget::setVisible(v);
 }
 
 ImageFrame& ImageGridScale::frame() { return _frame; }
+

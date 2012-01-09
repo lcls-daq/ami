@@ -20,7 +20,7 @@ namespace Ami {
     class ImageGridScale : public QWidget {
       Q_OBJECT
     public:
-      ImageGridScale(ImageFrame&);
+      ImageGridScale(ImageFrame&, bool grab);
       ~ImageGridScale();
     public:
       void save(char*& p) const;

@@ -20,12 +20,13 @@ namespace Ami {
 		      public ImageMarker {
       Q_OBJECT
     public:
-      CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row);
+      CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, bool grab);
       ~CrossHair();
     public:
       double column() const;
       double row   () const;
       void set_scale(double,double);
+      void disable_grab();
 
       void mousePressEvent  (double x, double y);
       void mouseMoveEvent   (double, double) {}

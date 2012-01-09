@@ -21,6 +21,12 @@
 
 using namespace Ami::Qt;
 
+//
+//  Bug in cross-hair mouse grabbing of zoomed plots.  The grid scale used by
+//  the position retrieval function isn't correct.  Don't know how to fix, so
+//  disable the mouse grabbing for this case.
+//
+
 ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         input_channel,
@@ -36,7 +42,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _y0     (y0),
   _x1     (x1),
   _y1     (y1),
-  _frame   (new ImageDisplay)
+  _frame   (new ImageDisplay(false))
 {
   setWindowTitle(name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
@@ -52,7 +58,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const char*&     p) :
   QtPWidget(parent),
   _signature(-1),
-  _frame   (new ImageDisplay)
+  _frame   (new ImageDisplay(false))
 {
   load(p);
 

@@ -35,13 +35,13 @@ using namespace Ami::Qt;
 static const double no_scale[] = {0, 1000};
 static NullTransform nullTransform;
 
-Ami::Qt::ImageDisplay::ImageDisplay() :
+Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
   QWidget(0),
   _sem   (Ami::Semaphore::FULL)
 {
   _zrange  = new ImageColorControl(this,"Z");
   _plot    = new ImageFrame(this,*_zrange);
-  _units   = new ImageGridScale(*_plot);
+  _units   = new ImageGridScale(*_plot, grab);
 
   _layout();
 }
