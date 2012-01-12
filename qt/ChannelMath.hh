@@ -26,6 +26,7 @@ namespace Ami {
 			       const Ami::AbsFilter&);
       const Ami::AbsFilter& filter() const;
       const Ami::AbsOperator& op  () const;
+      Ami::AbsOperator& op  ();
     public slots:
       void calc();
     private:

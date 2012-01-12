@@ -302,13 +302,28 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
     }
 
     _output_signature = ++output;
-    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						    source,
-						    input,
-						    _output_signature,
-						    _math->filter(),
-						    _math->op());
-    p += r.size();
+
+    ConfigureRequest* r;
+    if (_refBox) {
+      _operator = new EntryRefOp(_refBox->currentIndex());
+      _operator->next(&_math->op());
+      r = new (p) ConfigureRequest(ConfigureRequest::Create,
+                                   source,
+                                   input,
+                                   _output_signature,
+                                   _math->filter(),
+                                   *_operator);
+      _operator->next(0);
+    }
+    else {
+      r = new (p) ConfigureRequest(ConfigureRequest::Create,
+                                   source,
+                                   input,
+                                   _output_signature,
+                                   _math->filter(),
+                                   _math->op());
+    }
+    p += r->size();
     return _output_signature;
   }
   else if (_operator) {
