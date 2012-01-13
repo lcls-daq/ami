@@ -904,8 +904,16 @@ namespace CspadGeometry {
 
 using namespace Ami;
 
+static std::list<Pds::TypeId::Type> data_type_list()
+{
+  std::list<Pds::TypeId::Type> types;
+  types.push_back(Pds::TypeId::Id_CspadElement);
+  //  types.push_back(Pds::TypeId::Id_CspadElement);
+  return types;
+}
+
 CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, unsigned max_pixels) :
-  EventHandler(info, Pds::TypeId::Id_CspadElement, Pds::TypeId::Id_CspadConfig),
+  EventHandler(info, data_type_list(), Pds::TypeId::Id_CspadConfig),
   _entry(0),
   _unbinned_entry(0),
   _detector(0),

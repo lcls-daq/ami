@@ -9,18 +9,42 @@ using namespace Ami;
 EventHandler::EventHandler(const Pds::Src& info,
 			   Pds::TypeId::Type   data_type,
 			   Pds::TypeId::Type   config_type) :
-  _info       (info),
-  _data_type  (data_type)
+  _info       (info)
 {
+  _data_type  .push_back(data_type  );
   _config_type.push_back(config_type);
+}
+
+EventHandler::EventHandler(const Pds::Src&     info,
+                           const std::list<Pds::TypeId::Type>& data_type,
+                           Pds::TypeId::Type   config_type) :
+  _info       (info)
+{
+  _data_type  .insert(_data_type.begin(),
+                      data_type.begin(),
+                      data_type.end());
+  _config_type.push_back(config_type  );
 }
 
 EventHandler::EventHandler(const Pds::Src& info,
 			   Pds::TypeId::Type   data_type,
 			   const std::list<Pds::TypeId::Type>& config_type) :
-  _info       (info),
-  _data_type  (data_type)
+  _info       (info)
 {
+  _data_type  .push_back(data_type  );
+  _config_type.insert(_config_type.begin(),
+		      config_type.begin(),
+		      config_type.end());
+}
+
+EventHandler::EventHandler(const Pds::Src&     info,
+                           const std::list<Pds::TypeId::Type>& data_type,
+                           const std::list<Pds::TypeId::Type>& config_type) :
+  _info       (info)
+{
+  _data_type  .insert(_data_type.begin(),
+                      data_type.begin(),
+                      data_type.end());
   _config_type.insert(_config_type.begin(),
 		      config_type.begin(),
 		      config_type.end());

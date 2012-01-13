@@ -20,7 +20,13 @@ namespace Ami {
 		 Pds::TypeId::Type   data_type,
 		 Pds::TypeId::Type   config_type);
     EventHandler(const Pds::Src&     info,
+		 const std::list<Pds::TypeId::Type>& data_type,
+		 Pds::TypeId::Type   config_type);
+    EventHandler(const Pds::Src&     info,
 		 Pds::TypeId::Type   data_type,
+		 const std::list<Pds::TypeId::Type>& config_type);
+    EventHandler(const Pds::Src&     info,
+		 const std::list<Pds::TypeId::Type>& data_type,
 		 const std::list<Pds::TypeId::Type>& config_type);
     virtual ~EventHandler();
   public:
@@ -42,12 +48,13 @@ namespace Ami {
     virtual void         reset   () = 0;
   public:
     const Pds::Src&     info() const { return _info; }
-    const Pds::TypeId::Type&  data_type  () const { return _data_type; }
+    const Pds::TypeId::Type&  data_type() const { return _data_type.front(); }
+    const std::list<Pds::TypeId::Type>& data_types() const { return _data_type; }
     const Pds::TypeId::Type&  config_type() const { return _config_type.front(); }
     const std::list<Pds::TypeId::Type>& config_types() const { return _config_type; }
   private:
     Pds::Src                     _info;
-    Pds::TypeId::Type            _data_type;
+    std::list<Pds::TypeId::Type> _data_type;
     std::list<Pds::TypeId::Type> _config_type;
   };
 };

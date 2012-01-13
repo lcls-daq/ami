@@ -205,12 +205,21 @@ int XtcClient::process(Pds::Xtc* xtc)
       if (h->info().level() == xtc->src.level() &&
 	  (h->info().phy  () == (uint32_t)-1 ||
 	   h->info().phy  () == xtc->src.phy())) {
-	if (_seq->isEvent() && xtc->contains.id()==h->data_type()) {
-	  if (xtc->damage.value())
-	    h->_damaged();
-	  else
-	    h->_event(xtc->contains,xtc->payload(),_seq->clock());
-	  return 1;
+	if (_seq->isEvent()) {
+	  const std::list<Pds::TypeId::Type>& types = h->data_types();
+	  Pds::TypeId::Type type = xtc->contains.id();
+	  for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+              it != types.end(); it++) {
+	    if (*it == type) {
+              if (xtc->damage.value())
+                h->_damaged();
+              else
+                h->_event(xtc->contains,xtc->payload(),_seq->clock());
+            }
+            else
+              continue;
+            return 1;
+          }
 	}
 	else {
 	  const std::list<Pds::TypeId::Type>& types = h->config_types();
