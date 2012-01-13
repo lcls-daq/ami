@@ -110,7 +110,9 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _state     (Disconnected),
   _request   (0,Message::NoOp),
   _iovs      (new iovec[Step]),
+  _buffer_size(BufferSize),
   _buffer    (new char[BufferSize]),
+  _discovery_size(BufferSize),
   _discovery (new char[BufferSize]),
   _task      (new Task(TaskObject("lstn"))),
   _listen_sem(Semaphore::EMPTY),
@@ -291,9 +293,19 @@ void ClientManager::_flush_sockets(const Message& reply,
 	printf("_flush_sockets type %d from socket %d\n",
 	       r.type(), s.fd());
       }
-      s.read(_buffer,r.payload());
+      _flush_socket(s,r.payload());
     }
   }
+}
+
+void ClientManager::_flush_socket(ClientSocket& socket,
+                                  int           remaining)
+{
+  while(remaining) {
+    int sz = socket.read(_buffer,remaining < BufferSize ? 
+                         remaining : BufferSize);
+    remaining -= sz;
+  } 
 }
 
 int ClientManager::handle_client_io(ClientSocket& socket)
@@ -309,6 +321,12 @@ int ClientManager::handle_client_io(ClientSocket& socket)
 // 	 this, reply.type(), socket.fd());
 
   if (reply.type() == Message::Discover) { // unsolicited message
+    if (_discovery_size < reply.payload()) {
+      printf("ClientManager: Increasing discovery buffer size %d to %d \n",
+             _discovery_size, reply.payload());
+      delete[] _discovery;
+      _discovery = new char[_discovery_size=reply.payload()];
+    }
     int size = socket.read(_discovery,reply.payload());
     //    dump(_discovery,size);
     DiscoveryRx rx(_discovery, size);
@@ -330,18 +348,15 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     }
   }
   else {
+    //
+    //  Sink the unsolicited message
+    //
 //     printf("(%p) received id %d/%d type %d/%d\n",
 //  	   this, reply.id(),_request.id(),reply.type(),_request.type());
     switch (reply.type()) {
     case Message::Description: 
     case Message::Payload:     
-      { int remaining = reply.payload();
-	while(remaining) {
-	  int sz = socket.read(_buffer,remaining < BufferSize ? 
-			       remaining : BufferSize);
-	  remaining -= sz;
-	} 
-      }
+      _flush_socket(socket,reply.payload());
       break;
     default:          
       break;

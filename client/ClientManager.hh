@@ -46,6 +46,7 @@ namespace Ami {
     int  nconnected      () const;
   private:
     void _flush_sockets(const Message&, ClientSocket&);
+    void _flush_socket (ClientSocket&, int);
   private:
     enum State { Disconnected, Connected };
     AbsClient&      _client;
@@ -55,9 +56,11 @@ namespace Ami {
     State           _state;
     Message         _request;
     iovec*          _iovs;
+    unsigned        _buffer_size;
     char*           _buffer;
+    unsigned        _discovery_size;
     char*           _discovery;
-
+    
     Task*           _task;
     TSocket*        _listen;
     Socket*         _connect;
