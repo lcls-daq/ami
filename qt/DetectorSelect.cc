@@ -318,6 +318,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
     case Pds::DetInfo::Opal1000 : 
     case Pds::DetInfo::Phasics  :
+    case Pds::DetInfo::Timepix  :
     case Pds::DetInfo::TM6740   : 
     case Pds::DetInfo::pnCCD    :
     case Pds::DetInfo::Princeton: 

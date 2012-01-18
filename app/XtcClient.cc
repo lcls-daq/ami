@@ -17,6 +17,7 @@
 #include "ami/event/Gsc16aiHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/PhasicsHandler.hh"
+#include "ami/event/TimepixHandler.hh"
 #include "ami/event/TM6740Handler.hh"
 #include "ami/event/FccdHandler.hh"
 #include "ami/event/PnccdHandler.hh"
@@ -251,6 +252,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
       case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
+      case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,cache); break;
