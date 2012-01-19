@@ -29,8 +29,6 @@
 typedef Pds::CsPad::ElementV2 CspadElement;
 using Pds::CsPad::ElementIterator;
 
-using Pds::CsPad::ElementIterator;
-
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
 
@@ -908,7 +906,7 @@ static std::list<Pds::TypeId::Type> data_type_list()
 {
   std::list<Pds::TypeId::Type> types;
   types.push_back(Pds::TypeId::Id_CspadElement);
-  //  types.push_back(Pds::TypeId::Id_CspadElement);
+  //  types.push_back(Pds::TypeId::Id_CspadCompressedElement);
   return types;
 }
 
