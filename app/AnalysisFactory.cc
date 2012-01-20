@@ -78,6 +78,13 @@ void AnalysisFactory::configure(unsigned       id,
   const char* const end = payload + msg.payload();
   while(payload < end) {
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
+    
+    if (req.size()==0) {
+      const uint32_t* p = reinterpret_cast<const uint32_t*>(&req);
+      printf("AnalysisFactory::configure received corrupt request from id %d\n [%08x %08x %08x %08x %08x %08x]\n",
+             id, p[0], p[1], p[2], p[3], p[4], p[5] );
+      break;
+    }
 
     if (req.source() == ConfigureRequest::Summary) {
       SummaryAnalysis::instance().clear();
