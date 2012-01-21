@@ -612,8 +612,16 @@ namespace CspadMiniGeometry {
 
 using namespace Ami;
 
+static std::list<Pds::TypeId::Type> config_type_list()
+{
+  std::list<Pds::TypeId::Type> types;
+  types.push_back(Pds::TypeId::Id_CspadConfig);
+  types.push_back(Pds::TypeId::Id_Cspad2x2Config);
+  return types;
+}
+
 CspadMiniHandler::CspadMiniHandler(const Pds::DetInfo& info, FeatureCache& features, unsigned max_pixels) :
-  EventHandler(info, Pds::TypeId::Id_Cspad2x2Element, Pds::TypeId::Id_CspadConfig),
+  EventHandler(info, Pds::TypeId::Id_Cspad2x2Element, config_type_list()),
   _entry(0),
   _detector(0),
   _cache(features),
