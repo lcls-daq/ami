@@ -56,6 +56,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
 		 const char*& p) :
   QtPlot   (parent),
   _filter  (0),
+  _set     (Ami::PreAnalysis),
   _output_signature(0),
   _plot    (0)
 {
