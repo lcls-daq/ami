@@ -260,6 +260,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,cache);
         else                                 h = new CspadMiniHandler(info,cache);
         break;
+      case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler(info,cache); break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
