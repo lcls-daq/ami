@@ -44,6 +44,10 @@ void TimepixHandler::_configure(const void* payload, const Pds::ClockTime& t)
   rows    = _defRows;
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = (pixels-1)/640 + 1;
+
+  //   Fix resolution to 1 pixel
+  ppb = 1;
+
   columns = (columns+ppb-1)/ppb;
   rows    = (rows   +ppb-1)/ppb;
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
