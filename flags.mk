@@ -1,3 +1,6 @@
 include $(RELEASE_DIR)/make/sw/flags.mk
 
-DEFINES += -fopenmp
+ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
+else
+  DEFINES += -fopenmp
+endif

@@ -1,3 +1,9 @@
+ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
+qtincdir  := qt/include_64
+else
+qtincdir  := qt/include
+endif
+
 # List targets (if any) for this package
 tgtnames := ami test
 
@@ -25,13 +31,12 @@ tgtlibs_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
 tgtlibs_ami += pdsdata/fexampdata
 tgtlibs_ami += pdsdata/phasicsdata
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/client ami/app
-tgtlibs_ami += qt/QtCore
-
-# List special include directories (if any) needed by exe_a as
-# <project>/<incdir>. Note that the top level release directory is
-# already in the search path.
-# tgtincs_exe_a := prj_x/include prj_x/include/Linux
-tgtincs_ami := qt/include
+tgtincs_ami := $(qtincdir)
+ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
+  tgtlibs_ami += qt/QtCore
+else
+  tgtlibs_ami += qt/QtCore
+endif
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
