@@ -8,7 +8,7 @@ endif
 tgtnames := ami test
 
 # List source files for each target
-tgtsrcs_ami := ami.cc
+tgtsrcs_ami := ami.cc AmiApp.cc AmiApp.hh
 tgtsrcs_test := test.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
