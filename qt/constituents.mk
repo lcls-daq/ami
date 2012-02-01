@@ -5,14 +5,13 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
+#tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
+tgtnames := offline_ami
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
 
-tgtsrcs_offline_ami := FileSelect.cc FileSelect_moc.cc
-tgtsrcs_offline_ami += XtcFileClient.cc XtcFileClient_moc.cc
-tgtsrcs_offline_ami += qtami.cc
+tgtsrcs_offline_ami := XtcFileClient.cc XtcFileClient_moc.cc qtami.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
 
@@ -42,7 +41,7 @@ tgtlibs_offline_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_offline_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_offline_ami += pdsdata/gsc16aidata
 tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
-tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
+tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata pdsdata/anadata pdsdata/indexdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 

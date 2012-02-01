@@ -1,51 +1,82 @@
 #ifndef AmiQt_XtcFileClient_hh
 #define AmiQt_XtcFileClient_hh
 
+#include <QtGui/QComboBox>
+#include <QtGui/QPushButton>
+#include <QtGui/QLabel>
 #include <QtGui/QWidget>
+#include <QtGui/QCheckBox>
+
+#include "pdsdata/xtc/Dgram.hh"
+#include "pdsdata/xtc/Dgram.hh"
+#include "pdsdata/ana/XtcRun.hh"
+#include "ami/qt/QtMonitorClient.hh"
+
 #include "ami/service/Routine.hh"
+#include "ami/service/Task.hh"
+#include "ami/qt/QtMonitorClient.hh"
 
-#include <list>
+class QtMonitorServer;
 
-class QListWidget;
-class QPushButton;
-
-namespace Pds {
-  class Dgram;
-  class Xtc;
-  class Sequence;
-};
+using std::string;
+using std::list;
+using Pds::Dgram;
+using Pds::Ana::XtcRun;
 
 namespace Ami {
 
-  class Task;
-  class XtcClient;
-
   namespace Qt {
-    class FileSelect;
-    class XtcFileClient : public  QWidget,
-			  public  Routine {
+    class XtcFileClient : public QWidget, public Routine, public QtMonitorClient {
       Q_OBJECT
     public:
-      XtcFileClient(Ami::XtcClient&  client,
-		    const char* basedir);
+      XtcFileClient(const char* basedir, unsigned interface, unsigned serverGroup);
       ~XtcFileClient();
-    public:
       void routine();
-      void configure();
+      void printTransition(const Dgram* dg, const double hz = 0);
+      void addPathsFromRun(QString run);
+      void loopCheckBoxChanged(int state);
+
     public slots:
-      void select_expt(const QString&);
-      void configure_run();
+      void select_dir();
       void run();
+      void stop();
       void ready();
     signals:
       void done();
     private:
-      Ami::XtcClient&  _client;
-      const char* _basedir;
-      Task*       _task;  // thread for Qt
-      FileSelect* _file_select;
-      QListWidget* _expt_select;
-      QPushButton* _runB;
+      QString _curdir;
+      unsigned _interface;
+      unsigned _serverGroup;
+      Task* _task;  // thread for Qt
+      QPushButton* _dir_select;
+      QComboBox* _file_select;
+      QPushButton* _runButton;
+      QPushButton* _stopButton;
+      QPushButton* _exitButton;
+      QLabel* _transitionLabel;
+      QLabel* _timeLabel;
+      QLabel* _payloadSizeLabel;
+      QLabel* _damageLabel;
+      QLabel* _hzLabel;
+      //QSlider* _hzSlider;
+      QCheckBox* _loopCheckBox;
+      bool _running;
+
+
+
+
+      list<string> _paths;
+      XtcRun _run;
+      QtMonitorServer* _server;
+      bool _runIsValid;
+      bool _stopped;
+      long long int _period;
+      bool _verbose;
+      bool _veryverbose;
+      bool _skipToNextRun();
+      void _addPaths(list<string> newPaths);
+      long long int timeDiff(struct timespec* end, struct timespec* start);
+      Dgram* next();
     };
   };
 }

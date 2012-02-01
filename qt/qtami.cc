@@ -1,60 +1,15 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <dlfcn.h>
-
+#include <iostream>
+#include "ami/app/AmiApp.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
-#include "ami/app/AnalysisFactory.hh"
-#include "ami/app/EventFilter.hh"
-#include "ami/app/XtcClient.hh"
-#include "ami/server/ServerManager.hh"
-#include "ami/service/Ins.hh"
-
-#include "ami/data/FeatureCache.hh"
-#include "ami/data/UserModule.hh"
-
 #include "pdsdata/xtc/DetInfo.hh"
-
 #include <QtGui/QApplication>
 
 using namespace Ami;
+using namespace std;
 
 typedef Pds::DetInfo DI;
-
-template <class U, class C>
-static void load_syms(std::list<U*> user, char* arg)
-{
-  for(const char* p = strtok(arg,","); p!=NULL; p=strtok(NULL,",")) {
-    
-    printf("dlopen %s\n",p);
-
-    void* handle = dlopen(p, RTLD_LAZY);
-    if (!handle) break;
-
-    // reset errors
-    const char* dlsym_error;
-    dlerror();
-
-    // load the symbols
-    C* c_user = (C*) dlsym(handle, "create");
-    if ((dlsym_error = dlerror())) {
-      fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
-      break;
-    }
-          
-//     dlerror();
-//     destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
-//     if ((dlsym_error = dlerror())) {
-//       fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
-//       break;
-//     }
-
-    user.push_back( c_user() );
-  }
-}
 
 static void usage(char* progname) {
   fprintf(stderr,
@@ -70,19 +25,18 @@ int main(int argc, char* argv[]) {
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   bool offline=false;
-  const char* path = "/reg/d/pcds/amo/offline";
-  //  plug-in module
-  std::list<UserModule*> user_ana;
+  //const char* path = "/reg/d/pcds/amo/offline";
+  const char* path = "/reg/d/ana01/xpp";
+
+  //  plug-in modules
+  std::vector<char *> module_names;
 
   while ((c = getopt(argc, argv, "?hs:L:f:p:")) != -1) {
     switch (c) {
     case 's':
-      { in_addr inp;
-	if (inet_aton(optarg, &inp))
-	  serverGroup = ntohl(inp.s_addr);
-	break; }
-    case 'L': 
-      load_syms<UserModule,create_m>(user_ana,optarg);
+      serverGroup = AmiApp::parse_ip(optarg);
+    case 'L':
+      module_names.push_back(optarg);
       break;
     case 'f':
       Ami::Qt::Path::setBase(optarg);
@@ -105,35 +59,28 @@ int main(int argc, char* argv[]) {
 
   QApplication app(argc, argv);
 
-  ServerManager   srv(interface, serverGroup);
+  int partitionIndex = 0;
+  char* partitionTag = getenv("USER");
+  if (partitionTag == NULL) {
+    cerr << "The USER environment variable must be set!" << endl;
+    exit(1);
+  }
 
-  std::vector<FeatureCache*> features;
-  for(int i=0; i<Ami::NumberOfSets; i++)
-    features.push_back(new FeatureCache);
+  Ami::Qt::XtcFileClient client(path, interface, serverGroup);
+  client.show();
 
-  EventFilter     filter (user_ana, *features[Ami::PreAnalysis]);
-  AnalysisFactory factory(features, srv, user_ana, filter);
-  
-  XtcClient     myClient(features, factory, user_ana, filter, offline);
-  Ami::Qt::XtcFileClient input(myClient, path);
+  if (fork() == 0) {
+    AmiApp::run(partitionTag, serverGroup, module_names, interface, partitionIndex, offline);
+    cout << "Started AmiApp::run..." << endl;
+  }
 
-  srv.serve(factory);
-  srv.start();  // run in another thread
-  //  srv.routine();  // run in this thread
-
-  input.show();
-
-  Ami::Qt::DetectorSelect output("AMO Offline Monitoring",interface,interface,serverGroup);
+  cout << "starting DetectorSelect..." << endl;
+  Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup);
   output.show();
 
+  cout << "doing app.exec()..." << endl;
   app.exec();
+  cout << "did app.exec()..." << endl;
 
-  srv.stop();   // terminate the other thread
-  srv.dont_serve();
-
-  for(std::list<UserModule*>::iterator it=user_ana.begin(); 
-      it!=user_ana.end(); it++)
-    delete (*it);
-
-  return 1;
+  exit(0);
 }
