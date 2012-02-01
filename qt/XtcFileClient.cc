@@ -166,13 +166,14 @@ void XtcFileClient::addPathsFromRun(QString run) {
 }
 
 // Constructor that starts with an empty list of paths.
-XtcFileClient::XtcFileClient(const char* basedir, unsigned interface, unsigned serverGroup) :
+XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsigned serverGroup, const char* basedir) :
   QWidget (0,::Qt::Window),
   _curdir(basedir),
   _interface(interface),
   _serverGroup(serverGroup),
   _task(new Task(TaskObject("amiqt"))),
   _dir_select(new QPushButton("Select Directory...")),
+  _dirLabel(new QLabel(basedir)),
   _file_select(new QComboBox()),
 
   _runButton(new QPushButton("Run")),
@@ -199,6 +200,7 @@ XtcFileClient::XtcFileClient(const char* basedir, unsigned interface, unsigned s
 
   QVBoxLayout* l = new QVBoxLayout;
   l->addWidget(_dir_select);
+  l->addWidget(_dirLabel);
   l->addWidget(_file_select);
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
@@ -243,11 +245,6 @@ XtcFileClient::XtcFileClient(const char* basedir, unsigned interface, unsigned s
   // These are mandatory
   int numberOfBuffers = 4;
   unsigned sizeOfBuffers = 0x800000;
-  char* partitionTag = getenv("USER");
-  if (partitionTag == NULL) {
-    cerr << "The USER environment variable must be set!" << endl;
-    exit(1);
-  }
 
   // These are optional
   int rate = 60; // Hz

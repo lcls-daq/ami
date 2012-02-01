@@ -29,7 +29,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine, public QtMonitorClient {
       Q_OBJECT
     public:
-      XtcFileClient(const char* basedir, unsigned interface, unsigned serverGroup);
+      XtcFileClient(const char* partitionTag, unsigned interface, unsigned serverGroup, const char* basedir);
       ~XtcFileClient();
       void routine();
       void printTransition(const Dgram* dg, const double hz = 0);
@@ -49,6 +49,7 @@ namespace Ami {
       unsigned _serverGroup;
       Task* _task;  // thread for Qt
       QPushButton* _dir_select;
+      QLabel* _dirLabel;
       QComboBox* _file_select;
       QPushButton* _runButton;
       QPushButton* _stopButton;

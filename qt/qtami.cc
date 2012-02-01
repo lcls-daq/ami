@@ -3,46 +3,40 @@
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
-#include "pdsdata/xtc/DetInfo.hh"
 #include <QtGui/QApplication>
-
-using namespace Ami;
-using namespace std;
-
-typedef Pds::DetInfo DI;
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s -e <experiment name> -p <xtc path>\n"
-	  "         [-i <interface address>]\n"
+	  "Usage: %s -p <partitionTag>\n"
+	  "         [-d <xtc dir>]\n"
+	  "         [-i <interface>]\n"
 	  "         [-s <server mcast group>]\n"
 	  "         [-L <user plug-in path>]\n", progname);
 }
 
 
 int main(int argc, char* argv[]) {
-  int c;
-  unsigned interface   = 0x7f000001;
+  char* partitionTag = NULL;
+  const char* dir = "/reg/d";
+  unsigned interface = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
-  bool offline=false;
-  //const char* path = "/reg/d/pcds/amo/offline";
-  const char* path = "/reg/d/ana01/xpp";
-
-  //  plug-in modules
   std::vector<char *> module_names;
 
-  while ((c = getopt(argc, argv, "?hs:L:f:p:")) != -1) {
+  int c;
+  while ((c = getopt(argc, argv, "p:d:i:s:L:?h")) != -1) {
     switch (c) {
+    case 'p':
+      partitionTag = optarg;
+      break;
+    case 'd':
+      dir = optarg;
+      break;
+    case 'i':
+      interface = Ami::AmiApp::parse_interface(optarg);
     case 's':
-      serverGroup = AmiApp::parse_ip(optarg);
+      serverGroup = Ami::AmiApp::parse_ip(optarg);
     case 'L':
       module_names.push_back(optarg);
-      break;
-    case 'f':
-      Ami::Qt::Path::setBase(optarg);
-      break;
-    case 'p':
-      path = optarg;
       break;
     case '?':
     case 'h':
@@ -52,35 +46,22 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!interface) {
+  if (!partitionTag) {
     usage(argv[0]);
     exit(0);
   }
 
   QApplication app(argc, argv);
 
-  int partitionIndex = 0;
-  char* partitionTag = getenv("USER");
-  if (partitionTag == NULL) {
-    cerr << "The USER environment variable must be set!" << endl;
-    exit(1);
-  }
-
-  Ami::Qt::XtcFileClient client(path, interface, serverGroup);
+  Ami::Qt::XtcFileClient client(partitionTag, serverGroup, interface, dir);
   client.show();
-
   if (fork() == 0) {
-    AmiApp::run(partitionTag, serverGroup, module_names, interface, partitionIndex, offline);
-    cout << "Started AmiApp::run..." << endl;
+    const int partitionIndex = 0;
+    const bool sync = true;
+    Ami::AmiApp::run(partitionTag, serverGroup, module_names, interface, partitionIndex, sync);
   }
-
-  cout << "starting DetectorSelect..." << endl;
   Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup);
   output.show();
-
-  cout << "doing app.exec()..." << endl;
   app.exec();
-  cout << "did app.exec()..." << endl;
-
   exit(0);
 }
