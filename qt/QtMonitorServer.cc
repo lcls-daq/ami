@@ -27,12 +27,12 @@ QtMonitorServer::QtMonitorServer(const char* tag,
                                  unsigned numberofClients,
                                  unsigned sequenceLength,
                                  QtMonitorClient* client) :
-  _client(client),
   XtcMonitorServer(tag,
                    sizeofBuffers,
                    numberofEvBuffers,
                    numberofClients,
-                   sequenceLength) {
+                   sequenceLength),
+  _client(client) {
   //  sum of client queues (nEvBuffers) + clients + transitions + shuffleQ
   unsigned depth = 2*numberofEvBuffers+XtcMonitorServer::numberofTrBuffers+numberofClients;
   for(unsigned i=0; i<depth; i++)
