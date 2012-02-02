@@ -5,8 +5,8 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-#tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
-tgtnames := offline_ami
+tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
+tgtnames += offline_ami
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
