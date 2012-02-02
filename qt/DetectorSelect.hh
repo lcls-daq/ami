@@ -46,6 +46,7 @@ namespace Ami {
     public slots:
       void save_setup();
       void load_setup();
+      void load_setup(const char*);
       void print_setup();
       void default_setup();
 
@@ -63,7 +64,6 @@ namespace Ami {
       void detectors_discovered (const char*);
 
     private:
-      void                _load_setup_from_file(const char*);
       Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned, const QString&, const char*&);
       void                _connect_client(Ami::Qt::AbsClient* client);
 //       void                _update_groups();

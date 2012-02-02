@@ -50,6 +50,9 @@ class Ins
     static bool           is_multicast(int address);
     static bool           is_multicast(const Ins& );
 
+    static unsigned       parse_ip(const char*);
+    static unsigned       parse_interface(const char*);
+
     int operator==(const Ins& that)  const;
 
   protected:

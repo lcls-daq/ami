@@ -189,10 +189,10 @@ void DetectorSelect::load_setup ()
   QString fname = QFileDialog::getOpenFileName(this,"Load Setup from File (.ami)",
 					       Path::base(), "*.ami");
 
-  _load_setup_from_file(qPrintable(fname));
+  load_setup(qPrintable(fname));
 }
 
-void DetectorSelect::_load_setup_from_file(const char* fname)
+void DetectorSelect::load_setup(const char* fname)
 {
   FILE* f = fopen(fname,"r");
   if (!f) {
@@ -523,5 +523,5 @@ void DetectorSelect::autosave()
 void DetectorSelect::autoload()
 {
   QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
-  _load_setup_from_file(qPrintable(fname));
+  load_setup(qPrintable(fname));
 }

@@ -1,4 +1,5 @@
 #include "ami/app/AmiApp.hh"
+#include "ami/service/Ins.hh"
 
 using Ami::AmiApp;
 
@@ -27,10 +28,10 @@ int main(int argc, char* argv[]) {
         offline=true;
         break;
       case 'i':
-        interface = AmiApp::parse_interface(optarg);
+        interface = Ami::Ins::parse_interface(optarg);
         break; 
       case 's':
-        serverGroup = AmiApp::parse_ip(optarg);
+        serverGroup = Ami::Ins::parse_ip(optarg);
         break;
       case 'p':
         partitionTag = optarg;

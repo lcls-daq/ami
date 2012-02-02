@@ -3,6 +3,7 @@
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
+#include "ami/service/Ins.hh"
 #include <QtGui/QApplication>
 
 static void usage(char* progname) {
@@ -32,9 +33,9 @@ int main(int argc, char* argv[]) {
       dir = optarg;
       break;
     case 'i':
-      interface = Ami::AmiApp::parse_interface(optarg);
+      interface = Ami::Ins::parse_interface(optarg);
     case 's':
-      serverGroup = Ami::AmiApp::parse_ip(optarg);
+      serverGroup = Ami::Ins::parse_ip(optarg);
     case 'L':
       module_names.push_back(optarg);
       break;

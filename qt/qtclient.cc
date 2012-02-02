@@ -10,12 +10,14 @@
 
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
+#include "ami/app/AmiApp.hh"
 #include "ami/service/Ins.hh"
 
 #include <QtGui/QApplication>
 
 using namespace Ami;
 
+#if 0
 class QtAmiApp {
 public:
   static int start(string label, unsigned serverGroup, unsigned ppinterface = 0x7f000001, unsigned interface = 0x7f000001, string loadfile = "");
@@ -23,7 +25,7 @@ public:
 
 };
 
-void QtAmiApp::start(string label, unsigned serverGroup, unsigned ppinterface, unsigned interface, string loadfile)
+void QtAmiApp::start(std::string label, unsigned serverGroup, unsigned ppinterface, unsigned interface, std::string loadfile)
 {
 
     FILE* f = fopen(loadfile.c_str(),"r");
@@ -40,6 +42,7 @@ void QtAmiApp::start(string label, unsigned serverGroup, unsigned ppinterface, u
     }
   }
 }
+#endif
 
 int main(int argc, char **argv) 
 {
@@ -50,13 +53,13 @@ int main(int argc, char **argv)
 
   for(int i=0; i<argc; i++) {
     if (strcmp(argv[i],"-I")==0) {
-      ppinterface = AmiApp::parse_interface(argv[++i]);
+      ppinterface = Ins::parse_interface(argv[++i]);
     }
     else if (strcmp(argv[i],"-i")==0) {
-      interface = AmiApp::parse_interface(argv[++i]);
+      interface = Ins::parse_interface(argv[++i]);
     }
     else if (strcmp(argv[i],"-s")==0) {
-      serverGroup = AmiApp::parse_ip(argv[++i]);
+      serverGroup = Ins::parse_ip(argv[++i]);
     }
     else if (strcmp(argv[i],"-f")==0) {
       Ami::Qt::Path::setBase(argv[++i]);
@@ -68,8 +71,8 @@ int main(int argc, char **argv)
   QApplication app(argc, argv);
   Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup);
   select->show();
-  if (loadfile != "") {
-    select->_load_setup_from_file(loadfile.c_str());
+  if (loadfile) {
+    select->load_setup(loadfile);
   }
   app.exec();
 }
