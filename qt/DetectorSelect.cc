@@ -44,9 +44,10 @@ static const int MaxConfigSize = 0x100000;
 static const int BufferSize = 0x8000;
 
 DetectorSelect::DetectorSelect(const QString& label,
-			       unsigned ppinterface,
-			       unsigned interface,
-			       unsigned serverGroup) :
+                               unsigned ppinterface,
+                               unsigned interface,
+                               unsigned serverGroup,
+                               QGroupBox* guestBox) :
   QtPWidget   (0),
   _ppinterface(ppinterface),
   _interface  (interface),
@@ -64,6 +65,12 @@ DetectorSelect::DetectorSelect(const QString& label,
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   QVBoxLayout* l = new QVBoxLayout;
+
+  // Caller can add extra controls here.
+  if (guestBox) {
+    l->addWidget(guestBox);
+  }
+
   { QGroupBox* setup_box = new QGroupBox("Setup");
     QVBoxLayout* layout = new QVBoxLayout;
     QPushButton* saveB    = new QPushButton("Save");

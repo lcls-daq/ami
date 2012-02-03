@@ -15,6 +15,7 @@ class QLabel;
 class QListWidget;
 class QListWidgetItem;
 class QTimer;
+class QGroupBox;
 
 namespace Ami {
   class ClientManager;
@@ -28,9 +29,10 @@ namespace Ami {
       Q_OBJECT
     public:
       DetectorSelect(const QString&,
-		     unsigned ppinterface,
-		     unsigned interface,
-		     unsigned serverGroup);
+                     unsigned ppinterface,
+                     unsigned interface,
+                     unsigned serverGroup,
+                     QGroupBox* guestBox = NULL);
       ~DetectorSelect();
     public:
       void connected       () ;
