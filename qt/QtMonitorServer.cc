@@ -1,21 +1,8 @@
-#include "ami/qt/QtMonitorClient.hh"
+#include "ami/qt/QtMonitorServer.hh"
+#include "pdsdata/xtc/ProcInfo.hh"
 
-class QtMonitorServer : public XtcMonitorServer {
-private:
-  queue<Dgram*> _pool;
-  void _deleteDatagram(Dgram* dg);
-  QtMonitorClient* _client;
-public:
-  QtMonitorServer(const char* tag,
-                  unsigned sizeofBuffers, 
-                  unsigned numberofEvBuffers, 
-                  unsigned numberofClients,
-                  unsigned sequenceLength,
-                  QtMonitorClient* client);
-  ~QtMonitorServer();
-  XtcMonitorServer::Result events(Dgram* dg);
-  void insert(TransitionId::Value tr);
-};
+using namespace Ami::Qt;
+using namespace Pds;
 
 void QtMonitorServer::_deleteDatagram(Dgram* dg) {
   _pool.push(dg); 
