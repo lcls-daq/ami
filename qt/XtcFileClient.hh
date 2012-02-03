@@ -2,21 +2,18 @@
 #define AmiQt_XtcFileClient_hh
 
 #include <QtGui/QComboBox>
+#include <QtGui/QGroupBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QLabel>
 #include <QtGui/QWidget>
 #include <QtGui/QCheckBox>
 
 #include "pdsdata/xtc/Dgram.hh"
-#include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/ana/XtcRun.hh"
 #include "ami/qt/QtMonitorClient.hh"
-
+#include "ami/qt/QtMonitorServer.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
-#include "ami/qt/QtMonitorClient.hh"
-
-class QtMonitorServer;
 
 using std::string;
 using std::list;
@@ -29,7 +26,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine, public QtMonitorClient {
       Q_OBJECT
     public:
-      XtcFileClient(const char* partitionTag, unsigned interface, unsigned serverGroup, const char* basedir);
+      XtcFileClient(QGroupBox* groupBox, const char* partitionTag, unsigned interface, unsigned serverGroup, const char* curdir);
       ~XtcFileClient();
       void routine();
       void printTransition(const Dgram* dg, const double hz = 0);
@@ -59,13 +56,9 @@ namespace Ami {
       QLabel* _payloadSizeLabel;
       QLabel* _damageLabel;
       QLabel* _hzLabel;
-      //QSlider* _hzSlider;
+      QSlider* _hzSlider;
       QCheckBox* _loopCheckBox;
       bool _running;
-
-
-
-
       list<string> _paths;
       XtcRun _run;
       QtMonitorServer* _server;
@@ -76,6 +69,7 @@ namespace Ami {
       bool _veryverbose;
       bool _skipToNextRun();
       void _addPaths(list<string> newPaths);
+      void set_dir(QString dir);
       long long int timeDiff(struct timespec* end, struct timespec* start);
       Dgram* next();
     };

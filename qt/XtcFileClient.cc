@@ -1,38 +1,25 @@
-#include "ami/qt/XtcFileClient.hh"
-#include "ami/qt/DetectorSelect.hh"
+#include <dirent.h>
+#include <glob.h>
+#include <iostream>
+#include <string>
 
 #include <QtGui/QApplication>
 #include <QtGui/QFileDialog>
 #include <QtGui/QVBoxLayout>
 
-#include <glob.h>
-#include <string>
-#include <iostream>
-
-using namespace std;
-using Ami::Qt::XtcFileClient;
-
-
-
-
-
-
-//#include "ami/qt/XtcRunSet.hh"
-
-#include "pdsdata/app/XtcMonitorServer.hh"
+#include "ami/qt/QtMonitorServer.hh"
+#include "ami/qt/XtcFileClient.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
-#include <iostream>
-#include <glob.h>
-#include <dirent.h>
 
-using namespace Ami;
+using namespace Ami::Qt;
 using namespace Pds;
 using namespace std;
 
+// TODO:
+// 1. hz should be configurable
+
 //#define CLOCK CLOCK_PROCESS_CPUTIME_ID
 #define CLOCK CLOCK_REALTIME
-
-#include "ami/qt/QtMonitorServer.cc"
 
 static void printTransition0(const Dgram* dg) {
 #if 0
@@ -76,14 +63,6 @@ void XtcFileClient::printTransition(const Dgram* dg, const double hz) {
   sprintf(buf, "Damage: %d", dg->xtc.damage.value());
   _damageLabel->setText(buf);
 #endif
-
-  if (hz != 0) {
-    sprintf(buf, "Average Rate: %8.3f Hz", hz);
-    _hzLabel->setText(buf);
-  } else {
-    _hzLabel->setText("");
-  }
-
 }
 
 
@@ -103,7 +82,9 @@ bool XtcFileClient::_skipToNextRun() {
     cout << "Adding " << _paths.front() << endl;
     _paths.pop_front();
   }
+  cout << endl << "calling run.init()..." << endl;
   _run.init();
+  cout << endl << "done with run.init()." << endl;
   _runIsValid = true;
   return true;
 }
@@ -166,14 +147,14 @@ void XtcFileClient::addPathsFromRun(QString run) {
 }
 
 // Constructor that starts with an empty list of paths.
-XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsigned serverGroup, const char* basedir) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, const char* partitionTag, unsigned interface, unsigned serverGroup, const char* curdir) :
   QWidget (0,::Qt::Window),
-  _curdir(basedir),
+  _curdir(curdir),
   _interface(interface),
   _serverGroup(serverGroup),
   _task(new Task(TaskObject("amiqt"))),
   _dir_select(new QPushButton("Select Directory...")),
-  _dirLabel(new QLabel(basedir)),
+  _dirLabel(new QLabel(curdir)),
   _file_select(new QComboBox()),
 
   _runButton(new QPushButton("Run")),
@@ -185,10 +166,7 @@ XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsig
   _payloadSizeLabel(new QLabel("")),
   _damageLabel(new QLabel("")),
 
-  _hzLabel(new QLabel("???")),
-  /*
   _hzSlider(new QSlider(::Qt::Horizontal)),
-  */
   _loopCheckBox(new QCheckBox("Loop over run")),
 
   _running(false),
@@ -196,7 +174,8 @@ XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsig
   _runIsValid(false),
   _stopped(false)
 {
-  //  _hzSlider->setRange(1, 120);
+  set_dir(QString(_curdir));
+  _hzSlider->setRange(1, 120);
 
   QVBoxLayout* l = new QVBoxLayout;
   l->addWidget(_dir_select);
@@ -219,19 +198,20 @@ XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsig
   _timeLabel->setFont(qfont);
   _payloadSizeLabel->setFont(qfont);
   _damageLabel->setFont(qfont);
-  _hzLabel->setFont(qfont);
 
   l->addWidget(_transitionLabel);
   l->addWidget(_timeLabel);
   l->addWidget(_payloadSizeLabel);
   l->addWidget(_damageLabel);
-  l->addWidget(_hzLabel);
 
   l->addWidget(_loopCheckBox);
 
-  setLayout(l);
-
-
+  groupBox->setLayout(l);
+#if 0
+  //  l->addWidget(groupBox);
+#else
+  //  setLayout(l);
+#endif
 
   connect(_dir_select, SIGNAL(clicked()), this, SLOT(select_dir()));
   connect(_runButton, SIGNAL(clicked()), this, SLOT(run()));
@@ -239,8 +219,6 @@ XtcFileClient::XtcFileClient(const char* partitionTag, unsigned interface, unsig
   connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
   connect(_loopCheckBox, SIGNAL(stateChanged(int)), this, SLOT(loopCheckBoxChanged(int)));
   connect(this , SIGNAL(done()), this, SLOT(ready()));
-
-  cout << "~~~ setting up runSet.connect!" << endl;
 
   // These are mandatory
   int numberOfBuffers = 4;
@@ -284,36 +262,25 @@ XtcFileClient::~XtcFileClient()
   _task->destroy();
 }
 
-// TODO: would be nice if we could connect to an event such as fileSelected
-// and enabled/disable the OK button based on whether the selected directory
-// actually contains any .xtc files.
 void XtcFileClient::select_dir()
 {
-  {
-    QString dir = QFileDialog::getExistingDirectory(0, "Select Directory", _curdir, 0);
+  set_dir(QFileDialog::getExistingDirectory(0, "Select Directory", _curdir, 0));
+}
 
-    cout << "dir is now " << qPrintable(dir) << endl;
-    if (dir == "") {
-      return;
-    }
-
-
-    cout << "dir=[" << qPrintable(dir) << "]" << endl;
-    while (dir.endsWith("/")) {
-      dir.chop(1);
-      cout << "dir=[" << qPrintable(dir) << "] after chop" << endl;
-    }
-    if (dir.endsWith("/xtc")) {
-      dir.chop(4);
-      cout << "dir=[" << qPrintable(dir) << "] after -= /xtc" << endl;
-    }
-    cout << "dir=[" << qPrintable(dir) << "] at end" << endl;
-
-    cout << "dir=[" << qPrintable(dir) << "] in addPathsFromRun" << endl;
-    _curdir.clear();
-    _curdir.append(dir);
-    cout << "_curdir=[" << qPrintable(_curdir) << "] in addPathsFromRun" << endl;
+void XtcFileClient::set_dir(QString dir)
+{
+  if (dir == "") {
+    return;
   }
+  while (dir.endsWith("/")) {
+    dir.chop(1);
+  }
+  if (dir.endsWith("/xtc")) {
+    dir.chop(4);
+  }
+  _curdir.clear();
+  _curdir.append(dir);
+  _dirLabel->setText(dir);
 
   // Clear the list widget and the current run
   cout << "_curdir is " << qPrintable(_curdir) << endl;
@@ -366,6 +333,44 @@ void XtcFileClient::stop() {
   _stopped = true;
 }
 
+/*
+void XtcFileClient::configure()
+{
+  const char* fname = qPrintable(_file_select->paths().at(0));
+
+  int fd = ::open(fname,O_LARGEFILE,O_RDONLY);
+  if (fd == -1) {
+    printf("Error opening file %s : %s\n",fname,strerror(errno));
+    return;
+  }
+  else {
+    printf("Opened file %s\n",fname);
+  }
+
+  char* buffer = new char[0x800000];
+  Pds::Dgram* dg = (Pds::Dgram*)buffer;
+
+  insert_transition(dg, TransitionId::Map);
+  _client.processDgram(dg);
+
+  //  read configure transition
+  ::read(fd,dg, sizeof(Dgram));
+  if (::read(fd,dg->xtc.payload(), dg->xtc.sizeofPayload()) != dg->xtc.sizeofPayload()) 
+    printf("Unexpected eof in %s\n",fname);
+  else
+    _client.processDgram(dg);
+
+  insert_transition(dg, TransitionId::Unconfigure);
+  _client.processDgram(dg);
+
+  insert_transition(dg, TransitionId::Unmap);
+  _client.processDgram(dg);
+
+  ::close(fd);
+  delete[] buffer;
+}
+*/
+
 void XtcFileClient::routine()
 {
   _stopButton->setEnabled(true);
@@ -405,6 +410,7 @@ void XtcFileClient::routine()
 
 
 
+      /*
     Xtc* xtc = &dg->xtc;
     Level::Type level = xtc->src.level();
     const DetInfo& info = *(DetInfo*)(&xtc->src);
@@ -417,7 +423,6 @@ void XtcFileClient::routine()
         printf(", damage 0x%x", xtc->damage.value());
       }
       printf("\n");
-      /*
     } else {
       ProcInfo& info = *(ProcInfo*)(&xtc->src);
       printf("%s level contains: %s: ",Level::name(level), TypeId::name(xtc->contains.id()));
@@ -426,8 +431,8 @@ void XtcFileClient::routine()
         printf(", damage 0x%x", xtc->damage.value());
       }
       printf("\n");
-      */
     }
+      */
 
 
 
