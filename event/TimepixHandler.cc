@@ -12,8 +12,8 @@ using namespace Ami;
 TimepixHandler::TimepixHandler(const Pds::DetInfo& info) :
   EventHandler(info, Pds::TypeId::Id_TimepixData, Pds::TypeId::Id_TimepixConfig),
   _entry(0),
-  _defColumns(TIMEPIX_WIDTH),
-  _defRows   (TIMEPIX_HEIGHT)
+  _defColumns(Pds::Timepix::DataV1::Width),
+  _defRows   (Pds::Timepix::DataV1::Height)
 {
 }
 
@@ -66,15 +66,44 @@ void _fill(const Pds::Timepix::DataV1& f, EntryImage& entry)
 {
   const DescImage& desc = entry.desc();
 
+  T destVal;
+  unsigned destX, destY;
   const T* d = reinterpret_cast<const T*>(f.data());
-  for(unsigned j=0; j<f.height(); j++) {
+  for(unsigned j=0; j<2*f.height(); j++) {
     unsigned iy = desc.ppybin()==2 ? j>>1 : j;
-    if (desc.ppxbin()==2)
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k>>1, iy);
-    else
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k, iy);
+    for(unsigned k=0; k<f.width()/2; k++, d++) {
+      // display error pixels as 0
+      destVal = (*d > Pds::Timepix::DataV1::MaxPixelValue) ? 0 : *d;
+
+      // map pixels from 256x1024 to 512x512
+      switch (iy / 256) {
+        case 0:
+          destX = iy;
+          destY = 511 - k;
+          break;
+        case 1:
+          destX = iy - 256;
+          destY = 255 - k;
+          break;
+        case 2:
+          destX = 1023 - iy;
+          destY = k;
+          break;
+        case 3:
+          destX = 1023 + 256 - iy;
+          destY = k + 256;
+          break;
+        default:
+          // error
+          destX = destY = 0;  // suppress warning
+          break;
+      }
+      if (desc.ppxbin()==2) {
+        entry.addcontent(destVal, destX>>1, destY);
+      } else {
+        entry.addcontent(destVal, destX, destY);
+      }
+    }
   }
 
   //  entry.info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
@@ -89,10 +118,8 @@ void TimepixHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
-  if (f.depth_bytes()==2)
-    _fill<uint16_t>(f,*_entry);
-  else
-    _fill<uint8_t >(f,*_entry);
+  // f.depth_bytes()==2
+  _fill<uint16_t>(f,*_entry);
 
   _entry->valid(t);
 }
