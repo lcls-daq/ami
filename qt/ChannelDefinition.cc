@@ -12,6 +12,7 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
 #include "ami/data/Average.hh"
+#include "ami/data/Variance.hh"
 #include "ami/data/Single.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -38,7 +39,7 @@
 
 using namespace Ami::Qt;
 
-enum { _None, _Single, _Average, _Math, _Reference };
+enum { _None, _Single, _Average, _Variance, _Math, _Reference };
 enum { REFERENCE_BUFFER_SIZE = 0x1000 };
 
 static const unsigned NOT_INIT = (unsigned)-1;
@@ -69,16 +70,18 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _plot_grp = new QButtonGroup;
-  QRadioButton* noneB    = new QRadioButton(bold(None));  
-  QRadioButton* singleB  = new QRadioButton(bold(Single));  
-  QRadioButton* averageB = new QRadioButton(bold(Averaged));
-  QRadioButton* mathB    = new QRadioButton(bold(Math));
-  QRadioButton* refB     = new QRadioButton(bold(Reference));
-  _plot_grp->addButton(noneB   , _None); 
-  _plot_grp->addButton(singleB , _Single); 
-  _plot_grp->addButton(averageB, _Average);
-  _plot_grp->addButton(mathB   , _Math);
-  _plot_grp->addButton(refB    , _Reference);
+  QRadioButton* noneB     = new QRadioButton(bold(None));  
+  QRadioButton* singleB   = new QRadioButton(bold(Single));  
+  QRadioButton* averageB  = new QRadioButton(bold(Averaged));
+  QRadioButton* varianceB = new QRadioButton(bold(Variance));
+  QRadioButton* mathB     = new QRadioButton(bold(Math));
+  QRadioButton* refB      = new QRadioButton(bold(Reference));
+  _plot_grp->addButton(noneB    , _None); 
+  _plot_grp->addButton(singleB  , _Single); 
+  _plot_grp->addButton(averageB , _Average);
+  _plot_grp->addButton(varianceB, _Variance);
+  _plot_grp->addButton(mathB    , _Math);
+  _plot_grp->addButton(refB     , _Reference);
   refB->setEnabled(false);
 
   new QIntValidator(_interval);
@@ -110,11 +113,11 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
       layout->addLayout(layout1); }
     layout->addWidget(noneB);
     layout->addWidget(singleB);
-    { QHBoxLayout* layout1 = new QHBoxLayout;
-      layout1->addWidget(averageB);
-      layout1->addStretch();
-      layout1->addWidget(new QLabel("Events"));
-      layout1->addWidget(_interval);
+    { QGridLayout* layout1 = new QGridLayout;
+      layout1->addWidget(averageB ,0,0);
+      layout1->addWidget(varianceB,1,0);
+      layout1->addWidget(new QLabel("Events"),0,1,2,1);
+      layout1->addWidget(_interval,0,2,2,1);
       layout->addLayout(layout1); }
     { QHBoxLayout* layout1 = new QHBoxLayout;
       layout1->addWidget(mathB);
@@ -272,6 +275,14 @@ void ChannelDefinition::apply()
     }
     else
       _operator = new Average(_interval->text().toInt(),scale);
+    break;
+  case _Variance    : 
+    if (_refBox) {
+      _operator = new EntryRefOp(_refBox->currentIndex());
+      _operator->next(new Variance(_interval->text().toInt(),scale));
+    }
+    else
+      _operator = new Variance(_interval->text().toInt(),scale);
     break;
   case _Reference:
     _operator = new Reference(qPrintable(_ref_file)); break;

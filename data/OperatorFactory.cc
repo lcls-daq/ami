@@ -2,6 +2,7 @@
 
 #include "ami/data/Single.hh"
 #include "ami/data/Average.hh"
+#include "ami/data/Variance.hh"
 #include "ami/data/Integral.hh"
 #include "ami/data/Reference.hh"
 #include "ami/data/EntryRefOp.hh"
@@ -47,6 +48,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   switch(type) {
   case AbsOperator::Single    : o = new Single    (p,input,_f); break;
   case AbsOperator::Average   : o = new Average   (p,input,_f); break;
+  case AbsOperator::Variance  : o = new Variance  (p,input,_f); break;
   case AbsOperator::Mean      :
   case AbsOperator::Integral  : o = new Integral  (p,input); break;
   case AbsOperator::Reference : o = new Reference (p,input); break;
