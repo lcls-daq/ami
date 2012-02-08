@@ -39,7 +39,7 @@ AcqWaveformHandler::~AcqWaveformHandler()
 {
 }
 
-unsigned AcqWaveformHandler::nentries() const { return _nentries>1 ? _nentries+1 : 1; }
+unsigned AcqWaveformHandler::nentries() const { return _nentries>1 ? _nentries+1 : _nentries; }
 
 const Entry* AcqWaveformHandler::entry(unsigned i) const 
 {
