@@ -1,72 +1,95 @@
-#include <iostream>
-#include "ami/app/AmiApp.hh"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <dlfcn.h>
+
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
+#include "ami/app/AnalysisFactory.hh"
+#include "ami/app/EventFilter.hh"
+#include "ami/app/XtcClient.hh"
+#include "ami/server/ServerManager.hh"
 #include "ami/service/Ins.hh"
-#include "ami/service/Routine.hh"
-#include "ami/service/Task.hh"
+
+#include "ami/data/FeatureCache.hh"
+#include "ami/data/UserModule.hh"
+
+#include "pdsdata/xtc/DetInfo.hh"
+
 #include <QtGui/QApplication>
-#include <QtGui/QGroupBox>
+
+using namespace Ami;
+
+typedef Pds::DetInfo DI;
+
+template <class U, class C>
+static void load_syms(std::list<U*> user, char* arg)
+{
+  for(const char* p = strtok(arg,","); p!=NULL; p=strtok(NULL,",")) {
+    
+    printf("dlopen %s\n",p);
+
+    void* handle = dlopen(p, RTLD_LAZY);
+    if (!handle) break;
+
+    // reset errors
+    const char* dlsym_error;
+    dlerror();
+
+    // load the symbols
+    C* c_user = (C*) dlsym(handle, "create");
+    if ((dlsym_error = dlerror())) {
+      fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
+      break;
+    }
+          
+//     dlerror();
+//     destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
+//     if ((dlsym_error = dlerror())) {
+//       fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
+//       break;
+//     }
+
+    user.push_back( c_user() );
+  }
+}
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s -p <partitionTag>\n"
-	  "         [-d <xtc dir>]\n"
-	  "         [-i <interface>]\n"
+	  "Usage: %s -p <xtc path>\n"
+	  "         [-i <interface address>]\n"
 	  "         [-s <server mcast group>]\n"
 	  "         [-L <user plug-in path>]\n", progname);
 }
 
-class AmiRoutine : public Ami::Routine {
-private:
-  char* _partitionTag;
-  unsigned _serverGroup;
-  std::vector<char *>& _module_names;
-  unsigned _interface;
-
-public:
-  AmiRoutine(char* partitionTag,
-             unsigned serverGroup,
-             std::vector<char *>& module_names,
-             unsigned interface) :
-    _partitionTag(partitionTag),
-    _serverGroup(serverGroup),
-    _module_names(module_names),
-    _interface(interface) {
-  }
-
-  void routine() {
-    const int partitionIndex = 0;
-    const bool sync = true;
-    std::cout << "AmiApp::run starting..." << std::endl;
-    Ami::AmiApp::run(_partitionTag, _serverGroup, _module_names, _interface, partitionIndex, sync);
-    std::cout << "AmiApp::run done..." << std::endl;
-  }
-};
 
 int main(int argc, char* argv[]) {
-  char* partitionTag = NULL;
-  const char* dir = "/reg/d";
-  unsigned interface = 0x7f000001;
-  unsigned serverGroup = 0xefff2000;
-  std::vector<char *> module_names;
-
   int c;
-  while ((c = getopt(argc, argv, "p:d:i:s:L:?h")) != -1) {
+  unsigned interface   = 0x7f000001;
+  unsigned serverGroup = 0xefff2000;
+  bool offline=false;
+  //const char* path = "/reg/d/pcds/amo/offline";
+  const char* path = "/reg/neh/home/jbarrera/ana01/sxr/sxr13910";
+  //  plug-in module
+  std::list<UserModule*> user_ana;
+
+  while ((c = getopt(argc, argv, "?hs:L:f:p:")) != -1) {
     switch (c) {
-    case 'p':
-      partitionTag = optarg;
-      break;
-    case 'd':
-      dir = optarg;
-      break;
-    case 'i':
-      interface = Ami::Ins::parse_interface(optarg);
     case 's':
-      serverGroup = Ami::Ins::parse_ip(optarg);
-    case 'L':
-      module_names.push_back(optarg);
+      { in_addr inp;
+	if (inet_aton(optarg, &inp))
+	  serverGroup = ntohl(inp.s_addr);
+	break; }
+    case 'L': 
+      load_syms<UserModule,create_m>(user_ana,optarg);
+      break;
+    case 'f':
+      Ami::Qt::Path::setBase(optarg);
+      break;
+    case 'p':
+      path = optarg;
       break;
     case '?':
     case 'h':
@@ -76,27 +99,42 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!partitionTag) {
+  if (!interface) {
     usage(argv[0]);
     exit(0);
   }
 
-  // Start AmiApp in the background.
-  Ami::Task* amiTask = new Ami::Task(Ami::TaskObject("AmiThread"));
-  AmiRoutine amiRoutine = AmiRoutine(partitionTag, serverGroup, module_names, interface);
-  amiTask->call(&amiRoutine);
+  QApplication app(argc, argv);
+
+  ServerManager srv(interface, serverGroup);
+
+  std::vector<FeatureCache*> features;
+  for(unsigned i=0; i<Ami::NumberOfSets; i++) {
+    features.push_back(new FeatureCache);
+  }
+  EventFilter filter(user_ana,*features[PostAnalysis]);
+  AnalysisFactory factory(features, srv, user_ana, filter);
+  
+  srv.serve(factory);
+  srv.start();  // run in another thread
 
   // Start the DetectorSelect GUI.
-  QApplication app(argc, argv);
   QGroupBox* groupBox = new QGroupBox("Offline");
   Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
   output.show();
 
   // Start the XtcFileClient inside of the DetectorSelect GUI.
-  Ami::Qt::XtcFileClient client(groupBox, partitionTag, serverGroup, interface, dir);
-  //client.show();
+  XtcClient myClient(features, factory, user_ana, filter, offline);
+  Ami::Qt::XtcFileClient input(groupBox, myClient, path);
+
   app.exec();
 
-  amiTask->destroy();
-  exit(0);
+  srv.stop();   // terminate the other thread
+  srv.dont_serve();
+
+  for (std::list<UserModule*>::iterator it=user_ana.begin(); it!=user_ana.end(); it++) {
+    delete (*it);
+  }
+
+  return 1;
 }
