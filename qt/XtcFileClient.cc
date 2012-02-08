@@ -234,37 +234,14 @@ void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
 
 static void dump(Dgram* dg)
 {
-  Dgram dg0 = *dg;
-  dg = &dg0;
-  //cout << "DG.### " << dg << endl;
   char buff[128];
-
-  Pds::Sequence* sequencePtr = &dg->seq;
-  //cout << "SEQ.### " << sequencePtr << endl;
-
-#if 1
-  const Pds::ClockTime* clockTimePtr = &sequencePtr->clock();
-  //cout << "clockTimePtr.### " << clockTimePtr << endl;
-
-  const uint32_t* secondsPtr = &clockTimePtr->_high;
-  cout << "secondsPtr.### " << secondsPtr << endl;
-  const uint32_t seconds = *secondsPtr;
-  //cout << "seconds.### " << seconds << endl;
-
-
-  //  unsigned nanoseconds = clockTimePtr->nanoseconds();
-#endif
-
   time_t t = dg->seq.clock().seconds();
-
   strftime(buff,128,"%H:%M:%S",localtime(&t));
-#if 0
   printf("%s %08x/%08x %s extent %x damage %x\n",
    buff,
    dg->seq.stamp().fiducials(),dg->seq.stamp().vector(),
    Pds::TransitionId::name(dg->seq.service()),
    dg->xtc.extent, dg->xtc.damage.value());
-#endif
 }
 
 
@@ -385,9 +362,9 @@ void XtcFileClient::routine()
       }
       */
       _transitionLabel->setText(TransitionId::name(dg->seq.service()));
-      Dgram dg0 = *dg;
+      Dgram dg0 = *dg; // sanity check
       dgCount++;
-      //dump(dg);
+      dump(dg);
       _client.processDgram(dg);
 
 
