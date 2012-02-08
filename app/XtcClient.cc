@@ -104,8 +104,18 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
-    for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++)
-      (*it)->reset();
+    for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++) {
+      EventHandler* handler = *hit;
+      handler->reset();
+      if (handler->nentries() != 0) {
+        printf("Warning: after reset, handler->nentries() = %d for handler %p\n", handler->nentries(), handler);
+        const std::list<Pds::TypeId::Type>& types = handler->config_types();
+        for (std::list<Pds::TypeId::Type>::const_iterator it=types.begin(); it != types.end(); it++) {
+          const Pds::TypeId::Type& type = *it;
+          printf("(handler %p type %s)\n", handler, Pds::TypeId::name(type));
+        }
+      }
+    }
 
     _filter.reset();
     _filter.configure(dg);
