@@ -10,7 +10,6 @@
 
 #include "ami/qt/XtcFileClient.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
-//#include "pdsdata/ana/XtcSlice.hh"
 #include "pdsdata/ana/XtcRun.hh"
 
 using namespace Ami::Qt;
@@ -43,6 +42,22 @@ void XtcFileClient::printTransition(const Dgram* dg, double& start, const double
   time_t time = (time_t) clock.seconds();
   char date[256];
   strcpy(date, ctime(&time));
+
+#if 0
+static void dump(Dgram* dg)
+{
+  char buff[128];
+  time_t t = dg->seq.clock().seconds();
+  strftime(buff,128,"%H:%M:%S",localtime(&t));
+  printf("%s %08x/%08x %s extent %x damage %x\n",
+   buff,
+   dg->seq.stamp().fiducials(),dg->seq.stamp().vector(),
+   Pds::TransitionId::name(dg->seq.service()),
+   dg->xtc.extent, dg->xtc.damage.value());
+}
+#endif
+
+
   date[strlen(date) - 1] = '\0';
   sprintf(buf, "Clock: %s (start + %.3fs)", date, now - start);
   _clockLabel->setText(buf);
@@ -145,11 +160,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   connect(_runButton, SIGNAL(clicked()), this, SLOT(run()));
   connect(_stopButton, SIGNAL(clicked()), this, SLOT(stop()));
   connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
-
-  // XXX connect(_run_list, SIGNAL(run_selected()), this, SLOT(configure_run()));
-
-  // TODO: hz should be configurable
-  _hz = 60;
+  connect(_run_list, SIGNAL(currentIndexChanged(int)), this, SLOT(select_run(int)));
 }
 
 XtcFileClient::~XtcFileClient()
@@ -157,8 +168,26 @@ XtcFileClient::~XtcFileClient()
   _task->destroy();
 }
 
-void XtcFileClient::select_run()
+static void d_sleep(double seconds) {
+  long long int nanos = (long long int)(1.e9 * seconds);
+  timespec sleepTime;
+  const long long int billion = 1000 * 1000 * 1000;
+  sleepTime.tv_sec = nanos / billion;
+  sleepTime.tv_nsec = nanos % billion;
+  if (nanosleep(&sleepTime, NULL) < 0) {
+    perror("nanosleep");
+  }
+}
+
+void XtcFileClient::select_run(int index)
 {
+  _stopped = true;
+  if (_running) {
+    cout << "Waiting for stop..." << endl;
+    while (_running) {
+      d_sleep(0.2);
+    }
+  }
   configure();
 }
 
@@ -232,41 +261,46 @@ void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
   _client.processDgram(&dg);
 }
 
-static void dump(Dgram* dg)
-{
-  char buff[128];
-  time_t t = dg->seq.clock().seconds();
-  strftime(buff,128,"%H:%M:%S",localtime(&t));
-  printf("%s %08x/%08x %s extent %x damage %x\n",
-   buff,
-   dg->seq.stamp().fiducials(),dg->seq.stamp().vector(),
-   Pds::TransitionId::name(dg->seq.service()),
-   dg->xtc.extent, dg->xtc.damage.value());
-}
-
-
-
+// XXX use XtcRun for this as well?
 void XtcFileClient::configure()
 {
   QStringList files;
   getPathsFromRun(files, _run_list->currentText());
   const char* fname = qPrintable(files.first());
+  printf("XtcFileClient::configure: reading configuration from file %s\n", fname);
 
   int fd = ::open(fname, O_LARGEFILE, O_RDONLY);
   if (fd == -1) {
-    printf("Error opening file %s : %s\n",fname,strerror(errno));
+    printf("XtcFileClient::configure: error opening file %s : %s\n",fname,strerror(errno));
     return;
   }
 
-  printf("Reading configuration from file %s\n", fname);
-  insertTransition(TransitionId::Map);
-
   //  read configure transition
-  ::read(fd, _dg, sizeof(Dgram));
-  if (::read(fd, _dg->xtc.payload(), _dg->xtc.sizeofPayload()) != _dg->xtc.sizeofPayload()) {
-    printf("Unexpected eof in %s\n",fname);
+  int size = sizeof(Dgram);
+  int rv = ::read(fd, _dg, size);
+  if (rv != size) {
+    printf("XtcFileClient::configure: error reading header from file %s: ", fname);
+    if (rv == -1) {
+      printf("%s\n", strerror(errno));
+    } else {
+      printf("expected %d, got %d\n", size, rv);
+    }
+    return;
   }
 
+  size = _dg->xtc.sizeofPayload();
+  rv = ::read(fd, _dg->xtc.payload(), size);
+  if (rv != size) {
+    printf("XtcFileClient::configure: error reading payload from file %s: ", fname);
+    if (rv == -1) {
+      printf("%s\n", strerror(errno));
+    } else {
+      printf("expected %d, got %d\n", size, rv);
+    }
+    return;
+  }
+
+  insertTransition(TransitionId::Map);
   _client.processDgram(_dg);
   insertTransition(TransitionId::Unconfigure);
   insertTransition(TransitionId::Unmap);
@@ -320,6 +354,8 @@ void XtcFileClient::routine()
 
     insertTransition(TransitionId::Map);
 
+    double lastPrintTime = 0.0;
+
     while (! _stopped) {
       Dgram* dg = NULL;
       int slice = -1;
@@ -341,15 +377,6 @@ void XtcFileClient::routine()
         cout << "*** end of run ***" << endl;
         break;
       }
-      /*
-      if (dg->seq.service() == TransitionId::EndCalibCycle) {
-        cout << "Skipping dangerous EndCalibCycle" << endl;
-        continue;
-      }
-      */
-
-
-
       //cout << "TransitionId = " << TransitionId::name(dg->seq.service()) << endl;
 
 
@@ -364,32 +391,34 @@ void XtcFileClient::routine()
       _transitionLabel->setText(TransitionId::name(dg->seq.service()));
       Dgram dg0 = *dg; // sanity check
       dgCount++;
-      dump(dg);
+      //dump(dg);
       _client.processDgram(dg);
 
 
       if (dg->seq.service() == TransitionId::L1Accept) {
         double now = getTimeAsDouble();
         double deltaSec = now - runStart;
-        //cout << "now = " << now << " runStart=" << runStart << " deltaSec=" << deltaSec << endl;
         double effectiveHz = dgCount / deltaSec;
-        //cout << "effective hz = " << effectiveHz << " (" << dgCount << " / " << deltaSec << ")" << endl;
 
-        printTransition(dg, start, effectiveHz);
+        if (lastPrintTime < now - 0.1) {
+          //cout << "now = " << now << " runStart=" << runStart << " deltaSec=" << deltaSec << endl;
+          //cout << "effective hz = " << effectiveHz << " (" << dgCount << " / " << deltaSec << ")" << endl;
 
-        if (_hz != 0) {
-          double desiredDeltaSec = dgCount / (double) _hz;
+          printTransition(dg, start, effectiveHz);
+          lastPrintTime = now;
+        }
+
+        int hz = _hzSpinBox->value();
+        if (hz != 0) {
+          double desiredDeltaSec = dgCount / (double) hz;
+          //cout << "hz=" << hz << " desiredDeltaSec = " << desiredDeltaSec << endl;
           double stallSec = desiredDeltaSec - deltaSec;
+          if (stallSec > 2.0) {
+            stallSec = 2.0;
+          }
           if (stallSec > 0.0) {
             //cout << "Need to stall for " << stallSec << " seconds." << endl;
-            long long int nanos = (long long int)(1.e9 * stallSec);
-            timespec sleepTime;
-            const long long int billion = 1000 * 1000 * 1000;
-            sleepTime.tv_sec = nanos / billion;
-            sleepTime.tv_nsec = nanos % billion;
-            if (nanosleep(&sleepTime, NULL) < 0) {
-              perror("nanosleep");
-            }
+            d_sleep(stallSec);
           }
         }
       }

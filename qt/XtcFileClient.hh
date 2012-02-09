@@ -31,7 +31,6 @@ namespace Ami {
       XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir);
       ~XtcFileClient();
       void routine();
-      void NEW_routine();
       void insertTransition(Pds::TransitionId::Value transition);
       void printTransition(const Dgram* dg, double& start, const double effectiveHz);
       void getPathsFromRun(QStringList& list, QString run);
@@ -39,7 +38,7 @@ namespace Ami {
 
     public slots:
       void select_dir();
-      void select_run();
+      void select_run(int);
       void run();
       void stop();
     private:
@@ -68,7 +67,6 @@ namespace Ami {
       XtcRun _run;
       bool _runIsValid;
       bool _stopped;
-      int _hz;
       bool _verbose;
       bool _veryverbose;
       bool _skipToNextRun();
