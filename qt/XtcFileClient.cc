@@ -18,8 +18,7 @@ using namespace std;
 
 void XtcFileClient::printTransition(Pds::TransitionId::Value transition) {
   if (_lastTransition != transition) {
-    cout << "$$$ " << TransitionId::name(transition) << endl;
-    _transitionLabel->setText(TransitionId::name(transition));
+    cout << ">>> " << TransitionId::name(transition) << endl;
     _lastTransition = transition;
   }
 }
@@ -30,6 +29,10 @@ static double getTimeAsDouble() {
   return ts.tv_sec + ts.tv_nsec / 1.e9;
 }
 
+static double getClockTimeAsDouble(ClockTime& clockTime) {
+  return clockTime.seconds() + clockTime.nanoseconds() / 1.e9;
+}
+
 void XtcFileClient::printDgram(const Dgram* dg) {
   char buf[256];
 
@@ -37,13 +40,28 @@ void XtcFileClient::printDgram(const Dgram* dg) {
   double deltaSec = now - _runStart;
   double effectiveHz = _dgCount / deltaSec;
 
-  sprintf(buf, "Time: %8d/%8d", dg->seq.stamp().fiducials(), dg->seq.stamp().ticks());
+  ClockTime clock = dg->seq.clock();
+  if (_clockStart == 0.0) {
+    time_t time = (time_t) clock.seconds();
+    char date[256];
+    strcpy(date, ctime(&time));
+    date[strlen(date) - 1] = '\0';
+    sprintf(buf, "Run start: %s", date);
+    _startLabel->setText(buf);
+
+    _clockStart = getClockTimeAsDouble(clock);
+    sprintf(buf, "Datagram count: %d", _dgCount);
+    _countLabel->setText(buf);
+  } else {
+    double clockDelta = getClockTimeAsDouble(clock) - _clockStart;
+    sprintf(buf, "Datagram count: %d (start + %.3fs)", _dgCount, clockDelta);
+    _countLabel->setText(buf);
+  }
+
+  sprintf(buf, "Playback time: %.3fs\n", deltaSec);
   _timeLabel->setText(buf);
 
-  sprintf(buf, "Datagram count: %d", _dgCount);
-  _countLabel->setText(buf);
-
-  sprintf(buf, "Payload size: %8d", dg->xtc.sizeofPayload());
+  sprintf(buf, "Payload size: %8d", dg->xtc.sizeofPayload()); // XXX should be TOTAL payload size
   _payloadSizeLabel->setText(buf);
 
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
@@ -51,31 +69,6 @@ void XtcFileClient::printDgram(const Dgram* dg) {
 
   sprintf(buf, "Rate: %.0f Hz", effectiveHz);
   _hzLabel->setText(buf);
-
-  const ClockTime& clock = dg->seq.clock();
-
-  time_t time = (time_t) clock.seconds();
-  char date[256];
-  strcpy(date, ctime(&time));
-
-#if 0
-static void dump(Dgram* dg)
-{
-  char buff[128];
-  time_t t = dg->seq.clock().seconds();
-  strftime(buff,128,"%H:%M:%S",localtime(&t));
-  printf("%s %08x/%08x %s extent %x damage %x\n",
-   buff,
-   dg->seq.stamp().fiducials(),dg->seq.stamp().vector(),
-   Pds::TransitionId::name(dg->seq.service()),
-   dg->xtc.extent, dg->xtc.damage.value());
-}
-#endif
-
-
-  date[strlen(date) - 1] = '\0';
-  sprintf(buf, "Clock: %s (start + %.3fs)", date, now - _runStart);
-  _clockLabel->setText(buf);
 }
 
 void XtcFileClient::getPathsFromRun(QStringList& list, QString run) {
@@ -115,7 +108,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _stopButton(new QPushButton("Stop")),
   _exitButton(new QPushButton("Exit")),
 
-  _transitionLabel(new QLabel),
+  _startLabel(new QLabel),
   _clockLabel(new QLabel),
   _timeLabel(new QLabel),
   _countLabel(new QLabel),
@@ -125,6 +118,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
 
   _hzSpinBox(new QSpinBox),
   _loopCheckBox(new QCheckBox("Loop over run")),
+  _skipCheckBox(new QCheckBox("Skip processing")),
 
   _running(false),
   _stopped(false),
@@ -155,7 +149,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
 
   QFont qfont;
   qfont.setFixedPitch(true);
-  _transitionLabel->setFont(qfont);
+  _startLabel->setFont(qfont);
   _clockLabel->setFont(qfont);
   _timeLabel->setFont(qfont);
   _countLabel->setFont(qfont);
@@ -163,8 +157,8 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _damageLabel->setFont(qfont);
   _hzLabel->setFont(qfont);
 
-  l->addWidget(_transitionLabel);
-  l->addWidget(_clockLabel);
+  l->addWidget(_startLabel);
+  //  l->addWidget(_clockLabel);
   l->addWidget(_timeLabel);
   l->addWidget(_countLabel);
   l->addWidget(_payloadSizeLabel);
@@ -173,6 +167,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
 
   l->addWidget(_hzSpinBox);
   l->addWidget(_loopCheckBox);
+  l->addWidget(_skipCheckBox);
 
   groupBox->setLayout(l);
 
@@ -325,7 +320,16 @@ void XtcFileClient::run(bool configure_only)
   }
   run.init();
   
+
+
+
+
+
+
+
+
   _runStart = getTimeAsDouble();
+  _clockStart = 0.0;
   _dgCount = 0;
   _damageMask = 0;
   _damageCount = 0;
@@ -346,7 +350,9 @@ void XtcFileClient::run(bool configure_only)
     printTransition(transition);
 
     _dgCount++;
-    _client.processDgram(dg);
+    if (transition != TransitionId::L1Accept || ! _skipCheckBox->isChecked()) {
+      _client.processDgram(dg);
+    }
 
     uint32_t damage = dg->xtc.damage.value();
     if (damage) {
