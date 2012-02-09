@@ -1,60 +1,18 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <dlfcn.h>
-
-#include "ami/qt/XtcFileClient.hh"
-#include "ami/qt/DetectorSelect.hh"
-#include "ami/qt/Path.hh"
+#include "ami/app/AmiApp.hh"
 #include "ami/app/AnalysisFactory.hh"
 #include "ami/app/EventFilter.hh"
 #include "ami/app/XtcClient.hh"
-#include "ami/server/ServerManager.hh"
-#include "ami/service/Ins.hh"
-
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/UserModule.hh"
-
-#include "pdsdata/xtc/DetInfo.hh"
+#include "ami/qt/DetectorSelect.hh"
+#include "ami/qt/Path.hh"
+#include "ami/qt/XtcFileClient.hh"
+#include "ami/server/ServerManager.hh"
+#include "ami/service/Ins.hh"
 
 #include <QtGui/QApplication>
 
 using namespace Ami;
-
-typedef Pds::DetInfo DI;
-
-template <class U, class C>
-static void load_syms(std::list<U*> user, char* arg)
-{
-  for(const char* p = strtok(arg,","); p!=NULL; p=strtok(NULL,",")) {
-    
-    printf("dlopen %s\n",p);
-
-    void* handle = dlopen(p, RTLD_LAZY);
-    if (!handle) break;
-
-    // reset errors
-    const char* dlsym_error;
-    dlerror();
-
-    // load the symbols
-    C* c_user = (C*) dlsym(handle, "create");
-    if ((dlsym_error = dlerror())) {
-      fprintf(stderr,"Cannot load symbol create: %s\n",dlsym_error);
-      break;
-    }
-          
-//     dlerror();
-//     destroy_t* d_user = (destroy_t*) dlsym(handle, "destroy");
-//     if ((dlsym_error = dlerror())) {
-//       fprintf(stderr,"Cannot load symbol destroy: %s\n",dlsym_error);
-//       break;
-//     }
-
-    user.push_back( c_user() );
-  }
-}
 
 static void usage(char* progname) {
   fprintf(stderr,
@@ -66,30 +24,29 @@ static void usage(char* progname) {
 
 
 int main(int argc, char* argv[]) {
-  int c;
-  unsigned interface   = 0x7f000001;
-  unsigned serverGroup = 0xefff2000;
-  bool offline=false;
-  //const char* path = "/reg/d/pcds/amo/offline";
+  //const char* path = "/reg/d";
   const char* path = "/reg/neh/home/jbarrera/ana01/sxr/sxr13910";
-  //  plug-in module
-  std::list<UserModule*> user_ana;
+  unsigned interface = 0x7f000001;
+  unsigned serverGroup = 0xefff2000;
+  std::list<UserModule*> userModules;
 
-  while ((c = getopt(argc, argv, "?hs:L:f:p:")) != -1) {
+  QApplication app(argc, argv);
+
+  int c;
+  while ((c = getopt(argc, argv, "p:i:s:f:L:?h")) != -1) {
     switch (c) {
-    case 's':
-      { in_addr inp;
-	if (inet_aton(optarg, &inp))
-	  serverGroup = ntohl(inp.s_addr);
-	break; }
-    case 'L': 
-      load_syms<UserModule,create_m>(user_ana,optarg);
-      break;
-    case 'f':
-      Ami::Qt::Path::setBase(optarg);
-      break;
     case 'p':
       path = optarg;
+      break;
+    case 'i':
+      interface = Ami::Ins::parse_interface(optarg);
+    case 's':
+      serverGroup = Ami::Ins::parse_ip(optarg);
+    case 'L':
+      Ami::AmiApp::load_syms<UserModule,create_m>(userModules, optarg);
+      break;
+    case 'f':
+      Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
       break;
     case '?':
     case 'h':
@@ -99,42 +56,36 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!interface) {
-    usage(argv[0]);
-    exit(0);
-  }
-
-  QApplication app(argc, argv);
-
+  // Create ServerManager
   ServerManager srv(interface, serverGroup);
 
+  // Construct features, filter, and factory
   std::vector<FeatureCache*> features;
   for(unsigned i=0; i<Ami::NumberOfSets; i++) {
     features.push_back(new FeatureCache);
   }
-  EventFilter filter(user_ana,*features[PostAnalysis]);
-  AnalysisFactory factory(features, srv, user_ana, filter);
-  
+  EventFilter filter(userModules, *features[PostAnalysis]);
+  AnalysisFactory factory(features, srv, userModules, filter);
+
+  // Run ServerManager in a background thread
   srv.serve(factory);
-  srv.start();  // run in another thread
+  srv.start();
 
   // Start the DetectorSelect GUI.
   QGroupBox* groupBox = new QGroupBox("Offline");
   Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
   output.show();
 
+  // XXX Why do we pass factory to both ServerManager and XtcClient?
+  // XXX If factory is constructed from features, userModules, filter,
+  // XXX then why do we have to pass those again to XtcClient?
+
   // Start the XtcFileClient inside of the DetectorSelect GUI.
-  XtcClient myClient(features, factory, user_ana, filter, offline);
+  bool offline = true; // XXX true?
+  XtcClient myClient(features, factory, userModules, filter, offline);
   Ami::Qt::XtcFileClient input(groupBox, myClient, path);
 
   app.exec();
 
-  srv.stop();   // terminate the other thread
-  srv.dont_serve();
-
-  for (std::list<UserModule*>::iterator it=user_ana.begin(); it!=user_ana.end(); it++) {
-    delete (*it);
-  }
-
-  return 1;
+  exit(0);
 }
