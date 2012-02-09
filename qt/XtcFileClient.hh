@@ -42,6 +42,7 @@ namespace Ami {
       void select_run(int);
       void run_clicked();
       void stop_clicked();
+      void hzSliderChanged(int);
     private:
       void run(bool configure_only);
       void set_dir(QString dir);
@@ -54,20 +55,22 @@ namespace Ami {
       QPushButton* _runButton;
       QPushButton* _stopButton;
       QPushButton* _exitButton;
-      QLabel* _transitionLabel;
-      QLabel* _clockLabel;
+      QLabel* _startLabel;
       QLabel* _timeLabel;
       QLabel* _countLabel;
       QLabel* _payloadSizeLabel;
       QLabel* _damageLabel;
       QLabel* _hzLabel;
-      QSpinBox* _hzSpinBox;
+      QSlider* _hzSlider;
+      QLabel* _hzSliderLabel;
       QCheckBox* _loopCheckBox;
+      QCheckBox* _skipCheckBox;
       bool _running;
       XtcRun _run;
       bool _stopped;
       Pds::TransitionId::Value _lastTransition;
       int _dgCount;
+      double _clockStart;
       double _runStart;
       uint32_t _damageMask;
       unsigned _damageCount;

@@ -7,6 +7,7 @@
 #include <QtGui/QApplication>
 #include <QtGui/QFileDialog>
 #include <QtGui/QVBoxLayout>
+#include <QtGui/QSlider>
 
 #include "ami/qt/XtcFileClient.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
@@ -15,6 +16,9 @@
 using namespace Ami::Qt;
 using namespace Pds;
 using namespace std;
+
+const int defaultHz = 60;
+const int maxHz = 240;
 
 void XtcFileClient::printTransition(Pds::TransitionId::Value transition) {
   if (_lastTransition != transition) {
@@ -54,11 +58,11 @@ void XtcFileClient::printDgram(const Dgram* dg) {
     _countLabel->setText(buf);
   } else {
     double clockDelta = getClockTimeAsDouble(clock) - _clockStart;
-    sprintf(buf, "Datagram count: %d (start + %.3fs)", _dgCount, clockDelta);
+    sprintf(buf, "Datagram count: %d (run start + %.3fs)", _dgCount, clockDelta);
     _countLabel->setText(buf);
   }
 
-  sprintf(buf, "Playback time: %.3fs\n", deltaSec);
+  sprintf(buf, "Playback time: %.3fs", deltaSec);
   _timeLabel->setText(buf);
 
   sprintf(buf, "Payload size: %8d", dg->xtc.sizeofPayload()); // XXX should be TOTAL payload size
@@ -109,14 +113,14 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _exitButton(new QPushButton("Exit")),
 
   _startLabel(new QLabel),
-  _clockLabel(new QLabel),
   _timeLabel(new QLabel),
   _countLabel(new QLabel),
   _payloadSizeLabel(new QLabel),
   _damageLabel(new QLabel),
   _hzLabel(new QLabel),
 
-  _hzSpinBox(new QSpinBox),
+  _hzSlider(new QSlider(::Qt::Horizontal)),
+  _hzSliderLabel(new QLabel),
   _loopCheckBox(new QCheckBox("Loop over run")),
   _skipCheckBox(new QCheckBox("Skip processing")),
 
@@ -128,9 +132,6 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _damageCount(0)
 {
   set_dir(QString(_curdir));
-  _hzSpinBox->setRange(1, 240);
-  _hzSpinBox->setValue(60);
-  _hzSpinBox->setSuffix(" Hz");
 
   QVBoxLayout* l = new QVBoxLayout;
   l->addWidget(_dir_select);
@@ -150,7 +151,6 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   QFont qfont;
   qfont.setFixedPitch(true);
   _startLabel->setFont(qfont);
-  _clockLabel->setFont(qfont);
   _timeLabel->setFont(qfont);
   _countLabel->setFont(qfont);
   _payloadSizeLabel->setFont(qfont);
@@ -158,14 +158,20 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _hzLabel->setFont(qfont);
 
   l->addWidget(_startLabel);
-  //  l->addWidget(_clockLabel);
-  l->addWidget(_timeLabel);
   l->addWidget(_countLabel);
+  l->addWidget(_timeLabel);
   l->addWidget(_payloadSizeLabel);
   l->addWidget(_damageLabel);
   l->addWidget(_hzLabel);
 
-  l->addWidget(_hzSpinBox);
+  QHBoxLayout* hbox2 = new QHBoxLayout;
+  _hzSlider->setRange(1, maxHz + 1);
+  _hzSlider->setValue(defaultHz);
+  hbox2->addWidget(_hzSlider);
+  hbox2->addWidget(_hzSliderLabel);
+  l->addLayout(hbox2);
+  hzSliderChanged(defaultHz);
+
   l->addWidget(_loopCheckBox);
   l->addWidget(_skipCheckBox);
 
@@ -176,6 +182,17 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   connect(_stopButton, SIGNAL(clicked()), this, SLOT(stop_clicked()));
   connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
   connect(_run_list, SIGNAL(currentIndexChanged(int)), this, SLOT(select_run(int)));
+  connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
+}
+
+void XtcFileClient::hzSliderChanged(int value) {
+  char buf[128];
+  if (value > maxHz) {
+    sprintf(buf, "(unthrottled)");
+  } else {
+    sprintf(buf, "%d Hz", value);
+  }
+  _hzSliderLabel->setText(buf);
 }
 
 XtcFileClient::~XtcFileClient()
@@ -367,8 +384,8 @@ void XtcFileClient::run(bool configure_only)
         lastPrintTime = now;
       }
 
-      int hz = _hzSpinBox->value();
-      if (hz != 0) {
+      int hz = _hzSlider->value();
+      if (hz <= maxHz) {
         double deltaSec = now - _runStart;
         double desiredDeltaSec = _dgCount / (double) hz;
         //cout << "hz=" << hz << " desiredDeltaSec = " << desiredDeltaSec << endl;
@@ -377,7 +394,7 @@ void XtcFileClient::run(bool configure_only)
           stallSec = 2.0;
         }
         if (stallSec > 0.0) {
-          //cout << "Need to stall for " << stallSec << " seconds." << endl;
+          cout << "Need to stall for " << stallSec << " seconds." << endl;
           d_sleep(stallSec);
         }
       }
