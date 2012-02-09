@@ -16,28 +16,43 @@ using namespace Ami::Qt;
 using namespace Pds;
 using namespace std;
 
-void XtcFileClient::printTransition(const Dgram* dg, double& start, const double effectiveHz) {
+void XtcFileClient::printTransition(Pds::TransitionId::Value transition) {
+  if (_lastTransition != transition) {
+    cout << "$$$ " << TransitionId::name(transition) << endl;
+    _transitionLabel->setText(TransitionId::name(transition));
+    _lastTransition = transition;
+  }
+}
+
+static double getTimeAsDouble() {
+  timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts); // vs CLOCK_PROCESS_CPUTIME_ID
+  return ts.tv_sec + ts.tv_nsec / 1.e9;
+}
+
+void XtcFileClient::printDgram(const Dgram* dg) {
   char buf[256];
+
+  double now = getTimeAsDouble();
+  double deltaSec = now - _runStart;
+  double effectiveHz = _dgCount / deltaSec;
 
   sprintf(buf, "Time: %8d/%8d", dg->seq.stamp().fiducials(), dg->seq.stamp().ticks());
   _timeLabel->setText(buf);
 
+  sprintf(buf, "Datagram count: %d", _dgCount);
+  _countLabel->setText(buf);
+
   sprintf(buf, "Payload size: %8d", dg->xtc.sizeofPayload());
   _payloadSizeLabel->setText(buf);
 
-  sprintf(buf, "Damage: %d", dg->xtc.damage.value());
+  sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
   _damageLabel->setText(buf);
 
   sprintf(buf, "Rate: %.0f Hz", effectiveHz);
   _hzLabel->setText(buf);
 
   const ClockTime& clock = dg->seq.clock();
-  double now = clock.seconds() + (clock.nanoseconds() / 1.e9);
-  if (start == 0.0) {
-    start = now;
-  }
-
-  //'printf("delta = %.3f\n", (now - start));
 
   time_t time = (time_t) clock.seconds();
   char date[256];
@@ -59,7 +74,7 @@ static void dump(Dgram* dg)
 
 
   date[strlen(date) - 1] = '\0';
-  sprintf(buf, "Clock: %s (start + %.3fs)", date, now - start);
+  sprintf(buf, "Clock: %s (start + %.3fs)", date, now - _runStart);
   _clockLabel->setText(buf);
 }
 
@@ -91,7 +106,6 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   QWidget (0,::Qt::Window),
   _client(client),
   _curdir(curdir),
-  _dg((Dgram *) (new char[0x800000])),
   _task(new Task(TaskObject("amiqt"))),
   _dir_select(new QPushButton("Select Directory...")),
   _dirLabel(new QLabel(curdir)),
@@ -101,19 +115,23 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _stopButton(new QPushButton("Stop")),
   _exitButton(new QPushButton("Exit")),
 
-  _transitionLabel(new QLabel("")),
-  _clockLabel(new QLabel("")),
-  _timeLabel(new QLabel("")),
-  _payloadSizeLabel(new QLabel("")),
-  _damageLabel(new QLabel("")),
-  _hzLabel(new QLabel("")),
+  _transitionLabel(new QLabel),
+  _clockLabel(new QLabel),
+  _timeLabel(new QLabel),
+  _countLabel(new QLabel),
+  _payloadSizeLabel(new QLabel),
+  _damageLabel(new QLabel),
+  _hzLabel(new QLabel),
 
   _hzSpinBox(new QSpinBox),
   _loopCheckBox(new QCheckBox("Loop over run")),
 
   _running(false),
-  _runIsValid(false),
-  _stopped(false)
+  _stopped(false),
+  _lastTransition(TransitionId::Unmap),
+
+  _damageMask(0),
+  _damageCount(0)
 {
   set_dir(QString(_curdir));
   _hzSpinBox->setRange(1, 240);
@@ -140,6 +158,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _transitionLabel->setFont(qfont);
   _clockLabel->setFont(qfont);
   _timeLabel->setFont(qfont);
+  _countLabel->setFont(qfont);
   _payloadSizeLabel->setFont(qfont);
   _damageLabel->setFont(qfont);
   _hzLabel->setFont(qfont);
@@ -147,6 +166,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   l->addWidget(_transitionLabel);
   l->addWidget(_clockLabel);
   l->addWidget(_timeLabel);
+  l->addWidget(_countLabel);
   l->addWidget(_payloadSizeLabel);
   l->addWidget(_damageLabel);
   l->addWidget(_hzLabel);
@@ -157,8 +177,8 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   groupBox->setLayout(l);
 
   connect(_dir_select, SIGNAL(clicked()), this, SLOT(select_dir()));
-  connect(_runButton, SIGNAL(clicked()), this, SLOT(run()));
-  connect(_stopButton, SIGNAL(clicked()), this, SLOT(stop()));
+  connect(_runButton, SIGNAL(clicked()), this, SLOT(run_clicked()));
+  connect(_stopButton, SIGNAL(clicked()), this, SLOT(stop_clicked()));
   connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
   connect(_run_list, SIGNAL(currentIndexChanged(int)), this, SLOT(select_run(int)));
 }
@@ -242,81 +262,26 @@ void XtcFileClient::set_dir(QString dir)
   printf("Found %d runs\n", runs.size());
 }
 
-void XtcFileClient::run() 
+void XtcFileClient::run_clicked() 
 {
   _runButton->setEnabled(false);
   _task->call(this); 
 }
 
-void XtcFileClient::stop() {
+void XtcFileClient::stop_clicked() {
   cout << "stop requested..." << endl;
   _stopped = true;
 }
 
 void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
 {
+  printTransition(transition);
   Dgram dg;
   new((void*)&dg.seq) Pds::Sequence(Pds::Sequence::Event, transition, Pds::ClockTime(0,0), Pds::TimeStamp(0,0,0,0));
   new((char*)&dg.xtc) Pds::Xtc(Pds::TypeId(Pds::TypeId::Id_Xtc,0),Pds::ProcInfo(Pds::Level::Recorder,0,0));
   _client.processDgram(&dg);
 }
 
-// XXX use XtcRun for this as well?
-void XtcFileClient::configure()
-{
-  QStringList files;
-  getPathsFromRun(files, _run_list->currentText());
-  const char* fname = qPrintable(files.first());
-  printf("XtcFileClient::configure: reading configuration from file %s\n", fname);
-
-  int fd = ::open(fname, O_LARGEFILE, O_RDONLY);
-  if (fd == -1) {
-    printf("XtcFileClient::configure: error opening file %s : %s\n",fname,strerror(errno));
-    return;
-  }
-
-  //  read configure transition
-  int size = sizeof(Dgram);
-  int rv = ::read(fd, _dg, size);
-  if (rv != size) {
-    printf("XtcFileClient::configure: error reading header from file %s: ", fname);
-    if (rv == -1) {
-      printf("%s\n", strerror(errno));
-    } else {
-      printf("expected %d, got %d\n", size, rv);
-    }
-    return;
-  }
-
-  size = _dg->xtc.sizeofPayload();
-  rv = ::read(fd, _dg->xtc.payload(), size);
-  if (rv != size) {
-    printf("XtcFileClient::configure: error reading payload from file %s: ", fname);
-    if (rv == -1) {
-      printf("%s\n", strerror(errno));
-    } else {
-      printf("expected %d, got %d\n", size, rv);
-    }
-    return;
-  }
-
-  insertTransition(TransitionId::Map);
-  _client.processDgram(_dg);
-  insertTransition(TransitionId::Unconfigure);
-  insertTransition(TransitionId::Unmap);
-
-  ::close(fd);
-}
-
-static double getTimeAsDouble() {
-  timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts); // vs CLOCK_PROCESS_CPUTIME_ID
-  return ts.tv_sec + ts.tv_nsec / 1.e9;
-}
-
-//
-//  We don't yet worry about chunked files
-//
 void XtcFileClient::routine()
 {
   _stopButton->setEnabled(true);
@@ -325,112 +290,97 @@ void XtcFileClient::routine()
   _stopped = false;
 
   do {
-    QStringList files;
-    cout << "_curdir is " << qPrintable(_curdir) << endl;
-    getPathsFromRun(files, _run_list->currentText());
-    if (files.empty()) {
-      cout << "openXtcRun(): No xtc files found in " << qPrintable(_curdir) << endl;
-      break;
-    }
-
-    XtcRun run;
-    string file = qPrintable(files.first());
-    run.reset(file);
-    cout << "Added " << file << endl;
-    files.pop_front();
-    while (! files.empty()) {
-      file = qPrintable(files.first());
-      run.add_file(file);
-      cout << "Added " << file << endl;
-      files.pop_front();
-    }
-    cout << "Doing run.init()" << endl;
-    run.init();
-    cout << "DID run.init()" << endl;
-  
-    double start = 0.0;
-    double runStart = getTimeAsDouble();
-    int dgCount = 0;
-
-    insertTransition(TransitionId::Map);
-
-    double lastPrintTime = 0.0;
-
-    while (! _stopped) {
-      Dgram* dg = NULL;
-      int slice = -1;
-      int64_t offset = -1;
-      Pds::Ana::Result result = run.next(dg, &slice, &offset);
-      if (result == Pds::Ana::End) {
-        cout << "End of run" << endl;
-        break;
-      }
-      if (result == Pds::Ana::Error) {
-        cout << "Error from run.next(): " << result << endl;
-        break;
-      }
-      if (result != Pds::Ana::OK) {
-        cout << "run.next()... not OK? " << result << endl;
-        break;
-      }
-      if (dg == NULL) {
-        cout << "*** end of run ***" << endl;
-        break;
-      }
-      //cout << "TransitionId = " << TransitionId::name(dg->seq.service()) << endl;
-
-
-
-      /*
-      uint32_t damage = dg->xtc.damage.value();
-      if (damage) {
-        uNumDamage++;
-        damagemask |= damage;
-      }
-      */
-      _transitionLabel->setText(TransitionId::name(dg->seq.service()));
-      Dgram dg0 = *dg; // sanity check
-      dgCount++;
-      //dump(dg);
-      _client.processDgram(dg);
-
-
-      if (dg->seq.service() == TransitionId::L1Accept) {
-        double now = getTimeAsDouble();
-        double deltaSec = now - runStart;
-        double effectiveHz = dgCount / deltaSec;
-
-        if (lastPrintTime < now - 0.1) {
-          //cout << "now = " << now << " runStart=" << runStart << " deltaSec=" << deltaSec << endl;
-          //cout << "effective hz = " << effectiveHz << " (" << dgCount << " / " << deltaSec << ")" << endl;
-
-          printTransition(dg, start, effectiveHz);
-          lastPrintTime = now;
-        }
-
-        int hz = _hzSpinBox->value();
-        if (hz != 0) {
-          double desiredDeltaSec = dgCount / (double) hz;
-          //cout << "hz=" << hz << " desiredDeltaSec = " << desiredDeltaSec << endl;
-          double stallSec = desiredDeltaSec - deltaSec;
-          if (stallSec > 2.0) {
-            stallSec = 2.0;
-          }
-          if (stallSec > 0.0) {
-            //cout << "Need to stall for " << stallSec << " seconds." << endl;
-            d_sleep(stallSec);
-          }
-        }
-      }
-    }
-
-    insertTransition(TransitionId::Unconfigure);
-    insertTransition(TransitionId::Unmap);
-
+    run(false);
   } while (! _stopped && _loopCheckBox->isChecked());
 
   _stopped = false;
   _running = false;
   _stopButton->setEnabled(false);
   _runButton->setEnabled(true);
+}
+
+void XtcFileClient::configure()
+{
+  run(true);
+}
+
+bool XtcFileClient::run(bool configure_only)
+{
+  QStringList files;
+  cout << "_curdir is " << qPrintable(_curdir) << endl;
+  getPathsFromRun(files, _run_list->currentText());
+  if (files.empty()) {
+    cout << "openXtcRun(): No xtc files found in " << qPrintable(_curdir) << endl;
+    return false;
+  }
+
+  XtcRun& run = _run;
+  string file = qPrintable(files.first());
+  run.reset(file);
+  files.pop_front();
+  while (! files.empty()) {
+    file = qPrintable(files.first());
+    run.add_file(file);
+    files.pop_front();
+  }
+  run.init();
+  
+  _runStart = getTimeAsDouble();
+  _dgCount = 0;
+  _damageMask = 0;
+  _damageCount = 0;
+
+  insertTransition(TransitionId::Map);
+
+  double lastPrintTime = 0.0;
+
+  while (configure_only || ! _stopped) {
+    Dgram* dg = NULL;
+    int slice = -1;
+    int64_t offset = -1;
+    Pds::Ana::Result result = run.next(dg, &slice, &offset);
+    if (result != Pds::Ana::OK) {
+      break;
+    }
+    Pds::TransitionId::Value transition = dg->seq.service();
+    printTransition(transition);
+
+    _dgCount++;
+    _client.processDgram(dg);
+
+    uint32_t damage = dg->xtc.damage.value();
+    if (damage) {
+        _damageCount++;
+        _damageMask |= damage;
+    }
+
+    if (transition == TransitionId::L1Accept) {
+      double now = getTimeAsDouble();
+      if (lastPrintTime < now - 0.1) {
+        printDgram(dg);
+        lastPrintTime = now;
+      }
+
+      int hz = _hzSpinBox->value();
+      if (hz != 0) {
+        double deltaSec = now - _runStart;
+        double desiredDeltaSec = _dgCount / (double) hz;
+        //cout << "hz=" << hz << " desiredDeltaSec = " << desiredDeltaSec << endl;
+        double stallSec = desiredDeltaSec - deltaSec;
+        if (stallSec > 2.0) {
+          stallSec = 2.0;
+        }
+        if (stallSec > 0.0) {
+          //cout << "Need to stall for " << stallSec << " seconds." << endl;
+          d_sleep(stallSec);
+        }
+      }
+    } else if (transition == TransitionId::Configure && configure_only) {
+      break;
+    }
+  }
+
+  insertTransition(TransitionId::Unconfigure);
+  insertTransition(TransitionId::Unmap);
+  return true;
 }

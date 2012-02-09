@@ -32,21 +32,21 @@ namespace Ami {
       ~XtcFileClient();
       void routine();
       void insertTransition(Pds::TransitionId::Value transition);
-      void printTransition(const Dgram* dg, double& start, const double effectiveHz);
+      void printTransition(Pds::TransitionId::Value transition);
+      void printDgram(const Dgram* dg);
       void getPathsFromRun(QStringList& list, QString run);
       void configure();
 
     public slots:
       void select_dir();
       void select_run(int);
-      void run();
-      void stop();
+      void run_clicked();
+      void stop_clicked();
     private:
+      bool run(bool configure_only);
+      void set_dir(QString dir);
       XtcClient _client;
       QString _curdir;
-      Dgram* _dg;
-      unsigned _interface;
-      unsigned _serverGroup;
       Task* _task;  // thread for Qt
       QPushButton* _dir_select;
       QLabel* _dirLabel;
@@ -57,23 +57,20 @@ namespace Ami {
       QLabel* _transitionLabel;
       QLabel* _clockLabel;
       QLabel* _timeLabel;
+      QLabel* _countLabel;
       QLabel* _payloadSizeLabel;
       QLabel* _damageLabel;
       QLabel* _hzLabel;
       QSpinBox* _hzSpinBox;
       QCheckBox* _loopCheckBox;
       bool _running;
-      list<string> _paths;
       XtcRun _run;
-      bool _runIsValid;
       bool _stopped;
-      bool _verbose;
-      bool _veryverbose;
-      bool _skipToNextRun();
-      void _addPaths(list<string> newPaths);
-      void set_dir(QString dir);
-      long long int timeDiff(struct timespec* end, struct timespec* start);
-      Dgram* next();
+      Pds::TransitionId::Value _lastTransition;
+      int _dgCount;
+      double _runStart;
+      uint32_t _damageMask;
+      unsigned _damageCount;
     };
   };
 }
