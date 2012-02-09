@@ -43,7 +43,7 @@ namespace Ami {
       void run_clicked();
       void stop_clicked();
     private:
-      bool run(bool configure_only);
+      void run(bool configure_only);
       void set_dir(QString dir);
       XtcClient _client;
       QString _curdir;

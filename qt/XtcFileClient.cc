@@ -304,14 +304,14 @@ void XtcFileClient::configure()
   run(true);
 }
 
-bool XtcFileClient::run(bool configure_only)
+void XtcFileClient::run(bool configure_only)
 {
   QStringList files;
   cout << "_curdir is " << qPrintable(_curdir) << endl;
   getPathsFromRun(files, _run_list->currentText());
   if (files.empty()) {
     cout << "openXtcRun(): No xtc files found in " << qPrintable(_curdir) << endl;
-    return false;
+    _stopped = true; // do not loop
   }
 
   XtcRun& run = _run;
@@ -382,5 +382,4 @@ bool XtcFileClient::run(bool configure_only)
 
   insertTransition(TransitionId::Unconfigure);
   insertTransition(TransitionId::Unmap);
-  return true;
 }
