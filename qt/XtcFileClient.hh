@@ -74,6 +74,7 @@ namespace Ami {
       double _runStart;
       uint32_t _damageMask;
       unsigned _damageCount;
+      unsigned long long _payloadTotal;
     };
   };
 }
