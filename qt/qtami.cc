@@ -24,8 +24,7 @@ static void usage(char* progname) {
 
 
 int main(int argc, char* argv[]) {
-  //const char* path = "/reg/d";
-  const char* path = "/reg/neh/home/jbarrera/ana01/sxr/sxr13910";
+  const char* path = "/reg/d/ana01";
   unsigned interface = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   std::list<UserModule*> userModules;
