@@ -42,7 +42,6 @@ void XtcFileClient::printDgram(const Dgram* dg) {
 
   double now = getTimeAsDouble();
   double deltaSec = now - _runStart;
-  double effectiveHz = _dgCount / deltaSec;
 
   ClockTime clock = dg->seq.clock();
   if (_clockStart == 0.0) {
@@ -65,13 +64,14 @@ void XtcFileClient::printDgram(const Dgram* dg) {
   sprintf(buf, "Playback time: %.3fs", deltaSec);
   _timeLabel->setText(buf);
 
-  sprintf(buf, "Payload size: %8d", dg->xtc.sizeofPayload()); // XXX should be TOTAL payload size
+  double payloadTotalGB = _payloadTotal / 1024.0 / 1024.0 / 1024.0;
+  sprintf(buf, "Total payload size: %.3f GB", payloadTotalGB);
   _payloadSizeLabel->setText(buf);
 
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
   _damageLabel->setText(buf);
 
-  sprintf(buf, "Rate: %.0f Hz", effectiveHz);
+  sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s)", _dgCount / deltaSec, payloadTotalGB / deltaSec);
   _hzLabel->setText(buf);
 }
 
@@ -104,7 +104,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _client(client),
   _curdir(curdir),
   _task(new Task(TaskObject("amiqt"))),
-  _dir_select(new QPushButton("Select Directory...")),
+  _dir_select(new QPushButton("Select")),
   _dirLabel(new QLabel(curdir)),
   _run_list(new QComboBox()),
 
@@ -134,8 +134,12 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   set_dir(QString(_curdir));
 
   QVBoxLayout* l = new QVBoxLayout;
-  l->addWidget(_dir_select);
-  l->addWidget(_dirLabel);
+
+  QHBoxLayout* hboxA = new QHBoxLayout;
+  hboxA->addWidget(_dirLabel);
+  hboxA->addWidget(_dir_select);
+  l->addLayout(hboxA);
+
   l->addWidget(_run_list);
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
@@ -169,8 +173,8 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _hzSlider->setValue(defaultHz);
   hbox2->addWidget(_hzSlider);
   hbox2->addWidget(_hzSliderLabel);
-  l->addLayout(hbox2);
   hzSliderChanged(defaultHz);
+  l->addLayout(hbox2);
 
   l->addWidget(_loopCheckBox);
   l->addWidget(_skipCheckBox);
@@ -183,6 +187,8 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
   connect(_run_list, SIGNAL(currentIndexChanged(int)), this, SLOT(select_run(int)));
   connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
+
+  configure();
 }
 
 void XtcFileClient::hzSliderChanged(int value) {
@@ -322,8 +328,9 @@ void XtcFileClient::run(bool configure_only)
   cout << "_curdir is " << qPrintable(_curdir) << endl;
   getPathsFromRun(files, _run_list->currentText());
   if (files.empty()) {
-    cout << "openXtcRun(): No xtc files found in " << qPrintable(_curdir) << endl;
+    cout << "getPathsFromRun(): No xtc files found in " << qPrintable(_curdir) << endl;
     _stopped = true; // do not loop
+    return;
   }
 
   XtcRun& run = _run;
@@ -336,20 +343,13 @@ void XtcFileClient::run(bool configure_only)
     files.pop_front();
   }
   run.init();
-  
-
-
-
-
-
-
-
 
   _runStart = getTimeAsDouble();
   _clockStart = 0.0;
   _dgCount = 0;
   _damageMask = 0;
   _damageCount = 0;
+  _payloadTotal = 0;
 
   insertTransition(TransitionId::Map);
 
@@ -367,6 +367,8 @@ void XtcFileClient::run(bool configure_only)
     printTransition(transition);
 
     _dgCount++;
+    _payloadTotal += dg->xtc.sizeofPayload();
+
     if (transition != TransitionId::L1Accept || ! _skipCheckBox->isChecked()) {
       _client.processDgram(dg);
     }
