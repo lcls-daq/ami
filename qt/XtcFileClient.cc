@@ -1,6 +1,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
+#include <stdlib.h>
 #include <iostream>
 #include <string>
 
@@ -19,8 +20,9 @@ using namespace std;
 
 const int defaultHz = 60;
 const int maxHz = 240;
+const double secBetweenPrintDgram = 0.2;
 
-void XtcFileClient::printTransition(Pds::TransitionId::Value transition) {
+void XtcFileClient::printTransition(const Pds::TransitionId::Value transition) {
   if (_lastTransition != transition) {
     cout << ">>> " << TransitionId::name(transition) << endl;
     _lastTransition = transition;
@@ -37,7 +39,23 @@ static double getClockTimeAsDouble(ClockTime& clockTime) {
   return clockTime.seconds() + clockTime.nanoseconds() / 1.e9;
 }
 
-void XtcFileClient::printDgram(const Dgram* dg) {
+static QString itoa(int i) {
+  char buf[128];
+  sprintf(buf, "%d", i);
+  return QString(buf);
+}
+
+void XtcFileClient::setStatus(const QString status) {
+  cout << "[@@@] " << qPrintable(status) << endl;
+  _statusLabel->setText(status);
+}
+
+void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
+  widget->setEnabled(enabled);
+}
+
+void XtcFileClient::printDgram(const Dgram dg0) {
+  const Dgram* dg = &dg0;
   char buf[256];
 
   double now = getTimeAsDouble();
@@ -75,18 +93,18 @@ void XtcFileClient::printDgram(const Dgram* dg) {
   _hzLabel->setText(buf);
 }
 
-void XtcFileClient::getPathsFromRun(QStringList& list, QString run) {
+void XtcFileClient::getPathsForRun(QStringList& list, QString run) {
   if (_curdir.isEmpty() || run.isEmpty()) {
-    cout << "addPathsFromRun: no paths to add" << endl;
+    cout << "getPathsForRun: no paths to add" << endl;
     cout << "dir=" << qPrintable(_curdir) << endl;
     cout << "run=" << qPrintable(run) << endl;
     return;
   }
-  cout << "_curdir=[" << qPrintable(_curdir) << "] in addPathsFromRun" << endl;
+  cout << "_curdir=[" << qPrintable(_curdir) << "] in getPathsForRun" << endl;
 
   QString pattern = _curdir + "/xtc/*-r" + run + "-s*.xtc";
   glob_t g;
-  cout << "addPathsFromRun: " << qPrintable(pattern) << endl;
+  cout << "getPathsForRun: " << qPrintable(pattern) << endl;
   glob(qPrintable(pattern), 0, 0, &g);
 
   for (unsigned i = 0; i < g.gl_pathc; i++) {
@@ -99,14 +117,21 @@ void XtcFileClient::getPathsFromRun(QStringList& list, QString run) {
   list.sort();
 }
 
+static void _connect(const QObject* sender, const char* signal, const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) {
+  if (! QObject::connect(sender, signal, receiver, method, type)) {
+    cout << "connect(" << sender << ", " << signal << ", " << receiver << ", " << method << ", " << type << ") failed" << endl;
+    exit(1);
+  }
+}
+
 XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir) :
   QWidget (0,::Qt::Window),
   _client(client),
   _curdir(curdir),
   _task(new Task(TaskObject("amiqt"))),
-  _dir_select(new QPushButton("Select")),
+  _dirSelect(new QPushButton("Select")),
   _dirLabel(new QLabel(curdir)),
-  _run_list(new QComboBox()),
+  _runList(new QComboBox()),
 
   _runButton(new QPushButton("Run")),
   _stopButton(new QPushButton("Stop")),
@@ -123,6 +148,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _hzSliderLabel(new QLabel),
   _loopCheckBox(new QCheckBox("Loop over run")),
   _skipCheckBox(new QCheckBox("Skip processing")),
+  _statusLabel(new QLabel("Initializing...")),
 
   _running(false),
   _stopped(false),
@@ -131,16 +157,16 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _damageMask(0),
   _damageCount(0)
 {
-  set_dir(QString(_curdir));
+  setDir(QString(_curdir));
 
   QVBoxLayout* l = new QVBoxLayout;
 
   QHBoxLayout* hboxA = new QHBoxLayout;
   hboxA->addWidget(_dirLabel);
-  hboxA->addWidget(_dir_select);
+  hboxA->addWidget(_dirSelect);
   l->addLayout(hboxA);
 
-  l->addWidget(_run_list);
+  l->addWidget(_runList);
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
   hbox1->addStretch();
@@ -178,15 +204,20 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
 
   l->addWidget(_loopCheckBox);
   l->addWidget(_skipCheckBox);
+  l->addWidget(_statusLabel);
 
   groupBox->setLayout(l);
 
-  connect(_dir_select, SIGNAL(clicked()), this, SLOT(select_dir()));
-  connect(_runButton, SIGNAL(clicked()), this, SLOT(run_clicked()));
-  connect(_stopButton, SIGNAL(clicked()), this, SLOT(stop_clicked()));
-  connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
-  connect(_run_list, SIGNAL(currentIndexChanged(int)), this, SLOT(select_run(int)));
-  connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
+  _connect(_dirSelect, SIGNAL(clicked()), this, SLOT(selectDir()));
+  _connect(_runButton, SIGNAL(clicked()), this, SLOT(runClicked()));
+  _connect(_stopButton, SIGNAL(clicked()), this, SLOT(stopClicked()));
+  _connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
+  _connect(_runList, SIGNAL(currentIndexChanged(int)), this, SLOT(selectRun(int)));
+  _connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
+  _connect(this, SIGNAL(_printDgram(const Dgram)), this, SLOT(printDgram(const Dgram)));
+  _connect(this, SIGNAL(_printTransition(const Pds::TransitionId::Value)), this, SLOT(printTransition(const Pds::TransitionId::Value)));
+  _connect(this, SIGNAL(_setStatus(const QString)), this, SLOT(setStatus(const QString)));
+  _connect(this, SIGNAL(_setEnabled(QWidget*, bool)), this, SLOT(setEnabled(QWidget*, bool)));
 
   configure();
 }
@@ -217,7 +248,7 @@ static void d_sleep(double seconds) {
   }
 }
 
-void XtcFileClient::select_run(int index)
+void XtcFileClient::selectRun(int index)
 {
   _stopped = true;
   if (_running) {
@@ -229,13 +260,16 @@ void XtcFileClient::select_run(int index)
   configure();
 }
 
-void XtcFileClient::select_dir()
+void XtcFileClient::selectDir()
 {
-  set_dir(QFileDialog::getExistingDirectory(0, "Select Directory", _curdir, 0));
+  cout << "selectDir called..." << endl;
+  setStatus("Selecting directory...");
+  setDir(QFileDialog::getExistingDirectory(0, "Select Directory", _curdir, 0));
 }
 
-void XtcFileClient::set_dir(QString dir)
+void XtcFileClient::setDir(QString dir)
 {
+  setStatus(QString("Selected directory " + dir + "..."));
   if (dir == "") {
     return;
   }
@@ -251,8 +285,8 @@ void XtcFileClient::set_dir(QString dir)
 
   // Clear the list widget and the current run
   cout << "_curdir is " << qPrintable(_curdir) << endl;
-  cout << "_run_list->currentText() was " << qPrintable(_run_list->currentText()) << endl;
-  _run_list->clear();
+  cout << "_runList->currentText() was " << qPrintable(_runList->currentText()) << endl;
+  _runList->clear();
 
   QStringList runs;
 
@@ -275,19 +309,21 @@ void XtcFileClient::set_dir(QString dir)
   }
   globfree(&g);
   runs.sort();
-  _run_list->addItems(runs);
+  _runList->addItems(runs);
 
+  setStatus(QString("Found ") + itoa(runs.size()) + " runs");
   printf("Found %d runs\n", runs.size());
 }
 
-void XtcFileClient::run_clicked() 
+void XtcFileClient::runClicked() 
 {
+  setStatus("Run requested...");
   _runButton->setEnabled(false);
-  _task->call(this); 
+  _task->call(this);
 }
 
-void XtcFileClient::stop_clicked() {
-  cout << "stop requested..." << endl;
+void XtcFileClient::stopClicked() {
+  setStatus("Stop requested...");
   _stopped = true;
 }
 
@@ -302,38 +338,47 @@ void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
 
 void XtcFileClient::routine()
 {
-  _stopButton->setEnabled(true);
-  _runButton->setEnabled(false);
+  QString runName = _runList->currentText();
+  emit _setStatus("Running run " + runName + "...");
+  emit _setEnabled(_stopButton, true);
+  emit _setEnabled(_runButton, false);
   _running = true;
   _stopped = false;
 
   do {
-    run(false);
+    run(runName, false);
   } while (! _stopped && _loopCheckBox->isChecked());
 
   _stopped = false;
   _running = false;
-  _stopButton->setEnabled(false);
-  _runButton->setEnabled(true);
+  emit _setEnabled(_stopButton, false);
+  emit _setEnabled(_runButton, true);
+  emit _setStatus("Stopped run " + runName + ".");
 }
 
 void XtcFileClient::configure()
 {
-  run(true);
+  QString runName = _runList->currentText();
+  if (runName == "") {
+    return;
+  }
+  setStatus("Configuring run " + runName + "...");
+  run(runName, true);
+  setStatus("Configured run " + runName + ".");
 }
 
-void XtcFileClient::run(bool configure_only)
+void XtcFileClient::run(QString runName, bool configureOnly)
 {
   QStringList files;
   cout << "_curdir is " << qPrintable(_curdir) << endl;
-  getPathsFromRun(files, _run_list->currentText());
+  getPathsForRun(files, runName);
   if (files.empty()) {
-    cout << "getPathsFromRun(): No xtc files found in " << qPrintable(_curdir) << endl;
+    cout << "getPathsForRun(): No xtc files found in " << qPrintable(_curdir) << " for run " << qPrintable(runName) << endl;
     _stopped = true; // do not loop
     return;
   }
 
-  XtcRun& run = _run;
+  Pds::Ana::XtcRun run;
   string file = qPrintable(files.first());
   run.reset(file);
   files.pop_front();
@@ -342,7 +387,9 @@ void XtcFileClient::run(bool configure_only)
     run.add_file(file);
     files.pop_front();
   }
+  _setStatus("Initializing run " + runName + "...");
   run.init();
+  _setStatus("Initialized run " + runName + "...");
 
   _runStart = getTimeAsDouble();
   _clockStart = 0.0;
@@ -355,7 +402,7 @@ void XtcFileClient::run(bool configure_only)
 
   double lastPrintTime = 0.0;
 
-  while (configure_only || ! _stopped) {
+  while (configureOnly || ! _stopped) {
     Dgram* dg = NULL;
     int slice = -1;
     int64_t offset = -1;
@@ -364,12 +411,15 @@ void XtcFileClient::run(bool configure_only)
       break;
     }
     Pds::TransitionId::Value transition = dg->seq.service();
+
     printTransition(transition);
 
     _dgCount++;
     _payloadTotal += dg->xtc.sizeofPayload();
 
-    if (transition != TransitionId::L1Accept || ! _skipCheckBox->isChecked()) {
+    if (transition != TransitionId::L1Accept) {
+      _client.processDgram(dg);
+    } else if (! _skipCheckBox->isChecked()) {
       _client.processDgram(dg);
     }
 
@@ -381,8 +431,8 @@ void XtcFileClient::run(bool configure_only)
 
     if (transition == TransitionId::L1Accept) {
       double now = getTimeAsDouble();
-      if (lastPrintTime < now - 0.1) {
-        printDgram(dg);
+      if (lastPrintTime < now - secBetweenPrintDgram) {
+        emit _printDgram(*dg);
         lastPrintTime = now;
       }
 
@@ -396,11 +446,11 @@ void XtcFileClient::run(bool configure_only)
           stallSec = 2.0;
         }
         if (stallSec > 0.0) {
-          cout << "Need to stall for " << stallSec << " seconds." << endl;
+          //cout << "Need to stall for " << stallSec << " seconds." << endl;
           d_sleep(stallSec);
         }
       }
-    } else if (transition == TransitionId::Configure && configure_only) {
+    } else if (transition == TransitionId::Configure && configureOnly) {
       break;
     }
   }

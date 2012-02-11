@@ -30,6 +30,8 @@ int main(int argc, char* argv[]) {
   std::list<UserModule*> userModules;
 
   QApplication app(argc, argv);
+  qRegisterMetaType<Dgram>("Dgram");
+  qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
   while ((c = getopt(argc, argv, "p:i:s:f:L:?h")) != -1) {

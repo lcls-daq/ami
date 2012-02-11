@@ -10,7 +10,6 @@
 #include <QtGui/QSpinBox>
 
 #include "pdsdata/xtc/Dgram.hh"
-#include "pdsdata/ana/XtcRun.hh"
 #include "ami/app/XtcClient.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
@@ -20,7 +19,6 @@
 using std::string;
 using std::list;
 using Pds::Dgram;
-using Pds::Ana::XtcRun;
 
 namespace Ami {
 
@@ -32,26 +30,32 @@ namespace Ami {
       ~XtcFileClient();
       void routine();
       void insertTransition(Pds::TransitionId::Value transition);
-      void printTransition(Pds::TransitionId::Value transition);
-      void printDgram(const Dgram* dg);
-      void getPathsFromRun(QStringList& list, QString run);
+      void getPathsForRun(QStringList& list, QString run);
       void configure();
-
     public slots:
-      void select_dir();
-      void select_run(int);
-      void run_clicked();
-      void stop_clicked();
+      void selectDir();
+      void selectRun(int);
+      void runClicked();
+      void stopClicked();
       void hzSliderChanged(int);
+      void printTransition(const Pds::TransitionId::Value transition);
+      void printDgram(const Dgram dg);
+      void setStatus(const QString s);
+      void setEnabled(QWidget* widget, bool enabled);
+    signals:
+      void _printTransition(const Pds::TransitionId::Value transition);
+      void _printDgram(const Dgram dg);
+      void _setStatus(const QString s);
+      void _setEnabled(QWidget* widget, bool enabled);
     private:
-      void run(bool configure_only);
-      void set_dir(QString dir);
+      void run(QString runName, bool configureOnly);
+      void setDir(QString dir);
       XtcClient _client;
       QString _curdir;
       Task* _task;  // thread for Qt
-      QPushButton* _dir_select;
+      QPushButton* _dirSelect;
       QLabel* _dirLabel;
-      QComboBox* _run_list;
+      QComboBox* _runList;
       QPushButton* _runButton;
       QPushButton* _stopButton;
       QPushButton* _exitButton;
@@ -65,8 +69,8 @@ namespace Ami {
       QLabel* _hzSliderLabel;
       QCheckBox* _loopCheckBox;
       QCheckBox* _skipCheckBox;
+      QLabel* _statusLabel;
       bool _running;
-      XtcRun _run;
       bool _stopped;
       Pds::TransitionId::Value _lastTransition;
       int _dgCount;
