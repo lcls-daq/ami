@@ -32,6 +32,7 @@ namespace Ami {
       void insertTransition(Pds::TransitionId::Value transition);
       void getPathsForRun(QStringList& list, QString run);
       void configure();
+      void configure_run();
     public slots:
       void selectDir();
       void selectRun(int);

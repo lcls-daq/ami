@@ -22,6 +22,20 @@ const int defaultHz = 60;
 const int maxHz = 240;
 const double secBetweenPrintDgram = 0.2;
 
+namespace Ami {
+  namespace Qt {
+    class ConfigureTask : public Routine {
+    public:
+      ConfigureTask(XtcFileClient& c) : _c(c) {}
+      ~ConfigureTask() {}
+    public:
+      void routine() { _c.configure(); delete this; }
+    private:
+      XtcFileClient& _c;
+    };
+  };
+};
+
 void XtcFileClient::printTransition(const Pds::TransitionId::Value transition) {
   if (_lastTransition != transition) {
     cout << ">>> " << TransitionId::name(transition) << endl;
@@ -203,7 +217,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   l->addLayout(hbox2);
 
   l->addWidget(_loopCheckBox);
-  l->addWidget(_skipCheckBox);
+  //  l->addWidget(_skipCheckBox);
   l->addWidget(_statusLabel);
 
   groupBox->setLayout(l);
@@ -219,7 +233,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _connect(this, SIGNAL(_setStatus(const QString)), this, SLOT(setStatus(const QString)));
   _connect(this, SIGNAL(_setEnabled(QWidget*, bool)), this, SLOT(setEnabled(QWidget*, bool)));
 
-  configure();
+  configure_run();
 }
 
 void XtcFileClient::hzSliderChanged(int value) {
@@ -257,7 +271,7 @@ void XtcFileClient::selectRun(int index)
       d_sleep(0.2);
     }
   }
-  configure();
+  configure_run();
 }
 
 void XtcFileClient::selectDir()
@@ -356,15 +370,21 @@ void XtcFileClient::routine()
   emit _setStatus("Stopped run " + runName + ".");
 }
 
+void XtcFileClient::configure_run()
+{
+  _task->call(new ConfigureTask(*this));
+}
+
 void XtcFileClient::configure()
 {
   QString runName = _runList->currentText();
   if (runName == "") {
+    emit _setStatus("No runs found.");
     return;
   }
-  setStatus("Configuring run " + runName + "...");
+  emit _setStatus("Configuring run " + runName + "...");
   run(runName, true);
-  setStatus("Configured run " + runName + ".");
+  emit _setStatus("Configured run " + runName + ".");
 }
 
 void XtcFileClient::run(QString runName, bool configureOnly)
