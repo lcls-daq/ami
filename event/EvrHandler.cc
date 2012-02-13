@@ -36,8 +36,12 @@ void   EvrHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::
     _index[code] = index;			\
   }
 
-void   EvrHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
+void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
+  if (type.version() < 3) {
+    printf("type.version()=%d is not supported\n", type.version());
+    return;
+  }
   const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
 
   char buffer[64];
