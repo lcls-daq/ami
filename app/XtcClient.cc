@@ -101,6 +101,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _cache[PostAnalysis]->clear();
 
     //  Cleanup previous entries
+    if (_sync) {
+      _factory.lock();
+    }
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
@@ -119,6 +122,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _filter.reset();
     _filter.configure(dg);
+    if (_sync) {
+      _factory.unlock();
+    }
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());

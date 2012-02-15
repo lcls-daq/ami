@@ -21,6 +21,7 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
 				 ServerManager& srv,
                                  UList&         user,
                                  EventFilter&   filter) :
+  _mutex(Mutex("AnalysisFactory")),
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
@@ -62,6 +63,7 @@ void AnalysisFactory::configure(unsigned       id,
 				const char*    payload, 
 				Cds&           cds)
 {
+  lock();
   _sem.take();
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
@@ -142,6 +144,16 @@ void AnalysisFactory::configure(unsigned       id,
     _srv.discover_post();
 
   _configured.give();
+
+  unlock();
+}
+
+void AnalysisFactory::lock() {
+  _mutex.lock();
+}
+
+void AnalysisFactory::unlock() {
+  _mutex.unlock();
 }
 
 void AnalysisFactory::analyze  ()

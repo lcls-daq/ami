@@ -2,6 +2,7 @@
 #define Ami_AnalysisFactory_hh
 
 #include "ami/server/Factory.hh"
+#include "ami/service/Mutex.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -33,7 +34,10 @@ namespace Ami {
     void analyze  ();
     void wait_for_configure();
     void remove   (unsigned);
+    void lock();
+    void unlock();
   private:
+    Mutex _mutex;
     ServerManager& _srv;
     Cds       _cds;
     Cds       _ocds;
