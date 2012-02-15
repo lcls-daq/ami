@@ -40,7 +40,7 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
     while(1) {
       int npos = e.size();
       QString spos;
-      const std::vector<std::string> names = features.names();
+      const std::vector<std::string>& names = features.names();
       for(unsigned i=0; i<features.entries(); i++) {
 	QString it(names[i].c_str());
         int np = e.indexOf(it, pos);
