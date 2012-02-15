@@ -26,7 +26,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine {
       Q_OBJECT
     public:
-      XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir);
+      XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir, bool testMode);
       ~XtcFileClient();
       void routine();
       void insertTransition(Pds::TransitionId::Value transition);
@@ -53,10 +53,12 @@ namespace Ami {
       void setDir(QString dir);
       XtcClient _client;
       QString _curdir;
+      bool _testMode;
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
       QComboBox* _runList;
+      QString _runName;
       QPushButton* _runButton;
       QPushButton* _stopButton;
       QPushButton* _exitButton;

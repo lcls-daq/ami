@@ -123,12 +123,24 @@ void XtcFileClient::getPathsForRun(QStringList& list, QString run) {
 
   for (unsigned i = 0; i < g.gl_pathc; i++) {
     char *path = g.gl_pathv[i];
+    struct ::stat64 st;
+    if (::stat64(path, &st) == -1) {
+      perror(path);
+      continue;
+    }
+    if (st.st_size == 0) {
+      printf("Ignoring empty file %s\n", path);
+      continue;
+    }
+    cout << "getPathsForRun: adding " << path << endl;
     cout << path << endl;
     list << path;
   }
   globfree(&g);
 
+  cout << "getPathsForRun: sorting " << list.size() << " entries..." << endl;
   list.sort();
+  cout << "getPathsForRun: done." << endl;
 }
 
 static void _connect(const QObject* sender, const char* signal, const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) {
@@ -138,14 +150,16 @@ static void _connect(const QObject* sender, const char* signal, const QObject* r
   }
 }
 
-XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir, bool testMode) :
   QWidget (0,::Qt::Window),
   _client(client),
   _curdir(curdir),
+  _testMode(testMode),
   _task(new Task(TaskObject("amiqt"))),
   _dirSelect(new QPushButton("Select")),
   _dirLabel(new QLabel(curdir)),
   _runList(new QComboBox()),
+  _runName(""),
 
   _runButton(new QPushButton("Run")),
   _stopButton(new QPushButton("Stop")),
@@ -220,7 +234,12 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   //  l->addWidget(_skipCheckBox);
   l->addWidget(_statusLabel);
 
-  groupBox->setLayout(l);
+  if (groupBox) {
+    groupBox->setLayout(l);
+  } else {
+    setLayout(l);
+    show();
+  }
 
   _connect(_dirSelect, SIGNAL(clicked()), this, SLOT(selectDir()));
   _connect(_runButton, SIGNAL(clicked()), this, SLOT(runClicked()));
@@ -333,6 +352,7 @@ void XtcFileClient::runClicked()
 {
   setStatus("Run requested...");
   _runButton->setEnabled(false);
+  _runName = _runList->currentText();
   _task->call(this);
 }
 
@@ -352,39 +372,50 @@ void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
 
 void XtcFileClient::routine()
 {
-  QString runName = _runList->currentText();
-  emit _setStatus("Running run " + runName + "...");
+  emit _setStatus("Running run " + _runName + "...");
   emit _setEnabled(_stopButton, true);
   emit _setEnabled(_runButton, false);
   _running = true;
   _stopped = false;
 
   do {
-    run(runName, false);
+    run(_runName, false);
   } while (! _stopped && _loopCheckBox->isChecked());
 
   _stopped = false;
   _running = false;
   emit _setEnabled(_stopButton, false);
   emit _setEnabled(_runButton, true);
-  emit _setStatus("Stopped run " + runName + ".");
+  emit _setStatus("Stopped run " + _runName + ".");
 }
 
 void XtcFileClient::configure_run()
 {
+  _runName = _runList->currentText();
   _task->call(new ConfigureTask(*this));
 }
 
 void XtcFileClient::configure()
 {
-  QString runName = _runList->currentText();
-  if (runName == "") {
-    emit _setStatus("No runs found.");
-    return;
+  if (_testMode) {
+    _runList->setCurrentIndex(0); // XXX no Qt operations should be done in this thread!
+    for (int i = 1; true; i++) {
+      _runName = _runList->currentText();
+      _stopped = false;
+      _running = false;
+      run(_runName, true); // true to do full run; false to just config
+      _runList->setCurrentIndex(_runList->currentIndex() + 1);
+      cout << "~~~~~ did configure #" << i << endl;
+    }
+  } else {
+    if (_runName == "") {
+      emit _setStatus("No runs found.");
+      return;
+    }
+    emit _setStatus("Configuring run " + _runName + "...");
+    run(_runName, true);
+    emit _setStatus("Configured run " + _runName + ".");
   }
-  emit _setStatus("Configuring run " + runName + "...");
-  run(runName, true);
-  emit _setStatus("Configured run " + runName + ".");
 }
 
 void XtcFileClient::run(QString runName, bool configureOnly)
@@ -399,6 +430,7 @@ void XtcFileClient::run(QString runName, bool configureOnly)
   }
 
   Pds::Ana::XtcRun run;
+  run.live_read(false); // These files are already completely written
   string file = qPrintable(files.first());
   run.reset(file);
   files.pop_front();

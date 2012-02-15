@@ -24,17 +24,19 @@ static void usage(char* progname) {
 
 
 int main(int argc, char* argv[]) {
-  const char* path = "/reg/d/ana01";
+  const char* path = "/reg/d/ana12";
   unsigned interface = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   std::list<UserModule*> userModules;
+  bool testMode = false;
+  bool separateWindowMode = false;
 
   QApplication app(argc, argv);
   qRegisterMetaType<Dgram>("Dgram");
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:i:s:f:L:?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:i:s:f:L:TW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -48,6 +50,12 @@ int main(int argc, char* argv[]) {
       break;
     case 'f':
       Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
+      break;
+    case 'T':
+      testMode = true;
+      break;
+    case 'W':
+      separateWindowMode = true;
       break;
     case '?':
     case 'h':
@@ -72,19 +80,18 @@ int main(int argc, char* argv[]) {
   srv.serve(factory);
   srv.start();
 
-  // Start the DetectorSelect GUI.
-  QGroupBox* groupBox = new QGroupBox("Offline");
-  Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
-  output.show();
-
-  // XXX Why do we pass factory to both ServerManager and XtcClient?
-  // XXX If factory is constructed from features, userModules, filter,
-  // XXX then why do we have to pass those again to XtcClient?
+  // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.
+  QGroupBox* groupBox = NULL;
+  if (! separateWindowMode) {
+    groupBox = new QGroupBox("Offline");
+    Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
+    output.show();
+  }
 
   // Start the XtcFileClient inside of the DetectorSelect GUI.
-  bool offline = true; // XXX true?
-  XtcClient myClient(features, factory, userModules, filter, offline);
-  Ami::Qt::XtcFileClient input(groupBox, myClient, path);
+  bool sync = true;
+  XtcClient client(features, factory, userModules, filter, sync);
+  Ami::Qt::XtcFileClient input(groupBox, client, path, testMode);
 
   app.exec();
 
