@@ -462,14 +462,17 @@ void DetectorSelect::change_detectors(const char* c)
       n = reinterpret_cast<const Ami::DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size());
 
-      printf("Discovered %s [%08x.%08x]\n",e->name(),e->info().log(),e->info().phy());
-
+      printf("Discovered %s [%08x.%08x] size=%d\n",e->name(),e->info().log(),e->info().phy(),e->size());
       if (e->info().level() == Pds::Level::Control) {
         printf("\tSkip.\n");
-        continue;
+      } else {
+        new DetectorListItem(_detList, e->name(), e->info(), e->channel());
       }
-
-      new DetectorListItem(_detList, e->name(), e->info(), e->channel());
+      if (e->size() == 0) {
+        printf("Stopped processing because e->size is 0.\n");
+        sleep(10);
+        break;
+      }
     }
     _detList->sortItems();
   }
