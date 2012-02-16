@@ -5,16 +5,12 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami OLD_offline_ami blviewer bldipimbclient qttest
+tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
 
 tgtsrcs_offline_ami := XtcFileClient.cc XtcFileClient_moc.cc qtami.cc
-
-tgtsrcs_OLD_offline_ami := OLD_FileSelect.cc OLD_FileSelect_moc.cc
-tgtsrcs_OLD_offline_ami += OLD_XtcFileClient.cc OLD_XtcFileClient_moc.cc
-tgtsrcs_OLD_offline_ami += OLD_qtami.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
 
@@ -47,8 +43,6 @@ tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
 tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata pdsdata/anadata pdsdata/indexdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
-
-tgtlibs_OLD_offline_ami := $(tgtlibs_offline_ami)
 
 datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata pdsdata/xampsdata pdsdata/fexampdata pdsdata/gsc16aidata 
 datalibs += pdsdata/timepixdata
@@ -89,7 +83,6 @@ qt_incs += $(qtincdir)/QtXml
 
 tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)
-tgtincs_OLD_offline_ami := $(qt_incs)
 tgtincs_blviewer    := $(qt_incs)
 tgtincs_bldipimbclient   := $(qt_incs)
 tgtincs_qttest := $(qt_incs)
