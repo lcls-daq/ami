@@ -1,35 +1,40 @@
 #ifndef AmiQt_XtcFileClient_hh
 #define AmiQt_XtcFileClient_hh
 
-#include <QtGui/QComboBox>
-#include <QtGui/QGroupBox>
-#include <QtGui/QPushButton>
-#include <QtGui/QLabel>
-#include <QtGui/QWidget>
+#include <QtGui/QApplication>
 #include <QtGui/QCheckBox>
+#include <QtGui/QComboBox>
+#include <QtGui/QFileDialog>
+#include <QtGui/QGroupBox>
+#include <QtGui/QLabel>
+#include <QtGui/QPushButton>
+#include <QtGui/QSlider>
 #include <QtGui/QSpinBox>
+#include <QtGui/QVBoxLayout>
+#include <QtGui/QWidget>
 
-#include "pdsdata/xtc/Dgram.hh"
 #include "ami/app/XtcClient.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
+#include "pdsdata/ana/XtcRun.hh"
+#include "pdsdata/xtc/Dgram.hh"
+#include "pdsdata/xtc/ProcInfo.hh"
 
 #include <errno.h>
 
-using std::string;
-using std::list;
-using Pds::Dgram;
+using namespace Ami;
+using namespace Pds;
+using namespace std;
 
 namespace Ami {
-
   namespace Qt {
     class XtcFileClient : public QWidget, public Routine {
       Q_OBJECT
     public:
-      XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir, bool testMode);
+      XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode);
       ~XtcFileClient();
       void routine();
-      void insertTransition(Pds::TransitionId::Value transition);
+      void insertTransition(TransitionId::Value transition);
       void getPathsForRun(QStringList& list, QString run);
       void configure();
       void configure_run();
@@ -39,12 +44,12 @@ namespace Ami {
       void runClicked();
       void stopClicked();
       void hzSliderChanged(int);
-      void printTransition(const Pds::TransitionId::Value transition);
+      void printTransition(const TransitionId::Value transition);
       void printDgram(const Dgram dg);
       void setStatus(const QString s);
       void setEnabled(QWidget* widget, bool enabled);
     signals:
-      void _printTransition(const Pds::TransitionId::Value transition);
+      void _printTransition(const TransitionId::Value transition);
       void _printDgram(const Dgram dg);
       void _setStatus(const QString s);
       void _setEnabled(QWidget* widget, bool enabled);
@@ -75,7 +80,7 @@ namespace Ami {
       QLabel* _statusLabel;
       bool _running;
       bool _stopped;
-      Pds::TransitionId::Value _lastTransition;
+      TransitionId::Value _lastTransition;
       int _dgCount;
       double _clockStart;
       double _runStart;

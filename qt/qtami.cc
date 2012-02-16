@@ -82,10 +82,15 @@ int main(int argc, char* argv[]) {
 
   // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.
   QGroupBox* groupBox = NULL;
+  Ami::Qt::DetectorSelect* output;
   if (! separateWindowMode) {
+    printf("Starting DetectorSelect...\n");
     groupBox = new QGroupBox("Offline");
-    Ami::Qt::DetectorSelect output("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
-    output.show();
+    output = new Ami::Qt::DetectorSelect("AMO Offline Monitoring", interface, interface, serverGroup, groupBox);
+    output->show();
+    printf("Started DetectorSelect.\n");
+  } else {
+    printf("NOT Starting DetectorSelect...\n");
   }
 
   // Start the XtcFileClient inside of the DetectorSelect GUI.

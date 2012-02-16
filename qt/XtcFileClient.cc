@@ -1,3 +1,5 @@
+#include "ami/qt/XtcFileClient.hh"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
@@ -5,22 +7,11 @@
 #include <iostream>
 #include <string>
 
-#include <QtGui/QApplication>
-#include <QtGui/QFileDialog>
-#include <QtGui/QVBoxLayout>
-#include <QtGui/QSlider>
-
-#include "ami/qt/XtcFileClient.hh"
-#include "pdsdata/xtc/ProcInfo.hh"
-#include "pdsdata/ana/XtcRun.hh"
-
-using namespace Ami::Qt;
-using namespace Pds;
-using namespace std;
-
 const int defaultHz = 60;
 const int maxHz = 240;
 const double secBetweenPrintDgram = 0.2;
+
+using namespace Ami::Qt;
 
 namespace Ami {
   namespace Qt {
@@ -36,7 +27,7 @@ namespace Ami {
   };
 };
 
-void XtcFileClient::printTransition(const Pds::TransitionId::Value transition) {
+void XtcFileClient::printTransition(const TransitionId::Value transition) {
   if (_lastTransition != transition) {
     cout << ">>> " << TransitionId::name(transition) << endl;
     _lastTransition = transition;
@@ -133,7 +124,6 @@ void XtcFileClient::getPathsForRun(QStringList& list, QString run) {
       continue;
     }
     cout << "getPathsForRun: adding " << path << endl;
-    cout << path << endl;
     list << path;
   }
   globfree(&g);
@@ -143,14 +133,14 @@ void XtcFileClient::getPathsForRun(QStringList& list, QString run) {
   cout << "getPathsForRun: done." << endl;
 }
 
-static void _connect(const QObject* sender, const char* signal, const QObject* receiver, const char* method, Qt::ConnectionType type = Qt::AutoConnection) {
+static void _connect(const QObject* sender, const char* signal, const QObject* receiver, const char* method, ::Qt::ConnectionType type = ::Qt::AutoConnection) {
   if (! QObject::connect(sender, signal, receiver, method, type)) {
     cout << "connect(" << sender << ", " << signal << ", " << receiver << ", " << method << ", " << type << ") failed" << endl;
     exit(1);
   }
 }
 
-XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const char* curdir, bool testMode) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode) :
   QWidget (0,::Qt::Window),
   _client(client),
   _curdir(curdir),
@@ -248,7 +238,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, Ami::XtcClient& client, const 
   _connect(_runList, SIGNAL(currentIndexChanged(int)), this, SLOT(selectRun(int)));
   _connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
   _connect(this, SIGNAL(_printDgram(const Dgram)), this, SLOT(printDgram(const Dgram)));
-  _connect(this, SIGNAL(_printTransition(const Pds::TransitionId::Value)), this, SLOT(printTransition(const Pds::TransitionId::Value)));
+  _connect(this, SIGNAL(_printTransition(const TransitionId::Value)), this, SLOT(printTransition(const TransitionId::Value)));
   _connect(this, SIGNAL(_setStatus(const QString)), this, SLOT(setStatus(const QString)));
   _connect(this, SIGNAL(_setEnabled(QWidget*, bool)), this, SLOT(setEnabled(QWidget*, bool)));
 
@@ -361,7 +351,7 @@ void XtcFileClient::stopClicked() {
   _stopped = true;
 }
 
-void XtcFileClient::insertTransition(Pds::TransitionId::Value transition)
+void XtcFileClient::insertTransition(TransitionId::Value transition)
 {
   printTransition(transition);
   Dgram dg;
@@ -397,7 +387,38 @@ void XtcFileClient::configure_run()
 
 void XtcFileClient::configure()
 {
+  cout << "_testMode = " << _testMode << endl;
   if (_testMode) {
+    cout << "HI _testMode = " << _testMode << endl;
+    QStringList list;
+    QString pattern = _curdir + "/*/*/*/xtc"; // _curdir either /reg/d or /reg/data
+    cout << "About to glob pattern " << qPrintable(pattern) << endl;
+    glob_t g;
+    glob(qPrintable(pattern), 0, 0, &g);
+    for (unsigned i = 0; i < g.gl_pathc; i++) {
+      char *path = g.gl_pathv[i];
+      cout << "found " << path << endl;
+      list << path;
+    }
+    globfree(&g);
+    list.sort();
+    for (int i = 0; i < list.size(); i++) {
+      cout << "--> " << qPrintable(list.at(i)) << endl;
+    }
+    exit(0);
+
+
+
+
+
+
+
+
+
+
+
+
+
     _runList->setCurrentIndex(0); // XXX no Qt operations should be done in this thread!
     for (int i = 1; true; i++) {
       _runName = _runList->currentText();
@@ -462,7 +483,7 @@ void XtcFileClient::run(QString runName, bool configureOnly)
     if (result != Pds::Ana::OK) {
       break;
     }
-    Pds::TransitionId::Value transition = dg->seq.service();
+    TransitionId::Value transition = dg->seq.service();
 
     printTransition(transition);
 
