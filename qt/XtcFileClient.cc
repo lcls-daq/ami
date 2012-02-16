@@ -402,31 +402,43 @@ void XtcFileClient::configure()
     }
     globfree(&g);
     list.sort();
+    int configCount = 0;
     for (int i = 0; i < list.size(); i++) {
-      cout << "--> " << qPrintable(list.at(i)) << endl;
-    }
-    exit(0);
+      _curdir = list.at(i);
+      cout << "--> " << qPrintable(_curdir) << endl;
 
+      // Collect all the .xtc files in this dir,
+      // and remember the runs as well.
+      QStringList runs;
+      QString gpath = _curdir + "/*-r*-s*.xtc";
+      printf("Trying %s\n", qPrintable(gpath));
+      glob(qPrintable(gpath), 0, 0, &g);
+      for (unsigned i = 0; i < g.gl_pathc; i++) {
+        char *path = g.gl_pathv[i];
+        QString s(basename(path));
+        int p = s.indexOf("-r");
+        if (p >= 0) {
+          QString run = s.mid(p+2, s.indexOf("-s")-p-2);
+          if (! runs.contains(run)) {
+            cout << "run=" << path << endl;
+            runs << run;
+          }
+        }
+      }
+      globfree(&g);
+      runs.sort();
 
-
-
-
-
-
-
-
-
-
-
-
-    _runList->setCurrentIndex(0); // XXX no Qt operations should be done in this thread!
-    for (int i = 1; true; i++) {
-      _runName = _runList->currentText();
-      _stopped = false;
-      _running = false;
-      run(_runName, true); // true to do full run; false to just config
-      _runList->setCurrentIndex(_runList->currentIndex() + 1);
-      cout << "~~~~~ did configure #" << i << endl;
+      if (_curdir.endsWith("/xtc")) {
+        _curdir.chop(4);
+      }
+      for (int j = 0; j < runs.size(); j++) {
+        _runName = runs.at(j);
+        _stopped = false;
+        _running = false;
+        run(_runName, true); // true to do full run; false to just config
+        configCount++;
+        cout << "~~~~~ did configure #" << configCount << endl;
+      }
     }
   } else {
     if (_runName == "") {
