@@ -24,6 +24,7 @@
 
 using namespace Ami;
 using namespace Pds;
+using namespace Pds::Ana;
 using namespace std;
 
 namespace Ami {
@@ -48,21 +49,29 @@ namespace Ami {
       void printDgram(const Dgram dg);
       void setStatus(const QString s);
       void setEnabled(QWidget* widget, bool enabled);
+      void updateDirLabel();
+      void updateRunCombo();
+      void updateRun();
     signals:
       void _printTransition(const TransitionId::Value transition);
       void _printDgram(const Dgram dg);
       void _setStatus(const QString s);
       void _setEnabled(QWidget* widget, bool enabled);
+      void _updateDirLabel();
+      void _updateRunCombo();
+      void _updateRun();
     private:
       void run(QString runName, bool configureOnly);
       void setDir(QString dir);
+      XtcRun _run;
       XtcClient _client;
       QString _curdir;
       bool _testMode;
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
-      QComboBox* _runList;
+      QComboBox* _runCombo;
+      QStringList _runList;
       QString _runName;
       QPushButton* _runButton;
       QPushButton* _stopButton;
