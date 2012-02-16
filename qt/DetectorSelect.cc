@@ -47,8 +47,10 @@ DetectorSelect::DetectorSelect(const QString& label,
                                unsigned ppinterface,
                                unsigned interface,
                                unsigned serverGroup,
-                               QGroupBox* guestBox) :
+                               QGroupBox* guestBox,
+                               bool quiet) :
   QtPWidget   (0),
+  _quiet      (quiet),
   _ppinterface(ppinterface),
   _interface  (interface),
   _serverGroup(serverGroup),
@@ -459,18 +461,19 @@ void DetectorSelect::change_detectors(const char* c)
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n;
     for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = n) {
-      n = reinterpret_cast<const Ami::DescEntry*>
-	(reinterpret_cast<const char*>(e) + e->size());
-
-      printf("Discovered %s [%08x.%08x] size=%d\n",e->name(),e->info().log(),e->info().phy(),e->size());
+      n = reinterpret_cast<const Ami::DescEntry*> (reinterpret_cast<const char*>(e) + e->size());
+      if (! _quiet) {
+        printf("Discovered %s [%08x.%08x] size=%d\n",e->name(),e->info().log(),e->info().phy(),e->size());
+      }
       if (e->info().level() == Pds::Level::Control) {
-        printf("\tSkip.\n");
+        if (! _quiet) {
+          printf("\tSkip.\n");
+        }
       } else {
         new DetectorListItem(_detList, e->name(), e->info(), e->channel());
       }
       if (e->size() == 0) {
-        printf("Stopped processing because e->size is 0.\n");
-        sleep(10);
+        printf("Stopped discovering because size is 0 for %s [%08x.%08x]\n",e->name(),e->info().log(),e->info().phy());
         break;
       }
     }

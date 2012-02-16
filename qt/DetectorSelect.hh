@@ -32,7 +32,8 @@ namespace Ami {
                      unsigned ppinterface,
                      unsigned interface,
                      unsigned serverGroup,
-                     QGroupBox* guestBox = NULL);
+                     QGroupBox* guestBox = NULL,
+                     bool quiet = false);
       ~DetectorSelect();
     public:
       void connected       () ;
@@ -71,6 +72,7 @@ namespace Ami {
 //       void                _update_groups();
 
     private:
+      bool           _quiet;
       unsigned       _ppinterface;
       unsigned       _interface;
       unsigned       _serverGroup;
