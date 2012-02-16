@@ -27,20 +27,27 @@ namespace Ami {
 	       const char*&     p);
       ~EdgePlot();
     public:
+      void savefinder(Ami::EdgeFinder *f, char*& p) const;
+      Ami::EdgeFinder *loadfinder(const char *& p);
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      void addfinder(Ami::EdgeFinder *f);
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
 		     const AxisInfo&);
       void setup_payload(Cds&);
       void update();
-      void dump(FILE*) const;
+      void dump(FILE* f, int idx) const;
+      void dump(FILE* f) const;
     private:
       unsigned    _channel;
-      Ami::EdgeFinder* _finder;
+#define MAX_FINDERS  2
+      Ami::EdgeFinder* _finder[MAX_FINDERS];
+      int      _fcnt;
       unsigned _output_signature;
-      QtBase*  _plot;
+      QtBase*  _plot[MAX_FINDERS];
+      QColor   &getcolor(int i);
     };
   };
 };

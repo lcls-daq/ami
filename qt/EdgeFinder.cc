@@ -17,6 +17,7 @@
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QPushButton>
+#include <QtGui/QCheckBox>
 #include <QtGui/QRadioButton>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QLabel>
@@ -74,6 +75,15 @@ EdgeFinder::EdgeFinder(QWidget* parent,
     QVBoxLayout* layout2 = new QVBoxLayout;
     layout2->addWidget(_baseline);
     layout2->addWidget(_threshold);
+    { QHBoxLayout *layout3 = new QHBoxLayout;
+      layout3->addWidget(new QLabel("edge to find: "));
+      _leading = new QCheckBox("Leading");
+      _leading->setChecked(true);
+      layout3->addWidget(_leading);
+      _trailing = new QCheckBox("Trailing");
+      layout3->addWidget(_trailing);
+      layout3->addStretch();
+      layout2->addLayout(layout3); }
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
   { QGroupBox* plot_box = new QGroupBox("Plot");
@@ -198,17 +208,25 @@ void EdgeFinder::set_channel(int c)
 
 void EdgeFinder::plot()
 {
+  if (!_leading->isChecked() && !_trailing->isChecked())
+    return;
   Ami::DescTH1F desc(qPrintable(_title->text()),
 		     "edge location","pulses",
 		     _hist->bins(),_hist->lo(),_hist->hi(),false); 
-  
-  EdgePlot* plot = new EdgePlot(this,
-				_title->text(),
-				_channel,
-				new Ami::EdgeFinder(0.5,
-						    _threshold->value(),
-						    _baseline ->value(),
-						    desc));
+  EdgePlot* plot =
+      new EdgePlot(this, _title->text(),_channel,
+                   new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
+                                       Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
+                                                                      _leading->isChecked()),
+                                       desc));
+  if (_leading->isChecked() && _trailing->isChecked()) {
+      // Add trailing plot to EdgePlot!
+      plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
+                                          Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
+                                                                         false),
+                                          desc));
+  }
+
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));

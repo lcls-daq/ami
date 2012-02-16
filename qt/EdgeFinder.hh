@@ -10,6 +10,7 @@ class QLineEdit;
 class QButtonGroup;
 class QVBoxLayout;
 class QComboBox;
+class QCheckBox;
 
 #include <list>
 
@@ -38,8 +39,6 @@ namespace Ami {
       void load(const char*& p);
       void save_plots(const QString&) const;
     public:
-      Ami::AbsOperator* math() const;
-    public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
       void setup_payload(Cds&);
@@ -62,6 +61,7 @@ namespace Ami {
  
       QLineEdit* _title;
       DescTH1F*  _hist;
+      QCheckBox *_leading, *_trailing;
 
       std::list<EdgePlot*> _plots;
     };

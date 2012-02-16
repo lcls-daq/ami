@@ -16,9 +16,11 @@ using namespace Ami;
 EdgeFinder::EdgeFinder(double     fraction,
 		       double     threshold_value,
 		       double     baseline_value,
+                       int        alg,
 		       const      DescTH1F& output) :
   AbsOperator(AbsOperator::EdgeFinder),
   _fraction (fraction),
+  _alg(alg),
   _threshold_value(threshold_value),
   _baseline_value(baseline_value),
   _output(output),
@@ -34,6 +36,19 @@ static const char* _advance(const char*& p, unsigned size) { const char* o=p; p+
 
 EdgeFinder::EdgeFinder(const char*& p) :
   AbsOperator     (AbsOperator::EdgeFinder),
+  _fraction       (EXTRACT(p, double)),
+  _alg            (EXTRACT(p, int)),
+  _threshold_value(EXTRACT(p, double)),
+  _baseline_value (EXTRACT(p, double)),
+  _output         (EXTRACT(p, DescTH1F)),
+  _output_entry   (new EntryTH1F(_output))
+{
+}
+
+EdgeFinder::EdgeFinder(double fraction, int alg, const char*& p) :
+  AbsOperator     (AbsOperator::EdgeFinder),
+  _fraction       (fraction),
+  _alg            (alg),
   _threshold_value(EXTRACT(p, double)),
   _baseline_value (EXTRACT(p, double)),
   _output         (EXTRACT(p, DescTH1F)),
@@ -48,9 +63,13 @@ EdgeFinder::~EdgeFinder()
 }
 
 DescEntry& EdgeFinder::output   () const { return _output_entry->desc(); }
+void* EdgeFinder::desc   () const { return (void *)&_output; }
+int EdgeFinder::desc_size   () const { return sizeof(_output); }
 
 void*      EdgeFinder::_serialize(void* p) const
 {
+  _insert(p, &_fraction, sizeof(_fraction));
+  _insert(p, &_alg, sizeof(_alg));
   _insert(p, &_threshold_value, sizeof(_threshold_value));
   _insert(p, &_baseline_value, sizeof(_baseline_value));
   _insert(p, &_output, sizeof(_output));
@@ -86,13 +105,13 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
     }
     else if (crossed && !over) {
       //  find the edge
-      double edge_v = 0.5*(peak+baseline_value);
+      double edge_v = _fraction*(peak+baseline_value);
       unsigned i=start;
-      if (rising) { // leading edge +
+      if (rising == IsLeading(_alg)) { // leading positive edge, or trailing negative edge
 	while(entry.content(i) < edge_v)
 	  i++;
       }
-      else {        // leading edge -
+      else {                           // trailing positive edge, or leading negative edge
 	while(entry.content(i) > edge_v)
 	  i++;
       }
@@ -103,8 +122,11 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
       crossed = false;
     }
     else if (( rising && y>peak) ||
-	     (!rising && y<peak))
+	     (!rising && y<peak)) {
       peak = y;
+      if (!IsLeading(_alg))  // For a trailing edge, start at the peak!
+        start = k;
+    }
   }
   _output_entry->addinfo(entry.info(EntryWaveform::Normalization),
 			 EntryTH1F::Normalization);
