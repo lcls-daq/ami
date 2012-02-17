@@ -128,12 +128,12 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 
   switch(_plot_grp->checkedId()) {
   case ScalarPlotDesc::TH1F:
-    { QString v = _xnorm->isChecked() ? vn : qtitle;
+    { QString v = _ynorm->isChecked() ? vn : qtitle;
       desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
 			     _hist->bins(),_hist->lo(),_hist->hi()); 
       break; }
   case ScalarPlotDesc::vT: 
-    { QString v = _xnorm->isChecked() ? vn : qtitle;
+    { QString v = _ynorm->isChecked() ? vn : qtitle;
       switch(_vTime->stat()) {
       case Ami::DescScalar::StdDev:
         desc = new Ami::DescScalar(qPrintable(v),"stddev", Ami::DescScalar::StdDev,
@@ -174,9 +174,11 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 
 const char* ScalarPlotDesc::expr(const QString& e) const 
 {
+  static char buf[256];
   QString vn = _ynorm->isChecked() ?
     QString("(%1)/(%2)").arg(e).arg(_vnorm->entry()) : e;
-  return qPrintable(vn);
+  strncpy(buf, qPrintable(vn), 256);
+  return buf;
 }
 
 const char* ScalarPlotDesc::title() const

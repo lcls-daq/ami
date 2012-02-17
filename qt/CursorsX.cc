@@ -325,11 +325,10 @@ void CursorsX::calc()
 
 void CursorsX::plot()
 {
-  DescEntry* desc = _scalar_desc->desc(0);
-
   // replace cursors with values
   // and integrate symbol with 8-bit char
   QString expr = _expr->text();
+  DescEntry* desc = _scalar_desc->desc(qPrintable(expr));
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QString new_expr;
     const QString match = (*it)->name();
@@ -351,7 +350,6 @@ void CursorsX::plot()
   expr.replace(_divide      ,Expression::divide());
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
-
   CursorPlot* plot = new CursorPlot(this,
 				    desc->name(),
 				    _channel,

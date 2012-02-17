@@ -2,6 +2,7 @@
 #define AmiQt_ScalarPlotDesc_hh
 
 #include "ami/qt/FeatureList.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include <QtGui/QWidget>
 
@@ -18,12 +19,11 @@ namespace Ami {
     class DescChart;
     class DescProf;
     class DescScan;
-    class FeatureRegistry;
 
     class ScalarPlotDesc : public QWidget {
     public:
       enum Type { TH1F, vT, vF, vS };
-      ScalarPlotDesc(QWidget* parent, FeatureRegistry* =0);
+      ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry = &FeatureRegistry::instance());
       ~ScalarPlotDesc();
     public:
       void save(char*& p) const;

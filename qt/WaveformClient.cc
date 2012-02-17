@@ -3,6 +3,7 @@
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/EdgeFinder.hh"
 #include "ami/qt/CursorsX.hh"
+#include "ami/qt/CurveFit.hh"
 
 #include <QtGui/QPushButton>
 
@@ -22,9 +23,14 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
     addWidget(cursorsB);
     _cursors = new CursorsX(this,_channels,NCHANNELS,wd);
     connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(show())); }
+  { QPushButton* fitB = new QPushButton("Waveform Fit");
+    addWidget(fitB);
+    _fits = new CurveFit(this,_channels,NCHANNELS,wd);
+    connect(fitB, SIGNAL(clicked()), _fits, SLOT(show())); }
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
 }
 
 WaveformClient::~WaveformClient() {}
@@ -35,6 +41,7 @@ void WaveformClient::save(char*& p) const
   
   XML_insert(p, "EdgeFinder", "_edges", _edges  ->save(p) );
   XML_insert(p, "CursorsX", "_cursors", _cursors->save(p) );
+  XML_insert(p, "CurveFit", "_fits",    _fits->save(p) );
 }
 
 void WaveformClient::load(const char*& p)
@@ -43,6 +50,7 @@ void WaveformClient::load(const char*& p)
 
   disconnect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   disconnect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
+  disconnect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
   
   XML_iterate_open(p,tag)
 
@@ -52,11 +60,14 @@ void WaveformClient::load(const char*& p)
       _edges  ->load(p);
     else if (tag.name == "_cursors")
       _cursors->load(p);
+    else if (tag.name == "_fits")
+      _fits->load(p);
 
   XML_iterate_close(WaveformClient,tag);
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
 
   update_configuration();
 }
@@ -67,6 +78,7 @@ void WaveformClient::save_plots(const QString& p) const
   wd.save_plots(p);
   _edges  ->save_plots(p+"_edge");
   _cursors->save_plots(p+"_cursor");
+  _fits   ->save_plots(p+"_fit");
 }
 
 void WaveformClient::_prototype(const DescEntry& e)
@@ -76,6 +88,7 @@ void WaveformClient::_prototype(const DescEntry& e)
     
     _edges  ->initialize(e);
     _cursors->initialize(e);
+    _fits   ->initialize(e);
   }
 }
 
@@ -91,16 +104,20 @@ void WaveformClient::_configure(char*& p,
   _cursors->configure(p, input, output,
 		      ch, signatures, nchannels,
 		      ConfigureRequest::Analysis);
+  _fits   ->configure(p, input, output,
+		      ch, signatures, nchannels);
 }
 
 void WaveformClient::_setup_payload(Cds& cds)
 {
   _edges  ->setup_payload(cds);
   _cursors->setup_payload(cds);
+  _fits   ->setup_payload(cds);
 }
 
 void WaveformClient::_update()
 {
   _edges  ->update();
   _cursors->update();
+  _fits   ->update();
 }

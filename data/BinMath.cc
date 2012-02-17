@@ -7,6 +7,7 @@
 
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryImage.hh"
@@ -56,7 +57,43 @@ static const unsigned MAX_INDEX = 999999;
 
 namespace Ami {
   namespace BinMathC {
-    CLASSTERM(Waveform,content);
+    // CLASSTERM(Waveform,content);
+  class EntryWaveformTerm : public Ami::Term {
+  public:
+    EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi) :
+      _entry(e), _lo(lo), _hi(hi) {}
+      ~EntryWaveformTerm() {}
+  public:
+      double evaluate() const
+      { double sum=0;
+	unsigned lo=_lo, hi=_hi;
+	const EntryWaveform* e = static_cast<const EntryWaveform*>(_entry);
+        unsigned offset = 0;
+        const DescWaveform& desc = e->desc();
+        /*
+         * xlow is 0.0 for all regular waveforms.  However, for references read from a .dat file,
+         * the X values are the *middle* of the bins, and do not start at 0.0!  (Because of this,
+         * we use floor below instead of round in calculating the offset.)
+         */
+        if (desc.xlow() != 0.0) {
+            static int first = 0;
+            offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
+            if (first < 10) {
+                first++;
+                printf("BinMathC: %lg %lg %d -> offset %d\n", desc.xlow(), desc.xup(), desc.nbins(), offset);
+            }
+            lo -= offset;
+            hi -= offset;
+        }
+	for(unsigned i=lo; i<=hi; i++)
+	  sum += e->content(i);
+	double n = e->info(EntryWaveform::Normalization);
+	return n > 0 ? sum / n : sum; }
+  private:
+      const Entry*& _entry;
+      unsigned _lo, _hi;
+  };
+
     CLASSTERM(TH1F    ,content);
     //    CLASSTERM(Prof    ,ymean  );
 
@@ -222,7 +259,6 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   _entry = EntryFactory::entry(o);
  
   { QString expr(_expression);
-    printf("BinMath input expr %s\n",qPrintable(expr));
     QString new_expr;
     // parse expression for bin indices
     QRegExp match("\\[[0-9,]+\\]");

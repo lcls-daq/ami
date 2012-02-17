@@ -7,6 +7,7 @@ namespace Ami {
   namespace Qt {
     class CursorsX;
     class EdgeFinder;
+    class CurveFit;
 
     class WaveformClient : public Client {
     public:
@@ -30,6 +31,7 @@ namespace Ami {
     private:
       EdgeFinder*        _edges;
       CursorsX*          _cursors;
+      CurveFit*          _fits;
       bool               _initialized;
     };
   };

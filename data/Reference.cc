@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <vector>
 
 using namespace Ami;
 
@@ -38,7 +40,43 @@ Reference::Reference(const char*& p, const DescEntry& e) :
     printf("reference failed to open %s\n",_path);
     abort();
   }
-  int size;
+  int size, i;
+  /*
+   * Check if this is text or a DescEntry.
+   *
+   * Scan the file.  If everything is printable or whitespace,
+   * assume it is text.
+   */
+  while ((i = fgetc(f)) != EOF)
+      if (!isprint(i) && !isspace(i))
+          break;
+  rewind(f);
+  if (i == EOF) { // Looks like text!
+      double tf = 0.0, tl = 0.0;
+      std::vector<double> _data;
+      double tt, dd;
+
+      _data.clear();
+      i = 0;
+      while (fscanf(f, "%lg %lg\n", &tt, &dd) == 2) {
+          if (!i)
+              tf = tt;
+          else
+              tl = tt;
+          _data.push_back(dd);
+          i++;
+      }
+      fclose(f);
+      Pds::DetInfo info(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
+      DescWaveform *dwf =
+          new (_buffer) DescWaveform(info, -1, "Reference", "xtitle", "ytitle", i, tf, tl);
+      _entry = EntryFactory::entry(*dwf);
+      while (--i >= 0) {
+          ((EntryWaveform *)_entry)->content(_data[i], i);
+      }
+      _entry->valid(1.0); // Mark it valid with a bogus time!
+      return;
+  }
   READ_SIZE(_buffer,sizeof(DescEntry),f);
   const DescEntry& d = *reinterpret_cast<const DescEntry*>(_buffer);
   if (d.size()>sizeof(_buffer)) {

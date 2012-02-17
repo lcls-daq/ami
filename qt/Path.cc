@@ -76,7 +76,7 @@ QString Path::loadReferenceFile(const QString& base)
   QString ref_dir(_base);
   ref_dir += QString(base);
   QString file = QFileDialog::getOpenFileName(0,"Reference File:",
-					      ref_dir, "*.ref");
+					      ref_dir, "*.ref;;*.dat");
   if (file.isNull()) {
     printf("load_reference file is null\n");
   }
