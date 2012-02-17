@@ -1,5 +1,6 @@
 #include "ami/app/AmiApp.hh"
 #include "ami/service/Ins.hh"
+#include "ami/event/EventHandler.hh"
 
 using Ami::AmiApp;
 
@@ -10,6 +11,7 @@ static void usage(char* progname) {
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
 	  "          -L <user module plug-in path>\n"
+          "          [-R] (full resolution)\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -22,7 +24,7 @@ int main(int argc, char* argv[]) {
   bool offline=false;
   std::vector<char *> module_names;
 
-  while ((c = getopt(argc, argv, "?hfp:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfRp:n:i:s:L:")) != -1) {
     switch (c) {
       case 'f':
         offline=true;
@@ -41,6 +43,9 @@ int main(int argc, char* argv[]) {
         break;
       case 'L':
         module_names.push_back(optarg);
+        break;
+      case 'R':
+        Ami::EventHandler::enable_full_resolution(true);
         break;
       case '?':
       case 'h':

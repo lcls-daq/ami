@@ -52,6 +52,10 @@ namespace Ami {
     const std::list<Pds::TypeId::Type>& data_types() const { return _data_type; }
     const Pds::TypeId::Type&  config_type() const { return _config_type.front(); }
     const std::list<Pds::TypeId::Type>& config_types() const { return _config_type; }
+  public:
+    static void enable_full_resolution(bool);
+  protected:
+    bool _full_resolution() const;
   private:
     Pds::Src                     _info;
     std::list<Pds::TypeId::Type> _data_type;

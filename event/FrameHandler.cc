@@ -63,7 +63,7 @@ void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
     rows    = c.roiEnd().row   -c.roiBegin().row   ;
   }
   unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = (pixels-1)/640 + 1;
+  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
   columns = (columns+ppb-1)/ppb;
   rows    = (rows   +ppb-1)/ppb;
   DescImage desc(det, (unsigned)0, ChannelID::name(det),

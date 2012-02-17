@@ -72,3 +72,8 @@ void   EventHandler::_event(Pds::TypeId type,
   _event(payload,t);
 }
 
+static bool _full_res = false;
+
+void   EventHandler::enable_full_resolution(bool v) { _full_res = v; }
+
+bool   EventHandler::_full_resolution() const { return _full_res; }

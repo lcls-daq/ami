@@ -46,7 +46,7 @@ void PrincetonHandler::_configure(const void* payload, const Pds::ClockTime& t)
   unsigned columns = width (c);
   unsigned rows    = height(c);
   unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = (pixels-1)/640 + 1;
+  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
   columns = (columns+ppb-1)/ppb;
   rows    = (rows   +ppb-1)/ppb;
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
