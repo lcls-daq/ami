@@ -10,33 +10,53 @@
 #include "ami/server/ServerManager.hh"
 #include "ami/service/Ins.hh"
 
+#include <iostream>
+#include <fstream>
 #include <QtGui/QApplication>
 
 using namespace Ami;
+using namespace std;
 
 static void usage(char* progname) {
   fprintf(stderr,
 	  "Usage: %s -p <xtc path>\n"
 	  "         [-i <interface address>]\n"
 	  "         [-s <server mcast group>]\n"
-	  "         [-L <user plug-in path>]\n", progname);
+	  "         [-L <user plug-in path>]\n"
+	  "         [-o <debugging output file>]\n", progname);
 }
 
+
+static void redirectOutput(string redirectOutputFile) {
+  if (freopen(redirectOutputFile.c_str(), "w", stdout) == NULL) {
+    perror(redirectOutputFile.c_str());
+    return;
+  }
+  if (freopen(redirectOutputFile.c_str(), "w", stderr) == NULL) {
+    perror(redirectOutputFile.c_str());
+    return;
+  }
+  static ofstream file;
+  file.open(redirectOutputFile.c_str());
+  cout.rdbuf(file.rdbuf());
+  cerr.rdbuf(file.rdbuf());
+}
 
 int main(int argc, char* argv[]) {
   const char* path = "/reg/d/ana12";
   unsigned interface = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
-  std::list<UserModule*> userModules;
+  list<UserModule*> userModules;
   bool testMode = false;
   bool separateWindowMode = false;
+  string redirectOutputFile = "";
 
   QApplication app(argc, argv);
   qRegisterMetaType<Dgram>("Dgram");
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:i:s:f:L:TW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:i:s:f:o:L:TW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -50,6 +70,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'f':
       Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
+      break;
+    case 'o':
+      redirectOutputFile = optarg;
       break;
     case 'T':
       testMode = true;
@@ -65,11 +88,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  if (redirectOutputFile != "") {
+    redirectOutput(redirectOutputFile);
+  }
+
   // Create ServerManager
   ServerManager srv(interface, serverGroup);
 
   // Construct features, filter, and factory
-  std::vector<FeatureCache*> features;
+  vector<FeatureCache*> features;
   for(unsigned i=0; i<Ami::NumberOfSets; i++) {
     features.push_back(new FeatureCache);
   }
