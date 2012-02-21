@@ -76,6 +76,8 @@ namespace Ami {
       QtBase*       _plot;
       QComboBox*    _refBox;
       QLineEdit*    _scale;
+      bool          _operator_is_ref;
+      bool          _configured_ref;
     };
   };
 };
