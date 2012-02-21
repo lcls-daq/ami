@@ -15,9 +15,9 @@ namespace Ami {
       bool set_entry(Ami::Entry* entry);
       void update();
     public slots:
-      void change();
+      void change(QString text);
     signals:
-      void changed();
+      void changed(QString text);
     private:
       Ami::EntryScalar* _entry;
       double   _last;
