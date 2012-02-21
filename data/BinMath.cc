@@ -76,12 +76,7 @@ namespace Ami {
          * we use floor below instead of round in calculating the offset.)
          */
         if (desc.xlow() != 0.0) {
-            static int first = 0;
             offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
-            if (first < 10) {
-                first++;
-                printf("BinMathC: %lg %lg %d -> offset %d\n", desc.xlow(), desc.xup(), desc.nbins(), offset);
-            }
             lo -= offset;
             hi -= offset;
         }
