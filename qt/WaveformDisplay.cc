@@ -288,21 +288,10 @@ void WaveformDisplay::toggle_minor_grid()
 
 void WaveformDisplay::prototype(const Ami::DescEntry* e)
 {
-    /*
-     * OK, a little bit of weirdness here.  "Regular" entries start from zero,
-     * but entries that come References that are read from .dat files have 
-     * non-zero start points.  Since having two scales screws everything up,
-     * just skip the update for the .dat References, and count on the fact
-     * that one of the "real" displays should set the parameters correctly.
-     *
-     * If someone only displays unchanging References, they deserve what they
-     * are going to get!
-     */
 #define CASETYPE(type)							    \
     case Ami::DescEntry::type:						    \
       { const Ami::Desc##type& d = *static_cast<const Ami::Desc##type*>(e); \
-        if (d.xlow() == 0.0)                                                \
-	    _xbins->update(d.xlow(),d.xup(),d.nbins());			    \
+        _xbins->update(d.xlow(),d.xup(),d.nbins());			    \
 	break; }						       
   switch(e->type()) {
     CASETYPE(TH1F)

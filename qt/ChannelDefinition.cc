@@ -64,7 +64,9 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _changed         (false),
   _show            (false),
   _plot            (0),
-  _scale           (new QLineEdit)
+  _scale           (new QLineEdit),
+  _operator_is_ref (false),
+  _configured_ref  (false)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -267,6 +269,7 @@ void ChannelDefinition::apply()
     }
     else
       _operator = new Single(scale);
+    _operator_is_ref  = false;
     break;
   case _Average     : 
     if (_refBox) {
@@ -275,6 +278,7 @@ void ChannelDefinition::apply()
     }
     else
       _operator = new Average(_interval->text().toInt(),scale);
+    _operator_is_ref  = false;
     break;
   case _Variance    : 
     if (_refBox) {
@@ -283,13 +287,17 @@ void ChannelDefinition::apply()
     }
     else
       _operator = new Variance(_interval->text().toInt(),scale);
+    _operator_is_ref  = false;
     break;
   case _Reference:
-    _operator = new Reference(qPrintable(_ref_file)); break;
+    _operator = new Reference(qPrintable(_ref_file));
+    _operator_is_ref  = true;
+    break;
   case _Math:
   default:
     //  Don't request anything from the server?
     _operator = 0;
+    _operator_is_ref  = false;
     break;
   }
 
@@ -335,6 +343,7 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
                                    _math->op());
     }
     p += r->size();
+    _configured_ref = false;
     return _output_signature;
   }
   else if (_operator) {
@@ -346,6 +355,7 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
 						    *_filter->filter(),
 						    *_operator);
     p += r.size();
+    _configured_ref = _operator_is_ref;
     return _output_signature;
   }
   return -1;
@@ -363,7 +373,17 @@ void ChannelDefinition::setup_payload(Cds& cds)
   if (entry) {
     _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color);
     _frame.add(_plot, _show);
-    if (_show) 
+    /*
+     * OK, a little bit of weirdness here.  If we read in .dat files as references,
+     * they look different than the other waveforms and screw everything up.  But
+     * if we just ignore the non-zero start points, we screw up the projection
+     * waveforms.  Therefore, we keep track if we are a Reference, and if this
+     * is the response to configuring a Reference, we ignore it here.
+     *
+     * If someone only displays unchanging References in a window, they deserve what
+     * they are going to get!
+     */
+    if (_show && !_configured_ref) 
       _frame.prototype(&entry->desc());
   }
   else if (_output_signature!=NOT_INIT)
