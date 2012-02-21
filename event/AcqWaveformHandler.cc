@@ -21,7 +21,8 @@ static Pds::Acqiris::ConfigV1 _default(0,0,0,
 AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_AcqWaveform, Pds::TypeId::Id_AcqConfig),
   _config(_default),
-  _nentries(0)
+  _nentries(0),
+  _ref(NULL)
 {
 }
 
@@ -39,7 +40,7 @@ AcqWaveformHandler::~AcqWaveformHandler()
 {
 }
 
-unsigned AcqWaveformHandler::nentries() const { return _nentries>1 ? _nentries+1 : _nentries; }
+unsigned AcqWaveformHandler::nentries() const { return _nentries + (_ref != NULL); }
 
 const Entry* AcqWaveformHandler::entry(unsigned i) const 
 {
@@ -49,7 +50,10 @@ const Entry* AcqWaveformHandler::entry(unsigned i) const
     return _ref; 
 }
 
-void AcqWaveformHandler::reset() { _nentries = 0; }
+void AcqWaveformHandler::reset() {
+  _nentries = 0;
+  _ref = NULL;
+}
 
 void AcqWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
@@ -109,7 +113,7 @@ void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t
     d = d->nextChannel(h);
   }
 
-  if (_nentries>1)
+  if (_ref)
     _ref->valid(t);
 }
 
@@ -121,6 +125,6 @@ void AcqWaveformHandler::_damaged()
     entry->invalid();
   }
 
-  if (_nentries>1)
+  if (_ref)
     _ref->invalid();
 }
