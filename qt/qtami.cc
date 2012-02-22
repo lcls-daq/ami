@@ -23,23 +23,30 @@ static void usage(char* progname) {
 	  "         [-i <interface address>]\n"
 	  "         [-s <server mcast group>]\n"
 	  "         [-L <user plug-in path>]\n"
-	  "         [-o <debugging output file>]\n", progname);
+	  "         [-o <filename for debugging messages>]\n"
+	  "         [-e <filename for error messages>]\n", progname);
 }
 
 
-static void redirectOutput(string redirectOutputFile) {
-  if (freopen(redirectOutputFile.c_str(), "w", stdout) == NULL) {
-    perror(redirectOutputFile.c_str());
-    return;
+static void redirect(const char *output, const char *error) {
+  if (output) {
+    if (freopen(output, "w", stdout) == NULL) {
+      perror(output);
+      return;
+    }
+    static ofstream ofile;
+    ofile.open(output);
+    cout.rdbuf(ofile.rdbuf());
   }
-  if (freopen(redirectOutputFile.c_str(), "w", stderr) == NULL) {
-    perror(redirectOutputFile.c_str());
-    return;
+  if (error) {
+    if (freopen(error, "w", stderr) == NULL) {
+      perror(error);
+      return;
+    }
+    static ofstream efile;
+    efile.open(error);
+    cerr.rdbuf(efile.rdbuf());
   }
-  static ofstream file;
-  file.open(redirectOutputFile.c_str());
-  cout.rdbuf(file.rdbuf());
-  cerr.rdbuf(file.rdbuf());
 }
 
 int main(int argc, char* argv[]) {
@@ -49,14 +56,15 @@ int main(int argc, char* argv[]) {
   list<UserModule*> userModules;
   bool testMode = false;
   bool separateWindowMode = false;
-  string redirectOutputFile = "";
+  char* outputFile = "/dev/null";
+  char* errorFile = NULL;
 
   QApplication app(argc, argv);
   qRegisterMetaType<Dgram>("Dgram");
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:i:s:f:o:L:TW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:i:s:f:o:e:L:TW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -72,7 +80,10 @@ int main(int argc, char* argv[]) {
       Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
       break;
     case 'o':
-      redirectOutputFile = optarg;
+      outputFile = optarg;
+      break;
+    case 'e':
+      errorFile = optarg;
       break;
     case 'T':
       testMode = true;
@@ -88,9 +99,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (redirectOutputFile != "") {
-    redirectOutput(redirectOutputFile);
-  }
+  // Output goes to /dev/null if no other file was specified with -o
+  // Error goes to console if no other file was specified with -e
+  redirect(outputFile, errorFile);
 
   // Create ServerManager
   ServerManager srv(interface, serverGroup);
