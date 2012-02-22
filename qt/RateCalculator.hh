@@ -22,6 +22,7 @@ namespace Ami {
       Ami::EntryScalar* _entry;
       double   _last;
       double   _entries;
+      pthread_mutex_t _mutex;
     };
   };
 };
