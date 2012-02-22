@@ -7,8 +7,8 @@
 #include <iostream>
 #include <string>
 
-const int defaultHz = 60;
-const int maxHz = 240;
+const int maxHz = 60;
+const int defaultHz = maxHz + 1;
 const double secBetweenPrintDgram = 0.2;
 
 using namespace Ami::Qt;
@@ -412,7 +412,7 @@ void XtcFileClient::configure()
         emit _updateRun();
         _stopped = false;
         _running = false;
-        run(_runName, true); // true to do full run; false to just config
+        run(_runName, true); // false to do full run; true to just config
         configCount++;
         cout << ">>> Finished dir " << qPrintable(_curdir) << " run " << qPrintable(_runName) << " (config #" << configCount << ")" << endl;
         char status[256];
@@ -435,7 +435,11 @@ void XtcFileClient::run(QString runName, bool configureOnly)
 {
   QStringList files;
   cout << "_curdir is " << qPrintable(_curdir) << endl;
+  emit _setStatus("Fetching paths for run " + runName);
   getPathsForRun(files, runName);
+  char buf[256];
+  sprintf(buf, "Fetched %d paths for run %s", files.size(), qPrintable(runName));
+  emit _setStatus(buf);
   if (files.empty()) {
     cout << "getPathsForRun(): No xtc files found in " << qPrintable(_curdir) << " for run " << qPrintable(runName) << endl;
     _stopped = true; // do not loop
@@ -451,7 +455,11 @@ void XtcFileClient::run(QString runName, bool configureOnly)
     _run.add_file(file);
     files.pop_front();
   }
+  sprintf(buf, "Initializing run %s", qPrintable(runName));
+  emit _setStatus(buf);
   _run.init();
+  sprintf(buf, "Configuring run %s", qPrintable(runName));
+  emit _setStatus(buf);
 
   _runStart = getTimeAsDouble();
   _clockStart = 0.0;
@@ -510,8 +518,13 @@ void XtcFileClient::run(QString runName, bool configureOnly)
           d_sleep(stallSec);
         }
       }
-    } else if (transition == TransitionId::Configure && configureOnly) {
-      break;
+    } else if (transition == TransitionId::Configure) {
+      if (configureOnly) {
+        break;
+      }
+      // Finished with config, now doing actual processing
+      sprintf(buf, "Processing run %s", qPrintable(runName));
+      emit _setStatus(buf);
     }
   }
 
