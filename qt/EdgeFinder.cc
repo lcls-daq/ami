@@ -39,7 +39,8 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
-  _title    (new QLineEdit("Edge plot"))
+  _title    (new QLineEdit("Edge plot")),
+  _dead     (new QLineEdit("0"))
 {
   _baseline  = new EdgeCursor("baseline" ,*_frame.plot());
   _threshold = new EdgeCursor("threshold",*_frame.plot());
@@ -82,6 +83,11 @@ EdgeFinder::EdgeFinder(QWidget* parent,
       layout3->addWidget(_leading);
       _trailing = new QCheckBox("Trailing");
       layout3->addWidget(_trailing);
+      layout3->addStretch();
+      layout2->addLayout(layout3); }
+    { QHBoxLayout *layout3 = new QHBoxLayout;
+      layout3->addWidget(new QLabel("dead time: "));
+      layout3->addWidget(_dead);
       layout3->addStretch();
       layout2->addLayout(layout3); }
     locations_box->setLayout(layout2);
@@ -212,19 +218,20 @@ void EdgeFinder::plot()
     return;
   Ami::DescTH1F desc(qPrintable(_title->text()),
 		     "edge location","pulses",
-		     _hist->bins(),_hist->lo(),_hist->hi(),false); 
+		     _hist->bins(),_hist->lo(),_hist->hi(),false);
+  double deadtime = _dead->text().toDouble();
   EdgePlot* plot =
       new EdgePlot(this, _title->text(),_channel,
                    new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
                                                                       _leading->isChecked()),
-                                       desc));
+                                       deadtime, desc));
   if (_leading->isChecked() && _trailing->isChecked()) {
       // Add trailing plot to EdgePlot!
       plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
                                           Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
                                                                          false),
-                                          desc));
+                                          deadtime, desc));
   }
 
   _plots.push_back(plot);

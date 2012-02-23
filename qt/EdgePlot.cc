@@ -64,7 +64,7 @@ EdgePlot::EdgePlot(QWidget* parent,
       b += 2*sizeof(uint32_t);
       _finder[0] = new Ami::EdgeFinder(0.5,
                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                      true), b);
+                                                                      true), 0.0, b);
       _fcnt = 1;
     } else if (tag.name.compare(0,7,"_finder") == 0) { /* _finderNNN */
         int i = atoi(tag.name.substr(7).c_str());
@@ -95,6 +95,7 @@ void EdgePlot::savefinder(Ami::EdgeFinder *f, char*& p) const
     XML_insert( p, "double",   "_baseline",  QtPersistent::insert(p,f->baseline()) );
     XML_insert( p, "int",      "_algorithm", QtPersistent::insert(p,f->algorithm()) );
     XML_insert( p, "double",   "_fraction",  QtPersistent::insert(p,f->fraction()) );
+    XML_insert( p, "double",   "_deadtime",  QtPersistent::insert(p,f->deadtime()) );
     XML_insert( p, "DescTH1F", "_output",    QtPersistent::insert(p, f->desc(), f->desc_size()));
 }
 
@@ -102,6 +103,7 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
 {
   double thresh = 0.0, base = 0.0;
   int alg = Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak, true);
+  double deadtime = 0.0;
   double fraction = 0.5;
   const Ami::DescTH1F *desc = NULL;
 
@@ -112,6 +114,8 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
       base = Ami::Qt::QtPersistent::extract_d(p);
     else if (tag.name == "_algorithm")
       alg = Ami::Qt::QtPersistent::extract_i(p);
+    else if (tag.name == "_deadtime")
+      deadtime = Ami::Qt::QtPersistent::extract_d(p);
     else if (tag.name == "_fraction")
       fraction = Ami::Qt::QtPersistent::extract_d(p);
     else if (tag.name == "_output") {
@@ -120,7 +124,7 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
   XML_iterate_close(EdgeFinder,tag);
 
   if (desc)
-      return new Ami::EdgeFinder(fraction, thresh, base, alg, *desc);
+      return new Ami::EdgeFinder(fraction, thresh, base, alg, deadtime, *desc);
   else
       return NULL;
 }

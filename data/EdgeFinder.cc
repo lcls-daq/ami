@@ -17,10 +17,12 @@ EdgeFinder::EdgeFinder(double     fraction,
 		       double     threshold_value,
 		       double     baseline_value,
                        int        alg,
+                       double     deadtime,
 		       const      DescTH1F& output) :
   AbsOperator(AbsOperator::EdgeFinder),
   _fraction (fraction),
   _alg(alg),
+  _deadtime(deadtime),
   _threshold_value(threshold_value),
   _baseline_value(baseline_value),
   _output(output),
@@ -38,6 +40,7 @@ EdgeFinder::EdgeFinder(const char*& p) :
   AbsOperator     (AbsOperator::EdgeFinder),
   _fraction       (EXTRACT(p, double)),
   _alg            (EXTRACT(p, int)),
+  _deadtime       (EXTRACT(p, double)),
   _threshold_value(EXTRACT(p, double)),
   _baseline_value (EXTRACT(p, double)),
   _output         (EXTRACT(p, DescTH1F)),
@@ -45,10 +48,11 @@ EdgeFinder::EdgeFinder(const char*& p) :
 {
 }
 
-EdgeFinder::EdgeFinder(double fraction, int alg, const char*& p) :
+EdgeFinder::EdgeFinder(double fraction, int alg, double deadtime, const char*& p) :
   AbsOperator     (AbsOperator::EdgeFinder),
   _fraction       (fraction),
   _alg            (alg),
+  _deadtime       (deadtime),
   _threshold_value(EXTRACT(p, double)),
   _baseline_value (EXTRACT(p, double)),
   _output         (EXTRACT(p, DescTH1F)),
@@ -70,6 +74,7 @@ void*      EdgeFinder::_serialize(void* p) const
 {
   _insert(p, &_fraction, sizeof(_fraction));
   _insert(p, &_alg, sizeof(_alg));
+  _insert(p, &_deadtime, sizeof(_deadtime));
   _insert(p, &_threshold_value, sizeof(_threshold_value));
   _insert(p, &_baseline_value, sizeof(_baseline_value));
   _insert(p, &_output, sizeof(_output));
@@ -91,6 +96,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
 
   double   peak = threshold_value;
   unsigned start  =0;
+  double   last   = -1.0;
   bool     crossed=false;
   bool     rising = threshold_value > baseline_value;
   for(unsigned k=0; k<d.nbins(); k++) {
@@ -118,7 +124,11 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
       double edge = i>0 ? 
 	(edge_v-entry.content(i))/(entry.content(i)-entry.content(i-1)) 
 	+ double(i) : 0;
-      _output_entry->addcontent(1.,edge*(d.xup()-d.xlow())/double(d.nbins())+d.xlow());
+      double thisx = edge*(d.xup()-d.xlow())/double(d.nbins())+d.xlow();
+      if (last < 0 || thisx > last + _deadtime) {
+          _output_entry->addcontent(1.,thisx);
+          last = thisx;
+      }
       crossed = false;
     }
     else if (( rising && y>peak) ||

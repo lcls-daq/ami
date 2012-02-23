@@ -62,6 +62,7 @@ namespace Ami {
       QLineEdit* _title;
       DescTH1F*  _hist;
       QCheckBox *_leading, *_trailing;
+      QLineEdit* _dead;
 
       std::list<EdgePlot*> _plots;
     };

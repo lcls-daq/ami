@@ -28,14 +28,16 @@ namespace Ami {
 	       double     threshold_value,
 	       double     baseline_value,
                int        alg,
+               double     deadtime,
 	       const      DescTH1F& output);
     EdgeFinder(const char*&);
-    EdgeFinder(double fraction, int alg, const char*&);
+    EdgeFinder(double fraction, int alg, double deadtime, const char*&);
     ~EdgeFinder();
   public:
     inline double threshold() { return _threshold_value; }
     inline double baseline()  { return _baseline_value; }
     inline int    algorithm() { return _alg; }
+    inline double deadtime()  { return _deadtime; }
     inline double fraction()  { return _fraction; }
     DescEntry& output   () const;
     void*      desc   () const;
@@ -46,10 +48,11 @@ namespace Ami {
   private:
     double     _fraction;
     int        _alg;
+    double     _deadtime;
     double     _threshold_value;
     double     _baseline_value;
     DescTH1F   _output;
-    EntryTH1F*           _output_entry;
+    EntryTH1F* _output_entry;
   };
 
 };
