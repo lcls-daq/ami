@@ -5,8 +5,9 @@
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
+#include <QtGui/QLineEdit>
+#include <QtGui/QDoubleValidator>
 
-class QLineEdit;
 class QVBoxLayout;
 
 #include "ami/qt/Cursors.hh"
@@ -25,11 +26,18 @@ namespace Ami {
     class AxisArray;
     class ChannelDefinition;
     class CursorDefinition;
-    class CursorLocation;
     class CursorPlot;
     class CursorPost;
     class WaveformDisplay;
     class ScalarPlotDesc;
+
+    class CursorLocation : public QLineEdit {
+    public:
+      CursorLocation() : QLineEdit("0") { new QDoubleValidator(this); }
+      ~CursorLocation() {}
+    public:
+      double value() const { return text().toDouble(); }
+    };
 
     class CursorsX : public QtPWidget,
 		     public Cursors {

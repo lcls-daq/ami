@@ -28,7 +28,8 @@ EdgeCursor::EdgeCursor(const QString& name,
   _showB->setCheckable(true);
 
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(name));
+  if (qPrintable(name)[0])
+      layout->addWidget(new QLabel(name));
   layout->addWidget(_input);
   layout->addWidget(grabB);
   layout->addWidget(_showB);
@@ -93,3 +94,5 @@ void EdgeCursor::mousePressEvent(double x, double y)
 
 void EdgeCursor::mouseMoveEvent   (double x, double y) {}
 void EdgeCursor::mouseReleaseEvent(double x, double y) {}
+
+void EdgeCursor::setName(QString &name) { _marker->setLabel(name); }

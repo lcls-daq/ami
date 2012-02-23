@@ -27,8 +27,6 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QLabel>
 #include <QtGui/QGroupBox>
-#include <QtGui/QLineEdit>
-#include <QtGui/QDoubleValidator>
 #include <QtGui/QComboBox>
 #include <QtGui/QDoubleSpinBox>
 #include <QtCore/QRegExp>
@@ -42,19 +40,6 @@
 #define bold(t) #t
 
 enum { _TH1F, _vT, _vF, _vS };
-
-
-namespace Ami {
-  namespace Qt {
-    class CursorLocation : public QLineEdit {
-    public:
-      CursorLocation() : QLineEdit("0") { new QDoubleValidator(this); }
-      ~CursorLocation() {}
-    public:
-      double value() const { return text().toDouble(); }
-    };
-  };
-};
 
 using namespace Ami::Qt;
 

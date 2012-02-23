@@ -26,6 +26,10 @@ namespace Ami {
     PeakFitPlot(const DescEntry& output,
 		double    baseline,
 		Parameter prm);
+    PeakFitPlot(const DescEntry& output,
+		int       nbins,
+                int      *bins,
+		Parameter prm);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
     PeakFitPlot(const char*&, FeatureCache&);
@@ -40,8 +44,10 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
   private:
-    enum { DESC_LEN = 1024 };
+    enum { DESC_LEN = 1024, MAX_BINS = 10 };
     char             _desc_buffer[DESC_LEN];
+    int              _nbins;
+    int              _bins[MAX_BINS];
     double           _baseline;
     Parameter        _prm;
 

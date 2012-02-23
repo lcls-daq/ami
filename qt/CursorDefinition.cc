@@ -11,7 +11,7 @@ using namespace Ami::Qt;
 
 CursorDefinition::CursorDefinition(const QString& name,
 				   double    location,
-				   CursorsX& parent,
+				   Cursors& parent,
 				   QwtPlot*  plot) :
   QWidget  (0),
   _name    (name),
@@ -41,7 +41,7 @@ CursorDefinition::CursorDefinition(const QString& name,
 }
 
 CursorDefinition::CursorDefinition(const char*& p,
-				   CursorsX& parent,
+				   Cursors& parent,
 				   QwtPlot*  plot) :
   QWidget  (0),
   _parent  (parent),

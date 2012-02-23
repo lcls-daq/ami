@@ -10,16 +10,16 @@ class QwtPlotMarker;
 
 namespace Ami {
   namespace Qt {
-    class CursorsX;
+    class Cursors;
     class CursorDefinition : public QWidget {
       Q_OBJECT
     public:
       CursorDefinition(const QString& name,
 		       double    location,
-		       CursorsX& parent,
+		       Cursors& parent,
 		       QwtPlot*  plot);
       CursorDefinition(const char*&,
-		       CursorsX& parent,
+		       Cursors& parent,
 		       QwtPlot*  plot);
       ~CursorDefinition();
     public:
@@ -34,7 +34,7 @@ namespace Ami {
     private:
       QString   _name;
       double    _location;
-      CursorsX& _parent;
+      Cursors& _parent;
       QwtPlot*       _plot;
       QwtPlotMarker* _marker;
     };

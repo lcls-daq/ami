@@ -28,6 +28,7 @@ namespace Ami {
       void mousePressEvent  (double,double);
       void mouseMoveEvent   (double,double);
       void mouseReleaseEvent(double,double);
+      void setName(QString &name);
     public slots:
       void set_value();    
       void grab();

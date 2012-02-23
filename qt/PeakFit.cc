@@ -4,7 +4,8 @@
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
 #include "ami/qt/DescChart.hh"
-
+#include "ami/qt/AxisInfo.hh"
+#include "ami/qt/AxisBins.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/PeakFitPlot.hh"
@@ -13,6 +14,8 @@
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/CursorsX.hh"
+#include "ami/qt/CursorDefinition.hh"
 
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescTH1F.hh"
@@ -57,8 +60,11 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
-  _frame    (frame)
+  _frame    (frame),
+  _clayout  (new QVBoxLayout)
 {
+  _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
+
   setWindowTitle("PeakFit Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
@@ -66,7 +72,9 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _baseline  = new EdgeCursor("baseline" ,*_frame.plot());
+  _baseline  = new EdgeCursor(QString(""), *_frame.plot());
+  QString bl("baseline");
+  _baseline->setName(bl);
 
   QStringList q;
   for(unsigned k=0; k<Ami::PeakFitPlot::NumberOf; k++)
@@ -89,6 +97,16 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _plot_grp->addButton(_vScan   ->button(),_vS);
   _hist->button()->setChecked(true);
 
+  _const_bl  = new QRadioButton("constant baseline");
+  _linear_bl = new QRadioButton("linear baseline  ");
+  _lvalue = new CursorLocation;
+  QPushButton *lgrabB  = new QPushButton("Grab");
+
+  _base_grp = new QButtonGroup;
+  _base_grp->addButton(_const_bl, 0);
+  _base_grp->addButton(_linear_bl, 0);
+  _const_bl->setChecked(true);
+
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
   
@@ -108,7 +126,16 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   { QGroupBox* locations_box = new QGroupBox("Define PeakFit");
     locations_box->setToolTip("Define baseline value.");
     QVBoxLayout* layout1 = new QVBoxLayout;
-    layout1->addWidget(_baseline);
+    { QGridLayout *layout2 = new QGridLayout;
+      layout2->addWidget(_const_bl,  0, 0);
+      layout2->addWidget(_baseline,  0, 1);
+      layout2->addWidget(_linear_bl, 1, 0);
+      { QHBoxLayout* layout3 = new QHBoxLayout;
+        layout3->addWidget(_lvalue);
+        layout3->addWidget(lgrabB);
+        layout2->addLayout(layout3, 1, 1, ::Qt::AlignRight); }
+      layout1->addLayout(layout2); }
+    layout1->addLayout(_clayout);
     { QHBoxLayout* layout2 = new QHBoxLayout;
       layout2->addWidget(new QLabel("Quantity"));
       layout2->addWidget(qtyBox);
@@ -142,6 +169,10 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(qtyBox    , SIGNAL(activated(int)), this, SLOT(set_quantity(int)));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
+  connect(lgrabB    , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
+  connect(_lvalue   , SIGNAL(returnPressed()),this, SLOT(add_cursor()));
+  connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
+
   connect(addPostB  , SIGNAL(clicked()),      this, SLOT(add_post()));
 
   set_quantity(0);
@@ -165,6 +196,11 @@ void PeakFit::save(char*& p) const
   XML_insert(p, "DescChart", "_vTime", _vTime->save(p) );
   XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan", "_vScan", _vScan->save(p) );
+  XML_insert(p, "QRadioButton", "_const_bl", QtPersistent::insert(p,_const_bl->isChecked()));
+
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
+    XML_insert(p, "CursorDefinition", "_cursors", (*it)->save(p) );
+  }
 
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakFitPlot", "_plots", (*it)->save(p) );
@@ -177,6 +213,12 @@ void PeakFit::save(char*& p) const
 
 void PeakFit::load(const char*& p)
 {
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
+    _names.push_back((*it)->name());
+    delete *it;
+  }
+  _cursors.clear();
+
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
@@ -203,6 +245,19 @@ void PeakFit::load(const char*& p)
       _vFeature->load(p);
     else if (tag.name == "_vScan")
       _vScan->load(p);
+    else if (tag.name == "_const_bl") {
+        if (QtPersistent::extract_b(p))
+            _const_bl->setChecked(true);
+        else
+            _linear_bl->setChecked(true);
+    }
+    else if (tag.name == "_cursors") {
+      CursorDefinition* d = new CursorDefinition(p, *this, _frame.plot());
+      _cursors.push_back(d);
+      _clayout->addWidget(d);
+      _names.removeAll(d->name());
+      printf("Added cursor %s at %g\n",qPrintable(d->name()), d->location());
+    }    
     else if (tag.name == "_plots") {
       PeakFitPlot* plot = new PeakFitPlot(this, p);
       _plots.push_back(plot);
@@ -262,6 +317,9 @@ void PeakFit::set_quantity(int q)
 
 void PeakFit::plot()
 {
+  if (!_const_bl->isChecked() && !_cursors.size())  /* Can't plot if no baseline! */
+      return;
+
   DescEntry* desc;
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
   switch(_plot_grp->checkedId()) {
@@ -288,11 +346,27 @@ void PeakFit::plot()
     break;
   }
 
+
+  Ami::PeakFitPlot *plotter;
+  if (_const_bl->isChecked()) {
+      plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
+  } else {
+      int bins[MAX_BINS], i = 0;
+      for (std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end() && i < MAX_BINS; i++, it++) {
+          bins[i] = _frame.xinfo().tick((*it)->location());
+#if 0
+          const AxisBins *xi = dynamic_cast<const AxisBins *>(&_frame.xinfo());
+          printf("PeakFit: (%d,%d,%d) %lg -> bin %d\n", 
+                 _frame.xinfo().lo(), _frame.xinfo().hi(), xi ? xi->ticks() : -1,
+                 (*it)->location(), bins[i]);
+#endif
+      }
+      plotter = new Ami::PeakFitPlot(*desc, i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
+  }
   PeakFitPlot* plot = new PeakFitPlot(this,
 				      _title->text(),
 				      _channel,
-				      new Ami::PeakFitPlot(*desc,_baseline->value(),
-							   (Ami::PeakFitPlot::Parameter)_quantity));
+                                      plotter);
 							   
   _plots.push_back(plot);
 
@@ -320,11 +394,52 @@ void PeakFit::add_post()
   //
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
   Ami::DescCache* desc = new Ami::DescCache(name, qPrintable(_title->text()), Ami::PostAnalysis);
-  PeakFitPost* post = new PeakFitPost(_channel,
-                                      new Ami::PeakFitPlot(*desc,_baseline->value(),
-							   (Ami::PeakFitPlot::Parameter)_quantity));
+  Ami::PeakFitPlot *plotter;
+  if (_const_bl->isChecked()) {
+      plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
+  } else {
+      int bins[MAX_BINS], i = 0;
+      for (std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end() && i < MAX_BINS; i++, it++)
+          bins[i] = _frame.xinfo().tick((*it)->location());
+      plotter = new Ami::PeakFitPlot(*desc,i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
+  }
+  PeakFitPost* post = new PeakFitPost(_channel, plotter);
 							   
   _posts.push_back(post);
 
   emit changed();
 }
+
+void PeakFit::grab_cursorx() { _frame.plot()->set_cursor_input(this); }
+
+void PeakFit::add_cursor()
+{
+  if (_names.size()) {
+    CursorDefinition* d = new CursorDefinition(_names.takeFirst(),
+					       _lvalue->value(),
+					       *this,
+					       _frame.plot());
+    _cursors.push_back(d);
+    _clayout->addWidget(d);
+  }
+  else {
+    QMessageBox::critical(this,tr("Add Cursor"),tr("Too many cursors in use"));
+  }
+}
+
+void PeakFit::remove(CursorDefinition& c)
+{
+  _names.push_back(c.name());
+  _cursors.remove(&c);
+  delete &c;
+}
+
+void PeakFit::mousePressEvent(double x, double y)
+{
+  _frame.plot()->set_cursor_input(0);
+  _lvalue->setText(QString::number(x));
+  emit grabbed();
+}
+
+void PeakFit::mouseMoveEvent   (double,double) {}
+void PeakFit::mouseReleaseEvent(double,double) {}
