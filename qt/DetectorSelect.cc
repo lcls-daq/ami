@@ -459,9 +459,12 @@ void DetectorSelect::change_detectors(const char* c)
     new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     const Pds::DetInfo noInfo;
-    const Ami::DescEntry* n;
-    for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = n) {
-      n = reinterpret_cast<const Ami::DescEntry*> (reinterpret_cast<const char*>(e) + e->size());
+    const Ami::DescEntry* n = 0;
+    const Ami::DescEntry* rx_entries = rx.entries();
+    const Ami::DescEntry* rx_end = rx.end();
+    for (const Ami::DescEntry* e = rx_entries; e < rx_end; e = n) {
+      int e_size = e->size();
+      n = reinterpret_cast<const Ami::DescEntry*> (reinterpret_cast<const char*>(e) + e_size);
       if (! _quiet) {
         printf("Discovered %s [%08x.%08x] size=%d\n",e->name(),e->info().log(),e->info().phy(),e->size());
       }
