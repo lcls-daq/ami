@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
   list<UserModule*> userModules;
   bool testMode = false;
   bool separateWindowMode = false;
-  char* outputFile = "/dev/null";
+  char* outputFile = NULL;
   char* errorFile = NULL;
 
   QApplication app(argc, argv);
@@ -87,6 +87,7 @@ int main(int argc, char* argv[]) {
       break;
     case 'T':
       testMode = true;
+      path = "/reg/data/ana01/cxi";
       break;
     case 'W':
       separateWindowMode = true;
