@@ -2,7 +2,7 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/timepix/DataV1.hh"
+#include "pdsdata/timepix/DataV2.hh"
 #include "pdsdata/timepix/ConfigV1.hh"
 
 #include <string.h>
@@ -62,42 +62,17 @@ void TimepixHandler::_configure(const void* payload, const Pds::ClockTime& t)
 void TimepixHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 template <class T>
-void _fill(const Pds::Timepix::DataV1& f, EntryImage& entry)
+void _fill(const Pds::Timepix::DataV2& f, EntryImage& entry)
 {
   const DescImage& desc = entry.desc();
 
   T destVal;
-  unsigned destX, destY;
   const T* d = reinterpret_cast<const T*>(f.data());
-  for(unsigned j=0; j<2*f.height(); j++) {
-    unsigned iy = desc.ppybin()==2 ? j>>1 : j;
-    for(unsigned k=0; k<f.width()/2; k++, d++) {
+  for(unsigned j=0; j<f.height(); j++) {
+    unsigned destY = desc.ppybin()==2 ? j>>1 : j;
+    for(unsigned destX=0; destX<f.width(); destX++, d++) {
       // display error pixels as 0
-      destVal = (*d > Pds::Timepix::DataV1::MaxPixelValue) ? 0 : *d;
-
-      // map pixels from 256x1024 to 512x512
-      switch (iy / 256) {
-        case 0:
-          destX = iy;
-          destY = 511 - k;
-          break;
-        case 1:
-          destX = iy - 256;
-          destY = 255 - k;
-          break;
-        case 2:
-          destX = 1023 - iy;
-          destY = k;
-          break;
-        case 3:
-          destX = 1023 + 256 - iy;
-          destY = k + 256;
-          break;
-        default:
-          // error
-          destX = destY = 0;  // suppress warning
-          break;
-      }
+      destVal = (*d > Pds::Timepix::DataV2::MaxPixelValue) ? 0 : *d;
       if (desc.ppxbin()==2) {
         entry.addcontent(destVal, destX>>1, destY);
       } else {
@@ -113,7 +88,7 @@ void _fill(const Pds::Timepix::DataV1& f, EntryImage& entry)
 
 void TimepixHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Timepix::DataV1& f = *reinterpret_cast<const Pds::Timepix::DataV1*>(payload);
+  const Pds::Timepix::DataV2& f = *reinterpret_cast<const Pds::Timepix::DataV2*>(payload);
   if (!_entry) return;
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
