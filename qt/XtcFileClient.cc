@@ -319,6 +319,7 @@ void XtcFileClient::setDir(QString dir)
   _runName = "";
   glob_t g;
   QString gpath = _curdir + "/xtc/*-r*-s*.xtc";
+  emit _setStatus("Looking for runs under " + gpath + "...");
   glob(qPrintable(gpath), 0, 0, &g);
   for (unsigned i = 0; i < g.gl_pathc; i++) {
     char *path = g.gl_pathv[i];
@@ -393,15 +394,28 @@ void XtcFileClient::configure_run()
 void XtcFileClient::configure()
 {
   if (_testMode) {
+    // _curdir either /reg/d or /reg/data or /reg/data/ana01 or /reg/data/ana01/cxi or...
     QStringList list;
-    QString pattern = _curdir + "/*/*/*/xtc"; // _curdir either /reg/d or /reg/data
-    glob_t g;
-    glob(qPrintable(pattern), 0, 0, &g);
-    for (unsigned i = 0; i < g.gl_pathc; i++) {
-      char *path = g.gl_pathv[i];
-      list << path;
+    QString endPattern = "/xtc";
+    for (int depth = 1; depth <= 5; depth++) {
+      QString pattern = _curdir + endPattern;
+      emit _setStatus("Looking for runs under " + pattern + "...");
+      glob_t g;
+      glob(qPrintable(pattern), 0, 0, &g);
+      for (unsigned i = 0; i < g.gl_pathc; i++) {
+        char *path = g.gl_pathv[i];
+        list << path;
+      }
+      globfree(&g);
+      if (list.size() > 0) {
+        break;
+      }
+      endPattern = "/*" + endPattern;
     }
-    globfree(&g);
+    if (list.size() == 0) {
+      emit _setStatus("No runs found under " + _curdir);
+      return;
+    }
     list.sort();
     int configCount = 0;
     for (int i = 0; i < list.size(); i++) {
