@@ -104,26 +104,32 @@ void AnalysisFactory::configure(unsigned       id,
     }
     else {
       const Cds* pcds = 0;
+      char *reqType = NULL;
       switch(req.source()) {
-      case ConfigureRequest::Discovery: pcds = &_cds; break;
-      case ConfigureRequest::Analysis : pcds = & cds; break;
-      case ConfigureRequest::Hidden   : pcds = &_ocds; break;
-      default:
-        printf("AnalysisFactory::configure unknown source %d\n",req.source());
+        case ConfigureRequest::Discovery: pcds = &_cds; reqType = "Discovery"; break;
+        case ConfigureRequest::Analysis : pcds = & cds; reqType = "Analysis"; break;
+        case ConfigureRequest::Hidden   : pcds = &_ocds; reqType = "Hidden"; break;
+        default:
+          printf("AnalysisFactory::configure unknown source ConfigureRequest::%d\n",req.source());
+          break;
+      }
+      if (!pcds) {
+        printf("AnalysisFactory::configure failed (null pcds) for ConfigureRequest::%s\n", reqType);
+        printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
         break;
       }
       const Cds& input_cds = *pcds;
       const Entry* input = input_cds.entry(req.input());
       if (!input) {
-	printf("AnalysisFactory::configure failed input for configure request:\n");
-	printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
+        printf("AnalysisFactory::configure failed (null input) for ConfigureRequest::%s\n", reqType);
+        printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
         input_cds.showentries();
       }
       else if (req.state()==ConfigureRequest::Create) {
-	const char*  p     = reinterpret_cast<const char*>(&req+1);
-	Analysis* a = new Analysis(id, *input, req.output(),
-				   cds, *_features[req.scalars()], p);
-	_analyses.push_back(a);
+        const char*  p     = reinterpret_cast<const char*>(&req+1);
+        Analysis* a = new Analysis(id, *input, req.output(),
+                                   cds, *_features[req.scalars()], p);
+        _analyses.push_back(a);
       }
       else if (req.state()==ConfigureRequest::SetOpt) {
         unsigned o = *reinterpret_cast<const uint32_t*>(&req+1);
