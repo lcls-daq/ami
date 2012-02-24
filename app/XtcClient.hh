@@ -32,18 +32,16 @@ namespace Ami {
 	      EventFilter&  filter,
 	      bool          sync=false);
     ~XtcClient();
-  public:
     void insert(EventHandler*);
     void remove(EventHandler*);
-  public:
     void processDgram(Pds::Dgram*);
-  private:
-    int  process(Pds::Xtc*);
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;
     typedef std::list<UserModule*>   UList;
     typedef std::list<Entry*>        EList;
+    int process(Pds::Xtc*);
+    void _configure(Pds::Xtc* xtc, EventHandler* h);
     std::vector<FeatureCache*>& _cache;
     Factory&      _factory;
     UList&        _user_ana;

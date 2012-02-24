@@ -122,15 +122,13 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _filter.reset();
     _filter.configure(dg);
-    if (_sync) {
-      _factory.unlock();
-    }
 
     _seq = &dg->seq;
     SummaryAnalysis::instance().clock(dg->seq.clock());
     for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->clock(dg->seq.clock());
     
+    // This adds entries back to the handlers via process()
     iterate(&dg->xtc); 
 
     //  Create and register new entries
@@ -166,6 +164,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
 
+    if (_sync) {
+      _factory.unlock();
+    }
+
     printf("XtcClient configure done\n");
 
     //  Advertise
@@ -197,6 +199,32 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   }
 }
 
+void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) {
+  const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
+  const char* infoName = Pds::DetInfo::name(info);
+  const char* typeName = Pds::TypeId::name(xtc->contains.id());
+
+  const ClockTime* ct = &_seq->clock();
+  time_t t = ct->seconds();
+  char* time = ctime(&t);
+  time[strlen(time) - 1] = '\0';
+
+  h->_configure(xtc->contains, xtc->payload(), _seq->clock());
+
+  const int nentries = h->nentries();
+  if (nentries == 0) {
+    //printf("%s XtcClient::_configure: %s (%s): no entries\n", time, infoName, typeName);
+    return;
+  }
+  for (int i = 0; i < nentries; i++) {
+    const Entry* entry = h->entry(i);
+    const DescEntry& desc = entry->desc();
+    const DescEntry* descPtr = &desc;
+    const char* name = descPtr->name();
+    printf("%s XtcClient::_configure: %s (%s): entry[%d]=%s\n", time, infoName, typeName, i, name);
+  }
+}
+
 int XtcClient::process(Pds::Xtc* xtc) 
 {
   if (xtc->extent < sizeof(Xtc) ||
@@ -209,25 +237,25 @@ int XtcClient::process(Pds::Xtc* xtc)
   else {
     if (_seq->service()==Pds::TransitionId::L1Accept) {
       SummaryAnalysis::instance().event    (xtc->src,
-					    xtc->contains,
-					    xtc->payload());
+                                            xtc->contains,
+                                            xtc->payload());
     }
     else if (_seq->service()==Pds::TransitionId::Configure) {
       SummaryAnalysis::instance().configure(xtc->src,
-					    xtc->contains,
-					    xtc->payload());
+                                            xtc->contains,
+                                            xtc->payload());
     }
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
       if (h->info().level() == xtc->src.level() &&
-	  (h->info().phy  () == (uint32_t)-1 ||
-	   h->info().phy  () == xtc->src.phy())) {
-	if (_seq->isEvent()) {
-	  const std::list<Pds::TypeId::Type>& types = h->data_types();
-	  Pds::TypeId::Type type = xtc->contains.id();
-	  for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+          (h->info().phy  () == (uint32_t)-1 ||
+           h->info().phy  () == xtc->src.phy())) {
+        if (_seq->isEvent()) {
+          const std::list<Pds::TypeId::Type>& types = h->data_types();
+          Pds::TypeId::Type type = xtc->contains.id();
+          for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
               it != types.end(); it++) {
-	    if (*it == type) {
+            if (*it == type) {
               if (xtc->damage.value())
                 h->_damaged();
               else
@@ -237,23 +265,23 @@ int XtcClient::process(Pds::Xtc* xtc)
               continue;
             return 1;
           }
-	}
-	else {
-	  const std::list<Pds::TypeId::Type>& types = h->config_types();
-	  Pds::TypeId::Type type = xtc->contains.id();
-	  for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-	      it != types.end(); it++) {
-	    if (*it == type) {
-	      if (_seq->service()==Pds::TransitionId::Configure)
-		h->_configure(xtc->contains, xtc->payload(), _seq->clock());
-	      else if (_seq->service()==Pds::TransitionId::BeginCalibCycle)
-		h->_calibrate(xtc->contains, xtc->payload(), _seq->clock());
-	      else
-		continue;
-	      return 1;
-	    }
-	  }
-	}
+        }
+        else {
+          const std::list<Pds::TypeId::Type>& types = h->config_types();
+          Pds::TypeId::Type type = xtc->contains.id();
+          for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+              it != types.end(); it++) {
+            if (*it == type) {
+              if (_seq->service()==Pds::TransitionId::Configure)
+                _configure(xtc, h);
+              else if (_seq->service()==Pds::TransitionId::BeginCalibCycle)
+                h->_calibrate(xtc->contains, xtc->payload(), _seq->clock());
+              else
+                continue;
+              return 1;
+            }
+          }
+        }
       }
     }
     //  Wasn't handled
@@ -262,6 +290,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       FeatureCache& cache = *_cache[PreAnalysis];
       EventHandler* h = 0;
+      
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
@@ -296,13 +325,28 @@ int XtcClient::process(Pds::Xtc* xtc)
         if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config)
           ;
         else
-          printf("XtcClient::process cant handle type %d\n",xtc->contains.id());
+          printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
       }
       else {
-	printf("XtcClient::process adding handler for info %s type %s\n",
-	       Pds::DetInfo::name(info), Pds::TypeId::name(xtc->contains.id()));
-	insert(h);
-	h->_configure(xtc->contains,xtc->payload(),_seq->clock());
+        const char* infoName = Pds::DetInfo::name(info);
+        const char* typeName = Pds::TypeId::name(xtc->contains.id());
+        printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);
+
+#if 1
+        // Sanity check -- a newly created handler should have no entries.
+        int nentries = h->nentries();
+        if (nentries > 0) {
+          h->reset();
+          nentries = h->nentries();
+          if (nentries > 0) {
+            fprintf(stderr, "XtcClient::process: nentries=%d for new handler %p info %s type %s!\n", nentries, h, infoName, typeName);
+            *((char *) nentries) = 0; // force segfault for debugging
+          }
+        }
+#endif
+
+        insert(h);
+        _configure(xtc, h);
       }
     }
   }
