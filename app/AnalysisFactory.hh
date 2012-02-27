@@ -2,7 +2,7 @@
 #define Ami_AnalysisFactory_hh
 
 #include "ami/server/Factory.hh"
-#include "ami/service/Mutex.hh"
+#include "ami/service/Monitor.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -37,7 +37,7 @@ namespace Ami {
     void lock();
     void unlock();
   private:
-    Mutex _mutex;
+    Monitor _monitor;
     ServerManager& _srv;
     Cds       _cds;
     Cds       _ocds;

@@ -21,7 +21,7 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
 				 ServerManager& srv,
                                  UList&         user,
                                  EventFilter&   filter) :
-  _mutex(Mutex("AnalysisFactory")),
+  _monitor   ("AnalysisFactory"),
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
@@ -155,11 +155,11 @@ void AnalysisFactory::configure(unsigned       id,
 }
 
 void AnalysisFactory::lock() {
-  _mutex.lock();
+  _monitor.lock();
 }
 
 void AnalysisFactory::unlock() {
-  _mutex.unlock();
+  _monitor.unlock();
 }
 
 void AnalysisFactory::analyze  ()
