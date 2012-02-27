@@ -397,7 +397,7 @@ void XtcFileClient::configure()
     // _curdir either /reg/d or /reg/data or /reg/data/ana01 or /reg/data/ana01/cxi or...
     QStringList list;
     QString endPattern = "/xtc";
-    for (int depth = 1; depth <= 5; depth++) {
+    for (int depth = 1; depth <= 6; depth++) {
       QString pattern = _curdir + endPattern;
       emit _setStatus("Looking for runs under " + pattern + "...");
       glob_t g;
