@@ -18,7 +18,8 @@ AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo& info) :
 
 AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo&     info, 
 			     const AcqTdcConfigType& config) :
-  EventHandler(info, Pds::TypeId::Id_AcqTdcData, Pds::TypeId::Id_AcqTdcConfig)
+  EventHandler(info, Pds::TypeId::Id_AcqTdcData, Pds::TypeId::Id_AcqTdcConfig),
+  _entry(NULL)
 {
   Pds::ClockTime t;
   _configure(&config, t);
@@ -28,11 +29,11 @@ AcqTdcHandler::~AcqTdcHandler()
 {
 }
 
-unsigned AcqTdcHandler::nentries() const { return 1; }
+unsigned AcqTdcHandler::nentries() const { return (_entry != NULL); }
 
-const Entry* AcqTdcHandler::entry(unsigned i) const { return _entry; }
+const Entry* AcqTdcHandler::entry(unsigned i) const { return (i == 0 ? _entry : NULL); }
 
-void AcqTdcHandler::reset() {}
+void AcqTdcHandler::reset() { _entry = NULL; }
 
 void AcqTdcHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
