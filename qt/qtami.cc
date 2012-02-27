@@ -115,10 +115,6 @@ int main(int argc, char* argv[]) {
   EventFilter filter(userModules, *features[PostAnalysis]);
   AnalysisFactory factory(features, srv, userModules, filter);
 
-  // Run ServerManager in a background thread
-  srv.serve(factory);
-  srv.start();
-
   // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.
   QGroupBox* groupBox = NULL;
   Ami::Qt::DetectorSelect* output;
@@ -131,6 +127,10 @@ int main(int argc, char* argv[]) {
   } else {
     printf("NOT Starting DetectorSelect...\n");
   }
+
+  // Run ServerManager in a background thread
+  srv.serve(factory);
+  srv.start();
 
   // Start the XtcFileClient inside of the DetectorSelect GUI.
   bool sync = true;
