@@ -33,21 +33,16 @@ namespace Ami {
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void remove   (unsigned);
-    void lock();
-    void unlock();
   private:
-    Monitor _monitor;
     ServerManager& _srv;
     Cds       _cds;
     Cds       _ocds;
     typedef std::list<Analysis*>     AnList;
     AnList    _analyses;
-    Semaphore _sem;
     std::vector<FeatureCache*>& _features;
     typedef std::list<UserModule*> UList;
     UList&        _user;
     EventFilter&  _filter;
-
     pthread_mutex_t _mutex;
     pthread_cond_t _condition;
     bool _configured;

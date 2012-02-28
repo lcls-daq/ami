@@ -16,16 +16,13 @@
 
 using namespace Ami;
 
-
 AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
 				 ServerManager& srv,
                                  UList&         user,
                                  EventFilter&   filter) :
-  _monitor   ("AnalysisFactory"),
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
-  _sem       (Semaphore::FULL),
   _features  (cache),
   _user      (user),
   _filter    (filter),
@@ -50,20 +47,16 @@ Cds& AnalysisFactory::hidden   () { return _ocds; }
 //
 void AnalysisFactory::discover(bool waitForConfigure) 
 {
-  _sem.take();
+  pthread_mutex_lock(&_mutex);
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* an = *it;
     delete an;
   }
   _analyses.clear();
-  _sem.give();
-
-  if (! waitForConfigure) {
-    _srv.discover(); 
-  } else {
-    pthread_mutex_lock(&_mutex);
-    _configured = false;
-    _srv.discover(); 
+  _configured = false;
+  _srv.discover(); 
+  if (waitForConfigure) {
+    // waitingThread_ = pthread_self();
     for (;;) {
       if (_configured) {
         break;
@@ -79,8 +72,7 @@ void AnalysisFactory::configure(unsigned       id,
 				const char*    payload, 
 				Cds&           cds)
 {
-  lock();
-  _sem.take();
+  pthread_mutex_lock(&_mutex);
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
@@ -155,7 +147,6 @@ void AnalysisFactory::configure(unsigned       id,
     }
     payload += req.size();
   }
-  _sem.give();
 
   //
   //  Reconfigure Post Analyses whenever the PostAnalysis variable cache changes
@@ -165,25 +156,15 @@ void AnalysisFactory::configure(unsigned       id,
   if (_features[PostAnalysis]->update())
     _srv.discover_post();
 
-  unlock();
-
-  pthread_mutex_lock(&_mutex);
   _configured = true;
   pthread_cond_broadcast(&_condition);
+
   pthread_mutex_unlock(&_mutex);
-}
-
-void AnalysisFactory::lock() {
-  _monitor.lock();
-}
-
-void AnalysisFactory::unlock() {
-  _monitor.unlock();
 }
 
 void AnalysisFactory::analyze  ()
 {
-  _sem.take();
+  pthread_mutex_lock(&_mutex);
   SummaryAnalysis::instance().analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
@@ -191,12 +172,12 @@ void AnalysisFactory::analyze  ()
   //
   //  Post-analyses go here
   //
-  _sem.give();
+  pthread_mutex_unlock(&_mutex);
 }
 
 void AnalysisFactory::remove(unsigned id)
 {
-  _sem.take();
+  pthread_mutex_lock(&_mutex);
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
@@ -207,5 +188,5 @@ void AnalysisFactory::remove(unsigned id)
       newlist.push_back(a);
   }
   _analyses = newlist;
-  _sem.give();
+  pthread_mutex_unlock(&_mutex);
 }

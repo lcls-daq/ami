@@ -101,9 +101,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _cache[PostAnalysis]->clear();
 
     //  Cleanup previous entries
-    if (_sync) {
-      _factory.lock();
-    }
     _factory.discovery().reset();
     _factory.hidden   ().reset();
     SummaryAnalysis::instance().reset();
@@ -163,10 +160,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _ptime_acc_index = cache.add("ProcTimeAcc");
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
-
-    if (_sync) {
-      _factory.unlock();
-    }
 
     printf("XtcClient configure done\n");
 
