@@ -21,8 +21,6 @@ namespace Ami {
     virtual void analyze  () = 0;
     virtual void discover (bool waitForConfigure) = 0;
     virtual void remove   (unsigned id) = 0;
-    virtual void lock     () = 0;
-    virtual void unlock   () = 0;
   };
 
 };
