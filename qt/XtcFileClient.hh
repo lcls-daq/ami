@@ -48,6 +48,7 @@ namespace Ami {
       void printTransition(const TransitionId::Value transition);
       void printDgram(const Dgram dg);
       void setStatus(const QString s);
+      void setStatusLabelText(const QString s);
       void setEnabled(QWidget* widget, bool enabled);
       void updateDirLabel();
       void updateRunCombo();
@@ -55,15 +56,17 @@ namespace Ami {
     signals:
       void _printTransition(const TransitionId::Value transition);
       void _printDgram(const Dgram dg);
-      void _setStatus(const QString s);
+      void _setStatusLabelText(const QString s);
       void _setEnabled(QWidget* widget, bool enabled);
       void _updateDirLabel();
       void _updateRunCombo();
       void _updateRun();
     private:
-      void run(QString runName, bool configureOnly);
+      void do_configure(QString runName);
+      void run();
       void setDir(QString dir);
       XtcRun _run;
+      bool _runValid;
       XtcClient _client;
       QString _curdir;
       bool _testMode;
@@ -85,7 +88,6 @@ namespace Ami {
       QSlider* _hzSlider;
       QLabel* _hzSliderLabel;
       QCheckBox* _loopCheckBox;
-      QCheckBox* _skipCheckBox;
       QLabel* _statusLabel;
       bool _running;
       bool _stopped;
