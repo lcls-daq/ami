@@ -25,12 +25,14 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
   _srv       (srv),
   _cds       ("Analysis"),
   _ocds      ("Hidden"),
-  _configured(Semaphore::EMPTY),
   _sem       (Semaphore::FULL),
   _features  (cache),
   _user      (user),
-  _filter    (filter)
+  _filter    (filter),
+  _configured(false)
 {
+  pthread_mutex_init(&_mutex, NULL);
+  pthread_cond_init(&_condition, NULL);
   EntryFactory::source(*_features[PostAnalysis]);
 }
 
@@ -46,7 +48,7 @@ Cds& AnalysisFactory::hidden   () { return _ocds; }
 //
 //  The discovery cds has changed
 //
-void AnalysisFactory::discover () 
+void AnalysisFactory::discover(bool waitForConfigure) 
 {
   _sem.take();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
@@ -55,7 +57,21 @@ void AnalysisFactory::discover ()
   }
   _analyses.clear();
   _sem.give();
-  _srv.discover(); 
+
+  if (! waitForConfigure) {
+    _srv.discover(); 
+  } else {
+    pthread_mutex_lock(&_mutex);
+    _configured = false;
+    _srv.discover(); 
+    for (;;) {
+      if (_configured) {
+        break;
+      }
+      pthread_cond_wait(&_condition, &_mutex);
+    }
+    pthread_mutex_unlock(&_mutex);
+  }
 }
 
 void AnalysisFactory::configure(unsigned       id,
@@ -149,9 +165,12 @@ void AnalysisFactory::configure(unsigned       id,
   if (_features[PostAnalysis]->update())
     _srv.discover_post();
 
-  _configured.give();
-
   unlock();
+
+  pthread_mutex_lock(&_mutex);
+  _configured = true;
+  pthread_cond_broadcast(&_condition);
+  pthread_mutex_unlock(&_mutex);
 }
 
 void AnalysisFactory::lock() {
@@ -174,8 +193,6 @@ void AnalysisFactory::analyze  ()
   //
   _sem.give();
 }
-
-void AnalysisFactory::wait_for_configure() { _configured.take(); }
 
 void AnalysisFactory::remove(unsigned id)
 {

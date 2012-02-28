@@ -171,9 +171,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     printf("XtcClient configure done\n");
 
     //  Advertise
-    _factory.discover();
-    if (_sync) _factory.wait_for_configure();
-
+    _factory.discover(_sync);
     _ready =  true;
   }
   else {

@@ -29,10 +29,9 @@ namespace Ami {
     std::vector<FeatureCache*>& features();
     Cds& discovery();
     Cds& hidden   ();
-    void discover ();
+    void discover (bool waitForConfigure);
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
-    void wait_for_configure();
     void remove   (unsigned);
     void lock();
     void unlock();
@@ -43,12 +42,15 @@ namespace Ami {
     Cds       _ocds;
     typedef std::list<Analysis*>     AnList;
     AnList    _analyses;
-    Semaphore _configured;
     Semaphore _sem;
     std::vector<FeatureCache*>& _features;
     typedef std::list<UserModule*> UList;
     UList&        _user;
     EventFilter&  _filter;
+
+    pthread_mutex_t _mutex;
+    pthread_cond_t _condition;
+    bool _configured;
   };
 
 };

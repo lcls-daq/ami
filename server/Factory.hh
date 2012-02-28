@@ -19,8 +19,7 @@ namespace Ami {
     virtual Cds& hidden   () = 0;
     virtual void configure(unsigned id, const Message&, const char*, Cds&) = 0;
     virtual void analyze  () = 0;
-    virtual void discover () = 0;
-    virtual void wait_for_configure() = 0;
+    virtual void discover (bool waitForConfigure) = 0;
     virtual void remove   (unsigned id) = 0;
     virtual void lock     () = 0;
     virtual void unlock   () = 0;
