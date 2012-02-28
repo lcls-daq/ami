@@ -61,8 +61,10 @@ DetectorSelect::DetectorSelect(const QString& label,
   _filters    (new FilterSetup(*_manager)),
   _request    (new char[BufferSize]),
   _rate_display(new RateDisplay(_manager)),
-  _sem        (Semaphore::EMPTY)
+  _discovered(false)
 {
+  pthread_mutex_init(&_mutex, NULL);
+  pthread_cond_init(&_condition, NULL);
   setWindowTitle(label);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
@@ -416,8 +418,18 @@ int  DetectorSelect::configured      () { return 0; }
 void DetectorSelect::discovered      (const DiscoveryRx& rx) 
 { 
   _rate_display->discovered(rx);
+
+  pthread_mutex_lock(&_mutex);
+  _discovered = false;
   emit detectors_discovered(reinterpret_cast<const char*>(&rx));
-  _sem.take();
+  for (;;) {
+    if (_discovered) {
+      break;
+    }
+    pthread_cond_wait(&_condition, &_mutex);
+  }
+  pthread_mutex_unlock(&_mutex);
+
   _manager->configure();
 }
 
@@ -490,7 +502,11 @@ void DetectorSelect::change_detectors(const char* c)
 
   setUpdatesEnabled(true);
 
-  _sem.give();
+  // Let DetectorSelect::discovered know that we are done.
+  pthread_mutex_lock(&_mutex);
+  _discovered = true;
+  pthread_cond_signal(&_condition);
+  pthread_mutex_unlock(&_mutex);
 }
 
 void DetectorSelect::read_description(Socket& s,int len) {

@@ -71,6 +71,8 @@ namespace Ami {
       void                _connect_client(Ami::Qt::AbsClient* client);
 //       void                _update_groups();
 
+      void setDiscovered(bool isDiscovered);
+      void waitForDiscovered();
     private:
       bool           _quiet;
       unsigned       _ppinterface;
@@ -85,7 +87,9 @@ namespace Ami {
       QPrinter*      _printer;
       QTimer*        _autosave_timer;
       RateDisplay*   _rate_display;
-      Semaphore      _sem;
+      pthread_mutex_t _mutex;
+      pthread_cond_t _condition;
+      bool _discovered;
     };
   };
 };
