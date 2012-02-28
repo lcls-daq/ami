@@ -26,7 +26,7 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
   _features  (cache),
   _user      (user),
   _filter    (filter),
-  _configured(false)
+  _waitingForConfigure(false)
 {
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
@@ -53,18 +53,29 @@ void AnalysisFactory::discover(bool waitForConfigure)
     delete an;
   }
   _analyses.clear();
-  _configured = false;
-  _srv.discover(); 
+
   if (waitForConfigure) {
-    // waitingThread_ = pthread_self();
+    if (_waitingForConfigure) {
+      printf("Already waiting for configure?\n");
+      *((char *)0) = 0;
+    }
+    _waitingForConfigure = true;
+  }
+
+  _srv.discover(); 
+
+  if (waitForConfigure) {
+    printf("AnalysisFactory: waiting for configuration...\n");
     for (;;) {
-      if (_configured) {
+      if (! _waitingForConfigure) {
         break;
       }
       pthread_cond_wait(&_condition, &_mutex);
     }
-    pthread_mutex_unlock(&_mutex);
+    printf("AnalysisFactory: done waiting for configuration.\n");
   }
+
+  pthread_mutex_unlock(&_mutex);
 }
 
 void AnalysisFactory::configure(unsigned       id,
@@ -156,8 +167,11 @@ void AnalysisFactory::configure(unsigned       id,
   if (_features[PostAnalysis]->update())
     _srv.discover_post();
 
-  _configured = true;
-  pthread_cond_broadcast(&_condition);
+  if (_waitingForConfigure) {
+    _waitingForConfigure = false;
+    pthread_cond_signal(&_condition);
+    printf("AnalysisFactory: configuration is done.\n");
+  }
 
   pthread_mutex_unlock(&_mutex);
 }

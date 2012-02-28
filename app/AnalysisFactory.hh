@@ -2,8 +2,6 @@
 #define Ami_AnalysisFactory_hh
 
 #include "ami/server/Factory.hh"
-#include "ami/service/Monitor.hh"
-
 #include "ami/data/Cds.hh"
 
 #include <list>
@@ -45,7 +43,7 @@ namespace Ami {
     EventFilter&  _filter;
     pthread_mutex_t _mutex;
     pthread_cond_t _condition;
-    bool _configured;
+    bool _waitingForConfigure;
   };
 
 };
