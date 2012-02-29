@@ -30,12 +30,6 @@ namespace Ami {
   };
 };
 
-void XtcFileClient::printTransition(const TransitionId::Value transition) {
-  if (_lastTransition != transition) {
-    _lastTransition = transition;
-  }
-}
-
 static double getTimeAsDouble() {
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts); // vs CLOCK_PROCESS_CPUTIME_ID
@@ -73,7 +67,7 @@ void XtcFileClient::setStatus(const QString status) {
 }
 
 void XtcFileClient::updateDirLabel() {
-  _dirLabel->setText(_curdir);
+  _dirLabel->setText("Folder: " + _curdir);
 }
 
 void XtcFileClient::updateRunCombo() {
@@ -94,23 +88,21 @@ void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
 
 void XtcFileClient::printDgram(const Dgram dg0) {
   const Dgram* dg = &dg0;
-  char buf[256];
+
+  if (dg->seq.service() == TransitionId::Configure) {
+    time_t t = (time_t) _runStart;
+    _startLabel->setText("Run start: " + asctime(t));
+    return;
+  }
 
   double now = getTimeAsDouble();
-  double deltaSec = now - _runStart;
+  double deltaSec = now - _executionStart;
+  char buf[256];
 
-  ClockTime clock = dg->seq.clock();
-  if (_clockStart == 0.0) {
-    time_t time = (time_t) clock.seconds();
-    _startLabel->setText("Run start: " + asctime(time));
-
-    _clockStart = getClockTimeAsDouble(clock);
-    _countLabel->setText("Datagram count: " + itoa(_dgCount));
-  } else {
-    double clockDelta = getClockTimeAsDouble(clock) - _clockStart;
-    sprintf(buf, "Datagram count: %d (run start + %.3fs)", _dgCount, clockDelta);
-    _countLabel->setText(buf);
-  }
+  ClockTime clockTime = dg->seq.clock();
+  double clockDelta = getClockTimeAsDouble(clockTime) - _runStart;
+  sprintf(buf, "Datagram count: %d (run start + %.3fs)", _dgCount, clockDelta);
+  _countLabel->setText(buf);
 
   sprintf(buf, "Playback time: %.3fs", deltaSec);
   _timeLabel->setText(buf);
@@ -167,9 +159,9 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _curdir(curdir),
   _testMode(testMode),
   _task(new Task(TaskObject("amiqt"))),
-  _dirSelect(new QPushButton("Select")),
-  _dirLabel(new QLabel(curdir)),
-  _runCombo(new QComboBox()),
+  _dirSelect(new QPushButton("Change")),
+  _dirLabel(new QLabel),
+  _runCombo(new QComboBox),
   _runName(""),
 
   _runButton(new QPushButton("Run")),
@@ -185,18 +177,15 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
 
   _hzSlider(new QSlider(::Qt::Horizontal)),
   _hzSliderLabel(new QLabel),
-  _loopCheckBox(new QCheckBox("Loop over run")),
   _statusLabel(new QLabel("Initializing...")),
 
   _running(false),
   _stopped(false),
-  _lastTransition(TransitionId::Unmap),
 
   _damageMask(0),
   _damageCount(0)
 {
   _qtThread = pthread_self();
-  setDir(QString(_curdir));
 
   QVBoxLayout* l = new QVBoxLayout;
 
@@ -204,10 +193,13 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   hboxA->addWidget(_dirLabel);
   hboxA->addWidget(_dirSelect);
   l->addLayout(hboxA);
-
-  l->addWidget(_runCombo);
+  updateDirLabel();
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
+  hbox1->addStretch();
+  hbox1->addWidget(new QLabel("Run:"));
+  hbox1->addStretch();
+  hbox1->addWidget(_runCombo);
   hbox1->addStretch();
   hbox1->addWidget(_runButton);
   hbox1->addStretch();
@@ -236,12 +228,12 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   QHBoxLayout* hbox2 = new QHBoxLayout;
   _hzSlider->setRange(1, maxHz + 1);
   _hzSlider->setValue(defaultHz);
+  hbox2->addWidget(new QLabel("Throttle:"));
   hbox2->addWidget(_hzSlider);
   hbox2->addWidget(_hzSliderLabel);
   hzSliderChanged(defaultHz);
   l->addLayout(hbox2);
 
-  l->addWidget(_loopCheckBox);
   l->addWidget(_statusLabel);
 
   if (groupBox) {
@@ -258,19 +250,19 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _connect(_runCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(selectRun(int)));
   _connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
   _connect(this, SIGNAL(_printDgram(const Dgram)), this, SLOT(printDgram(const Dgram)));
-  _connect(this, SIGNAL(_printTransition(const TransitionId::Value)), this, SLOT(printTransition(const TransitionId::Value)));
   _connect(this, SIGNAL(_setStatusLabelText(const QString)), this, SLOT(setStatusLabelText(const QString)));
   _connect(this, SIGNAL(_setEnabled(QWidget*, bool)), this, SLOT(setEnabled(QWidget*, bool)));
   _connect(this, SIGNAL(_updateDirLabel()), this, SLOT(updateDirLabel()));
   _connect(this, SIGNAL(_updateRunCombo()), this, SLOT(updateRunCombo()));
   _connect(this, SIGNAL(_updateRun()), this, SLOT(updateRun()));
 
+  setDir(QString(_curdir));
   configure_run();
 }
 
 void XtcFileClient::hzSliderChanged(int value) {
   if (value > maxHz) {
-    _hzSliderLabel->setText("(unthrottled)");
+    _hzSliderLabel->setText("(none)");
   } else {
     _hzSliderLabel->setText(itoa(value) + " Hz");
   }
@@ -348,7 +340,7 @@ void XtcFileClient::setDir(QString dir)
   }
   globfree(&g);
   _runList.sort();
-  setStatus(QString("Found ") + itoa(_runList.size()) + " runs");
+  setStatus(QString("Found ") + itoa(_runList.size()) + " runs;;; runName=" + _runName);
   emit _updateRunCombo();
   if (_runName != "") {
     emit _updateRun();
@@ -370,7 +362,6 @@ void XtcFileClient::stopClicked() {
 
 void XtcFileClient::insertTransition(TransitionId::Value transition)
 {
-  printTransition(transition);
   Dgram dg;
   new((void*)&dg.seq) Sequence(Sequence::Event, transition, ClockTime(0,0), TimeStamp(0,0,0,0));
   new((char*)&dg.xtc) Xtc(TypeId(TypeId::Id_Xtc,0),ProcInfo(Level::Recorder,0,0));
@@ -379,7 +370,6 @@ void XtcFileClient::insertTransition(TransitionId::Value transition)
 
 void XtcFileClient::routine()
 {
-  setStatus("Running run " + _runName + "...");
   emit _setEnabled(_stopButton, true);
   emit _setEnabled(_runButton, false);
   _running = true;
@@ -387,16 +377,13 @@ void XtcFileClient::routine()
 
   do_configure(_runName);
   if (_runValid) {
-    do {
-      run();
-    } while (! _stopped && _loopCheckBox->isChecked());
+    run();
   }
 
   _stopped = false;
   _running = false;
   emit _setEnabled(_stopButton, false);
   emit _setEnabled(_runButton, true);
-  setStatus("Stopped run " + _runName + ".");
 }
 
 void XtcFileClient::configure_run()
@@ -444,7 +431,7 @@ void XtcFileClient::configure()
         _running = false;
         do_configure(_runName);
         if (! _runValid) {
-          cerr << "Configuration for run " << qPrintable(_runName) << " failed" << endl;
+          setStatus("Configuration for run " + _runName + " failed");
         } else if (! testModeConfigOnly) {
           run();
         }
@@ -504,29 +491,40 @@ void XtcFileClient::do_configure(QString runName)
     setStatus("Could not fetch Configuration datagram");
     return;
   }
-  TransitionId::Value transition = dg->seq.service();
-  if (transition != TransitionId::Configure) {
+  if (dg->seq.service() != TransitionId::Configure) {
     setStatus("Run does not start with Configuration datagram");
     return;
   }
 
   _dgCount++;
-  printTransition(transition); // ???
+  ClockTime clockTime = dg->seq.clock();
+  _executionStart = getTimeAsDouble();
+  _runStart = getClockTimeAsDouble(clockTime);
+  _damageMask = 0;
+  _damageCount = 0;
+  _payloadTotal = 0;
+
+  emit _printDgram(*dg);
+
   setStatus("Configuring run " + runName);
-  _client.processDgram(dg); // check return value??? here and in run()?
+  _client.processDgram(dg);
   setStatus("Finished configuring run " + runName + ".");
   _runValid = true;
+
+  //  _run.probe();
 }
 
 void XtcFileClient::run()
 {
-  _runStart = getTimeAsDouble();
-  _clockStart = 0.0;
+  _executionStart = getTimeAsDouble();
   _damageMask = 0;
   _damageCount = 0;
   _payloadTotal = 0;
 
   double lastPrintTime = 0.0;
+
+  Dgram* last_dg = NULL;
+  Dgram* last_printed_dg = NULL;
 
   while (! _stopped) {
     Dgram* dg = NULL;
@@ -536,10 +534,7 @@ void XtcFileClient::run()
     if (result != OK) {
       break;
     }
-    TransitionId::Value transition = dg->seq.service();
-
-    printTransition(transition);
-
+    last_dg = dg;
     _dgCount++;
     _payloadTotal += dg->xtc.sizeofPayload();
     _client.processDgram(dg);
@@ -550,16 +545,26 @@ void XtcFileClient::run()
         _damageMask |= damage;
     }
 
+    TransitionId::Value transition = dg->seq.service();
+    if (transition == TransitionId::Configure) {
+      setStatus("Configuring run " + _runName + " ???");
+      _client.processDgram(dg);
+      setStatus("Finished configuring run " + _runName + " ???");
+      sleep(5);
+      continue;
+    }
+
     if (transition == TransitionId::L1Accept) {
       double now = getTimeAsDouble();
       if (lastPrintTime < now - secBetweenPrintDgram) {
         emit _printDgram(*dg);
         lastPrintTime = now;
+        last_printed_dg = dg;
       }
 
       int hz = _hzSlider->value();
       if (hz <= maxHz) {
-        double deltaSec = now - _runStart;
+        double deltaSec = now - _executionStart;
         double desiredDeltaSec = _dgCount / (double) hz;
         double stallSec = desiredDeltaSec - deltaSec;
         if (stallSec > 2.0) {
@@ -571,8 +576,11 @@ void XtcFileClient::run()
       }
     }
   }
-
-  setStatus("Completed run " + _runName + " (" + itoa(_dgCount) + " datagrams)");
+  if (last_dg != NULL && last_dg != last_printed_dg) {
+    emit _printDgram(*last_dg);
+  }
+  QString verb = (_stopped ? "Stopped" : "Completed");
+  setStatus(verb + " run " + _runName + " (" + itoa(_dgCount) + " datagrams)");
 
   insertTransition(TransitionId::Unconfigure);
   insertTransition(TransitionId::Unmap);

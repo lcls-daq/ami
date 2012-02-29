@@ -45,7 +45,6 @@ namespace Ami {
       void runClicked();
       void stopClicked();
       void hzSliderChanged(int);
-      void printTransition(const TransitionId::Value transition);
       void printDgram(const Dgram dg);
       void setStatus(const QString s);
       void setStatusLabelText(const QString s);
@@ -54,7 +53,6 @@ namespace Ami {
       void updateRunCombo();
       void updateRun();
     signals:
-      void _printTransition(const TransitionId::Value transition);
       void _printDgram(const Dgram dg);
       void _setStatusLabelText(const QString s);
       void _setEnabled(QWidget* widget, bool enabled);
@@ -87,14 +85,12 @@ namespace Ami {
       QLabel* _hzLabel;
       QSlider* _hzSlider;
       QLabel* _hzSliderLabel;
-      QCheckBox* _loopCheckBox;
       QLabel* _statusLabel;
       bool _running;
       bool _stopped;
-      TransitionId::Value _lastTransition;
       int _dgCount;
-      double _clockStart;
       double _runStart;
+      double _executionStart;
       uint32_t _damageMask;
       unsigned _damageCount;
       unsigned long long _payloadTotal;
