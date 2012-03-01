@@ -45,6 +45,7 @@ namespace Ami {
       void runClicked();
       void stopClicked();
       void hzSliderChanged(int);
+      void runSliderChanged(int);
       void printDgram(const Dgram dg);
       void setStatus(const QString s);
       void setStatusLabelText(const QString s);
@@ -62,6 +63,7 @@ namespace Ami {
     private:
       void do_configure(QString runName);
       void run();
+      int findTime(double time);
       void setDir(QString dir);
       XtcRun _run;
       bool _runValid;
@@ -82,18 +84,25 @@ namespace Ami {
       QLabel* _countLabel;
       QLabel* _payloadSizeLabel;
       QLabel* _damageLabel;
+
+      QSlider* _runSlider;
+      QLabel* _runSliderLabel;
+
       QLabel* _hzLabel;
       QSlider* _hzSlider;
       QLabel* _hzSliderLabel;
+
       QLabel* _statusLabel;
       bool _running;
       bool _stopped;
       int _dgCount;
-      double _runStart;
       double _executionStart;
       uint32_t _damageMask;
       unsigned _damageCount;
       unsigned long long _payloadTotal;
+      double _start;
+      double _end;
+      bool _startAndEndValid;
     };
   };
 }
