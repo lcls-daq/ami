@@ -10,7 +10,7 @@ tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc
 
-tgtsrcs_offline_ami := XtcFileClient.cc XtcFileClient_moc.cc qtami.cc
+tgtsrcs_offline_ami := offline_ami.cc XtcFileClient.cc XtcFileClient_moc.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
 

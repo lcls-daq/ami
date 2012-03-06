@@ -87,16 +87,8 @@ int main(int argc, char* argv[]) {
       break;
     case 'T':
       testMode = true;
-      //path = "/reg/data/ana01/cxi";
-
-      // XXX permission denied on /ana02/amo/amocom09/xtc/e4-r001-s00/c00.xtc
-      //path = "/reg/data";
-
-
       path = "/reg/d";
-      //path = "/reg/d/ana01/cxi";
-
-
+      path = "/reg/d/ana02";
       break;
     case 'W':
       separateWindowMode = true;
@@ -148,6 +140,6 @@ int main(int argc, char* argv[]) {
 
   app.exec();
 
-  printf("qtami: Application has exited.\n");
+  printf("offline_ami: Application has exited.\n");
   exit(0);
 }

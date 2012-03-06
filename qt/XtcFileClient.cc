@@ -3,15 +3,15 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
-#include <math.h>
 #include <stdlib.h>
 #include <iostream>
 #include <string>
 
 const int maxHz = 60;
 const int defaultHz = maxHz + 1;
-const double secBetweenPrintDgram = 0.2;
+const double secBetweenPrintDgram = 0.1;
 const bool testModeConfigOnly = false;
+const int maxTicks = 20;
 
 static pthread_t _qtThread;
 
@@ -31,7 +31,7 @@ namespace Ami {
   };
 };
 
-static double getTimeAsDouble() {
+static double now() {
   timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts); // vs CLOCK_PROCESS_CPUTIME_ID
   return ClockTime(ts).asDouble();
@@ -40,6 +40,12 @@ static double getTimeAsDouble() {
 static QString itoa(int i) {
   char buf[128];
   sprintf(buf, "%d", i);
+  return QString(buf);
+}
+
+static QString dtoa(double d, int digits) {
+  char buf[128];
+  sprintf(buf, "%.*f", digits, d);
   return QString(buf);
 }
 
@@ -83,46 +89,86 @@ void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
   widget->setEnabled(enabled);
 }
 
-void XtcFileClient::printDgram(const Dgram dg0) {
-  const Dgram* dg = &dg0;
+void XtcFileClient::runSliderSetRange(double start, double end) {
+  pthread_mutex_lock(&_mutex);
+  _ignoreRunSlider = true;
+  int max = (int) (end - start);
+  _runSlider->setRange(0, max);
+  _runSliderValue = 0;
+  _ignoreRunSlider = false;
+  pthread_mutex_unlock(&_mutex);
+}
 
-  if (dg->seq.service() == TransitionId::Configure) {
+void XtcFileClient::runSliderSetValue(double value) {
+  if (now() - _runSliderLastMoved > 0) {
+    _ignoreRunSlider = true;
+    _runSlider->setValue((int) value);
+    _runSliderValue = _runSlider->value();
+    _ignoreRunSlider = false;
+  }
+}
+
+static int getTickInterval(double length) {
+  for (int base = 1; true; base *= 10) {
+    int interval = base;
+    if (length / interval < maxTicks) {
+      return interval;
+    }
+    interval = 2 * base;
+    if (length / interval < maxTicks) {
+      return interval;
+    }
+    interval = 5 * base;
+    if (length / interval < maxTicks) {
+      return interval;
+    }
+  }
+}
+
+void XtcFileClient::printDgram(const Dgram dg) {
+  char buf[256];
+
+  if (dg.seq.service() == TransitionId::Configure) {
+    if (_length > 0) {
+      runSliderSetRange(_start, _end);
+      int interval = getTickInterval(_length);
+      _runSlider->setTickInterval(interval);
+      sprintf(buf, "%d sec/tick", interval);
+      _runSliderLabel->setText(buf);
+    } else {
+      runSliderSetRange(0, 0);
+      _runSliderLabel->setText("");
+    }
+
     time_t t = (time_t) _start;
-    _startLabel->setText("Run start: " + asctime(t));
+    QString label = "Run date is " + asctime(t);
+    if (_length > 0) {
+      if (_length > 2 * 60) {
+        label += ", length is " + dtoa(_length / 60, 1) + " min";
+      } else {
+        label += ", length is " + dtoa(_length, 1) + " sec";
+      }
+    }
+    _startLabel->setText(label);
+    _damageLabel->setText("");
+    _hzLabel->setText("");
+
     return;
   }
 
-  double now = getTimeAsDouble();
-  double deltaSec = now - _executionStart;
-  char buf[256];
+  double clockTime = dg.seq.clock().asDouble();
+  double clockDelta = clockTime - _start;
 
-  ClockTime clockTime = dg->seq.clock();
-  double clockDelta = clockTime.asDouble() - _start;
-  sprintf(buf, "Datagram count: %d (run start + %.3fs)", _dgCount, clockDelta);
-  _countLabel->setText(buf);
-
-  sprintf(buf, "Playback time: %.3fs", deltaSec);
-  _timeLabel->setText(buf);
-
-  if (_startAndEndValid) {
-    double ratio = clockDelta / (_end - _start);
-    if (ratio < 0) {
-      ratio = 0;
-    }
-    _runSlider->setValue((int) (1000 * ratio + 0.5));
-    char buf[64];
-    sprintf(buf, "%2.f%%", 100.0 * ratio);
-    _runSliderLabel->setText(buf);
+  if (_length > 0) {
+    runSliderSetValue(clockTime - _start);
   }
-
-  double payloadTotalGB = _payloadTotal / 1024.0 / 1024.0 / 1024.0;
-  sprintf(buf, "Total payload size: %.3f GB", payloadTotalGB);
-  _payloadSizeLabel->setText(buf);
 
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
   _damageLabel->setText(buf);
 
-  sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s)", _dgCount / deltaSec, payloadTotalGB / deltaSec);
+  double executionTime = now() - _executionStart;
+  double payloadTotalGB = _payloadTotal / 1024.0 / 1024.0 / 1024.0;
+  sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s); Progress: %.1f sec", _dgCount / executionTime, payloadTotalGB / executionTime, clockDelta);
   _hzLabel->setText(buf);
 }
 
@@ -177,13 +223,13 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _exitButton(new QPushButton("Exit")),
 
   _startLabel(new QLabel),
-  _timeLabel(new QLabel),
-  _countLabel(new QLabel),
-  _payloadSizeLabel(new QLabel),
   _damageLabel(new QLabel),
 
   _runSlider(new QSlider(::Qt::Horizontal)),
   _runSliderLabel(new QLabel),
+  _runSliderLastMoved(0.0),
+  _runSliderValue(0),
+  _runSliderSeekRequested(false),
 
   _hzLabel(new QLabel),
   _hzSlider(new QSlider(::Qt::Horizontal)),
@@ -195,9 +241,15 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _stopped(false),
 
   _damageMask(0),
-  _damageCount(0)
+  _damageCount(0),
+
+  _start(0),
+  _end(0),
+  _length(0),
+  _ignoreRunSlider(false)
 {
   _qtThread = pthread_self();
+  pthread_mutex_init(&_mutex, 0);
 
   QVBoxLayout* l = new QVBoxLayout;
 
@@ -208,11 +260,15 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   updateDirLabel();
 
   QHBoxLayout* hboxRun = new QHBoxLayout;
-  _runSlider->setRange(0, 1000);
-  _runSlider->setValue(0);
+  _ignoreRunSlider = true;
+  runSliderSetRange(0, 0);
+  _runSlider->setTickInterval(10);
+  _runSlider->setTickPosition(QSlider::TicksBothSides);
+  _runSliderLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed); // XXX this doesn't work and so the slider width keeps changing XXX
   hboxRun->addWidget(new QLabel("Progress:"));
   hboxRun->addWidget(_runSlider);
   hboxRun->addWidget(_runSliderLabel);
+  _ignoreRunSlider = false;
   l->addLayout(hboxRun);
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
@@ -229,25 +285,16 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   hbox1->addStretch();
   l->addLayout(hbox1);
 
-  QFont qfont;
-  qfont.setFixedPitch(true);
-  _startLabel->setFont(qfont);
-  _timeLabel->setFont(qfont);
-  _countLabel->setFont(qfont);
-  _payloadSizeLabel->setFont(qfont);
-  _damageLabel->setFont(qfont);
-  _hzLabel->setFont(qfont);
-
   l->addWidget(_startLabel);
-  l->addWidget(_countLabel);
-  l->addWidget(_timeLabel);
-  l->addWidget(_payloadSizeLabel);
   l->addWidget(_damageLabel);
   l->addWidget(_hzLabel);
 
   QHBoxLayout* hbox2 = new QHBoxLayout;
-  _hzSlider->setRange(1, maxHz + 1);
+  _hzSlider->setMinimum(1);
+  _hzSlider->setMaximum(maxHz + 1);
   _hzSlider->setValue(defaultHz);
+  _hzSlider->setTickPosition(QSlider::TicksBothSides);
+  _hzSlider->setTickInterval(10);
   hbox2->addWidget(new QLabel("Throttle:"));
   hbox2->addWidget(_hzSlider);
   hbox2->addWidget(_hzSliderLabel);
@@ -289,9 +336,12 @@ void XtcFileClient::hzSliderChanged(int value) {
   }
 }
 
-void XtcFileClient::runSliderChanged(int perMille) {
-  // Note: this changes when WE change it...
-  //cout << "perMille = " << perMille << endl;
+void XtcFileClient::runSliderChanged(int value) {
+  if (! _ignoreRunSlider) {
+    _runSliderSeekRequested = true;
+    _runSliderValue = value;
+    _runSliderLastMoved = now();
+  }
 }
 
 XtcFileClient::~XtcFileClient()
@@ -377,6 +427,7 @@ void XtcFileClient::runClicked()
 {
   setStatus("Run requested...");
   _runButton->setEnabled(false);
+  //_runButton->setText("Pause");
   _runName = _runCombo->currentText();
   _task->call(this);
 }
@@ -458,7 +509,7 @@ void XtcFileClient::configure()
         do_configure(_runName);
         if (! _runValid) {
           setStatus("Configuration for run " + _runName + " failed");
-        } else if (! testModeConfigOnly) {
+        } else if (! testModeConfigOnly && _length > 0) {
           run();
         }
         runCount++;
@@ -484,7 +535,7 @@ void XtcFileClient::do_configure(QString runName)
 {
   _runValid = false;
   QStringList files;
-  setStatus("Fetching files for run " + runName);
+  setStatus("Fetching files for run " + runName + "...");
   getPathsForRun(files, runName);
   if (files.empty()) {
     setStatus("Found no files paths for run " + runName);
@@ -502,21 +553,21 @@ void XtcFileClient::do_configure(QString runName)
     files.pop_front();
   }
 
-  setStatus("Initializing run " + runName);
+  setStatus("Initializing run " + runName + "...");
   _run.init();
 
   ClockTime clockStart;
   ClockTime clockEnd;
-  _startAndEndValid = (_run.getStartAndEndTime(clockStart, clockEnd) == 0);
-  if (_startAndEndValid) {
+  if (_run.getStartAndEndTime(clockStart, clockEnd) == 0) {
     _start = clockStart.asDouble();
     _end = clockEnd.asDouble();
+    _length = _end - _start;
     time_t tb = (time_t) _start;
     time_t te = (time_t) _end;
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     printf("XtcRun start = %s", ctime(&tb));
     printf("XtcRun end   = %s", ctime(&te));
-    printf("XtcRun length = %.3f sec\n", _end - _start);
+    printf("XtcRun length = %.3f sec\n", _length);
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   } else {
     printf("Could not fetch run start/end times\n");
@@ -541,8 +592,8 @@ void XtcFileClient::do_configure(QString runName)
 
   _dgCount++;
   ClockTime clockTime = dg->seq.clock();
-  _executionStart = getTimeAsDouble();
-  if (! _startAndEndValid) {
+  _executionStart = now();
+  if (_length <= 0) {
     _start = clockTime.asDouble();
   }
   _damageMask = 0;
@@ -560,21 +611,35 @@ void XtcFileClient::do_configure(QString runName)
 }
 
 // returns 0 on success
-int XtcFileClient::findTime(double time) {
-  double intpart;
-  double fracpart = modf(time, &intpart);
-  uint32_t seconds = (uint32_t) intpart;
-  uint32_t nanoseconds = (uint32_t) (1.e9 * fracpart + 0.5);
+int XtcFileClient::seekTime(double time) {
+  uint32_t seconds = (uint32_t) time;
+  setStatus("Doing seekTime(" + itoa(seconds) + ")");
   int iCalib = -1;
   int iEvent = -1;
   bool bExactMatch = false;
   bool bOvertime = false;
-  return _run.findTime(seconds, nanoseconds, iCalib, iEvent, bExactMatch, bOvertime);
+  int iError = _run.findTime(seconds, 0, iCalib, iEvent, bExactMatch, bOvertime);
+  if (iError) {
+    setStatus("Failed to seekTime(" + itoa(seconds) + ")");
+  } else {
+    setStatus("Success for seekTime(" + itoa(seconds) + ") bExactMatch=" + itoa(bExactMatch) +
+              " bOvertime=" + itoa(bOvertime) +
+              " iCalib=" + itoa(iCalib) +
+              " iEvent=" + itoa(iEvent));
+  }
+  int eventNum;
+  iError = _run.jump(iCalib, iEvent, eventNum);
+  if (iError) {
+    setStatus("Failed to jump");
+  } else {
+    setStatus("did jump, eventNum=" + itoa(eventNum));
+  }
+  return iError;
 }
 
 void XtcFileClient::run()
 {
-  _executionStart = getTimeAsDouble();
+  _executionStart = now();
   _damageMask = 0;
   _damageCount = 0;
   _payloadTotal = 0;
@@ -585,6 +650,11 @@ void XtcFileClient::run()
   Dgram* last_printed_dg = NULL;
 
   while (! _stopped) {
+    if (_runSliderSeekRequested) {
+      seekTime(_start + _runSliderValue);
+      _runSliderSeekRequested = false;
+    }
+
     Dgram* dg = NULL;
     int slice = -1;
     int64_t offset = -1;
@@ -608,19 +678,18 @@ void XtcFileClient::run()
       setStatus("Configuring run " + _runName + " ???");
       _client.processDgram(dg);
       setStatus("Finished configuring run " + _runName + " ???");
-      sleep(5);
       continue;
     }
 
     if (transition == TransitionId::L1Accept) {
-      double now = getTimeAsDouble();
+      double now = ::now();
       if (lastPrintTime < now - secBetweenPrintDgram) {
         emit _printDgram(*dg);
         lastPrintTime = now;
         last_printed_dg = dg;
       }
 
-      int hz = _hzSlider->value();
+      int hz = _hzSlider->value(); // XXX unsafe?
       if (hz <= maxHz) {
         double deltaSec = now - _executionStart;
         double desiredDeltaSec = _dgCount / (double) hz;
