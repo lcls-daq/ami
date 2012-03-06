@@ -100,7 +100,8 @@ void TdcPlot::dump(FILE* f) const { _plot->dump(f); }
 void TdcPlot::setup_payload(Cds& cds)
 {
   if (_plot) delete _plot;
-    
+  _plot = 0;
+
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     edit_xrange(true);
