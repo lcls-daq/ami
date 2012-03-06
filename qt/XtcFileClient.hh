@@ -66,7 +66,7 @@ namespace Ami {
       void runSliderSetValue(double value);
       void do_configure(QString runName);
       void run();
-      int seekTime(double time);
+      void seekTime(double time);
       void setDir(QString dir);
       XtcRun _run;
       bool _runValid;
@@ -88,12 +88,13 @@ namespace Ami {
       QSlider* _runSlider;
       QLabel* _runSliderLabel;
       double _runSliderLastMoved;
-      int _runSliderValue; // Qt thread always sets this to _runSlider->value()
-      bool _runSliderSeekRequested; // (init:false) Qt thread sets this when _runSlider->value() != _runSliderLastSetValue
+      int _runSliderMovedTo; // Qt sets this to _runSlider->value() if user moved slider
+      bool _runSliderBeingSet;
 
       QLabel* _hzLabel;
       QSlider* _hzSlider;
       QLabel* _hzSliderLabel;
+      int _hzSliderValue;
 
       QLabel* _statusLabel;
       bool _running;
@@ -106,8 +107,6 @@ namespace Ami {
       double _start;
       double _end;
       double _length;
-      bool _ignoreRunSlider;
-      pthread_mutex_t _mutex;
     };
   };
 }

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string>
+#include <cassert>
 
 const int maxHz = 60;
 const int defaultHz = maxHz + 1;
@@ -90,22 +91,11 @@ void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
 }
 
 void XtcFileClient::runSliderSetRange(double start, double end) {
-  pthread_mutex_lock(&_mutex);
-  _ignoreRunSlider = true;
+  _runSliderBeingSet = true;
   int max = (int) (end - start);
   _runSlider->setRange(0, max);
-  _runSliderValue = 0;
-  _ignoreRunSlider = false;
-  pthread_mutex_unlock(&_mutex);
-}
-
-void XtcFileClient::runSliderSetValue(double value) {
-  if (now() - _runSliderLastMoved > 0) {
-    _ignoreRunSlider = true;
-    _runSlider->setValue((int) value);
-    _runSliderValue = _runSlider->value();
-    _ignoreRunSlider = false;
-  }
+  _runSliderMovedTo = -1;
+  _runSliderBeingSet = false;
 }
 
 static int getTickInterval(double length) {
@@ -157,10 +147,10 @@ void XtcFileClient::printDgram(const Dgram dg) {
   }
 
   double clockTime = dg.seq.clock().asDouble();
-  double clockDelta = clockTime - _start;
-
-  if (_length > 0) {
-    runSliderSetValue(clockTime - _start);
+  if (_length > 0 && (now() - _runSliderLastMoved > 0.5)) {
+    _runSliderBeingSet = true;
+    _runSlider->setValue((int) (clockTime - _start));
+    _runSliderBeingSet = false;
   }
 
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
@@ -168,6 +158,7 @@ void XtcFileClient::printDgram(const Dgram dg) {
 
   double executionTime = now() - _executionStart;
   double payloadTotalGB = _payloadTotal / 1024.0 / 1024.0 / 1024.0;
+  double clockDelta = clockTime - _start;
   sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s); Progress: %.1f sec", _dgCount / executionTime, payloadTotalGB / executionTime, clockDelta);
   _hzLabel->setText(buf);
 }
@@ -228,8 +219,8 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _runSlider(new QSlider(::Qt::Horizontal)),
   _runSliderLabel(new QLabel),
   _runSliderLastMoved(0.0),
-  _runSliderValue(0),
-  _runSliderSeekRequested(false),
+  _runSliderMovedTo(-1),
+  _runSliderBeingSet(false),
 
   _hzLabel(new QLabel),
   _hzSlider(new QSlider(::Qt::Horizontal)),
@@ -245,11 +236,9 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
 
   _start(0),
   _end(0),
-  _length(0),
-  _ignoreRunSlider(false)
+  _length(0)
 {
   _qtThread = pthread_self();
-  pthread_mutex_init(&_mutex, 0);
 
   QVBoxLayout* l = new QVBoxLayout;
 
@@ -260,15 +249,14 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   updateDirLabel();
 
   QHBoxLayout* hboxRun = new QHBoxLayout;
-  _ignoreRunSlider = true;
+  _runSliderBeingSet = true;
   runSliderSetRange(0, 0);
   _runSlider->setTickInterval(10);
   _runSlider->setTickPosition(QSlider::TicksBothSides);
-  _runSliderLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed); // XXX this doesn't work and so the slider width keeps changing XXX
   hboxRun->addWidget(new QLabel("Progress:"));
   hboxRun->addWidget(_runSlider);
   hboxRun->addWidget(_runSliderLabel);
-  _ignoreRunSlider = false;
+  _runSliderBeingSet = false;
   l->addLayout(hboxRun);
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
@@ -334,12 +322,12 @@ void XtcFileClient::hzSliderChanged(int value) {
   } else {
     _hzSliderLabel->setText(itoa(value) + " Hz");
   }
+  _hzSliderValue = value;
 }
 
 void XtcFileClient::runSliderChanged(int value) {
-  if (! _ignoreRunSlider) {
-    _runSliderSeekRequested = true;
-    _runSliderValue = value;
+  if (! _runSliderBeingSet) {
+    _runSliderMovedTo = value;
     _runSliderLastMoved = now();
   }
 }
@@ -416,7 +404,7 @@ void XtcFileClient::setDir(QString dir)
   }
   globfree(&g);
   _runList.sort();
-  setStatus(QString("Found ") + itoa(_runList.size()) + " runs;;; runName=" + _runName);
+  setStatus("Found " + itoa(_runList.size()) + " runs under " + _curdir);
   emit _updateRunCombo();
   if (_runName != "") {
     emit _updateRun();
@@ -427,7 +415,6 @@ void XtcFileClient::runClicked()
 {
   setStatus("Run requested...");
   _runButton->setEnabled(false);
-  //_runButton->setText("Pause");
   _runName = _runCombo->currentText();
   _task->call(this);
 }
@@ -562,15 +549,11 @@ void XtcFileClient::do_configure(QString runName)
     _start = clockStart.asDouble();
     _end = clockEnd.asDouble();
     _length = _end - _start;
-    time_t tb = (time_t) _start;
-    time_t te = (time_t) _end;
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    printf("XtcRun start = %s", ctime(&tb));
-    printf("XtcRun end   = %s", ctime(&te));
-    printf("XtcRun length = %.3f sec\n", _length);
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
   } else {
     printf("Could not fetch run start/end times\n");
+    _start = 0;
+    _end = 0;
+    _length = 0;
   }
 
   setStatus("Fetching first datagram for run " + runName);
@@ -606,35 +589,23 @@ void XtcFileClient::do_configure(QString runName)
   _client.processDgram(dg);
   setStatus("Finished configuring run " + runName + ".");
   _runValid = true;
-
-  //  _run.probe();
 }
 
-// returns 0 on success
-int XtcFileClient::seekTime(double time) {
+void XtcFileClient::seekTime(double time) {
   uint32_t seconds = (uint32_t) time;
-  setStatus("Doing seekTime(" + itoa(seconds) + ")");
   int iCalib = -1;
   int iEvent = -1;
   bool bExactMatch = false;
   bool bOvertime = false;
-  int iError = _run.findTime(seconds, 0, iCalib, iEvent, bExactMatch, bOvertime);
-  if (iError) {
-    setStatus("Failed to seekTime(" + itoa(seconds) + ")");
-  } else {
-    setStatus("Success for seekTime(" + itoa(seconds) + ") bExactMatch=" + itoa(bExactMatch) +
-              " bOvertime=" + itoa(bOvertime) +
-              " iCalib=" + itoa(iCalib) +
-              " iEvent=" + itoa(iEvent));
+  if (_run.findTime(seconds, 0, iCalib, iEvent, bExactMatch, bOvertime) != 0) {
+    setStatus("Failed to find event for " + dtoa(time - _start, 0) + " seconds after start");
+    return;
   }
   int eventNum;
-  iError = _run.jump(iCalib, iEvent, eventNum);
-  if (iError) {
-    setStatus("Failed to jump");
-  } else {
-    setStatus("did jump, eventNum=" + itoa(eventNum));
+  if (_run.jump(iCalib, iEvent, eventNum) != 0) {
+    setStatus("Failed to move to event for " + dtoa(time - _start, 0) + " seconds after start");
+    return;
   }
-  return iError;
 }
 
 void XtcFileClient::run()
@@ -650,9 +621,9 @@ void XtcFileClient::run()
   Dgram* last_printed_dg = NULL;
 
   while (! _stopped) {
-    if (_runSliderSeekRequested) {
-      seekTime(_start + _runSliderValue);
-      _runSliderSeekRequested = false;
+    if (_runSliderMovedTo >= 0) {
+      seekTime(_start + _runSliderMovedTo);
+      _runSliderMovedTo = -1;
     }
 
     Dgram* dg = NULL;
@@ -674,13 +645,7 @@ void XtcFileClient::run()
     }
 
     TransitionId::Value transition = dg->seq.service();
-    if (transition == TransitionId::Configure) {
-      setStatus("Configuring run " + _runName + " ???");
-      _client.processDgram(dg);
-      setStatus("Finished configuring run " + _runName + " ???");
-      continue;
-    }
-
+    assert(transition != TransitionId::Configure);
     if (transition == TransitionId::L1Accept) {
       double now = ::now();
       if (lastPrintTime < now - secBetweenPrintDgram) {
@@ -689,7 +654,7 @@ void XtcFileClient::run()
         last_printed_dg = dg;
       }
 
-      int hz = _hzSlider->value(); // XXX unsafe?
+      int hz = _hzSliderValue;
       if (hz <= maxHz) {
         double deltaSec = now - _executionStart;
         double desiredDeltaSec = _dgCount / (double) hz;
