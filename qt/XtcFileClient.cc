@@ -323,6 +323,10 @@ void XtcFileClient::hzSliderChanged(int value) {
     _hzSliderLabel->setText(itoa(value) + " Hz");
   }
   _hzSliderValue = value;
+
+  // Reset values, but avoid values that would lead to division by zero when computing rate.
+  _executionStart = now() - 1.0;
+  _dgCount = 1;
 }
 
 void XtcFileClient::runSliderChanged(int value) {
