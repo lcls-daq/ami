@@ -89,7 +89,9 @@ namespace Ami {
 
       bool        _one_shot;
 
+    protected:
       Cds             _cds;
+    private:
       ClientManager*  _manager;
       unsigned        _niovload;
       iovec*          _iovload;

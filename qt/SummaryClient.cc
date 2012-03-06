@@ -291,7 +291,8 @@ void SummaryClient::_read_description(int size)
                          noTransform,noTransform,QColor(0,0,0));
       break;
     case Ami::DescEntry::TH2F:
-      plot = new QtTH2F(plot_title,*static_cast<const Ami::EntryTH2F*>(entry));
+      plot = new QtTH2F(plot_title,*static_cast<const Ami::EntryTH2F*>(entry),
+                        noTransform,noTransform,QColor(0,0,0));
       break;
     default:
       printf("Summary type %d not implemented yet\n",desc->type()); 

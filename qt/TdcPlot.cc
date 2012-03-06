@@ -2,7 +2,7 @@
 
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/PlotFactory.hh"
-#include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtBase.hh"
 #include "ami/qt/Path.hh"
 
 #include "ami/data/AbsFilter.hh"
@@ -11,7 +11,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/DescEntry.hh"
-#include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/TdcPlot.hh"
 #include "ami/data/RawFilter.hh"
 
@@ -80,8 +80,13 @@ void TdcPlot::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.element == "QtPlot")
       QtPlot::load(p);
-    else if (tag.name == "_desc")
-      _desc = new DescTH1F(*reinterpret_cast<DescTH1F*>(QtPersistent::extract_op(p)));
+    else if (tag.name == "_desc") {
+      const DescEntry& desc = *reinterpret_cast<DescEntry*>(QtPersistent::extract_op(p));
+      switch(desc.type()) {
+      case DescEntry::TH2F: _desc = new DescTH2F(static_cast<const DescTH2F&>(desc)); break;
+      default             : _desc = 0; printf("TdcPlot::load error desc type %d\n",desc.type()); break;
+      }
+    }
     else if (tag.name == "_expr")
       _expr = QtPersistent::extract_s(p);
   XML_iterate_close(TdcPlot,tag);
@@ -99,8 +104,8 @@ void TdcPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     edit_xrange(true);
-    _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-		       noTransform,noTransform,QColor(0,0,0));
+    _plot = PlotFactory::plot(_name,*entry,
+                              noTransform,noTransform,QColor(0,0,0));
     _plot->attach(_frame);
   }
   else if (_output_signature>=0)

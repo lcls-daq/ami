@@ -1,51 +1,53 @@
 #ifndef AmiQt_TdcPlot_hh
 #define AmiQt_TdcPlot_hh
 
+//=========================================================
+//
+//  TwoDPlot for the Analysis and Monitoring Implementation
+//
+//  Filter configures the server-side filtering
+//  Math   configures the server-side operations
+//
+//=========================================================
+
 #include "ami/qt/QtPlot.hh"
+
 #include <QtCore/QString>
 
-#include "ami/data/ConfigureRequest.hh"
-
-#include <list>
-
 namespace Ami {
-  class AbsFilter;
   class Cds;
   class DescEntry;
+  class AbsFilter;
   namespace Qt {
-    class AxisArray;
-    class ChannelDefinition;
-    class TdcDefinition;
     class QtBase;
     class TdcPlot : public QtPlot {
       Q_OBJECT
     public:
       TdcPlot(QWidget*,
-	      const QString&  name,
-	      const Ami::AbsFilter& filter,
-	      DescEntry*      desc,
-	      const QString&  expr);
+              const QString&,
+              const Ami::AbsFilter&  filter,
+              DescEntry*       desc,
+              const QString&   expr);
       TdcPlot(QWidget*,const char*&);
       ~TdcPlot();
     public:
-      void save(char*&) const;
-      void load(const char*&);
+      virtual void save(char*& p) const;
+      virtual void load(const char*& p);
     public:
-      void configure(char*& p, unsigned input, unsigned& output);
+      void configure(char*& p, 
+		     unsigned input, 
+		     unsigned& output);
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
     private:
-      Ami::AbsFilter* _filter;
-      DescEntry* _desc;
-      QString    _expr;
-
-      unsigned _output_signature;
-
-      QtBase*  _plot;
+      Ami::AbsFilter*   _filter;
+      DescEntry*        _desc;
+      QString           _expr;
+      unsigned          _output_signature;
+      QtBase*           _plot;
     };
   };
 };
 
-#endif
-		 
+#endif      

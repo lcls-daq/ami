@@ -74,3 +74,27 @@ void EntryTH2F::setto(const EntryTH2F& curr,
   valid(curr.time());
 }
 
+void EntryTH2F::addcontent(float y, double vx, double vy) 
+{
+  bool valid=false;
+
+  if (vx < _desc.xlow()) 
+    addinfo(y, UnderflowX);
+  else if (vx >= _desc.xup()) 
+    addinfo(y, OverflowX);
+  else
+    valid=true;
+
+  if (vy < _desc.ylow()) 
+    addinfo(y, UnderflowY);
+  else if (vy >= _desc.yup()) 
+    addinfo(y, OverflowY);
+  else if (valid) {
+    unsigned binx = unsigned(((vx-_desc.xlow())*double(_desc.nbinsx()) /
+                              (_desc.xup()-_desc.xlow())));
+    unsigned biny = unsigned(((vy-_desc.ylow())*double(_desc.nbinsy()) /
+                              (_desc.yup()-_desc.ylow())));
+    *(_y+binx+biny*_desc.nbinsx()) += y;
+  }
+}
+

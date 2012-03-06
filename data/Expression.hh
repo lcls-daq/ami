@@ -49,6 +49,7 @@ namespace Ami {
     static const QChar& divide      ();
     static const QChar& add         ();
     static const QChar& subtract    ();
+    static QString      constant(double);
   private:
     QString& _process(QString&);
     QString& _process(QString&,const QChar&);

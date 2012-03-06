@@ -711,6 +711,9 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   _create_entry( f,s,g,rms,gm, 
                  _detector, _entry, _max_pixels);
 
+  Ami::PeakFinder::register_(info().phy(),   
+                             new CspadMiniGeometry::CspadMiniPFF(g,rms,_detector,_entry->desc()));
+
   if (f ) fclose(f);
   if (s ) fclose(s);
   if (g ) fclose(g);
@@ -744,9 +747,6 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   desc.set_scale(pixel_size*1e3,pixel_size*1e3);
     
   detector->fill(desc,_cache);
-
-  Ami::PeakFinder::register_(info().phy(),   
-                             new CspadMiniGeometry::CspadMiniPFF(g,rms,detector,desc));
 
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
@@ -785,3 +785,4 @@ void CspadMiniHandler::_damaged()
   if (_entry) 
     _entry->invalid(); 
 }
+

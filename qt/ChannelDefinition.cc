@@ -398,3 +398,5 @@ void ChannelDefinition::set_scale()
   }
   delete c;
 }
+
+unsigned  ChannelDefinition::output_signature() const { return _output_signature; }

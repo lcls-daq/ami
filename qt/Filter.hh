@@ -13,7 +13,7 @@ namespace Ami {
 
   namespace Qt {
     class Condition;
-
+    class FeatureTree;
     class Filter : public QtPWidget {
       Q_OBJECT
     public:
@@ -30,7 +30,6 @@ namespace Ami {
       void calc  ();
       void apply ();
       void clear ();
-      void update_features();
     signals:
       void changed();
     private:
@@ -40,7 +39,7 @@ namespace Ami {
       QLineEdit* _expr;
       QLineEdit* _cond_name;
       QComboBox* _bld_box;
-      QComboBox* _features;
+      FeatureTree* _features;
       QLineEdit* _lo_rng;
       QLineEdit* _hi_rng;
       QVBoxLayout* _clayout;

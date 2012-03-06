@@ -29,8 +29,9 @@ namespace Ami {
       //  very slow
       double value(double x,double y) const {
         const DescTH2F& desc = _entry.desc();
-        int ix = int((x-desc.xlow())*_idx);
-        int iy = int((y-desc.ylow())*_idy);
+        //  QwtPlot probes the upper left corner of each bin
+        int ix = int((x-desc.xlow())*_idx+0.5);
+        int iy = int((y-desc.ylow())*_idy-0.5);
         return _entry.content(ix,iy);
       }
       QwtRasterData* copy() const {
@@ -65,7 +66,10 @@ namespace Ami {
 using namespace Ami::Qt;
 
 QtTH2F::QtTH2F(const QString&   title,
-	       const Ami::EntryTH2F& entry) :
+	       const Ami::EntryTH2F& entry,
+               const AbsTransform&,
+               const AbsTransform&,
+               const QColor&) :
   QtBase(title,entry),
   _curve(entry.desc().name()),
   _z    (new DataCache(entry))

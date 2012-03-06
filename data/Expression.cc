@@ -54,6 +54,17 @@ const QChar& Expression::divide      () { return _divide; }
 const QChar& Expression::add         () { return _add; }
 const QChar& Expression::subtract    () { return _subtract; }
 
+QString Expression::constant(double v)
+{
+  QString q = QString::number(v);
+  int pos = q.indexOf('e');
+  if (pos != -1) {
+    q.replace(pos,1,QString("%1%2%3(").arg(multiply()).arg(10).arg(exponentiate()));
+    q.append (")");
+  }
+  return q;
+}
+
 Expression::Expression(const std::list<Variable*>& variables) :
   _variables(variables)
 {
@@ -93,8 +104,7 @@ QString& Expression::_process(QString& text,const QChar& o)
       int len = termMatch.matchedLength();
       last = index+len;
       QString str = text.mid(index+2,len-2);
-      unsigned ub = str.toULong(0,16);
-      b = reinterpret_cast<Term*>(ub);
+      b = reinterpret_cast<Term*>(str.toULongLong(0,16));
 #ifdef DBUG
       printf("Found term %s : %p %x\n",qPrintable(str),b,ub);
 #endif
@@ -137,8 +147,7 @@ QString& Expression::_process(QString& text,const QChar& o)
       int len = termMatch.matchedLength();
       first = index-len;
       QString str = text.mid(first+1,len-2);
-      unsigned ua = str.toULong(0,16);
-      a = reinterpret_cast<Term*>(ua);
+      a = reinterpret_cast<Term*>(str.toULongLong(0,16));
 #ifdef DBUG
       printf("Found term %s : %p %x\n",qPrintable(str),a,ua);
 #endif
@@ -192,7 +201,7 @@ QString& Expression::_process(QString& text,const QChar& o)
     else if (o==_subtract    ) { B = new Sub(a,b); }
     else { B = 0; } // can't get here
 
-    text.insert(first,QString("[%1]").arg((unsigned long)B,0,16));
+    text.insert(first,QString("[%1]").arg(reinterpret_cast<uint64_t>(B),0,16));
   }
   return text;
 }
@@ -204,14 +213,14 @@ QString& Expression::_process(QString& text)
   //
   for(VarList::const_iterator it = _variables.begin(); it != _variables.end(); it++) {
     if (text.compare((*it)->name())==0) {
-      text = QString("[%1]").arg((unsigned long)((*it)->clone()),0,16);
+      text = QString("[%1]").arg(reinterpret_cast<uint64_t>((*it)->clone()),0,16);
       return text;
     }
   }
   bool ok;
   double v=text.toDouble(&ok);
   if (ok) {
-    text = QString("[%1]").arg((unsigned long)(new Constant("constant",v)),0,16);
+    text = QString("[%1]").arg(reinterpret_cast<uint64_t>(new Constant("constant",v)),0,16);
     return text;
   }
   
@@ -243,7 +252,7 @@ Term* Expression::evaluate(const QString& e)
   bool ok(false);
   Term* t = 0;
   if (text[0]=='[' && text[text.size()-1]==']')
-    t = reinterpret_cast<Term*>(text.mid(1,text.size()-2).toULong(&ok,16));
+    t = reinterpret_cast<Term*>(text.mid(1,text.size()-2).toULongLong(&ok,16));
 #ifdef DBUG
   printf("Result is (%s) %p %s\n",ok ? "OK" : "Not OK", t,qPrintable(text));
 #endif

@@ -4,12 +4,13 @@
 // #include "ami/qt/QtScalar.hh"
 #include "ami/qt/QtTH1F.hh"
 #include "ami/qt/QtProf.hh"
-// #include "ami/qt/QtTH2F.hh"
+#include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtImage.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtWaveform.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryImage.hh"
@@ -35,7 +36,7 @@ QtBase* PlotFactory::plot(const QString&    name,
     //    QTCASE(Scalar);
     QTCASE(TH1F);
     QTCASE(Prof);
-    //    QTCASE(TH2F);
+    QTCASE(TH2F);
     QTCASE(Waveform);
     QTCASE(Image);
   default : 

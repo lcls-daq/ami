@@ -29,7 +29,7 @@ namespace Ami {
     void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
-  private:
+  public:
     void _create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                        CspadMiniGeometry::Detector*& detector,
                        EntryImage*& entry, 

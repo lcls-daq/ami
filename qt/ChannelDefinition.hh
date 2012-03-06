@@ -48,6 +48,7 @@ namespace Ami {
 			      ChannelDefinition* ch[], int*, int,
 			      ConfigureRequest::Source = ConfigureRequest::Discovery);
       void          setup_payload  (Cds&);
+      unsigned      output_signature() const;
     public slots:
       void load_reference();
       void show_plot(bool);

@@ -1,9 +1,9 @@
-#ifndef AmiQt_ProjectionPlot_hh
-#define AmiQt_ProjectionPlot_hh
+#ifndef AmiQt_TwoDPlot_hh
+#define AmiQt_TwoDPlot_hh
 
 //=========================================================
 //
-//  ProjectionPlot for the Analysis and Monitoring Implementation
+//  TwoDPlot for the Analysis and Monitoring Implementation
 //
 //  Filter configures the server-side filtering
 //  Math   configures the server-side operations
@@ -22,18 +22,18 @@ namespace Ami {
   class AbsOperator;
   namespace Qt {
     class ChannelDefinition;
-    class CursorsX;
-    class PeakFit;
-    class WaveformDisplay;
-    class ProjectionPlot : public QtPWidget {
+    class ImageXYProjection;
+    class ImageRPhiProjection;
+    class ImageContourProjection;
+    class ImageDisplay;
+    class TwoDPlot : public QtPWidget {
       Q_OBJECT
     public:
-      ProjectionPlot(QWidget*,
-		     const QString&,
-		     unsigned input_channel,
-		     Ami::AbsOperator*);
-      ProjectionPlot(QWidget*,const char*&);
-      ~ProjectionPlot();
+      TwoDPlot(QWidget*,
+               const QString&,
+               Ami::AbsOperator*);
+      TwoDPlot(QWidget*,const char*&);
+      ~TwoDPlot();
     public:
       virtual void save(char*& p) const;
       virtual void load(const char*& p);
@@ -42,12 +42,6 @@ namespace Ami {
       void configure(char*& p, 
 		     unsigned input, 
 		     unsigned& output);
-      void configure(char*& p, 
-		     unsigned input, 
-		     unsigned& output,
-		     ChannelDefinition* ch[], 
-		     int* signatures, 
-		     unsigned nchannels);
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
@@ -64,10 +58,12 @@ namespace Ami {
 
       enum {NCHANNELS=4};
       ChannelDefinition* _channels[NCHANNELS];
-      WaveformDisplay*   _frame;
+      ImageDisplay*      _frame;
       const DescEntry*   _input_entry;
-      CursorsX*          _cursors;
-      PeakFit*           _peakfit;
+
+      ImageXYProjection*      _xyproj;
+      ImageRPhiProjection*    _rfproj;
+      ImageContourProjection* _cntproj;
 
       unsigned           _showMask;
     };

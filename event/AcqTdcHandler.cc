@@ -12,7 +12,8 @@ static const double TDC_PERIOD = 50e-12;
 using namespace Ami;
 
 AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo& info) : 
-  EventHandler(info, Pds::TypeId::Id_AcqTdcData, Pds::TypeId::Id_AcqTdcConfig)
+  EventHandler(info, Pds::TypeId::Id_AcqTdcData, Pds::TypeId::Id_AcqTdcConfig),
+  _entry(NULL)
 {
 }
 

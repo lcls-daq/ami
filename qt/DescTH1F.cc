@@ -80,4 +80,5 @@ void DescTH1F::load(const char*& p)
     else if (tag.name == "_hi")
       _hi  ->setText(QtPersistent::extract_s(p));
   XML_iterate_close(DescTH1F,tag);
+  validate();
 }

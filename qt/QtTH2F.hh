@@ -15,7 +15,10 @@ namespace Ami {
     class QtTH2F : public QtBase {
     public:
       QtTH2F(const QString&   title,
-	     const Ami::EntryTH2F&);
+	     const Ami::EntryTH2F&,
+	     const AbsTransform& x,
+	     const AbsTransform& y,
+	     const QColor&);
       ~QtTH2F();
     public:
       void        dump  (FILE*   ) const;

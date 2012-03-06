@@ -5,7 +5,7 @@
 
 #include "ami/data/RawFilter.hh"
 #include "ami/data/FeatureRange.hh"
-#include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/FeatureTree.hh"
 #include "ami/qt/Calculator.hh"
 
 #include <QtGui/QHBoxLayout>
@@ -36,7 +36,7 @@ Filter::Filter(QWidget* parent,const QString& title) :
   _name     (title),
   _expr     (new QLineEdit),
   _cond_name(new QLineEdit("A")),
-  _features (new QComboBox),
+  _features (new FeatureTree),
   _lo_rng   (new QLineEdit("0")),
   _hi_rng   (new QLineEdit("1")),
   _clayout  (new QVBoxLayout),
@@ -110,8 +110,6 @@ Filter::Filter(QWidget* parent,const QString& title) :
   connect(okB   , SIGNAL(clicked()), this, SLOT(apply()));
   connect(okB   , SIGNAL(clicked()), this, SLOT(hide()));
   connect(cancelB, SIGNAL(clicked()), this, SLOT(hide()));
-  connect(&FeatureRegistry::instance(), SIGNAL(changed()),
-	  this  , SLOT(update_features()));
 }
 
 Filter::~Filter()
@@ -149,9 +147,7 @@ void Filter::load(const char*& p)
 
       printf("new condition %s := %g <= %s <= %g\n",
              condition, lo, variable, hi);
-      int index = _features->findText(variable);
-      if (index<0)
-        printf("Unable to identify %s\n",variable);
+      _features->set_entry(variable);
 
       Condition* c = new Condition(condition,
                                    QString("%1 := %2 <= %3 <= %4")
@@ -181,9 +177,9 @@ void Filter::add  ()
 				QString("%1 := %2 <= %3 <= %4")
 				.arg(_cond_name->text())
 				.arg(_lo_rng->text())
-				.arg(_features->currentText())
+				.arg(_features->entry())
 				.arg(_hi_rng->text()),
-				new FeatureRange(qPrintable(_features->currentText()),
+				new FeatureRange(qPrintable(_features->entry()),
 						 _lo_rng->text().toDouble(),
 						 _hi_rng->text().toDouble()));
   _conditions.push_back(c);
@@ -233,14 +229,6 @@ void Filter::clear()
 
   if (_filter) delete _filter;
   _filter = new RawFilter;
-}
-
-void Filter::update_features()
-{
-  _features->clear();
-  QStringList names = FeatureRegistry::instance().names();
-  if (!names.isEmpty())
-    _features->addItems(names);
 }
 
 const Ami::AbsFilter* Filter::filter() const { return _filter; }

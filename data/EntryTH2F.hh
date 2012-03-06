@@ -22,6 +22,7 @@ namespace Ami {
     float content   (unsigned bin) const;
     float content   (unsigned binx, unsigned biny) const;
     void  addcontent(float y, unsigned binx, unsigned biny);
+    void  addcontent(float y, double vx, double vy);
     void  content   (float y, unsigned binx, unsigned biny);
 
     enum Info { UnderflowX, OverflowX, UnderflowY, OverflowY, Normalization, InfoSize };

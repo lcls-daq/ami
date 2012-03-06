@@ -109,7 +109,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(_detList = new QListWidget(this));
     *new DetectorListItem(_detList, "Env"    , envInfo, 0);
     *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
-    *new DetectorListItem(_detList, "Summary", noInfo , 0);
+    //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	    this, SLOT(show_detector(QListWidgetItem*)));
 
@@ -468,7 +468,7 @@ void DetectorSelect::change_detectors(const char* c)
 
     new DetectorListItem(_detList, "Env"    , envInfo, 0);
     new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
-    new DetectorListItem(_detList, "Summary", noInfo , 0);
+    //    new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     const Pds::DetInfo noInfo;
     const Ami::DescEntry* n = 0;

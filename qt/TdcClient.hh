@@ -21,11 +21,15 @@ namespace Ami {
     class Control;
     class Status;
     class TdcPlot;
+    class ProjectionPlot;
+    class TwoDPlot;
     class DescTH1F;
+    class DescTH2F;
     class Filter;
     class TdcClient : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
+      enum { TH1F, TH2F, Image };
       TdcClient(QWidget*, const Pds::DetInfo&, unsigned);
       virtual ~TdcClient();
     public:
@@ -53,9 +57,12 @@ namespace Ami {
       void remove_plot         (QObject*);
       void select_source       ();
       void validate_source     ();
+      void select_vsource      ();
+      void validate_vsource    ();
     signals:
       void description_changed(int);
     private:
+      void _select_source  (QLineEdit*);
       void _configure(char*& p, 
 		      unsigned input, 
 		      unsigned& output);
@@ -82,11 +89,19 @@ namespace Ami {
 
       QLineEdit*   _source_edit;
       QPushButton* _source_compose;
+
+      QLineEdit*   _vsource_edit;
+      QPushButton* _vsource_compose;
+
       Filter*      _filter;
 
-      DescTH1F*    _plot_desc;
+      QButtonGroup* _plot_grp;
+      DescTH1F*    _plot_desc_1d;
+      DescTH2F*    _plot_desc_2d;
 
-      std::list<TdcPlot*> _plots;
+      std::list<TdcPlot*>        _plots;
+      std::list<ProjectionPlot*> _pplots;
+      std::list<TwoDPlot*>       _tplots;
     };
   };
 };

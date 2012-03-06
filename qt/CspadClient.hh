@@ -7,8 +7,8 @@ class QCheckBox;
 
 namespace Ami {
   namespace Qt {
-
     class CspadClient : public ImageClient {
+      Q_OBJECT
     public:
       CspadClient(QWidget*,const Pds::DetInfo&, unsigned);
       ~CspadClient();
@@ -23,6 +23,8 @@ namespace Ami {
 		      int* signatures, 
 		      unsigned nchannels);
       void _setup_payload(Cds&);
+    public slots:
+      void write_pedestals();
     private:
       //  Specialization widgets
       QCheckBox* _fnBox;

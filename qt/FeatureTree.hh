@@ -1,11 +1,7 @@
 #ifndef AmiQt_FeatureTree_hh
 #define AmiQt_FeatureTree_hh
 
-#include <QtGui/QTreeView>
-#include <QtGui/QPushButton>
-
-#include <QtGui/QStandardItemModel>
-#include <QtCore/QString>
+#include "ami/qt/QtTree.hh"
 
 class QColor;
 
@@ -13,29 +9,17 @@ namespace Ami {
   namespace Qt {
     class FeatureRegistry;
 
-    class FeatureTree : public QPushButton {
+    class FeatureTree : public QtTree {
       Q_OBJECT
     public:
       FeatureTree(FeatureRegistry* =0);
-      FeatureTree(const QStringList&, const QStringList&, const QColor&);
+      FeatureTree(const QStringList& names, const QStringList& help, const QColor& color);
       ~FeatureTree();
-    public:
-      void save(char*&) const;
-      void load(const char*&);
-    public:
-      const QString& entry() const;
-      void  clear();
-      void  fill (const QStringList&);
     public slots:
       void change_features();
-      void set_entry(const QModelIndex&);
-      void set_entry(const QString&);
-    signals:
-      void activated(const QString&);
     private:
-      QStandardItemModel _model;
-      QTreeView          _view;
-      QString            _entry;
+      bool _valid_entry(const QString&) const;
+    private:
       FeatureRegistry*   _registry;
     };
   };

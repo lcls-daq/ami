@@ -8,7 +8,7 @@
 //
 
 #include "ami/data/AbsOperator.hh"
-#include "ami/data/DescTH1F.hh"
+#include "ami/data/DescImage.hh"
 
 namespace Ami {
 
@@ -21,6 +21,7 @@ namespace Ami {
     TdcPlot(const DescEntry& output, const char*);
     //  Reconstituted from the input serial stream and the input entry accessor.
     TdcPlot(const char*&, const DescEntry&);
+    TdcPlot(const char*&);
     ~TdcPlot();
   public:
     DescEntry& output   () const;
@@ -30,11 +31,12 @@ namespace Ami {
   private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];
-    enum { DESC_LEN = sizeof(DescTH1F) };
+    enum { DESC_LEN = sizeof(DescImage) };
     char             _desc_buffer[DESC_LEN];
 
     unsigned      _mask;
-    Term*         _term;
+    Term*         _xterm;
+    Term*         _yterm;
     Entry*        _output;
     class TdcVar;
     TdcVar*       _chan[6];
