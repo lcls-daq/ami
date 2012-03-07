@@ -2,7 +2,8 @@
 #define Ami_PrincetonHandler_hh
 
 #include "ami/event/EventHandler.hh"
-#include "pdsdata/princeton/ConfigV1.hh"
+#include "ami/data/FeatureCache.hh"
+#include "pdsdata/princeton/ConfigV2.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {
@@ -10,21 +11,29 @@ namespace Ami {
 
   class PrincetonHandler : public EventHandler {
   public:
-    PrincetonHandler(const Pds::DetInfo& info);
+    PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache);
     ~PrincetonHandler();
   public:
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
   private:
-    void _calibrate(const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t);
-    void _event    (const void* payload, const Pds::ClockTime& t);
-    void _damaged  ();
+    virtual void _configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t);    
+    virtual void _calibrate(const void* payload, const Pds::ClockTime& t);
+    virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
+    virtual void _damaged  ();
   private:
-    PrincetonHandler(const Pds::DetInfo& info, const EntryImage*);
-    Pds::Princeton::ConfigV1 _config;
-    EntryImage* _entry;
+    //PrincetonHandler(const Pds::DetInfo& info, const EntryImage*);
+    Pds::Princeton::ConfigV2  _config;
+    FeatureCache&             _cache;
+    int                       _iCacheIndexTemperature;
+    EntryImage*               _entry;
+
+    /*
+     * These functions will never be called. The above _configure() and _event() replace these two.
+     */    
+    virtual void _configure(const void* payload, const Pds::ClockTime& t);
+    virtual void _event    (const void* payload, const Pds::ClockTime& t);
   };
 };
 
