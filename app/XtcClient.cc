@@ -42,10 +42,10 @@
 using namespace Ami;
 
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
-		     Factory&      factory,
-		     UList&        user_ana,
+         Factory&      factory,
+         UList&        user_ana,
                      EventFilter&  filter,
-		     bool          sync) :
+         bool          sync) :
   _cache   (cache),
   _factory (factory),
   _user_ana(user_ana),
@@ -290,8 +290,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
       case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
-      case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info); break;
-      case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler    (info,cache); break;
+      case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
+      case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
       case Pds::TypeId::Id_CspadConfig:      
         if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,cache);
         else                                 h = new CspadMiniHandler(info,cache);
