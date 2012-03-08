@@ -49,10 +49,21 @@ static void redirect(const char *output, const char *error) {
   }
 }
 
+// This should return a different group for every
+// running instance on a single machine, which should
+// be sufficient if we are using the lo interface.
+static unsigned getLocallyUniqueServerGroup() {
+  unsigned pid = getpid();
+  pid = pid & 0x0000ffff;
+  unsigned ipv4_local_scope = 0xefff0000; // 239.255.0.0/16, see RFC 2365 section 6.1
+  unsigned group = ipv4_local_scope | (pid & 0x0000ffff);
+  return group;
+}
+
 int main(int argc, char* argv[]) {
   const char* path = "/reg/d/ana12";
   unsigned interface = 0x7f000001;
-  unsigned serverGroup = 0xefff2000;
+  unsigned serverGroup = getLocallyUniqueServerGroup();
   list<UserModule*> userModules;
   bool testMode = false;
   bool separateWindowMode = false;
@@ -122,7 +133,7 @@ int main(int argc, char* argv[]) {
   if (! separateWindowMode) {
     printf("Starting DetectorSelect...\n");
     groupBox = new QGroupBox("Offline");
-    output = new Ami::Qt::DetectorSelect("AMO Offline Monitoring", interface, interface, serverGroup, groupBox, true);
+    output = new Ami::Qt::DetectorSelect("DAQ Offline Monitoring", interface, interface, serverGroup, groupBox, true);
     output->show();
     printf("Started DetectorSelect.\n");
   } else {

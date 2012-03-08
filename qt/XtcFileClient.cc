@@ -131,7 +131,7 @@ void XtcFileClient::printDgram(const Dgram dg) {
     }
 
     time_t t = (time_t) _start;
-    QString label = "Run date is " + asctime(t);
+    QString label = "Run " + _runName + " date is " + asctime(t);
     if (_length > 0) {
       if (_length > 2 * 60) {
         label += ", length is " + dtoa(_length / 60, 1) + " min";
