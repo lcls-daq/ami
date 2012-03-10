@@ -177,8 +177,6 @@ namespace Ami {
 		}
 	      }
 	    }
-          else
-	      return 0;
 	}
 	else {
 	  if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
@@ -200,9 +198,9 @@ namespace Ami {
 	      }
 	    }
 	  }
-	  else {
-            return 0;
-          }
+// 	  else {
+//             return 0;
+//          }
 	}
 	double n = double(e.info(EntryImage::Normalization));
 	return n > 0 ? sum / n : sum;
