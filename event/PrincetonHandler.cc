@@ -74,8 +74,7 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
    * Setup temperature variable
    */
   char sTemperatureVar[64];  
-  strncpy(sTemperatureVar,Pds::DetInfo::name(det),60);  
-  sprintf(sTemperatureVar+strlen(sTemperatureVar), "-Princeton-%d-T", det.devId());  
+  sprintf(sTemperatureVar, "Princeton-%d-T", det.devId());
   _iCacheIndexTemperature = _cache.add(sTemperatureVar);
 }
 
