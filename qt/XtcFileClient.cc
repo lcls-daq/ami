@@ -25,7 +25,10 @@ namespace Ami {
       ConfigureTask(XtcFileClient& c) : _c(c) {}
       ~ConfigureTask() {}
     public:
-      void routine() { _c.configure(); delete this; }
+      void routine() {
+        _c.configure();
+        delete this;
+      }
     private:
       XtcFileClient& _c;
     };
@@ -239,7 +242,6 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _length(0)
 {
   _qtThread = pthread_self();
-
   QVBoxLayout* l = new QVBoxLayout;
 
   QHBoxLayout* hboxA = new QHBoxLayout;
@@ -354,13 +356,18 @@ static void d_sleep(double seconds) {
 
 void XtcFileClient::selectRun(int index)
 {
+  printf("------------------------------------------------------------ starting...\n");
+  printf("!!! selectRun(%d) running=%d\n", index, _running);
   if (_running) {
+    printf("!!! selectRun(%d) running=%d waiting to stop...\n", index, _running);
     setStatus("Waiting for stop...");
     while (_running) {
       d_sleep(0.2);
     }
   }
+  printf("!!! selectRun(%d) configuring...\n", index);
   configure_run();
+  printf("------------------------------------------------------------ done.\n");
 }
 
 void XtcFileClient::selectDir()
