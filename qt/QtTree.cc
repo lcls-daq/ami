@@ -70,9 +70,13 @@ static void push(QStandardItem& root,
 
 QtTree::QtTree(const QString& separator) :
   QPushButton(),
+  _view      (this),
   _entry     (),
   _separator (separator)
 {
+  _view.setWindowFlags(::Qt::Dialog);
+  _view.setWindowModality(::Qt::NonModal);
+
   _view.setModel(&_model);
 
   connect(this  , SIGNAL(clicked()), &_view, SLOT(show()));
@@ -82,6 +86,7 @@ QtTree::QtTree(const QString& separator) :
 QtTree::QtTree(const QStringList& names, const QStringList& help, const QColor& color,
                const QString& separator) :
   QPushButton(),
+  _view      (this),
   _entry     (),
   _separator (separator)
 {
@@ -91,8 +96,9 @@ QtTree::QtTree(const QStringList& names, const QStringList& help, const QColor& 
   setPalette(newPalette);
 
   _view.setWindowFlags(::Qt::Dialog);
-  _view.setWindowModality(::Qt::WindowModal);
+  _view.setWindowModality(::Qt::NonModal);
   //  _view.setWindowFlags(::Qt::Popup);
+
   _view.setModel(&_model);
 
   fill(names);
@@ -148,8 +154,10 @@ void QtTree::set_entry(const QModelIndex& e) {
 
 void QtTree::set_entry(const QString& e) { 
   QPalette p(palette());
-  if (_valid_entry(e))
+  if (_valid_entry(e)) {
     p.setColor(QPalette::ButtonText, QColor(0,0,0));
+    _view.hide();
+  }
   else
     p.setColor(QPalette::ButtonText, QColor(0xc0,0,0));
 

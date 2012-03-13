@@ -214,16 +214,24 @@ int  Client::initialize(ClientManager& mgr)
 {
   managed(mgr);
 
+#if 1
   timespec tmo;
   clock_gettime(CLOCK_REALTIME, &tmo);
-#ifdef DBUG
-  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
-  tmo.tv_sec+=5;
+
+  timespec btmo;
+  btmo.tv_sec  = tmo.tv_sec;
+  btmo.tv_nsec = tmo.tv_nsec;
+
+  tmo.tv_sec += 5;
   int result = sem_timedwait(&_initial_sem, &tmo);
 
   clock_gettime(CLOCK_REALTIME, &tmo);
-  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
+  printf("Ami::Client initialize time %f seconds\n",
+         double(tmo.tv_sec-btmo.tv_sec) +
+         (double(tmo.tv_nsec)-double(btmo.tv_nsec))*1.e-9);
 #else
+  timespec tmo;
+  clock_gettime(CLOCK_REALTIME, &tmo);
   tmo.tv_sec+=5;
   int result = sem_timedwait(&_initial_sem, &tmo);
 #endif
