@@ -31,7 +31,8 @@ namespace Ami {
     public:
       void post(QObject*, const char*);
     public:
-      const char* title() const;
+      const char*     title() const;
+      QString         qtitle() const;
       DescEntry*  desc(const char*) const;
       const char* expr(const QString& e) const;
     protected:

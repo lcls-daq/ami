@@ -373,8 +373,9 @@ void CursorsX::add_post()
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
 
-  Ami::DescCache* desc = new Ami::DescCache(_scalar_desc->title(),
-                                            _scalar_desc->title(), 
+  QByteArray qtitle(qPrintable(_scalar_desc->qtitle()));
+  Ami::DescCache* desc = new Ami::DescCache(qtitle.constData(),
+                                            qtitle.constData(),
                                             Ami::PostAnalysis);
 
   CursorPost* post = new CursorPost(_channel,

@@ -186,6 +186,11 @@ const char* ScalarPlotDesc::title() const
   return qPrintable(_title->text());
 }
 
+QString ScalarPlotDesc::qtitle() const
+{ 
+  return _title->text();
+}
+
 void ScalarPlotDesc::post(QObject* obj, const char* slot)
 {
   connect(_postB, SIGNAL(clicked()), obj, slot);

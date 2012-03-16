@@ -19,14 +19,16 @@ CursorPost::CursorPost(unsigned         channel,
 {
 }
 
-CursorPost::CursorPost(const char*& p)
+CursorPost::CursorPost(const char*& p) : 
+  _channel(0),
+  _input  (0)
 {
   load(p);
 }
 
 CursorPost::~CursorPost()
 {
-  delete _input;
+  if (_input) delete _input;
 }
 
 void CursorPost::save(char*& p) const
@@ -43,6 +45,7 @@ void CursorPost::load(const char*& p)
     if (tag.name == "_channel")
       _channel = QtPersistent::extract_i(p);
     else if (tag.name == "_input") {
+      if (_input) delete _input;
       const char* b = (const char*)QtPersistent::extract_op(p);
       b += 2*sizeof(uint32_t);
       _input = new BinMath(b);
