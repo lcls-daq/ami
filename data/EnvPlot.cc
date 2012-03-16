@@ -46,18 +46,16 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   FeatureExpression parser;
   { QString expr(o.name());
     _input = parser.evaluate(features,expr);
-    printf("EnvPlot input %p\n",_input);
     if (!_input)
-      printf("EnvPlot failed to parse %s\n",qPrintable(expr));
+      printf("EnvPlot failed to parse input %s\n",qPrintable(expr));
   }
 
   if (o.type()==DescEntry::Prof ||
       o.type()==DescEntry::Scan) {
     QString expr(o.xtitle());
     _term = parser.evaluate(features,expr);
-    printf("EnvPlot term %p\n",_term);
     if (!_term)
-      printf("EnvPlot failed to parse %s\n",qPrintable(expr));
+      printf("EnvPlot failed to parse term %s\n",qPrintable(expr));
   }
 
   if (o.isweighted_type()) {
@@ -67,7 +65,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
       printf("%s evaluates to\n",qPrintable(expr));
       _weight = parser.evaluate(features,expr);
       if (!_weight)
-	printf("EnvPlot failed to parse %s\n",qPrintable(expr));
+	printf("EnvPlot failed to parse weight %s\n",qPrintable(expr));
     }
   }
 }

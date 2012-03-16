@@ -1,6 +1,8 @@
 #ifndef Ami_Expression_hh
 #define Ami_Expression_hh
 
+#include "ami/service/Exception.hh"
+
 #include <QtCore/QString>
 
 #include <list>
@@ -52,7 +54,7 @@ namespace Ami {
     static QString      constant(double);
   private:
     QString& _process(QString&);
-    QString& _process(QString&,const QChar&);
+    QString& _process(QString&,const QChar&) throw(Event);
   private:
     typedef std::list<Variable*> VarList;
     const VarList& _variables;

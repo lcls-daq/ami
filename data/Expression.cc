@@ -72,7 +72,7 @@ Expression::Expression(const std::list<Variable*>& variables) :
 
 Expression::~Expression() {}
 
-QString& Expression::_process(QString& text,const QChar& o) 
+QString& Expression::_process(QString& text,const QChar& o) throw(Event)
 {
   static const QRegExp constantMatch   ("[\\+\\-]?[0-9]*[\\.]?[0-9]*");
   static const QRegExp revConstantMatch("[0-9]*[\\.]?[0-9]*[\\+\\-]?");
@@ -106,7 +106,7 @@ QString& Expression::_process(QString& text,const QChar& o)
       QString str = text.mid(index+2,len-2);
       b = reinterpret_cast<Term*>(str.toULongLong(0,16));
 #ifdef DBUG
-      printf("Found term %s : %p %x\n",qPrintable(str),b,ub);
+      printf("Found term %s : %p\n",qPrintable(str),b);
 #endif
     }
     else if (text[index+1].isLetter()) {  // variable
@@ -124,7 +124,10 @@ QString& Expression::_process(QString& text,const QChar& o)
 	}
       }
       if (last<0) {
-	printf("Failed to find variable at %s\n",qPrintable(str));
+        QString exc = QString("Failed to find variable (out of %1) at %2 : last<0")
+          .arg(_variables.size())
+          .arg(qPrintable(str));
+        throw Event("Ami::Expression",qPrintable(exc));
 	text.clear();
 	return text;
       }
@@ -149,7 +152,7 @@ QString& Expression::_process(QString& text,const QChar& o)
       QString str = text.mid(first+1,len-2);
       a = reinterpret_cast<Term*>(str.toULongLong(0,16));
 #ifdef DBUG
-      printf("Found term %s : %p %x\n",qPrintable(str),a,ua);
+      printf("Found term %s : %p\n",qPrintable(str),a);
 #endif
     }
     else if (text[index-1].isLetter()) {  // variable
@@ -167,7 +170,10 @@ QString& Expression::_process(QString& text,const QChar& o)
 	}
       }
       if (first<0) {
-	printf("Failed to find variable at %s\n",qPrintable(text.mid(0,index)));
+        QString exc = QString("Failed to find variable (out of %1) at %2 : first<0")
+          .arg(_variables.size())
+          .arg(qPrintable(text.mid(0,index)));
+        throw Event("Ami::Expression",qPrintable(exc));
 	text.clear();
 	return text;
       }
@@ -239,15 +245,22 @@ Term* Expression::evaluate(const QString& e)
   printf("_evaluate %s\n",qPrintable(text));
 #endif
 
-  //  process "()" first
-  int end;
-  while( (end=text.indexOf(')'))!=-1 ) {
-    int start=text.lastIndexOf('(',end);
-    QString t = text.mid(start+1,end-start-1);
-    text.replace(start,end-start+1,_process(t));
-  }
+  try {
+    //  process "()" first
+    int end;
+    while( (end=text.indexOf(')'))!=-1 ) {
+      int start=text.lastIndexOf('(',end);
+      QString t = text.mid(start+1,end-start-1);
+      text.replace(start,end-start+1,_process(t));
+    }
 
-  _process(text);
+    _process(text);
+  }
+  catch (Event& ev) {
+    printf("Expression::evaluate %s : %s : %s\n",
+           qPrintable(e), ev.who(), ev.what());
+    return 0;
+  }
 
   bool ok(false);
   Term* t = 0;
