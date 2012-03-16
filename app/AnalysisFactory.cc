@@ -112,9 +112,13 @@ void AnalysisFactory::configure(unsigned       id,
       SummaryAnalysis::instance().create(cds);
     }
     else if (req.source() == ConfigureRequest::User) {
-      for(UList::iterator it=_user.begin(); it!=_user.end(); it++) {
-        (*it)->clear();
-        (*it)->create(cds);
+      int i=0;
+      for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++) {
+        if (req.input() == i) {
+          (*it)->clear();
+          (*it)->create(cds);
+          break;
+        }
       }
     }
     else if (req.source() == ConfigureRequest::Filter) {

@@ -27,8 +27,9 @@ namespace Ami {
       _size = e - (char*)this;
     }
     ConfigureRequest(State        state,
-		     Source       source) : 
-      _state(state), _source(source), _scalars(PreAnalysis), _input(-1), _output(-1), _size(sizeof(*this))
+		     Source       source,
+                     int          input) : 
+      _state(state), _source(source), _scalars(PreAnalysis), _input(input), _output(-1), _size(sizeof(*this))
     {
     }
     ConfigureRequest(int          input,

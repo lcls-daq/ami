@@ -134,9 +134,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       EntryScalar* e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),0,"XtcClient","timestamp");
       _factory.discovery().add(e);
       _entry.push_back(e);
-      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++) {
-        info = ProcInfo(Pds::Level::Event,_entry.size(),0);
-        e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),_entry.size(),(*it)->name(),"module");
+      int imod=0;
+      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++,imod++) {
+        info = ProcInfo(Pds::Level::Event,0,imod);
+        e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),0,(*it)->name(),"module");
         _factory.discovery().add(e);
         _entry.push_back(e);
       }

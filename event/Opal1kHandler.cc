@@ -18,7 +18,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
 Opal1kHandler::Opal1kHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
-               Opal1kConfigType::Column_Pixels,
-               Opal1kConfigType::Row_Pixels) 
+               Opal1kConfigType::max_column_pixels(info),
+               Opal1kConfigType::max_row_pixels(info)) 
 {
 }

@@ -167,7 +167,7 @@ void SummaryClient::connected()
 void SummaryClient::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
-  printf("Summary Discovered\n");
+  printf("%s Discovered\n",qPrintable(_title));
 
   _manager->configure();
 }
@@ -175,10 +175,10 @@ void SummaryClient::discovered(const DiscoveryRx& rx)
 int  SummaryClient::configure       (iovec* iov) 
 {
   _status->set_state(Status::Configured);
-  printf("Summary Configure\n");
+  printf("%s Configure\n",qPrintable(_title));
 
   char* p = _request;
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create, _source);
+  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create, _source, info.phy());
   p += r.size();
 
   iov[0].iov_base = _request;
@@ -188,13 +188,13 @@ int  SummaryClient::configure       (iovec* iov)
 
 int  SummaryClient::configured      () 
 {
-  printf("Summary Configured\n");
+  printf("%s Configured\n",qPrintable(_title));
   return 0; 
 }
 
 void SummaryClient::read_description(Socket& socket,int len)
 {
-  printf("Summary Described so\n");
+  printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -215,7 +215,7 @@ void SummaryClient::read_description(Socket& socket,int len)
 
 void SummaryClient::_read_description(int size)
 {
-  printf("Summary Described si\n");
+  printf("%s Described si\n",qPrintable(_title));
 
   while(_tab->count()) {
     QWidget* w = _tab->widget(0);
@@ -239,7 +239,8 @@ void SummaryClient::_read_description(int size)
       break;
     }
     Entry* entry = EntryFactory::entry(*desc);
-    printf("Summary found entry %s of type %d\n",
+    printf("%s found entry %s of type %d\n",
+           qPrintable(_title),
 	   desc->name(), desc->type());
 
     QString page_title, plot_title;
@@ -295,7 +296,7 @@ void SummaryClient::_read_description(int size)
                         noTransform,noTransform,QColor(0,0,0));
       break;
     default:
-      printf("Summary type %d not implemented yet\n",desc->type()); 
+      printf("%s type %d not implemented yet\n",qPrintable(_title),desc->type()); 
       return;
     }
 
@@ -365,7 +366,7 @@ void SummaryClient::managed(ClientManager& mgr)
 {
   _manager = &mgr;
   show();
-  printf("SummaryClient connecting\n");
+  printf("%s connecting\n",qPrintable(_title));
   _manager->connect();
 }
 

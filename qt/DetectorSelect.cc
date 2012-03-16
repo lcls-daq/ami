@@ -43,6 +43,16 @@ static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoD
 static const int MaxConfigSize = 0x100000;
 static const int BufferSize = 0x8000;
 
+//
+//  Really need to replace DetInfo with Src in all monitoring usage
+//  Until then, add level to the match criteria
+//
+static bool match(const Pds::DetInfo& a,
+                  const Pds::DetInfo& b)
+{
+  return a.level()==b.level() && a.phy()==b.phy();
+}
+
 DetectorSelect::DetectorSelect(const QString& label,
                                unsigned ppinterface,
                                unsigned interface,
@@ -50,7 +60,8 @@ DetectorSelect::DetectorSelect(const QString& label,
                                QGroupBox* guestBox,
                                bool quiet) :
   QtPWidget   (0),
-  _quiet      (quiet),
+  //  _quiet      (quiet),
+  _quiet      (false),
   _ppinterface(ppinterface),
   _interface  (interface),
   _serverGroup(serverGroup),
@@ -257,7 +268,7 @@ void DetectorSelect::set_setup(const char* p, int size)
       bool lFound=false;
       for(std::list<QtTopWidget*>::iterator it = _client.begin();
           it != _client.end(); it++)
-        if ((*it)->info == info && (*it)->channel == channel) {
+        if (match((*it)->info,info) && (*it)->channel == channel) {
           printf("Loading %s\n",tag.name.c_str());
           lFound=true;
           (*it)->load(p);
@@ -320,6 +331,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
                                                    const QString& name,
                                                    const char*& p)
 {
+  printf("Creating client for %s [%08x.%08x]\n",qPrintable(name), info.log(), info.phy());
+
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
@@ -385,7 +398,7 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
 {
   DetectorListItem* ditem = static_cast<DetectorListItem*>(item);
   for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++)
-    if ((*it)->info==ditem->info && (*it)->channel==ditem->channel) {
+    if (match((*it)->info,ditem->info) && (*it)->channel==ditem->channel) {
       (*it)->show();
       return;
     }
@@ -448,8 +461,8 @@ void DetectorSelect::change_detectors(const char* c)
       for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
 	  e = reinterpret_cast<const Ami::DescEntry*>
 	    (reinterpret_cast<const char*>(e) + e->size()))
-	if (((*it)->info == e->info() && (*it)->channel == e->channel()) ||
-	    ((*it)->info == envInfo   && (*it)->channel <= 1)) {
+	if ((match((*it)->info,e->info()) && (*it)->channel == e->channel()) ||
+	    (match((*it)->info,envInfo)   && (*it)->channel <= 1)) {
 	  lFound=true;
 	  break;
 	}
@@ -470,7 +483,6 @@ void DetectorSelect::change_detectors(const char* c)
     new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    new DetectorListItem(_detList, "Summary", noInfo , 0);
 
-    const Pds::DetInfo noInfo;
     const Ami::DescEntry* n = 0;
     const Ami::DescEntry* rx_entries = rx.entries();
     const Ami::DescEntry* rx_end = rx.end();
