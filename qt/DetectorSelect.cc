@@ -341,6 +341,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
     case Pds::DetInfo::Opal1000 : 
+    case Pds::DetInfo::Opal2000 : 
+    case Pds::DetInfo::Opal4000 : 
     case Pds::DetInfo::Phasics  :
     case Pds::DetInfo::Timepix  :
     case Pds::DetInfo::TM6740   : 

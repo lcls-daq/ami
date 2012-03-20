@@ -84,13 +84,25 @@ void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
 
   const T* d = reinterpret_cast<const T*>(f.data());
   for(unsigned j=0; j<f.height(); j++) {
-    unsigned iy = desc.ppybin()==2 ? j>>1 : j;
-    if (desc.ppxbin()==2)
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k>>1, iy);
-    else
+    unsigned iy = j/desc.ppybin();
+    switch(desc.ppxbin()) {
+    case 1:
       for(unsigned k=0; k<f.width(); k++, d++)
 	entry.addcontent(*d, k, iy);
+      break;
+    case 2:
+      for(unsigned k=0; k<f.width(); k++, d++)
+	entry.addcontent(*d, k>>1, iy);
+      break;
+    case 4:
+      for(unsigned k=0; k<f.width(); k++, d++)
+	entry.addcontent(*d, k>>2, iy);
+      break;
+    default:
+      for(unsigned k=0; k<f.width(); k++, d++)
+	entry.addcontent(*d, k/desc.ppxbin(), iy);
+      break;
+    }
   }
 
   entry.info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);

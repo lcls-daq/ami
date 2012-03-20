@@ -18,16 +18,20 @@ static char _buffer[128];
     else                                        \
       AppendChannel(title)			\
         }
-#define OpalChannel(title)  			\
-    if (info.device()==DetInfo::Opal1000)	\
-      AppendChannel(title)			
+#define OpalChannel(title)                          \
+  if (info.device()==DetInfo::Opal1000 ||           \
+      info.device()==DetInfo::Opal2000 ||           \
+      info.device()==DetInfo::Opal4000)             \
+    AppendChannel(title)			
 #define OpalDetector(title) 				\
-    if (info.device()==DetInfo::Opal1000) {		\
-      if (info.devId()==0)				\
-	strcpy(_buffer,title);				\
-      else						\
-	sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
-    }							
+  if (info.device()==DetInfo::Opal1000 ||               \
+      info.device()==DetInfo::Opal2000 ||               \
+      info.device()==DetInfo::Opal4000) {               \
+    if (info.devId()==0)				\
+      strcpy(_buffer,title);				\
+    else						\
+      sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
+  }							
 #define PnccdDetector 				     \
     if (info.device()==DetInfo::pnCCD)		     \
       sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
