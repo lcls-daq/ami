@@ -47,11 +47,17 @@ static const int BufferSize = 0x8000;
 //  Really need to replace DetInfo with Src in all monitoring usage
 //  Until then, add level to the match criteria
 //
-static bool match(const Pds::DetInfo& a,
-                  const Pds::DetInfo& b)
+static bool match(const Pds::Src& a,
+                  const Pds::Src& b)
 {
   return a.level()==b.level() && a.phy()==b.phy();
 }
+
+class SrcV : public Pds::Src {
+public:
+  SrcV(uint32_t l, uint32_t p) { _log=l; _phy=p; }
+};
+
 
 DetectorSelect::DetectorSelect(const QString& label,
                                unsigned ppinterface,
@@ -164,7 +170,7 @@ int DetectorSelect::get_setup(char* buffer) const
   for(std::list<QtTopWidget*>::const_iterator it = _client.begin();
       it != _client.end(); it++)
     if ((*it)) {
-      sprintf(id, "%08x.%d", (*it)->info.phy(), (*it)->channel);
+      sprintf(id, "%08x.%08x.%d", (*it)->info.log(), (*it)->info.phy(), (*it)->channel);
       XML_insert( p, id, qPrintable((*it)->title()), (*it)->save(p) );
     }
 
@@ -256,15 +262,16 @@ void DetectorSelect::set_setup(const char* p, int size)
       load(p);
     else {
 
-      uint32_t phy, channel;
-      sscanf(tag.element.c_str(),"%08x.%d",&phy,&channel);
+      uint32_t log, phy, channel;
+      if (sscanf(tag.element.c_str(),"%08x.%08x.%d",&log,&phy,&channel)!=3) {
+        log = 0x01000000;
+        sscanf(tag.element.c_str(),"%08x.%d",&phy,&channel);
+      }
 
-      printf("Seeking %s (%08x.%d)\n",tag.name.c_str(),phy,channel);
+      printf("Seeking %s (%08x.%08x.%d)\n",tag.name.c_str(),log,phy,channel);
 
-      Pds::DetInfo info( 0, 
-                         Pds::DetInfo::Detector((phy>>24)&0xff), (phy>>16)&0xff, 
-                         Pds::DetInfo::Device  ((phy>> 8)&0xff), (phy>> 0)&0xff );
-
+      SrcV info(log,phy);
+      
       bool lFound=false;
       for(std::list<QtTopWidget*>::iterator it = _client.begin();
           it != _client.end(); it++)
@@ -326,12 +333,14 @@ void DetectorSelect::save_plots()
     (*it)->save_plots(QString("%1_%2").arg(prefix).arg((*it)->title()));
 }
 
-Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info, 
+Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src, 
 						   unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {
-  printf("Creating client for %s [%08x.%08x]\n",qPrintable(name), info.log(), info.phy());
+  const Pds::DetInfo& info = static_cast<const Pds::DetInfo&>(src);
+
+  printf("Creating client for %s [%08x.%08x]\n",qPrintable(name), src.log(), src.phy());
 
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
@@ -354,8 +363,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
     default: printf("Device type %x not recognized\n", info.device()); break;
     }
   }
-  else if (info.level()==Pds::Level::Reporter) {
-    const Pds::BldInfo& bld = reinterpret_cast<const Pds::BldInfo&>(info);
+  else if (src.level()==Pds::Level::Reporter) {
+    const Pds::BldInfo& bld = reinterpret_cast<const Pds::BldInfo&>(src);
     switch(bld.type()) {
     case Pds::BldInfo::HxxDg1Cam:
     case Pds::BldInfo::HfxDg2Cam:
@@ -367,11 +376,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::DetInfo& info,
       printf("Bld type %x not recognized\n", bld.type()); break;
     }
   }
-  else if (info.level()==Pds::Level::Event) {
+  else if (src.level()==Pds::Level::Event) {
     client = new Ami::Qt::SummaryClient (this, info , channel, name, ConfigureRequest::User); 
   }
   else {
-    printf("Ignoring %s [%08x.%08x]\n",qPrintable(name), info.log(), info.phy());
+    printf("Ignoring %s [%08x.%08x]\n",qPrintable(name), src.log(), src.phy());
   }
 
   if (client) {

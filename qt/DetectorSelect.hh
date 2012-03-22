@@ -67,7 +67,7 @@ namespace Ami {
       void detectors_discovered (const char*);
 
     private:
-      Ami::Qt::AbsClient* _create_client (const Pds::DetInfo&, unsigned, const QString&, const char*&);
+      Ami::Qt::AbsClient* _create_client (const Pds::Src&, unsigned, const QString&, const char*&);
       void                _connect_client(Ami::Qt::AbsClient* client);
 //       void                _update_groups();
 

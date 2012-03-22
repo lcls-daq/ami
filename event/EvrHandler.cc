@@ -48,7 +48,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
 
   sprintf(buffer,"DAQ:EVR%d:",static_cast<const Pds::DetInfo&>(info()).devId());
   char* iptr = buffer+strlen(buffer);
-
   for(unsigned i=0; i<c.npulses(); i++) {
     sprintf(iptr,"P%d:Delay",i);
     int index = _cache.add(buffer);
@@ -58,6 +57,8 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
 
   memset(_index, -1, sizeof(_index));
 
+  sprintf(buffer,"DAQ:EVR:");
+  iptr = buffer+strlen(buffer);
   for(unsigned i=0; i<c.neventcodes(); i++) {
     REGISTER_CODE(c.eventcode(i).code());
   }
