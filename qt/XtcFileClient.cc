@@ -83,10 +83,7 @@ void XtcFileClient::updateRunCombo() {
 }
 
 void XtcFileClient::updateRun() {
-  int index = _runCombo->findText(_runName);
-  if (index != -1) {
-    _runCombo->setCurrentIndex(index);
-  }
+  _runCombo->set_entry(_runName);
 }
 
 void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
@@ -209,7 +206,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _task(new Task(TaskObject("amiqt"))),
   _dirSelect(new QPushButton("Change")),
   _dirLabel(new QLabel),
-  _runCombo(new QComboBox),
+  _runCombo(new RunTree),
   _runName(""),
 
   _runButton(new QPushButton("Run")),

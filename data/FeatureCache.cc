@@ -20,6 +20,9 @@ void     FeatureCache::clear()
   _damaged.clear();
 }
 
+unsigned FeatureCache::add(const std::string& name)
+{ return add(name.c_str()); }
+
 unsigned FeatureCache::add(const char* name)
 {
   _update=true;

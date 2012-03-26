@@ -3,7 +3,6 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QCheckBox>
-#include <QtGui/QComboBox>
 #include <QtGui/QFileDialog>
 #include <QtGui/QGroupBox>
 #include <QtGui/QLabel>
@@ -14,6 +13,7 @@
 #include <QtGui/QWidget>
 
 #include "ami/app/XtcClient.hh"
+#include "ami/qt/RunTree.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
 #include "pdsdata/ana/XtcRun.hh"
@@ -76,7 +76,7 @@ namespace Ami {
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
-      QComboBox* _runCombo;
+      RunTree* _runCombo;
       QStringList _runList;
       QString _runName;
       QPushButton* _runButton;

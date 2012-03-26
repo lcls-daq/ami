@@ -16,6 +16,7 @@ namespace Ami {
     ~FeatureCache();
   public:
     void     clear ();
+    unsigned add   (const std::string&);
     unsigned add   (const char* name);
     int      lookup(const char* name) const;
     bool     update();
