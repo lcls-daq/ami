@@ -18,11 +18,6 @@ static char _buffer[128];
     else                                        \
       AppendChannel(title)			\
         }
-#define OpalChannel(title)                          \
-  if (info.device()==DetInfo::Opal1000 ||           \
-      info.device()==DetInfo::Opal2000 ||           \
-      info.device()==DetInfo::Opal4000)             \
-    AppendChannel(title)			
 #define OpalDetector(title) 				\
   if (info.device()==DetInfo::Opal1000 ||               \
       info.device()==DetInfo::Opal2000 ||               \
@@ -69,7 +64,7 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
     case DetInfo::AmoETof  : AcqChannel("ETOF"); break;
     case DetInfo::AmoGasdet: AcqChannel("GASDET"); break;
     case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
-    case DetInfo::AmoBps   : OpalChannel("BPS"); break;
+    case DetInfo::AmoBps   : OpalDetector("BPS"); break;
       //  CAMP Detectors
     case DetInfo::Camp     : 
       AcqChannel("ACQ")
