@@ -14,29 +14,31 @@
 
 using namespace Ami::Qt;
 
-enum { Mono=0, Thermal=1 };
+enum { Mono=0, Jet=1 };
 
-static QVector<QRgb>* monochrome_palette()
+static ColorMaps _colorMaps;
+
+static QVector<QRgb>* get_palette_from_colormap(unsigned int colormap[])
 {
   QVector<QRgb>* color_table = new QVector<QRgb>(256);
-  for (int i = 0; i < 256; i++)
-    color_table->insert(i, qRgb(i,i,i));
+  for (int i = 0; i < 256; i++) {
+    unsigned int rgb = colormap[i];
+    unsigned int r = (rgb & 0xff0000) >> 16;
+    unsigned int g = (rgb & 0xff00) >> 8;
+    unsigned int b = (rgb & 0xff);
+    color_table->insert(i, qRgb(r, g, b));
+  }
   return color_table;
 }
 
-static QVector<QRgb>* thermal_palette()
+static QVector<QRgb>* jet_palette()
 {
-  QVector<QRgb>* color_table = new QVector<QRgb>(256);
-  for (int i = 0; i < 43; i++)  // black - red
-    color_table->insert(  0+i, qRgb(i*6,0,0));
-  for (int i = 0; i < 86; i++)  // red - green
-    color_table->insert( 43+i, qRgb(255-i*3,i*3,0));
-  for (int i = 0; i < 86; i++)  // green - blue
-    color_table->insert(129+i, qRgb(0,255-i*3,i*3));
-  for (int i = 0; i < 40; i++)  // blue - violet
-    color_table->insert(215+i, qRgb(i*3,0,255-i*3));
-  color_table->insert(255, qRgb(255,255,255));
-  return color_table;
+  return get_palette_from_colormap(_colorMaps.get("jet"));
+}
+
+static QVector<QRgb>* monochrome_palette()
+{
+  return get_palette_from_colormap(_colorMaps.get("gray"));
 }
 
 ImageColorControl::ImageColorControl(QWidget* parent,
@@ -73,13 +75,13 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   delete _color_table;
 
   QRadioButton* colorB = new QRadioButton; 
-  palette.setColorTable(*(_color_table = thermal_palette()));
+  palette.setColorTable(*(_color_table = jet_palette()));
   QLabel* colorC = new QLabel;
   colorC->setPixmap(QPixmap::fromImage(palette));
 
   _paletteGroup = new QButtonGroup;
-  _paletteGroup->addButton(monoB ,Mono);
-  _paletteGroup->addButton(colorB,Thermal);
+  _paletteGroup->addButton(monoB, Mono);
+  _paletteGroup->addButton(colorB, Jet);
 
   _logscale = new QCheckBox("Log Scale");
   _logscale->setChecked(false);
@@ -170,7 +172,7 @@ const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_tab
 void   ImageColorControl::set_palette(int p)
 {
   delete _color_table;
-  _color_table = (p==Mono) ? monochrome_palette() : thermal_palette();
+  _color_table = (p==Mono) ? monochrome_palette() : jet_palette();
 
   emit windowChanged();
 }

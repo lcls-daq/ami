@@ -8,6 +8,7 @@
 #include <QtCore/QString>
 #include <QtCore/QVector>
 #include <QtGui/QPixmap>
+#include "ColorMaps.hh"
 
 class QButtonGroup;
 class QCheckBox;

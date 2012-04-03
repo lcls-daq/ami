@@ -157,6 +157,7 @@ libsrcs_amiqt += TwoDPlot.cc TwoDPlot_moc.cc
 libsrcs_amiqt += ImageGrid.cc
 libsrcs_amiqt += ImageFrame.cc ImageFrame_moc.cc
 libsrcs_amiqt += ImageColorControl.cc ImageColorControl_moc.cc
+libsrcs_amiqt += ColorMaps.cc
 libsrcs_amiqt += ImageScale.cc ImageScale_moc.cc
 libsrcs_amiqt += ImageDisplay.cc ImageDisplay_moc.cc
 libsrcs_amiqt += RectangleCursors.cc RectangleCursors_moc.cc
