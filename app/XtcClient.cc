@@ -28,6 +28,7 @@
 #include "ami/event/AcqTdcHandler.hh"
 #include "ami/event/DiodeFexHandler.hh"
 #include "ami/event/IpmFexHandler.hh"
+#include "ami/event/OceanOpticsHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -298,6 +299,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         else                                 h = new CspadMiniHandler(info,cache);
         break;
       case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler(info,cache); break;
+      case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;

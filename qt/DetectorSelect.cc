@@ -73,8 +73,8 @@ DetectorSelect::DetectorSelect(const QString& label,
   _serverGroup(serverGroup),
   _clientPort (Port::clientPortBase()),
   _manager    (new ClientManager(ppinterface,
-				 interface, serverGroup, 
-				 _clientPort++,*this)),
+         interface, serverGroup, 
+         _clientPort++,*this)),
   _filters    (new FilterSetup(*_manager)),
   _request    (new char[BufferSize]),
   _rate_display(new RateDisplay(_manager)),
@@ -128,7 +128,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
-	    this, SLOT(show_detector(QListWidgetItem*)));
+      this, SLOT(show_detector(QListWidgetItem*)));
 
     data_box->setLayout(layout);
     l->addWidget(data_box); }
@@ -186,7 +186,7 @@ void DetectorSelect::save_setup ()
   int len = get_setup(buffer);
   if (len > MaxConfigSize) {
     printf("DetectorSelect::save_setup exceeded save buffer size (0x%x/0x%x)\n",
-	   len, MaxConfigSize);
+     len, MaxConfigSize);
   }
 
   char time_buffer[32];
@@ -215,7 +215,7 @@ void DetectorSelect::load_setup ()
 {
   // get the file 
   QString fname = QFileDialog::getOpenFileName(this,"Load Setup from File (.ami)",
-					       Path::base(), "*.ami");
+                 Path::base(), "*.ami");
 
   load_setup(qPrintable(fname));
 }
@@ -327,14 +327,14 @@ void DetectorSelect::save_plots()
   QString def = QString("%1/%2").arg(Path::base()).arg(time_buffer);
 
   QString prefix = QFileDialog::getSaveFileName(0,"Save Files with Prefix",
-						def,"*.dat");
+            def,"*.dat");
   for(std::list<QtTopWidget*>::iterator it=_client.begin();
       it!=_client.end(); it++)
     (*it)->save_plots(QString("%1_%2").arg(prefix).arg((*it)->title()));
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src, 
-						   unsigned channel,
+               unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {
@@ -347,6 +347,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     switch(info.device()) {
     case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel); break;
+    case Pds::DetInfo::OceanOptics : 
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
     case Pds::DetInfo::Opal1000 : 
@@ -394,11 +395,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
  void DetectorSelect::_connect_client(Ami::Qt::AbsClient* client)
  {
    ClientManager* manager = new ClientManager(_ppinterface,
-					      _interface,     
-					      _serverGroup,
-					      _clientPort++,
-					      *client);	
-   client->managed(*manager);					
+                _interface,     
+                _serverGroup,
+                _clientPort++,
+                *client); 
+   client->managed(*manager);         
    _client.push_back(client);
    //   _update_groups();
 
@@ -470,15 +471,15 @@ void DetectorSelect::change_detectors(const char* c)
       
       bool lFound=false;
       for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
-	  e = reinterpret_cast<const Ami::DescEntry*>
-	    (reinterpret_cast<const char*>(e) + e->size()))
-	if ((match((*it)->info,e->info()) && (*it)->channel == e->channel()) ||
-	    (match((*it)->info,envInfo)   && (*it)->channel <= 1)) {
-	  lFound=true;
-	  break;
-	}
+    e = reinterpret_cast<const Ami::DescEntry*>
+      (reinterpret_cast<const char*>(e) + e->size()))
+  if ((match((*it)->info,e->info()) && (*it)->channel == e->channel()) ||
+      (match((*it)->info,envInfo)   && (*it)->channel <= 1)) {
+    lFound=true;
+    break;
+  }
       if (!lFound)
-	remove.push_back(*it);
+  remove.push_back(*it);
     }
     for(std::list<QtTopWidget*>::iterator it = remove.begin(); it != remove.end(); it++) {
       printf("DetectorSelect::change_detectors removing %s\n",qPrintable((*it)->title()));
