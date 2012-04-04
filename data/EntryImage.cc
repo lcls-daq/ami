@@ -14,13 +14,13 @@ EntryImage::~EntryImage() {}
 EntryImage::EntryImage(const Pds::DetInfo& info, unsigned channel, const char* name) :
   _desc(info, channel, name, DefaultNbins, DefaultNbins)
 {
-  build(DefaultNbins, DefaultNbins);
+  build();
 }
 
 EntryImage::EntryImage(const DescImage& desc) :
   _desc(desc)
 {
-  build(_desc.nbinsx(), _desc.nbinsy());
+  build();
 }
 
 void EntryImage::params(unsigned nbinsx,
@@ -29,18 +29,18 @@ void EntryImage::params(unsigned nbinsx,
 			   int ppybin)
 {
   _desc.params(nbinsx, nbinsy, ppxbin, ppybin);
-  build(nbinsx, nbinsy);
+  build();
 }
 
 void EntryImage::params(const DescImage& desc)
 {
   _desc = desc;
-  build(_desc.nbinsx(), _desc.nbinsy());
+  build();
 }
 
-void EntryImage::build(unsigned nbinsx, unsigned nbinsy)
+void EntryImage::build()
 {
-  _y = static_cast<unsigned*>(allocate(sizeof(unsigned)*SIZE(nbinsx,nbinsy)));
+  _y = static_cast<unsigned*>(allocate(sizeof(unsigned)*SIZE(_desc.nbinsx(), _desc.nbinsy())));
   info(DefaultPedestal, EntryImage::Pedestal);
 }
 

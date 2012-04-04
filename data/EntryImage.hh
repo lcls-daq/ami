@@ -41,7 +41,7 @@ namespace Ami {
     virtual DescImage& desc();
 
   private:
-    void build(unsigned nbinsx, unsigned nbinsy);
+    void build();
 
   private:
     DescImage _desc;
