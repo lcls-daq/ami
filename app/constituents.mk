@@ -20,7 +20,7 @@ tgtslib_test := $(USRLIBDIR)/rt
 # List project libraries (if any) needed by exe_a as <project>/<lib>.
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata
+tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata pdsdata/timepixdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
 tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
 tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
