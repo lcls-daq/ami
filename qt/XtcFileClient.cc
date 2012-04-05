@@ -83,7 +83,10 @@ void XtcFileClient::updateRunCombo() {
 }
 
 void XtcFileClient::updateRun() {
-  _runCombo->set_entry(_runName);
+  int index = _runCombo->findText(_runName);
+  if (index != -1) {
+    _runCombo->setCurrentIndex(index);
+  }
 }
 
 void XtcFileClient::setEnabled(QWidget* widget, bool enabled) {
@@ -206,7 +209,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _task(new Task(TaskObject("amiqt"))),
   _dirSelect(new QPushButton("Change")),
   _dirLabel(new QLabel),
-  _runCombo(new RunTree),
+  _runCombo(new QComboBox),
   _runName(""),
 
   _runButton(new QPushButton("Run")),
@@ -257,6 +260,10 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   hboxRun->addWidget(_runSliderLabel);
   _runSliderBeingSet = false;
   l->addLayout(hboxRun);
+
+  // This forces combobox to use scrollbar, which is essential
+  // when it contains a very large number of items.
+  _runCombo->setStyle(new QPlastiqueStyle());
 
   QHBoxLayout* hbox1 = new QHBoxLayout;
   hbox1->addStretch();

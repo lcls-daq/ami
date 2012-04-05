@@ -3,9 +3,11 @@
 
 #include <QtGui/QApplication>
 #include <QtGui/QCheckBox>
+#include <QtGui/QComboBox>
 #include <QtGui/QFileDialog>
 #include <QtGui/QGroupBox>
 #include <QtGui/QLabel>
+#include <QtGui/QPlastiqueStyle>
 #include <QtGui/QPushButton>
 #include <QtGui/QSlider>
 #include <QtGui/QSpinBox>
@@ -76,7 +78,7 @@ namespace Ami {
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
-      RunTree* _runCombo;
+      QComboBox* _runCombo;
       QStringList _runList;
       QString _runName;
       QPushButton* _runButton;

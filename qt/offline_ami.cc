@@ -61,7 +61,7 @@ static unsigned getLocallyUniqueServerGroup() {
 }
 
 int main(int argc, char* argv[]) {
-  const char* path = "/reg/d/ana12";
+  const char* path = "/reg/d";
   unsigned interface = 0x7f000001;
   unsigned serverGroup = getLocallyUniqueServerGroup();
   list<UserModule*> userModules;
@@ -70,6 +70,7 @@ int main(int argc, char* argv[]) {
   char* outputFile = NULL;
   char* errorFile = NULL;
 
+  QApplication::setStyle("plastique");
   QApplication app(argc, argv);
   qRegisterMetaType<Dgram>("Dgram");
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
