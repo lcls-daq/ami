@@ -14,7 +14,7 @@ namespace Ami {
 	if (event->type() == QEvent::ToolTip) {
 	  QHelpEvent* helpEvent = static_cast<QHelpEvent*>(event);
 	  int index = indexAt(helpEvent->pos()).row();
-	  if (_help.size()<index || _help[index].isEmpty())
+	  if (_help.size()<=index || _help[index].isEmpty())
 	    QToolTip::hideText();
 	  else {
 	    QToolTip::showText(helpEvent->globalPos(), _help[index]);
@@ -60,7 +60,7 @@ QHComboBox::QHComboBox(const QStringList& v,
 bool Ami::Qt::QHComboBox::event(QEvent* event) {
   if (event->type() == QEvent::ToolTip) {
     int index = currentIndex();
-    if (index < 0 || _help.size()<index || _help[index].isEmpty())
+    if (index < 0 || _help.size()<=index || _help[index].isEmpty())
       QToolTip::hideText();
     else {
       QHelpEvent* helpEvent = static_cast<QHelpEvent*>(event);
