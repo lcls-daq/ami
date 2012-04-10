@@ -20,7 +20,7 @@ namespace Ami {
 		 const QStringList& variables,    // pre-defined variables {cursor bin, filter condition, ..}
 		 const QStringList& var_var_ops,  // binary operations only between variables
 		 const QStringList& var_con_ops,  // binary operations between any combination of variables,constants
-		 const QStringList& help = QStringList());
+		 const QStringList& help = _defaultHelp);
     public:
       QString result() const;
     private slots:
@@ -51,6 +51,8 @@ namespace Ami {
       QStringList _varvarops;
       QStringList _varconops;
       QLineEdit*  _display;
+
+      static QStringList _defaultHelp;
     };
   };
 };

@@ -405,3 +405,4 @@ CalculatorButton* Calculator::createButton(const QString &text,
 
 QString Calculator::result() const { return _display->text(); }
 
+QStringList Calculator::_defaultHelp;
