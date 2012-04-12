@@ -148,7 +148,9 @@ Entry&     TdcPlot::_operate(const Entry& e) const
     return *_output;
 
   const EntryRef* input  = static_cast<const EntryRef*>(&e);
-  _output->reset();
+
+  if (output().type() != DescEntry::TH2F)
+    _output->reset();
 
   //
   //  Depends upon the list of hits terminating in a Bank switch marker

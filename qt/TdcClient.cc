@@ -494,7 +494,7 @@ void TdcClient::plot()
         Expression::multiply() + Expression::constant(512./(_plot_desc_2d->xhi()-_plot_desc_2d->xlo()));
       
       expr += QString("%") + _vsource_edit->text();
-      Ami::DescImage desc(qPrintable(expr), 512, 512);
+      Ami::DescImage desc(qPrintable(expr), 512, 512, 1, 1, 0, 0, false);
 
       for(unsigned i=0; i<6; i++)
         iexpr.replace(QString("Chan%1").arg(i+1),

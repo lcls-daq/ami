@@ -1,6 +1,7 @@
-#include "EdgeFinder.hh"
+#include "ami/qt/EdgeFinder.hh"
 
 #include "ami/qt/DescTH1F.hh"
+#include "ami/qt/DescTH2F.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
@@ -9,6 +10,7 @@
 #include "ami/qt/PlotFrame.hh"
 
 #include "ami/data/DescTH1F.hh"
+#include "ami/data/DescTH2F.hh"
 #include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EdgeFinder.hh"
@@ -55,6 +57,21 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   _hist   = new DescTH1F ("Sum (1dH)");
   _hist->button()->setChecked(true);
 
+  QHBoxLayout* vsl = new QHBoxLayout;
+  _hist2d = new DescTH2F (vsl);
+  _hist2d->td_button()->setEnabled(true);
+  _hist2d->im_button()->setEnabled(false);
+  _hist2d->td_button()->setChecked(true);
+
+  _vtbutton = new QButtonGroup;
+  QRadioButton* plotTimeB = new QRadioButton("Time");
+  QRadioButton* plotAmplB = new QRadioButton("Amplitude");
+  QRadioButton* plotAmplvTimeB = new QRadioButton("Ampl v Time");
+  _vtbutton->addButton(plotTimeB,(int)Ami::EdgeFinder::Location);
+  _vtbutton->addButton(plotAmplB,(int)Ami::EdgeFinder::Amplitude);
+  _vtbutton->addButton(plotAmplvTimeB,(int)Ami::EdgeFinder::AmplvLoc);
+  plotTimeB->setChecked(true);
+
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
   
@@ -98,7 +115,17 @@ EdgeFinder::EdgeFinder(QWidget* parent,
       layout2->addWidget(new QLabel("Title"));
       layout2->addWidget(_title);
       layout1->addLayout(layout2); }
-    layout1->addWidget(_hist );
+    { QHBoxLayout* layout2 = new QHBoxLayout;
+      { QVBoxLayout* layout3 = new QVBoxLayout;
+        layout3->addWidget(plotTimeB);
+        layout3->addWidget(plotAmplB);
+        layout2->addLayout(layout3); }
+      layout2->addWidget(_hist );
+      layout1->addLayout(layout2); }
+    { QHBoxLayout* layout2 = new QHBoxLayout;
+      layout2->addWidget(plotAmplvTimeB);
+      layout2->addWidget(_hist2d);
+      layout1->addLayout(layout2); }
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -126,7 +153,9 @@ void EdgeFinder::save(char*& p) const
   XML_insert(p, "EdgeCursor", "_threshold",_threshold->save(p) );
 
   XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
-  XML_insert(p, "DescTH1F", "_hist", _hist->save(p) );
+  XML_insert(p, "QButtonGroup", "_vtbutton", QtPersistent::insert(p,_vtbutton->checkedId()) );
+  XML_insert(p, "DescTH1F", "_hist"  , _hist  ->save(p) );
+  XML_insert(p, "DescTH2F", "_hist2d", _hist2d->save(p) );
 
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "EdgePlot", "_plots", (*it)->save(p) );
@@ -149,8 +178,12 @@ void EdgeFinder::load(const char*& p)
       _threshold->load(p);
     else if (tag.name == "_title")
       _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_vtbutton")
+      _vtbutton->button(QtPersistent::extract_i(p))->setChecked(true);
     else if (tag.name == "_hist")
       _hist->load(p);
+    else if (tag.name == "_hist2d")
+      _hist2d->load(p);
     else if (tag.name == "_plots") {
       EdgePlot* plot = new EdgePlot(this, p);
       _plots.push_back(plot);
@@ -216,25 +249,52 @@ void EdgeFinder::plot()
 {
   if (!_leading->isChecked() && !_trailing->isChecked())
     return;
-  Ami::DescTH1F desc(qPrintable(_title->text()),
-		     "edge location","pulses",
-		     _hist->bins(),_hist->lo(),_hist->hi(),false);
+
+  Ami::DescEntry* desc = 0;
+  switch(_vtbutton->checkedId()) {
+  case Ami::EdgeFinder::Location:
+    desc = new Ami::DescTH1F(qPrintable(_title->text()),
+                             "edge location", "pulses",
+                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
+    break;
+  case Ami::EdgeFinder::Amplitude:
+    desc = new Ami::DescTH1F(qPrintable(_title->text()),
+                             "amplitude", "pulses",
+                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
+    break;
+  case Ami::EdgeFinder::AmplvLoc:
+    desc = new Ami::DescTH2F(qPrintable(_title->text()),
+                             "location", "amplitude", 
+                             _hist2d->xbins(),_hist2d->xlo(),_hist2d->xhi(),
+                             _hist2d->ybins(),_hist2d->ylo(),_hist2d->yhi(),
+                             false);  
+    break;
+  default:
+    printf("EdgeFinder unknown plot type %d\n",_vtbutton->checkedId());
+    return;
+  }
+
   double deadtime = _dead->text().toDouble();
   EdgePlot* plot =
       new EdgePlot(this, _title->text(),_channel,
                    new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
                                                                       _leading->isChecked()),
-                                       deadtime, desc));
+                                       deadtime, *desc,
+                                       Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
+
   if (_leading->isChecked() && _trailing->isChecked()) {
       // Add trailing plot to EdgePlot!
       plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
                                           Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
                                                                          false),
-                                          deadtime, desc));
+                                          deadtime, *desc,
+                                          Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
   }
 
   _plots.push_back(plot);
+
+  delete desc;
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 

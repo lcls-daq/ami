@@ -31,7 +31,8 @@ namespace Ami {
     DescImage(const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 
 	      int ppbx=1, int ppby=1,  // pixels per bin
-              unsigned xp0=0, unsigned yp0=0);  // pixel origin
+              unsigned xp0=0, unsigned yp0=0,   // pixel origin
+              bool isnormalized=true);
 
     unsigned nbinsx() const;
     unsigned nbinsy() const;

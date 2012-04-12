@@ -27,6 +27,7 @@ namespace Ami {
     class EdgeCursor;
     class EdgePlot;
     class DescTH1F;
+    class DescTH2F;
     class WaveformDisplay;
 
     class EdgeFinder : public QtPWidget {
@@ -60,7 +61,9 @@ namespace Ami {
       EdgeCursor* _threshold;
  
       QLineEdit* _title;
+      QButtonGroup* _vtbutton;
       DescTH1F*  _hist;
+      DescTH2F*  _hist2d;
       QCheckBox *_leading, *_trailing;
       QLineEdit* _dead;
 

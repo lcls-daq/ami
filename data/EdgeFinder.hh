@@ -3,13 +3,10 @@
 
 #include "ami/data/AbsOperator.hh"
 
-#include "ami/data/DescTH1F.hh"
-
 namespace Ami {
 
   class DescEntry;
-  class EntryWaveform;
-  class EntryTH1F;
+  class Entry;
 
   //
   //  Edge finder
@@ -19,6 +16,8 @@ namespace Ami {
     enum Algorithm {
                      halfbase2peak = 0,
                    };
+    enum Parameter { Location, Amplitude, AmplvLoc };
+
     inline static int  EdgeAlgorithm(Algorithm a, bool leading)
       { return 2 * a + (leading ? 0 : 1); };
     inline static bool IsLeading(int a)
@@ -29,7 +28,8 @@ namespace Ami {
 	       double     baseline_value,
                int        alg,
                double     deadtime,
-	       const      DescTH1F& output);
+	       const      DescEntry& output,
+               Parameter  parm = Location);
     EdgeFinder(const char*&);
     EdgeFinder(double fraction, int alg, double deadtime, const char*&);
     ~EdgeFinder();
@@ -39,6 +39,7 @@ namespace Ami {
     inline int    algorithm() { return _alg; }
     inline double deadtime()  { return _deadtime; }
     inline double fraction()  { return _fraction; }
+    inline Parameter parameter() { return _parameter; }
     DescEntry& output   () const;
     void*      desc   () const;
     int        desc_size () const;
@@ -51,8 +52,9 @@ namespace Ami {
     double     _deadtime;
     double     _threshold_value;
     double     _baseline_value;
-    DescTH1F   _output;
-    EntryTH1F* _output_entry;
+    DescEntry* _output;
+    Entry*     _output_entry;
+    Parameter  _parameter;
   };
 
 };

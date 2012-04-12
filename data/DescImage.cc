@@ -10,8 +10,9 @@ DescImage::DescImage(const char* name,
 		     int ppbx,
 		     int ppby,
                      unsigned xp0,
-                     unsigned yp0) :
-  DescEntry(name, "x", "y", Image, sizeof(DescImage)),
+                     unsigned yp0,
+                     bool isnormalized) :
+  DescEntry(name, "x", "y", Image, sizeof(DescImage), isnormalized),
   _nbinsx(nbinsx ? nbinsx : 1),
   _nbinsy(nbinsy ? nbinsy : 1),
   _ppbx  (ppbx),

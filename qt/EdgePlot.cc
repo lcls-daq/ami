@@ -4,13 +4,12 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/PlotFactory.hh"
-#include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtBase.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/DescEntry.hh"
-#include "ami/data/EntryTH1F.hh"
 #include "ami/data/EdgeFinder.hh"
 
 #include <QtGui/QLabel>
@@ -96,7 +95,8 @@ void EdgePlot::savefinder(Ami::EdgeFinder *f, char*& p) const
     XML_insert( p, "int",      "_algorithm", QtPersistent::insert(p,f->algorithm()) );
     XML_insert( p, "double",   "_fraction",  QtPersistent::insert(p,f->fraction()) );
     XML_insert( p, "double",   "_deadtime",  QtPersistent::insert(p,f->deadtime()) );
-    XML_insert( p, "DescTH1F", "_output",    QtPersistent::insert(p, f->desc(), f->desc_size()));
+    XML_insert( p, "DescEntry","_output",    QtPersistent::insert(p,f->desc(), f->desc_size()));
+    XML_insert( p, "Parameter","_parameter", QtPersistent::insert(p,f->parameter()));
 }
 
 Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p) 
@@ -105,7 +105,8 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
   int alg = Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak, true);
   double deadtime = 0.0;
   double fraction = 0.5;
-  const Ami::DescTH1F *desc = NULL;
+  const Ami::DescEntry *desc = NULL;
+  EdgeFinder::Parameter parm = EdgeFinder::Location;
 
   XML_iterate_open(p,tag)
     if (tag.name == "_threshold")
@@ -119,12 +120,14 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
     else if (tag.name == "_fraction")
       fraction = Ami::Qt::QtPersistent::extract_d(p);
     else if (tag.name == "_output") {
-      desc = (const Ami::DescTH1F*)QtPersistent::extract_op(p);
+      desc = (const Ami::DescEntry*)QtPersistent::extract_op(p);
     }
+    else if (tag.name == "_parameter")
+      parm = Ami::EdgeFinder::Parameter(Ami::Qt::QtPersistent::extract_i(p));
   XML_iterate_close(EdgeFinder,tag);
 
   if (desc)
-      return new Ami::EdgeFinder(fraction, thresh, base, alg, deadtime, *desc);
+    return new Ami::EdgeFinder(fraction, thresh, base, alg, deadtime, *desc, parm);
   else
       return NULL;
 }
@@ -185,8 +188,8 @@ void EdgePlot::setup_payload(Cds& cds)
     };
     entry  = cds.entry(_output_signature + i);
     if (entry) {
-      _plot[i] = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-                            noTransform,noTransform,getcolor(i));
+      _plot[i] = PlotFactory::plot(_name,*entry,
+                                   noTransform,noTransform,getcolor(i));
       _plot[i]->attach(_frame);
     }
     else if (_output_signature + i >=0)
