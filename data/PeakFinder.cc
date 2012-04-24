@@ -17,13 +17,16 @@ using namespace Ami;
 static PeakFinderFn* _lookup(unsigned);
 
 PeakFinder::PeakFinder(double threshold_v0,
-                       double threshold_v1) :
+                       double threshold_v1,
+                       bool   accumulate) :
   AbsOperator(AbsOperator::PeakFinder),
   _threshold_v0(threshold_v0),
   _threshold_v1(threshold_v1),
+  _accumulate  (accumulate),
   _output_entry(0),
   _fn          (0)
 {
+  printf("PeakFinder acc %c\n",_accumulate ? 't':'f');
 }
 
 #define CASETERM(type) case DescEntry::type: \
@@ -36,9 +39,12 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   AbsOperator     (AbsOperator::PeakFinder),
   _threshold_v0(EXTRACT(p, double)),
   _threshold_v1(EXTRACT(p, double)),
+  _accumulate  (EXTRACT(p, bool  )),
   _output_entry(static_cast<EntryImage*>(EntryFactory::entry(e))),
   _fn          (0)
 {
+  printf("PeakFinder2 acc %c\n",_accumulate ? 't':'f');
+
   _output_entry->info(0,EntryImage::Pedestal);
   int ppbin = 1;
   ppbin *= _output_entry->desc().ppxbin();
@@ -66,6 +72,7 @@ void*      PeakFinder::_serialize(void* p) const
 {
   _insert(p, &_threshold_v0, sizeof(_threshold_v0));
   _insert(p, &_threshold_v1, sizeof(_threshold_v1));
+  _insert(p, &_accumulate  , sizeof(_accumulate));
   return p;
 }
 
@@ -78,6 +85,9 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   const DescImage& d = entry.desc();
   const unsigned nx = d.nbinsx();
   const unsigned ny = d.nbinsy();
+
+  if (!_accumulate)
+    memset(_output_entry->contents(), 0, sizeof(unsigned)*nx*ny);
 
   if (_fn) {
     // find the peak positions which are above the threshold

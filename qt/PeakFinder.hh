@@ -4,12 +4,8 @@
 #include "ami/qt/QtPWidget.hh"
 
 #include <QtCore/QString>
-#include <QtCore/QStringList>
 
-class QLineEdit;
-class QButtonGroup;
-class QVBoxLayout;
-class QComboBox;
+class QCheckBox;
 
 #include <list>
 
@@ -56,7 +52,8 @@ namespace Ami {
 
       ImageDisplay&  _frame;
       ImageScale*    _threshold;
- 
+      QCheckBox*     _accumulate;
+
       std::list<PeakPlot*> _plots;
     };
   };

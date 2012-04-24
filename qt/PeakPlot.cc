@@ -35,12 +35,14 @@ PeakPlot::PeakPlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         input_channel,
 		   double           threshold_0,
-		   double           threshold_1) :
+		   double           threshold_1,
+                   bool             accumulate) :
   QtPWidget(parent),
   _name    (name),
   _input   (input_channel),
   _threshold_0(threshold_0),
   _threshold_1(threshold_1),
+  _accumulate (accumulate),
   _signature(-1),
   _frame   (new ImageDisplay),
   _showMask(1)
@@ -137,6 +139,8 @@ void PeakPlot::save(char*& p) const
               QtPersistent::insert(p,_threshold_0) );
   XML_insert( p, "double"  , "_threshold_1",
               QtPersistent::insert(p,_threshold_1) );
+  XML_insert( p, "bool"  , "_accumulate",
+              QtPersistent::insert(p,_accumulate) );
 
   for(unsigned i=0; i<NCHANNELS; i++)
     XML_insert( p, "ChannelDefinition", "_channels",
@@ -165,6 +169,8 @@ void PeakPlot::load(const char*& p)
       _threshold_0 = QtPersistent::extract_i(p);
     else if (tag.name == "_threshold_1")
       _threshold_1 = QtPersistent::extract_i(p);
+    else if (tag.name == "_accumulate")
+      _accumulate = QtPersistent::extract_b(p);
     else if (tag.name == "_channels") {
       _channels[nchannels]->load(p);
       if (_channels[nchannels]->is_shown())
@@ -206,7 +212,7 @@ void PeakPlot::setup_payload(Cds& cds)
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
-  Ami::PeakFinder op(_threshold_0,_threshold_1);
+  Ami::PeakFinder op(_threshold_0,_threshold_1,_accumulate);
 
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Analysis,

@@ -20,6 +20,7 @@
 #include <QtGui/QButtonGroup>
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
+#include <QtGui/QCheckBox>
 
 #include <sys/socket.h>
 
@@ -34,6 +35,8 @@ PeakFinder::PeakFinder(QWidget* parent,
   _frame    (frame)
 {
   _threshold = new ImageScale("threshold");
+  _accumulate = new QCheckBox("sum events");
+  _accumulate->setChecked(true);
 
   setWindowTitle("PeakFinder Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -59,6 +62,7 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout2->addWidget(_threshold);
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
+  { layout->addWidget(_accumulate); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -83,6 +87,7 @@ void PeakFinder::save(char*& p) const
   XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
   XML_insert(p, "QLineEdit", "_threshold_0", QtPersistent::insert(p,_threshold->value(0)) );
   XML_insert(p, "QLineEdit", "_threshold_1", QtPersistent::insert(p,_threshold->value(1)) );
+  XML_insert(p, "QCheckBox", "_accumulate", QtPersistent::insert(p,_accumulate->isChecked()) );
 
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakPlot", "_plots", (*it)->save(p) );
@@ -106,6 +111,8 @@ void PeakFinder::load(const char*& p)
       _threshold->value(0,QtPersistent::extract_d(p));
     else if (tag.name == "_threshold_1")
       _threshold->value(1,QtPersistent::extract_d(p));
+    else if (tag.name == "_accumulate")
+      _accumulate->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_plots") {
       PeakPlot* plot = new PeakPlot(this, p);
       _plots.push_back(plot);
@@ -156,7 +163,8 @@ void PeakFinder::plot()
                                 .arg(_threshold->value(1)),
 				_channel,
 				_threshold->value(0),
-				_threshold->value(1));
+				_threshold->value(1),
+                                _accumulate->isChecked());
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));

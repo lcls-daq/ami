@@ -33,22 +33,18 @@ tgtlibs_online_ami := pdsdata/xtcdata pdsdata/acqdata
 tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
 
-tgtlibs_offline_ami := pdsdata/xtcdata pdsdata/acqdata
-tgtlibs_offline_ami += pdsdata/camdata pdsdata/opal1kdata
-tgtlibs_offline_ami += pdsdata/pulnixdata pdsdata/princetondata
-tgtlibs_offline_ami += pdsdata/pnccddata pdsdata/ipimbdata
-tgtlibs_offline_ami += pdsdata/evrdata pdsdata/encoderdata pdsdata/timepixdata
-tgtlibs_offline_ami += pdsdata/gsc16aidata pdsdata/oceanopticsdata
-tgtlibs_offline_ami += pdsdata/controldata pdsdata/epics
-tgtlibs_offline_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata pdsdata/anadata pdsdata/indexdata
-tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
-tgtlibs_offline_ami += $(qt_libs)
-
-datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata pdsdata/xampsdata pdsdata/fexampdata pdsdata/gsc16aidata 
+datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata pdsdata/xampsdata pdsdata/fexampdata pdsdata/gsc16aidata pdsdata/epics
 datalibs += pdsdata/timepixdata
 datalibs += pdsdata/phasicsdata
 datalibs += pdsdata/cspad2x2data
 datalibs += pdsdata/oceanopticsdata
+
+#
+# Need all pdsdata libraries to support dynamic linking of plug-in modules
+#
+tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata
+tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
+tgtlibs_offline_ami += $(qt_libs)
 
 tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg
 tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/amiqt

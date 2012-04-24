@@ -17,9 +17,9 @@ tgtsrcs_test := test.cc
 tgtslib_ami := $(USRLIBDIR)/rt
 tgtslib_test := $(USRLIBDIR)/rt
 
-# List project libraries (if any) needed by exe_a as <project>/<lib>.
-# Note that <lib> is the name of the library, not of the file: i.e.
-# <lib> for 'libc.so' is 'c'. Low level first.
+#
+# Need all pdsdata libraries to support dynamic linking of plug-in modules
+#
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata pdsdata/timepixdata
 tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
 tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
@@ -28,6 +28,7 @@ tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
 tgtlibs_ami += pdsdata/gsc16aidata
 tgtlibs_ami += pdsdata/controldata pdsdata/epics 
 tgtlibs_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
+tgtlibs_ami += pdsdata/cspad2x2data
 tgtlibs_ami += pdsdata/fexampdata
 tgtlibs_ami += pdsdata/phasicsdata pdsdata/oceanopticsdata
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/client ami/app

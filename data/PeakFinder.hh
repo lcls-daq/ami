@@ -16,7 +16,8 @@ namespace Ami {
   class PeakFinder : public AbsOperator {
   public:
     PeakFinder(double threshold_v0,
-               double threshold_v1);
+               double threshold_v1,
+               bool   accumulate);
     PeakFinder(const char*&, const DescEntry&);
     ~PeakFinder();
   public:
@@ -29,6 +30,7 @@ namespace Ami {
   private:
     double            _threshold_v0;
     double            _threshold_v1;
+    bool              _accumulate;
     EntryImage*       _output_entry;
     PeakFinderFn*     _fn;
   };

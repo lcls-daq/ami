@@ -29,7 +29,8 @@ namespace Ami {
 	       const QString&,
 	       unsigned input_channel,
 	       double threshold_0,
-	       double threshold_1);
+	       double threshold_1,
+               bool   accumulate=true);
       PeakPlot(QWidget*, const char*&);
       ~PeakPlot();
     public:
@@ -56,6 +57,7 @@ namespace Ami {
       unsigned         _input;
       double           _threshold_0;
       double           _threshold_1;
+      bool             _accumulate;
       unsigned         _signature;
 
       enum {NCHANNELS=4};
