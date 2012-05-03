@@ -3,17 +3,18 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/princeton/ConfigV1.hh"
+#include "pdsdata/princeton/ConfigV2.hh"
 #include "pdsdata/princeton/FrameV1.hh"
 #include "pdsdata/princeton/InfoV1.hh"
 
 #include <string.h>
 
-static inline unsigned height(const Pds::Princeton::ConfigV2& c)
+static inline unsigned height(const Pds::Princeton::ConfigV3& c)
 {
   return (c.height() + c.binY() - 1)/c.binY();
 }
 
-static unsigned width(const Pds::Princeton::ConfigV2& c)
+static unsigned width(const Pds::Princeton::ConfigV3& c)
 {
   return (c.width() + c.binX() - 1)/c.binX();
 }
@@ -54,10 +55,14 @@ void PrincetonHandler::reset() { _entry = 0; }
 
 void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {  
+  if (type.version() == 3)
+    _config = *reinterpret_cast<const Pds::Princeton::ConfigV3*>(payload);
   if (type.version() == 2)
-    _config = *reinterpret_cast<const Pds::Princeton::ConfigV2*>(payload);
-  else
+    new (&_config) Pds::Princeton::ConfigV3(*reinterpret_cast<const Pds::Princeton::ConfigV2*>(payload));
+  else if (type.version() == 1)
     new (&_config) Pds::Princeton::ConfigV2(*reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload));
+  else
+    printf("PrincetonHandler::_configure(): Unsupported Princeton Version %d\n", type.version());
   
   unsigned columns = width (_config);
   unsigned rows    = height(_config);
