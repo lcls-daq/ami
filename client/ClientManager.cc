@@ -119,29 +119,38 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _client_sem(Semaphore::EMPTY),
   _server    (serverGroup, Port::serverPort())
 {
-  if (Ins::is_multicast(serverGroup)) {
+  bool mcast = Ins::is_multicast(serverGroup);
+  printf("CM pp %x int %x grp %x mcast %c\n", 
+	 ppinterface, interface, serverGroup,
+	 mcast ? 'T':'F');
+
+  if (mcast) {
     VClientSocket* so = new VClientSocket;
     so->set_dst(_server, interface);
     _connect = so;
-
-    _listen = new TSocket;
-    _port   = 0;
-    while(_port!=port) {
-      _port = port;
-      try             { _listen->bind(Ins(ppinterface,_port)); }
-      catch(Event& e) { 
-        //        printf("bind error : %s : trying port %d\n",e.what(),++port); 
-        ++port;
-      }
-    }
-    _task->call(this);
-    _listen_sem.take();
-    
-    _reconn = new ConnectRoutine(*this, _server, interface);
   }
   else {
-    _connect = 0;
-    _listen  = 0;
+    // Connect to a proxy
+    TSocket* so = new TSocket;
+    so->connect(_server);
+    _connect = so;
+  }
+
+  _listen = new TSocket;
+  _port   = 0;
+  while(_port!=port) {
+    _port = port;
+    try             { _listen->bind(Ins(ppinterface,_port)); }
+    catch(Event& e) { 
+      //        printf("bind error : %s : trying port %d\n",e.what(),++port); 
+      ++port;
+    }
+  }
+  _task->call(this);
+  _listen_sem.take();
+  
+  if (mcast) {
+    _reconn = new ConnectRoutine(*this, _server, interface);
   }
 
   _poll->start();
@@ -188,20 +197,6 @@ void ClientManager::connect(bool svc)
                        _ppinterface,
                        _listen->ins().portId());
     _connect->write(&_request,sizeof(_request));
-  }
-  else {
-    ClientSocket& cs = *new ClientSocket(*this);
-    try              {
-      cs.bind   (Ins(_ppinterface,_port));
-      Ins remote = _server;
-      cs.connect(remote); 
-      Ins local  = cs.ins();
-      _state = Connected;
-
-      Message msg(svc ? 1:0,Message::Connect,0,0);
-      cs.write(&msg,sizeof(msg));
-    }
-    catch (Event& e) { printf("Connection failed: %s\n", e.what()); delete &cs; }
   }
 }
 
