@@ -38,10 +38,9 @@ namespace Ami {
   class ConnectRoutine : public Routine {
   public:
     ConnectRoutine(ClientManager& mgr,
-                   const Ins&     ins,
-                   unsigned       interface) :
+		   Socket&        skt) :
       _task(new Task(TaskObject("cmco"))),
-      _mgr(mgr), _skt(ins,interface), _found(false) 
+      _mgr(mgr), _skt(skt), _found(false) 
     {
       _task->call(this); 
     }
@@ -59,10 +58,8 @@ namespace Ami {
         Message msg(0,Message::NoOp);
         if (_skt.read(&msg,sizeof(msg))==sizeof(msg))
           if (msg.type()==Message::Hello) {
-            Ins peer = _skt.peer().get();
-            printf("Hello from %x.%d\n",
-                   peer.address(),
-                   peer.portId());
+            printf("Hello from socket %d\n",
+		   _skt.socket());
             _found = true;
           }
       }
@@ -75,7 +72,7 @@ namespace Ami {
   private:
     Task*          _task;
     ClientManager& _mgr;
-    VServerSocket  _skt;
+    Socket&        _skt;
     bool           _found;
   };
 };
@@ -149,9 +146,10 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _task->call(this);
   _listen_sem.take();
   
-  if (mcast) {
-    _reconn = new ConnectRoutine(*this, _server, interface);
-  }
+  if (mcast)
+    _reconn = new ConnectRoutine(*this, *new VServerSocket(_server, interface));
+  else
+    _reconn = new ConnectRoutine(*this, *_connect);
 
   _poll->start();
 }
