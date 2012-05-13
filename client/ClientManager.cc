@@ -35,31 +35,32 @@ namespace Ami {
   //
   //  A class to listen for servers that come online
   //
-  class ConnectRoutine : public Routine {
+  class ServerConnect : public Routine {
   public:
-    ConnectRoutine(ClientManager& mgr,
-		   Socket&        skt) :
+    ServerConnect(ClientManager& mgr,
+		  Socket*        skt) :
       _task(new Task(TaskObject("cmco"))),
       _mgr(mgr), _skt(skt), _found(false) 
     {
       _task->call(this); 
     }
-    ~ConnectRoutine() {
+    ~ServerConnect() {
       _task->destroy_b();
+      delete _skt;
     }
   public:
     void routine()
     {
       pollfd fds[1];
-      fds[0].fd = _skt.socket();
+      fds[0].fd = _skt->socket();
       fds[0].events = POLLIN | POLLERR;
 
       if (poll(fds, 1, 1000)>0) {
         Message msg(0,Message::NoOp);
-        if (_skt.read(&msg,sizeof(msg))==sizeof(msg))
+        if (_skt->read(&msg,sizeof(msg))==sizeof(msg))
           if (msg.type()==Message::Hello) {
             printf("Hello from socket %d\n",
-		   _skt.socket());
+		   _skt->socket());
             _found = true;
           }
       }
@@ -72,7 +73,71 @@ namespace Ami {
   private:
     Task*          _task;
     ClientManager& _mgr;
-    Socket&        _skt;
+    Socket*        _skt;
+    bool           _found;
+  };
+
+  class ProxyConnect : public Routine {
+  public:
+    ProxyConnect(ClientManager& mgr,
+                 Socket*&       skt,
+                 const Ins&     ins) :
+      _task(new Task(TaskObject("cmco"))),
+      _mgr(mgr), _skt(skt), _ins(ins), _found(false) 
+    {
+      _task->call(this); 
+    }
+    ~ProxyConnect() {
+      _task->destroy_b();
+      delete _skt;
+    }
+  public:
+    void routine()
+    {
+      if (_skt==0) {
+        sleep(1);
+        TSocket* skt = new TSocket;
+        try {
+          skt->connect(_ins);
+          _skt = skt;
+        }
+        catch(Event& e) {
+          delete skt;
+        }
+      }
+      else {
+        pollfd fds[1];
+        fds[0].fd = _skt->socket();
+        fds[0].events = POLLIN | POLLERR;
+
+        if (poll(fds, 1, 1000)>0) {
+          Message msg(0,Message::NoOp);
+          int len = _skt->read(&msg,sizeof(msg));
+          if (len==sizeof(msg)) {
+            if (msg.type()==Message::Hello) {
+              printf("Hello from socket %d\n",
+                     _skt->socket());
+              _found = true;
+            }
+          }
+          else if (len<=0) {
+            printf("Proxy offline\n");
+            delete _skt;
+            _skt = 0;
+          }
+        }
+        else if (_found) {
+          _found = false;
+          _mgr.connect();
+        }
+      }
+      _task->call(this);
+    }
+  private:
+    Task*          _task;
+    ClientManager& _mgr;
+    Socket*&       _skt;
+    Ins            _ins;
     bool           _found;
   };
 };
@@ -147,9 +212,10 @@ ClientManager::ClientManager(unsigned   ppinterface,
   _listen_sem.take();
   
   if (mcast)
-    _reconn = new ConnectRoutine(*this, *new VServerSocket(_server, interface));
-  else
-    _reconn = new ConnectRoutine(*this, *_connect);
+    _reconn = new ServerConnect(*this, new VServerSocket(_server, interface));
+  else {
+    _reconn = new ProxyConnect(*this, _connect, _server);
+  }
 
   _poll->start();
 }
@@ -166,7 +232,6 @@ ClientManager::~ClientManager()
   delete _poll;
   if (_reconn ) delete _reconn ;
   if (_listen ) delete _listen ;
-  if (_connect) delete _connect;
   delete &_client;
 }
 
