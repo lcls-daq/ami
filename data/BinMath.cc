@@ -28,42 +28,24 @@
 
 #include <stdio.h>
 
-static bool _parseIndices(const QString& use, unsigned& lo, unsigned& hi);
+enum Moment { None, Zero, First, Second };
+
+static bool _parseIndices(const QString& use, 
+                          unsigned& lo, 
+                          unsigned& hi,
+                          Moment&   mom);
 
 static const unsigned MAX_INDEX = 999999;
 
-//
-//  this could probably be a template
-//
-#define CLASSTERM(type,func) \
-  class Entry##type##Term : public Ami::Term {				\
-  public:								\
-    Entry##type##Term(const Entry*& e, unsigned lo, unsigned hi) :	\
-      _entry(e), _lo(lo), _hi(hi) {}					\
-      ~Entry##type##Term() {}						\
-  public:								\
-      double evaluate() const						\
-      { double sum=0;							\
-	unsigned lo=_lo, hi=_hi;					\
-	const Entry##type* e = static_cast<const Entry##type*>(_entry); \
-	for(unsigned i=lo; i<=hi; i++)					\
-	  sum += e->func(i);						\
-	double n = e->info(Entry##type::Normalization);			\
-	return n > 0 ? sum / n : sum; }					\
-  private:								\
-      const Entry*& _entry;						\
-      unsigned _lo, _hi;						\
-  }
-
 namespace Ami {
   namespace BinMathC {
-    // CLASSTERM(Waveform,content);
-  class EntryWaveformTerm : public Ami::Term {
-  public:
-    EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi) :
-      _entry(e), _lo(lo), _hi(hi) {}
+    class EntryWaveformTerm : public Ami::Term {
+    public:
+      EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi,
+                        Moment mom) :
+        _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
       ~EntryWaveformTerm() {}
-  public:
+    public:
       double evaluate() const
       { double sum=0;
 	unsigned lo=_lo, hi=_hi;
@@ -76,44 +58,142 @@ namespace Ami {
          * we use floor below instead of round in calculating the offset.)
          */
         if (desc.xlow() != 0.0) {
-            offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
-            lo -= offset;
-            hi -= offset;
+          offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
+          lo -= offset;
+          hi -= offset;
         }
-	for(unsigned i=lo; i<=hi; i++)
-	  sum += e->content(i);
+        switch(_mom) {
+        case First:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->content(i)*x;
+          }
+          break;
+        case Second:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->content(i)*x*x;
+          }
+          break;
+        default:
+          for(unsigned i=lo; i<=hi; i++)
+            sum += e->content(i);
+          break;
+        }
 	double n = e->info(EntryWaveform::Normalization);
 	return n > 0 ? sum / n : sum; }
-  private:
+    private:
       const Entry*& _entry;
       unsigned _lo, _hi;
-  };
+      Moment _mom;
+    };
 
-    CLASSTERM(TH1F    ,content);
-    //    CLASSTERM(Prof    ,ymean  );
+    class EntryTH1FTerm : public Ami::Term {
+    public:
+      EntryTH1FTerm(const Entry*& e, unsigned lo, unsigned hi,
+                    Moment mom) :
+        _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
+      ~EntryTH1FTerm() {}
+    public:
+      double evaluate() const
+      { double sum=0;
+        unsigned lo=_lo, hi=_hi;
+        const EntryTH1F* e = static_cast<const EntryTH1F*>(_entry);
+        const DescTH1F& desc = e->desc();
+        switch(_mom) {
+        case First:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->content(i)*x;
+          }
+          break;
+        case Second:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->content(i)*x*x;
+          }
+          break;
+        default:
+          for(unsigned i=lo; i<=hi; i++)
+            sum += e->content(i);
+          break;
+        }
+        double n = e->info(EntryTH1F::Normalization);
+        return n > 0 ? sum / n : sum; }
+    private:
+      const Entry*& _entry;
+      unsigned _lo, _hi;
+      Moment _mom;
+    };
 
     class EntryProfTerm  : public Ami::Term {
     public:
-    EntryProfTerm(const Entry*& e, unsigned lo, unsigned hi) :
-      _entry(e), _lo(lo), _hi(hi) {}
+      EntryProfTerm(const Entry*& e, unsigned lo, unsigned hi,
+                    Moment mom) :
+        _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
       ~EntryProfTerm() {}
     public:
       double evaluate() const
       { double sum=0;
-	unsigned lo=_lo, hi=_hi;
-	const EntryProf* e = static_cast<const EntryProf*>(_entry);
-	for(unsigned i=lo; i<=hi; i++)
-	  sum += e->ymean(i);
+        unsigned lo=_lo, hi=_hi;
+        const EntryProf* e = static_cast<const EntryProf*>(_entry);
+        const DescProf& desc = e->desc();
+        switch(_mom) {
+        case First:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->ymean(i)*x;
+          }
+          break;
+        case Second:
+          {
+            double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+            double x  = desc.xlow()+(double(lo)+0.5)*dx;
+            for(unsigned i=lo; i<=hi; i++, x+=dx)
+              sum += e->ymean(i)*x*x;
+          }
+          break;
+        default:
+          for(unsigned i=lo; i<=hi; i++)
+            sum += e->ymean(i);
+          break;
+        }
         return sum; }
-  private:
+    private:
       const Entry*& _entry;
       unsigned _lo, _hi;
+      Moment _mom;
     };
-
+    
     class EntryImageTerm : public Ami::Term {
     public:
-      EntryImageTerm(const Entry*& e, unsigned xlo, unsigned xhi, unsigned ylo, unsigned yhi) :
-	_entry(e), _xlo(xlo), _xhi(xhi), _ylo(ylo), _yhi(yhi) {}
+      EntryImageTerm(const Entry*& e, 
+                     unsigned xlo, unsigned xhi, 
+                     unsigned ylo, unsigned yhi,
+                     Moment mom) :
+	_entry(e), _xlo(xlo), _xhi(xhi), _ylo(ylo), _yhi(yhi), _mom(mom) 
+      {
+        switch(_mom) {
+        case First: 
+          printf("EntryImageTerm first moment not implemented\n"); 
+          break;
+        case Second: 
+          printf("EntryImageTerm second moment not implemented\n"); 
+          break;
+        default:
+          break;
+        }
+      }
       ~EntryImageTerm() {}
     public:
       double evaluate() const {
@@ -124,17 +204,18 @@ namespace Ami {
 	if (d.nframes()) {
 	  for(unsigned fn=0; fn<d.nframes(); fn++) {
 	    int xlo(_xlo), xhi(_xhi+1), ylo(_ylo), yhi(_yhi+1);
-	    if (d.xy_bounds(xlo, xhi, ylo, yhi, fn))
-	      for(int j=ylo; j<yhi; j++)
-		for(int i=xlo; i<xhi; i++)
-		  sum += double(e.content(i,j))-p;
+	    if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
+              for(int j=ylo; j<yhi; j++)
+                for(int i=xlo; i<xhi; i++)
+                  sum += double(e.content(i,j))-p;
+            }
 	  }
 	}
 	else {
 	  unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
-	  for(unsigned j=ylo; j<=yhi; j++)
-	    for(unsigned i=xlo; i<=xhi; i++)
-	      sum += double(e.content(i,j))-p;
+          for(unsigned j=ylo; j<=yhi; j++)
+            for(unsigned i=xlo; i<=xhi; i++)
+              sum += double(e.content(i,j))-p;
 	}
 	double n = double(e.info(EntryImage::Normalization));
 	return n > 0 ? sum / n : sum;
@@ -142,12 +223,29 @@ namespace Ami {
     private:
       const Entry*& _entry;
       unsigned _xlo, _xhi, _ylo, _yhi;
+      Moment _mom;
     };
 
     class EntryImageTermF : public Ami::Term {
     public:
-      EntryImageTermF(const Entry*& e, double xc, double yc, double r0, double r1, double f0, double f1) :
-	_entry(e), _xc(xc), _yc(yc), _r0(r0), _r1(r1), _f0(f0), _f1(f1) {}
+      EntryImageTermF(const Entry*& e, 
+                      double xc, double yc, 
+                      double r0, double r1, 
+                      double f0, double f1,
+                      Moment mom) :
+	_entry(e), _xc(xc), _yc(yc), _r0(r0), _r1(r1), _f0(f0), _f1(f1), _mom(mom) 
+      {
+        switch(_mom) {
+        case First: 
+          printf("EntryImageTermF first moment not implemented\n"); 
+          break;
+        case Second: 
+          printf("EntryImageTermF second moment not implemented\n"); 
+          break;
+        default:
+          break;
+        }
+      }
       ~EntryImageTermF() {}
     public:
       double evaluate() const {
@@ -194,13 +292,13 @@ namespace Ami {
 		if ( (rsq >= r0sq && rsq <= r1sq) &&
 		     ( (f>=_f0 && f<=_f1) ||
 		       (f+2*M_PI <= _f1) ) )
-		sum += double(e.content(i,j))-p;
+                  sum += double(e.content(i,j))-p;
 	      }
 	    }
 	  }
-// 	  else {
-//             return 0;
-//          }
+          // 	  else {
+          //             return 0;
+          //          }
 	}
 	double n = double(e.info(EntryImage::Normalization));
 	return n > 0 ? sum / n : sum;
@@ -208,6 +306,7 @@ namespace Ami {
     private:
       const Entry*& _entry;
       double _xc, _yc, _r0, _r1, _f0, _f1;
+      Moment _mom;
     };
 
   };
@@ -215,9 +314,13 @@ namespace Ami {
 
 using namespace Ami;
 
-static QChar _integrate(0x002C);
-static QChar _range    (0x0023);
+static QChar _integrate(0x002C);  // ,
+static QChar _moment1  (0x0027);  // '
+static QChar _moment2  (0x0022);  // "
+static QChar _range    (0x0023);  // #
 const QChar& BinMath::integrate() { return _integrate; }
+const QChar& BinMath::moment1  () { return _moment1  ; }
+const QChar& BinMath::moment2  () { return _moment2  ; }
 const QChar& BinMath::range    () { return _range    ; }
 const double BinMath::floatPrecision() { return 1.e3; }
 
@@ -235,7 +338,7 @@ BinMath::BinMath(const DescEntry& output,
 
 #define CASETERM(type)							\
   case DescEntry::type:							\
-  { t = new Ami::BinMathC::Entry##type##Term(_input,lo,hi);		\
+  { t = new Ami::BinMathC::Entry##type##Term(_input,lo,hi,mom);		\
     break; }
 
 BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features) :
@@ -254,15 +357,16 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   { QString expr(_expression);
     QString new_expr;
     // parse expression for bin indices
-    QRegExp match("\\[[0-9,]+\\]");
+    QRegExp match("\\[[0-9,\\\'\\\"]+\\]");
     int last=0;
     int pos=0;
     int mlen=0;
     while( (pos=match.indexIn(expr,pos)) != -1) {
       mlen = match.matchedLength();
       QString use = expr.mid(pos+1,mlen-2);
-      unsigned lo, hi;  
-      if (!_parseIndices(use,lo,hi)) {
+      unsigned lo, hi;
+      Moment mom;
+      if (!_parseIndices(use,lo,hi,mom)) {
         pos += mlen;
         continue;
       }
@@ -276,20 +380,21 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 	  ypos = match.indexIn(expr,ypos);
 	  mlen += match.matchedLength();
 	  QString yuse = expr.mid(ypos+1,match.matchedLength()-2);
-	  unsigned ylo, yhi;  _parseIndices(yuse,ylo,yhi);
+	  unsigned ylo, yhi;  _parseIndices(yuse,ylo,yhi,mom);
 	  if (expr[pos+mlen]=='[') {  // third dimension (azimuth)
 	    int zpos = pos+mlen;
 	    zpos = match.indexIn(expr,zpos);
 	    mlen += match.matchedLength();
 	    QString zuse = expr.mid(zpos+1,match.matchedLength()-2);
-	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi);
+	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi,mom);
 	    t = new Ami::BinMathC::EntryImageTermF(_input,
 						   double( lo)/floatPrecision(),double( hi)/floatPrecision(),
 						   double(ylo)/floatPrecision(),double(yhi)/floatPrecision(),
-						   double(zlo)/floatPrecision(),double(zhi)/floatPrecision()); 
+						   double(zlo)/floatPrecision(),double(zhi)/floatPrecision(),
+                                                   mom); 
 	  }
 	  else
-	    t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi); 
+	    t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi,mom); 
 	}
 	break;
       default:
@@ -410,19 +515,28 @@ Entry&     BinMath::_operate(const Entry& e) const
   return *_entry;
 }
 
-static bool _parseIndices(const QString& use, unsigned& lo, unsigned& hi)
+static bool _parseIndices(const QString& use, 
+                          unsigned& lo, 
+                          unsigned& hi,
+                          Moment&   mom)
 {
-  int index = use.indexOf(_integrate);
-  if (index == -1) {
-    lo = hi = use.toInt();
-    if (lo > MAX_INDEX)
-      return false;
-  }
-  else {
-    lo = use.mid(0,index).toInt();
-    hi = use.mid(index+1,-1).toInt();
-    //    if (lo > hi) { unsigned i=lo; lo=hi; hi=i; }
-  }
+  int index;
+  if ((index=use.indexOf(_integrate)) == -1)
+    if ((index=use.indexOf(_moment1)) == -1)
+      if ((index=use.indexOf(_moment2)) == -1) {
+        mom = None;
+        lo = hi = use.toInt();
+        return lo <  MAX_INDEX;
+      }
+      else
+        mom = Second;
+    else 
+      mom = First;
+  else
+    mom = Zero;
+
+  lo = use.mid(0,index).toInt();
+  hi = use.mid(index+1,-1).toInt();
   return true;
 }
 

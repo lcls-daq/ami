@@ -9,6 +9,7 @@
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/server/ServerManager.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <iostream>
 #include <fstream>
@@ -57,6 +58,7 @@ static unsigned getLocallyUniqueServerGroup() {
   pid = pid & 0x0000ffff;
   unsigned ipv4_local_scope = 0xefff0000; // 239.255.0.0/16, see RFC 2365 section 6.1
   unsigned group = ipv4_local_scope | (pid & 0x0000ffff);
+  printf("Using server group %x\n",group);
   return group;
 }
 
@@ -142,8 +144,10 @@ int main(int argc, char* argv[]) {
   }
 
   // Run ServerManager in a background thread
-  srv.serve(factory);
+  Semaphore connect_sem(Semaphore::EMPTY);
+  srv.serve(factory,&connect_sem);
   srv.start();
+  connect_sem.take();
 
   // Start the XtcFileClient inside of the DetectorSelect GUI.
   bool sync = true;
