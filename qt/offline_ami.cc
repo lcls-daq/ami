@@ -5,6 +5,7 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/UserModule.hh"
 #include "ami/qt/DetectorSelect.hh"
+#include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/server/ServerManager.hh"
@@ -78,15 +79,14 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:i:s:f:o:e:L:TW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:C:L:TW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
       break;
-    case 'i':
-      interface = Ami::Ins::parse_interface(optarg);
-    case 's':
-      serverGroup = Ami::Ins::parse_ip(optarg);
+    case 'C':
+      Ami::Qt::ImageColorControl::set_color_choice(atoi(optarg));
+      break;
     case 'L':
       Ami::AmiApp::load_syms<UserModule,create_m>(userModules, optarg);
       break;
