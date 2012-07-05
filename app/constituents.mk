@@ -33,7 +33,7 @@ endif
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
 tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata pdsdata/timepixdata
-tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata
+tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata pdsdata/quartzdata
 tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
 tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
 tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata
