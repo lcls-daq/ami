@@ -84,14 +84,14 @@ Ami::Qt::Client::Client(QWidget*            parent,
   }
   
   QHBoxLayout* layout = new QHBoxLayout;
-  { QVBoxLayout* layout3 = new QVBoxLayout;
+  { _layout3 = new QVBoxLayout;
     if (!oldLayout) {
       { QGroupBox* ctrlBox = new QGroupBox("Control");
         QVBoxLayout* layout1 = new QVBoxLayout;
         layout1->addWidget(_control);
         layout1->addWidget(_status); 
         ctrlBox->setLayout(layout1);
-        layout3->addWidget(ctrlBox); }
+        _layout3->addWidget(ctrlBox); }
     }
     { QGroupBox* chanBox = new QGroupBox("Channels");
       QVBoxLayout* layout1 = new QVBoxLayout;
@@ -102,25 +102,25 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	_channels[i] = new ChannelDefinition(this,title, names, *_frame, color[i], i==0, refnames);
 	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
-	{ QHBoxLayout* layout4 = new QHBoxLayout;
+	{ _layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
 	  connect(_channels[i], SIGNAL(show_plot_changed(bool)), box, SLOT(setChecked(bool)));
 	  box->setChecked( i==0 );
-	  layout4->addWidget(box);
-	  layout4->addWidget(chanB[i]);
-	  layout1->addLayout(layout4); 
+	  _layout4->addWidget(box);
+	  _layout4->addWidget(chanB[i]);
+	  layout1->addLayout(_layout4);
 	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
 	  connect(_channels[i], SIGNAL(changed()), this, SIGNAL(changed()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
 	}
       }
       chanBox->setLayout(layout1);
-      layout3->addWidget(chanBox); }
-    layout3->addLayout(_layout);
-    layout3->addStretch();
-    layout->addLayout(layout3,0); }
+      _layout3->addWidget(chanBox); }
+    _layout3->addLayout(_layout);
+    _layout3->addStretch();
+    layout->addLayout(_layout3,0); }
   if (oldLayout) {
     { QVBoxLayout* layout1 = new QVBoxLayout;
       { QHBoxLayout* layout2 = new QHBoxLayout;

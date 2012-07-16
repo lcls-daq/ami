@@ -14,8 +14,10 @@
 #include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
+#include <QtGui/QHBoxLayout>
 
 class QLayout;
+class QVBoxLayout;
 
 namespace Ami {
   class ClientManager;
@@ -84,6 +86,11 @@ namespace Ami {
       char*       _request;
       char*       _description;
 
+    protected:
+      QVBoxLayout* _layout3;
+      QHBoxLayout* _layout4;
+
+    private:
       Control*    _control;
       Status*     _status;
 
@@ -95,9 +102,10 @@ namespace Ami {
       ClientManager*  _manager;
       unsigned        _niovload;
       iovec*          _iovload;
+    protected:
+      QLayout*        _layout;
 
-      QLayout*    _layout;
-
+    private:
       Semaphore*  _sem;
 
       bool _throttled;

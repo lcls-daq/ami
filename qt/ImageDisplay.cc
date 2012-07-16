@@ -39,6 +39,10 @@ Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
   QWidget(0),
   _sem   (Ami::Semaphore::FULL)
 {
+  _menu_bar = new QMenuBar(this);
+  _mainLayout = new QVBoxLayout();
+  _layout2    = new QHBoxLayout();
+  _plotBox = new QGroupBox("Plot");
   _zrange  = new ImageColorControl(this,"Z");
   _plot    = new ImageFrame(this,*_zrange);
   _units   = new ImageGridScale(*_plot, grab);
@@ -48,34 +52,37 @@ Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
 
 void Ami::Qt::ImageDisplay::_layout()
 {
-  QMenuBar* menu_bar = new QMenuBar(this);
   {
     QMenu* file_menu = new QMenu("File");
     file_menu->addAction("Save image"     , this, SLOT(save_image()));
     file_menu->addAction("Save data"      , this, SLOT(save_data ()));
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
-    menu_bar->addMenu(file_menu);
-    menu_bar->addAction(new PrintAction(*this));
+    _menu_bar->addMenu(file_menu);
+    QMenu* view_menu = new QMenu("View");
+    view_menu->addAction("Hide chrome"    , this, SLOT(hide_chrome()));
+    view_menu->addAction("Show chrome"    , this, SLOT(show_chrome()));
+    view_menu->addSeparator();
+    _menu_bar->addMenu(view_menu);
+    _menu_bar->addAction(new PrintAction(*this));
   }
 
-  QVBoxLayout* layout = new QVBoxLayout;
-  layout->setSpacing(1);
-  { QGroupBox* plotBox = new QGroupBox("Plot");
+  _mainLayout->setSpacing(1);
+  {
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* hl = new QHBoxLayout;
-      hl->addWidget(menu_bar);
+      hl->addWidget(_menu_bar);
       hl->addWidget(_time_display=new QLabel("Time: Seconds . nseconds"));
       layout1->addLayout(hl); }
     layout1->addWidget(_plot);
-    plotBox->setLayout(layout1);
-    layout->addWidget(plotBox); }
-  { QHBoxLayout* layout2 = new QHBoxLayout;
-    layout2->addWidget(_units );
-    layout2->addWidget(_zrange);
-    layout->addLayout(layout2); }
-  layout->addStretch();
-  setLayout(layout);
+    _plotBox->setLayout(layout1);
+    _mainLayout->addWidget(_plotBox); }
+  { _layout2 = new QHBoxLayout;
+    _layout2->addWidget(_units );
+    _layout2->addWidget(_zrange);
+    _mainLayout->addLayout(_layout2); }
+  _mainLayout->addStretch();
+  setLayout(_mainLayout);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
   connect(this   , SIGNAL(redraw()) , this       , SLOT(update_timedisplay()));
@@ -119,6 +126,36 @@ void ImageDisplay::save_plots(const QString& p) const
 const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 ImageGridScale& ImageDisplay::grid_scale() { return *_units; }
+
+void Ami::Qt::ImageDisplay::hide_chrome()
+{
+  unsigned i = 0;
+  QLayoutItem* item;
+  while ((item = _layout2->itemAt(i++))) {
+    if (item->widget()) {
+      item->widget()->hide();
+    }
+  }
+  _container->hideWidgets();
+  printf("ImageDisplay _plotBox %d,%d\n", _plotBox->width(), _plotBox->height());
+  if (_container->parentWidget() != 0) {
+    QWidget* wid = _container->parentWidget();
+    wid->updateGeometry();
+    wid->resize(wid->minimumWidth(), wid->minimumHeight());
+  }
+}
+
+void Ami::Qt::ImageDisplay::show_chrome()
+{
+  unsigned i = 0;
+  QLayoutItem* item;
+  _container->showWidgets();
+  while ((item = _layout2->itemAt(i++))) {
+    if (item->widget()) {
+      item->widget()->show();
+    }
+  }
+}
 
 void Ami::Qt::ImageDisplay::save_image()
 {
