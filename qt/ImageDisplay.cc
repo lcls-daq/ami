@@ -137,7 +137,6 @@ void Ami::Qt::ImageDisplay::hide_chrome()
     }
   }
   _container->hideWidgets();
-  printf("ImageDisplay _plotBox %d,%d\n", _plotBox->width(), _plotBox->height());
   if (_container->parentWidget() != 0) {
     QWidget* wid = _container->parentWidget();
     wid->updateGeometry();
