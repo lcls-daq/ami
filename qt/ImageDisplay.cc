@@ -46,7 +46,7 @@ Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
   _zrange  = new ImageColorControl(this,"Z");
   _plot    = new ImageFrame(this,*_zrange);
   _units   = new ImageGridScale(*_plot, grab);
-
+  _resizeCount = 0;
   _layout();
 }
 
@@ -138,6 +138,7 @@ void Ami::Qt::ImageDisplay::hide_chrome()
     }
   }
   _container->hideWidgets();
+  _resizeCount = 2;
 }
 
 void Ami::Qt::ImageDisplay::show_chrome()
@@ -326,4 +327,14 @@ void Ami::Qt::ImageDisplay::update_timedisplay()
   _time_display->setText(QString("Time:%1.%2")
                          .arg(QString::number(time.seconds()))
                          .arg(QString::number(time.nanoseconds()),9,QChar('0')));
+  if (_resizeCount)
+  {
+    QWidget* wid = _container->_layout->parentWidget()->window();
+    if (wid) {
+      printf("ImageDisplay::update_timedisplay container window widget %d,%d\n",
+          wid->minimumWidth(), wid->minimumHeight());
+      wid->resize(wid->minimumWidth(), wid->minimumHeight());
+    }
+    _resizeCount -= 1;
+  }
 }
