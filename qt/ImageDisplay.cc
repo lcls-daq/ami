@@ -137,11 +137,6 @@ void Ami::Qt::ImageDisplay::hide_chrome()
     }
   }
   _container->hideWidgets();
-  if (_container->parentWidget() != 0) {
-    QWidget* wid = _container->parentWidget();
-    wid->updateGeometry();
-    wid->resize(wid->minimumWidth(), wid->minimumHeight());
-  }
 }
 
 void Ami::Qt::ImageDisplay::show_chrome()
