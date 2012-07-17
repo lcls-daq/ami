@@ -61,7 +61,6 @@ void Ami::Qt::ImageDisplay::_layout()
     _menu_bar->addMenu(file_menu);
     QMenu* view_menu = new QMenu("View");
     view_menu->addAction("Hide chrome"    , this, SLOT(hide_chrome()));
-    view_menu->addAction("Shrink hidden view", this, SLOT(hide_chrome()));
     view_menu->addAction("Show chrome"    , this, SLOT(show_chrome()));
     view_menu->addSeparator();
     _menu_bar->addMenu(view_menu);
@@ -329,7 +328,7 @@ void Ami::Qt::ImageDisplay::update_timedisplay()
                          .arg(QString::number(time.nanoseconds()),9,QChar('0')));
   if (_resizeCount)
   {
-    QWidget* wid = _container->_layout->parentWidget()->window();
+    QWidget* wid = _container->window();
     if (wid) {
       printf("ImageDisplay::update_timedisplay container window widget %d,%d\n",
           wid->minimumWidth(), wid->minimumHeight());

@@ -72,6 +72,7 @@ namespace Ami {
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
+      unsigned               _resizeCount;
     };
   };
 };

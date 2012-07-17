@@ -54,6 +54,7 @@ namespace Ami {
       void read_description(Ami::Socket&,int);
       void read_payload    (Ami::Socket&,int);
       void process         ();
+      QWidget* window()  { return _layout->parentWidget()->window(); }
     public slots:
       void update_configuration();
       void _read_description(int);

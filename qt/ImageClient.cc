@@ -94,7 +94,7 @@ void Ami::Qt::ImageClient::hideWidgets()
   unsigned i = 0;
   QWidget* wid = 0;
   if (_layout->parentWidget() != 0) {
-    wid = _layout->parentWidget()->window();
+    wid = window();
   }
   QLayoutItem* item;
   while ((item = _layout3->itemAt(i++))) {
@@ -119,7 +119,7 @@ void Ami::Qt::ImageClient::showWidgets()
   unsigned i = 0;
   QWidget* wid = 0;
   if (_layout->parentWidget() != 0) {
-    wid = _layout->parentWidget()->window();
+    wid = window();
   }
   QLayoutItem* item;
   while ((item = _layout3->itemAt(i++))) {
