@@ -330,8 +330,6 @@ void Ami::Qt::ImageDisplay::update_timedisplay()
   {
     QWidget* wid = _container->window();
     if (wid) {
-      printf("ImageDisplay::update_timedisplay container window widget %d,%d\n",
-          wid->minimumWidth(), wid->minimumHeight());
       wid->resize(wid->minimumWidth(), wid->minimumHeight());
     }
     _resizeCount -= 1;
