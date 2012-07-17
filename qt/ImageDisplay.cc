@@ -61,6 +61,7 @@ void Ami::Qt::ImageDisplay::_layout()
     _menu_bar->addMenu(file_menu);
     QMenu* view_menu = new QMenu("View");
     view_menu->addAction("Hide chrome"    , this, SLOT(hide_chrome()));
+    view_menu->addAction("Shrink hidden view", this, SLOT(hide_chrome()));
     view_menu->addAction("Show chrome"    , this, SLOT(show_chrome()));
     view_menu->addSeparator();
     _menu_bar->addMenu(view_menu);
@@ -143,12 +144,12 @@ void Ami::Qt::ImageDisplay::show_chrome()
 {
   unsigned i = 0;
   QLayoutItem* item;
-  _container->showWidgets();
   while ((item = _layout2->itemAt(i++))) {
     if (item->widget()) {
       item->widget()->show();
     }
   }
+  _container->showWidgets();
 }
 
 void Ami::Qt::ImageDisplay::save_image()
