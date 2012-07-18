@@ -92,10 +92,6 @@ void Ami::Qt::ImageClient::save_plots(const QString& p) const
 void Ami::Qt::ImageClient::hideWidgets()
 {
   unsigned i = 0;
-//  QWidget* wid = 0;
-//  if (_layout->parentWidget() != 0) {
-//    wid = window();
-//  }
   QLayoutItem* item;
   while ((item = _layout3->itemAt(i++))) {
     if (item->widget()) {
@@ -108,19 +104,11 @@ void Ami::Qt::ImageClient::hideWidgets()
       item->widget()->hide();
     }
   }
-//  if (wid) {
-//    printf("ImageClient::_layout parent window widget %d,%d after hide\n", wid->minimumWidth(), wid->minimumHeight());
-//    wid->resize(wid->minimumWidth(), wid->minimumHeight());
-//  }
 }
 
 void Ami::Qt::ImageClient::showWidgets()
 {
   unsigned i = 0;
-//  QWidget* wid = 0;
-//  if (_layout->parentWidget() != 0) {
-//    wid = window();
-//  }
   QLayoutItem* item;
   while ((item = _layout3->itemAt(i++))) {
     if (item->widget()) {
@@ -133,10 +121,6 @@ void Ami::Qt::ImageClient::showWidgets()
       item->widget()->show();
     }
   }
-//  if (wid) {
-//    printf("ImageClient::_layout parent window widget %d,%d after show\n", wid->minimumWidth(), wid->minimumHeight());
-//    wid->resize(wid->minimumWidth(), wid->minimumHeight());
-//  }
 }
 
 void Ami::Qt::ImageClient::_configure(char*& p,

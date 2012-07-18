@@ -1,7 +1,6 @@
 #include "ImageDisplay.hh"
 
 #include "ami/qt/QtBase.hh"
-#include "ami/qt/AxisArray.hh"
 #include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/Transform.hh"
