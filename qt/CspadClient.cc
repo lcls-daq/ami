@@ -20,6 +20,7 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
 
   addWidget(_spBox = new QCheckBox("Suppress\nBad Pixels"));
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
+  addWidget(_npBox = new QCheckBox("Suppress\nPedestal"));
 }
 
 CspadClient::~CspadClient() {}
@@ -29,6 +30,7 @@ void CspadClient::save(char*& p) const
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_spBox", QtPersistent::insert(p,_spBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
 }
 
 void CspadClient::load(const char*& p)
@@ -40,6 +42,8 @@ void CspadClient::load(const char*& p)
       _fnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_spBox")
       _spBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_npBox")
+      _npBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(CspadClient,tag);
 }
 
@@ -53,6 +57,7 @@ void CspadClient::_configure(char*& p,
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= 2;
   if (_spBox->isChecked()) o |= 1;
+  if (_npBox->isChecked()) o |= 4;
   ConfigureRequest& req = *new(p) ConfigureRequest(input,o);
   p += req.size();
 
@@ -73,6 +78,7 @@ void CspadClient::_setup_payload(Cds& cds)
         unsigned oo(0);
         if (_fnBox->isChecked()) oo |= 2;
         if (_spBox->isChecked()) oo |= 1;
+        if (_npBox->isChecked()) oo |= 4;
         if (o != oo) {
           printf("CspadClient::setup_payload options %x -> %x\n",oo,o);
         }

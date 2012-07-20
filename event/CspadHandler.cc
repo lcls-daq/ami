@@ -156,7 +156,8 @@ static double frameNoise(const uint16_t*  data,
 #else
 static double frameNoise(const uint16_t*  data,
                          const uint16_t*  off,
-                         const uint16_t* const* sta)
+                         const uint16_t* const* sta,
+                         bool noped = false)
 {
   const unsigned ColBins = CsPad::ColumnsPerASIC;
   const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;
@@ -461,11 +462,14 @@ namespace CspadGeometry {
         free(linep);
       }
     }
+    void kill_off() { memset(_off,0,sizeof(_off)); }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
+
+  static uint16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
 #define AsicTemplate(classname,bi,PPB)          \
   class classname : public AsicP {          \
@@ -485,8 +489,9 @@ namespace CspadGeometry {
         const uint16_t*  data) const {                            \
       bool lsuppress  = image.desc().options()&1;                       \
       bool lcorrectfn = image.desc().options()&2;                       \
+      bool lnopedestal= image.desc().options()&4;                       \
       uint16_t* zero = 0;                                               \
-      const uint16_t*  off = _off;                                      \
+      const uint16_t* off = lnopedestal ? off_no_ped : _off;            \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = _gn;                                            \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
@@ -922,6 +927,8 @@ CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, uns
   _max_pixels(max_pixels),
   _options   (0)
 {
+  unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(uint16_t);
+  for (unsigned i=0; i<s; i++) CspadGeometry::off_no_ped[i] = (uint16_t)Offset;
 }
 
 CspadHandler::~CspadHandler()
