@@ -18,6 +18,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <errno.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -963,44 +964,56 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   if (!f) {
     sprintf(oname,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
     f = fopen(oname,"r");
+    if (!f) {
+      perror("fopen");
+    }
   }
   if (f) 
     printf("Loaded pedestals from %s\n",oname);
   else
-    printf("Failed to load pedestals\n");
+    printf("Failed to load pedestals from %s\n", oname);
 
   sprintf(oname,"sta.%08x.dat",info().phy());
   FILE* s = fopen(oname,"r");
   if (!s) {
     sprintf(oname,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
     s = fopen(oname,"r");
+    if (!s) {
+      perror("fopen");
+    }
   }
   if (s)
     printf("Loaded status map from %s\n",oname);
   else
-    printf("Failed to load status map\n");
+    printf("Failed to load status map from %s\n", oname);
 
   sprintf(oname,"gain.%08x.dat",info().phy());
   FILE* g = fopen(oname,"r");
   if (!g) {
     sprintf(oname,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
     g = fopen(oname,"r");
+    if (!g) {
+      perror("fopen");
+    }
   }
   if (g)
     printf("Loaded gain map from %s\n",oname);
   else
-    printf("Failed to load gain map\n");
+    printf("Failed to load gain map from %s\n", oname);
 
   sprintf(oname,"geo.%08x.dat",info().phy());
   FILE* gm = fopen(oname,"r");
   if (!gm) {
     sprintf(oname,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
     gm = fopen(oname,"r");
+    if (!gm) {
+      perror("fopen");
+    }
   }
   if (gm)
     printf("Loaded geometry from %s\n",oname);
   else
-    printf("Failed to load geometry\n");
+    printf("Failed to load geometry from %s\n", oname);
 
   CspadGeometry::ConfigCache cfg(type,payload);
 

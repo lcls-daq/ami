@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <errno.h>
 
 static const int PixelsPerBin = 2;
 
@@ -95,9 +96,13 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
   sprintf(oname,"ped.%08x.dat",info().phy());
   FILE* f = fopen(oname,"r");
   if (!f) {
+    perror("fopen");
     printf("Failed to open %s\n",oname);
     sprintf(oname,"/reg/g/pcds/pds/pnccdcalib/ped.%08x.dat",info().phy());
     f = fopen(oname,"r");
+    if (!f) {
+      perror("fopen");
+    }
   }
   if (f) {
     printf("Loading pedestals from %s\n",oname);
