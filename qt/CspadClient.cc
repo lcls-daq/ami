@@ -230,7 +230,7 @@ void CspadClient::write_pedestals()
             break; }
         case D180:
           { unsigned x = frame.x + frame.nx - 1;
-            unsigned y = frame.y + frame.ny;
+            unsigned y = frame.y;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
                 fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-col,y+row))-doff)/dn);
