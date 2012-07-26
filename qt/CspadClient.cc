@@ -215,7 +215,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y + frame.ny - 1;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, "%f ", double(*off) + (double(entry.content(x+col,y-row))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+col,y-row))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -224,7 +224,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, "%f ", double(*off) + (double(entry.content(x+row,y+col))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+row,y+col))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -233,7 +233,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y + frame.ny;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, "%f ", double(*off) + (double(entry.content(x-col,y+row))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-col,y+row))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -242,7 +242,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y + frame.ny - 1;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, "%f ", double(*off) + (double(entry.content(x-row,y-col))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-row,y-col))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
