@@ -243,6 +243,28 @@ static double frameNoise(const uint16_t*  data,
 }
 #endif
 
+static FILE *fopen_dual(char *path1,char * path2, char *description)
+{
+  const int ErrMsgSize=200;
+  char errmsg[ErrMsgSize];
+  FILE *f = fopen(path1, "r");
+
+  if (f) {
+    printf("Loaded %s from %s\n", description, path1);
+  } else {
+    snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path1);
+    perror(errmsg);
+    f = fopen(path2, "r");
+    if (f) {
+      printf("Loaded %s from %s\n", description, path2);
+    } else {
+      snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path2);
+      perror(errmsg);
+    }
+  }
+  return (f);
+}
+
 namespace CspadGeometry {
 
   //
@@ -958,62 +980,24 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   //  Load pedestals
   //
   const int NameSize=128;
-  char oname[NameSize];
-  sprintf(oname,"ped.%08x.dat",info().phy());
-  FILE* f = fopen(oname,"r");
-  if (!f) {
-    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
-    f = fopen(oname,"r");
-    if (!f) {
-      perror("fopen");
-    }
-  }
-  if (f) 
-    printf("Loaded pedestals from %s\n",oname);
-  else
-    printf("Failed to load pedestals from %s\n", oname);
+  char oname1[NameSize];
+  char oname2[NameSize];
 
-  sprintf(oname,"sta.%08x.dat",info().phy());
-  FILE* s = fopen(oname,"r");
-  if (!s) {
-    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
-    s = fopen(oname,"r");
-    if (!s) {
-      perror("fopen");
-    }
-  }
-  if (s)
-    printf("Loaded status map from %s\n",oname);
-  else
-    printf("Failed to load status map from %s\n", oname);
+  sprintf(oname1,"ped.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
+  FILE *f = fopen_dual(oname1, oname2, "pedestals");
 
-  sprintf(oname,"gain.%08x.dat",info().phy());
-  FILE* g = fopen(oname,"r");
-  if (!g) {
-    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
-    g = fopen(oname,"r");
-    if (!g) {
-      perror("fopen");
-    }
-  }
-  if (g)
-    printf("Loaded gain map from %s\n",oname);
-  else
-    printf("Failed to load gain map from %s\n", oname);
+  sprintf(oname1,"sta.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
+  FILE *s = fopen_dual(oname1, oname2, "status map");
 
-  sprintf(oname,"geo.%08x.dat",info().phy());
-  FILE* gm = fopen(oname,"r");
-  if (!gm) {
-    sprintf(oname,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
-    gm = fopen(oname,"r");
-    if (!gm) {
-      perror("fopen");
-    }
-  }
-  if (gm)
-    printf("Loaded geometry from %s\n",oname);
-  else
-    printf("Failed to load geometry from %s\n", oname);
+  sprintf(oname1,"gain.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
+  FILE *g = fopen_dual(oname1, oname2, "gain map");
+
+  sprintf(oname1,"geo.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
+  FILE *gm = fopen_dual(oname1, oname2, "geometry");
 
   CspadGeometry::ConfigCache cfg(type,payload);
 
