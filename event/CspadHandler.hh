@@ -33,7 +33,7 @@ namespace Ami {
     void _damaged  ();
   private:
     void _create_entry(const CspadGeometry::ConfigCache& cfg,
-                       FILE* f, FILE* s, FILE* g, FILE* gm,
+                       FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                        CspadGeometry::Detector*& detector,
                        EntryImage*& entry, 
                        unsigned max_pixels); 

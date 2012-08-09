@@ -384,12 +384,13 @@ namespace CspadMiniGeometry {
                                                                         \
       uint16_t* const* sta = &_sta[0];                                  \
       int k=0;                                                          \
+      const unsigned no_threshold = -1;                                 \
       for(unsigned i=0; i<ColBins; i++) {				\
         for(unsigned j=0; j<RowBins; j++,k++) {                         \
           const unsigned x = CALC_X(column,i,j);                        \
           const unsigned y = CALC_Y(row   ,i,j);                        \
           if (*sta == _off+k) {                                         \
-            image.content(-1UL,x,y);                                    \
+            image.content(no_threshold,x,y);                            \
             sta++;                                                      \
           }                                                             \
           else {                                                        \
@@ -611,9 +612,10 @@ namespace CspadMiniGeometry {
     void     setup(double v0,
                    double v1)
     {
+      const unsigned no_threshold = -1;
       for(unsigned k=0; k<_nbinsy; k++)
         for(unsigned j=0; j<_nbinsx; j++)
-          _values->content(-1UL,j,k);
+          _values->content(no_threshold,j,k);
 
       _detector.fill(*_values,v0,v1);
     }
@@ -712,6 +714,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   if (f ) fclose(f);
   if (s ) fclose(s);
   if (g ) fclose(g);
+  if (rms) fclose(rms);
   if (gm) fclose(gm);
 }
 
@@ -723,6 +726,7 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   if (f ) rewind(f);
   if (s ) rewind(s);
   if (g ) rewind(g);
+  if (rms) rewind(rms);
   if (gm) rewind(gm);
 
   if (detector)
@@ -754,7 +758,6 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   entry->info(0,EntryImage::Normalization);
   entry->invalid();
 }
-
 
 void CspadMiniHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void CspadMiniHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}

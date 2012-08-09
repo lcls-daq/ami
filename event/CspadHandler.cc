@@ -6,6 +6,8 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/PeakFinder.hh"
+#include "ami/data/PeakFinderFn.hh"
 
 #include "pdsdata/cspad/ElementIterator.hh"
 #include "pdsdata/cspad/ElementHeader.hh"
@@ -365,6 +367,8 @@ namespace CspadGeometry {
     virtual void fill(Ami::DescImage& image) const = 0;
     virtual void fill(Ami::EntryImage& image,
           const uint16_t*  data) const = 0;
+    virtual void fill(Ami::EntryImage& image,
+                      double v0, double v1) const = 0;
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
         unsigned& y0, unsigned& y1) const = 0;
@@ -374,20 +378,34 @@ namespace CspadGeometry {
     uint16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-#define AsicTemplate(classname,bi,PPB)          \
-  class classname : public Asic {         \
-  public:               \
+#define AsicTemplate(classname,bi,PPB)                                  \
+  class classname : public Asic {                                       \
+  public:                                                               \
     classname(double x, double y) : Asic(x,y,PPB) {}                    \
-    void boundary(unsigned& dx0, unsigned& dx1,       \
-      unsigned& dy0, unsigned& dy1) const {     \
-      FRAME_BOUNDS;             \
-      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }         \
-    void fill(Ami::DescImage& image) const {        \
-      FRAME_BOUNDS;             \
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);       \
-    }                 \
-    void fill(Ami::EntryImage& image,         \
-        const uint16_t*  data) const { bi }                       \
+    void boundary(unsigned& dx0, unsigned& dx1,                         \
+                  unsigned& dy0, unsigned& dy1) const {                 \
+      FRAME_BOUNDS;                                                     \
+      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }                                 \
+    void fill(Ami::DescImage& image) const {                            \
+      FRAME_BOUNDS;                                                     \
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);                           \
+    }                                                                   \
+    void fill(Ami::EntryImage& image,                                   \
+              const uint16_t*  data) const { bi }                       \
+    void fill(Ami::EntryImage& image,                                   \
+              double v0, double v1) const {                             \
+      const unsigned ColBins = CsPad::ColumnsPerASIC;                   \
+      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
+                                                                        \
+      int k=0;                                                          \
+      for(unsigned i=0; i<ColBins; i++) {                               \
+        for(unsigned j=0; j<RowBins; j++,k++) {                         \
+          const unsigned x = CALC_X(column,i,j);                        \
+          const unsigned y = CALC_Y(row   ,i,j);                        \
+          image.content(unsigned(v0),x,y);                              \
+        }                                                               \
+      }                                                                 \
+    }                                                                   \
   }
 
 #define F1 (*data++)
@@ -430,7 +448,7 @@ namespace CspadGeometry {
 
   class AsicP : public Asic {
   public:
-    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain) :
+    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain, FILE* rms) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
@@ -481,6 +499,23 @@ namespace CspadGeometry {
         }
       }
       
+      if (rms) {
+        float* r = _rms;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          getline(&linep, &sz, rms);
+          *r++ = strtod(linep,&pEnd);
+          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *r++ = strtod(pEnd,&pEnd);
+        }
+      }
+      else {
+        float* r = _rms;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *r++ = 1.;
+        }
+      }
+      
       if (linep) {
         free(linep);
       }
@@ -490,26 +525,50 @@ namespace CspadGeometry {
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    float     _rms[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
   static uint16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
-#define AsicTemplate(classname,bi,PPB)          \
-  class classname : public AsicP {          \
-  public:               \
+#define AsicTemplate(classname,bi,PPB)                                  \
+  class classname : public AsicP {                                      \
+  public:                                                               \
     classname(double x, double y,                                       \
-              FILE* p, FILE* s, FILE* g)                                \
-      : AsicP(x,y,PPB,p,s,g) {}                                         \
-    void boundary(unsigned& dx0, unsigned& dx1,       \
-      unsigned& dy0, unsigned& dy1) const {     \
-      FRAME_BOUNDS;             \
-      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }         \
-    void fill(Ami::DescImage& image) const {        \
-      FRAME_BOUNDS;             \
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);       \
-    }                 \
-    void fill(Ami::EntryImage& image,         \
-        const uint16_t*  data) const {                            \
+              FILE* p, FILE* s, FILE* g, FILE* rms)                     \
+      : AsicP(x,y,PPB,p,s,g,rms) {}                                     \
+    void boundary(unsigned& dx0, unsigned& dx1,                         \
+                  unsigned& dy0, unsigned& dy1) const {                 \
+      FRAME_BOUNDS;                                                     \
+      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }                                 \
+    void fill(Ami::DescImage& image) const {                            \
+      FRAME_BOUNDS;                                                     \
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);                           \
+    }                                                                   \
+    void fill(Ami::EntryImage& image,                                   \
+              double v0, double v1) const                               \
+    {                                                                   \
+      const unsigned ColBins = CsPad::ColumnsPerASIC;			\
+      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
+                                                                        \
+      uint16_t* const* sta = &_sta[0];                                  \
+      int k=0;                                                          \
+      const unsigned no_threshold = -1;                                 \
+      for(unsigned i=0; i<ColBins; i++) {				\
+        for(unsigned j=0; j<RowBins; j++,k++) {                         \
+          const unsigned x = CALC_X(column,i,j);                        \
+          const unsigned y = CALC_Y(row   ,i,j);                        \
+          if (*sta == _off+k) {                                         \
+            image.content(no_threshold,x,y);                            \
+            sta++;                                                      \
+          }                                                             \
+          else {                                                        \
+            image.content(unsigned(v0 + v1*_rms[k]*_gn[k]),x,y);        \
+          }                                                             \
+        }                                                               \
+      }									\
+    }                                                                   \
+    void fill(Ami::EntryImage& image,                                   \
+              const uint16_t*  data) const {                            \
       bool lsuppress  = image.desc().options()&1;                       \
       bool lcorrectfn = image.desc().options()&2;                       \
       bool lnopedestal= image.desc().options()&4;                       \
@@ -563,8 +622,8 @@ namespace CspadGeometry {
   class TwoByTwo {
   public:
     TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
-       const Ami::Cspad::TwoByTwoAlignment& a,
-             FILE* f, FILE* s, FILE* g) 
+             const Ami::Cspad::TwoByTwoAlignment& a,
+             FILE* f, FILE* s, FILE* g, FILE* rms) 
     {
       for(unsigned i=0; i<2; i++) {
   double tx(x), ty(y);
@@ -573,27 +632,27 @@ namespace CspadGeometry {
           switch(r) {
           case D0: 
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g); break;
-            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g); break;
-            default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g); break;
+            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms); break;
+            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g,rms); break;
+            default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g,rms); break;
             } break;
           case D90:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g); break;
-            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g); break;
-            default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g); break;
+            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g,rms); break;
+            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g,rms); break;
+            default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g,rms); break;
             } break;
           case D180:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g); break;
-            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g); break;
-            default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g); break;
+            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
+            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g,rms); break;
+            default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g,rms); break;
             } break;
           case D270:
             switch(ppb) {
-            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g); break;
-            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g); break;
-            default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g); break;
+            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
+            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g,rms); break;
+            default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g,rms); break;
             } break;
           default:
             break;
@@ -644,6 +703,12 @@ namespace CspadGeometry {
     {
       asic[sector_id&1]->fill(image,&(sector->pixel[0][0]));
     }
+    void fill(Ami::EntryImage& image,
+              double v0, double v1) const
+    {
+      for(unsigned ie=0; ie<2; ie++)
+        asic[ie]->fill(image,v0,v1);
+    }
   public:
     Asic* asic[2];
   };
@@ -652,18 +717,18 @@ namespace CspadGeometry {
   public:
     Quad(double x, double y, unsigned ppb, Rotation r, 
          const Ami::Cspad::QuadAlignment& align,
-         FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0)
+         FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0, FILE* rmsFile=0)
     {
       static Rotation _tr[] = {  D0  , D90 , D180, D90 ,
          D90 , D180, D270, D180,
          D180, D270, D0  , D270,
          D270, D0  , D90 , D0 };
       for(unsigned i=0; i<4; i++) {
-  Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
-  double tx(x), ty(y);
-  _transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
-  element[i] = new TwoByTwo( tx, ty, ppb, _tr[r*NPHI+i], ta, 
-                                   pedFile, staFile, gainFile );
+        Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
+        double tx(x), ty(y);
+        _transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
+        element[i] = new TwoByTwo( tx, ty, ppb, _tr[r*NPHI+i], ta, 
+                                   pedFile, staFile, gainFile, rmsFile );
       }
     }
     ~Quad() { for(unsigned i=0; i<4; i++) delete element[i]; }
@@ -681,9 +746,15 @@ namespace CspadGeometry {
       unsigned id;
       const Pds::CsPad::Section* s;
       while( (s=iter.next(id)) ) {
-  element[id>>1]->fill(image,s,id);
+        element[id>>1]->fill(image,s,id);
       }
     }      
+    void fill(Ami::EntryImage& image,
+              double v0, double v1) const
+    {
+      for(unsigned ie=0; ie<4; ie++)
+        element[ie]->fill(image,v0,v1);
+    }
   public:
     TwoByTwo* element[4];
   };
@@ -779,16 +850,17 @@ namespace CspadGeometry {
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
+             FILE* rms,  // noise
              FILE* gm,   // geometry
              unsigned max_pixels) :
       _src   (src),
       _config(c)
     {
       unsigned smask = 
-  (_config.roiMask(0)<< 0) |
-  (_config.roiMask(1)<< 8) |
-  (_config.roiMask(2)<<16) |
-  (_config.roiMask(3)<<24);
+        (_config.roiMask(0)<< 0) |
+        (_config.roiMask(1)<< 8) |
+        (_config.roiMask(2)<<16) |
+        (_config.roiMask(3)<<24);
 
       //  Determine layout : binning, origin
       double x,y;
@@ -803,8 +875,8 @@ namespace CspadGeometry {
       _pixels = 2048-256;
       _ppb = 4;
       { const double frame = double(_pixels)*pixel_size;
-  x =  0.5*frame;
-  y = -0.5*frame;
+        x =  0.5*frame;
+        y = -0.5*frame;
       }
       quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0]);
       quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1]);
@@ -816,18 +888,18 @@ namespace CspadGeometry {
       //
       unsigned xmin(_pixels), xmax(0), ymin(_pixels), ymax(0);
       for(unsigned i=0; i<32; i++) {
-  if (smask&(1<<i)) {
-    unsigned x0,x1,y0,y1;
-    quad[i>>3]->element[(i>>1)&3]->asic[i&1]->boundary(x0,x1,y0,y1);
-    if (x0<xmin) xmin=x0;
-    if (x1>xmax) xmax=x1;
-    if (y0<ymin) ymin=y0;
-    if (y1>ymax) ymax=y1;
-  }
+        if (smask&(1<<i)) {
+          unsigned x0,x1,y0,y1;
+          quad[i>>3]->element[(i>>1)&3]->asic[i&1]->boundary(x0,x1,y0,y1);
+          if (x0<xmin) xmin=x0;
+          if (x1>xmax) xmax=x1;
+          if (y0<ymin) ymin=y0;
+          if (y1>ymax) ymax=y1;
+        }
       }
 
       for(int i=0; i<4; i++)
-  delete quad[i];
+        delete quad[i];
 
       int idx = xmax-xmin+1;
       int idy = ymax-ymin+1;
@@ -836,17 +908,17 @@ namespace CspadGeometry {
       _ppb = 1;
 #ifndef UNBINNED
       while((pixels*4/_ppb+2*bin0) > max_pixels)
-  _ppb<<=1;
+        _ppb<<=1;
 #endif
       x += pixel_size*double(bin0*int(_ppb) - xmin*4);
       y -= pixel_size*double(bin0*int(_ppb) - ymin*4);
 
       _pixels = pixels*4 + 2*bin0*_ppb;
 
-      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0],f,s,g);
-      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1],f,s,g);
-      quad[2] = new Quad(x,y,_ppb,D180,qalign[2],f,s,g);
-      quad[3] = new Quad(x,y,_ppb,D270,qalign[3],f,s,g);
+      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0],f,s,g,rms);
+      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1],f,s,g,rms);
+      quad[2] = new Quad(x,y,_ppb,D180,qalign[2],f,s,g,rms);
+      quad[3] = new Quad(x,y,_ppb,D270,qalign[3],f,s,g,rms);
 
       if (gm)
         delete[] qalign;
@@ -916,6 +988,12 @@ namespace CspadGeometry {
       delete iter;
 #endif
     }
+    void fill(Ami::EntryImage& image,
+              double v0, double v1) const
+    {
+      for(unsigned iq=0; iq<4; iq++)
+        quad[iq]->fill(image,v0,v1);
+    }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
@@ -927,6 +1005,54 @@ namespace CspadGeometry {
     mutable int _feature[16];
     unsigned _ppb;
     unsigned _pixels;
+  };
+
+  class CspadPFF : public Ami::PeakFinderFn {
+  public:
+    CspadPFF(FILE* gain,
+             FILE* rms,
+             const Detector*  detector,
+             Ami::DescImage& image) :
+      _detector(*detector),
+      _nbinsx  (image.nbinsx()),
+      _nbinsy  (image.nbinsy()),
+      _values  (new Ami::EntryImage(image))
+    {
+      image.pedcalib (true);
+      image.gaincalib(gain!=0);
+      image.rmscalib (rms !=0);
+    }
+    virtual ~CspadPFF()
+    {
+      delete _values;
+    }
+  public:
+    void     setup(double v0,
+                   double v1)
+    {
+      const unsigned no_threshold = -1;
+      for(unsigned k=0; k<_nbinsy; k++)
+        for(unsigned j=0; j<_nbinsx; j++)
+          _values->content(no_threshold,j,k);
+
+      _detector.fill(*_values,v0,v1);
+    }
+    unsigned value(unsigned j, unsigned k) const
+    {
+      return _values->content(j,k);
+    }
+    Ami::PeakFinderFn* clone() const { return new CspadPFF(*this); }
+  private:
+    CspadPFF(const CspadPFF& o) :
+      _detector(o._detector),
+      _nbinsx  (o._nbinsx),
+      _nbinsy  (o._nbinsy),
+      _values  (new Ami::EntryImage(o._values->desc())) {}
+  private:
+    const Detector&  _detector;
+    unsigned         _nbinsx;
+    unsigned         _nbinsy;
+    Ami::EntryImage* _values;
   };
 };
 
@@ -995,26 +1121,35 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
   FILE *g = fopen_dual(oname1, oname2, "gain map");
 
+  sprintf(oname1,"res.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
+  FILE *rms = fopen_dual(oname1, oname2, "noise");
+
   sprintf(oname1,"geo.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
   FILE *gm = fopen_dual(oname1, oname2, "geometry");
 
   CspadGeometry::ConfigCache cfg(type,payload);
 
-  _create_entry( cfg,f,s,g,gm, 
+  _create_entry( cfg,f,s,g,rms,gm, 
                  _detector, _entry, _max_pixels);
 #ifndef UNBINNED
-  _create_entry( cfg,f,s,g,gm, 
+  _create_entry( cfg,f,s,g,rms,gm, 
                  _unbinned_detector, _unbinned_entry, 1<<12);
 #endif
+
+  Ami::PeakFinder::register_(info().phy(),   
+                             new CspadGeometry::CspadPFF(g,rms,_detector,_entry->desc()));
+
   if (f ) fclose(f);
   if (s ) fclose(s);
   if (g ) fclose(g);
+  if (rms) fclose(rms);
   if (gm) fclose(gm);
 }
 
 void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
-                                 FILE* f, FILE* s, FILE* g, FILE* gm,
+                                 FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                                  CspadGeometry::Detector*& detector,
                                  EntryImage*& entry, 
                                  unsigned max_pixels) 
@@ -1022,12 +1157,13 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (f ) rewind(f);
   if (s ) rewind(s);
   if (g ) rewind(g);
+  if (rms) rewind(rms);
   if (gm) rewind(gm);
 
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,gm,max_pixels);
+  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels);
 
   if (entry) 
     delete entry;
