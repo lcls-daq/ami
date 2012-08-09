@@ -9,6 +9,7 @@
 #include <QtGui/QDoubleValidator>
 
 class QVBoxLayout;
+class QComboBox;
 
 #include "ami/qt/Cursors.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -85,7 +86,15 @@ namespace Ami {
       CursorLocation* _new_value;
       QVBoxLayout*    _clayout;
 
+#if 0
       QLineEdit* _expr;
+#else
+      QComboBox* _expr;
+#endif
+      QString _expr_text() const;
+      void _expr_setText(const QString&);
+      void _expr_save(char*&) const;
+      void _expr_load(const char*&);
 
       ScalarPlotDesc* _scalar_desc;
 

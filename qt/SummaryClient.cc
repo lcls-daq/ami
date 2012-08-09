@@ -96,7 +96,8 @@ namespace Ami {
           col = 0;
         }
         { int trow, tcol, trows, tcols;
-          for(unsigned i=0; i<_layout->count(); i++) {
+          const unsigned count(_layout->count());
+          for(unsigned i=0; i<count; i++) {
             _layout->getItemPosition(i, &trow, &tcol, &trows, &tcols);
             if (trow==row &&
                 tcol==col) {

@@ -64,12 +64,22 @@ CursorsX::CursorsX(QWidget* parent,
   _channel  (0),
   _frame    (frame),
   _clayout  (new QVBoxLayout),
+#if 0
   _expr     (new QLineEdit("1")),
+#else
+  _expr     (new QComboBox),
+#endif
   _force    (false)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
+#if 0
   _expr->setReadOnly(true);
+#else
+  _expr->setEditable(false);
+  _expr->addItem("1");
+  _expr->setMaxCount(10);
+#endif
 
   _new_value = new CursorLocation;
 
@@ -163,7 +173,8 @@ void CursorsX::save(char*& p) const
 {
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr ->text()) );
+  _expr_save(p);
+
   XML_insert(p, "ScalarPlotDesc", "_scalar_desc", _scalar_desc->save(p) );
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
@@ -201,7 +212,7 @@ void CursorsX::load(const char*& p)
     if      (tag.element == "QtPWidget")
       QtPWidget::load(p);
     else if (tag.name == "_expr")
-      _expr ->setText(QtPersistent::extract_s(p));
+      _expr_load(p);
     else if (tag.name == "_scalar_desc")
       _scalar_desc->load(p);
     else if (tag.name == "_cursors") {
@@ -311,7 +322,7 @@ void CursorsX::calc()
   Calculator* c = new Calculator(tr("Cursor Math"),"",
  				 variables, vops, ops);
   if (c->exec()==QDialog::Accepted)
-    _expr->setText(c->result());
+    _expr_setText(c->result());
 
    delete c;
 }
@@ -320,7 +331,7 @@ void CursorsX::plot()
 {
   // replace cursors with values
   // and integrate symbol with 8-bit char
-  QString expr = _expr->text();
+  QString expr = _expr_text();
   DescEntry* desc = _scalar_desc->desc(qPrintable(expr));
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QString new_expr;
@@ -360,7 +371,7 @@ void CursorsX::add_post()
 {
   // replace cursors with values
   // and integrate symbol with 8-bit char
-  QString expr = _expr->text();
+  QString expr = _expr_text();
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QString new_expr;
     const QString match = (*it)->name();
@@ -422,3 +433,59 @@ void CursorsX::mousePressEvent(double x, double y)
 
 void CursorsX::mouseMoveEvent   (double,double) {}
 void CursorsX::mouseReleaseEvent(double,double) {}
+
+#if 0
+
+QString CursorsX::_expr_text() const { return _expr->text(); }
+
+void CursorsX::_expr_setText(const QString& t) { _expr->setText(t); }
+
+void CursorsX::_expr_save() const
+{
+  XML_insert(p, "QLineEdit", "_expr", QtPersistent::insert(p,_expr ->text()) );
+}
+
+void CursorsX::_expr_load(const char*& p)
+{
+  _expr->setText(QtPersistent::extract_s(p));
+}
+
+#else
+
+static void _save_combobox(char*& p, QComboBox* b)
+{
+  XML_insert(p, "int", "index", QtPersistent::insert(p, b->currentIndex()));
+  for(int i=0; i<b->count(); i++)
+    XML_insert(p, "QString", "item", QtPersistent::insert(p, b->itemText(i)));
+}
+
+static void _load_combobox(const char*& p, QComboBox* b)
+{
+  int index = 0;
+  XML_iterate_open(p,tag)
+  if      (tag.element == "int")
+    index = QtPersistent::extract_i(p);
+  else if (tag.element == "QString")
+    b->insertItem(b->count(), QtPersistent::extract_s(p));
+  XML_iterate_close(QComboBox,tag);
+  b->setCurrentIndex(index);
+}
+
+void CursorsX::_expr_save(char*& p) const
+{
+  XML_insert(p, "QComboBox", "_expr", _save_combobox(p,_expr) );
+}
+
+void CursorsX::_expr_load(const char*& p)
+{
+  _load_combobox(p, _expr);
+}
+
+QString CursorsX::_expr_text() const { return _expr->currentText(); }
+void CursorsX::_expr_setText(const QString& t) 
+{
+  _expr->insertItem(0, t); 
+  _expr->setCurrentIndex(0);
+}
+
+#endif
