@@ -2,8 +2,8 @@
 #define Ami_ClientManager_hh
 
 #include "ami/data/Message.hh"
+#include "ami/service/ConnectionHandler.hh"
 #include "ami/service/Ins.hh"
-#include "ami/service/Routine.hh"
 #include "ami/service/Semaphore.hh"
 
 #include <list>
@@ -14,20 +14,18 @@ class iovec;
 namespace Ami {
 
   class AbsClient;
+  class ConnectionManager;
   class ClientSocket;
   class VClientSocket;
   class Poll;
-  class Task;
-  class Socket;
-  class TSocket;
   class Routine;
+  class Socket;
 
-  class ClientManager : public Routine {
+  class ClientManager : public ConnectionHandler {
   public:
-    ClientManager(unsigned   ppinterface,
-		  unsigned   interface,
+    ClientManager(unsigned   interface,
 		  unsigned   serverGroup,
-		  unsigned short port,
+		  ConnectionManager& connect_mgr,
 		  AbsClient& client);
     ~ClientManager();
   public:
@@ -37,8 +35,9 @@ namespace Ami {
     void configure ();
     void request_description();
     void request_payload    ();
-  public:    // Routine interface
-    virtual void routine();
+  public:    // ConnectionHandler interface
+    virtual unsigned connection_id() const;
+    virtual void     handle(int);
   public:
     void add_client      (ClientSocket&);
     void remove_client   (ClientSocket&);
@@ -50,8 +49,6 @@ namespace Ami {
   private:
     enum State { Disconnected, Connected };
     AbsClient&      _client;
-    int             _ppinterface;
-    unsigned short  _port;
     Poll*           _poll;
     State           _state;
     Message         _request;
@@ -61,13 +58,13 @@ namespace Ami {
     unsigned        _discovery_size;
     char*           _discovery;
     
-    Task*           _task;
-    TSocket*        _listen;
     Socket*         _connect;
-    Semaphore       _listen_sem;
     Semaphore       _client_sem;
     Ins             _server;
     Routine*        _reconn;
+
+    ConnectionManager& _connect_mgr;
+    unsigned           _connect_id;
   };
 
 };

@@ -19,6 +19,7 @@ class QGroupBox;
 
 namespace Ami {
   class ClientManager;
+  class ConnectionManager;
   namespace Qt {
     class AbsClient;
     class QtTopWidget;
@@ -75,10 +76,10 @@ namespace Ami {
       void waitForDiscovered();
     private:
       bool           _quiet;
-      unsigned       _ppinterface;
       unsigned       _interface;
       unsigned       _serverGroup;
-      unsigned short _clientPort;
+      unsigned       _connect_id;
+      ConnectionManager* _connect_mgr;
       ClientManager* _manager;
       FilterSetup*   _filters;
       char*          _request;

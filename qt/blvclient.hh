@@ -30,7 +30,7 @@ namespace Ami {
 		       const Pds::DetInfo& dinfo, 
 		       unsigned            interface,
 		       const char*         host,
-		       unsigned            port );
+		       ConnectionManager&  connect_mgr);
       ~DetectorListItem() {}
     public:
       Pds::DetInfo    info;
@@ -57,9 +57,9 @@ namespace Ami {
     private:
       QWidget*           _parent;
       unsigned           _interface;
-      unsigned           _port;
       Qt::ImageClient*   _client;
       unsigned           _ip_host;
+      ConnectionManager& _connect_mgr;
       ClientManager*     _manager;
     };
 
@@ -90,7 +90,7 @@ namespace Ami {
 	  static_cast<DetectorListItem*>(_detList->item(i))->reconnect();
       }
     private:
-      unsigned short               _clientPort;
+      ConnectionManager*           _connect_mgr;
       QListWidget*                 _detList;
       DetectorListItem*            _last_item;
       QTimer*                      _reconnect_timer;

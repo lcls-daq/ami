@@ -15,6 +15,7 @@
 #include "pdsapp/config/Experiment.hh"
 #include "pdsapp/config/Reconfig_Ui.hh"
 #include "pdsapp/blv/IdleControlMsg.hh"
+#include "ami/service/ConnectionManager.hh"
 #include "ami/service/TSocket.hh"
 
 #include <QtGui/QApplication>
@@ -31,13 +32,13 @@ DetectorListItem::DetectorListItem(QListWidget*        parent,
 				   const Pds::DetInfo& dinfo, 
 				   unsigned            interface,
 				   const char*         host,
-				   unsigned            port ) :
+				   ConnectionManager&  connect_mgr) :
   QListWidgetItem(dlabel, parent),
   info           (dinfo),
   _parent        (parent),
   _interface     (interface),
-  _port          (port),
   _client        (0),
+  _connect_mgr   (connect_mgr),
   _manager       (0)
 {
   setTextAlignment(::Qt::AlignHCenter);
@@ -56,7 +57,9 @@ void DetectorListItem::show() {
 
     _client = new Ami::Qt::ImageClient(_parent, info, 0);
     
-    _manager = new ClientManager(_interface, _interface, _ip_host, _port,
+    _manager = new ClientManager(_interface, 
+                                 _ip_host, 
+                                 _connect_mgr,
 				 *_client);
     _client->managed(*_manager);
   }
@@ -67,7 +70,7 @@ void DetectorListItem::hide() { if (_client) _client->hide(); }
 DetectorSelect::DetectorSelect(unsigned interface,
 			       const SList& servers) :
   QGroupBox   ("Data"),
-  _clientPort (Port::clientPortBase()),
+  _connect_mgr(new ConnectionManager(interface)),
   _last_item  (0)
 {
   QVBoxLayout* layout = new QVBoxLayout;    
@@ -76,7 +79,7 @@ DetectorSelect::DetectorSelect(unsigned interface,
   for(SList::const_iterator it = servers.begin(); it != servers.end(); it++)
     if (strcmp(it->name,"EVR"))
       new DetectorListItem(_detList, it->name, it->info, 
-			   interface, it->host, _clientPort++);
+			   interface, it->host, *_connect_mgr);
 
   connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
 	  this, SLOT(show_detector(QListWidgetItem*)));

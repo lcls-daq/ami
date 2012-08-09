@@ -14,8 +14,7 @@ using namespace Ami;
 static const int BufferSize = 32*1024;
 
 Server::Server(Socket*         socket,
-	       Factory&        factory,
-	       const Message&  request) :
+	       Factory&        factory) :
   _socket(socket),
   _iov   (new iovec[10]),
   _iovcnt(10),
@@ -29,12 +28,6 @@ Server::Server(Socket*         socket,
 
   _iov[0].iov_base = &_reply;
   _iov[0].iov_len  = sizeof(_reply);
-
-//   _reply = request;
-//   _socket->writev(_iov,1);
-
-//   Message disc(0, Message::DiscoverReq);
-//   processIo(reinterpret_cast<const char*>(&disc), sizeof(disc));
 }
 
 Server::~Server()

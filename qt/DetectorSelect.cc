@@ -14,10 +14,10 @@
 #include "ami/qt/FilterSetup.hh"
 #include "ami/qt/RateDisplay.hh"
 #include "ami/client/ClientManager.hh"
+#include "ami/service/ConnectionManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/ConfigureRequest.hh"
-#include "ami/service/Port.hh"
 
 #include "pdsdata/xtc/BldInfo.hh"
 
@@ -68,13 +68,13 @@ DetectorSelect::DetectorSelect(const QString& label,
   QtPWidget   (0),
   //  _quiet      (quiet),
   _quiet      (false),
-  _ppinterface(ppinterface),
   _interface  (interface),
   _serverGroup(serverGroup),
-  _clientPort (Port::clientPortBase()),
-  _manager    (new ClientManager(ppinterface,
-         interface, serverGroup, 
-         _clientPort++,*this)),
+  _connect_mgr(new ConnectionManager(interface)),
+  _manager    (new ClientManager(interface,
+                                 serverGroup, 
+                                 *_connect_mgr,
+                                 *this)),
   _filters    (new FilterSetup(*_manager)),
   _request    (new char[BufferSize]),
   _rate_display(new RateDisplay(_manager)),
@@ -397,11 +397,10 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
 
  void DetectorSelect::_connect_client(Ami::Qt::AbsClient* client)
  {
-   ClientManager* manager = new ClientManager(_ppinterface,
-                _interface,     
-                _serverGroup,
-                _clientPort++,
-                *client); 
+   ClientManager* manager = new ClientManager(_interface,     
+                                              _serverGroup,
+                                              *_connect_mgr,
+                                              *client); 
    client->managed(*manager);         
    _client.push_back(client);
    //   _update_groups();

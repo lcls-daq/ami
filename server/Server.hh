@@ -16,8 +16,7 @@ namespace Ami {
   class Server : public Fd {
   public:
     Server(Socket*,
-	   Factory&,
-	   const Message&);
+	   Factory&);
     ~Server();
   public:  // Fd interface
     int fd() const;

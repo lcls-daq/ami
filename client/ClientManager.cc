@@ -13,6 +13,7 @@
 #include "ami/service/Port.hh"
 #include "ami/service/Poll.hh"
 #include "ami/service/Task.hh"
+#include "ami/service/ConnectionManager.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/Discovery.hh"
@@ -160,30 +161,27 @@ static void dump(const char* payload, unsigned size)
 }
 
 
-ClientManager::ClientManager(unsigned   ppinterface,
-			     unsigned   interface,
+ClientManager::ClientManager(unsigned   interface,
 			     unsigned   serverGroup,
-			     unsigned   short port,
+			     ConnectionManager& connect_mgr,
 			     AbsClient& client) :
-  _client    (*new Aggregator(client)),
-  _ppinterface(ppinterface),
-  _port       (port),
-  _poll      (new Poll(1000)),
-  _state     (Disconnected),
-  _request   (0,Message::NoOp),
-  _iovs      (new iovec[Step]),
+  _client     (*new Aggregator(client)),
+  _poll       (new Poll(1000)),
+  _state      (Disconnected),
+  _request    (0,Message::NoOp),
+  _iovs       (new iovec[Step]),
   _buffer_size(BufferSize),
-  _buffer    (new char[BufferSize]),
+  _buffer     (new char[BufferSize]),
   _discovery_size(BufferSize),
-  _discovery (new char[BufferSize]),
-  _task      (new Task(TaskObject("lstn"))),
-  _listen_sem(Semaphore::EMPTY),
-  _client_sem(Semaphore::EMPTY),
-  _server    (serverGroup, Port::serverPort())
+  _discovery  (new char[BufferSize]),
+  _client_sem (Semaphore::EMPTY),
+  _server     (serverGroup, Port::serverPort()),
+  _connect_mgr(connect_mgr),
+  _connect_id (connect_mgr.add(*this))
 {
   bool mcast = Ins::is_multicast(serverGroup);
-  printf("CM pp %x int %x grp %x mcast %c\n", 
-	 ppinterface, interface, serverGroup,
+  printf("CM int %x grp %x mcast %c\n", 
+	 interface, serverGroup,
 	 mcast ? 'T':'F');
 
   if (mcast) {
@@ -198,19 +196,6 @@ ClientManager::ClientManager(unsigned   ppinterface,
     _connect = so;
   }
 
-  _listen = new TSocket;
-  _port   = 0;
-  while(_port!=port) {
-    _port = port;
-    try             { _listen->bind(Ins(ppinterface,_port)); }
-    catch(Event& e) { 
-      //        printf("bind error : %s : trying port %d\n",e.what(),++port); 
-      ++port;
-    }
-  }
-  _task->call(this);
-  _listen_sem.take();
-  
   if (mcast)
     _reconn = new ServerConnect(*this, new VServerSocket(_server, interface));
   else {
@@ -223,15 +208,14 @@ ClientManager::ClientManager(unsigned   ppinterface,
 
 ClientManager::~ClientManager()
 {
+  _connect_mgr.remove(*this);
   disconnect();
   delete[] _iovs;
   delete[] _buffer;
   delete[] _discovery;
-  _task->destroy();
   _poll->stop();
   delete _poll;
   if (_reconn ) delete _reconn ;
-  if (_listen ) delete _listen ;
   delete &_client;
 }
 
@@ -256,9 +240,10 @@ void ClientManager::connect(bool svc)
     delete &_poll->fds(n--);
 
   if (_connect) {
-    _request = Message(svc ? 1:0,Message::Connect,
-                       _ppinterface,
-                       _listen->ins().portId());
+    _request = Message((svc ? (1<<31):0) | _connect_id,
+                       Message::Connect,
+                       _connect_mgr.ins().address(),
+                       _connect_mgr.ins().portId());
     _connect->write(&_request,sizeof(_request));
   }
 }
@@ -300,26 +285,15 @@ void ClientManager::configure()
   _client.configured();
 }
 
-void ClientManager::routine()
+unsigned ClientManager::connection_id() const
 {
-  while(1) {
-    if (::listen(_listen->socket(),5)<0)
-      printf("ClientManager listen failed\n");
-    else {
-      _listen_sem.give();
-      Ami::Sockaddr name;
-      unsigned length = name.sizeofName();
-      int s = ::accept(_listen->socket(),name.name(), &length);
-      if (s<0)
-	printf("ClientManager accept failed\n");
-      else {
-	ClientSocket* cs = new ClientSocket(*this,s);
-	Ins local  = cs->ins();
-	Ins remote = name.get();
-	_state = Connected;
-      }
-    }
-  }
+  return _connect_id;
+}
+
+void ClientManager::handle(int s)
+{
+  new ClientSocket(*this,s);
+  _state = Connected;
 }
 
 void ClientManager::add_client(ClientSocket& socket) 

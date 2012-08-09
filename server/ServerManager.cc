@@ -114,13 +114,13 @@ int ServerManager::processIo()
            local .address(), local .portId(),
            remote.address(), remote.portId());
 
-    Server* srv = new Server(s,*_factory,request);
+    Server* srv = new Server(s,*_factory);
     //
     //  Register for special service?
     //
     { Message msg(0,Message::NoOp);
       ::read(srv->fd(),&msg,sizeof(msg));
-      if (msg.type()==Ami::Message::Connect && msg.id())
+      if (msg.type()==Ami::Message::Connect && (msg.id()>>31))
         _servers.push_back(srv);
     }
     manage(*srv);
@@ -151,10 +151,13 @@ int ServerManager::processIo()
 	     local .address(), local .portId(),
 	     remote.address(), remote.portId());
 
-      Server* srv = new Server(s,*_factory,request);
-      if (request.id())
+      Server* srv = new Server(s,*_factory);
+      if (request.id()>>31)
         _servers.push_back(srv);
       manage(*srv);
+
+      uint32_t connect_id = request.id() & ~(1<<31);
+      ::write(s->socket(),&connect_id,sizeof(connect_id));
 
       if (_connect_sem) {
         _connect_sem->give();

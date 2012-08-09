@@ -3,7 +3,7 @@
 #include "ami/client/ClientManager.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
-#include "ami/service/Port.hh"
+#include "ami/service/ConnectionManager.hh"
 
 static const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
 static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
@@ -15,13 +15,13 @@ using namespace Ami::Python;
 Discovery::Discovery(unsigned ppinterface,
 		     unsigned interface,
 		     unsigned serverGroup) :
-  _ppinterface(ppinterface),
   _interface  (interface),
   _serverGroup(serverGroup),
-  _clientPort (Port::clientPortBase()),
-  _manager    (new ClientManager(ppinterface,
-				 interface, serverGroup, 
-				 _clientPort++,*this))
+  _connect_mgr(new ConnectionManager(interface)),
+  _manager    (new ClientManager(interface,
+                                 serverGroup, 
+				 *_connect_mgr,
+                                 *this))
 {
   _manager->connect();
 }
@@ -33,10 +33,9 @@ Discovery::~Discovery()
 
 Ami::ClientManager* Discovery::allocate(Ami::AbsClient& c)
 {
-  return new ClientManager(_ppinterface, 
-			   _interface, 
+  return new ClientManager(_interface, 
 			   _serverGroup, 
-			   _clientPort++, 
+                           *_connect_mgr,
 			   c);
 }
 

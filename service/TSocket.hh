@@ -20,7 +20,8 @@ namespace Ami {
     ~TSocket();
 
   public:
-    void bind(const Ins&) throw(Event);
+    //    void bind(const Ins&) throw(Event);
+    bool bind(const Ins&);
     void connect(const Ins&) throw(Event);
     Ins  ins() const throw(Event);
  

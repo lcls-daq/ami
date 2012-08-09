@@ -36,7 +36,12 @@ TSocket::TSocket(int s) throw(Event)
 //
 //  Bind to port to listen
 //
-void TSocket::bind(const Ins& insb) throw(Event)
+//void TSocket::bind(const Ins& insb) throw(Event)
+//
+//  I find that exceptions are not caught (in C++) when
+//  used as a module in python.  Revert to checking return value.
+//
+bool TSocket::bind(const Ins& insb)
 {
   _rhdr.msg_control    = 0;
   _rhdr.msg_controllen = 0;
@@ -46,8 +51,11 @@ void TSocket::bind(const Ins& insb) throw(Event)
     throw Event("TSocket failed to set reuseaddr",strerror(errno));
 
   Sockaddr sa(insb);
-  if (::bind(_socket, sa.name(), sa.sizeofName()) < 0)
-    throw Event("TSocket failed to bind to port",strerror(errno));
+  if (::bind(_socket, sa.name(), sa.sizeofName()) < 0) {
+    //    throw Event("TSocket failed to bind to port",strerror(errno));
+    return false;
+  }
+  return true;
 }
 
 Ins TSocket::ins() const throw(Event)

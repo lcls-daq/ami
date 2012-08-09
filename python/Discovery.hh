@@ -7,7 +7,10 @@
 #include <list>
 
 namespace Ami {
+
   class ClientManager;
+  class ConnectionManager;
+
   namespace Python {
     class Discovery : public Ami::AbsClient {
     public:
@@ -27,10 +30,9 @@ namespace Ami {
       void process         () ;
 
     private:
-      unsigned       _ppinterface;
       unsigned       _interface;
       unsigned       _serverGroup;
-      unsigned short _clientPort;
+      ConnectionManager* _connect_mgr;
       ClientManager* _manager;
     };
   };
