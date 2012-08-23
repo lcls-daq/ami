@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <netpacket/packet.h>
 
 namespace Ami {
   //
@@ -177,7 +178,8 @@ ClientManager::ClientManager(unsigned   interface,
   _client_sem (Semaphore::EMPTY),
   _server     (serverGroup, Port::serverPort()),
   _connect_mgr(connect_mgr),
-  _connect_id (connect_mgr.add(*this))
+  _connect_id (connect_mgr.add(*this)),
+  _receive_bytes(0)
 {
   bool mcast = Ins::is_multicast(serverGroup);
   printf("CM int %x grp %x mcast %c\n", 
@@ -221,8 +223,13 @@ ClientManager::~ClientManager()
 
 void ClientManager::request_payload()
 {
+  request_payload(EntryList(EntryList::Full));
+}
+
+void ClientManager::request_payload(const EntryList& req)
+{
   if (_state == Connected) {
-    _request = Message(_request.id()+1,Message::PayloadReq);
+    _request = Message(_request.id()+1,Message::PayloadReq,req);
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
   }
@@ -294,6 +301,13 @@ void ClientManager::handle(int s)
 {
   new ClientSocket(*this,s);
   _state = Connected;
+}
+
+unsigned ClientManager::receive_bytes()
+{
+  unsigned rxb = _receive_bytes - _receive_last;
+  _receive_last = _receive_bytes;
+  return rxb;
 }
 
 void ClientManager::add_client(ClientSocket& socket) 
@@ -372,7 +386,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
       //      _request = Message(_request.id()+1,_request.type());  // only need one reply
       break;
     case Message::Payload:     
-      _client.read_payload(socket,reply.payload());
+      _receive_bytes += _client.read_payload(socket,reply.payload());
       _client.process();
       break;
     default:          
@@ -396,3 +410,4 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   }
   return 1;
 }
+

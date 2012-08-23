@@ -11,6 +11,7 @@
 //=========================================================
 
 #include "ami/qt/QtPlot.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -46,6 +47,7 @@ namespace Ami {
       QString           _expr;
       unsigned          _output_signature;
       QtBase*           _plot;
+      ConfigureRequestor _req;
     };
   };
 };

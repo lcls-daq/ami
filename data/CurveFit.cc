@@ -33,6 +33,8 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
 {
   strncpy(_name, name, NAME_LEN);
   memcpy (_desc_buffer, &output, output.size());
+  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+
   if (!norm)
       _norm[0] = 0;
   else

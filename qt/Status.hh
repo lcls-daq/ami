@@ -21,7 +21,7 @@ namespace Ami {
 		   Requested,
 		   Received,
 		   Processed };
-      void set_state(State);
+      void set_state(State, unsigned=0);
       State state() const { return _state; }
     public slots:
       void update_state();
@@ -30,6 +30,8 @@ namespace Ami {
     private:
       State   _state;
       QLabel* _label;
+      unsigned _requested;
+      unsigned _received;
     };
   };
 };

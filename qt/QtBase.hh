@@ -15,7 +15,7 @@ namespace Ami {
     class QtBase {
     public:
       QtBase(const QString& title,
-	     const Ami::Entry&   entry) : _title(title), _entry(entry) {}
+	     const Ami::Entry&   entry) : _title(title), _entry(&entry) {}
       virtual ~QtBase() {}
     public:
       virtual void        dump  (FILE*) const = 0;
@@ -30,10 +30,11 @@ namespace Ami {
       virtual double      normalization() const { return 0; }
     public:
       const QString& title() const { return _title; }
-      const Ami::Entry& entry() const { return _entry; }
+      const Ami::Entry& entry() const { return *_entry; }
+      void              entry(const Ami::Entry& e) { _entry=&e; }
     private:
       QString _title;
-      const Ami::Entry& _entry;
+      const Ami::Entry* _entry;
     };
   };
 };

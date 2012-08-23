@@ -54,6 +54,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
+  _niovread        (5),
   _iovload         (new iovec[_niovload]),
   _layout          (new QVBoxLayout),
   _sem             (new Semaphore(Semaphore::EMPTY)),
@@ -114,6 +115,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
 	  connect(_channels[i], SIGNAL(changed()), this, SIGNAL(changed()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
+	  connect(box, SIGNAL(toggled(bool)), this, SLOT(update_configuration(bool)));
 	}
       }
       chanBox->setLayout(layout1);
@@ -204,7 +206,7 @@ void Ami::Qt::Client::connected()
 void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
-  printf("%s Discovered\n",qPrintable(title()));
+  //  printf("%s Discovered\n",qPrintable(title()));
 
   //  iterate through discovery and print
   FeatureRegistry::instance().insert(rx.features());
@@ -233,7 +235,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 int  Ami::Qt::Client::configure       (iovec* iov) 
 {
   _status->set_state(Status::Configured);
-  printf("%s Configure\n",qPrintable(title()));
+  //  printf("%s Configure\n",qPrintable(title()));
   if (_input_entry==0) {
     printf("input_entry not found\n");
     return 0;
@@ -265,11 +267,16 @@ int  Ami::Qt::Client::configure       (iovec* iov)
       }
     } while(lAdded);
 
+    char* hp = p;
+
     _configure(p,_input_entry->signature(),_output_signature,
 	       _channels,signatures,NCHANNELS);
 
     if (p > _request+BufferSize) {
       printf("Client request overflow: size = 0x%x\n", p-_request);
+      return 0;
+    }
+    else if (p==hp && !isVisible()) {  // nothing to show
       return 0;
     }
     else {
@@ -285,7 +292,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 //
 int  Ami::Qt::Client::configured      () 
 {
-  printf("%s Configured\n",qPrintable(title()));
+  //  printf("%s Configured\n",qPrintable(title()));
   return 0; 
 }
 
@@ -294,7 +301,7 @@ int  Ami::Qt::Client::configured      ()
 //
 void Ami::Qt::Client::read_description(Socket& socket, int len)
 {
-  printf("%s Described so\n",qPrintable(_title));
+  //  printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -316,7 +323,7 @@ void Ami::Qt::Client::read_description(Socket& socket, int len)
 
 void Ami::Qt::Client::_read_description(int size)
 {
-  printf("%s Described si\n",qPrintable(_title));
+  //  printf("%s Described si\n",qPrintable(_title));
   //  printf("description\n"); 
 
   _frame->reset();
@@ -342,16 +349,18 @@ void Ami::Qt::Client::_read_description(int size)
 //     printf("Received desc %s signature %d\n",desc->name(),desc->signature());
   }
 
-  if (_cds.totalentries()>_niovload) {
-    delete[] _iovload;
-    _iovload = new iovec[_niovload=_cds.totalentries()];
-  }
-  _cds.payload(_iovload);
-
+  bool show = isVisible();
   for(unsigned i=0; i<NCHANNELS; i++)
-    _channels[i]->setup_payload(_cds);
+    _channels[i]->setup_payload(_cds,show);
 
   _setup_payload(_cds);
+
+  int n = _cds.totalentries();
+  if (n>_niovload) {
+    delete[] _iovload;
+    _iovload = new iovec[_niovload=n];
+  }
+  _niovread = _cds.payload(_iovload, _cds.request());
 
   _status->set_state(Status::Described);
 
@@ -361,10 +370,13 @@ void Ami::Qt::Client::_read_description(int size)
 //
 //  read_payload changes plot contents
 //
-void Ami::Qt::Client::read_payload     (Socket& socket, int size)
+int Ami::Qt::Client::read_payload     (Socket& socket, int size)
 {
-  if (_status->state() == Status::Requested) {
-    socket.readv(_iovload,_cds.totalentries());
+  int nbytes = 0;
+  if (_niovread==0) 
+    ;
+  else if (_status->state() == Status::Requested) {
+    nbytes = socket.readv(_iovload,_niovread);
   }
   else if (!_one_shot) {
     //
@@ -372,7 +384,9 @@ void Ami::Qt::Client::read_payload     (Socket& socket, int size)
     //
     printf("Ami::Qt::Client::read_payload: multiple server processing not implemented\n");
   }
-  _status->set_state(Status::Received);
+  _status->set_state(Status::Received, nbytes);
+
+  return nbytes;
 }
 
 void Ami::Qt::Client::process         () 
@@ -399,8 +413,8 @@ void Ami::Qt::Client::request_payload()
   if (_status->state() == Status::Described ||
       _status->state() == Status::Processed) {
     _throttled = false;
-    _status->set_state(Status::Requested);
-    _manager->request_payload();
+    _status->set_state(Status::Requested, _cds.request().value());
+    _manager->request_payload(_cds.request());
   }
   else if (_status->state() == Status::Requested) {
     _denials++;
@@ -417,8 +431,27 @@ void Ami::Qt::Client::one_shot(bool l)
   _one_shot=l; 
 }
 
+void Ami::Qt::Client::update_configuration(bool)
+{
+  update_configuration();
+}
+
 void Ami::Qt::Client::update_configuration()
 {
   if (_manager)
     _manager->configure();
+}
+
+void Ami::Qt::Client::showEvent(QShowEvent* e)
+{
+  QWidget::showEvent(e);
+  if (_status->state() >= Status::Discovered)
+    update_configuration();
+}
+
+void Ami::Qt::Client::hideEvent(QHideEvent* e)
+{
+  QWidget::hideEvent(e);
+  if (_status->state() >= Status::Discovered)
+    update_configuration();
 }

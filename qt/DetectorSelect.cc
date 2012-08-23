@@ -15,6 +15,7 @@
 #include "ami/qt/RateDisplay.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/service/ConnectionManager.hh"
+#include "ami/service/Task.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -77,7 +78,8 @@ DetectorSelect::DetectorSelect(const QString& label,
                                  *this)),
   _filters    (new FilterSetup(*_manager)),
   _request    (new char[BufferSize]),
-  _rate_display(new RateDisplay(_manager)),
+  _rate_display(new RateDisplay(*_connect_mgr,
+                                _manager)),
   _discovered(false)
 {
   pthread_mutex_init(&_mutex, NULL);
@@ -539,8 +541,8 @@ void DetectorSelect::read_description(Socket& s,int len) {
   _rate_display->read_description(s,len);
 }
 
-void DetectorSelect::read_payload    (Socket& s,int len) {
-  _rate_display->read_payload(s,len);
+int  DetectorSelect::read_payload    (Socket& s,int len) {
+  return _rate_display->read_payload(s,len);
 }
 
 void DetectorSelect::process         () {

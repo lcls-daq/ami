@@ -84,12 +84,16 @@ void AnalysisFactory::configure(unsigned       id,
 				Cds&           cds)
 {
   pthread_mutex_lock(&_mutex);
+
+  //
+  //  Segregate the entries belonging to the configuring client
+  //
   AnList newlist;
+  AnList oldList;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
-    if (a->id() == id) {
-      delete a;
-    }
+    if (a->id() == id)
+      oldList.push_back(a);
     else
       newlist.push_back(a);
   }
@@ -149,10 +153,25 @@ void AnalysisFactory::configure(unsigned       id,
         input_cds.showentries();
       }
       else if (req.state()==ConfigureRequest::Create) {
-        const char*  p     = reinterpret_cast<const char*>(&req+1);
-        Analysis* a = new Analysis(id, *input, req.output(),
-                                   cds, *_features[req.scalars()], p);
-        _analyses.push_back(a);
+        //
+        //  If the output entry already exists, don't need to create it.
+        //
+        bool lFound=false;
+        for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
+          Analysis* a = *it;
+          if (a->output().signature()==req.output()) {
+            _analyses.push_back(a);
+            oldList.remove(a);
+            lFound=true;
+            break;
+          }
+        }
+        if (!lFound) {
+          const char*  p     = reinterpret_cast<const char*>(&req+1);
+          Analysis* a = new Analysis(id, *input, req.output(),
+                                     cds, *_features[req.scalars()], p);
+          _analyses.push_back(a);
+        }
       }
       else if (req.state()==ConfigureRequest::SetOpt) {
         unsigned o = *reinterpret_cast<const uint32_t*>(&req+1);
@@ -162,6 +181,16 @@ void AnalysisFactory::configure(unsigned       id,
     }
     payload += req.size();
   }
+
+  //
+  //  Clean up any old client entries that were not requested
+  //
+  for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
+    Analysis* a = *it;
+    delete a;
+  }
+
+  cds.showentries();
 
   //
   //  Reconfigure Post Analyses whenever the PostAnalysis variable cache changes

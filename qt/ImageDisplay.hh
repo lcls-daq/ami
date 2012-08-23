@@ -73,6 +73,16 @@ namespace Ami {
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
       unsigned               _resizeCount;
+
+    public:
+      static void enable_movie_option();
+    public slots:
+      void start_movie();
+      void update_movie();
+    private:                                
+      QAction* _movie_action;
+      QString  _movie_fname;
+      unsigned _movie_index;
     };
   };
 };

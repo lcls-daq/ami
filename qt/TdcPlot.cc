@@ -99,18 +99,30 @@ void TdcPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void TdcPlot::setup_payload(Cds& cds)
 {
-  if (_plot) delete _plot;
-  _plot = 0;
-
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
-    edit_xrange(true);
-    _plot = PlotFactory::plot(_name,*entry,
-                              noTransform,noTransform,QColor(0,0,0));
-    _plot->attach(_frame);
+
+    if (_plot && !_req.changed()) {
+      _plot->entry(*entry);
+    }
+    else {
+      if (_plot)
+        delete _plot;
+
+      edit_xrange(true);
+      _plot = PlotFactory::plot(_name,*entry,
+                                noTransform,noTransform,QColor(0,0,0));
+      _plot->attach(_frame);
+    }
   }
-  else if (_output_signature>=0)
-    printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+  else {
+    if (_output_signature>=0)
+      printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+    if (_plot) {
+      delete _plot;
+      _plot = 0;
+    }
+  }
 }
 
 void TdcPlot::configure(char*& p, unsigned input, unsigned& output)
@@ -120,9 +132,11 @@ void TdcPlot::configure(char*& p, unsigned input, unsigned& output)
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Discovery,
 						  input,
-						  _output_signature = ++output,
+						  -1,
 						  RawFilter(), op);
   p += r.size();
+  _req.request(r,output);
+  _output_signature = r.output();
 }
 
 void TdcPlot::update()

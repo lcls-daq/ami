@@ -54,6 +54,11 @@ namespace Ami {
     {
       *reinterpret_cast<uint32_t*>(this+1)=options;
     }
+    ConfigureRequest(const ConfigureRequest&);
+    ~ConfigureRequest() {}
+  public:
+    bool  operator==(const ConfigureRequest&) const;
+    void  output(unsigned s) { _output=s; }
   public:
     State  state () const { return State (_state); }
     Source source() const { return Source(_source); }

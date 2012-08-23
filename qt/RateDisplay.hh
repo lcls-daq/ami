@@ -12,18 +12,20 @@ namespace Ami {
   class DiscoveryRx;
   class Socket;
   class ClientManager;
+  class ConnectionManager;
   namespace Qt {
     class RateCalculator;
+    class RecvCalculator;
     class RateDisplay : public Timer {
     public:
-      RateDisplay(ClientManager*);
+      RateDisplay(ConnectionManager&,ClientManager*);
       ~RateDisplay();
     public:
       void addLayout       (QVBoxLayout*);
       int  configure       (char*&);
       void discovered      (const DiscoveryRx&);
       void read_description(Socket&,int);
-      void read_payload    (Socket&,int);
+      int  read_payload    (Socket&,int);
       void process         ();
     public:  // Timer interface
       void     expired();
@@ -39,6 +41,7 @@ namespace Ami {
       iovec*          _iovload;
       RateCalculator* _inputCalc;
       RateCalculator* _acceptCalc;
+      RecvCalculator* _netCalc;
       Task*           _task;
       volatile bool   _ready;
     };

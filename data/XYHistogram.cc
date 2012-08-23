@@ -23,6 +23,7 @@ XYHistogram::XYHistogram(const DescEntry& output,
   _output    (0)
 {
   memcpy(_desc_buffer, &output, output.size());
+  memset(_desc_buffer+output.size(), 0, DESC_LEN-output.size());
 }
 
 XYHistogram::XYHistogram(const char*& p, const DescEntry& input) :

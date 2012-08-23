@@ -25,6 +25,7 @@ namespace Ami {
     DescEntry& output () const;
   private:
     unsigned     _id;
+    unsigned     _output;
     AbsFilter*   _filter;
     AbsOperator* _op;
     const Entry& _input;

@@ -132,38 +132,48 @@ void CurveFitPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void CurveFitPlot::setup_payload(Cds& cds)
 {
-  if (_plot) {
-    delete _plot;
-    _plot = 0;
-  }
-    
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
-    switch(entry->desc().type()) {
-    case Ami::DescEntry::TH1F: 
-      _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    case Ami::DescEntry::Scalar:  // create a chart from a scalar
-      _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  QColor(0,0,0));
-      break;
-    case Ami::DescEntry::Prof: 
-      _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    case Ami::DescEntry::Scan: 
-      _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    default:
-      printf("CurveFitPlot type %d not implemented yet\n",entry->desc().type()); 
-      return;
+    if (_plot && !_req.changed()) {
+      _plot->entry(*entry);
     }
-    _plot->attach(_frame);
+    else {
+      if (_plot)
+        delete _plot;
+
+      switch(entry->desc().type()) {
+      case Ami::DescEntry::TH1F: 
+        _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      case Ami::DescEntry::Scalar:  // create a chart from a scalar
+        _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
+                            QColor(0,0,0));
+        break;
+      case Ami::DescEntry::Prof: 
+        _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      case Ami::DescEntry::Scan: 
+        _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      default:
+        printf("CurveFitPlot type %d not implemented yet\n",entry->desc().type()); 
+        _plot = 0;
+        return;
+      }
+      _plot->attach(_frame);
+    }
   }
-  else if (_output_signature>=0)
-    printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+  else {
+    if (_output_signature>=0)
+      printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+    if (_plot) {
+      delete _plot;
+      _plot = 0;
+    }
+  }
 }
 
 void CurveFitPlot::configure(char*& p, unsigned input, unsigned& output,
@@ -175,10 +185,12 @@ void CurveFitPlot::configure(char*& p, unsigned input, unsigned& output,
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Analysis,
 						  input_signature,
-						  _output_signature = ++output,
+                                                  -1,
 						  *channels[_channel]->filter().filter(),
 						  *_fit);
   p += r.size();
+  _req.request(r, output);
+  _output_signature = ++output;
 }
 
 void CurveFitPlot::update()

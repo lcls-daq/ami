@@ -35,9 +35,11 @@ namespace Ami {
     void configure ();
     void request_description();
     void request_payload    ();
+    void request_payload    (const EntryList& request);
   public:    // ConnectionHandler interface
     virtual unsigned connection_id() const;
     virtual void     handle(int);
+    virtual unsigned receive_bytes();
   public:
     void add_client      (ClientSocket&);
     void remove_client   (ClientSocket&);
@@ -65,6 +67,8 @@ namespace Ami {
 
     ConnectionManager& _connect_mgr;
     unsigned           _connect_id;
+    unsigned           _receive_bytes;
+    unsigned           _receive_last;
   };
 
 };

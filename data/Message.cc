@@ -11,6 +11,13 @@ Message::Message(unsigned id, Type type, unsigned payload, unsigned offset) :
   _payload(payload)
 {}
 
+Message::Message(unsigned id, Type type, const EntryList& l) :
+  _id     (id),
+  _type   (type)
+{
+  l.serialize(_offset,_payload);
+}
+
 Message::Message(const Message& o) :
   _id     (o._id),
   _type   (o._type),
@@ -29,6 +36,8 @@ void Message::type(Type t) {_type = t;}
 unsigned Message::offset() const {return _offset;}
 
 unsigned Message::payload() const {return _payload;}
+
+EntryList Message::list() const { return EntryList(_offset, _payload); }
 
 void Message::payload(const iovec* iov, unsigned iovcnt) 
 {

@@ -8,6 +8,7 @@
 #include <QtCore/QStringList>
 
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 class QButtonGroup;
 class QLineEdit;
@@ -47,7 +48,12 @@ namespace Ami {
       int           configure(char*& p, unsigned input, unsigned& output,
 			      ChannelDefinition* ch[], int*, int,
 			      ConfigureRequest::Source = ConfigureRequest::Discovery);
-      void          setup_payload  (Cds&);
+    private:
+      bool          _configure(char* p, unsigned input, unsigned output,
+                               ChannelDefinition* ch[], int*, int,
+                               ConfigureRequest::Source = ConfigureRequest::Discovery);
+    public:
+      void          setup_payload  (Cds&,bool=true);
       unsigned      output_signature() const;
     public slots:
       void load_reference();
@@ -79,6 +85,7 @@ namespace Ami {
       QLineEdit*    _scale;
       bool          _operator_is_ref;
       bool          _configured_ref;
+      ConfigureRequestor _req;
     };
   };
 };

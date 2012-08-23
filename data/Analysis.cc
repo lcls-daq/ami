@@ -18,6 +18,7 @@ Analysis::Analysis(unsigned      id,
 		   FeatureCache& cache,
 		   const char*&  p) :
   _id    (id),
+  _output(output),
   _input (input),
   _cds   (cds)
 {
@@ -33,7 +34,7 @@ Analysis::Analysis(unsigned      id,
 
 Analysis::~Analysis() 
 {
-  _cds.remove(_cds.entry(output().signature()));
+  _cds.remove(_cds.entry(_output));
   delete _filter;
   // bug, possibly double free of entries
   // consequence of not deleting is a small mem-leak

@@ -2,6 +2,7 @@
 #define AmiQt_EnvPost_hh
 
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 namespace Ami {
   class Cds;
@@ -27,6 +28,7 @@ namespace Ami {
       DescCache*     _desc;
       Ami::ScalarSet _set;
       unsigned       _output_signature;
+      ConfigureRequestor _req;
     };
   };
 };

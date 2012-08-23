@@ -217,10 +217,12 @@ void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Analysis,
 						  input_signatures[_input],
-						  input = ++output,
+						  -1,
 						  *input_channels[_input]->filter().filter(),
 						  op);
   p += r.size();
+  _req.request(r, output);
+  input = r.output();
 
   int signatures[NCHANNELS];
   for(int i=0; i<NCHANNELS; i++)

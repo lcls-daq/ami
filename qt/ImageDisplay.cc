@@ -33,6 +33,7 @@ using namespace Ami::Qt;
 
 static const double no_scale[] = {0, 1000};
 static NullTransform nullTransform;
+static bool _enable_movie_option = false;
 
 Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
   QWidget(0),
@@ -64,6 +65,8 @@ void Ami::Qt::ImageDisplay::_layout()
     view_menu->addSeparator();
     _menu_bar->addMenu(view_menu);
     _menu_bar->addAction(new PrintAction(*this));
+    if (_enable_movie_option)
+      _movie_action = _menu_bar->addAction("Start movie"    , this, SLOT(start_movie()));
   }
 
   _mainLayout->setSpacing(1);
@@ -333,4 +336,38 @@ void Ami::Qt::ImageDisplay::update_timedisplay()
     }
     _resizeCount -= 1;
   }
+}
+
+void Ami::Qt::ImageDisplay::enable_movie_option() { _enable_movie_option = true; }
+
+void Ami::Qt::ImageDisplay::start_movie()
+{
+  if (disconnect(this, SIGNAL(redraw()), this, SLOT(update_movie()))) {
+    _movie_action->setText("Start Movie");
+  }
+  else {
+    _movie_action->setText("Stop Movie");
+
+    char time_buffer[32];
+    time_t seq_tm = time(NULL);
+    strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
+
+    QString def("ami");
+    def += "_";
+    def += time_buffer;
+    _movie_fname = def;
+    _movie_index = 0;
+
+    printf("Start movie %s\n",qPrintable(def));
+    connect(this, SIGNAL(redraw()), this, SLOT(update_movie()));
+  }
+}
+
+void Ami::Qt::ImageDisplay::update_movie()
+{
+  QString fname = QString("%1%2.jpg").arg(_movie_fname).arg(double(_movie_index++)*1e-4,0,'f',4);
+  QPixmap pixmap(QWidget::size());
+  QWidget::render(&pixmap);
+  pixmap.toImage().save(fname);
+  printf("Saved %s\n",qPrintable(fname));
 }

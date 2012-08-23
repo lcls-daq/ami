@@ -80,7 +80,7 @@ int Server::processIo()
     if (_described) {
       int n = _cds.payload()+1;
       _adjust(n);
-      _cds.payload(_iov+1);
+      n = _cds.payload(_iov+1, request.list())+1;
       reply(request.id(), Message::Payload, n); 
       //      _cds.invalidate_payload();
     }

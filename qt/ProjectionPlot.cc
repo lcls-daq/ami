@@ -217,14 +217,15 @@ void ProjectionPlot::setup_payload(Cds& cds)
 
 void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
 {
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Discovery,
-                                                  input,
-                                                  ++output,
-                                                  RawFilter(),
-                                                  *_proj);
-  p += r.size();
-  input = output;
+  ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                    ConfigureRequest::Discovery,
+                                                    input,
+                                                    -1,
+                                                    RawFilter(),
+                                                    *_proj);
+  p += req.size();
+  _req.request(req, output);
+  input = req.output();
 
   int signatures[NCHANNELS];
   for(int i=0; i<NCHANNELS; i++)

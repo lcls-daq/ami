@@ -2,6 +2,7 @@
 #define AmiQt_CurveFitPlot_hh
 
 #include "ami/qt/QtPlot.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -45,6 +46,7 @@ namespace Ami {
       unsigned _output_signature;
       QtBase*  _plot;
       DescEntry* _desc;
+      ConfigureRequestor _req;
     };
   };
 };

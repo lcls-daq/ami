@@ -1,6 +1,7 @@
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageColorControl.hh"
+#include "ami/qt/ImageDisplay.hh"
 #include "ami/service/Ins.hh"
 
 #include <QtGui/QApplication>
@@ -16,7 +17,8 @@ static void usage(char* p)
          "-s <address>   : server multicast group or proxy address\n" \
          "-f <path>      : default path for load/save operations\n" \
          "-F <path>      : file to load initial configuration\n" \
-         "-C <int>       : color palette choice (0-jette, 1-radiation)\n", p);
+         "-C <int>       : color palette choice (0-jette, 1-radiation)" \
+         "-E             : expert mode\n",p);
 }
 
 int main(int argc, char **argv) 
@@ -44,6 +46,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-C")==0) {
       Ami::Qt::ImageColorControl::set_color_choice(atoi(argv[++i]));
+    }
+    else if (strcmp(argv[i],"-E")==0) {
+      Ami::Qt::ImageDisplay::enable_movie_option();
     }
     else if (strcmp(argv[i],"-h")==0 ||
              strcmp(argv[i],"-?")==0) {

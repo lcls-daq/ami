@@ -2,6 +2,7 @@
 #define AmiQt_EdgePlot_hh
 
 #include "ami/qt/QtPlot.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -48,6 +49,7 @@ namespace Ami {
       unsigned _output_signature;
       QtBase*  _plot[MAX_FINDERS];
       QColor   &getcolor(int i);
+      ConfigureRequestor _req[MAX_FINDERS];
     };
   };
 };

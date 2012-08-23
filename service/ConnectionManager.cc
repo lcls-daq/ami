@@ -87,3 +87,12 @@ void ConnectionManager::routine()
     
   }
 }
+
+unsigned ConnectionManager::receive_bytes() 
+{
+  unsigned rxb=0;
+  for(std::list<ConnectionHandler*>::iterator it = _handlers.begin();
+      it!=_handlers.end(); it++)
+    rxb += (*it)->receive_bytes();
+  return rxb;
+}

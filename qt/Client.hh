@@ -52,11 +52,12 @@ namespace Ami {
       int  configured      ();
       void discovered      (const DiscoveryRx&);
       void read_description(Ami::Socket&,int);
-      void read_payload    (Ami::Socket&,int);
+      int  read_payload    (Ami::Socket&,int);
       void process         ();
       QWidget* window()  { return _layout->parentWidget()->window(); }
     public slots:
       void update_configuration();
+      void update_configuration(bool);
       void _read_description(int);
     signals:
       void description_changed(int);
@@ -75,6 +76,8 @@ namespace Ami {
       virtual void _update() {}
       virtual void _prototype(const DescEntry&) {}
 
+      virtual void showEvent(QShowEvent*);
+      virtual void hideEvent(QHideEvent*);
     protected:
       enum {NCHANNELS=4};
       ChannelDefinition* _channels[NCHANNELS];
@@ -102,6 +105,7 @@ namespace Ami {
     private:
       ClientManager*  _manager;
       unsigned        _niovload;
+      unsigned        _niovread;
       iovec*          _iovload;
     protected:
       QLayout*        _layout;

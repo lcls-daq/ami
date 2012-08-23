@@ -71,6 +71,7 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _entry     (0)
 {
   memcpy (_desc_buffer, &output, output.size());
+  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
 }
 
 PeakFitPlot::PeakFitPlot(const DescEntry& output, 

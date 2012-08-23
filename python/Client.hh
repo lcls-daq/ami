@@ -37,7 +37,7 @@ namespace Ami {
       int  configured      ();
       void discovered      (const DiscoveryRx&);
       void read_description(Ami::Socket&,int);
-      void read_payload    (Ami::Socket&,int);
+      int  read_payload    (Ami::Socket&,int);
       void process         ();
     private:
       Pds::DetInfo        _info;

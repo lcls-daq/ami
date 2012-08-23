@@ -124,7 +124,6 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g)
     if (qx < bx) { qr = (qy<by) ? D180 : D90; }
     else         { qr = (qy<by) ? D270 : D0;  }
 
-    printf("Quad %d => rotation %d\n",iq,qr);
 /*
 **  Index the sections accordingly.
 **

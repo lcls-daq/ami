@@ -6,6 +6,7 @@
 #include "ami/data/UserModule.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/ImageColorControl.hh"
+#include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/server/ServerManager.hh"
@@ -26,7 +27,9 @@ static void usage(char* progname) {
 	  "         [-s <server mcast group>]\n"
 	  "         [-L <user plug-in path>]\n"
 	  "         [-o <filename for debugging messages>]\n"
-	  "         [-e <filename for error messages>]\n", progname);
+	  "         [-e <filename for error messages>]\n"
+          "         [-C <color palette>]"
+          "         [-E (expert mode>]\n", progname);
 }
 
 
@@ -79,13 +82,16 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:C:L:TW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:C:L:ETW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
       break;
     case 'C':
       Ami::Qt::ImageColorControl::set_color_choice(atoi(optarg));
+      break;
+    case 'E':
+      Ami::Qt::ImageDisplay::enable_movie_option();
       break;
     case 'L':
       Ami::AmiApp::load_syms<UserModule,create_m>(userModules, optarg);

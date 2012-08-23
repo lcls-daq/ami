@@ -194,9 +194,9 @@ void Client::read_description(Socket& socket,int len)
   sem_post(&_initial_sem);
 }
 
-void Client::read_payload     (Socket& socket,int)
+int  Client::read_payload     (Socket& socket,int)
 {
-  socket.readv(_iovload,_cds.totalentries());
+  return socket.readv(_iovload,_cds.totalentries());
 }
 
 void Client::process         () 

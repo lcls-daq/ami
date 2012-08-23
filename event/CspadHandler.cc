@@ -1180,8 +1180,6 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
 
-  printf("CspadHandler created entry %p\n", entry);
-    
   if (f)
     entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
   else

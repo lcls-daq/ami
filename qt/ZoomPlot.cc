@@ -142,10 +142,12 @@ void ZoomPlot::configure(char*& p,
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Hidden,
 						  input,
-						  _signature = ++output,
+						  -1,
 						  *input_channels[_input]->filter().filter(),
 						  zoom);
   p += r.size();
+  _req.request(r,output);
+  _signature = r.output();
 #else
   _signature = input_signatures[_input];
 #endif

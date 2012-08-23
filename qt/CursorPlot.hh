@@ -7,6 +7,7 @@
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 namespace Ami {
   class Cds;
@@ -41,6 +42,7 @@ namespace Ami {
       BinMath* _input;
       unsigned _output_signature;
       QtBase*  _plot;
+      ConfigureRequestor _req;
     };
   };
 };

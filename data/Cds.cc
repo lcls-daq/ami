@@ -38,6 +38,7 @@ void Cds::add(Entry* entry, unsigned signature)
   printf("Cds %s added entry %s (%p) type %d signature %d nentries %d\n",
    	 _desc.name(),entry->desc().name(),entry,entry->desc().type(),signature,totalentries());
 #endif
+  _request.insert(_entries.size()-1);
 }
 
 void Cds::remove(Entry* entry)
@@ -65,6 +66,7 @@ void Cds::reset()
     delete entry;
   }
   _entries.clear();
+  _request.fill(_entries.size());
 }
 
 const Entry*   Cds::entry       (int signature) const
@@ -93,7 +95,7 @@ Entry*         Cds::entry       (int signature)
 
 void Cds::showentries() const
 {
-  printf("Serving %d entries:\n", totalentries());
+  printf("%s serving %d entries:\n", _desc.name(), totalentries());
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
     const Entry* en = *it;
     printf("  [%2d] %s\n", en->desc().signature(), en->desc().name());
@@ -114,14 +116,46 @@ void Cds::description(iovec* iov) const
   }
 }
 
-void Cds::payload(iovec* iov) const
+void Cds::payload(iovec* iov)
 {
+  _request.fill(_entries.size());
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++, iov++)
     (*it)->payload(*iov);
+}
+
+unsigned Cds::payload(iovec* iov, EntryList request)
+{
+  _request = request;
+  unsigned i=0;
+  iovec* iov_b(iov);
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++,i++)
+    if (request.contains(i))
+      (*it)->payload(*iov++);
+
+#ifdef DEBUG
+  { unsigned psize(0);
+    for(iovec* b=iov_b; b<iov; b++)
+      psize += b->iov_len;
+    printf("psize %x\n",psize); }
+#endif
+  return iov-iov_b;
 }
 
 void Cds::invalidate_payload()
 {
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++)
     (*it)->invalid();
+}
+
+void Cds::request(const Entry& entry, bool r)
+{
+  unsigned b=0;
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++, b++)
+    if ((*it)==&entry) {
+      if (r)
+        _request.insert(b);
+      else
+        _request.remove(b);
+      break;
+    }
 }

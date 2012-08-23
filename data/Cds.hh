@@ -4,6 +4,7 @@
 #include <sys/uio.h>
 
 #include "ami/data/Desc.hh"
+#include "ami/data/EntryList.hh"
 #include "ami/service/Port.hh"
 #include "ami/service/Semaphore.hh"
 
@@ -32,10 +33,14 @@ namespace Ami {
     //  serialize
     unsigned description() const { return totaldescs(); }
     unsigned payload    () const { return totalentries(); }
-    void     description(iovec*) const;
-    void     payload    (iovec*) const;
 
+    void     description(iovec*) const;
+    void     payload    (iovec*);
+    unsigned payload    (iovec*, EntryList);
     void     invalidate_payload();
+
+    void      request    (const Entry&, bool);
+    EntryList request    () const { return _request; }
 
     Semaphore& payload_sem() const { return _payload_sem; }
   private:
@@ -47,6 +52,7 @@ namespace Ami {
     EnList            _entries;
     mutable Semaphore _payload_sem;
     unsigned          _signature;
+    EntryList         _request;
   };
 };
 

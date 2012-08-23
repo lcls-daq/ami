@@ -9,6 +9,7 @@
 #include "ami/data/RawFilter.hh"
 #include "ami/service/Socket.hh"
 #include "ami/service/Task.hh"
+#include "ami/service/ConnectionManager.hh"
 
 #include <QtCore/QString>
 #include <QtGui/QLabel>
@@ -21,9 +22,36 @@ static const int BufferSize = 0x8000;
 static const unsigned InputRateSignature  = 1;
 static const unsigned AcceptRateSignature = 2;
 
+namespace Ami {
+  namespace Qt {
+    class RecvCalculator : public QLabel {
+    public:
+      RecvCalculator(ConnectionManager& m) : 
+        QLabel("-.-- MB/s"),
+        _m(m) {}
+    public:
+      void update() 
+      {
+        unsigned v = _m.receive_bytes(); 
+        if (v > 1e8)
+          setText(QString("%1 GB/s").arg(double(v)*1.e-9,0,'f',1));
+        else if (v > 1e5)
+          setText(QString("%1 MB/s").arg(double(v)*1.e-6,0,'f',1));
+        else if (v > 1e2)
+          setText(QString("%1 kB/s").arg(double(v)*1.e-3,0,'f',1));
+        else
+          setText(QString("%1  B/s").arg(double(v),0));
+      }
+    private:
+      ConnectionManager& _m;
+    };
+  };
+};
+
 using namespace Ami::Qt;
 
-RateDisplay::RateDisplay(ClientManager* manager) :
+RateDisplay::RateDisplay(ConnectionManager& conn,
+                         ClientManager* manager) :
   _manager         (manager),
   _input           (0),
   _description     (new char[BufferSize]),
@@ -32,6 +60,7 @@ RateDisplay::RateDisplay(ClientManager* manager) :
   _iovload         (new iovec[_niovload]),
   _inputCalc       (new RateCalculator),
   _acceptCalc      (new RateCalculator),
+  _netCalc         (new RecvCalculator(conn)),
   _task            (new Task(TaskObject("rattmr"))),
   _ready           (false)
 {
@@ -47,12 +76,15 @@ RateDisplay::~RateDisplay()
   delete _manager;
   delete _inputCalc;
   delete _acceptCalc;
+  delete _netCalc;
   delete[] _iovload;
   delete[] _description;
 }
 
 void RateDisplay::expired()
 {
+  _netCalc->update();
+
   if (_ready)
     _manager->request_payload();
   else
@@ -70,6 +102,9 @@ void RateDisplay::addLayout(QVBoxLayout* l)
   layout->addStretch();
   layout->addWidget(new QLabel("Filtered:"));
   layout->addWidget(_acceptCalc);
+  layout->addStretch();
+  layout->addWidget(new QLabel("Network:"));
+  layout->addWidget(_netCalc);
   rate_box->setLayout(layout);
   l->addWidget(rate_box); 
 }
@@ -138,8 +173,8 @@ void RateDisplay::read_description(Socket& s,int len) {
     _acceptCalc->set_entry(_cds.entry(AcceptRateSignature));
 }
 
-void RateDisplay::read_payload    (Socket& s,int) {
-  s.readv(_iovload,_cds.totalentries());
+int RateDisplay::read_payload    (Socket& s,int) {
+  return s.readv(_iovload,_cds.totalentries());
 }
 
 void RateDisplay::process         () {

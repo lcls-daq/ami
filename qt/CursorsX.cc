@@ -357,7 +357,7 @@ void CursorsX::plot()
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
   CursorPlot* plot = new CursorPlot(this,
-				    desc->name(),
+				    _expr_text(),
 				    _channel,
 				    new BinMath(*desc,_scalar_desc->expr(expr)));
   _plots.push_back(plot);

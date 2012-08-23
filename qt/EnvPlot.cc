@@ -118,42 +118,56 @@ void EnvPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void EnvPlot::setup_payload(Cds& cds)
 {
-  if (_plot) delete _plot;
-    
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
-    edit_xrange(true);
-
-    switch(entry->desc().type()) {
-    case Ami::DescEntry::TH1F: 
-      _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    case Ami::DescEntry::Scalar:  // create a chart from a scalar
-//       { const DescChart& d = *reinterpret_cast<const DescChart*>(_desc);
-// 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-// 			    d.pts(),QColor(0,0,0));
-// 	break; }
-      _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-			  QColor(0,0,0));
-      edit_xrange(false);
-      break;
-    case Ami::DescEntry::Prof: 
-      _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    case Ami::DescEntry::Scan: 
-      _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-			 noTransform,noTransform,QColor(0,0,0));
-      break;
-    default:
-      printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
-      return;
+    
+    if (_plot && !_req.changed()) {
+      _plot->entry(*entry);
     }
-    _plot->attach(_frame);
+
+    else {
+      if (_plot)
+        delete _plot;
+
+      edit_xrange(true);
+
+      switch(entry->desc().type()) {
+      case Ami::DescEntry::TH1F: 
+        _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      case Ami::DescEntry::Scalar:  // create a chart from a scalar
+        //       { const DescChart& d = *reinterpret_cast<const DescChart*>(_desc);
+        // 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
+        // 			    d.pts(),QColor(0,0,0));
+        // 	break; }
+        _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
+                            QColor(0,0,0));
+        edit_xrange(false);
+        break;
+      case Ami::DescEntry::Prof: 
+        _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      case Ami::DescEntry::Scan: 
+        _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        break;
+      default:
+        printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
+        return;
+      }
+      _plot->attach(_frame);
+    }
   }
-  else if (_output_signature>=0)
-    printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+  else {
+    if (_output_signature>=0)
+      printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+    if (_plot) {
+      delete _plot;
+      _plot = 0;
+    }
+  }
 }
 
 void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
@@ -163,9 +177,11 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Discovery,
 						  input,
-						  _output_signature = ++output,
+						  -1,
 						  *_filter, op, _set);
   p += r.size();
+  _req.request(r, output);
+  _output_signature = r.output();
 }
 
 void EnvPlot::update()

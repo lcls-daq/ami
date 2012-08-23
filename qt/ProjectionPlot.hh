@@ -11,6 +11,7 @@
 //=========================================================
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -70,6 +71,7 @@ namespace Ami {
       PeakFit*           _peakfit;
 
       unsigned           _showMask;
+      ConfigureRequestor _req;
     };
   };
 };

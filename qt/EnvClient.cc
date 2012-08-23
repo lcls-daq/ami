@@ -306,11 +306,12 @@ void EnvClient::_read_description(int size)
   _sem->give();
 }
 
-void EnvClient::read_payload     (Socket& socket,int)
+int  EnvClient::read_payload     (Socket& socket,int)
 {
+  int nbytes = 0;
   //  printf("payload\n"); 
   if (_status->state() == Status::Requested) {
-    socket.readv(_iovload,_cds.totalentries());
+    nbytes = socket.readv(_iovload,_cds.totalentries());
   }
   else {
     //
@@ -319,6 +320,7 @@ void EnvClient::read_payload     (Socket& socket,int)
     printf("Ami::Qt::Client::read_payload: multiple server processing not implemented\n");
   }
   _status->set_state(Status::Received);
+  return nbytes;
 }
 
 void EnvClient::process         () 

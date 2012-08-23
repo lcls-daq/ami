@@ -180,20 +180,29 @@ QColor &EdgePlot::getcolor(int i)
 
 void EdgePlot::setup_payload(Cds& cds)
 {
-  Ami::Entry* entry;
   for (int i = 0; i < _fcnt; i++) {
-    if (_plot[i]) {
-      delete _plot[i];
-      _plot[i] = 0;
-    };
-    entry  = cds.entry(_output_signature + i);
+    Ami::Entry* entry = cds.entry(_output_signature + i);
     if (entry) {
-      _plot[i] = PlotFactory::plot(_name,*entry,
-                                   noTransform,noTransform,getcolor(i));
-      _plot[i]->attach(_frame);
+      if (_plot[i] && !_req[i].changed()) {
+        _plot[i]->entry(*entry);
+      }
+      else { 
+        if (_plot[i])
+          delete _plot[i];
+
+        _plot[i] = PlotFactory::plot(_name,*entry,
+                                     noTransform,noTransform,getcolor(i));
+        _plot[i]->attach(_frame);
+      }
     }
-    else if (_output_signature + i >=0)
-      printf("%s output_signature %d not found\n",qPrintable(_name), _output_signature + i);
+    else {
+      if (_output_signature + i >=0)
+        printf("%s output_signature %d not found\n",qPrintable(_name), _output_signature + i);
+      if (_plot[i]) {
+          delete _plot[i];
+          _plot[i] = 0;
+      }
+    }
   }
 }
 
@@ -209,15 +218,17 @@ void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
   unsigned input_signature = signatures[_channel];
 
   ConfigureRequest *r;
-  _output_signature = output + 1;
   for (int i = 0; i < _fcnt; i++) {
     r = new (p) ConfigureRequest(ConfigureRequest::Create,
                                  ConfigureRequest::Analysis,
                                  input_signature,
-                                 ++output,
+                                 -1,
                                  *channels[_channel]->filter().filter(),
                                  *_finder[i]);
     p += r->size();
+    _req[i].request(*r, output);
+    if (i==0)
+      _output_signature = r->output();
   }
 }
 

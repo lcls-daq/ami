@@ -157,24 +157,25 @@ void Aggregator::read_description(Socket& socket, int len)
 
 #include "pdsdata/xtc/ClockTime.hh"
 
-void Aggregator::read_payload    (Socket& s, int sz) 
+int  Aggregator::read_payload    (Socket& s, int sz) 
 {
+  int nbytes = 0;
   if (_state != Described) 
-    return;
+    return nbytes;
 
   if ( _n == 1 ) { 
-    _client.read_payload(s,sz);
+    nbytes =_client.read_payload(s,sz);
     _remaining = 0;
   }
   else if ( _n > 1 ) {
 
     if (_remaining==0) {  // simply copy
-      s.read(_buffer->data(),sz);
+      nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
     }
     else {  // aggregate
       int niov = _cds.totalentries();
-      s.readv(_iovload,niov);
+      nbytes = s.readv(_iovload,niov);
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
@@ -222,6 +223,7 @@ void Aggregator::read_payload    (Socket& s, int sz)
       }
     }
   }
+  return nbytes;
 }
 
 //

@@ -27,6 +27,8 @@ namespace Ami {
     void       remove(ConnectionHandler&);
 
     void routine();
+
+    unsigned   receive_bytes();
   private:
     TSocket*                      _socket;
     Task*                         _task;

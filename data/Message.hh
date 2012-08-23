@@ -1,6 +1,8 @@
 #ifndef Ami_MESSAGE_HH
 #define Ami_MESSAGE_HH
 
+#include "ami/data/EntryList.hh"
+
 #include <stdint.h>
 
 class iovec;
@@ -24,12 +26,14 @@ namespace Ami {
 	      PayloadFragment};
 
     Message(unsigned id, Type type, unsigned payload=0, unsigned offset=0);
+    Message(unsigned id, Type type, const EntryList&);
     Message(const Message&);
   public:
     unsigned id     () const;
     Type     type   () const;
     unsigned offset () const;
     unsigned payload() const;
+    EntryList list  () const;
   public:
     void     id(unsigned);
     void     type(Type t);

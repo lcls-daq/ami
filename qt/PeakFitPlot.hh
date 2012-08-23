@@ -7,6 +7,7 @@
 
 #include "ami/data/PeakFitPlot.hh"
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <list>
 
@@ -46,6 +47,7 @@ namespace Ami {
       unsigned _output_signature;
 
       QtBase*  _plot;
+      ConfigureRequestor _req;
     };
   };
 };

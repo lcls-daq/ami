@@ -311,6 +311,8 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
 				 ChannelDefinition* channels[], int* signatures, int nchannels,
 				 ConfigureRequest::Source source)
 {
+  ConfigureRequest* r = 0;
+
   //  if (_mode==_None) 
   //    ;
   //  else if (_mode==_Math) {
@@ -320,16 +322,13 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
       return -1;
     }
 
-    _output_signature = ++output;
-
-    ConfigureRequest* r;
     if (_refBox) {
       _operator = new EntryRefOp(_refBox->currentIndex());
       _operator->next(&_math->op());
       r = new (p) ConfigureRequest(ConfigureRequest::Create,
                                    source,
                                    input,
-                                   _output_signature,
+                                   -1,
                                    _math->filter(),
                                    *_operator);
       _operator->next(0);
@@ -338,27 +337,29 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
       r = new (p) ConfigureRequest(ConfigureRequest::Create,
                                    source,
                                    input,
-                                   _output_signature,
+                                   -1,
                                    _math->filter(),
                                    _math->op());
     }
-    p += r->size();
     _configured_ref = false;
-    return _output_signature;
   }
   else if (_operator) {
-    _output_signature = ++output;
-    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						    source,
-						    input,
-						    _output_signature,
-						    *_filter->filter(),
-						    *_operator);
-    p += r.size();
+    r = new (p) ConfigureRequest(ConfigureRequest::Create,
+                                 source,
+                                 input,
+                                 -1,
+                                 *_filter->filter(),
+                                 *_operator);
     _configured_ref = _operator_is_ref;
-    return _output_signature;
   }
-  return -1;
+
+  if (r) {
+    p += r->size();
+    _req.request(*r, output);
+    return _output_signature = r->output();
+  }
+  else
+    return -1;
 }
 
 
@@ -367,10 +368,11 @@ Ami::AbsTransform& ChannelDefinition::transform()
   return *_transform;
 }
 
-void ChannelDefinition::setup_payload(Cds& cds)
+void ChannelDefinition::setup_payload(Cds& cds, bool vis)
 {
   Entry* entry = cds.entry(_output_signature);
   if (entry) {
+    cds.request(*entry, _show && vis);
     _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color);
     _frame.add(_plot, _show);
     /*

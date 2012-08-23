@@ -382,15 +382,17 @@ void SummaryClient::_read_description(int size)
   _sem->give();
 }
 
-void SummaryClient::read_payload     (Socket& socket,int)
+int  SummaryClient::read_payload     (Socket& socket,int)
 {
+  int nbytes = 0;
   if (_status->state() == Status::Requested) {
-    socket.readv(_iovload,_cds.totalentries());
+    nbytes = socket.readv(_iovload,_cds.totalentries());
   }
   else {
     printf("Ami::Qt::Client::read_payload unrequested payload\n");
   }
   _status->set_state(Status::Received);
+  return nbytes;
 }
 
 void SummaryClient::process         () 

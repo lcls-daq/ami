@@ -59,9 +59,11 @@ void PeakFitPost::configure(char*& p, unsigned input, unsigned& output,
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  source,
 						  input_signature,
-						  _output_signature = ++output,
+						  -1,
 						  *channels[channel]->filter().filter(),
 						  *_input);
   p += r.size();
+  _req.request(r,output);
+  _output_signature = r.output();
 }
 

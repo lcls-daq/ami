@@ -10,6 +10,7 @@ namespace Ami {
     virtual unsigned connection_id() const = 0;
 
     virtual void handle(int skt) = 0;
+    virtual unsigned receive_bytes() = 0;
   };
 };
 

@@ -11,6 +11,7 @@
 //=========================================================
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -66,6 +67,7 @@ namespace Ami {
       ImageContourProjection* _cntproj;
 
       unsigned           _showMask;
+      ConfigureRequestor _req;
     };
   };
 };

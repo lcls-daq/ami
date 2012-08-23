@@ -334,6 +334,7 @@ BinMath::BinMath(const DescEntry& output,
 {
   strncpy(_expression, expr, EXPRESSION_LEN);
   memcpy (_desc_buffer, &output, output.size());
+  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
 }
 
 #define CASETERM(type)							\

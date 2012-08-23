@@ -19,7 +19,7 @@ namespace Ami {
     virtual int  configured      () = 0;
     virtual void discovered      (const DiscoveryRx&) = 0;
     virtual void read_description(Socket&,int) = 0;
-    virtual void read_payload    (Socket&,int) = 0;
+    virtual int  read_payload    (Socket&,int) = 0;
     virtual void process         () = 0;
   };
 };

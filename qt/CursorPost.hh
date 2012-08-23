@@ -2,6 +2,7 @@
 #define AmiQt_CursorPost_hh
 
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 namespace Ami {
   class Cds;
@@ -28,6 +29,7 @@ namespace Ami {
       unsigned _channel;
       unsigned _output_signature;
       BinMath* _input;
+      ConfigureRequestor _req;
     };
   };
 };

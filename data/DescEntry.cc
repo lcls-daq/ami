@@ -28,7 +28,7 @@ DescEntry::DescEntry(const char* name,
   _xtitle[TitleSize-1] = 0;
   strncpy(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
-  _zunits[0] = 0;
+  memset(_zunits, 0, TitleSize);
 }
 
 DescEntry::DescEntry(const Pds::DetInfo& info,
@@ -56,7 +56,7 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _xtitle[TitleSize-1] = 0;
   strncpy(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
-  _zunits[0] = 0;
+  memset(_zunits, 0, TitleSize);
 }
 
 DescEntry::DescEntry(const Pds::DetInfo& info,

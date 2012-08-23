@@ -227,7 +227,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
   return -1;
 }
 
-static PyObject* get(PyObject* self, PyObject* args)
+static PyObject* amientry_get(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
 
@@ -362,7 +362,7 @@ static PyObject* get(PyObject* self, PyObject* args)
   return NULL;
 }
 
-static PyObject* clear(PyObject* self, PyObject* args)
+static PyObject* amientry_clear(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
   e->client->reset();
@@ -374,8 +374,8 @@ static PyObject* clear(PyObject* self, PyObject* args)
 //  Register amientry methods
 //
 static PyMethodDef amientry_methods[] = {
-  {"get"   , get   , METH_VARARGS, "Return the accumulated data"},
-  {"clear" , clear , METH_VARARGS, "Clear the accumulated data"},
+  {"get"   , amientry_get   , METH_VARARGS, "Return the accumulated data"},
+  {"clear" , amientry_clear , METH_VARARGS, "Clear the accumulated data"},
   {NULL},
 };
 

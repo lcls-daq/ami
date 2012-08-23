@@ -42,7 +42,7 @@ namespace Ami {
       int  configured      () ;
       void discovered      (const DiscoveryRx&) ;
       void read_description(Socket&,int) ;
-      void read_payload    (Socket&,int) ;
+      int  read_payload    (Socket&,int) ;
       void process         () ;
     public:
       int                 get_setup(char*) const;
