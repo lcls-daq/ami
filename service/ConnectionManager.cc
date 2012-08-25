@@ -26,7 +26,7 @@ ConnectionManager::ConnectionManager(int interface) :
     //      port++;
     //    }
     if (!_socket->bind(ins)) {
-      perror("bind error (retrying)");
+      perror("ConnectionManager bind error (retrying)");
       port++;
     }
   } while(_port!=port);
@@ -58,6 +58,10 @@ void ConnectionManager::remove(ConnectionHandler& h)
 
 void ConnectionManager::routine()
 {
+  printf("ConnectionManager listening on %x/%d\n", 
+         _socket->ins().address(), 
+         _socket->ins().portId());
+  
   while(1) {
     if (::listen(_socket->socket(),5)<0)
       printf("ConnectionManager listen failed\n");

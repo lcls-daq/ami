@@ -320,7 +320,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       default: break;
       }
       if (!h) {
-        if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config)
+        if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
+            xtc->contains.id()==Pds::TypeId::Id_EpicsConfig)
           ;
         else
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());

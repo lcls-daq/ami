@@ -8,21 +8,21 @@
 
 namespace Ami {
 
-  class Factory;
   class Ins;
   class Server;
   class Semaphore;
   class Socket;
-  class VServerSocket;
 
   class ServerManager : public Poll,
 			public Fd {
   public:
     ServerManager (unsigned interface,
 		   unsigned serverGroup);
-    ~ServerManager();
+    virtual ~ServerManager();
   public:
-    void serve     (Factory&, Semaphore* =0);
+    virtual Server* new_server(Socket*) = 0;
+  public:
+    void serve     (Semaphore* =0);
     void dont_serve();
   public:
     void discover  ();
@@ -40,7 +40,6 @@ namespace Ami {
     unsigned           _interface;
     unsigned           _serverGroup;
     unsigned           _ppinterface;
-    Factory*           _factory;
     Socket*            _socket;
     SvList             _servers;
     Semaphore*         _connect_sem;

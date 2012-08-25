@@ -45,6 +45,10 @@ namespace Ami {
     void remove_client   (ClientSocket&);
     int  handle_client_io(ClientSocket&);
     int  nconnected      () const;
+  public:
+    const Message& request() const { return _request; }
+    void forward(const Message&);
+    void forward(const Message&,Socket&);
   private:
     void _flush_sockets(const Message&, ClientSocket&);
     void _flush_socket (ClientSocket&, int);

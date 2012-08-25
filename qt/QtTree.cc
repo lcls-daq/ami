@@ -6,6 +6,10 @@
 
 using namespace Ami::Qt;
 
+static QStringList _most_recent;
+const int MOST_RECENT_DISPLAY =  5;
+const int MOST_RECENT_SIZE    = 10;
+
 static void push(QStandardItem& root, 
                  const QString& name, 
                  int level,
@@ -26,13 +30,15 @@ static void push(QStandardItem& root,
     if (name_f.size() && row_f.size() && 
         name_f[0]==row_f[0] &&
         row.text()!=root.text()) {
+
       //  If they are equal upto the row's length:
       if (name_f.size()>=row_f.size() &&
           name_f.mid(0,row_f.size()) == row_f) {
         //  If the row has children:
-        if (row.rowCount())
+        if (row.rowCount()) {
           //  push onto the row's tree
           push(row, name, level+row_f.size(),separator);
+        }
         else {
           //  Create a tree from the row and append
           row.appendRow( new QStandardItem(row.text()) );
@@ -51,10 +57,12 @@ static void push(QStandardItem& root,
         root.insertRow( i, branch );
         branch->appendRow( &row );
         QStandardItem* leaf = new QStandardItem( name );
-        if (name < row.text())
+        if (name_f[0] < row_f[0]) {
           branch->insertRow(0, leaf);
-        else
+        }
+        else {
           branch->appendRow(leaf);
+        }
       }
     }
     //  Insert before or after
@@ -65,6 +73,7 @@ static void push(QStandardItem& root,
       continue;
     return;
   }
+
   root.appendRow(new QStandardItem(name));
 }
 
@@ -79,6 +88,7 @@ QtTree::QtTree(const QString& separator) :
 
   _view.setModel(&_model);
 
+  connect(this  , SIGNAL(clicked()), this, SLOT(set_mru()));
   connect(this  , SIGNAL(clicked()), &_view, SLOT(show()));
   connect(&_view, SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
@@ -103,6 +113,7 @@ QtTree::QtTree(const QStringList& names, const QStringList& help, const QColor& 
 
   fill(names);
 
+  connect(this    , SIGNAL(clicked()), this, SLOT(set_mru()));
   connect(this    , SIGNAL(clicked()), &_view, SLOT(show()));
   connect(&_view  , SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
@@ -116,7 +127,10 @@ void QtTree::fill(const QStringList& names)
     for(int i=1; i<names.size(); i++) {
       push(*root, names.at(i),0,_separator);
     }
+
+    root->insertRow( 0,  new QStandardItem( QString("[Most Recent]")) );
   }
+
   set_entry(_entry);
 }
 
@@ -157,12 +171,58 @@ void QtTree::set_entry(const QString& e) {
   if (_valid_entry(e)) {
     p.setColor(QPalette::ButtonText, QColor(0,0,0));
     _view.hide();
+
+    if (!e.isEmpty()) {
+      QStandardItem& mru_root = *_model.invisibleRootItem()->child(0);
+      for(int i=0; i<mru_root.rowCount(); i++) {
+        QStandardItem& row = *mru_root.child(i);
+        if (row.text() == e) {
+          mru_root.takeRow(i);
+          break;
+        }
+      }
+      mru_root.insertRow(0, new QStandardItem(e));
+      while (mru_root.rowCount() > MOST_RECENT_DISPLAY)
+        mru_root.takeRow(MOST_RECENT_DISPLAY);
+    
+      _most_recent.removeAll(e);
+      _most_recent.push_front(e);
+      while (_most_recent.size() > MOST_RECENT_SIZE)
+        _most_recent.pop_back();
+    }
   }
   else
     p.setColor(QPalette::ButtonText, QColor(0xc0,0,0));
 
   this->setText(_entry=e);
   this->setPalette(p);
+}
+
+static bool has_child_named(const QStandardItem& root, 
+                            const QString& name)
+{
+  for(int i=0; i<root.rowCount(); i++) {
+    const QStandardItem& row = *root.child(i);
+    if (row.text()==name || has_child_named(row,name))
+      return true;
+  }
+  return false;
+}
+
+void QtTree::set_mru()
+{
+  _model.invisibleRootItem()->takeRow(0);
+
+  QStandardItem& mru_root = *new QStandardItem( QString("[Most Recent]"));
+  _model.invisibleRootItem()->insertRow(0, &mru_root);
+
+  for(int i=0,n=0; i<_most_recent.size(); i++) {
+    if (has_child_named(*_model.invisibleRootItem(), _most_recent[i])) {
+      mru_root.appendRow( new QStandardItem(_most_recent[i]) );
+      if (++n >= MOST_RECENT_DISPLAY)
+        break;
+    }
+  }
 }
 
 bool QtTree::_valid_entry(const QString&) const { return true; }

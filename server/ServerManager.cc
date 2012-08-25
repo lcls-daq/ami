@@ -13,6 +13,7 @@
 #include "ami/service/Semaphore.hh"
 #include "ami/service/TSocket.hh"
 #include "ami/service/Exception.hh"
+#include "ami/service/Port.hh"
 
 #include "ami/client/VClientSocket.hh"
 
@@ -38,9 +39,8 @@ ServerManager::~ServerManager()
 }
 
 
-void ServerManager::serve(Factory& factory, Semaphore* sem)
+void ServerManager::serve(Semaphore* sem)
 {
-  _factory = &factory;
   _connect_sem = sem;
   try {
     if (Ins::is_multicast(_serverGroup))
@@ -114,7 +114,7 @@ int ServerManager::processIo()
            local .address(), local .portId(),
            remote.address(), remote.portId());
 
-    Server* srv = new Server(s,*_factory);
+    Server* srv = new_server(s);
     //
     //  Register for special service?
     //
@@ -151,7 +151,7 @@ int ServerManager::processIo()
 	     local .address(), local .portId(),
 	     remote.address(), remote.portId());
 
-      Server* srv = new Server(s,*_factory);
+      Server* srv = new_server(s);
       if (request.id()>>31)
         _servers.push_back(srv);
       manage(*srv);

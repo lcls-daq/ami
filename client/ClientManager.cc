@@ -182,9 +182,11 @@ ClientManager::ClientManager(unsigned   interface,
   _receive_bytes(0)
 {
   bool mcast = Ins::is_multicast(serverGroup);
-  printf("CM int %x grp %x mcast %c\n", 
+
+  printf("CM int %x grp %x mcast %c poll %p\n", 
 	 interface, serverGroup,
-	 mcast ? 'T':'F');
+	 mcast ? 'T':'F',
+         _poll);
 
   if (mcast) {
     VClientSocket* so = new VClientSocket;
@@ -363,8 +365,10 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     return 0;
   }
 
-//   printf("(%p) handle_client_io type %d from socket %d\n",
-// 	 this, reply.type(), socket.fd());
+#ifdef DBUG
+  printf("CM handle_client_io %d:%d %x\n",
+         reply.id(), reply.type(), reply.payload());
+#endif
 
   if (reply.type() == Message::Discover) { // unsolicited message
     if (_discovery_size < reply.payload()) {
@@ -397,8 +401,10 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     //
     //  Sink the unsolicited message
     //
-//     printf("(%p) received id %d/%d type %d/%d\n",
-//  	   this, reply.id(),_request.id(),reply.type(),_request.type());
+#ifdef DBUG
+    printf("(%p) received id %d/%d type %d/%d\n",
+  	   this, reply.id(),_request.id(),reply.type(),_request.type());
+#endif
     switch (reply.type()) {
     case Message::Description: 
     case Message::Payload:     
@@ -411,3 +417,39 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   return 1;
 }
 
+void ClientManager::forward(const Message& request)
+{
+  _request = request;
+  _poll->bcast_out(reinterpret_cast<const char*>(&request),
+                   sizeof(request));
+#ifdef DBUG
+  printf("Forward %d:%d %x to %d clients\n",
+         request.id(), request.type(), 0,_poll->nfds());
+#endif
+}
+
+void ClientManager::forward(const Message& request,
+                            Socket&        socket)
+{
+  _request = request;
+
+  unsigned len = request.payload();
+  char* p = new char[len];
+  socket.read(p, len);
+
+  iovec iov[2];
+  iov[0].iov_base = const_cast<Message*>(&request);
+  iov[0].iov_len  = sizeof(request);
+  iov[1].iov_base = p;
+  iov[1].iov_len  = len;
+
+  _poll->bcast_out(iov,2);
+
+#ifdef DBUG
+  printf("Forward %d:%d %x to %d clients\n",
+         request.id(), request.type(),
+         len,_poll->nfds());
+#endif
+
+  delete[] p;
+}

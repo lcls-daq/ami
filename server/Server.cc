@@ -13,14 +13,11 @@ using namespace Ami;
 
 static const int BufferSize = 32*1024;
 
-Server::Server(Socket*         socket,
-	       Factory&        factory) :
+Server::Server(Socket*         socket) :
   _socket(socket),
   _iov   (new iovec[10]),
   _iovcnt(10),
   _reply (0,Message::NoOp),
-  _cds   ("Server"),
-  _factory(factory),
   _buffer (new char[BufferSize]),
   _described(false)
 {
@@ -32,83 +29,12 @@ Server::Server(Socket*         socket,
 
 Server::~Server()
 {
-  _factory.remove(fd());
   delete _socket;
   delete[] _buffer;
   delete[] _iov;
 }
 
 int Server::fd() const { return _socket->socket(); }
-
-int Server::processIo()
-{
-  int r = 1;
-  Message request(0,Message::NoOp);
-  int result = _socket->read(&request,sizeof(request));
-  if (result != sizeof(request)) {
-    printf("S processIo read result %d (skt %d): %s\n",
-	   result,_socket->socket(),strerror(errno));
-    return 0;
-  }
-
-//   printf("S request type %d id %d (skt %d)\n",
-// 	 request.type(), request.id(), _socket->socket());
-
-  switch(request.type()) {
-  case Message::Disconnect:
-    _described=false;
-    r = 0;
-    break;
-  case Message::DiscoverReq:
-    { DiscoveryTx tx(_factory.features(),_factory.discovery());
-      int n = tx.niovs()+1;
-      _adjust(n);
-      tx.serialize(_iov+1);
-      reply(request.id(), Message::Discover, n); }
-    break;
-  case Message::ConfigReq:
-    _socket->read(_buffer,request.payload());
-    _factory.configure(fd(), request,_buffer,_cds);
-    _described = true;
-  case Message::DescriptionReq:
-    { int n = _cds.description()+1;
-      _adjust(n);
-      _cds.description(_iov+1);
-      reply(request.id(), Message::Description, n); }
-    break;
-  case Message::PayloadReq:
-    if (_described) {
-      int n = _cds.payload()+1;
-      _adjust(n);
-      n = _cds.payload(_iov+1, request.list())+1;
-      reply(request.id(), Message::Payload, n); 
-      //      _cds.invalidate_payload();
-    }
-    break;
-  default:
-    break;
-  }
-
-  return r;
-}
-
-int Server::processIo(const char* msg,int size)
-{
-  const Message& request = *reinterpret_cast<const Message*>(msg);
-  switch(request.type()) {
-  case Message::DiscoverReq:
-    _described = false;
-    { DiscoveryTx tx(_factory.features(),_factory.discovery());
-      int n = tx.niovs()+1;
-      _adjust(n);
-      tx.serialize(_iov+1);
-      reply(request.id(), Message::Discover, n); }
-    break;
-  default:
-    break;
-  }
-  return 1;
-}
 
 void Server::_adjust    (int size)
 {
@@ -127,8 +53,10 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
   _reply.type(type);
   _reply.payload(_iov+1,cnt-1);
 
-//   printf("S reply type %d  id %d  payload %d\n",
-// 	 _reply.type(),_reply.id(),_reply.payload());
+#ifdef DBUG
+  printf("S reply %d:%d %x  skt %d\n",
+ 	 _reply.id(), _reply.type(),_reply.payload(), _socket->socket());
+#endif
 
   if (_socket->writev(_iov,cnt)<0)
     printf("Error in Server::reply writev writing %d bytes : %s\n",_reply.payload(),strerror(errno));

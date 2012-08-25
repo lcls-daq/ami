@@ -5,11 +5,12 @@ qtincdir  := qt/include
 endif
 
 # List targets (if any) for this package
-tgtnames := ami ami_proxy test tcptest
+tgtnames := ami ami_proxy ami_collection test tcptest
 
 # List source files for each target
 tgtsrcs_ami := ami.cc AmiApp.cc AmiApp.hh
 tgtsrcs_ami_proxy := ami_proxy.cc
+tgtsrcs_ami_collection := ami_collection.cc
 tgtsrcs_test := test.cc
 tgtsrcs_tcptest := tcptest.cc
 
@@ -18,6 +19,7 @@ tgtsrcs_tcptest := tcptest.cc
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtslib_ami := $(USRLIBDIR)/rt
 tgtslib_ami_proxy := $(USRLIBDIR)/rt
+tgtslib_ami_collection := $(USRLIBDIR)/rt
 tgtslib_test := $(USRLIBDIR)/rt
 tgtslib_tcptest := $(USRLIBDIR)/rt
 
@@ -27,6 +29,14 @@ ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
   tgtlibs_ami_proxy += qt/QtCore
 else
   tgtlibs_ami_proxy += qt/QtCore
+endif
+
+tgtlibs_ami_collection := ami/service ami/data ami/server ami/client
+tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/acqdata
+ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
+  tgtlibs_ami_collection += qt/QtCore
+else
+  tgtlibs_ami_collection += qt/QtCore
 endif
 
 #

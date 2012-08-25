@@ -9,7 +9,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
-#include "ami/server/ServerManager.hh"
+#include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Semaphore.hh"
 
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
   redirect(outputFile, errorFile);
 
   // Create ServerManager
-  ServerManager srv(interface, serverGroup);
+  AnalysisServerManager srv(interface, serverGroup);
 
   // Construct features, filter, and factory
   vector<FeatureCache*> features;

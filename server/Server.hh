@@ -3,7 +3,6 @@
 
 #include "ami/service/Fd.hh"
 
-#include "ami/data/Cds.hh"
 #include "ami/data/Message.hh"
 
 class iovec;
@@ -11,27 +10,21 @@ class iovec;
 namespace Ami {
 
   class Socket;
-  class Factory;
 
   class Server : public Fd {
   public:
-    Server(Socket*,
-	   Factory&);
+    Server(Socket*);
     ~Server();
   public:  // Fd interface
     int fd() const;
-    int processIo();
-    int processIo(const char*,int);
-  private:
+  protected:
     void _adjust     (int);
     void reply       (unsigned,Message::Type,unsigned);
-  private:
+  protected:
     Socket*         _socket;
     iovec*          _iov;
     int             _iovcnt;
     Message         _reply;
-    Cds             _cds;
-    Factory&        _factory;
     char*           _buffer;
     bool            _described;
   };

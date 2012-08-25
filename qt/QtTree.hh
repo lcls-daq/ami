@@ -28,6 +28,7 @@ namespace Ami {
     public slots:
       void set_entry(const QModelIndex&);
       void set_entry(const QString&);
+      void set_mru  ();
     signals:
       void activated(const QString&);
     private:

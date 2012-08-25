@@ -8,7 +8,7 @@
 #include "ami/app/AnalysisFactory.hh"
 #include "ami/app/EventFilter.hh"
 
-#include "ami/server/ServerManager.hh"
+#include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
@@ -59,7 +59,7 @@ int AmiApp::run(char *partitionTag, unsigned serverGroup, std::vector<char *> mo
     load_syms<UserModule,create_m>(user_mod, module_names[i]);
   }
 
-  ServerManager   srv(interface, serverGroup);
+  AnalysisServerManager   srv(interface, serverGroup);
 
   std::vector<FeatureCache*> features;
   for(unsigned i=0; i<Ami::NumberOfSets; i++)

@@ -123,6 +123,10 @@ void Poll::post    (const char* msg, int size)
 //
 void Poll::manage(Fd& fd)
 {
+#ifdef DBUG
+  printf("Poll %p  manage %d\n",this,fd.fd());
+#endif
+
   unsigned available = 0;
   for (unsigned short n=1; n<_nfds; n++) {
     if (!_ofd[n] && !available) available = n;
@@ -140,6 +144,10 @@ void Poll::manage(Fd& fd)
 
 void Poll::unmanage(Fd& fd)
 {
+#ifdef DBUG
+  printf("Poll %p  unmanage %d\n",this,fd.fd());
+#endif
+
   for (unsigned short n=1; n<_nfds; n++) {
     if (_ofd[n] == &fd) {
       _ofd[n] = 0;
