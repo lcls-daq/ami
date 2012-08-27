@@ -57,12 +57,14 @@ static QChar _subtract    (0x002D);
 CursorsX::CursorsX(QWidget* parent, 
                    ChannelDefinition* channels[], 
                    unsigned nchannels, 
-                   WaveformDisplay& frame) :
+                   WaveformDisplay& frame,
+                   QtPWidget* frameParent) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
+  _frameParent(frameParent),
   _clayout  (new QVBoxLayout),
 #if 0
   _expr     (new QLineEdit("1")),
@@ -157,6 +159,7 @@ CursorsX::CursorsX(QWidget* parent,
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(grabB     , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
+  connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));
 
   _scalar_desc->post(this, SLOT(add_post()));
 }
@@ -422,7 +425,12 @@ void CursorsX::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
-void CursorsX::grab_cursorx() { _frame.plot()->set_cursor_input(this); }
+void CursorsX::grab_cursorx() 
+{
+  _frame.plot()->set_cursor_input(this); 
+  if (_frameParent)
+    _frameParent->front();
+}
 
 void CursorsX::mousePressEvent(double x, double y)
 {

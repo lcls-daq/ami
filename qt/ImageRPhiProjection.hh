@@ -32,7 +32,7 @@ namespace Ami {
     class ImageRPhiProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageRPhiProjection(QWidget* parent,
+      ImageRPhiProjection(QtPWidget* parent,
 			  ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageRPhiProjection();
     public:

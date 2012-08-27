@@ -26,22 +26,22 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
   { QPushButton* rectB = new QPushButton("X / Y Selection");
     addWidget(rectB);
     _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(show())); }
+    connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(front())); }
 
   { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
     addWidget(cylB);
     _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(show())); }
+    connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
 
   { QPushButton* cntB = new QPushButton("Contour Projection");
     addWidget(cntB);
     _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(show())); }
+    connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(front())); }
 
   { QPushButton* hitB = new QPushButton("Hit Finder");
     addWidget(hitB);
     _hit = new PeakFinder(this,_channels,NCHANNELS,wd);
-    connect(hitB, SIGNAL(clicked()), _hit, SLOT(show()));}
+    connect(hitB, SIGNAL(clicked()), _hit, SLOT(front()));}
 
   connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed()));

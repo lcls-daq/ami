@@ -17,16 +17,16 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
 
   { QPushButton* edgesB = new QPushButton("Edges");
     addWidget(edgesB);
-    _edges = new EdgeFinder(this,_channels,NCHANNELS,wd);
-    connect(edgesB, SIGNAL(clicked()), _edges, SLOT(show())); }
+    _edges = new EdgeFinder(this,_channels,NCHANNELS,wd, this);
+    connect(edgesB, SIGNAL(clicked()), _edges, SLOT(front())); }
   { QPushButton* cursorsB = new QPushButton("Cursors");
     addWidget(cursorsB);
-    _cursors = new CursorsX(this,_channels,NCHANNELS,wd);
-    connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(show())); }
+    _cursors = new CursorsX(this,_channels,NCHANNELS,wd, this);
+    connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(front())); }
   { QPushButton* fitB = new QPushButton("Waveform Fit");
     addWidget(fitB);
     _fits = new CurveFit(this,_channels,NCHANNELS,wd);
-    connect(fitB, SIGNAL(clicked()), _fits, SLOT(show())); }
+    connect(fitB, SIGNAL(clicked()), _fits, SLOT(front())); }
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));

@@ -26,9 +26,11 @@ static const QChar DEG(0x00b0);
 static const double DEG_TO_RAD = M_PI/180.;
 static const double RAD_TO_DEG = 180./M_PI;
 
-AnnulusCursors::AnnulusCursors(ImageFrame& f) :
+AnnulusCursors::AnnulusCursors(ImageFrame& f,
+                               QtPWidget*  fParent) :
   QWidget(0),
   _frame(f),
+  _frameParent(fParent),
   _xc(f.size().width()/2),
   _yc(f.size().height()/2),
   _r0(f.size().width()/4),
@@ -124,8 +126,21 @@ void AnnulusCursors::load(const char*& p)
   _set_edits();
 }
 
-void AnnulusCursors::grab_center() { _active = Center; _frame.set_cursor_input(this); }
-void AnnulusCursors::grab_limits() { _active = Limits; _frame.set_cursor_input(this); }
+void AnnulusCursors::grab_center() 
+{
+  _active = Center; 
+  _frame.set_cursor_input(this); 
+  if (_frameParent)
+    _frameParent->front();
+}
+
+void AnnulusCursors::grab_limits() 
+{
+  _active = Limits; 
+  _frame.set_cursor_input(this); 
+  if (_frameParent)
+    _frameParent->front();
+}
 
 void AnnulusCursors::update_edits() 
 {
@@ -223,6 +238,7 @@ void AnnulusCursors::mouseReleaseEvent(double x,double y)
   _active=None;
   _set_edits();
   emit changed();
+  emit done();
 }
 
 //

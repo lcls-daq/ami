@@ -13,6 +13,7 @@
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/FilterSetup.hh"
 #include "ami/qt/RateDisplay.hh"
+#include "ami/qt/PWidgetManager.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/service/ConnectionManager.hh"
 #include "ami/service/Task.hh"
@@ -135,6 +136,9 @@ DetectorSelect::DetectorSelect(const QString& label,
     data_box->setLayout(layout);
     l->addWidget(data_box); }
   _rate_display->addLayout(l);
+
+  l->addWidget(new PWidgetManager);
+
   setLayout(l);
 
   connect(this, SIGNAL(detectors_discovered(const char*)), this, SLOT(change_detectors(const char*)));

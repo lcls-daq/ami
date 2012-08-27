@@ -33,7 +33,7 @@ namespace Ami {
     class ImageXYProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageXYProjection(QWidget* parent,
+      ImageXYProjection(QtPWidget* parent,
 			ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageXYProjection();
     public:

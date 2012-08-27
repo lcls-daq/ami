@@ -4,6 +4,22 @@
 
 using namespace Ami::Qt;
 
+#ifdef USE_DIALOG
+
+QtPWidget::QtPWidget() :
+  QDialog(0)
+{
+  //  setVisible(true);
+}
+
+QtPWidget::QtPWidget(QWidget* parent) : 
+  QDialog(parent)
+{
+  //  setVisible(true);
+}
+
+#else
+
 QtPWidget::QtPWidget() :
   QWidget(0)
 {
@@ -13,7 +29,11 @@ QtPWidget::QtPWidget(QWidget* parent) :
   //  QWidget(parent,::Qt::Window) 
   QWidget(0)
 {
+  if (parent)
+    move( parent->pos() );
 }
+
+#endif
 
 QtPWidget::~QtPWidget() 
 {
@@ -62,4 +82,14 @@ void QtPWidget::load(const char*& p)
   }
 
   setVisible(v);
+}
+
+void QtPWidget::front()
+{
+  if (!isVisible())
+    show();
+  else {
+    raise();
+    activateWindow();
+  }
 }

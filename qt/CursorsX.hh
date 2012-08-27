@@ -44,7 +44,8 @@ namespace Ami {
 		     public Cursors {
       Q_OBJECT
     public:
-      CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
+               WaveformDisplay&, QtPWidget* =0);
       ~CursorsX();
     public:
       void save(char*& p) const;
@@ -82,6 +83,7 @@ namespace Ami {
       unsigned _channel;
 
       WaveformDisplay&  _frame;
+      QtPWidget*        _frameParent;
       QStringList     _names;
       CursorLocation* _new_value;
       QVBoxLayout*    _clayout;

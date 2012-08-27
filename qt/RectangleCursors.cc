@@ -12,9 +12,11 @@
 
 using namespace Ami::Qt;
 
-RectangleCursors::RectangleCursors(ImageFrame& f) :
+RectangleCursors::RectangleCursors(ImageFrame& f,
+                                   QtPWidget*  fParent) :
   QWidget(0),
   _frame(f),
+  _frameParent(fParent),
   _x0(f.size().width()/4),
   _y0(f.size().width()/4),
   _x1(f.size().width()*3/4),
@@ -100,7 +102,13 @@ void RectangleCursors::load(const char*& p)
   _set_edits();
 }
 
-void RectangleCursors::grab() { _frame.set_cursor_input(this); }
+void RectangleCursors::grab() 
+{
+  _frame.set_cursor_input(this); 
+  if (_frameParent)
+    _frameParent->front();
+}
+
 void RectangleCursors::update_edits() 
 {
   _x0 = _edit_x0   ->text().toDouble();
@@ -182,6 +190,7 @@ void RectangleCursors::mouseReleaseEvent(double x,double y)
 {
   _frame.set_cursor_input(0);
   mouseMoveEvent(x,y);
+  emit done();
 }
 
 double RectangleCursors::xlo() const { return _x0 < _x1 ? _x0 : _x1; }

@@ -55,12 +55,14 @@ enum { _TH1F, _vT, _vF, _vS };
 
 using namespace Ami::Qt;
 
-PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
+PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
+                 WaveformDisplay& frame, QtPWidget* frameParent) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
+  _frameParent(frameParent),
   _clayout  (new QVBoxLayout)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
@@ -172,6 +174,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(lgrabB    , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(_lvalue   , SIGNAL(returnPressed()),this, SLOT(add_cursor()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
+  connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));
 
   connect(addPostB  , SIGNAL(clicked()),      this, SLOT(add_post()));
 
@@ -410,7 +413,12 @@ void PeakFit::add_post()
   emit changed();
 }
 
-void PeakFit::grab_cursorx() { _frame.plot()->set_cursor_input(this); }
+void PeakFit::grab_cursorx() 
+{
+  _frame.plot()->set_cursor_input(this); 
+  if (_frameParent)
+    _frameParent->front();
+}
 
 void PeakFit::add_cursor()
 {

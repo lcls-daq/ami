@@ -6,6 +6,7 @@
 #include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/PWidgetManager.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
@@ -52,6 +53,8 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   setLayout(layout);
 
   show();
+
+  PWidgetManager::add(this, name);
 }
 
 ZoomPlot::ZoomPlot(QWidget*         parent,
@@ -70,6 +73,8 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   setLayout(layout);
 
   show();
+
+  PWidgetManager::add(this, _name);
 }
 
 ZoomPlot::~ZoomPlot()

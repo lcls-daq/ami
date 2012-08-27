@@ -8,6 +8,7 @@
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/WaveformDisplay.hh"
+#include "ami/qt/PWidgetManager.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -51,6 +52,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame);
 
   _layout();
+  
+  PWidgetManager::add(this, name);
 }
 
 ProjectionPlot::ProjectionPlot(QWidget*          parent,
@@ -67,10 +70,13 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   load(p);
 
   _layout();
+
+  PWidgetManager::add(this, _name);
 }
 
 ProjectionPlot::~ProjectionPlot()
 {
+  PWidgetManager::remove(this);
   delete _proj;
 }
 

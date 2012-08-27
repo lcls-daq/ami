@@ -35,7 +35,8 @@
 using namespace Ami::Qt;
 
 EdgeFinder::EdgeFinder(QWidget* parent,
-		       ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay& frame) :
+		       ChannelDefinition* channels[], unsigned nchannels, 
+                       WaveformDisplay& frame, QtPWidget* frameParent) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
@@ -44,8 +45,8 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   _title    (new QLineEdit("Edge plot")),
   _dead     (new QLineEdit("0"))
 {
-  _baseline  = new EdgeCursor("baseline" ,*_frame.plot());
-  _threshold = new EdgeCursor("threshold",*_frame.plot());
+  _baseline  = new EdgeCursor("baseline" ,*_frame.plot(), frameParent);
+  _threshold = new EdgeCursor("threshold",*_frame.plot(), frameParent);
 
   setWindowTitle("EdgeFinder Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -137,6 +138,8 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
+  connect(_threshold, SIGNAL(changed()),      this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }

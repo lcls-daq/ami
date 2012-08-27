@@ -32,7 +32,7 @@ using namespace Ami::Qt;
 
 enum { XAxis, YAxis };
 
-ImageContourProjection::ImageContourProjection(QWidget*           parent,
+ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
 					       ChannelDefinition* channels[],
 					       unsigned           nchannels, 
 					       ImageFrame&        frame) :
@@ -43,7 +43,7 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
   _frame    (frame),
   _title    (new QLineEdit("Projection"))
 {
-  _rectangle = new RectangleCursors(_frame);
+  _rectangle = new RectangleCursors(_frame,parent);
   //  _contour   = new Contour("X","f(X)",frame,Ami::ContourProjection::Y,*_rectangle);
   _contour   = new Contour("Y","f(Y)",Ami::ContourProjection::X,frame,*_rectangle);
 
@@ -120,6 +120,7 @@ ImageContourProjection::ImageContourProjection(QWidget*           parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_rectangle, SIGNAL(done())   ,      this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }

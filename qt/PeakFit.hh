@@ -37,11 +37,12 @@ namespace Ami {
     class CursorLocation;
     class CursorDefinition;
 
-      class PeakFit : public QtPWidget,
-		      public Cursors {
+    class PeakFit : public QtPWidget,
+                    public Cursors {
       Q_OBJECT
     public:
-      PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
+              WaveformDisplay&, QtPWidget* =0);
       ~PeakFit();
     public:
       void save(char*& p) const;
@@ -77,6 +78,7 @@ namespace Ami {
       unsigned _channel;
 
       WaveformDisplay&  _frame;
+      QtPWidget*        _frameParent;
       EdgeCursor* _baseline;
       unsigned   _quantity;
 

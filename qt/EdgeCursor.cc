@@ -14,9 +14,11 @@
 using namespace Ami::Qt;
 
 EdgeCursor::EdgeCursor(const QString& name,
-		       PlotFrame&     frame) :
+		       PlotFrame&     frame,
+                       QtPWidget*     frameParent) :
   QWidget(0),
   _frame (frame),
+  _frameParent(frameParent),
   _input (new QLineEdit()),
   _marker(new QwtPlotMarker)
 {
@@ -76,6 +78,8 @@ void EdgeCursor::set_value()
 void EdgeCursor::grab()
 {
   _frame.set_cursor_input(this);
+  if (_frameParent)
+    _frameParent->front();
 }
 
 void EdgeCursor::show_in_plot(bool lShow)

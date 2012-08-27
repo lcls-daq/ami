@@ -139,7 +139,11 @@ void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
   QWidget::mouseReleaseEvent(e);
 }
 
-void ImageFrame::set_cursor_input(Cursors* c) { _c=c; }
+void ImageFrame::set_cursor_input(Cursors* c) 
+{
+  _c=c; 
+  raise();
+}
 
 void ImageFrame::set_grid_scale(double scalex, double scaley)
 {                                               
@@ -163,3 +167,4 @@ static Pds::ClockTime _defaultTime(0,0);
 const Pds::ClockTime& ImageFrame::time() const {
   return _qimage ? _qimage->entry().time() : _defaultTime;
 }
+

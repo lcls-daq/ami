@@ -41,7 +41,7 @@ using namespace Ami::Qt;
 
 enum { PlotProjection, PlotIntegral };
 
-ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
+ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
 					 ChannelDefinition* channels[],
 					 unsigned           nchannels, 
 					 ImageFrame&        frame) :
@@ -50,7 +50,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
-  _annulus  (new AnnulusCursors(frame)),
+  _annulus  (new AnnulusCursors(frame, parent)),
   _title    (new QLineEdit("Projection"))
 {
   setWindowTitle("Image Projection");
@@ -101,6 +101,7 @@ ImageRPhiProjection::ImageRPhiProjection(QWidget*           parent,
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_annulus  , SIGNAL(changed()),      this, SLOT(update_range()));
+  connect(_annulus  , SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 

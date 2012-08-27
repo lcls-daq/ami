@@ -40,7 +40,7 @@ using namespace Ami::Qt;
 
 enum { PlotHistogram, PlotProjection, PlotIntegral };
 
-ImageXYProjection::ImageXYProjection(QWidget*           parent,
+ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 				     ChannelDefinition* channels[],
 				     unsigned           nchannels, 
 				     ImageFrame&        frame) :
@@ -51,7 +51,7 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
   _frame    (frame),
   _title    (new QLineEdit("Projection"))
 {
-  _rectangle = new RectangleCursors(_frame);
+  _rectangle = new RectangleCursors(_frame, parent);
 
   setWindowTitle("Image Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -108,6 +108,7 @@ ImageXYProjection::ImageXYProjection(QWidget*           parent,
 
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
+  connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));

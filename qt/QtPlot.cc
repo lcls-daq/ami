@@ -3,6 +3,7 @@
 #include "ami/qt/AxisControl.hh"
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/Path.hh"
+#include "ami/qt/PWidgetManager.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -45,6 +46,8 @@ QtPlot::QtPlot(QWidget* parent,
   _grid->attach(_frame);
 
   _layout();
+
+  PWidgetManager::add(this, name);
 }
 
 QtPlot::QtPlot(QWidget* parent) :
@@ -59,6 +62,7 @@ QtPlot::QtPlot(QWidget* parent) :
 
 QtPlot::~QtPlot()
 {
+  PWidgetManager::remove(this);
 }
 
 void QtPlot::_layout()

@@ -3,11 +3,21 @@
 
 #include "QtPersistent.hh"
 
+//#define USE_DIALOG
+
+#ifdef USE_DIALOG
+#include <QtGui/QDialog>
+#else
 #include <QtGui/QWidget>
+#endif
 
 namespace Ami {
   namespace Qt {
+#ifdef USE_DIALOG
+    class QtPWidget : public QDialog {
+#else
     class QtPWidget : public QWidget { // , public QtPersistent {
+#endif
       Q_OBJECT
     public:
       QtPWidget();
@@ -16,6 +26,8 @@ namespace Ami {
     public:
       virtual void save(char*& p) const;
       virtual void load(const char*& p);
+    public slots:
+      void front();
     };
   };
 };

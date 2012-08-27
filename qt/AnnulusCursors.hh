@@ -1,7 +1,7 @@
 #ifndef AmiQt_AnnulusCursors_hh
 #define AmiQt_AnnulusCursors_hh
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageMarker.hh"
 
@@ -15,7 +15,8 @@ namespace Ami {
 			   public ImageMarker {
       Q_OBJECT
     public:
-      AnnulusCursors(ImageFrame&);
+      AnnulusCursors(ImageFrame&,
+                     QtPWidget* =0);
       ~AnnulusCursors();
     public:
       void save(char*& p) const;
@@ -41,9 +42,11 @@ namespace Ami {
     private:
       void _set_edits ();
     signals:
-      void changed();
+      void changed();                             
+      void done   ();                             
     private:
       ImageFrame& _frame;
+      QtPWidget*  _frameParent;
       enum Cursor { None, Center, Limits, NumberOf };
       Cursor _active;
       double _xc,_yc;

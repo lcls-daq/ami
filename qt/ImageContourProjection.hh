@@ -26,7 +26,7 @@ namespace Ami {
     class ImageContourProjection : public QtPWidget {
       Q_OBJECT
     public:
-      ImageContourProjection(QWidget* parent,
+      ImageContourProjection(QtPWidget* parent,
 			     ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageContourProjection();
     public:

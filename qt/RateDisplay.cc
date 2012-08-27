@@ -105,6 +105,8 @@ void RateDisplay::addLayout(QVBoxLayout* l)
   layout->addStretch();
   layout->addWidget(new QLabel("Network:"));
   layout->addWidget(_netCalc);
+  layout->setMargin(0);
+  layout->setSpacing(0);
   rate_box->setLayout(layout);
   l->addWidget(rate_box); 
 }

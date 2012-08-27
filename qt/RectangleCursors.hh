@@ -6,6 +6,7 @@
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/ImageMarker.hh"
+#include "ami/qt/QtPWidget.hh"
 
 class QLineEdit;
 
@@ -16,7 +17,8 @@ namespace Ami {
 			     public ImageMarker {
       Q_OBJECT
     public:
-      RectangleCursors(ImageFrame&);
+      RectangleCursors(ImageFrame&,
+                       QtPWidget* =0);
       ~RectangleCursors();
     public:
       void save(char*& p) const;
@@ -45,8 +47,10 @@ namespace Ami {
       void update_edits();
     signals:
       void changed();
+      void done   ();
     private:
       ImageFrame& _frame;
+      QtPWidget*  _frameParent;
       double _x0, _y0;     // units are source pixels
       double _x1, _y1;     //  not displayed pixels
       QLineEdit* _edit_x0;

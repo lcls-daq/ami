@@ -3,7 +3,7 @@
 
 #include "ami/qt/Cursors.hh"
 
-#include <QtGui/QWidget>
+#include "ami/qt/QtPWidget.hh"
 
 class QString;
 class QLineEdit;
@@ -17,7 +17,7 @@ namespace Ami {
 		       public Cursors {
       Q_OBJECT
     public:
-      EdgeCursor(const QString&, PlotFrame&);
+      EdgeCursor(const QString&, PlotFrame&, QtPWidget* =0);
       ~EdgeCursor();
     public:
       void load(const char*&);
@@ -37,6 +37,7 @@ namespace Ami {
       void changed();
     private:
       PlotFrame& _frame;
+      QtPWidget* _frameParent;
       QString    _name;
       QLineEdit* _input;
       QPushButton* _showB;

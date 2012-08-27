@@ -33,7 +33,8 @@ namespace Ami {
     class EdgeFinder : public QtPWidget {
       Q_OBJECT
     public:
-      EdgeFinder(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      EdgeFinder(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
+                 WaveformDisplay&, QtPWidget* =0);
       ~EdgeFinder();
     public:
       void save(char*& p) const;

@@ -182,6 +182,7 @@ libsrcs_amiqt += Defaults.cc
 libsrcs_amiqt += RateCalculator.cc RateCalculator_moc.cc
 libsrcs_amiqt += RateDisplay.cc
 libsrcs_amiqt += FilterSetup.cc FilterSetup_moc.cc
+libsrcs_amiqt += PWidgetManager.cc PWidgetManager_moc.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 
 libsrcs_amiblv := blv
