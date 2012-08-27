@@ -13,7 +13,8 @@ QtScan::QtScan(const QString&   title,
 	       const Ami::EntryScan& entry,
 	       const AbsTransform& x,
 	       const AbsTransform& y,
-	       const QColor& c) :
+	       const QColor& c,
+               int symbol_size) :
   QtBase(title,entry),
   _xscale(x),
   _yscale(y),
@@ -21,7 +22,10 @@ QtScan::QtScan(const QString&   title,
 {
   if (entry.desc().scatter()) {
     _curve.setStyle(QwtPlotCurve::Dots);
-    QwtSymbol symbol(QwtSymbol::Diamond,QBrush(c),QPen(c),QSize(5,5));
+    QwtSymbol symbol(QwtSymbol::Diamond,
+                     QBrush(c),
+                     QPen(c),
+                     QSize(symbol_size,symbol_size));
     _curve.setSymbol(symbol);
   }
   else {

@@ -151,7 +151,7 @@ void EnvPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0));
+                           noTransform,noTransform,QColor(0,0,0),_symbol_size);
         break;
       default:
         printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 

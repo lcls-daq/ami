@@ -40,6 +40,7 @@ namespace Ami {
       void xrange_change();
       void yrange_change();
       void update_counts(double);
+      void set_symbol_size();
     public:
       QString      _name;
       QwtPlot*     _frame;
@@ -48,6 +49,8 @@ namespace Ami {
       AxisControl* _xrange;
       AxisControl* _yrange;
       QwtPlotGrid* _grid;
+    protected:
+      int          _symbol_size;
     };
   };
 };

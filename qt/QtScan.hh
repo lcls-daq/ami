@@ -12,12 +12,14 @@ namespace Ami {
   class AbsTransform;
   namespace Qt {
     class QtScan : public QtBase {
+      enum { DefaultSymbolSize=5 };
     public:
       QtScan(const QString&   title,
 	     const Ami::EntryScan&,
 	     const AbsTransform& x,
 	     const AbsTransform& y,
-	     const QColor&);
+	     const QColor&,
+             int symbol_size=DefaultSymbolSize);
       ~QtScan();
     public:
       void        dump  (FILE*   ) const;
