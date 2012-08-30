@@ -374,7 +374,8 @@ void ChannelDefinition::setup_payload(Cds& cds, bool vis)
   if (entry) {
     cds.request(*entry, _show && vis);
     _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color);
-    _frame.add(_plot, _show);
+    if (_plot)
+      _frame.add(_plot, _show);
     /*
      * OK, a little bit of weirdness here.  If we read in .dat files as references,
      * they look different than the other waveforms and screw everything up.  But
