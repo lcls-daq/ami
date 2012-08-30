@@ -58,7 +58,8 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _ptime_index    (-1),
   _ptime_acc_index(-1),
   _pltnc_index    (-1),
-  _event_index    (-1)
+  _event_index    (-1),
+  _runno_index    (-1)
 {
 }
 
@@ -95,6 +96,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       _entry.front()->valid(_seq->clock());
       _factory.analyze();
     }
+  }
+  else if (dg->seq.service() == Pds::TransitionId::BeginRun) {
+    cache.cache(_runno_index,dg->env.value());
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 
@@ -164,6 +168,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _ptime_acc_index = cache.add("ProcTimeAcc");
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
+    _runno_index     = cache.add("RunNumber");
 
     printf("XtcClient configure done\n");
 

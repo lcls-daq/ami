@@ -1,5 +1,6 @@
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/RateCalculator.hh"
+#include "ami/qt/RunMaster.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
@@ -21,6 +22,7 @@ static const int BufferSize = 0x8000;
 
 static const unsigned InputRateSignature  = 1;
 static const unsigned AcceptRateSignature = 2;
+static const unsigned RunNumberSignature  = 3;
 
 namespace Ami {
   namespace Qt {
@@ -129,6 +131,14 @@ int  RateDisplay::configure       (char*& p)
                                                       AcceptRateSignature,
                                                       RawFilter(), op);
       p += r.size(); }
+
+    { Ami::EnvPlot op(Ami::DescScalar("RunNumber","mean"));
+      ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                      ConfigureRequest::Discovery,
+                                                      _input,
+                                                      RunNumberSignature,
+                                                      RawFilter(), op);
+      p += r.size(); }
   }
   return 1;
 }
@@ -173,6 +183,8 @@ void RateDisplay::read_description(Socket& s,int len) {
   _ready = 
     _inputCalc ->set_entry(_cds.entry(InputRateSignature)) &&
     _acceptCalc->set_entry(_cds.entry(AcceptRateSignature));
+
+  RunMaster::instance()->set_entry(_cds.entry(RunNumberSignature));
 }
 
 int RateDisplay::read_payload    (Socket& s,int) {
@@ -182,5 +194,6 @@ int RateDisplay::read_payload    (Socket& s,int) {
 void RateDisplay::process         () {
   _inputCalc ->update();
   _acceptCalc->update();
+  RunMaster::instance()->update();
   _ready = true;
 }
