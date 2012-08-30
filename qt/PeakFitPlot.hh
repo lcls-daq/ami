@@ -16,6 +16,7 @@ class QwtPlot;
 namespace Ami {
   class Cds;
   class DescEntry;
+  class EntryScalarRange;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
@@ -40,6 +41,8 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
+    signals:
+      void changed();
     private:
       unsigned   _channel;
       Ami::PeakFitPlot* _input;
@@ -48,6 +51,8 @@ namespace Ami {
 
       QtBase*  _plot;
       ConfigureRequestor _req;
+
+      const EntryScalarRange* _auto_range;
     };
   };
 };

@@ -380,6 +380,7 @@ void EnvClient::plot()
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
 
   emit changed();
 }
@@ -405,6 +406,7 @@ void EnvClient::remove_plot(QObject* obj)
   _plots.remove(plot);
 
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  emit changed();
 }
 
 void EnvClient::select_source()

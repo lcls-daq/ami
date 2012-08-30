@@ -19,6 +19,7 @@
 #include "ami/data/XYHistogram.hh"
 #include "ami/data/TdcPlot.hh"
 #include "ami/data/RawFilter.hh"
+#include "ami/data/EntryScalarRange.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -34,6 +35,7 @@ using namespace Ami::Qt;
 static QColor  color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
 static QStringList names = QStringList() << QString("ChA") << QString("ChB") << QString("ChC") << QString("ChD");
 
+
 ProjectionPlot::ProjectionPlot(QWidget*          parent,
 			       const QString&    name,
 			       unsigned          input_channel,
@@ -41,15 +43,17 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   QtPWidget(parent),
   _name    (name),
   _input   (input_channel),
+  _output  (-1),
   _proj    (proj),
   _frame   (new WaveformDisplay),
-  _showMask(1)
+  _showMask(1),
+  _auto_range(0)
 {
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
 
-  _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame);
-  _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame);
+  _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
+  _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
 
   _layout();
   
@@ -59,7 +63,9 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 ProjectionPlot::ProjectionPlot(QWidget*          parent,
 			       const char*&      p) :
   QtPWidget(parent),
-  _frame   (new WaveformDisplay)
+  _output  (-1),
+  _frame   (new WaveformDisplay),
+  _auto_range(0)
 {
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
@@ -104,7 +110,7 @@ void ProjectionPlot::_layout()
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4);
-	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); }
       }
@@ -112,10 +118,10 @@ void ProjectionPlot::_layout()
       layout3->addWidget(chanBox); }
     { QPushButton* cursorsB = new QPushButton("Cursors");
       layout3->addWidget(cursorsB);
-      connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(show())); }
+      connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(front())); }
     { QPushButton* peakFitB = new QPushButton("Peak");
       layout3->addWidget(peakFitB);
-      connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(show())); }
+      connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(front())); }
     layout3->addStretch();
     layout->addLayout(layout3); }
   layout->addWidget(_frame);
@@ -212,6 +218,12 @@ void ProjectionPlot::update_configuration()
 
 void ProjectionPlot::setup_payload(Cds& cds)
 {
+  _auto_range = 0;
+
+  Ami::Entry* entry = cds.entry(_output);
+  if (entry && entry->desc().type() == Ami::DescEntry::ScalarRange)
+    _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+
   _frame->reset();
 
   for(unsigned i=0; i<NCHANNELS; i++)
@@ -231,7 +243,7 @@ void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
                                                     *_proj);
   p += req.size();
   _req.request(req, output);
-  input = req.output();
+  input = _output = req.output();
 
   int signatures[NCHANNELS];
   for(int i=0; i<NCHANNELS; i++)
@@ -269,13 +281,16 @@ void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
 void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output,
 			       ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Analysis,
-						  input_signatures[_input],
-						  input = ++output,
-						  *input_channels[_input]->filter().filter(),
-						  *_proj);
-  p += r.size();
+  ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                    ConfigureRequest::Analysis,
+                                                    input_signatures[_input],
+                                                    -1,
+                                                    *input_channels[_input]->filter().filter(),
+                                                    *_proj);
+
+  p += req.size();
+  _req.request(req, output);
+  input = _output = req.output();
 
   int signatures[NCHANNELS];
   for(int i=0; i<NCHANNELS; i++)
@@ -315,4 +330,13 @@ void ProjectionPlot::update()
   _frame  ->update();
   _cursors->update();
   _peakfit->update();
+
+  if (_auto_range) {
+    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    if (v >= 0) {
+      _auto_range->result(&_proj->output());
+      _auto_range = 0;
+      emit description_changed();
+    }
+  }
 }

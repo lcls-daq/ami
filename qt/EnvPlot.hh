@@ -13,6 +13,7 @@ namespace Ami {
   class AbsFilter;
   class Cds;
   class DescEntry;
+  class EntryScalarRange;
   namespace Qt {
     class AxisArray;
     class ChannelDefinition;
@@ -36,6 +37,8 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
+    signals:
+      void changed();
     private:
       Ami::AbsFilter* _filter;
       DescEntry* _desc;
@@ -45,6 +48,8 @@ namespace Ami {
 
       QtBase*  _plot;
       ConfigureRequestor _req;
+
+      EntryScalarRange*  _auto_range;
     };
   };
 };

@@ -288,7 +288,6 @@ void ImageXYProjection::plot()
       ProjectionPlot* plot = 
 	new ProjectionPlot(this,_title->text(), _channel, op);
                            
-      
       _pplots.push_back(plot);
 
       connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
@@ -307,6 +306,7 @@ void ImageXYProjection::plot()
       
       _cplots.push_back(plot);
 
+      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
       emit changed();
 

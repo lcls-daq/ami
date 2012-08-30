@@ -259,7 +259,7 @@ void ImageRPhiProjection::plot()
 
       _pplots.push_back(plot);
 
-      connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
+      connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
       emit changed();
 
@@ -274,6 +274,7 @@ void ImageRPhiProjection::plot()
       
       _cplots.push_back(plot);
 
+      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
       emit changed();
 
@@ -307,11 +308,6 @@ void ImageRPhiProjection::remove_plot(QObject* obj)
     _cplots.remove(plot); }
 
   disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-}
-
-void ImageRPhiProjection::configure_plot()
-{
-  emit changed();
 }
 
 void ImageRPhiProjection::update_range()

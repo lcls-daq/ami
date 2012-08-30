@@ -4,6 +4,7 @@
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PWidgetManager.hh"
+#include "ami/qt/RunMaster.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -11,8 +12,6 @@
 #include <QtGui/QInputDialog>
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
-#include <QtGui/QPen>
-#include <QtGui/QIntValidator>
 
 #include "qwt_plot.h"
 #include "qwt_plot_curve.h"
@@ -22,18 +21,16 @@
 
 using namespace Ami::Qt;
 
-static const int DefaultSymbolSize = 5;
-
 QtPlot::QtPlot(QWidget* parent,
 	       const QString&   name) :
   QtPWidget(parent),
   _name    (name),
   _frame   (new QwtPlot(name)),
+  _runnum  (new QLabel("")),
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
-  _grid    (new QwtPlotGrid),
-  _symbol_size(DefaultSymbolSize)
+  _grid    (new QwtPlotGrid)
 {
   bool gMajor = Defaults::instance()->show_grid();
   _grid->enableX   (gMajor);
@@ -52,11 +49,11 @@ QtPlot::QtPlot(QWidget* parent,
 
 QtPlot::QtPlot(QWidget* parent) :
   QtPWidget(parent),
+  _runnum  (new QLabel("")),
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
-  _grid    (new QwtPlotGrid),
-  _symbol_size(DefaultSymbolSize)
+  _grid    (new QwtPlotGrid)
 {
 }
 
@@ -68,6 +65,7 @@ QtPlot::~QtPlot()
 void QtPlot::_layout()
 {
   setAttribute(::Qt::WA_DeleteOnClose, true);
+  setWindowTitle(_name);
   
   QVBoxLayout* layout = new QVBoxLayout;
   { QHBoxLayout* l = new QHBoxLayout;
@@ -81,9 +79,11 @@ void QtPlot::_layout()
       annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
       annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
       annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
-      annotate->addAction("Set Symbol Size"      , this, SLOT(set_symbol_size()));
+      annotate->addAction("Set Plot Style",        this, SLOT(set_style()));
       menu_bar->addMenu(annotate); }
     l->addWidget(menu_bar);
+    l->addStretch();
+    l->addWidget(_runnum); 
     l->addStretch();
     l->addWidget(_counts); 
     layout->addLayout(l); }
@@ -119,7 +119,7 @@ void QtPlot::save(char*& p) const
   XML_insert(p, "AxisControl", "_yrange", _yrange->save(p) );
   XML_insert(p, "bool", "_grid_xenabled"   , QtPersistent::insert(p,_grid->xEnabled()) );
   XML_insert(p, "bool", "_grid_xminenabled", QtPersistent::insert(p,_grid->xMinEnabled()) );
-  XML_insert(p, "int" , "_symbol_size"     , QtPersistent::insert(p,_symbol_size) );
+  XML_insert(p, "QtPlotStyle", "_style", _style.save(p) );
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 }
 
@@ -150,6 +150,8 @@ void QtPlot::load(const char*& p)
       _grid->enableXMin(gMinor);
       _grid->enableYMin(gMinor);
     }
+    else if (tag.name == "_style")
+      _style.load(p);
     else if (tag.element == "QtPWidget")
       QtPWidget::load(p);
 
@@ -172,8 +174,13 @@ void QtPlot::set_plot_title()
   bool ok;
   QString text = QInputDialog::getText(this, tr("Plot Title"), tr("Enter new title:"), 
 				       QLineEdit::Normal, _frame->title().text(), &ok);
-  if (ok)
+  if (ok) {
     _frame->setTitle(text);
+    _name = text;
+    setWindowTitle(text);
+    PWidgetManager::remove(this);
+    PWidgetManager::add(this,text);
+  }
 }
 
 void QtPlot::set_xaxis_title()
@@ -243,62 +250,34 @@ void QtPlot::yrange_change()
 
 void QtPlot::update_counts(double n)
 {
+  _runnum->setText(RunMaster::instance()->run_title());
   _counts->setText(QString("Np %1").arg(n));
 }
 
-class SymbolSizeDialog : public QDialog {
-public:
-  SymbolSizeDialog(QWidget* p, unsigned size) : QDialog(p) 
-  {
-    setWindowTitle("Size");
-
-    _edit = new QLineEdit(QString::number(size));
-    _edit->setMaximumWidth(30);
-    new QIntValidator(1,99,_edit);
-    QHBoxLayout* l = new QHBoxLayout;
-    l->addStretch();
-    l->addWidget(_edit);
-    l->addStretch();
-    setLayout(l);
-
-    connect( _edit, SIGNAL(editingFinished()), this, SLOT(accept()) );
-  }
-  unsigned symbolSize() const 
-  {
-    return _edit->text().toUInt();
-  }
-private:
-  QLineEdit* _edit;
-};
-  
-void QtPlot::set_symbol_size()
+void QtPlot::set_style()
 {
+  _style.query(this);
+
+  QColor qcol(0,0,0);
+  QBrush qbrush(qcol);
+  QPen   qpen(qcol); 
+  qpen.setStyle((::Qt::PenStyle)_style.line_style());
+  qpen.setWidth(_style.line_size());
+  QSize  qsize(_style.symbol_size(),_style.symbol_size());
+
   QwtPlotCurve* item = 0;
   const QwtPlotItemList& list = _frame->itemList();
+
   for(int i=0; i<list.size(); i++) {
     item = dynamic_cast<QwtPlotCurve*>(list.at(i));
-    if (item) break;
+    if (!item) continue;
+
+    QwtSymbol s((QwtSymbol::Style)_style.symbol_style(),
+                qbrush, 
+                qpen, 
+                qsize);
+    item->setSymbol(s);
+    item->setPen(qpen);
   }
-
-  if (!item) return;
-    
-  unsigned w;
-  { QwtSymbol s(item->symbol());
-    w = s.size().width(); }
-
-  SymbolSizeDialog* d = new SymbolSizeDialog(this, w);
-  d->exec();
-  {
-    w = _symbol_size = d->symbolSize();
-    for(int i=0; i<list.size(); i++) {
-      item = dynamic_cast<QwtPlotCurve*>(list.at(i));
-      if (!item) continue;
-
-      QwtSymbol s(item->symbol());
-      s.setSize(w,w);
-      item->setSymbol(s);
-    }
-    emit redraw();
-  }
-  delete d;
+  emit redraw();
 }

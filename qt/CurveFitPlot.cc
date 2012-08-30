@@ -156,7 +156,8 @@ void CurveFitPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),_symbol_size);
+                           noTransform,noTransform,QColor(0,0,0),
+                           _style.symbol_size());
         break;
       default:
         printf("CurveFitPlot type %d not implemented yet\n",entry->desc().type()); 

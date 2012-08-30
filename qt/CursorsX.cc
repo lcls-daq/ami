@@ -366,6 +366,7 @@ void CursorsX::plot()
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
 
   emit changed();
 }

@@ -21,6 +21,7 @@ namespace Ami {
   class Cds;
   class DescEntry;
   class AbsOperator;
+  class EntryScalarRange;
   namespace Qt {
     class ChannelDefinition;
     class CursorsX;
@@ -61,6 +62,7 @@ namespace Ami {
     private:
       QString           _name;
       unsigned          _input;
+      unsigned          _output;
       Ami::AbsOperator* _proj;
 
       enum {NCHANNELS=4};
@@ -72,6 +74,8 @@ namespace Ami {
 
       unsigned           _showMask;
       ConfigureRequestor _req;
+
+      EntryScalarRange*  _auto_range;
     };
   };
 };

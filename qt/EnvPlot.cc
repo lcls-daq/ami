@@ -19,6 +19,7 @@
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EnvPlot.hh"
 
 #include <QtGui/QLabel>
@@ -118,6 +119,8 @@ void EnvPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void EnvPlot::setup_payload(Cds& cds)
 {
+  _auto_range = 0;
+
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     
@@ -136,6 +139,10 @@ void EnvPlot::setup_payload(Cds& cds)
         _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
                            noTransform,noTransform,QColor(0,0,0));
         break;
+      case Ami::DescEntry::ScalarRange: 
+        _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+        _plot = 0;
+        return;
       case Ami::DescEntry::Scalar:  // create a chart from a scalar
         //       { const DescChart& d = *reinterpret_cast<const DescChart*>(_desc);
         // 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
@@ -151,10 +158,13 @@ void EnvPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),_symbol_size);
+                           noTransform,noTransform,
+                           QColor(0,0,0),
+                           _style.symbol_size(),_style.symbol_style());
         break;
       default:
         printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
+        _plot = 0;
         return;
       }
       _plot->attach(_frame);
@@ -190,5 +200,15 @@ void EnvPlot::update()
     _plot->update();
     emit counts_changed(_plot->normalization());
     emit redraw();
+  }
+  if (_auto_range) {
+    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    emit counts_changed(v);
+    if (v >= 0) {
+      delete _desc;
+      _desc = _auto_range->result();
+      _auto_range = 0;
+      emit changed();
+    }
   }
 }

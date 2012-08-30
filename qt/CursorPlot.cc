@@ -14,10 +14,12 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/DescEntry.hh"
+
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScalarRange.hh"
 
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
@@ -36,6 +38,7 @@ using namespace Ami::Qt;
 
 static NullTransform noTransform;
 
+
 CursorPlot::CursorPlot(QWidget* parent,
 		       const QString&   name,
 		       unsigned         channel,
@@ -44,14 +47,16 @@ CursorPlot::CursorPlot(QWidget* parent,
   _channel (channel),
   _input   (input),
   _output_signature  (0),
-  _plot    (0)
+  _plot    (0),
+  _auto_range(0)
 {
 }
 
 CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
   QtPlot   (parent),
-  _plot    (0)
+  _plot    (0),
+  _auto_range(0)
 {
   load(p);
 }
@@ -95,6 +100,8 @@ void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void CursorPlot::setup_payload(Cds& cds)
 {
+  _auto_range = 0;
+
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
 
@@ -114,16 +121,22 @@ void CursorPlot::setup_payload(Cds& cds)
         _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
                             QColor(0,0,0));
         break;
+      case Ami::DescEntry::ScalarRange:
+        _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+        _plot = 0;
+        return;
       case Ami::DescEntry::Prof: 
         _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
                            noTransform,noTransform,QColor(0,0,0));
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),_symbol_size);
+                           noTransform,noTransform,QColor(0,0,0),
+                           _style.symbol_size());
         break;
       default:
         printf("CursorPlot type %d not implemented yet\n",entry->desc().type()); 
+        _plot = 0;
         return;
       }
       _plot->attach(_frame);
@@ -212,5 +225,14 @@ void CursorPlot::update()
     _plot->update();
     emit counts_changed(_plot->normalization());
     emit redraw();
+  }
+  if (_auto_range) {
+    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    emit counts_changed(v);
+    if (v >= 0) {
+      _auto_range->result(&_input->output());
+      _auto_range = 0;
+      emit changed();
+    }
   }
 }

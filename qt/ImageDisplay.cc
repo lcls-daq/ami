@@ -9,6 +9,7 @@
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/NullTransform.hh"
 #include "ami/qt/PrintAction.hh"
+#include "ami/qt/RunMaster.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
@@ -24,6 +25,7 @@
 #include <QtGui/QInputDialog>
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
+#include <QtCore/QDateTime>
 
 #include <sys/uio.h>
 #include <time.h>
@@ -325,9 +327,11 @@ ImageFrame* Ami::Qt::ImageDisplay::plot() const { return _plot; }
 void Ami::Qt::ImageDisplay::update_timedisplay()
 {
   const Pds::ClockTime& time = _plot->time();
-  _time_display->setText(QString("Time:%1.%2")
-                         .arg(QString::number(time.seconds()))
-                         .arg(QString::number(time.nanoseconds()),9,QChar('0')));
+  QDateTime datime; datime.setTime_t(time.seconds());
+  _time_display->setText(QString("%1 %2.%3")
+                         .arg(RunMaster::instance()->run_title())
+                         .arg(datime.toString("MMM dd,yyyy hh:mm:ss"))
+                         .arg(QString::number(time.nanoseconds()/1000000),3,QChar('0')));
   if (_resizeCount)
   {
     QWidget* wid = _container->window();

@@ -7,10 +7,9 @@
 #include <QtCore/QStringList>
 
 class QLineEdit;
-class QRadioButton;
-class QButtonGroup;
 class QVBoxLayout;
 class QComboBox;
+class QTabWidget;
 
 #include "ami/qt/Cursors.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -82,12 +81,11 @@ namespace Ami {
       EdgeCursor* _baseline;
       unsigned   _quantity;
 
+      QTabWidget* _baseline_tab;
+      QTabWidget* _plottype_tab;
+
       QLineEdit* _title;
-      QButtonGroup* _base_grp;
-      QRadioButton* _const_bl;
-      QRadioButton* _linear_bl;
       CursorLocation *_lvalue;
-      QButtonGroup* _plot_grp;
       DescTH1F*  _hist;
       DescChart* _vTime;
       DescProf*  _vFeature;

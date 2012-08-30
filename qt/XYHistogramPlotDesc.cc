@@ -5,6 +5,7 @@
 #include "ami/qt/DescTH1F.hh"
 
 #include "ami/data/DescTH1F.hh"
+#include "ami/data/DescScalarRange.hh"
 #include "ami/data/XYHistogram.hh"
 
 #include <QtGui/QHBoxLayout>
@@ -45,10 +46,34 @@ void XYHistogramPlotDesc::load(const char*& p)
 
 Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const
 {
-  Ami::DescTH1F desc(title,
-                     "pixel value", "pixels",
-                     _desc->bins(), _desc->lo(), _desc->hi());
-  return new Ami::XYHistogram(desc, 
-                              _rectangle.xlo(), _rectangle.xhi(),
-                              _rectangle.ylo(), _rectangle.yhi());
+  Ami::DescEntry* desc = 0;
+
+  switch(_desc->method()) {
+  case DescTH1F::Fixed:
+    desc = new Ami::DescTH1F(title,
+                             "pixel value", "pixels",
+                             _desc->bins(), _desc->lo(), _desc->hi());
+    break;
+  case DescTH1F::Auto1:
+    desc = new Ami::DescScalarRange(title,"events",
+                                    DescScalarRange::MeanSigma,
+                                    _desc->sigma(),
+                                    _desc->nsamples(),
+                                    _desc->bins());
+    break;
+  case DescTH1F::Auto2:
+    desc = new Ami::DescScalarRange(title,"events",
+                                    DescScalarRange::MinMax,
+                                    _desc->extent(),
+                                    _desc->nsamples(),
+                                    _desc->bins());
+    break;
+  default:
+    break;
+  }
+  Ami::XYHistogram* r = new Ami::XYHistogram(*desc, 
+                                             _rectangle.xlo(), _rectangle.xhi(),
+                                             _rectangle.ylo(), _rectangle.yhi());
+  delete desc;
+  return r;
 }

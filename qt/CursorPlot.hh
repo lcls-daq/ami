@@ -12,6 +12,7 @@
 namespace Ami {
   class Cds;
   class DescEntry;
+  class EntryScalarRange;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
@@ -37,12 +38,15 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
+    signals:
+      void changed();
     private:
       unsigned _channel;
       BinMath* _input;
       unsigned _output_signature;
       QtBase*  _plot;
       ConfigureRequestor _req;
+      EntryScalarRange* _auto_range;
     };
   };
 };

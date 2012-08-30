@@ -18,6 +18,7 @@
 #include "ami/qt/CursorDefinition.hh"
 
 #include "ami/data/DescScalar.hh"
+#include "ami/data/DescScalarRange.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/DescScan.hh"
@@ -43,6 +44,7 @@
 #include <QtCore/QRegExp>
 #include <QtGui/QRegExpValidator>
 #include <QtGui/QMessageBox>
+#include <QtGui/QTabWidget>
 
 #include <sys/socket.h>
 
@@ -50,6 +52,7 @@
 //#define bold(t) "<b>" #t "</b>"
 #define bold(t) #t
 
+enum { ConstantBL, LinearBL };
 enum { _TH1F, _vT, _vF, _vS };
 
 
@@ -74,7 +77,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _baseline  = new EdgeCursor(QString(""), *_frame.plot());
+  _baseline  = new EdgeCursor(QString(""), *_frame.plot(), frameParent);
   QString bl("baseline");
   _baseline->setName(bl);
 
@@ -92,22 +95,8 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _vFeature = new DescProf (bold(Mean v Var) , &FeatureRegistry::instance());
   _vScan    = new DescScan (bold(Mean v Scan));
 
-  _plot_grp = new QButtonGroup;
-  _plot_grp->addButton(_hist    ->button(),_TH1F);
-  _plot_grp->addButton(_vTime   ->button(),_vT);
-  _plot_grp->addButton(_vFeature->button(),_vF);
-  _plot_grp->addButton(_vScan   ->button(),_vS);
-  _hist->button()->setChecked(true);
-
-  _const_bl  = new QRadioButton("constant baseline");
-  _linear_bl = new QRadioButton("linear baseline  ");
   _lvalue = new CursorLocation;
   QPushButton *lgrabB  = new QPushButton("Grab");
-
-  _base_grp = new QButtonGroup;
-  _base_grp->addButton(_const_bl, 0);
-  _base_grp->addButton(_linear_bl, 0);
-  _const_bl->setChecked(true);
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -128,34 +117,41 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   { QGroupBox* locations_box = new QGroupBox("Define PeakFit");
     locations_box->setToolTip("Define baseline value.");
     QVBoxLayout* layout1 = new QVBoxLayout;
-    { QGridLayout *layout2 = new QGridLayout;
-      layout2->addWidget(_const_bl,  0, 0);
-      layout2->addWidget(_baseline,  0, 1);
-      layout2->addWidget(_linear_bl, 1, 0);
-      { QHBoxLayout* layout3 = new QHBoxLayout;
-        layout3->addWidget(_lvalue);
-        layout3->addWidget(lgrabB);
-        layout2->addLayout(layout3, 1, 1, ::Qt::AlignRight); }
+    { QHBoxLayout* layout2 = new QHBoxLayout;
+      layout2->addWidget(new QLabel("Baseline"));
+      { _baseline_tab = new QTabWidget;
+        _baseline_tab->addTab(_baseline, "Constant");
+        { QVBoxLayout* vl = new QVBoxLayout;
+          { QHBoxLayout* hl = new QHBoxLayout;
+            hl->addWidget(_lvalue);
+            hl->addWidget(lgrabB);
+            vl->addLayout(hl); }
+          vl->addLayout(_clayout);
+          QWidget* lw = new QWidget;
+          lw->setLayout(vl);
+          _baseline_tab->addTab(lw, "Linear"); }
+        layout2->addWidget(_baseline_tab); }
       layout1->addLayout(layout2); }
-    layout1->addLayout(_clayout);
     { QHBoxLayout* layout2 = new QHBoxLayout;
       layout2->addWidget(new QLabel("Quantity"));
       layout2->addWidget(qtyBox);
       layout1->addLayout(layout2); }
     locations_box->setLayout(layout1);
     layout->addWidget(locations_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
+  { QHBoxLayout* layout2 = new QHBoxLayout;
+    layout2->addWidget(new QLabel("Title"));
+    layout2->addWidget(_title);
+    layout2->addStretch();
+    layout2->addWidget(addPostB);
+    layout->addLayout(layout2); }
+  { QGroupBox* plot_box = new QGroupBox("Plot Type");
     QVBoxLayout* layout1 = new QVBoxLayout;
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
-      layout2->addWidget(_title);
-      layout2->addStretch();
-      layout2->addWidget(addPostB);
-      layout1->addLayout(layout2); }
-    layout1->addWidget(_hist );
-    layout1->addWidget(_vTime);
-    layout1->addWidget(_vFeature);
-    layout1->addWidget(_vScan);
+    _plottype_tab = new QTabWidget;
+    _plottype_tab->addTab(_hist    , _hist    ->button()->text());
+    _plottype_tab->addTab(_vTime   , _vTime   ->button()->text());
+    _plottype_tab->addTab(_vFeature, _vFeature->button()->text());
+    _plottype_tab->addTab(_vScan   , _vScan   ->button()->text());
+    layout1->addWidget(_plottype_tab);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -177,6 +173,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));
 
   connect(addPostB  , SIGNAL(clicked()),      this, SLOT(add_post()));
+  connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
 
   set_quantity(0);
 }
@@ -199,7 +196,8 @@ void PeakFit::save(char*& p) const
   XML_insert(p, "DescChart", "_vTime", _vTime->save(p) );
   XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan", "_vScan", _vScan->save(p) );
-  XML_insert(p, "QRadioButton", "_const_bl", QtPersistent::insert(p,_const_bl->isChecked()));
+  XML_insert(p, "QTabWidget", "_baseline_tab", QtPersistent::insert(p,_baseline_tab->currentIndex()));
+  XML_insert(p, "QTabWidget", "_plottype_tab", QtPersistent::insert(p,_plottype_tab->currentIndex()));
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     XML_insert(p, "CursorDefinition", "_cursors", (*it)->save(p) );
@@ -248,12 +246,10 @@ void PeakFit::load(const char*& p)
       _vFeature->load(p);
     else if (tag.name == "_vScan")
       _vScan->load(p);
-    else if (tag.name == "_const_bl") {
-        if (QtPersistent::extract_b(p))
-            _const_bl->setChecked(true);
-        else
-            _linear_bl->setChecked(true);
-    }
+    else if (tag.name == "_baseline_tab")
+      _baseline_tab->setCurrentIndex(QtPersistent::extract_i(p));
+    else if (tag.name == "_plottype_tab")
+      _plottype_tab->setCurrentIndex(QtPersistent::extract_i(p));
     else if (tag.name == "_cursors") {
       CursorDefinition* d = new CursorDefinition(p, *this, _frame.plot());
       _cursors.push_back(d);
@@ -320,16 +316,38 @@ void PeakFit::set_quantity(int q)
 
 void PeakFit::plot()
 {
-  if (!_const_bl->isChecked() && !_cursors.size())  /* Can't plot if no baseline! */
+  if (_baseline_tab->currentIndex()!=ConstantBL && !_cursors.size())  /* Can't plot if no baseline! */
       return;
 
   DescEntry* desc;
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
-  switch(_plot_grp->checkedId()) {
+  switch(_plottype_tab->currentIndex()) {
   case _TH1F:
-    desc = new Ami::DescTH1F(qPrintable(_title->text()),
-			     name,"events",
-			     _hist->bins(),_hist->lo(),_hist->hi(), false); 
+    switch(_hist->method()) {
+      case DescTH1F::Fixed:
+        desc = new Ami::DescTH1F(qPrintable(_title->text()),
+                                 name,"events",
+                                 _hist->bins(),_hist->lo(),_hist->hi(),false); 
+        break;
+      case DescTH1F::Auto1:
+        desc = new Ami::DescScalarRange(qPrintable(_title->text()),"events",
+                                        DescScalarRange::MeanSigma,
+                                        _hist->sigma(),
+                                        _hist->nsamples(),
+                                        _hist->bins(),
+                                        false);
+        break;
+      case DescTH1F::Auto2:
+        desc = new Ami::DescScalarRange(qPrintable(_title->text()),"events",
+                                        DescScalarRange::MinMax,
+                                        _hist->extent(),
+                                        _hist->nsamples(),
+                                        _hist->bins(),
+                                        false);
+        break;
+      default:
+        break;
+    }
     break;
   case _vT: 
     desc = new Ami::DescScalar(qPrintable(_title->text()),
@@ -351,7 +369,7 @@ void PeakFit::plot()
 
 
   Ami::PeakFitPlot *plotter;
-  if (_const_bl->isChecked()) {
+  if (_baseline_tab->currentIndex()==ConstantBL) {
       plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
   } else {
       int bins[MAX_BINS], i = 0;
@@ -373,6 +391,7 @@ void PeakFit::plot()
 							   
   _plots.push_back(plot);
 
+  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
   emit changed();
@@ -398,7 +417,7 @@ void PeakFit::add_post()
   const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
   Ami::DescCache* desc = new Ami::DescCache(name, qPrintable(_title->text()), Ami::PostAnalysis);
   Ami::PeakFitPlot *plotter;
-  if (_const_bl->isChecked()) {
+  if (_baseline_tab->currentIndex()==ConstantBL) {
       plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
   } else {
       int bins[MAX_BINS], i = 0;
@@ -429,6 +448,7 @@ void PeakFit::add_cursor()
 					       _frame.plot());
     _cursors.push_back(d);
     _clayout->addWidget(d);
+    _baseline_tab->updateGeometry();
   }
   else {
     QMessageBox::critical(this,tr("Add Cursor"),tr("Too many cursors in use"));
@@ -440,6 +460,7 @@ void PeakFit::remove(CursorDefinition& c)
   _names.push_back(c.name());
   _cursors.remove(&c);
   delete &c;
+  _baseline_tab->updateGeometry();
 }
 
 void PeakFit::mousePressEvent(double x, double y)

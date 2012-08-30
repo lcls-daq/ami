@@ -2,6 +2,7 @@
 #define AmiQt_QtPlot_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/QtPlotStyle.hh"
 
 #include <QtCore/QString>
 
@@ -12,6 +13,7 @@ class QwtPlotGrid;
 namespace Ami {
   namespace Qt {
     class AxisControl;
+
     class QtPlot : public QtPWidget {
       Q_OBJECT
     public:
@@ -40,17 +42,18 @@ namespace Ami {
       void xrange_change();
       void yrange_change();
       void update_counts(double);
-      void set_symbol_size();
+      void set_style();
     public:
       QString      _name;
       QwtPlot*     _frame;
+      QLabel*      _runnum;
       QLabel*      _counts;
     private:
       AxisControl* _xrange;
       AxisControl* _yrange;
       QwtPlotGrid* _grid;
     protected:
-      int          _symbol_size;
+      QtPlotStyle _style;
     };
   };
 };

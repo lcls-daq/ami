@@ -6,6 +6,9 @@
 #include "ami/data/EntryScalar.hh"
 
 #include "qwt_plot_curve.h"
+
+#include <QtGui/QPen>
+
 class QwtPlot;
 class QColor;
 
@@ -13,10 +16,12 @@ namespace Ami {
   class EntryChart;
   namespace Qt {
     class QtChart : public QtBase {
+      enum { DefaultPenSize=1 };
     public:
       QtChart(const QString&   title,
 	      const Ami::EntryScalar&,
-	      const QColor&);
+	      const QColor&,
+              int          pen_size = DefaultPenSize);
       virtual ~QtChart();
     public:
       void        dump  (FILE*   ) const;

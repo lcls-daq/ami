@@ -20,6 +20,7 @@
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScalarRange.hh"
 
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
@@ -46,13 +47,16 @@ PeakFitPlot::PeakFitPlot(QWidget* parent,
   _channel (channel),
   _input   (input),
   _output_signature  (0),
-  _plot    (0)
+  _plot    (0),
+  _auto_range(0)
 {
 }
 
 PeakFitPlot::PeakFitPlot(QWidget* parent,
 			 const char*& p) :
-  QtPlot(parent)
+  QtPlot(parent),
+  _auto_range(0)
+
 {
   load(p);
 
@@ -97,6 +101,8 @@ void PeakFitPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void PeakFitPlot::setup_payload(Cds& cds)
 {
+  _auto_range = 0;
+
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     if (_plot && !_req.changed()) {
@@ -121,8 +127,13 @@ void PeakFitPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),_symbol_size);
+                           noTransform,noTransform,QColor(0,0,0),
+                           _style.symbol_size());
         break;
+      case Ami::DescEntry::ScalarRange:
+        _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+        _plot = 0;
+        return;
       default:
         printf("PeakFitPlot type %d not implemented yet\n",entry->desc().type()); 
         _plot = 0;
@@ -165,5 +176,14 @@ void PeakFitPlot::update()
     _plot->update();
     emit counts_changed(_plot->normalization());
     emit redraw();
+  }
+  if (_auto_range) {
+    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    emit counts_changed(v);
+    if (v >= 0) {
+      _auto_range->result(&_input->output());
+      _auto_range = 0;
+      emit changed();
+    }
   }
 }

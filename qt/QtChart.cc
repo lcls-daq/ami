@@ -29,9 +29,10 @@ namespace Ami {
 
 using namespace Ami::Qt;
 
-QtChart::QtChart(const QString&   title,
+QtChart::QtChart(const QString&          title,
 		 const Ami::EntryScalar& entry,
-		 const QColor& c) :
+		 const QColor&           c,
+                 int                     pen_size) :
   QtBase  (title,entry),
   _cache  (*new EntryScalar(entry.desc())),
   _n      (entry.desc().npoints()),
@@ -41,7 +42,12 @@ QtChart::QtChart(const QString&   title,
   _pts    (0)
 {
   _curve.setStyle(QwtPlotCurve::Steps);
-  _curve.setPen  (QPen(c));
+
+  QPen pen(c);
+  //  pen.setStyle(pen_style);
+  pen.setWidth(pen_size);
+  _curve.setPen  (pen);
+
   _curve.setCurveAttribute(QwtPlotCurve::Inverted,true);
 
   unsigned nb = 2*_n;

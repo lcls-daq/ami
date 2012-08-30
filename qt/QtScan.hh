@@ -4,6 +4,7 @@
 #include "ami/qt/QtBase.hh"
 
 #include "qwt_plot_curve.h"
+#include "qwt_symbol.h"
 class QwtPlot;
 class QColor;
 
@@ -13,13 +14,15 @@ namespace Ami {
   namespace Qt {
     class QtScan : public QtBase {
       enum { DefaultSymbolSize=5 };
+      enum { DefaultSymbolStyle=QwtSymbol::Diamond };
     public:
       QtScan(const QString&   title,
 	     const Ami::EntryScan&,
 	     const AbsTransform& x,
 	     const AbsTransform& y,
 	     const QColor&,
-             int symbol_size=DefaultSymbolSize);
+             int symbol_size=DefaultSymbolSize,
+             int symbol_style=DefaultSymbolStyle);
       ~QtScan();
     public:
       void        dump  (FILE*   ) const;

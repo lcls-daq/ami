@@ -419,7 +419,7 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
   DetectorListItem* ditem = static_cast<DetectorListItem*>(item);
   for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++)
     if (match((*it)->info,ditem->info) && (*it)->channel==ditem->channel) {
-      (*it)->show();
+      (*it)->front();
       return;
     }
   const char* p=0;

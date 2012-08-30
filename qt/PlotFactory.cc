@@ -1,7 +1,6 @@
 #include "PlotFactory.hh"
 
 #include "ami/data/AbsTransform.hh"
-// #include "ami/qt/QtScalar.hh"
 #include "ami/qt/QtTH1F.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtTH2F.hh"
@@ -39,6 +38,9 @@ QtBase* PlotFactory::plot(const QString&    name,
     QTCASE(TH2F);
     QTCASE(Waveform);
     QTCASE(Image);
+  case Ami::DescEntry::ScalarRange:  // silently ignore
+    b = 0;
+    break;
   default : 
     printf("PlotFactory type %d not implemented\n",entry.desc().type()); 
     b = 0; 
