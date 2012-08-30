@@ -10,6 +10,7 @@
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/DescScan.hh"
+#include "ami/data/DescScalarRange.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QPushButton>
@@ -35,12 +36,14 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
   _vFeature = new DescProf("Mean v Var" , registry);
   _vScan    = new DescScan("Mean v Scan", registry);
 
+#if 0
   _plot_grp = new QButtonGroup;
   _plot_grp->addButton(_hist    ->button(),(int)TH1F);
   _plot_grp->addButton(_vTime   ->button(),(int)vT);
   _plot_grp->addButton(_vFeature->button(),(int)vF);
   _plot_grp->addButton(_vScan   ->button(),(int)vS);
   _hist->button()->setChecked(true);
+#endif
 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
@@ -50,18 +53,28 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
   _vweight = new FeatureList(registry);
 
   QVBoxLayout* layout1 = new QVBoxLayout;
+  { QHBoxLayout* layout2 = new QHBoxLayout;
+    layout2->addWidget(new QLabel("Title"));
+    layout2->addWidget(_title);
+    layout2->addStretch();
+    layout2->addWidget(_postB);
+    layout1->addLayout(layout2); }
   { QGroupBox* box = new QGroupBox("Plot Type");
     QVBoxLayout* vl = new QVBoxLayout;
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
-      layout2->addWidget(_title);
-      layout2->addStretch();
-      layout2->addWidget(_postB);
-      vl->addLayout(layout2); }
+#if 0
     vl->addWidget(_hist );
     vl->addWidget(_vTime);
     vl->addWidget(_vFeature);
     vl->addWidget(_vScan);
+#else
+    QTabWidget* tab = new QTabWidget;
+    tab->addTab(_hist    , _hist    ->button()->text());
+    tab->addTab(_vTime   , _vTime   ->button()->text());
+    tab->addTab(_vFeature, _vFeature->button()->text());
+    tab->addTab(_vScan   , _vScan   ->button()->text());
+    vl->addWidget(tab);
+    _plot_grp = tab;
+#endif
     box->setLayout(vl);
     layout1->addWidget(box); }
   { QGroupBox* box = new QGroupBox("Normalization");
@@ -99,7 +112,11 @@ void ScalarPlotDesc::save(char*& p) const
   XML_insert(p, "DescProf" , "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan" , "_vScan"   , _vScan   ->save(p) );
 
+#if 0
   XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->checkedId ()) );
+#else
+  XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->currentIndex ()) );
+#endif
 }
 
 void ScalarPlotDesc::load(const char*& p)
@@ -114,7 +131,11 @@ void ScalarPlotDesc::load(const char*& p)
     else if (tag.name == "_vScan")
       _vScan->load(p);
     else if (tag.name == "_plot_grp")
+#if 0
       _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
+#else
+      _plot_grp->setCurrentIndex(QtPersistent::extract_i(p));
+#endif
   XML_iterate_close(ScalarPlotDesc,tag);
 }
 
@@ -126,11 +147,35 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 
   QString qtitle = title ? QString(title) : _title->text();
 
+#if 0
   switch(_plot_grp->checkedId()) {
+#else
+  switch(_plot_grp->currentIndex()) {
+#endif
   case ScalarPlotDesc::TH1F:
     { QString v = _ynorm->isChecked() ? vn : qtitle;
-      desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
-			     _hist->bins(),_hist->lo(),_hist->hi()); 
+      switch(_hist->method()) {
+      case DescTH1F::Fixed:
+        desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
+                                 _hist->bins(),_hist->lo(),_hist->hi()); 
+        break;
+      case DescTH1F::Auto1:
+        desc = new Ami::DescScalarRange(qPrintable(v),"events",
+                                        DescScalarRange::MeanSigma,
+                                        _hist->sigma(),
+                                        _hist->nsamples(),
+                                        _hist->bins());
+        break;
+      case DescTH1F::Auto2:
+        desc = new Ami::DescScalarRange(qPrintable(v),"events",
+                                        DescScalarRange::MinMax,
+                                        _hist->extent(),
+                                        _hist->nsamples(),
+                                        _hist->bins());
+        break;
+      default:
+        break;
+      }
       break; }
   case ScalarPlotDesc::vT: 
     { QString v = _ynorm->isChecked() ? vn : qtitle;

@@ -32,7 +32,7 @@ DescProf::DescProf(const char* name, FeatureRegistry* registry) :
   new QDoubleValidator(_hi);
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout = new QHBoxLayout;
-    layout->addWidget(_button);
+//     layout->addWidget(_button);
     layout->addWidget(_expr);
     layout->addWidget(calcB);
     layout->addStretch();

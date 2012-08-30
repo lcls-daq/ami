@@ -9,6 +9,7 @@
 class QLineEdit;
 class QPushButton;
 class QButtonGroup;
+class QTabWidget;
 class QCheckBox;
 class QString;
 
@@ -46,7 +47,11 @@ namespace Ami {
       QCheckBox*    _weightB;
       FeatureList*  _vweight;
 
+#if 0
       QButtonGroup* _plot_grp;
+#else
+      QTabWidget* _plot_grp;
+#endif
       DescTH1F*   _hist;
       DescChart*  _vTime;
       DescProf*   _vFeature;

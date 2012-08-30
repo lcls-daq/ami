@@ -13,7 +13,7 @@ using namespace Ami::Qt;
 
 DescChart::DescChart(const char* name) :
   QWidget(0), 
-  _button(new QRadioButton), 
+  _button(new QRadioButton("v Time")), 
   _stat  (new QComboBox),
   _pts(new QLineEdit("100")), 
   _dpt(new QLineEdit("1"))
@@ -27,14 +27,20 @@ DescChart::DescChart(const char* name) :
   _dpt->setMaximumWidth(60);
   new QIntValidator   (1,(1<<16 -1),_dpt);
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(_button);
+//   layout->addWidget(_button);
   layout->addWidget(_stat);
   layout->addWidget(new QLabel(name));
   layout->addStretch();
-  layout->addWidget(new QLabel("points"));
-  layout->addWidget(_pts);
-  layout->addWidget(new QLabel("prescale"));
-  layout->addWidget(_dpt);
+  { QVBoxLayout* vl = new QVBoxLayout;
+    { QHBoxLayout* l = new QHBoxLayout;
+      l->addWidget(new QLabel("points"));
+      l->addWidget(_pts); 
+      vl->addLayout(l); }
+    { QHBoxLayout* l = new QHBoxLayout;
+      l->addWidget(new QLabel("prescale"));
+      l->addWidget(_dpt);
+      vl->addLayout(l); }
+    layout->addLayout(vl); }
   _pts->setEnabled(true);
   _dpt->setEnabled(true);
   setLayout(layout);

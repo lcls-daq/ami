@@ -23,7 +23,8 @@ DescScan::DescScan(const char* name, FeatureRegistry* registry) :
 
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout = new QHBoxLayout;
-    layout->addWidget(_button);
+//     layout->addWidget(_button);
+    layout->addStretch();
     layout->addWidget(_features);
     layout->addStretch();
     layout->addWidget(new QLabel("pts"));
