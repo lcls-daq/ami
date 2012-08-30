@@ -9,7 +9,7 @@ namespace Ami {
 
   class DescEntry : public Desc {
   public:
-    enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan, Ref, Cache};
+    enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan, Ref, Cache, ScalarRange};
     Type type() const;
 
     const Pds::DetInfo& info()    const;

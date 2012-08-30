@@ -4,6 +4,7 @@
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/data/Cds.hh"
@@ -94,6 +95,20 @@ Entry&     XYHistogram::_operate(const Entry& e) const
             o->addcontent(1.,(double(_input->content(i,j))-p)*n);
 	}
 	o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
+	break; }
+    case DescEntry::ScalarRange:
+      { EntryScalarRange* o = static_cast<EntryScalarRange*>(_output);
+
+        unsigned ilo = unsigned((_xlo-inputd.xlow())/inputd.ppxbin());
+        unsigned ihi = unsigned((_xhi-inputd.xlow())/inputd.ppxbin());
+        unsigned jlo = unsigned((_ylo-inputd.ylow())/inputd.ppybin());
+        unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
+        double   p(_input->info(EntryImage::Pedestal));
+        double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
+        for(unsigned i=ilo; i<ihi; i++) {
+          for(unsigned j=jlo; j<jhi; j++)
+            o->addcontent((double(_input->content(i,j))-p)*n);
+	}
 	break; }
     default:
       break;

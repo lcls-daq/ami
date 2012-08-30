@@ -10,6 +10,7 @@
 #include "ami/data/DescWaveform.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
@@ -17,7 +18,6 @@
 #include "ami/data/EntryCache.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
-#include "ami/data/DescImage.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
@@ -474,6 +474,10 @@ Entry&     BinMath::_operate(const Entry& e) const
     switch(_entry->desc().type()) {
     case DescEntry::Scalar:  
       { EntryScalar* en = static_cast<EntryScalar*>(_entry);
+	en->addcontent(y);
+	break; }
+    case DescEntry::ScalarRange:  
+      { EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
 	en->addcontent(y);
 	break; }
     case DescEntry::TH1F:

@@ -7,7 +7,7 @@
 //
 
 #include "ami/data/AbsOperator.hh"
-#include "ami/data/DescTH1F.hh"
+#include "ami/data/DescScalarRange.hh"
 
 namespace Ami {
 
@@ -28,7 +28,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
   private:
-    enum { DESC_LEN = sizeof(DescTH1F) };
+    enum { DESC_LEN = sizeof(DescScalarRange) };
     char             _desc_buffer[DESC_LEN];
     double           _xlo;
     double           _xhi;

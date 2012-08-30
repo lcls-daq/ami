@@ -4,6 +4,7 @@
 #include "ami/data/DescEntryW.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
@@ -102,6 +103,10 @@ Entry&     EnvPlot::_operate(const Entry& e) const
       switch(_entry->desc().type()) {
       case DescEntry::Scalar: 
 	{ EntryScalar* en = static_cast<EntryScalar*>(_entry);
+	  en->addcontent(y);    
+	  break; }
+      case DescEntry::ScalarRange: 
+	{ EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
 	  en->addcontent(y);    
 	  break; }
       case DescEntry::TH1F: 
