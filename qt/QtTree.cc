@@ -88,13 +88,15 @@ QtTree::QtTree(const QString& separator) :
 
   _view.setModel(&_model);
 
-  connect(this  , SIGNAL(clicked()), this, SLOT(set_mru()));
-  connect(this  , SIGNAL(clicked()), &_view, SLOT(show()));
+  connect(this  , SIGNAL(clicked()), this, SLOT(show_tree()));
   connect(&_view, SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
 
-QtTree::QtTree(const QStringList& names, const QStringList& help, const QColor& color,
-               const QString& separator) :
+QtTree::QtTree(const QStringList& names, 
+               const QStringList& help, 
+               const QColor& color,
+               const QString& separator,
+               const QStringList& pnames) :
   QPushButton(),
   _view      (this),
   _entry     (),
@@ -113,25 +115,49 @@ QtTree::QtTree(const QStringList& names, const QStringList& help, const QColor& 
 
   fill(names);
 
-  connect(this    , SIGNAL(clicked()), this, SLOT(set_mru()));
-  connect(this    , SIGNAL(clicked()), &_view, SLOT(show()));
+  connect(this    , SIGNAL(clicked()), this, SLOT(show_tree()));
   connect(&_view  , SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
 
-void QtTree::fill(const QStringList& names)
+void QtTree::fill(const QStringList& names) { fill(names,QStringList()); }
+
+void QtTree::fill(const QStringList& names,
+                  const QStringList& post_names)
 {
+  QStringList scan_names;
 
   if (names.size()) {
     QStandardItem* root = _model.invisibleRootItem();
-    root->appendRow( new QStandardItem( names.at(0) ) );
-    for(int i=1; i<names.size(); i++) {
-      push(*root, names.at(i),0,_separator);
+
+    bool lFirst=true;
+    for(int i=0; i<names.size(); i++) {
+      QString n(names.at(i));
+      if (n.contains("(SCAN)"))
+        scan_names.push_back(n);
+      else if (lFirst) {
+        lFirst=false;
+        root->appendRow( new QStandardItem( n ) );
+      }
+      else
+        push(*root,n,0,_separator);
+    }
+    for(int i=0; i<scan_names.size(); i++)
+      root->insertRow(0, new QStandardItem(scan_names.at(i)));
+
+    { 
+      root->insertRow( 0, new QStandardItem( QString("[Post]")));
+      QStandardItem& post_root = *_model.invisibleRootItem()->child(0);
+      for(int i=0; i<post_names.size(); i++)
+        post_root.insertRow(0, new QStandardItem(post_names.at(i)));
     }
 
-    root->insertRow( 0,  new QStandardItem( QString("[Most Recent]")) );
+    root->insertRow( 0, new QStandardItem( QString("[Most Recent]")) );
   }
 
-  set_entry(_entry);
+  if (scan_names.size())
+    set_entry(scan_names.at(0));
+  else
+    set_entry(_entry);
 }
 
 QtTree::~QtTree()
@@ -209,7 +235,7 @@ static bool has_child_named(const QStandardItem& root,
   return false;
 }
 
-void QtTree::set_mru()
+void QtTree::show_tree()
 {
   _model.invisibleRootItem()->takeRow(0);
 
@@ -223,6 +249,8 @@ void QtTree::set_mru()
         break;
     }
   }
+
+  _view.show();
 }
 
 bool QtTree::_valid_entry(const QString&) const { return true; }

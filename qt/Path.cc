@@ -24,7 +24,7 @@ FILE* Path::helpFile()
   return fopen(qPrintable(fname),"r");
 }
 
-FILE* Path::saveDataFile()
+FILE* Path::saveDataFile(QWidget* parent)
 {
   FILE* f = 0;
 
@@ -35,7 +35,8 @@ FILE* Path::saveDataFile()
   QString def = QString("%1/%2.dat").arg(_base).arg(time_buffer);
 
   QString fname =
-    QFileDialog::getSaveFileName(0,"Save File As (.dat)",
+    QFileDialog::getSaveFileName(parent,
+                                 "Save File As (.dat)",
 				 def,"*.dat");
 
   if (fname.isNull())
@@ -46,17 +47,19 @@ FILE* Path::saveDataFile()
 
   f = fopen(qPrintable(fname),"w");
   if (!f)
-    QMessageBox::warning(0, "Save data",
+    QMessageBox::warning(parent, 
+                         "Save data",
 			 QString("Error opening %1 for writing").arg(fname));
 
   return f;
 }
 
-FILE* Path::saveReferenceFile(const QString& base) 
+FILE* Path::saveReferenceFile(QWidget* parent,const QString& base) 
 {
   QString ref_dir(_base);
   ref_dir += base;
-  QString file = QFileDialog::getSaveFileName(0,"Reference File:",
+  QString file = QFileDialog::getSaveFileName(parent,
+                                              "Reference File:",
 					      ref_dir, "*.ref");
   if (file.isNull())
     return 0;
@@ -66,16 +69,18 @@ FILE* Path::saveReferenceFile(const QString& base)
 
   FILE* f = fopen(qPrintable(file),"w");
   if (!f)
-    QMessageBox::critical(0, "Save Reference", QString("Error opening %s for writing.").arg(file));
+    QMessageBox::critical(parent, "Save Reference", QString("Error opening %s for writing.").arg(file));
 
   return f; 
 }
 
-QString Path::loadReferenceFile(const QString& base)
+QString Path::loadReferenceFile(QWidget* parent,
+                                const QString& base)
 {
   QString ref_dir(_base);
   ref_dir += QString(base);
-  QString file = QFileDialog::getOpenFileName(0,"Reference File:",
+  QString file = QFileDialog::getOpenFileName(parent,
+                                              "Reference File:",
 					      ref_dir, "*.ref;;*.dat");
   if (file.isNull()) {
     printf("load_reference file is null\n");

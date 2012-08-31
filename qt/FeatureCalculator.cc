@@ -19,8 +19,9 @@ static QStringList ops = QStringList() << _exponentiate
 
 static QStringList vops;
 
-FeatureCalculator::FeatureCalculator(const QString& name, FeatureRegistry& r) :
-  Calculator(name, "",
+FeatureCalculator::FeatureCalculator(QWidget* parent, const QString& name, FeatureRegistry& r) :
+  Calculator(parent,
+             name, "",
 	     r.names(),
 	     vops, 
 	     ops,

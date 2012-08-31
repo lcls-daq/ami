@@ -37,7 +37,7 @@ PeakPlot::PeakPlot(QWidget*         parent,
 		   double           threshold_0,
 		   double           threshold_1,
                    bool             accumulate) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _name    (name),
   _input   (input_channel),
   _threshold_0(threshold_0),
@@ -80,7 +80,7 @@ void PeakPlot::_layout()
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4);
-	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); }
       }
@@ -89,11 +89,11 @@ void PeakPlot::_layout()
 
     { QPushButton* rectB = new QPushButton("X / Y Selection");
       layout3->addWidget(rectB);
-      connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(show())); }
+      connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(front())); }
     
     { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
       layout3->addWidget(cylB);
-      connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(show())); }
+      connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
     layout3->addStretch();
     layout->addLayout(layout3); }
 

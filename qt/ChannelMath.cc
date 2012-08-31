@@ -64,7 +64,8 @@ void ChannelMath::calc()
   QStringList names(_names);
   names << FeatureRegistry::instance().names();
 
-  Calculator* c = new Calculator(tr("Channel Math"),"",
+  Calculator* c = new Calculator(this,
+                                 tr("Channel Math"),"",
 				 names, vops, ops);
   if (c->exec()==QDialog::Accepted) {
     _expr->setText(c->result());

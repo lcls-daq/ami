@@ -10,7 +10,7 @@ namespace Ami {
     class QtTopWidget : public QtPWidget {
     public:
       QtTopWidget(QWidget* parent, const Pds::DetInfo& i, unsigned ch) : 
-	QtPWidget(parent), info(i), channel(ch) {}
+	QtPWidget(0), info(i), channel(ch) {}
       virtual ~QtTopWidget() {}
     public:
       virtual const QString& title() const = 0;

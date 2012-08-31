@@ -64,7 +64,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _status  = new Status;
 
   QPushButton* filterB = new QPushButton("Filter");
-  _filter = new Filter     (NULL,_title);
+  _filter = new Filter     (this,_title);
 
   _source_edit    = new QLineEdit("");
   _source_compose = new QPushButton("Select");
@@ -96,7 +96,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     layout->addLayout(layout1); }
   setLayout(layout);
 
-  connect(filterB   , SIGNAL(clicked()),   _filter, SLOT(show()));
+  connect(filterB   , SIGNAL(clicked()),   _filter, SLOT(front()));
   connect(_source_edit   , SIGNAL(editingFinished()), this, SLOT(validate_source()));
   connect(_source_compose, SIGNAL(clicked()),         this, SLOT(select_source()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
@@ -411,7 +411,7 @@ void EnvClient::remove_plot(QObject* obj)
 
 void EnvClient::select_source()
 {
-  FeatureCalculator* c = new FeatureCalculator("Source", FeatureRegistry::instance(_set));
+  FeatureCalculator* c = new FeatureCalculator(this, "Source", FeatureRegistry::instance(_set));
   if (c->exec()==QDialog::Accepted) {
     _source_edit->setText(c->result());
   }

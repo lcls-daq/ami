@@ -15,7 +15,7 @@ namespace Ami {
       PWidgetManager(QWidget* parent=0);
       ~PWidgetManager();
     public:
-      static void add   (QtPWidget*, const QString&);
+      static void add   (QtPWidget*, QString&);
       static void remove(QtPWidget*);
     public:
       void sync();

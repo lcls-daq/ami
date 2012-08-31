@@ -23,7 +23,7 @@ using namespace Ami::Qt;
 
 QtPlot::QtPlot(QWidget* parent,
 	       const QString&   name) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _name    (name),
   _frame   (new QwtPlot(name)),
   _runnum  (new QLabel("")),
@@ -32,6 +32,8 @@ QtPlot::QtPlot(QWidget* parent,
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
+  PWidgetManager::add(this, _name);
+
   bool gMajor = Defaults::instance()->show_grid();
   _grid->enableX   (gMajor);
   _grid->enableY   (gMajor);
@@ -43,12 +45,10 @@ QtPlot::QtPlot(QWidget* parent,
   _grid->attach(_frame);
 
   _layout();
-
-  PWidgetManager::add(this, name);
 }
 
 QtPlot::QtPlot(QWidget* parent) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _runnum  (new QLabel("")),
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
@@ -162,7 +162,7 @@ void QtPlot::load(const char*& p)
 
 void QtPlot::save_data()
 {
-  FILE* f = Path::saveDataFile();
+  FILE* f = Path::saveDataFile(this);
   if (f) {
     dump(f);
     fclose(f);

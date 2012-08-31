@@ -8,7 +8,7 @@ namespace Ami {
     class FeatureRegistry;
     class FeatureCalculator : public Calculator {
     public:
-      FeatureCalculator(const QString&     title, FeatureRegistry&);
+      FeatureCalculator(QWidget* parent, const QString&     title, FeatureRegistry&);
     public:
       QString result();
     };

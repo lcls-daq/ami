@@ -108,7 +108,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
   connect(_xrange, SIGNAL(windowChanged()), this , SLOT(xrange_change()));
   connect(_yrange, SIGNAL(windowChanged()), this , SLOT(yrange_change()));
-  connect(xtransB, SIGNAL(clicked()), _xtransform, SLOT(show()));
+  connect(xtransB, SIGNAL(clicked()), _xtransform, SLOT(front()));
   connect(_xtransform, SIGNAL(changed()), this, SLOT(xtransform_update()));
 }
 
@@ -237,7 +237,7 @@ void WaveformDisplay::save_reference()
     return;
   }
 
-  FILE* f = Path::saveReferenceFile(ref->title());
+  FILE* f = Path::saveReferenceFile(this,ref->title());
   if (f) {
     fwrite(&ref->entry().desc(), ref->entry().desc().size(), 1, f);
     iovec iov;  ref->entry().payload(iov);

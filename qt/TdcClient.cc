@@ -547,7 +547,8 @@ void TdcClient::_select_source(QLineEdit* source_edit)
   QStringList varops; varops << _subtract;
   QStringList conops; conops << _multiply << _divide << _add << _subtract;
 
-  Calculator* c = new Calculator("Tdc Source","",
+  Calculator* c = new Calculator(this,
+                                 "Tdc Source","",
 				 vars,
 				 varops,
 				 conops);

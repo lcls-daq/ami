@@ -113,7 +113,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  _layout4->addWidget(box);
 	  _layout4->addWidget(chanB[i]);
 	  layout1->addLayout(_layout4);
-	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
 	  connect(_channels[i], SIGNAL(changed()), this, SIGNAL(changed()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
 	  connect(box, SIGNAL(toggled(bool)), this, SLOT(update_configuration(bool)));

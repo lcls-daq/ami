@@ -40,10 +40,17 @@ PWidgetManager::~PWidgetManager()
   _managers.remove(this);
 }
 
-void PWidgetManager::add(QtPWidget* p, const QString& name)
+void PWidgetManager::add(QtPWidget* p, QString& iname)
 {
+  QString name(iname);
+  unsigned j=0;
+  for(unsigned i=0; i<_items.size(); i++) {
+    if (name == _items[i])
+      name = QString("%1_%2").arg(iname).arg(++j);
+  }
+
   unsigned i=0;
-  while(i<_items.size() && name < _items[i])
+  while(i<_items.size() && _items[i] < name)
     i++;
 
   _pitems.insert(_pitems.begin()+i,p);
@@ -53,6 +60,8 @@ void PWidgetManager::add(QtPWidget* p, const QString& name)
       it != _managers.end();
       it++)
     (*it)->sync();
+
+  iname = name;
 }
 
 void PWidgetManager::remove(QtPWidget* p)

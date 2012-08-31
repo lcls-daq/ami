@@ -149,8 +149,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(this    , SIGNAL(reference_loaded(bool)), refB, SLOT(setEnabled(bool)));
   
   connect(loadB   , SIGNAL(clicked()), this, SLOT(load_reference()));
-  connect(filterB , SIGNAL(clicked()), _filter, SLOT(show()));
-  connect(yfuncB  , SIGNAL(clicked()), _transform , SLOT(show()));
+  connect(filterB , SIGNAL(clicked()), _filter, SLOT(front()));
+  connect(yfuncB  , SIGNAL(clicked()), _transform , SLOT(front()));
   connect(applyB  , SIGNAL(clicked()), this, SLOT(apply()));
   connect(_filter , SIGNAL(changed()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
@@ -228,7 +228,7 @@ void ChannelDefinition::load(const char*& p)
 
 void ChannelDefinition::load_reference()
 {
-  QString file = Path::loadReferenceFile(_name);
+  QString file = Path::loadReferenceFile(this,_name);
 
   if (file.isNull()) {
     printf("load_reference file is null\n");
@@ -395,7 +395,7 @@ void ChannelDefinition::setup_payload(Cds& cds, bool vis)
 
 void ChannelDefinition::set_scale()
 {
-  FeatureCalculator* c = new FeatureCalculator("%1 : Scale", FeatureRegistry::instance());
+  FeatureCalculator* c = new FeatureCalculator(this,"%1 : Scale", FeatureRegistry::instance());
   if (c->exec()==QDialog::Accepted) {
     _scale->setText(c->result());
   }

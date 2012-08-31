@@ -24,11 +24,6 @@
 using std::ifstream;
 using std::ofstream;
 
-namespace Ami {
-  namespace Qt {
-  };
-};
-
 using namespace Ami::Qt;
 
 Filter::Filter(QWidget* parent,const QString& title) :
@@ -245,7 +240,8 @@ void Filter::calc()
   
   QStringList none;
 
-  Calculator* c = new Calculator(tr("Filter Expression"),"",
+  Calculator* c = new Calculator(this,
+                                 tr("Filter Expression"),"",
  				 conditions, ops, none);
   if (c->exec()==QDialog::Accepted)
     _expr->setText(c->result());

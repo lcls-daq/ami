@@ -18,6 +18,8 @@ namespace Ami {
       virtual void load(const char*& p);
     public slots:
       void front();
+    private:
+      QWidget* _parent;
     };
   };
 };

@@ -5,7 +5,7 @@
 #include <QtGui/QPushButton>
 
 #include <QtGui/QStandardItemModel>
-#include <QtCore/QString>
+#include <QtCore/QStringList>
 
 class QColor;
 
@@ -16,7 +16,8 @@ namespace Ami {
     public:
       QtTree(const QString& separator);
       QtTree(const QStringList&, const QStringList&, const QColor&,
-             const QString& separator);
+             const QString& separator,
+             const QStringList& pnames=QStringList());
       virtual ~QtTree();
     public:
       void save(char*&) const;
@@ -25,10 +26,12 @@ namespace Ami {
       const QString& entry() const;
       void  clear();
       void  fill (const QStringList&);
+      void  fill (const QStringList&,
+                  const QStringList&);
     public slots:
       void set_entry(const QModelIndex&);
       void set_entry(const QString&);
-      void set_mru  ();
+      void show_tree();
     signals:
       void activated(const QString&);
     private:

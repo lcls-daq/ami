@@ -35,7 +35,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 		   unsigned         y0,
 		   unsigned         x1,
 		   unsigned         y1) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _name    (name),
   _input   (input_channel),
   _signature(-1),
@@ -54,12 +54,12 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 
   show();
 
-  PWidgetManager::add(this, name);
+  PWidgetManager::add(this, _name);
 }
 
 ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const char*&     p) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _signature(-1),
   _frame   (new ImageDisplay(false))
 {

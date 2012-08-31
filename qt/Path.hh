@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 
+class QWidget;
+
 namespace Ami {
   namespace Qt {
     class Path {
@@ -12,9 +14,9 @@ namespace Ami {
       static void    setBase(const QString&);
       static const QString& base();
       static FILE*   helpFile();
-      static FILE*   saveDataFile();
-      static FILE*   saveReferenceFile(const QString&);      
-      static QString loadReferenceFile(const QString&);
+      static FILE*   saveDataFile(QWidget*);
+      static FILE*   saveReferenceFile(QWidget*,const QString&);      
+      static QString loadReferenceFile(QWidget*,const QString&);
     };
   };
 };

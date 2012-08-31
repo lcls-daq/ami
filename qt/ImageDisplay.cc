@@ -235,7 +235,7 @@ void Ami::Qt::ImageDisplay::save_reference()
     return;
   }
 
-  FILE* f = Path::saveReferenceFile(ref->title());
+  FILE* f = Path::saveReferenceFile(this,ref->title());
   if (f) {
     fwrite(&ref->entry().desc(), ref->entry().desc().size(), 1, f);
     iovec iov;  ref->entry().payload(iov);

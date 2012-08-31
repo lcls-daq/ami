@@ -42,7 +42,7 @@ static QStringList names = QStringList() << QString("ChA") << QString("ChB") << 
 TwoDPlot::TwoDPlot(QWidget*          parent,
                    const QString&    name,
                    Ami::AbsOperator* proj) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _name    (name),
   _proj    (proj),
   _frame   (new ImageDisplay),
@@ -60,7 +60,7 @@ TwoDPlot::TwoDPlot(QWidget*          parent,
 
 TwoDPlot::TwoDPlot(QWidget*          parent,
                    const char*&      p) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _frame   (new ImageDisplay)
 {
   for(int i=0; i<NCHANNELS; i++)
@@ -104,7 +104,7 @@ void TwoDPlot::_layout()
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4);
-	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(show()));
+	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); }
       }
@@ -113,15 +113,15 @@ void TwoDPlot::_layout()
 
     { QPushButton* rectB = new QPushButton("X / Y Selection");
       layout3->addWidget(rectB);
-      connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(show())); }
+      connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(front())); }
 
     { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
       layout3->addWidget(cylB);
-      connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(show())); }
+      connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
 
     { QPushButton* cntB = new QPushButton("Contour Projection");
       layout3->addWidget(cntB);
-      connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(show())); }
+      connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(front())); }
 
     layout3->addStretch();
     layout->addLayout(layout3); }

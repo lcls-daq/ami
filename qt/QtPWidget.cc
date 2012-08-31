@@ -5,16 +5,16 @@
 using namespace Ami::Qt;
 
 QtPWidget::QtPWidget() :
-  QWidget(0)
+  QWidget(0),
+  _parent(0)
 {
 }
 
 QtPWidget::QtPWidget(QWidget* parent) : 
   //  QWidget(parent,::Qt::Window) 
-  QWidget(0)
+  QWidget(0),
+  _parent(parent)
 {
-  if (parent)
-    move( parent->pos() );
 }
 
 QtPWidget::~QtPWidget() 
@@ -68,6 +68,9 @@ void QtPWidget::load(const char*& p)
 
 void QtPWidget::front()
 {
+  if (_parent)
+    move(_parent->pos());
+
   if (!isVisible())
     show();
   else {

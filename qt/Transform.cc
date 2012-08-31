@@ -202,7 +202,8 @@ void Transform::calc()
 
   QStringList none;
 
-  Calculator* c = new Calculator(tr("Y Transform"),_name,
+  Calculator* c = new Calculator(this,
+                                 tr("Y Transform"),_name,
  				 variables, none, ops);
   if (c->exec()==QDialog::Accepted)
     _expr->setText(c->result());

@@ -322,7 +322,8 @@ void CursorsX::calc()
        << _moment1
        << _moment2;
 
-  Calculator* c = new Calculator(tr("Cursor Math"),"",
+  Calculator* c = new Calculator(this,
+                                 tr("Cursor Math"),"",
  				 variables, vops, ops);
   if (c->exec()==QDialog::Accepted)
     _expr_setText(c->result());

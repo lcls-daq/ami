@@ -99,13 +99,14 @@ static unsigned numberAtEnd(const QString& str)
 }
 
 
-Calculator::Calculator(const QString&     title,
+Calculator::Calculator(QWidget*           parent,
+                       const QString&     title,
 		       const QString&     reset,
 		       const QStringList& variables,
                        const QStringList& var_var_ops,
                        const QStringList& var_con_ops,
 		       const QStringList& variables_help) :
-  QDialog (0),
+  QDialog (parent),
   _reset  (reset),
   _variables(variables),
   _varvarops(var_var_ops),

@@ -15,7 +15,8 @@ namespace Ami {
     class Calculator : public QDialog {
       Q_OBJECT
     public:
-      Calculator(const QString&     title,
+      Calculator(QWidget*           parent,
+                 const QString&     title,
 		 const QString&     reset,
 		 const QStringList& variables,    // pre-defined variables {cursor bin, filter condition, ..}
 		 const QStringList& var_var_ops,  // binary operations only between variables

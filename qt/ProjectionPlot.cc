@@ -40,7 +40,7 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 			       const QString&    name,
 			       unsigned          input_channel,
 			       Ami::AbsOperator* proj) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _name    (name),
   _input   (input_channel),
   _output  (-1),
@@ -50,25 +50,25 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _auto_range(0)
 {
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
 
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
 
   _layout();
   
-  PWidgetManager::add(this, name);
+  PWidgetManager::add(this, _name);
 }
 
 ProjectionPlot::ProjectionPlot(QWidget*          parent,
 			       const char*&      p) :
-  QtPWidget(parent),
+  QtPWidget(0),
   _output  (-1),
   _frame   (new WaveformDisplay),
   _auto_range(0)
 {
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
 	
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame);

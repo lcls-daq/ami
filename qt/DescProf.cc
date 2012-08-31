@@ -54,7 +54,7 @@ DescProf::DescProf(const char* name, FeatureRegistry* registry) :
 
 void DescProf::calc()
 {
-  FeatureCalculator* c = new FeatureCalculator(tr("X Var Math"),*_registry);
+  FeatureCalculator* c = new FeatureCalculator(this,tr("X Var Math"),*_registry);
   if (c->exec()==QDialog::Accepted)
     _expr->setText(c->result());
 
