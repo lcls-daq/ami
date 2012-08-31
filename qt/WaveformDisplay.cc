@@ -83,6 +83,8 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
     annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
     annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
     menu_bar->addMenu(annotate); }
+    _chrome_is_visible = true;
+    _chrome_action = menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* plotBox = new QGroupBox("Plot");
@@ -99,6 +101,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
       layout3->addWidget(xtransB);
       layout3->addStretch();
       layout2->addLayout(layout3,1,0); }
+    _chrome_layout = layout2;
     layout->addLayout(layout2); }
   setLayout(layout);
 
@@ -286,6 +289,34 @@ void WaveformDisplay::toggle_minor_grid()
   emit redraw();
 }
 
+static void setChildrenVisible(QLayout* l, bool v)
+{
+  for(int i=0; i<l->count(); i++) {
+    QLayoutItem* item = l->itemAt(i);
+    if (item->widget())
+      item->widget()->setVisible(v);
+    else if (item->layout())
+      setChildrenVisible(item->layout(), v);
+  }
+}
+
+void WaveformDisplay::toggle_chrome()
+{
+  if (_chrome_is_visible) {
+    setMinimumWidth(width());
+    _chrome_is_visible=false;
+    _chrome_action->setText("Show chrome");
+  }
+  else {
+    _chrome_is_visible = true;
+    _chrome_action->setText("Hide chrome");
+  }
+
+  setChildrenVisible(_chrome_layout, _chrome_is_visible);
+
+  emit set_chrome_visible(_chrome_is_visible);
+}
+
 void WaveformDisplay::prototype(const Ami::DescEntry* e)
 {
 #define CASETYPE(type)							    \
@@ -433,5 +464,4 @@ const std::list<QtBase*> WaveformDisplay::plots() const { return _curves; }
 const AxisInfo& WaveformDisplay::xinfo() const { return *_xinfo; }
 
 PlotFrame* WaveformDisplay::plot() const { return _plot; }
-
 

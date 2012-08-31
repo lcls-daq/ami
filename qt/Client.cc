@@ -57,6 +57,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _niovread        (5),
   _iovload         (new iovec[_niovload]),
   _layout          (new QVBoxLayout),
+  _chrome_changed  (false),
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false),
   _denials         (0),
@@ -356,7 +357,7 @@ void Ami::Qt::Client::_read_description(int size)
   _setup_payload(_cds);
 
   int n = _cds.totalentries();
-  if (n>_niovload) {
+  if (n>int(_niovload)) {
     delete[] _iovload;
     _iovload = new iovec[_niovload=n];
   }
@@ -454,4 +455,51 @@ void Ami::Qt::Client::hideEvent(QHideEvent* e)
   QWidget::hideEvent(e);
   if (_status->state() >= Status::Discovered)
     update_configuration();
+}
+
+void Ami::Qt::Client::set_chrome_visible(bool v)
+{
+  if (v) {
+    unsigned i = 0;
+    QLayoutItem* item;
+    while ((item = _layout3->itemAt(i++))) {
+      if (item->widget()) {
+        item->widget()->show();
+      }
+    }
+    i = 0;
+    while ((item = _layout->itemAt(i++))) {
+      if (item->widget()) {
+        item->widget()->show();
+      }
+    }
+  }
+  else {
+    unsigned i = 0;
+    QLayoutItem* item;
+    while ((item = _layout3->itemAt(i++))) {
+      if (item->widget()) {
+        item->widget()->hide();
+      }
+    }
+    i = 0;
+    while ((item = _layout->itemAt(i++))) {
+      if (item->widget()) {
+        item->widget()->hide();
+      }
+    }
+  }
+
+  _chrome_changed = true;
+  updateGeometry();
+  resize(minimumWidth(),minimumHeight());
+}
+
+void Ami::Qt::Client::paintEvent(QPaintEvent* e)
+{
+  if (_chrome_changed) {
+    resize(minimumWidth(),minimumHeight());
+    _chrome_changed = false;
+  }
+  QWidget::paintEvent(e);
 }

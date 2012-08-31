@@ -8,6 +8,7 @@
 #include <list>
 
 class QwtPlotGrid;
+class QLayout;
 
 namespace Ami {
   class DescEntry;
@@ -69,6 +70,15 @@ namespace Ami {
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
+
+    public slots:
+      void toggle_chrome();
+    signals:
+      void set_chrome_visible(bool);
+    private:
+      bool     _chrome_is_visible;
+      QAction* _chrome_action;
+      QLayout* _chrome_layout;
     };
   };
 };

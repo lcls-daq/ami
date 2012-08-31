@@ -20,9 +20,9 @@ class Control;
 Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :
   Client  (parent,info,ch,new ImageDisplay,1.)
 {
-
   ImageDisplay& wd = (ImageDisplay&)(display());
-  wd.container(this);
+  connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
+
   { QPushButton* rectB = new QPushButton("X / Y Selection");
     addWidget(rectB);
     _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*wd.plot());
@@ -87,40 +87,6 @@ void Ami::Qt::ImageClient::save_plots(const QString& p) const
   _rfproj ->save_plots(p+"_rfproj");
   _cntproj->save_plots(p+"_cntproj");
   _hit    ->save_plots(p+"_hits");
-}
-
-void Ami::Qt::ImageClient::hideWidgets()
-{
-  unsigned i = 0;
-  QLayoutItem* item;
-  while ((item = _layout3->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->hide();
-    }
-  }
-  i = 0;
-  while ((item = _layout->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->hide();
-    }
-  }
-}
-
-void Ami::Qt::ImageClient::showWidgets()
-{
-  unsigned i = 0;
-  QLayoutItem* item;
-  while ((item = _layout3->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->show();
-    }
-  }
-  i = 0;
-  while ((item = _layout->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->show();
-    }
-  }
 }
 
 void Ami::Qt::ImageClient::_configure(char*& p,

@@ -18,8 +18,6 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
       void save_plots(const QString&) const;
-      void hideWidgets();
-      void showWidgets();
     protected:
       void _configure(char*& p, 
 		      unsigned input, 
@@ -30,7 +28,6 @@ namespace Ami {
       void _setup_payload(Cds&);
       void _update();
       void _prototype(const DescEntry&);
-    protected:
       
     private:
       ImageXYProjection*      _xyproj;

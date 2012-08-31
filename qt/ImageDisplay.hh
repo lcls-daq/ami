@@ -2,24 +2,27 @@
 #define AmiQt_ImageDisplay_hh
 
 #include "ami/qt/Display.hh"
-#include "ami/qt/ImageClient.hh"
 #include <QtGui/QWidget>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QMenuBar>
-#include <QGroupBox>
+#include <QtGui/QGroupBox>
+#include <QtCore/QString>
 #include "ami/service/Semaphore.hh"
 #include <list>
 
 class QLabel;
 class QPrinter;
-class ImageClient;
+class QAction;
 
 namespace Ami {
+  class DescEntry;
   namespace Qt {
     class ImageGridScale;
     class ImageColorControl;
     class ImageFrame;
+    class QtBase;
+
     class ImageDisplay : public QWidget,
 			 public Display {
       Q_OBJECT
@@ -41,7 +44,6 @@ namespace Ami {
       bool canOverlay() const { return false; }
       QWidget* widget() { return this; }
     public:
-      void container(ImageClient* c) { _container = c; }
       const ImageColorControl& control() const;
       ImageGridScale& grid_scale();
     public:
@@ -52,34 +54,37 @@ namespace Ami {
       void save_image();
       void save_data();
       void save_reference();
-      void hide_chrome();
-      void show_chrome();
       void update_timedisplay();
     signals:
       void redraw();
     private:
       void _layout();
     private:
-      ImageClient* _container;
       QLabel* _time_display;
       ImageFrame*  _plot;
       QMenuBar*    _menu_bar;
       QGroupBox*   _plotBox;
-      QVBoxLayout* _mainLayout;
-      QHBoxLayout* _layout2;
       ImageGridScale*    _units;
       ImageColorControl* _zrange;
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
-      unsigned               _resizeCount;
+
+    public slots:
+      void toggle_chrome();
+    signals:
+      void set_chrome_visible(bool);
+    private:
+      bool     _chrome_is_visible;
+      QAction* _chrome_action;
+      QLayout* _chrome_layout;
 
     public:
       static void enable_movie_option();
     public slots:
       void start_movie();
       void update_movie();
-    private:                                
+    private:     
       QAction* _movie_action;
       QString  _movie_fname;
       unsigned _movie_index;

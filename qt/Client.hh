@@ -90,10 +90,6 @@ namespace Ami {
       char*       _request;
       char*       _description;
 
-    protected:
-      QVBoxLayout* _layout3;
-      QHBoxLayout* _layout4;
-
     private:
       Control*    _control;
       Status*     _status;
@@ -107,8 +103,16 @@ namespace Ami {
       unsigned        _niovload;
       unsigned        _niovread;
       iovec*          _iovload;
+
+    public slots:
+      void set_chrome_visible(bool);
     protected:
-      QLayout*        _layout;
+      void paintEvent(QPaintEvent*);
+    private:
+      QLayout*     _layout;
+      QVBoxLayout* _layout3;
+      QHBoxLayout* _layout4;
+      bool         _chrome_changed;
 
     private:
       Semaphore*  _sem;

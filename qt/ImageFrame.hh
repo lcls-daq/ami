@@ -14,6 +14,7 @@ namespace Pds { class ClockTime; };
 
 namespace Ami {
   namespace Qt {
+    class AxisInfo;
     class Cursors;
     class ImageColorControl;
     class ImageMarker;

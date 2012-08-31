@@ -14,6 +14,7 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
   _initialized(false)
 {
   WaveformDisplay& wd = static_cast<WaveformDisplay&>(display());
+  connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
 
   { QPushButton* edgesB = new QPushButton("Edges");
     addWidget(edgesB);

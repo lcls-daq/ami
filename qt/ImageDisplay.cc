@@ -8,7 +8,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/NullTransform.hh"
-#include "ami/qt/PrintAction.hh"
+//#include "ami/qt/PrintAction.hh"
 #include "ami/qt/RunMaster.hh"
 
 #include "ami/data/DescEntry.hh"
@@ -42,13 +42,10 @@ Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
   _sem   (Ami::Semaphore::FULL)
 {
   _menu_bar = new QMenuBar(this);
-  _mainLayout = new QVBoxLayout();
-  _layout2    = new QHBoxLayout();
   _plotBox = new QGroupBox("Plot");
   _zrange  = new ImageColorControl(this,"Z");
   _plot    = new ImageFrame(this,*_zrange);
   _units   = new ImageGridScale(*_plot, grab);
-  _resizeCount = 0;
   _layout();
 }
 
@@ -61,17 +58,14 @@ void Ami::Qt::ImageDisplay::_layout()
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
     _menu_bar->addMenu(file_menu);
-    QMenu* view_menu = new QMenu("View");
-    view_menu->addAction("Hide chrome"    , this, SLOT(hide_chrome()));
-    view_menu->addAction("Show chrome"    , this, SLOT(show_chrome()));
-    view_menu->addSeparator();
-    _menu_bar->addMenu(view_menu);
-    _menu_bar->addAction(new PrintAction(*this));
+    _chrome_is_visible = true;
+    _chrome_action = _menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
     if (_enable_movie_option)
       _movie_action = _menu_bar->addAction("Start movie"    , this, SLOT(start_movie()));
   }
 
-  _mainLayout->setSpacing(1);
+  QVBoxLayout* mainLayout = new QVBoxLayout;
+  mainLayout->setSpacing(1);
   {
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* hl = new QHBoxLayout;
@@ -80,13 +74,14 @@ void Ami::Qt::ImageDisplay::_layout()
       layout1->addLayout(hl); }
     layout1->addWidget(_plot);
     _plotBox->setLayout(layout1);
-    _mainLayout->addWidget(_plotBox); }
-  { _layout2 = new QHBoxLayout;
-    _layout2->addWidget(_units );
-    _layout2->addWidget(_zrange);
-    _mainLayout->addLayout(_layout2); }
-  _mainLayout->addStretch();
-  setLayout(_mainLayout);
+    mainLayout->addWidget(_plotBox); }
+  { QHBoxLayout* layout2 = new QHBoxLayout;
+    layout2->addWidget(_units );
+    layout2->addWidget(_zrange);
+    _chrome_layout = layout2;
+    mainLayout->addLayout(layout2); }
+  mainLayout->addStretch();
+  setLayout(mainLayout);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
   connect(this   , SIGNAL(redraw()) , this       , SLOT(update_timedisplay()));
@@ -131,29 +126,31 @@ const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 ImageGridScale& ImageDisplay::grid_scale() { return *_units; }
 
-void Ami::Qt::ImageDisplay::hide_chrome()
+static void setChildrenVisible(QLayout* l, bool v)
 {
-  unsigned i = 0;
-  QLayoutItem* item;
-  while ((item = _layout2->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->hide();
-    }
+  for(int i=0; i<l->count(); i++) {
+    QLayoutItem* item = l->itemAt(i);
+    if (item->widget())
+      item->widget()->setVisible(v);
+    else if (item->layout())
+      setChildrenVisible(item->layout(), v);
   }
-  _container->hideWidgets();
-  _resizeCount = 2;
 }
 
-void Ami::Qt::ImageDisplay::show_chrome()
+void ImageDisplay::toggle_chrome()
 {
-  unsigned i = 0;
-  QLayoutItem* item;
-  while ((item = _layout2->itemAt(i++))) {
-    if (item->widget()) {
-      item->widget()->show();
-    }
+  if (_chrome_is_visible) {
+    _chrome_is_visible=false;
+    _chrome_action->setText("Show chrome");
   }
-  _container->showWidgets();
+  else {
+    _chrome_is_visible = true;
+    _chrome_action->setText("Hide chrome");
+  }
+
+  setChildrenVisible(_chrome_layout, _chrome_is_visible);
+
+  emit set_chrome_visible(_chrome_is_visible);
 }
 
 void Ami::Qt::ImageDisplay::save_image()
@@ -332,14 +329,6 @@ void Ami::Qt::ImageDisplay::update_timedisplay()
                          .arg(RunMaster::instance()->run_title())
                          .arg(datime.toString("MMM dd,yyyy hh:mm:ss"))
                          .arg(QString::number(time.nanoseconds()/1000000),3,QChar('0')));
-  if (_resizeCount)
-  {
-    QWidget* wid = _container->window();
-    if (wid) {
-      wid->resize(wid->minimumWidth(), wid->minimumHeight());
-    }
-    _resizeCount -= 1;
-  }
 }
 
 void Ami::Qt::ImageDisplay::enable_movie_option() { _enable_movie_option = true; }
