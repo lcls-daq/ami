@@ -92,9 +92,31 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         (*it)->clock(dg->seq.clock());
       
       iterate(&dg->xtc); 
-      
+
+      _cache[PostAnalysis]->cache(cache);
+
       _entry.front()->valid(_seq->clock());
       _factory.analyze();
+    }
+    //
+    //  Time the processing
+    //
+    timespec tq;
+    clock_gettime(CLOCK_REALTIME, &tq);
+    if (_ptime_index>=0) {
+      double dt;
+      dt = double(tq.tv_sec-tp.tv_sec) + 
+        1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
+      cache.cache(_ptime_index,dt);
+      if (accept) {
+        cache.cache(_ptime_acc_index,dt);
+        _cache[PostAnalysis]->cache(_ptime_acc_index,dt);
+      }
+
+      dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
+        1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
+      cache.cache(_pltnc_index,dt);
+      _cache[PostAnalysis]->cache(_pltnc_index,dt);
     }
   }
   else if (dg->seq.service() == Pds::TransitionId::BeginRun) {
@@ -161,14 +183,17 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         }
       }
     }
+    printf("XC\n");
     _factory.discovery().showentries();
-    _factory.hidden   ().showentries();
+    //    _factory.hidden   ().showentries();
 
     _ptime_index     = cache.add("ProcTime");
     _ptime_acc_index = cache.add("ProcTimeAcc");
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
     _runno_index     = cache.add("RunNumber");
+
+    _cache[PostAnalysis]->add(cache);
 
     printf("XtcClient configure done\n");
 
@@ -182,20 +207,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
     _seq = &dg->seq;
     iterate(&dg->xtc); 
-  }
-  timespec tq;
-  clock_gettime(CLOCK_REALTIME, &tq);
-  if (_ptime_index>=0) {
-    double dt;
-    dt = double(tq.tv_sec-tp.tv_sec) + 
-      1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
-    cache.cache(_ptime_index,dt);
-    if (accept)
-      cache.cache(_ptime_acc_index,dt);
-
-    dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
-      1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
-    cache.cache(_pltnc_index,dt);
   }
 }
 
