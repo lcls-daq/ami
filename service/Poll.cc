@@ -107,7 +107,6 @@ void Poll::bcast    (const iovec* iov, int len, int hdr)
 //
 void Poll::post    (const char* msg, int size)
 {
-  printf("Poll::post\n");
   int hdr = PostIn;
   int iovcnt=2;
   iovec* iov = new iovec[iovcnt];
