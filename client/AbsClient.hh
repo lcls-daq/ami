@@ -18,9 +18,10 @@ namespace Ami {
     virtual int  configure       (iovec*) = 0;
     virtual int  configured      () = 0;
     virtual void discovered      (const DiscoveryRx&) = 0;
-    virtual void read_description(Socket&,int) = 0;
+    virtual int  read_description(Socket&,int) = 0;
     virtual int  read_payload    (Socket&,int) = 0;
     virtual void process         () = 0;
+    virtual bool svc             () const = 0;
   };
 };
 

@@ -142,6 +142,16 @@ namespace Ami {
     Ins            _ins;
     bool           _found;
   };
+
+  class ClPoll : public Poll {
+  public:
+    ClPoll(ClientManager& cm) : Poll(1000), _cm(cm) {}
+  public:
+    int processTmo() { _cm.processTmo(); return 1; }
+  private:
+    ClientManager& _cm;
+  };
+
 };
 
 using namespace Ami;
@@ -166,8 +176,8 @@ ClientManager::ClientManager(unsigned   interface,
 			     unsigned   serverGroup,
 			     ConnectionManager& connect_mgr,
 			     AbsClient& client) :
-  _client     (*new Aggregator(client)),
-  _poll       (new Poll(1000)),
+  _client     (client),
+  _poll       (new ClPoll(*this)),
   _state      (Disconnected),
   _request    (0,Message::NoOp),
   _iovs       (new iovec[Step]),
@@ -179,7 +189,8 @@ ClientManager::ClientManager(unsigned   interface,
   _server     (serverGroup, Port::serverPort()),
   _connect_mgr(connect_mgr),
   _connect_id (connect_mgr.add(*this)),
-  _receive_bytes(0)
+  _receive_bytes(0),
+  _receive_last (0)
 {
   bool mcast = Ins::is_multicast(serverGroup);
 
@@ -241,7 +252,7 @@ void ClientManager::request_payload(const EntryList& req)
 //  Connecting involves negotiating a destination port with the server group
 //  and allocating a server on the peer connected to that port.  
 //
-void ClientManager::connect(bool svc)
+void ClientManager::connect()
 {
   //  Remove previous connections
   unsigned n = nconnected();
@@ -249,7 +260,7 @@ void ClientManager::connect(bool svc)
     delete &_poll->fds(n--);
 
   if (_connect) {
-    _request = Message((svc ? (1<<31):0) | _connect_id,
+    _request = Message((_client.svc() ? (1<<31):0) | _connect_id,
                        Message::Connect,
                        _connect_mgr.ins().address(),
                        _connect_mgr.ins().portId());
@@ -314,8 +325,6 @@ unsigned ClientManager::receive_bytes()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
-//   printf("(%p) ClientManager::add_client %d (skt %d)\n",
-// 	 this, nconnected(),socket.socket());
   _client.connected();
   _poll->manage(socket);
 }
@@ -324,8 +333,6 @@ void ClientManager::remove_client(ClientSocket& socket)
 {
   _poll->unmanage(socket);
   _client.disconnected();
-//   printf("(%p) ClientManager::remove_client %d (skt %d)\n",
-// 	 this,nconnected(),socket.fd());
   _client_sem.give();
 }
 
@@ -360,8 +367,6 @@ int ClientManager::handle_client_io(ClientSocket& socket)
 {
   Message reply(0,Message::NoOp);
   if (socket.read(&reply,sizeof(reply))!=sizeof(reply)) {
-//     printf("Error reading from skt %d : %s\n",
-// 	   socket.socket(), strerror(errno));
     return 0;
   }
 
@@ -370,27 +375,27 @@ int ClientManager::handle_client_io(ClientSocket& socket)
          reply.id(), reply.type(), reply.payload());
 #endif
 
+  int size = 0;
+
   if (reply.type() == Message::Discover) { // unsolicited message
     if (_discovery_size < reply.payload()) {
-      printf("ClientManager: Increasing discovery buffer size %d to %d \n",
-             _discovery_size, reply.payload());
       delete[] _discovery;
       _discovery = new char[_discovery_size=reply.payload()];
     }
-    int size = socket.read(_discovery,reply.payload());
+    size = socket.read(_discovery,reply.payload());
     //    dump(_discovery,size);
     DiscoveryRx rx(_discovery, size);
-    _client.discovered(rx);
+    _client.discovered(rx, reply.id());
   }
   else if (reply.id() == _request.id()) {   // solicited message
   //  else if (1) { // solicited message
     switch (reply.type()) {
     case Message::Description: 
-      _client.read_description(socket, reply.payload());
-      //      _request = Message(_request.id()+1,_request.type());  // only need one reply
+      size = _client.read_description(socket, reply.payload(), reply.id());
       break;
     case Message::Payload:     
-      _receive_bytes += _client.read_payload(socket,reply.payload());
+      size =_client.read_payload(socket,reply.payload(), reply.id());
+      _receive_bytes += size;
       _client.process();
       break;
     default:          
@@ -405,10 +410,22 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     printf("(%p) received id %d/%d type %d/%d\n",
   	   this, reply.id(),_request.id(),reply.type(),_request.type());
 #endif
+    
     switch (reply.type()) {
     case Message::Description: 
+      size = _client.read_description(socket, reply.payload(), reply.id());
+      break;
+    default:
+      break;
+    }
+  }
+
+  if (size < reply.payload()) {
+    switch (reply.type()) {
+    case Message::Discover: 
+    case Message::Description: 
     case Message::Payload:     
-      _flush_socket(socket,reply.payload());
+      _flush_socket(socket,reply.payload()-size);
       break;
     default:          
       break;
@@ -452,4 +469,10 @@ void ClientManager::forward(const Message& request,
 #endif
 
   delete[] p;
+}
+
+int ClientManager::processTmo()
+{
+  _client.tmo();
+  return 1;
 }

@@ -2,6 +2,7 @@
 #define Ami_ClientManager_hh
 
 #include "ami/data/Message.hh"
+#include "ami/data/Aggregator.hh"
 #include "ami/service/ConnectionHandler.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Semaphore.hh"
@@ -29,7 +30,7 @@ namespace Ami {
 		  AbsClient& client);
     ~ClientManager();
   public:
-    void connect   (bool svc=false);  // Connect to a server group
+    void connect   ();  // Connect to a server group
     void disconnect();  // Disconnect from a server group
     void discover  ();
     void configure ();
@@ -49,12 +50,14 @@ namespace Ami {
     const Message& request() const { return _request; }
     void forward(const Message&);
     void forward(const Message&,Socket&);
+  public:
+    int  processTmo();
   private:
     void _flush_sockets(const Message&, ClientSocket&);
     void _flush_socket (ClientSocket&, int);
   private:
     enum State { Disconnected, Connected };
-    AbsClient&      _client;
+    Aggregator      _client;
     Poll*           _poll;
     State           _state;
     Message         _request;
@@ -68,6 +71,8 @@ namespace Ami {
     Semaphore       _client_sem;
     Ins             _server;
     Routine*        _reconn;
+
+    bool            _svc;
 
     ConnectionManager& _connect_mgr;
     unsigned           _connect_id;
