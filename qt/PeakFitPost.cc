@@ -3,6 +3,7 @@
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/PFPostParent.hh"
 
 #include "ami/data/PeakFitPlot.hh"
 #include "ami/data/Cds.hh"
@@ -12,20 +13,26 @@
 using namespace Ami::Qt;
 
 PeakFitPost::PeakFitPost(unsigned          channel,
-			 Ami::PeakFitPlot* input) :
+			 Ami::PeakFitPlot* input,
+                         PFPostParent*     parent) :
   _channel (channel),
-  _input   (input)
+  _input   (input),
+  _parent  (parent)
 {
 }
 
-PeakFitPost::PeakFitPost(const char*& p)
+PeakFitPost::PeakFitPost(const char*& p) :
+  _parent  (0)
 {
   load(p);
 }
 
 PeakFitPost::~PeakFitPost()
 {
-  delete _input;
+  if (_parent)
+    _parent->remove_peakfit_post(this); 
+  if (_input)
+    delete _input;
 }
 
 void PeakFitPost::save(char*& p) const

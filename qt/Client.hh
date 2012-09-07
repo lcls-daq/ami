@@ -51,8 +51,9 @@ namespace Ami {
     public: // AbsClient interface
       int  configured      ();
       void discovered      (const DiscoveryRx&);
-      void read_description(Ami::Socket&,int);
+      int  read_description(Ami::Socket&,int);
       int  read_payload    (Ami::Socket&,int);
+      bool svc             () const;
       void process         ();
       QWidget* window()  { return _layout->parentWidget()->window(); }
     public slots:

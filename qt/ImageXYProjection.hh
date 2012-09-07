@@ -2,6 +2,7 @@
 #define AmiQt_ImageXYProjection_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/CPostParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -30,7 +31,8 @@ namespace Ami {
     class ScalarPlotDesc;
     class ImageIntegral;
 
-    class ImageXYProjection : public QtPWidget {
+    class ImageXYProjection : public QtPWidget,
+                              public CPostParent {
       Q_OBJECT
     public:
       ImageXYProjection(QtPWidget* parent,
@@ -57,6 +59,8 @@ namespace Ami {
     signals:
       void changed();
     private:
+      QString _add_post();
+    private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
       unsigned _channel;
@@ -75,6 +79,10 @@ namespace Ami {
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
       std::list<ZoomPlot*>       _zplots;
+
+    public:
+      void remove_cursor_post(CursorPost*);
+    private:
       std::list<CursorPost*>     _posts;
     };
   };

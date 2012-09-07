@@ -2,6 +2,7 @@
 #define AmiQt_PeakFit_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/PFPostParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -28,16 +29,21 @@ namespace Ami {
     class EdgeCursor;
     class PeakFitPlot;
     class PeakFitPost;
+#if 0
     class DescTH1F;
     class DescProf;
     class DescScan;
     class DescChart;
+#else
+    class ScalarPlotDesc;
+#endif
     class WaveformDisplay;
     class CursorLocation;
     class CursorDefinition;
 
     class PeakFit : public QtPWidget,
-                    public Cursors {
+                    public Cursors,
+                    public PFPostParent {
       Q_OBJECT
     public:
       PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
@@ -65,6 +71,8 @@ namespace Ami {
     signals:
       void changed();
       void grabbed();
+    private:
+      QString _add_post    ();
     public:
       void mousePressEvent  (double, double);
       void mouseMoveEvent   (double, double);
@@ -82,16 +90,24 @@ namespace Ami {
       unsigned   _quantity;
 
       QTabWidget* _baseline_tab;
-      QTabWidget* _plottype_tab;
 
       QLineEdit* _title;
       CursorLocation *_lvalue;
+
+#if 0
+      QTabWidget* _plottype_tab;
       DescTH1F*  _hist;
       DescChart* _vTime;
       DescProf*  _vFeature;
       DescScan*  _vScan;
+#else
+      ScalarPlotDesc* _scalar_desc;
+#endif
 
       std::list<PeakFitPlot*> _plots;
+    public:
+      void remove_peakfit_post(PeakFitPost*);
+    private:
       std::list<PeakFitPost*> _posts;
       std::list<CursorDefinition*> _cursors;
 

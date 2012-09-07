@@ -2,6 +2,7 @@
 #define AmiQt_CurveFit_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/CFPostParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -26,7 +27,8 @@ namespace Ami {
     class CurveFitPlot;
     class CurveFitPost;
 
-    class CurveFit : public QtPWidget {
+    class CurveFit : public QtPWidget,
+                     public CFPostParent {
       Q_OBJECT
     public:
       CurveFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
@@ -50,6 +52,8 @@ namespace Ami {
     signals:
       void changed();
     private:
+      QString _add_post();
+    private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
       unsigned _channel;
@@ -59,7 +63,12 @@ namespace Ami {
       QComboBox* _outBox;
       ScalarPlotDesc* _scalar_desc;
       std::list<CurveFitPlot*> _plots;
+
+    public:
+      void remove_curvefit_post(CurveFitPost*);
+    private:
       std::list<CurveFitPost*> _posts;
+
       static char *_opname[];
     };
   };

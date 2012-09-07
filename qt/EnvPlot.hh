@@ -19,6 +19,7 @@ namespace Ami {
     class ChannelDefinition;
     class EnvDefinition;
     class QtBase;
+    class SharedData;
     class EnvPlot : public QtPlot {
       Q_OBJECT
     public:
@@ -26,7 +27,8 @@ namespace Ami {
 	      const QString&  name,
 	      const Ami::AbsFilter& filter,
 	      DescEntry*      desc,
-              Ami::ScalarSet  set);
+              Ami::ScalarSet  set,
+              SharedData*     shared=0);
       EnvPlot(QWidget*,const char*&);
       ~EnvPlot();
     public:
@@ -50,6 +52,8 @@ namespace Ami {
       ConfigureRequestor _req;
 
       EntryScalarRange*  _auto_range;
+
+      SharedData*        _shared;
     };
   };
 };

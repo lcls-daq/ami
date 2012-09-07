@@ -171,6 +171,7 @@ libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += CspadClient.cc CspadClient_moc.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc
 libsrcs_amiqt += EnvPost.cc
+libsrcs_amiqt += PostAnalysis.cc
 libsrcs_amiqt += EnvClient.cc EnvClient_moc.cc
 libsrcs_amiqt += TdcPlot.cc TdcPlot_moc.cc
 libsrcs_amiqt += TdcClient.cc TdcClient_moc.cc

@@ -89,11 +89,11 @@ QString  DescProf::feature() const
       }
       else 
 	break;
-      printf("new_expr %s\n",qPrintable(new_expr));
+      //      printf("new_expr %s\n",qPrintable(new_expr));
     }
     new_expr.append(e.mid(pos));
   }
-  printf("new_expr %s\n",qPrintable(new_expr));
+  //  printf("new_expr %s\n",qPrintable(new_expr));
   return new_expr;
 }
 

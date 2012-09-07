@@ -10,6 +10,7 @@
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
+#include "ami/qt/PostAnalysis.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescTH1F.hh"
@@ -267,17 +268,25 @@ void ImageRPhiProjection::plot()
     }
   case PlotIntegral:
     {
-      DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
-      CursorPlot* plot = 
- 	new CursorPlot(this, _title->text(), _channel, 
-                       new BinMath(*desc,_integral_plot->expression()));
+      if (_integral_plot->postAnalysis()) {
+        QString     qtitle = _add_post();
+        DescEntry*  entry  = _integral_plot->desc(qPrintable(qtitle));
+        PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
+      }
+      else {
+        DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
+        CursorPlot* plot = 
+          new CursorPlot(this, _title->text(), _channel, 
+                         new BinMath(*desc,_integral_plot->expression()));
+        delete desc;
       
-      _cplots.push_back(plot);
+        _cplots.push_back(plot);
 
-      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+        connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+        connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      }
+
       emit changed();
-
       break;
     }
   default:
@@ -285,18 +294,29 @@ void ImageRPhiProjection::plot()
   }
 }
 
-void ImageRPhiProjection::add_post()
+void ImageRPhiProjection::add_post() 
 {
-  Ami::DescCache*  desc = new Ami::DescCache(_integral_plot->title(),
-                                             _integral_plot->title(),
+  _add_post(); 
+  _posts.back()->signup();
+}
+
+QString ImageRPhiProjection::_add_post()
+{
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(_integral_plot->qtitle());
+
+  Ami::DescCache*  desc = new Ami::DescCache(qPrintable(qtitle),
+                                             qPrintable(qtitle),
                                              Ami::PostAnalysis);
   CursorPost* post = new CursorPost(_channel,
-				    new BinMath(*desc,_integral_plot->expression()));
+				    new BinMath(*desc,_integral_plot->expression()),
+                                    this);
   _posts.push_back(post);
 
   delete desc;
 
   emit changed();
+
+  return qtitle;
 }
 
 void ImageRPhiProjection::remove_plot(QObject* obj)
@@ -318,4 +338,10 @@ void ImageRPhiProjection::update_range()
                                _annulus->r_outer(),
                                _annulus->phi0(),
                                _annulus->phi1());
+}
+
+void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
+{
+  _posts.remove(post);
+  emit changed();
 }

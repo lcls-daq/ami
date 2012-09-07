@@ -1,9 +1,13 @@
 #include "PeakFit.hh"
 
+#if 0
 #include "ami/qt/DescTH1F.hh"
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
 #include "ami/qt/DescChart.hh"
+#else
+#include "ami/qt/ScalarPlotDesc.hh"
+#endif
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/ChannelDefinition.hh"
@@ -16,12 +20,16 @@
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/CursorsX.hh"
 #include "ami/qt/CursorDefinition.hh"
+#include "ami/qt/PostAnalysis.hh"
 
+#if 0
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescScalarRange.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/DescScan.hh"
+#else
+#endif
 #include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
@@ -88,12 +96,17 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   qtyBox->addItems(q);
 
   _title    = new QLineEdit("Peak plot");
+
+#if 0
   QPushButton* addPostB = new QPushButton("Post");
 
   _hist   = new DescTH1F (bold(Sum (1dH)));
   _vTime  = new DescChart(bold(Mean v Time));
   _vFeature = new DescProf (bold(Mean v Var) , &FeatureRegistry::instance());
   _vScan    = new DescScan (bold(Mean v Scan));
+#else
+  _scalar_desc = new ScalarPlotDesc(0,&FeatureRegistry::instance(),false);
+#endif
 
   _lvalue = new CursorLocation;
   QPushButton *lgrabB  = new QPushButton("Grab");
@@ -138,6 +151,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
       layout1->addLayout(layout2); }
     locations_box->setLayout(layout1);
     layout->addWidget(locations_box); }
+#if 0
   { QHBoxLayout* layout2 = new QHBoxLayout;
     layout2->addWidget(new QLabel("Title"));
     layout2->addWidget(_title);
@@ -154,6 +168,14 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
     layout1->addWidget(_plottype_tab);
     plot_box->setLayout(layout1); 
     layout->addWidget(plot_box); }
+#else
+  { QHBoxLayout* layout2 = new QHBoxLayout;
+    layout2->addWidget(new QLabel("Title"));
+    layout2->addWidget(_title);
+    layout2->addStretch();
+    layout->addLayout(layout2); }
+  layout->addWidget(_scalar_desc);
+#endif
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -172,7 +194,11 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));
 
+#if 0
   connect(addPostB  , SIGNAL(clicked()),      this, SLOT(add_post()));
+#else
+  _scalar_desc->post(this, SLOT(add_post()));
+#endif
   connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
 
   set_quantity(0);
@@ -192,12 +218,16 @@ void PeakFit::save(char*& p) const
 
   XML_insert(p, "QLineEdit", "_baseline", QtPersistent::insert(p,_baseline ->value()) );
   XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
+#if 0
   XML_insert(p, "DescTH1F", "_hist", _hist->save(p) );
   XML_insert(p, "DescChart", "_vTime", _vTime->save(p) );
   XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan", "_vScan", _vScan->save(p) );
-  XML_insert(p, "QTabWidget", "_baseline_tab", QtPersistent::insert(p,_baseline_tab->currentIndex()));
   XML_insert(p, "QTabWidget", "_plottype_tab", QtPersistent::insert(p,_plottype_tab->currentIndex()));
+#else
+  XML_insert(p, "ScalarPlotDesc", "_scalar_desc", _scalar_desc->save(p) );
+#endif
+  XML_insert(p, "QTabWidget", "_baseline_tab", QtPersistent::insert(p,_baseline_tab->currentIndex()));
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     XML_insert(p, "CursorDefinition", "_cursors", (*it)->save(p) );
@@ -238,6 +268,7 @@ void PeakFit::load(const char*& p)
       _baseline->value(QtPersistent::extract_d(p));
     else if (tag.name == "_title")
       _title->setText(QtPersistent::extract_s(p));
+#if 0
     else if (tag.name == "_hist")
       _hist->load(p);
     else if (tag.name == "_vTime")
@@ -246,10 +277,14 @@ void PeakFit::load(const char*& p)
       _vFeature->load(p);
     else if (tag.name == "_vScan")
       _vScan->load(p);
-    else if (tag.name == "_baseline_tab")
-      _baseline_tab->setCurrentIndex(QtPersistent::extract_i(p));
     else if (tag.name == "_plottype_tab")
       _plottype_tab->setCurrentIndex(QtPersistent::extract_i(p));
+#else
+    else if (tag.name == "_scalar_desc")
+      _scalar_desc->load(p);
+#endif
+    else if (tag.name == "_baseline_tab")
+      _baseline_tab->setCurrentIndex(QtPersistent::extract_i(p));
     else if (tag.name == "_cursors") {
       CursorDefinition* d = new CursorDefinition(p, *this, _frame.plot());
       _cursors.push_back(d);
@@ -319,82 +354,48 @@ void PeakFit::plot()
   if (_baseline_tab->currentIndex()!=ConstantBL && !_cursors.size())  /* Can't plot if no baseline! */
       return;
 
-  DescEntry* desc;
-  const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
-  switch(_plottype_tab->currentIndex()) {
-  case _TH1F:
-    switch(_hist->method()) {
-      case DescTH1F::Fixed:
-        desc = new Ami::DescTH1F(qPrintable(_title->text()),
-                                 name,"events",
-                                 _hist->bins(),_hist->lo(),_hist->hi(),false); 
-        break;
-      case DescTH1F::Auto1:
-        desc = new Ami::DescScalarRange(qPrintable(_title->text()),"events",
-                                        DescScalarRange::MeanSigma,
-                                        _hist->sigma(),
-                                        _hist->nsamples(),
-                                        _hist->bins(),
-                                        false);
-        break;
-      case DescTH1F::Auto2:
-        desc = new Ami::DescScalarRange(qPrintable(_title->text()),"events",
-                                        DescScalarRange::MinMax,
-                                        _hist->extent(),
-                                        _hist->nsamples(),
-                                        _hist->bins(),
-                                        false);
-        break;
-      default:
-        break;
-    }
-    break;
-  case _vT: 
-    desc = new Ami::DescScalar(qPrintable(_title->text()),
-			       name);
-    break;
-  case _vF:
-    desc = new Ami::DescProf(qPrintable(_title->text()),
-			     qPrintable(_vFeature->expr()),name,
-			     _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean");
-    break;
-  case _vS:
-    desc = new Ami::DescScan(qPrintable(_title->text()),
-			     qPrintable(_vScan->expr()),"mean",_vScan->bins());
-    break;
-  default:
-    desc = 0;
-    break;
+#if 0
+#else
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
+    PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
   }
+  else {
+    QString qtitle = QString("%1:%2")
+      .arg(_title->text())
+      .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity));
 
+    DescEntry* desc = _scalar_desc->desc(qPrintable(qtitle));
 
-  Ami::PeakFitPlot *plotter;
-  if (_baseline_tab->currentIndex()==ConstantBL) {
+    Ami::PeakFitPlot *plotter;
+    if (_baseline_tab->currentIndex()==ConstantBL) {
       plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
-  } else {
+    } else {
       int bins[MAX_BINS], i = 0;
       for (std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end() && i < MAX_BINS; i++, it++) {
-          bins[i] = _frame.xinfo().tick((*it)->location());
+        bins[i] = _frame.xinfo().tick((*it)->location());
 #if 0
-          const AxisBins *xi = dynamic_cast<const AxisBins *>(&_frame.xinfo());
-          printf("PeakFit: (%d,%d,%d) %lg -> bin %d\n", 
-                 _frame.xinfo().lo(), _frame.xinfo().hi(), xi ? xi->ticks() : -1,
-                 (*it)->location(), bins[i]);
+        const AxisBins *xi = dynamic_cast<const AxisBins *>(&_frame.xinfo());
+        printf("PeakFit: (%d,%d,%d) %lg -> bin %d\n", 
+               _frame.xinfo().lo(), _frame.xinfo().hi(), xi ? xi->ticks() : -1,
+               (*it)->location(), bins[i]);
 #endif
       }
       plotter = new Ami::PeakFitPlot(*desc, i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
+    }
+    PeakFitPlot* plot = new PeakFitPlot(this,
+                                        qtitle,
+                                        _channel,
+                                        plotter);
+    
+    _plots.push_back(plot);
+
+    connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
-  PeakFitPlot* plot = new PeakFitPlot(this,
-				      _title->text(),
-				      _channel,
-                                      plotter);
-							   
-  _plots.push_back(plot);
-
-  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
   emit changed();
+#endif
 }
 
 void PeakFit::remove_plot(QObject* obj)
@@ -407,15 +408,34 @@ void PeakFit::remove_plot(QObject* obj)
 
 void PeakFit::add_post()
 {
+  _add_post();
+#if 0
+#else
+  _posts.back()->signup();
+#endif
+}
+
+QString PeakFit::_add_post()
+{
   //
   //  Check that a post variable by the same name doesn't already exist
   //
+#if 0
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).
+    validate_name(QString("%1")
+                  .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity)));
+#else
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).
+    validate_name(QString("%1:%2").arg(_scalar_desc->qtitle())
+                  .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity)));
+#endif
 
   //
   //  Add to the list of post variables
   //
-  const char* name = Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity);
-  Ami::DescCache* desc = new Ami::DescCache(name, qPrintable(_title->text()), Ami::PostAnalysis);
+  Ami::DescCache* desc = new Ami::DescCache(qPrintable(qtitle), 
+                                            qPrintable(qtitle),
+                                            Ami::PostAnalysis);
   Ami::PeakFitPlot *plotter;
   if (_baseline_tab->currentIndex()==ConstantBL) {
       plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), (Ami::PeakFitPlot::Parameter)_quantity);
@@ -425,11 +445,13 @@ void PeakFit::add_post()
           bins[i] = _frame.xinfo().tick((*it)->location());
       plotter = new Ami::PeakFitPlot(*desc,i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
   }
-  PeakFitPost* post = new PeakFitPost(_channel, plotter);
+  PeakFitPost* post = new PeakFitPost(_channel, plotter, this);
 							   
   _posts.push_back(post);
 
   emit changed();
+
+  return qtitle;
 }
 
 void PeakFit::grab_cursorx() 
@@ -472,3 +494,9 @@ void PeakFit::mousePressEvent(double x, double y)
 
 void PeakFit::mouseMoveEvent   (double,double) {}
 void PeakFit::mouseReleaseEvent(double,double) {}
+
+void PeakFit::remove_peakfit_post(PeakFitPost* post)
+{
+  _posts.remove(post);
+  emit changed();
+}

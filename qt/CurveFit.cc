@@ -9,6 +9,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/CurveFitPlot.hh"
 #include "ami/qt/CurveFitPost.hh"
+#include "ami/qt/PostAnalysis.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescWaveform.hh"
@@ -230,25 +231,31 @@ void CurveFit::set_channel(int c)
 
 void CurveFit::plot()
 {
-  int op = _outBox->currentIndex();
-  DescEntry *desc = _scalar_desc->desc(_opname[op]);
-  QString norm(_scalar_desc->expr(QString(""))); /* This has the form "()/(NORMVAR)" or "" */
-  
-  if (norm.length()) {
-      norm = norm.mid(4, norm.length() - 5); // Just the name, please!
-  }
-
   if (_fname.isNull())
-      return;
+    return;
 
-  CurveFitPlot* plot = new CurveFitPlot(this, desc->name(), _channel,
-                                        new Ami::CurveFit(qPrintable(_fname),
-                                                          op, *desc, qPrintable(norm)));
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
+    PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
+  }
+  else {
+    int op = _outBox->currentIndex();
+    DescEntry *desc = _scalar_desc->desc(_opname[op]);
+    QString norm(_scalar_desc->expr(QString(""))); /* This has the form "()/(NORMVAR)" or "" */
+  
+    if (norm.length()) {
+      norm = norm.mid(4, norm.length() - 5); // Just the name, please!
+    }
 
-  _plots.push_back(plot);
+    CurveFitPlot* plot = new CurveFitPlot(this, desc->name(), _channel,
+                                          new Ami::CurveFit(qPrintable(_fname),
+                                                            op, *desc, qPrintable(norm)));
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    _plots.push_back(plot);
 
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  }
   emit changed();
 }
 
@@ -262,17 +269,34 @@ void CurveFit::remove_plot(QObject* obj)
 
 void CurveFit::add_post()
 {
-    if (_fname.isNull())
-        return;
-    Ami::DescCache* desc = new Ami::DescCache(_scalar_desc->title(),
-                                              _scalar_desc->title(),
+  if (_fname.isNull())
+    return;
+
+  _add_post();
+  _posts.back()->signup();
+}
+
+QString CurveFit::_add_post()
+{
+    QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(_scalar_desc->qtitle());
+
+    Ami::DescCache* desc = new Ami::DescCache(qPrintable(qtitle),
+                                              qPrintable(qtitle),
                                               Ami::PostAnalysis);
     Ami::CurveFit* fit = new Ami::CurveFit(qPrintable(_fname),
                                            _outBox->currentIndex(), *desc);
-    CurveFitPost* post = new CurveFitPost(_channel, fit);
+    CurveFitPost* post = new CurveFitPost(_channel, fit, this);
     _posts.push_back(post);
 
     delete desc;
 
     emit changed();
+
+    return qtitle;
+}
+
+void CurveFit::remove_curvefit_post(CurveFitPost* post)
+{
+  _posts.remove(post);
+  emit changed();
 }

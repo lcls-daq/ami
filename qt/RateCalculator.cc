@@ -15,7 +15,9 @@ RateCalculator::~RateCalculator() {}
 bool RateCalculator::set_entry(Ami::Entry* entry) {
   pthread_mutex_lock(&_mutex);
   _entries = _last = 0;
-  bool result = (_entry = static_cast<Ami::EntryScalar*>(entry));
+  bool result = (entry!=0);
+  if (result)
+    _entry = static_cast<Ami::EntryScalar*>(entry);
   pthread_mutex_unlock(&_mutex);
   return result;
 }

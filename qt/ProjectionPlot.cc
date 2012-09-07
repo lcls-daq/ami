@@ -70,8 +70,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
 	
-  _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame);
-  _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame);
+  _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
+  _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
 
   load(p);
 

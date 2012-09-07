@@ -45,8 +45,9 @@ namespace Ami {
       int  configure       (iovec*);
       int  configured      ();
       void discovered      (const DiscoveryRx&);
-      void read_description(Ami::Socket&,int);
+      int  read_description(Ami::Socket&,int);
       int  read_payload    (Ami::Socket&,int);
+      bool svc             () const;
       void process         ();
     public slots:
       void _read_description   (int);

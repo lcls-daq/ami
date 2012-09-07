@@ -26,8 +26,6 @@ namespace Ami {
       const QString& entry() const;
       void  clear();
       void  fill (const QStringList&);
-      void  fill (const QStringList&,
-                  const QStringList&);
     public slots:
       void set_entry(const QModelIndex&);
       void set_entry(const QString&);

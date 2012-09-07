@@ -18,13 +18,14 @@ namespace Ami {
     class FeatureRegistry : public QObject {
       Q_OBJECT
     public:
-      static FeatureRegistry& instance(Ami::ScalarSet t=Ami::PreAnalysis);
+      static FeatureRegistry& instance(Ami::ScalarSet t=Ami::PostAnalysis);
     public:
       void               insert  (const std::vector<std::string>&);
     public:
       QStringList        names   () const;
       const QStringList& help    () const;
       int                index   (const QString&) const;
+      QString            validate_name(const QString&) const;
     public:
       void               force   ();
     signals:

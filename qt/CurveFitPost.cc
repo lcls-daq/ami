@@ -3,6 +3,7 @@
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/CFPostParent.hh"
 
 #include "ami/data/CurveFit.hh"
 #include "ami/data/Cds.hh"
@@ -14,19 +15,25 @@
 
 using namespace Ami::Qt;
 
-CurveFitPost::CurveFitPost(unsigned channel, Ami::CurveFit* input) :
+CurveFitPost::CurveFitPost(unsigned       channel, 
+                           Ami::CurveFit* input,
+                           CFPostParent*  parent) :
   _channel (channel),
-  _input   (input)
+  _input   (input),
+  _parent  (parent)
 {
 }
 
-CurveFitPost::CurveFitPost(const char*& p)
+CurveFitPost::CurveFitPost(const char*& p) :
+  _parent  (0)
 {
   load(p);
 }
 
 CurveFitPost::~CurveFitPost()
 {
+  if (_parent)
+    _parent->remove_curvefit_post(this);
   delete _input;
 }
 

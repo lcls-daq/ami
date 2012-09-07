@@ -119,10 +119,7 @@ QtTree::QtTree(const QStringList& names,
   connect(&_view  , SIGNAL(clicked(const QModelIndex&)), this, SLOT(set_entry(const QModelIndex&)));
 }
 
-void QtTree::fill(const QStringList& names) { fill(names,QStringList()); }
-
-void QtTree::fill(const QStringList& names,
-                  const QStringList& post_names)
+void QtTree::fill(const QStringList& names)
 {
   QStringList scan_names;
 
@@ -144,11 +141,12 @@ void QtTree::fill(const QStringList& names,
     for(int i=0; i<scan_names.size(); i++)
       root->insertRow(0, new QStandardItem(scan_names.at(i)));
 
-    { 
-      root->insertRow( 0, new QStandardItem( QString("[Post]")));
-      QStandardItem& post_root = *_model.invisibleRootItem()->child(0);
-      for(int i=0; i<post_names.size(); i++)
-        post_root.insertRow(0, new QStandardItem(post_names.at(i)));
+    for(int i=0; i<root->rowCount(); i++) {
+      QStandardItem* ch = root->child(i);
+      if (ch->text().startsWith("Post")) {
+        root->insertRow(0, root->takeRow(i));
+        break;
+      }
     }
 
     root->insertRow( 0, new QStandardItem( QString("[Most Recent]")) );
@@ -199,22 +197,24 @@ void QtTree::set_entry(const QString& e) {
     _view.hide();
 
     if (!e.isEmpty()) {
-      QStandardItem& mru_root = *_model.invisibleRootItem()->child(0);
-      for(int i=0; i<mru_root.rowCount(); i++) {
-        QStandardItem& row = *mru_root.child(i);
-        if (row.text() == e) {
-          mru_root.takeRow(i);
-          break;
+      if (_model.invisibleRootItem()->child(0)) {
+        QStandardItem& mru_root = *_model.invisibleRootItem()->child(0);
+        for(int i=0; i<mru_root.rowCount(); i++) {
+          QStandardItem& row = *mru_root.child(i);
+          if (row.text() == e) {
+            mru_root.takeRow(i);
+            break;
+          }
         }
-      }
-      mru_root.insertRow(0, new QStandardItem(e));
-      while (mru_root.rowCount() > MOST_RECENT_DISPLAY)
-        mru_root.takeRow(MOST_RECENT_DISPLAY);
+        mru_root.insertRow(0, new QStandardItem(e));
+        while (mru_root.rowCount() > MOST_RECENT_DISPLAY)
+          mru_root.takeRow(MOST_RECENT_DISPLAY);
     
-      _most_recent.removeAll(e);
-      _most_recent.push_front(e);
-      while (_most_recent.size() > MOST_RECENT_SIZE)
-        _most_recent.pop_back();
+        _most_recent.removeAll(e);
+        _most_recent.push_front(e);
+        while (_most_recent.size() > MOST_RECENT_SIZE)
+          _most_recent.pop_back();
+      }
     }
   }
   else

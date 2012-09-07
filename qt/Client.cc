@@ -209,8 +209,14 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   _status->set_state(Status::Discovered);
   //  printf("%s Discovered\n",qPrintable(title()));
 
+  //  The EnvClient requests all variable sets
+#if 0
   //  iterate through discovery and print
-  FeatureRegistry::instance().insert(rx.features());
+  for(int i=0; i<Ami::NumberOfSets; i++) {
+    Ami::ScalarSet set((Ami::ScalarSet)i);
+    FeatureRegistry::instance(set).insert(rx.features(set));
+  }
+#endif
 
   char channel_name [128]; 
   strcpy(channel_name ,ChannelID::name(info,channel));
@@ -300,14 +306,14 @@ int  Ami::Qt::Client::configured      ()
 //
 //  read_description adds/removes plots
 //
-void Ami::Qt::Client::read_description(Socket& socket, int len)
+int Ami::Qt::Client::read_description(Socket& socket, int len)
 {
   //  printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
-    return;
+    return 0;
   }
 
   if (size>BufferSize) {
@@ -320,6 +326,8 @@ void Ami::Qt::Client::read_description(Socket& socket, int len)
   emit description_changed(size);
 
   _sem->take();
+
+  return size;
 }
 
 void Ami::Qt::Client::_read_description(int size)
@@ -503,3 +511,5 @@ void Ami::Qt::Client::paintEvent(QPaintEvent* e)
   }
   QWidget::paintEvent(e);
 }
+
+bool Ami::Qt::Client::svc() const { return false; }

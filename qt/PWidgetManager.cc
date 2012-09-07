@@ -25,7 +25,7 @@ PWidgetManager::PWidgetManager(QWidget* parent) :
 
   QHBoxLayout* l = new QHBoxLayout;
   //  l->addStretch();
-  l->addWidget(new QLabel("Find"));
+  l->addWidget(new QLabel("Find Plot"));
   l->addWidget(box,1);
   setLayout(l);
 

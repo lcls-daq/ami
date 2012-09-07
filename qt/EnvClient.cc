@@ -17,6 +17,7 @@
 #include "ami/data/DescCache.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EnvPlot.hh"
+#include "ami/data/RawFilter.hh"
 
 #include "ami/service/Socket.hh"
 #include "ami/service/Semaphore.hh"
@@ -52,11 +53,15 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false)
 {
+#if 0
   switch(_set) {
   case Ami::PreAnalysis : _title = QString("Env"); break;
   case Ami::PostAnalysis: _title = QString("PostAnalysis"); break;
   default:                _title = QString("Environment"); break;
   }
+#else
+  _title = QString("Env");
+#endif
   setWindowTitle(_title);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
@@ -104,12 +109,16 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()), this, SLOT(update_configuration()));
 
+#if 0
   if (_set!=Ami::PostAnalysis)
     _scalar_plot->post(this, SLOT(add_post()));
+#endif
 }
 
 EnvClient::~EnvClient() 
 {
+  printf("====== destroying EnvClient ========\n");
+
   for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
@@ -216,7 +225,13 @@ void EnvClient::discovered(const DiscoveryRx& rx)
   _input = e->signature();
 
   //  iterate through discovery and print
-  FeatureRegistry::instance(_set).insert(rx.features(_set));
+#if 0
+  //  FeatureRegistry::instance(_set).insert(rx.features(_set));
+  for(int i=0; i<Ami::NumberOfSets; i++) {
+    Ami::ScalarSet set((Ami::ScalarSet)i);
+    FeatureRegistry::instance(set).insert(rx.features(set));
+  }
+#endif
 
   _manager->configure();
 }
@@ -248,13 +263,13 @@ int  EnvClient::configured      ()
   return 0; 
 }
 
-void EnvClient::read_description(Socket& socket,int len)
+int  EnvClient::read_description(Socket& socket,int len)
 {
   int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
-    return;
+    return 0;
   }
 
   if (size==BufferSize) {
@@ -266,6 +281,8 @@ void EnvClient::read_description(Socket& socket,int len)
   emit description_changed(size);
 
   _sem->take();
+
+  return size;
 }
 
 void EnvClient::_read_description(int size)
@@ -323,6 +340,8 @@ int  EnvClient::read_payload     (Socket& socket,int)
   return nbytes;
 }
 
+bool EnvClient::svc             () const { return true; }
+
 void EnvClient::process         () 
 {
   //
@@ -338,7 +357,7 @@ void EnvClient::managed(ClientManager& mgr)
 {
   _manager = &mgr;
   show();
-  _manager->connect(_set==Ami::PostAnalysis);
+  _manager->connect();
 }
 
 void EnvClient::request_payload()
@@ -421,4 +440,23 @@ void EnvClient::select_source()
 void EnvClient::validate_source()
 {
   //  Don't know how to validate yet
+}
+
+void EnvClient::plot(const QString& name, 
+                     DescEntry*     desc, 
+                     SharedData*    shared)
+{
+  EnvPlot* plot = new EnvPlot(this,
+			      name,
+			      Ami::RawFilter(),
+			      desc,
+                              _set,
+                              shared);
+
+  _plots.push_back(plot);
+
+  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
+
+  emit changed();
 }

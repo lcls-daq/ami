@@ -24,7 +24,9 @@ namespace Ami {
     class ScalarPlotDesc : public QWidget {
     public:
       enum Type { TH1F, vT, vF, vS };
-      ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry = &FeatureRegistry::instance());
+      ScalarPlotDesc(QWidget* parent, 
+                     FeatureRegistry* registry = &FeatureRegistry::instance(),
+                     bool lNormWeight=true);
       ~ScalarPlotDesc();
     public:
       void save(char*& p) const;
@@ -36,6 +38,7 @@ namespace Ami {
       QString         qtitle() const;
       DescEntry*  desc(const char*) const;
       const char* expr(const QString& e) const;
+      bool        postAnalysis() const;
     protected:
       QLineEdit*   _title;
       QPushButton* _postB;
@@ -47,11 +50,7 @@ namespace Ami {
       QCheckBox*    _weightB;
       FeatureList*  _vweight;
 
-#if 0
-      QButtonGroup* _plot_grp;
-#else
       QTabWidget* _plot_grp;
-#endif
       DescTH1F*   _hist;
       DescChart*  _vTime;
       DescProf*   _vFeature;

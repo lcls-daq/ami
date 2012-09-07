@@ -2,6 +2,7 @@
 #define AmiQt_EnvClient_hh
 
 #include "ami/qt/AbsClient.hh"
+#include "ami/qt/PostAnalysis.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureCache.hh"
@@ -25,7 +26,9 @@ namespace Ami {
     class EnvPost;
     class ScalarPlotDesc;
     class Filter;
-    class EnvClient : public Ami::Qt::AbsClient {
+    class SharedData;
+    class EnvClient : public Ami::Qt::AbsClient,
+                      public PostAnalysis {
       Q_OBJECT
     public:
       EnvClient(QWidget*, const Pds::DetInfo&, unsigned);
@@ -45,8 +48,9 @@ namespace Ami {
       int  configure       (iovec*);
       int  configured      ();
       void discovered      (const DiscoveryRx&);
-      void read_description(Ami::Socket&,int);
+      int  read_description(Ami::Socket&,int);
       int  read_payload    (Ami::Socket&,int);
+      bool svc             () const;
       void process         ();
     public slots:
       void update_configuration();
@@ -93,6 +97,9 @@ namespace Ami {
 
       std::list<EnvPlot*> _plots;
       std::list<EnvPost*> _posts;
+
+    public:
+      void plot(const QString&, DescEntry*, SharedData*);
     };
   };
 };

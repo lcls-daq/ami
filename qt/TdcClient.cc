@@ -243,8 +243,14 @@ void TdcClient::discovered(const DiscoveryRx& rx)
   _status->set_state(Status::Discovered);
   printf("Tdc Discovered\n");
 
+  //  The EnvClient requests all variable sets
+#if 0
   //  iterate through discovery and print
-  FeatureRegistry::instance().insert(rx.features());
+  for(int i=0; i<Ami::NumberOfSets; i++) {
+    Ami::ScalarSet set((Ami::ScalarSet)i);
+    FeatureRegistry::instance(set).insert(rx.features(set));
+  }
+#endif
 
   char channel_name [128];
   strcpy(channel_name ,ChannelID::name(info,channel));
@@ -299,14 +305,14 @@ int  TdcClient::configured      ()
   return 0; 
 }
 
-void TdcClient::read_description(Socket& socket,int len)
+int  TdcClient::read_description(Socket& socket,int len)
 {
   printf("Tdc Described so\n");
   int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
-    return;
+    return 0;
   }
 
   if (size==BufferSize) {
@@ -318,6 +324,8 @@ void TdcClient::read_description(Socket& socket,int len)
   emit description_changed(size);
 
   _sem->take();
+
+  return size;
 }
 
 void TdcClient::_read_description(int size)
@@ -381,6 +389,8 @@ int  TdcClient::read_payload     (Socket& socket,int)
   _status->set_state(Status::Received);
   return nbytes;
 }
+
+bool TdcClient::svc             () const { return false; }
 
 void TdcClient::process         () 
 {

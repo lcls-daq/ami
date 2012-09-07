@@ -6,10 +6,14 @@ using namespace Ami::Qt;
 
 FeatureTree::FeatureTree(FeatureRegistry* r) :
   QtTree     (":"),
-  _registry  (r ? r : &FeatureRegistry::instance())
+  _registry  (r ? r : &FeatureRegistry::instance(Ami::PreAnalysis))
 {
   fill(_registry->names());
   connect(_registry, SIGNAL(changed()), this, SLOT(change_features()));
+
+//   FeatureRegistry* pre = &FeatureRegistry::instance(Ami::PreAnalysis);
+//   if (_registry != pre)
+//     connect(pre, SIGNAL(changed()), this, SLOT(change_features()));
 }
 
 FeatureTree::FeatureTree(const QStringList& names, const QStringList& help, const QColor& color) :

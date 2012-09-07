@@ -24,7 +24,7 @@
 
 using namespace Ami::Qt;
 
-ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
+ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool lNormWeight) :
   QWidget(parent)
 {
   _title = new QLineEdit  ("title");
@@ -35,15 +35,6 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
   _vTime  = new DescChart ("v Time");
   _vFeature = new DescProf("Mean v Var" , registry);
   _vScan    = new DescScan("Mean v Scan", registry);
-
-#if 0
-  _plot_grp = new QButtonGroup;
-  _plot_grp->addButton(_hist    ->button(),(int)TH1F);
-  _plot_grp->addButton(_vTime   ->button(),(int)vT);
-  _plot_grp->addButton(_vFeature->button(),(int)vF);
-  _plot_grp->addButton(_vScan   ->button(),(int)vS);
-  _hist->button()->setChecked(true);
-#endif
 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
@@ -61,12 +52,6 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
     layout1->addLayout(layout2); }
   { QGroupBox* box = new QGroupBox("Plot Type");
     QVBoxLayout* vl = new QVBoxLayout;
-#if 0
-    vl->addWidget(_hist );
-    vl->addWidget(_vTime);
-    vl->addWidget(_vFeature);
-    vl->addWidget(_vScan);
-#else
     QTabWidget* tab = new QTabWidget;
     tab->addTab(_hist    , _hist    ->button()->text());
     tab->addTab(_vTime   , _vTime   ->button()->text());
@@ -74,7 +59,6 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
     tab->addTab(_vScan   , _vScan   ->button()->text());
     vl->addWidget(tab);
     _plot_grp = tab;
-#endif
     box->setLayout(vl);
     layout1->addWidget(box); }
   { QGroupBox* box = new QGroupBox("Normalization");
@@ -88,6 +72,7 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
     hl->addWidget(new QLabel("variable to"));
     hl->addWidget(_vnorm);
     box->setLayout(hl);
+    if (!lNormWeight) box->hide();
     layout1->addWidget(box); }
   { QGroupBox* box = new QGroupBox("Weighted Average");
     QHBoxLayout* hl = new QHBoxLayout;
@@ -97,6 +82,7 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry) :
     hl->addWidget(_vweight); 
     hl->addStretch();
     box->setLayout(hl); 
+    if (!lNormWeight) box->hide();
     layout1->addWidget(box); }
   setLayout(layout1);
 }
@@ -111,12 +97,7 @@ void ScalarPlotDesc::save(char*& p) const
   XML_insert(p, "DescChart", "_vTime"   , _vTime   ->save(p) );
   XML_insert(p, "DescProf" , "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan" , "_vScan"   , _vScan   ->save(p) );
-
-#if 0
-  XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->checkedId ()) );
-#else
   XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->currentIndex ()) );
-#endif
 }
 
 void ScalarPlotDesc::load(const char*& p)
@@ -131,11 +112,7 @@ void ScalarPlotDesc::load(const char*& p)
     else if (tag.name == "_vScan")
       _vScan->load(p);
     else if (tag.name == "_plot_grp")
-#if 0
-      _plot_grp->button(QtPersistent::extract_i(p))->setChecked(true);
-#else
       _plot_grp->setCurrentIndex(QtPersistent::extract_i(p));
-#endif
   XML_iterate_close(ScalarPlotDesc,tag);
 }
 
@@ -147,11 +124,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 
   QString qtitle = title ? QString(title) : _title->text();
 
-#if 0
-  switch(_plot_grp->checkedId()) {
-#else
   switch(_plot_grp->currentIndex()) {
-#endif
   case ScalarPlotDesc::TH1F:
     { QString v = _ynorm->isChecked() ? vn : qtitle;
       switch(_hist->method()) {
@@ -209,7 +182,8 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 			       qPrintable(_vScan->expr()),title,
 			       _vScan->bins(),
 			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
-      break; }
+    }
+    break;
   default:
     desc = 0;
     break;
@@ -240,4 +214,43 @@ void ScalarPlotDesc::post(QObject* obj, const char* slot)
 {
   connect(_postB, SIGNAL(clicked()), obj, slot);
   _postB->setEnabled(true);
+}
+
+bool ScalarPlotDesc::postAnalysis() const
+{
+  static QString _post_str("Post:");
+
+  bool post(false);
+  if (_ynorm->isChecked() && _vnorm->entry().contains(_post_str))
+    post = true;
+
+  switch(_plot_grp->currentIndex()) {
+
+  case ScalarPlotDesc::vT:
+    if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
+      post = true;
+    break;
+
+  case ScalarPlotDesc::vS:
+    if (_vScan->expr().contains(_post_str))
+      post = true;
+    if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
+      post = true;
+    if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
+      post = true;
+    break;
+
+  case ScalarPlotDesc::vF:
+    if (_vFeature->expr().contains(_post_str))
+      post = true;
+    if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
+      post = true;
+    if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
+      post = true;
+    break;
+
+  default:
+    break;
+  }
+  return post;
 }

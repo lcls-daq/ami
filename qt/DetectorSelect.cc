@@ -14,6 +14,7 @@
 #include "ami/qt/FilterSetup.hh"
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/PWidgetManager.hh"
+#include "ami/qt/FeatureRegistry.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/service/ConnectionManager.hh"
 #include "ami/service/Task.hh"
@@ -69,7 +70,7 @@ DetectorSelect::DetectorSelect(const QString& label,
                                bool quiet) :
   QtPWidget   (0),
   //  _quiet      (quiet),
-  _quiet      (false),
+  _quiet      (true),
   _interface  (interface),
   _serverGroup(serverGroup),
   _connect_mgr(new ConnectionManager(interface)),
@@ -127,8 +128,19 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
 
     layout->addWidget(_detList = new QListWidget(this));
-    *new DetectorListItem(_detList, "Env"    , envInfo, 0);
-    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
+#if 1
+    //
+    //  The EnvClient is needed at all times to request the PostAnalysis variable set and generate those plots
+    //
+    { DetectorListItem* ditem = new DetectorListItem(_detList, "Env"    , envInfo, 1);
+      const char* p=0;
+      Ami::Qt::AbsClient* cl = _create_client(ditem->info,ditem->channel,ditem->text(),p);
+      //      cl->hide(); 
+    }
+#else
+    *new DetectorListItem(_detList, "Env", envInfo, 1);
+#endif
+    //    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
       this, SLOT(show_detector(QListWidgetItem*)));
@@ -346,8 +358,6 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
 {
   const Pds::DetInfo& info = static_cast<const Pds::DetInfo&>(src);
 
-  printf("Creating client for %s [%08x.%08x]\n",qPrintable(name), src.log(), src.phy());
-
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
@@ -417,11 +427,12 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
 void DetectorSelect::show_detector(QListWidgetItem* item)
 {
   DetectorListItem* ditem = static_cast<DetectorListItem*>(item);
-  for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++)
+  for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++) {
     if (match((*it)->info,ditem->info) && (*it)->channel==ditem->channel) {
       (*it)->front();
       return;
     }
+  }
   const char* p=0;
   _create_client(ditem->info,ditem->channel,ditem->text(),p);
 }
@@ -450,6 +461,11 @@ int  DetectorSelect::configured      () { return 0; }
 
 void DetectorSelect::discovered      (const DiscoveryRx& rx) 
 { 
+  for(int i=0; i<Ami::NumberOfSets; i++) {
+    Ami::ScalarSet set((Ami::ScalarSet)i);
+    FeatureRegistry::instance(set).insert(rx.features(set));
+  }
+
   _rate_display->discovered(rx);
 
   pthread_mutex_lock(&_mutex);
@@ -476,21 +492,23 @@ void DetectorSelect::change_detectors(const char* c)
   {
     std::list<QtTopWidget*> remove;
     for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++) {
-      
-      bool lFound=false;
-      for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
-    e = reinterpret_cast<const Ami::DescEntry*>
-      (reinterpret_cast<const char*>(e) + e->size()))
-  if ((match((*it)->info,e->info()) && (*it)->channel == e->channel()) ||
-      (match((*it)->info,envInfo)   && (*it)->channel <= 1)) {
-    lFound=true;
-    break;
-  }
-      if (!lFound)
-  remove.push_back(*it);
+      if (match((*it)->info,envInfo) && (*it)->channel <= 1)
+        ;
+      else {
+        bool lFound=false;
+        for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
+            e = reinterpret_cast<const Ami::DescEntry*>
+              (reinterpret_cast<const char*>(e) + e->size()))
+          if (match((*it)->info,e->info()) && (*it)->channel == e->channel()) {
+            lFound=true;
+            break;
+          }
+        
+        if (!lFound)
+          remove.push_back(*it);
+      }
     }
     for(std::list<QtTopWidget*>::iterator it = remove.begin(); it != remove.end(); it++) {
-      printf("DetectorSelect::change_detectors removing %s\n",qPrintable((*it)->title()));
       _client.remove(*it);
     }
   }
@@ -499,8 +517,8 @@ void DetectorSelect::change_detectors(const char* c)
   {
     _detList->clear();
 
-    new DetectorListItem(_detList, "Env"    , envInfo, 0);
-    new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
+    new DetectorListItem(_detList, "Env"    , envInfo, 1);
+    //    new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    new DetectorListItem(_detList, "Summary", noInfo , 0);
 
     const Ami::DescEntry* n = 0;
@@ -541,13 +559,16 @@ void DetectorSelect::change_detectors(const char* c)
   pthread_mutex_unlock(&_mutex);
 }
 
-void DetectorSelect::read_description(Socket& s,int len) {
+int DetectorSelect::read_description(Socket& s,int len) {
   _rate_display->read_description(s,len);
+  return len;
 }
 
 int  DetectorSelect::read_payload    (Socket& s,int len) {
   return _rate_display->read_payload(s,len);
 }
+
+bool DetectorSelect::svc             () const { return true; }
 
 void DetectorSelect::process         () {
   _rate_display->process();

@@ -31,11 +31,13 @@ void QtPWidget::save(char*& p) const
 
   XML_insert(p, "bool", "visible", QtPersistent::insert(p,isVisible()) );
 
+#if 0
   if (isVisible())
     printf("QtP save %d,%d %d,%d %c\n",
 	   pos().x(),pos().y(),
 	   size().width(),size().height(),
 	   isVisible()?'t':'f');
+#endif
 }
 
 void QtPWidget::load(const char*& p)

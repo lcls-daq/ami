@@ -1,6 +1,8 @@
 #ifndef AmiQt_CursorPost_hh
 #define AmiQt_CursorPost_hh
 
+#include "ami/qt/SharedData.hh"
+
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/ConfigureRequestor.hh"
 
@@ -12,10 +14,12 @@ namespace Ami {
     class AxisInfo;
     class ChannelDefinition;
     class CursorDefinition;
-    class CursorPost {
+    class CPostParent;
+    class CursorPost : public SharedData {
     public:
       CursorPost(unsigned       channel,
-		 BinMath*       desc);
+		 BinMath*       desc,
+                 CPostParent*   parent =0);
       CursorPost(const char*&   p);
       ~CursorPost();
     public:
@@ -30,6 +34,7 @@ namespace Ami {
       unsigned _output_signature;
       BinMath* _input;
       ConfigureRequestor _req;
+      CPostParent*       _parent;
     };
   };
 };

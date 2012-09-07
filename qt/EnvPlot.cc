@@ -8,6 +8,7 @@
 #include "ami/qt/QtScan.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/SharedData.hh"
 
 #include "ami/data/AbsFilter.hh"
 #include "ami/data/FilterFactory.hh"
@@ -43,14 +44,17 @@ EnvPlot::EnvPlot(QWidget*         parent,
 		 const QString&   name,
 		 const Ami::AbsFilter&  filter,
 		 DescEntry*       desc,
-                 Ami::ScalarSet   set) :
+                 Ami::ScalarSet   set,
+                 SharedData*      shared) :
   QtPlot   (parent, name),
   _filter  (filter.clone()),
   _desc    (desc),
   _set     (set),
   _output_signature  (0),
-  _plot    (0)
+  _plot    (0),
+  _shared  (shared)
 {
+  if (shared) shared->signup();
 }
 
 EnvPlot::EnvPlot(QWidget*     parent,
@@ -59,7 +63,8 @@ EnvPlot::EnvPlot(QWidget*     parent,
   _filter  (0),
   _set     (Ami::PreAnalysis),
   _output_signature(0),
-  _plot    (0)
+  _plot    (0),
+  _shared  (0)
 {
   XML_iterate_open(p,tag)
     
@@ -95,6 +100,7 @@ EnvPlot::~EnvPlot()
   if (_filter  ) delete _filter;
   delete _desc;
   if (_plot    ) delete _plot;
+  if (_shared  ) _shared->resign();
 }
 
 void EnvPlot::save(char*& p) const
@@ -190,7 +196,7 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
 						  -1,
 						  *_filter, op, _set);
   p += r.size();
-  _req.request(r, output);
+  _req.request(r, output, _plot==0);
   _output_signature = r.output();
 }
 

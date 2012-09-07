@@ -74,3 +74,17 @@ FeatureRegistry::FeatureRegistry() : _sem(Ami::Semaphore::FULL) {}
 
 FeatureRegistry::~FeatureRegistry() {}
 
+QString FeatureRegistry::validate_name(const QString& n) const
+{
+  QString m;
+  if (this == _instance[PostAnalysis] && !n.startsWith("Post:"))
+    m = QString("Post:%1").arg(n);
+  else
+    m = n;
+
+  QString v(m);
+  unsigned j=0;
+  while (_names.contains(v))
+    v = QString("%1_%2").arg(m).arg(++j);
+  return v;
+}

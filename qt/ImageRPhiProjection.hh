@@ -2,6 +2,7 @@
 #define AmiQt_ImageRPhiProjection_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/CPostParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -29,7 +30,8 @@ namespace Ami {
     class RPhiProjectionPlotDesc;
     class ImageIntegral;
 
-    class ImageRPhiProjection : public QtPWidget {
+    class ImageRPhiProjection : public QtPWidget,
+                                public CPostParent {
       Q_OBJECT
     public:
       ImageRPhiProjection(QtPWidget* parent,
@@ -54,6 +56,8 @@ namespace Ami {
     signals:
       void changed();
     private:
+      QString _add_post();
+    private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
       unsigned _channel;
@@ -74,6 +78,10 @@ namespace Ami {
 
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
+
+    public:
+      void remove_cursor_post(CursorPost*);
+    private:
       std::list<CursorPost*>     _posts;
     };
   };

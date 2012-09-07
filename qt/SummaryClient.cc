@@ -228,14 +228,14 @@ int  SummaryClient::configured      ()
   return 0; 
 }
 
-void SummaryClient::read_description(Socket& socket,int len)
+int  SummaryClient::read_description(Socket& socket,int len)
 {
   printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
-    return;
+    return 0;
   }
 
   if (size==BufferSize) {
@@ -247,6 +247,8 @@ void SummaryClient::read_description(Socket& socket,int len)
   emit description_changed(size);
 
   _sem->take();
+
+  return size;
 }
 
 void SummaryClient::_read_description(int size)
@@ -394,6 +396,8 @@ int  SummaryClient::read_payload     (Socket& socket,int)
   _status->set_state(Status::Received);
   return nbytes;
 }
+
+bool SummaryClient::svc             () const { return false; }
 
 void SummaryClient::process         () 
 {

@@ -1,6 +1,8 @@
 #ifndef AmiQt_CurveFitPost_hh
 #define AmiQt_CurveFitPost_hh
 
+#include "ami/qt/SharedData.hh"
+
 #include "ami/data/CurveFit.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/ConfigureRequestor.hh"
@@ -12,10 +14,12 @@ namespace Ami {
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
-    class CurveFitPost {
+    class CFPostParent;
+    class CurveFitPost : public SharedData {
     public:
       CurveFitPost(unsigned          channel,
-		   Ami::CurveFit*    input);
+		   Ami::CurveFit*    input,
+                   CFPostParent*     parent=0);
       CurveFitPost(const char*&   p);
       ~CurveFitPost();
     public:
@@ -30,6 +34,7 @@ namespace Ami {
       unsigned   _output_signature;
       Ami::CurveFit* _input;
       ConfigureRequestor _req;
+      CFPostParent*      _parent;
     };
   };
 };

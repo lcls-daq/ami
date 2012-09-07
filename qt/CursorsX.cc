@@ -12,6 +12,7 @@
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/PostAnalysis.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescCache.hh"
@@ -67,11 +68,10 @@ CursorsX::CursorsX(QWidget* parent,
   _frameParent(frameParent),
   _clayout  (new QVBoxLayout),
 #if 0
-  _expr     (new QLineEdit("1")),
+  _expr     (new QLineEdit("1"))
 #else
-  _expr     (new QComboBox),
+  _expr     (new QComboBox)
 #endif
-  _force    (false)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
@@ -331,12 +331,11 @@ void CursorsX::calc()
    delete c;
 }
 
-void CursorsX::plot()
+QString CursorsX::_translate_expr()
 {
   // replace cursors with values
   // and integrate symbol with 8-bit char
   QString expr = _expr_text();
-  DescEntry* desc = _scalar_desc->desc(qPrintable(expr));
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     QString new_expr;
     const QString match = (*it)->name();
@@ -360,59 +359,59 @@ void CursorsX::plot()
   expr.replace(_divide      ,Expression::divide());
   expr.replace(_add         ,Expression::add());
   expr.replace(_subtract    ,Expression::subtract());
-  CursorPlot* plot = new CursorPlot(this,
-				    _expr_text(),
-				    _channel,
-				    new BinMath(*desc,_scalar_desc->expr(expr)));
-  _plots.push_back(plot);
+  return expr;
+}
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+void CursorsX::plot()
+{
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
+    PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
+  }
+  else {
+    QString expr = _translate_expr();
+    DescEntry* desc = _scalar_desc->desc(qPrintable(_expr_text()));
+    CursorPlot* plot = new CursorPlot(this,
+                                      _expr_text(),
+                                      _channel,
+                                      new BinMath(*desc,_scalar_desc->expr(expr)));
+    delete desc;
 
+    _plots.push_back(plot);
+
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+  }
   emit changed();
 }
 
-void CursorsX::add_post()
+void    CursorsX::add_post() 
 {
-  // replace cursors with values
-  // and integrate symbol with 8-bit char
-  QString expr = _expr_text();
-  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
-    QString new_expr;
-    const QString match = (*it)->name();
-    int last=0;
-    int pos=0;
-    while( (pos=expr.indexOf(match,pos)) != -1) {
-      new_expr.append(expr.mid(last,pos-last));
-      new_expr.append(QString("[%1]").arg((*it)->location()));
-      pos += match.size();
-      last = pos;
-    }
-    new_expr.append(expr.mid(last));
-    expr = new_expr;
-  }
-  expr.replace(_integrate   ,BinMath::integrate());
-  expr.replace(_moment1     ,BinMath::moment1  ());
-  expr.replace(_moment2     ,BinMath::moment2  ());
-  expr.replace(_range       ,BinMath::range    ());
-  expr.replace(_exponentiate,Expression::exponentiate());
-  expr.replace(_multiply    ,Expression::multiply());
-  expr.replace(_divide      ,Expression::divide());
-  expr.replace(_add         ,Expression::add());
-  expr.replace(_subtract    ,Expression::subtract());
+  _add_post();
+  _posts.back()->signup();
+}
 
-  QByteArray qtitle(qPrintable(_scalar_desc->qtitle()));
-  Ami::DescCache* desc = new Ami::DescCache(qtitle.constData(),
-                                            qtitle.constData(),
+QString CursorsX::_add_post()
+{
+  QString expr = _translate_expr();
+
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(_scalar_desc->qtitle());
+
+  Ami::DescCache* desc = new Ami::DescCache(qPrintable(qtitle),
+                                            qPrintable(qtitle),
                                             Ami::PostAnalysis);
 
   CursorPost* post = new CursorPost(_channel,
-				    new BinMath(*desc,_scalar_desc->expr(expr)));
+				    new BinMath(*desc,_scalar_desc->expr(expr)),
+                                    this);
   _posts.push_back(post);
 
   delete desc;
 
   emit changed();
+
+  return QString(qtitle);
 }
 
 void CursorsX::hide_cursors()
@@ -499,3 +498,9 @@ void CursorsX::_expr_setText(const QString& t)
 }
 
 #endif
+
+void CursorsX::remove_cursor_post(CursorPost* post)
+{
+  _posts.remove(post);
+  emit changed();
+}

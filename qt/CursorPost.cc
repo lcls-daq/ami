@@ -3,6 +3,7 @@
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/CPostParent.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/Cds.hh"
@@ -13,22 +14,28 @@
 using namespace Ami::Qt;
 
 CursorPost::CursorPost(unsigned         channel,
-		       BinMath*         input) :
+		       BinMath*         input,
+                       CPostParent*     parent) :
   _channel (channel),
-  _input   (input)
+  _input   (input),
+  _parent  (parent)
 {
 }
 
 CursorPost::CursorPost(const char*& p) : 
   _channel(0),
-  _input  (0)
+  _input  (0),
+  _parent (0)
 {
   load(p);
 }
 
 CursorPost::~CursorPost()
 {
-  if (_input) delete _input;
+  if (_parent)
+    _parent->remove_cursor_post(this); 
+  if (_input ) 
+    delete _input;
 }
 
 void CursorPost::save(char*& p) const
