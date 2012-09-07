@@ -58,11 +58,16 @@ void Discovery::discovered      (const DiscoveryRx& rx)
   }
 }
 
-void Discovery::read_description(Socket& s,int) {
+int Discovery::read_description(Socket& s,int len) {
+  return len;
 }
 
 int Discovery::read_payload    (Socket& s,int) {
   return 0;
+}
+
+bool Discovery::svc             () const {
+  return false;
 }
 
 void Discovery::process         () {

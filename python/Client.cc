@@ -149,13 +149,13 @@ int  Client::configured      ()
   return 0; 
 }
 
-void Client::read_description(Socket& socket,int len)
+int  Client::read_description(Socket& socket,int len)
 {
   int size = socket.read(_description,len);
 
   if (size<0) {
     printf("Read error in Ami::Python::Client::read_description.\n");
-    return;
+    return 0;
   }
 
   if (size==BufferSize) {
@@ -192,12 +192,16 @@ void Client::read_description(Socket& socket,int len)
   _cds.payload(_iovload);
 
   sem_post(&_initial_sem);
+
+  return size;
 }
 
 int  Client::read_payload     (Socket& socket,int)
 {
   return socket.readv(_iovload,_cds.totalentries());
 }
+
+bool Client::svc             () const { return false; }
 
 void Client::process         () 
 {

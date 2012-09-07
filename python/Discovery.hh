@@ -25,8 +25,9 @@ namespace Ami {
       int  configure       (iovec*) ;
       int  configured      () ;
       void discovered      (const DiscoveryRx&) ;
-      void read_description(Socket&,int) ;
+      int  read_description(Socket&,int) ;
       int  read_payload    (Socket&,int) ;
+      bool svc             () const ;
       void process         () ;
 
     private:
