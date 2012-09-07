@@ -18,12 +18,14 @@ static const int BufferSize = 32*1024;
 CollectionServer::CollectionServer(unsigned           interface,
                                    unsigned           serverGroup,
                                    ConnectionManager& connect_mgr,
-                                   Socket*            socket) :
+                                   Socket*            socket,
+                                   bool               postService) :
   Server(socket),
   _client_manager(new ClientManager(interface,
                                     serverGroup,
                                     connect_mgr,
-                                    *this))
+                                    *this)),
+  _post_service(postService)
 {
   _client_manager->connect();
 }
@@ -99,15 +101,21 @@ void CollectionServer::discovered      (const DiscoveryRx& rx)
   _iov[1].iov_len  = rx.payload_size();
   reply(-1, Message::Discover, 2);
 }
-void CollectionServer::read_description(Socket& s,int len)
+int  CollectionServer::read_description(Socket& s,int len)
 {
   _reply(Message::Description, s, len);
+  return len;
 }
 int  CollectionServer::read_payload    (Socket& s,int len)
 {
   _reply(Message::Payload, s, len);
   return len;
 }
+bool CollectionServer::svc             () const
+{
+  return _post_service;
+}
+
 void CollectionServer::process         () {}
 
 void CollectionServer::_reply(Message::Type t, Socket& s, int len)

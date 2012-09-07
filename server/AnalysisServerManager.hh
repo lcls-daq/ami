@@ -15,7 +15,7 @@ namespace Ami {
                            unsigned serverGroup);
     ~AnalysisServerManager();
   public:
-    Server* new_server(Socket*);
+    Server* new_server(Socket*, bool);
   public:
     void serve     (Factory&, Semaphore* =0);
   private:

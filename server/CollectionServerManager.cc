@@ -22,10 +22,11 @@ CollectionServerManager::~CollectionServerManager()
   delete _connection_manager;
 }
 
-Server* CollectionServerManager::new_server(Socket* s)
+Server* CollectionServerManager::new_server(Socket* s, bool post_service)
 {
   return new CollectionServer(_server_interface,
                               _server_group,
                               *_connection_manager,
-                              s);
+                              s,
+                              post_service);
 }

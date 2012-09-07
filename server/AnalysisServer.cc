@@ -13,10 +13,17 @@ using namespace Ami;
 
 static const int BufferSize = 32*1024;
 
+static const char* _cds_name(Socket& s)
+{
+  static char buff[32];
+  sprintf(buff,"AnalysisServer_%d",s.socket());
+  return buff;
+}
+
 AnalysisServer::AnalysisServer(Socket*         socket,
                                Factory&        factory) :
   Server(socket),
-  _cds   ("AnalysisServer"),
+  _cds   (_cds_name(*socket)),
   _factory(factory)
 {
 }

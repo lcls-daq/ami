@@ -16,7 +16,7 @@ AnalysisServerManager::~AnalysisServerManager()
 {
 }
 
-Server* AnalysisServerManager::new_server(Socket* s)
+Server* AnalysisServerManager::new_server(Socket* s, bool)
 {
   return new AnalysisServer(s,*_factory);
 }

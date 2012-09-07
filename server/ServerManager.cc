@@ -114,15 +114,18 @@ int ServerManager::processIo()
            local .address(), local .portId(),
            remote.address(), remote.portId());
 
-    Server* srv = new_server(s);
-    //
-    //  Register for special service?
-    //
-    { Message msg(0,Message::NoOp);
-      ::read(srv->fd(),&msg,sizeof(msg));
-      if (msg.type()==Ami::Message::Connect && (msg.id()>>31))
-        _servers.push_back(srv);
+    s->read(&request, sizeof(request));
+
+    if (request.type()!=Message::Connect) {
+      printf("ServerManager::processIo expected Connect received %d\n",
+             request.type());
+      return 1;
     }
+
+    Server* srv = new_server(s, request.post_service());
+    if (request.post_service())
+      _servers.push_back(srv);
+
     manage(*srv);
 
     if (_connect_sem) {
@@ -151,12 +154,13 @@ int ServerManager::processIo()
 	     local .address(), local .portId(),
 	     remote.address(), remote.portId());
 
-      Server* srv = new_server(s);
-      if (request.id()>>31)
+      Server* srv = new_server(s,request.post_service());
+      if (request.post_service())
         _servers.push_back(srv);
+
       manage(*srv);
 
-      uint32_t connect_id = request.id() & ~(1<<31);
+      uint32_t connect_id = request.id();
       ::write(s->socket(),&connect_id,sizeof(connect_id));
 
       if (_connect_sem) {

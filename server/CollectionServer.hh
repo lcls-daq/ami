@@ -18,7 +18,8 @@ namespace Ami {
     CollectionServer(unsigned   interface,
                      unsigned   serverGroup,
                      ConnectionManager&,
-                     Socket*);
+                     Socket*,
+                     bool       postService);
     ~CollectionServer();
   public:
     int processIo();
@@ -29,13 +30,15 @@ namespace Ami {
     int  configure       (iovec*);
     int  configured      ();
     void discovered      (const DiscoveryRx&);
-    void read_description(Socket&,int);
+    int  read_description(Socket&,int);
     int  read_payload    (Socket&,int);
+    bool svc             () const;
     void process         ();
   private:
     void _reply  (Message::Type, Socket&, int);
   private:
     ClientManager* _client_manager;
+    bool           _post_service;
   };
 
 };

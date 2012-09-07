@@ -16,7 +16,7 @@ namespace Ami {
                              unsigned server_group);
     ~CollectionServerManager();
   public:
-    Server* new_server(Socket*);
+    Server* new_server(Socket*, bool);
   private:
     ConnectionManager* _connection_manager;
     unsigned           _server_interface;

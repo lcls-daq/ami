@@ -20,7 +20,7 @@ namespace Ami {
 		   unsigned serverGroup);
     virtual ~ServerManager();
   public:
-    virtual Server* new_server(Socket*) = 0;
+    virtual Server* new_server(Socket*, bool post_service) = 0;
   public:
     void serve     (Semaphore* =0);
     void dont_serve();
