@@ -27,6 +27,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return true; }
   private:
     enum { DESC_LEN = sizeof(DescScalarRange) };
     char             _desc_buffer[DESC_LEN];

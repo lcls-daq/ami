@@ -17,7 +17,8 @@ namespace Ami {
     DescEntry& output   () const;
   private:
     Entry&     _operate  (const Entry&) const;
-    void*      _serialize(void*) const;
+    void*      _serialize(void*) const; 
+    bool       _valid    () const { return true; }
   private:
     Entry*         _entry;
     unsigned       _xlo, _xhi, _ylo, _yhi;

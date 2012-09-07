@@ -21,6 +21,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return _v; }
   private:
     enum { SCALE_LEN=256 };
     char           _scale_buffer[SCALE_LEN];
@@ -28,6 +29,7 @@ namespace Ami {
     Entry*         _entry;
     Entry*         _cache;
     Term*          _term ;
+    bool           _v;
   };
 
 };

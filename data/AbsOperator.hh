@@ -30,11 +30,13 @@ namespace Ami {
     Type         type() const;
     AbsOperator* next() const;
     void         next(AbsOperator* o);
+    bool         valid() const;   // Operator was constructed without error
   public:
     virtual DescEntry& output   () const = 0;
   private:
     virtual Entry& _operate  (const Entry&) const = 0;
     virtual void*  _serialize(void* p     ) const = 0;
+    virtual bool   _valid     ()            const = 0;
   protected:
     //  helper functions for (de)serialization
     void _insert (void*& p, const void* b, unsigned size) const;

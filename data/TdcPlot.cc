@@ -40,7 +40,8 @@ private:
 TdcPlot::TdcPlot(const DescEntry& output, const char* expr) :
   AbsOperator(AbsOperator::TdcPlot),
   _xterm     (0),
-  _output    (0)
+  _output    (0),
+  _v         (true)
 {
   strncpy(_expression , expr, EXPRESSION_LEN);
   memcpy (_desc_buffer, &output, output.size());
@@ -49,7 +50,8 @@ TdcPlot::TdcPlot(const DescEntry& output, const char* expr) :
 
 TdcPlot::TdcPlot(const char*& p, const DescEntry& input) :
   AbsOperator(AbsOperator::TdcPlot),
-  _mask      (0)
+  _mask      (0),
+  _v         (true)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
@@ -95,15 +97,18 @@ TdcPlot::TdcPlot(const char*& p, const DescEntry& input) :
     _xterm = parser.evaluate(new_expr);
     _yterm = 0;
   }
-  if (!_xterm)
+  if (!_xterm) {
     printf("TdcPlot failed to parse %s\n",qPrintable(new_expr));
+    _v = false;
+  }
 }
 
 TdcPlot::TdcPlot(const char*& p) :
   AbsOperator(AbsOperator::TdcPlot),
   _mask      (0),
   _xterm     (0),
-  _output    (0)
+  _output    (0),
+  _v         (true)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);

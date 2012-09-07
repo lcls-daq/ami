@@ -26,7 +26,8 @@ using namespace Ami;
 EntryMath::EntryMath(const char* expr) : 
   AbsOperator(AbsOperator::EntryMath),
   _term      (0),
-  _entry     (0)
+  _entry     (0),
+  _v         (true)
 {
   strncpy(_expression, expr, EXPRESSION_LEN);
 }
@@ -35,7 +36,8 @@ EntryMath::EntryMath(const char* expr) :
   t = new Entry##type##Term(static_cast<const Entry##type&>(*entry),_index); break;
 
 EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds, FeatureCache& features) :
-  AbsOperator(AbsOperator::EntryMath)
+  AbsOperator(AbsOperator::EntryMath),
+  _v         (true)
 {
   _extract(p, _expression, EXPRESSION_LEN);
   _entry = EntryFactory::entry(e);
@@ -61,6 +63,7 @@ EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds, Feature
       CASETERM(Image);
     default:
       printf("EntryMath: No implementation for entry type %d\n",entry->desc().type());
+      _v = false;
       t = 0;
       break;
     }

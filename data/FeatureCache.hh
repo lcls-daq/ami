@@ -18,6 +18,7 @@ namespace Ami {
     void     clear ();
     unsigned add   (const std::string&);
     unsigned add   (const char* name);
+    void     add   (const FeatureCache&);
     int      lookup(const char* name) const;
     bool     update();
   public:
@@ -25,6 +26,7 @@ namespace Ami {
     const std::vector<std::string>& names() const;
     double      cache  (int index, bool* damaged=0) const;
     void        cache  (int index, double, bool damaged=false);
+    void        cache  (const FeatureCache&);
   public:
     char*  serialize(int& len) const;
   private:

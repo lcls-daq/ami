@@ -11,7 +11,8 @@ namespace Ami {
     ~ConfigureRequestor();
   public:
     void request(ConfigureRequest& request,
-                 unsigned&         output);
+                 unsigned&         output,
+                 bool              force=false);
     bool changed() const { return _changed; }
   private:
     char* _prev_request;

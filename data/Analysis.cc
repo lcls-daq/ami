@@ -28,8 +28,8 @@ Analysis::Analysis(unsigned      id,
   OperatorFactory operators(cache);
   _op = operators.deserialize(p, input, cds, output);
   Entry& output_entry = (*_op)(input);
-  output_entry.invalid();
-  _cds.add(&output_entry,output);
+  if (_op->valid())
+    _cds.add(&output_entry,output);
 }
 
 Analysis::~Analysis() 

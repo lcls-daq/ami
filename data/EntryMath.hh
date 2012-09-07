@@ -21,12 +21,14 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return _v; }
   private:
     enum { EXPRESSION_LEN = 256 };
     char       _expression[EXPRESSION_LEN];
     Term*      _term;
     Entry*     _entry;
     mutable unsigned   _index;
+    bool       _v;
   };
 
 };

@@ -58,7 +58,7 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
 	break;
     }
     expr.append(e.mid(pos));
-    printf("expr %s\n",qPrintable(expr));
+    //    printf("expr %s\n",qPrintable(expr));
   }
 
   QString new_expr;

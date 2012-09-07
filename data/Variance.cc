@@ -25,7 +25,8 @@ Variance::Variance(unsigned n, const char* scale) :
   _mom1      (0),
   _mom2      (0),
   _cache     (0),
-  _term      (0)
+  _term      (0),
+  _v         (true)
 {
   if (scale)
     strncpy(_scale_buffer,scale,SCALE_LEN);
@@ -34,7 +35,8 @@ Variance::Variance(unsigned n, const char* scale) :
 }
 
 Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
-  AbsOperator(AbsOperator::Variance)
+  AbsOperator(AbsOperator::Variance),
+  _v         (true)
 {
   _extract(p,_scale_buffer, SCALE_LEN);
   _extract(p, &_n, sizeof(_n));
@@ -52,8 +54,10 @@ Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
     QString expr(_scale_buffer);
     FeatureExpression parser;
     _term = parser.evaluate(features,expr);
-    if (!_term)
+    if (!_term) {
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
+      _v = false; 
+    }
   }
   else
     _term = 0;

@@ -31,6 +31,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return _v; }
   private:
     enum { DESC_LEN = 1024 };
     char             _desc_buffer[DESC_LEN];
@@ -40,6 +41,7 @@ namespace Ami {
     Term*         _weight;
     Entry*        _entry;
     Term*         _input;
+    bool          _v;
   };
 
 };

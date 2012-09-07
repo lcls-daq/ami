@@ -27,7 +27,8 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   _term      (0),
   _weight    (0),
   _entry     (0),
-  _input     (0)
+  _input     (0),
+  _v         (true)
 {
   memcpy (_desc_buffer, &output, output.size());
   memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
@@ -35,9 +36,10 @@ EnvPlot::EnvPlot(const DescEntry& output) :
 
 EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   AbsOperator(AbsOperator::EnvPlot),
-  _cache (&features),
-  _term  (0),
-  _weight(0)
+  _cache     (&features),
+  _term      (0),
+  _weight    (0),
+  _v         (true)
 {
   _extract(p, _desc_buffer, DESC_LEN);
 
@@ -48,16 +50,20 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   FeatureExpression parser;
   { QString expr(o.name());
     _input = parser.evaluate(features,expr);
-    if (!_input)
+    if (!_input) {
       printf("EnvPlot failed to parse input %s\n",qPrintable(expr));
+      _v = false;
+    }
   }
 
   if (o.type()==DescEntry::Prof ||
       o.type()==DescEntry::Scan) {
     QString expr(o.xtitle());
     _term = parser.evaluate(features,expr);
-    if (!_term)
+    if (!_term) {
       printf("EnvPlot failed to parse term %s\n",qPrintable(expr));
+      _v = false;
+    }
   }
 
   if (o.isweighted_type()) {
@@ -66,8 +72,10 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
       QString expr(w.weight());
       printf("%s evaluates to\n",qPrintable(expr));
       _weight = parser.evaluate(features,expr);
-      if (!_weight)
+      if (!_weight) {
 	printf("EnvPlot failed to parse weight %s\n",qPrintable(expr));
+        _v = false;
+      }
     }
   }
 }

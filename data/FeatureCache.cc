@@ -40,6 +40,12 @@ unsigned FeatureCache::add(const char* name)
   return len-1;
 }
 
+void FeatureCache::add(const FeatureCache& c)
+{
+  for(unsigned k=0; k<c._names.size(); k++)
+    add(c._names[k]);
+}
+
 int         FeatureCache::lookup(const char* name) const
 {
   std::string sname(name);
@@ -69,6 +75,12 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
     else
       _damaged[index>>5] &= ~mask;
   }
+}
+
+void        FeatureCache::cache  (const FeatureCache& c)
+{
+  for(unsigned i=0; i<c._cache.size(); i++)
+    cache(i, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
 }
 
 char*  FeatureCache::serialize(int& len) const

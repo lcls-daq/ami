@@ -85,7 +85,8 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _prm       (prm),
   _cache     (0),
   _term      (0),
-  _entry     (0)
+  _entry     (0),
+  _v         (true)
 {
   memcpy (_desc_buffer, &output, output.size());
   memcpy (_bins, bins, nbins * sizeof(int));
@@ -95,7 +96,8 @@ PeakFitPlot::PeakFitPlot(const char*& p,
                          FeatureCache& features) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache (&features),
-  _term  (0)
+  _term  (0),
+  _v     (true)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_nbins  , sizeof(_nbins));
@@ -116,8 +118,10 @@ PeakFitPlot::PeakFitPlot(const char*& p,
     QString expr(o.xtitle());
     FeatureExpression parser;
     _term = parser.evaluate(features,expr);
-    if (!_term)
+    if (!_term) {
       printf("PeakFitPlot failed to parse %s\n",qPrintable(expr));
+      _v = false;
+    }
   }
 }
 
@@ -125,7 +129,8 @@ PeakFitPlot::PeakFitPlot(const char*& p) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache(0),
   _term (0),
-  _entry(0)
+  _entry(0),
+  _v    (true)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_nbins  , sizeof(_nbins));

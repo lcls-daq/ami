@@ -25,9 +25,11 @@ Message::Message(const Message& o) :
   _payload(o._payload)
 {}
 
-unsigned Message::id() const { return _id; }
-
 void Message::id(unsigned i) { _id = i; }
+
+unsigned Message::id          () const { return _id & ~(1<<31); }
+
+bool     Message::post_service() const { return _id>>31; }
 
 Message::Type Message::type() const {return (Type)_type;}
 

@@ -40,7 +40,7 @@ namespace Ami {
     void     payload(const iovec* iov, unsigned iovcnt);
     void     payload(unsigned size);
     void     offset (unsigned size);
-    
+    bool     post_service() const;
   private:
     volatile uint32_t  _id;
     uint32_t  _type;

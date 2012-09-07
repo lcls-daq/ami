@@ -18,6 +18,12 @@ Entry&                 AbsOperator::operator()(const Entry& i) const
   return _next ? _next->_operate(o) : o;
 }
 
+bool                   AbsOperator::valid() const
+{
+  if (!_valid()) return false;
+  return _next ? _next->_valid() : true;
+}
+
 void*                  AbsOperator::serialize(void* p) const 
 { 
   static const uint32_t zero(0), one(1);

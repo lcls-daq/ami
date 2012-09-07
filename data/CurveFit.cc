@@ -29,7 +29,8 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
   _op(op),
   _entry(0),
   _fterm(0),
-  _nterm(0)
+  _nterm(0),
+  _v    (true)
 {
   strncpy(_name, name, NAME_LEN);
   memcpy (_desc_buffer, &output, output.size());
@@ -44,7 +45,8 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
 CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& features) :
     AbsOperator     (AbsOperator::CurveFit),
     _input          (&input),
-    _fterm(0)
+    _fterm          (0),
+    _v              (true)
 {
     FILE *fp;
     int cnt;
@@ -84,8 +86,10 @@ CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& feature
     if (_norm[0]) {
         FeatureExpression parser;
         _nterm = parser.evaluate(features,QString(_norm));
-        if (!_nterm)
+        if (!_nterm) {
             printf("CurveFit failed to parse f %s\n",_norm);
+            _v = false;
+        }
     } else
         _nterm = 0;
 
@@ -94,8 +98,10 @@ CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& feature
         QString expr(o.xtitle());
         FeatureExpression parser;
         _fterm = parser.evaluate(features,expr);
-        if (!_fterm)
+        if (!_fterm) {
             printf("CurveFit failed to parse f %s\n",qPrintable(expr));
+            _v = false;
+        }
     }
 }
 

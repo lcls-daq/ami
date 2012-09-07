@@ -9,10 +9,17 @@
 
 using namespace Ami;
 
-static const int BufferSize = 0x800000;
+static const int BufferSize = 0x2000000;
 
 template <class T>
 static void agg(iovec*, iovec*, char*);
+
+static const char* State[] = { "Init", "Connected",
+                               "Discovering", "Discovered", 
+                               "Configured", 
+                               "Describing", "Described",
+                               "Processing" };
+
 
 Aggregator::Aggregator(AbsClient& client) :
   _client          (client),
@@ -24,7 +31,8 @@ Aggregator::Aggregator(AbsClient& client) :
   _iovdesc         (new iovec[_niovload+1]),
   _buffer          (new BSocket(BufferSize)),
   _state           (Init),
-  _latest          (0)
+  _latest          (0),
+  _current         (0)
 {
 }
 
@@ -40,20 +48,18 @@ Aggregator::~Aggregator()
 //
 void Aggregator::connected       () 
 {
-  //  printf("Agg connect %d %p\n",_n,&_client);
+  //  _checkState("conn");
   //
   //  Only forward a connection if it is the first, or it
   //    requires a resync of server states
   //
-  if (_n++==0 || _state!=Init)
-    _client.connected(); 
-  else
-    printf("Agg conn suppressed n (%d) _state (%d)\n",
-           _n, _state);
+  _n++;
+  _state = Connected;
 }
 
 void Aggregator::disconnected    () 
 {
+  //  _checkState("dcon");
   //  printf("Agg disconnect %d %p\n",_n,&_client);
   _n--;
   _client.disconnected(); 
@@ -64,6 +70,7 @@ void Aggregator::disconnected    ()
 //
 int  Aggregator::configure       (iovec* iov) 
 {
+  //  _checkState("conf");
   _state = Configured;
   int n = _client.configure(iov);
   // ...
@@ -75,32 +82,55 @@ int  Aggregator::configured      ()
   return _client.configured(); 
 }
 
-void Aggregator::discovered      (const DiscoveryRx& rx)
+void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 {
-  _client.discovered(rx); 
+  //  _checkState("dcov",id);
+
+  if (_state != Discovering || id > _current) {
+    _state = Discovering;
+    _remaining = _n-1;
+    _current   = id;
+  }
+  else {
+    _remaining--;
+  }
+
+  if (_remaining == 0) {
+    _state = Discovered;
+    _client.discovered(rx);
+  }
 }
 
 //
 //  Keep a cache of the description
 //
-void Aggregator::read_description(Socket& socket, int len) 
+int Aggregator::read_description(Socket& socket, int len, unsigned id) 
 {
+  //  _checkState("desc",id);
+
+  int nbytes = 0;
   if (_n == 1) {
-    _client.read_description(socket,len);
-    _state = Described;
+    nbytes += _client.read_description(socket,len);
+    _state     = Described;
     _remaining = 0;
   }
   else if ( _n > 1 ) {
 
     if (len > BufferSize) {
       printf("Aggregator::read_description too large to buffer (%d)\n",len);
-      return;
+      return nbytes;
     }
 
     int size = socket.read(_buffer->data(),len);
+    nbytes += size;
 
-    if (_state != Describing) {
-      
+    if (_state == Discovering) {
+      //      printf("[%p]   ...discovering .. abort\n",this);
+      return nbytes;
+    }
+
+    if (_state != Describing || id > _current) {
+      _current = id;
       _cds.reset();
     
       const char* payload = _buffer->data();
@@ -136,10 +166,13 @@ void Aggregator::read_description(Socket& socket, int len)
       _remaining = _n-1;
       _state = Describing;
     }
+    else if (id < _current)
+      ;
     else if (--_remaining == 0) {
       _state = Described;
     }
   }
+  return nbytes;
 }
 
 //
@@ -157,11 +190,14 @@ void Aggregator::read_description(Socket& socket, int len)
 
 #include "pdsdata/xtc/ClockTime.hh"
 
-int  Aggregator::read_payload    (Socket& s, int sz) 
+int  Aggregator::read_payload    (Socket& s, int sz, unsigned id) 
 {
+  //  _checkState("payl");
   int nbytes = 0;
-  if (_state != Described) 
+  if (_state != Described) {
+    //    printf("[%p] Agg read_payload state %s\n", this, State[_state]);
     return nbytes;
+  }
 
   if ( _n == 1 ) { 
     nbytes =_client.read_payload(s,sz);
@@ -169,7 +205,8 @@ int  Aggregator::read_payload    (Socket& s, int sz)
   }
   else if ( _n > 1 ) {
 
-    if (_remaining==0) {  // simply copy
+    if (_remaining==0 || id > _current) {  // simply copy
+      _current = id;
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
     }
@@ -226,11 +263,14 @@ int  Aggregator::read_payload    (Socket& s, int sz)
   return nbytes;
 }
 
+bool Aggregator::svc() const { return _client.svc(); }
+
 //
 //  If all servers seen, process.
 //
 void Aggregator::process         () 
 {
+  //  _checkState("proc");
   if (_state==Described && _remaining==0)
     _client.process();
 }
@@ -262,3 +302,21 @@ void agg(iovec* iovd, iovec* iovl, char* payload)
     while (src < end)
       *dst++  = *src++;  
 } 
+
+void Aggregator::tmo()
+{
+  //  _checkState("tmo");
+  if (_state == Connected)    
+    _client.connected();
+}
+
+void Aggregator::_checkState(const char* s)
+{
+  printf("[%p] : %s : State %s : remaining %d/%d\n", this, s, State[_state], _remaining, _n);
+}
+
+void Aggregator::_checkState(const char* s, unsigned id)
+{
+  printf("[%p] : %s : State %s : id %d/%d: remaining %d/%d\n", 
+         this, s, State[_state], id, _current, _remaining, _n);
+}

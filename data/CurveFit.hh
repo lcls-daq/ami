@@ -30,6 +30,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return _v; }
   private:
     const DescEntry *_input;
     enum { NAME_LEN = 256 };
@@ -46,6 +47,7 @@ namespace Ami {
     double         _refbw;
     Term*         _fterm;
     Term*         _nterm;
+    bool          _v;
 
   public:
     enum { CALC_LEN = 10 };

@@ -43,6 +43,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return _v; }
   private:
     enum { DESC_LEN = 1024, MAX_BINS = 10 };
     char             _desc_buffer[DESC_LEN];
@@ -54,6 +55,7 @@ namespace Ami {
     FeatureCache* _cache;
     Term*         _term;
     Entry*        _entry;
+    bool          _v;
   };
 
 };

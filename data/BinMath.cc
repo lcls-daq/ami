@@ -330,7 +330,8 @@ BinMath::BinMath(const DescEntry& output,
   _cache     (0),
   _term      (0),
   _fterm     (0),
-  _entry     (0)
+  _entry     (0),
+  _v         (true)
 {
   strncpy(_expression, expr, EXPRESSION_LEN);
   memcpy (_desc_buffer, &output, output.size());
@@ -346,7 +347,8 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   AbsOperator(AbsOperator::BinMath),
   _cache (&features),
   _term  (0),
-  _fterm (0)
+  _fterm (0),
+  _v     (true)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
@@ -415,8 +417,10 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 //     _term = parser.evaluate(new_expr);
     FeatureExpression parser;
     _term = parser.evaluate(features,new_expr);
-    if (!_term)
+    if (!_term) {
       printf("BinMath failed to parse %s (%s)\n",qPrintable(new_expr),_expression);
+      _v = false; 
+    }
   }
 
   if (o.type() == DescEntry::Prof ||
@@ -424,8 +428,10 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     QString expr(o.xtitle());
     FeatureExpression parser;
     _fterm = parser.evaluate(features,expr);
-    if (!_fterm)
+    if (!_fterm) {
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
+      _v = false;
+    }
   }
 }
 
@@ -434,7 +440,8 @@ BinMath::BinMath(const char*& p) :
   _cache     (0),
   _term      (0),
   _fterm     (0),
-  _entry     (0)
+  _entry     (0),
+  _v         (true)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);

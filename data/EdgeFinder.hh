@@ -46,6 +46,7 @@ namespace Ami {
   private:
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
+    bool       _valid    () const { return true; }
   private:
     double     _fraction;
     int        _alg;

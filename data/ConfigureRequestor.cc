@@ -17,13 +17,14 @@ ConfigureRequestor::~ConfigureRequestor()
 }
 
 void ConfigureRequestor::request(ConfigureRequest&              req,
-                                 unsigned&                      output)
+                                 unsigned&                      output,
+                                 bool                           force)
 {
 //   printf("CR %p  prev %p  input %d  prev_output %d\n",
 //          this, _prev_request, req.input(), 
 //          _prev_request ? reinterpret_cast<ConfigureRequest*>(_prev_request)->output() : -1);
 
-  if (_prev_request && req == *reinterpret_cast<ConfigureRequest*>(_prev_request)) {
+  if (_prev_request && req == *reinterpret_cast<ConfigureRequest*>(_prev_request) && !force) {
     req.output(reinterpret_cast<ConfigureRequest*>(_prev_request)->output());
     _changed=false;
   }

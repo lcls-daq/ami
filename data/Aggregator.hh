@@ -10,7 +10,7 @@ namespace Ami {
 
   class BSocket;
 
-  class Aggregator : public AbsClient {
+  class Aggregator {
   public:
     Aggregator(AbsClient&);
     ~Aggregator();
@@ -19,10 +19,15 @@ namespace Ami {
     void disconnected    () ;
     int  configure       (iovec*) ;
     int  configured      () ;
-    void discovered      (const DiscoveryRx&) ;
-    void read_description(Socket&,int) ;
-    int  read_payload    (Socket&,int) ;
+    void discovered      (const DiscoveryRx&,unsigned) ;
+    int  read_description(Socket&,int,unsigned) ;
+    int  read_payload    (Socket&,int,unsigned) ;
+    bool svc             () const;
     void process         () ;
+    void tmo             () ;
+  private:
+    void _checkState     (const char*);
+    void _checkState     (const char*, unsigned);
   private:
     AbsClient& _client;
     unsigned   _n;
@@ -32,8 +37,11 @@ namespace Ami {
     iovec*     _iovload;
     iovec*     _iovdesc;
     BSocket*   _buffer;
-    enum { Init, Configured, Describing, Described, Processing } _state;
+    enum { Init, Connected, 
+           Discovering, Discovered, Configured, 
+           Describing, Described, Processing } _state;
     double     _latest;
+    unsigned   _current;
   };
 };
 
