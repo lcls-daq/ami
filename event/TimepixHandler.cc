@@ -14,8 +14,8 @@ using namespace Ami;
 TimepixHandler::TimepixHandler(const Pds::DetInfo& info) :
   EventHandler(info, Pds::TypeId::Id_TimepixData, Pds::TypeId::Id_TimepixConfig),
   _entry(0),
-  _defColumns(Pds::Timepix::DataV1::Width),
-  _defRows   (Pds::Timepix::DataV1::Height)
+  _defColumns(Pds::Timepix::DataV1::Width + TimepixHandler::HorizGapPixels),
+  _defRows   (Pds::Timepix::DataV1::Height + TimepixHandler::VertGapPixels)
 {
 }
 
@@ -49,14 +49,9 @@ void TimepixHandler::_configure(Pds::TypeId type, const void* payload, const Pds
   unsigned columns,rows;
   columns = _defColumns;
   rows    = _defRows;
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = (pixels-1)/640 + 1;
 
   //   Fix resolution to 1 pixel
-  ppb = 1;
-
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
+  unsigned ppb = 1;
 
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);
@@ -64,6 +59,15 @@ void TimepixHandler::_configure(Pds::TypeId type, const void* payload, const Pds
   if (_entry) 
     delete _entry;
   _entry = new EntryImage(desc);
+
+  // add a SubFrame for each quadrant
+  unsigned qh = Pds::Timepix::DataV1::Height / 2;
+  unsigned qw = Pds::Timepix::DataV1::Width / 2;
+  _entry->desc().add_frame(0,            0,         qw, qh);
+  _entry->desc().add_frame(columns - qw, 0,         qw, qh);
+  _entry->desc().add_frame(0,            rows - qh, qw, qh);
+  _entry->desc().add_frame(columns - qw, rows - qh, qw, qh);
+
   _entry->invalid();
 }
 
@@ -72,24 +76,38 @@ void TimepixHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds
 template <class T>
 void _fill(const Pds::Timepix::DataV2& f, EntryImage& entry)
 {
-  const DescImage& desc = entry.desc();
-
   T destVal;
+  unsigned destX, destY;
+  unsigned srcWidth = f.width();
+  unsigned destWidth = entry.desc().nbinsx();
+  unsigned srcHeight = f.height();
+  unsigned destHeight = entry.desc().nbinsy();
   const T* d = reinterpret_cast<const T*>(f.data());
-  for(unsigned j=0; j<f.height(); j++) {
-    unsigned destY = desc.ppybin()==2 ? j>>1 : j;
-    for(unsigned destX=0; destX<f.width(); destX++, d++) {
-      // display error pixels as 0
+
+  // Copy 4 equally sized quadrants to the corners of the (larger) destination array.
+  // Display error pixels (those over MaxPixelValue) as 0.
+
+  for (destY=0; destY < srcHeight/2; destY++) {
+    for (destX=0; destX < srcWidth/2; destX++, d++) {
       destVal = (*d > Pds::Timepix::DataV2::MaxPixelValue) ? 0 : *d;
-      if (desc.ppxbin()==2) {
-        entry.addcontent(destVal, destX>>1, destY);
-      } else {
-        entry.addcontent(destVal, destX, destY);
-      }
+      entry.addcontent(destVal, destX, destY);
+    }
+    for (destX = destWidth - (srcWidth/2); destX < destWidth; destX++, d++) {
+      destVal = (*d > Pds::Timepix::DataV2::MaxPixelValue) ? 0 : *d;
+      entry.addcontent(destVal, destX, destY);
+    }
+  }
+  for (destY = destHeight - (srcHeight/2); destY < destHeight; destY++) {
+    for (destX=0; destX < srcWidth/2; destX++, d++) {
+      destVal = (*d > Pds::Timepix::DataV2::MaxPixelValue) ? 0 : *d;
+      entry.addcontent(destVal, destX, destY);
+    }
+    for (destX = destWidth - (srcWidth/2); destX < destWidth; destX++, d++) {
+      destVal = (*d > Pds::Timepix::DataV2::MaxPixelValue) ? 0 : *d;
+      entry.addcontent(destVal, destX, destY);
     }
   }
 
-  //  entry.info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
   entry.info(0,EntryImage::Pedestal);
   entry.info(1,EntryImage::Normalization);
 }

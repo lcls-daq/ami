@@ -30,6 +30,9 @@ namespace Ami {
     EntryImage* _entry;
     unsigned    _defColumns;
     unsigned    _defRows;
+  private:
+    enum { HorizGapPixels=4 };
+    enum { VertGapPixels=4 };
   };
 };
 
