@@ -90,12 +90,32 @@ Entry&     XYHistogram::_operate(const Entry& e) const
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
-        for(unsigned i=ilo; i<ihi; i++) {
-          for(unsigned j=jlo; j<jhi; j++)
-            o->addcontent(1.,(double(_input->content(i,j))-p)*n);
-	}
-	o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
-	break; }
+        if (inputd.nframes()) {
+          int countdown = (jhi - jlo) * (ihi - ilo);
+          for(int fn=0; fn<int(inputd.nframes()); fn++) {
+            const SubFrame& f = inputd.frame(fn);
+            for(unsigned j=f.y; j<f.y+f.ny; j++) {
+              if ((j >= jlo) && (j < jhi)) {
+                for (unsigned k=f.x; k<f.x+f.nx; k++) {
+                  if ((k >= ilo) && (k < ihi)) {
+                    o->addcontent(1.,(double(_input->content(k,j))-p)*n);
+                    if (--countdown == 0) {
+                      goto doneTH1F;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          for(unsigned i=ilo; i<ihi; i++) {
+            for(unsigned j=jlo; j<jhi; j++)
+              o->addcontent(1.,(double(_input->content(i,j))-p)*n);
+          }
+        }
+doneTH1F:
+        o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
+        break; }
     case DescEntry::ScalarRange:
       { EntryScalarRange* o = static_cast<EntryScalarRange*>(_output);
 
@@ -105,11 +125,31 @@ Entry&     XYHistogram::_operate(const Entry& e) const
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
-        for(unsigned i=ilo; i<ihi; i++) {
-          for(unsigned j=jlo; j<jhi; j++)
-            o->addcontent((double(_input->content(i,j))-p)*n);
-	}
-	break; }
+        if (inputd.nframes()) {
+          int countdown = (jhi - jlo) * (ihi - ilo);
+          for(int fn=0; fn<int(inputd.nframes()); fn++) {
+            const SubFrame& f = inputd.frame(fn);
+            for(unsigned j=f.y; j < f.y+f.ny; j++) {
+              if ((j >= jlo) && (j < jhi)) {
+                for (unsigned k=f.x; k < f.x+f.nx; k++) {
+                  if ((k >= ilo) && (k < ihi)) {
+                    o->addcontent((double(_input->content(k,j))-p)*n);
+                    if (--countdown == 0) {
+                      goto doneScalarRange;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          for(unsigned i=ilo; i<ihi; i++) {
+            for(unsigned j=jlo; j<jhi; j++)
+              o->addcontent((double(_input->content(i,j))-p)*n);
+          }
+        }
+doneScalarRange:
+        break; }
     default:
       break;
     }
