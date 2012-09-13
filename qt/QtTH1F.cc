@@ -64,12 +64,12 @@ void           QtTH1F::dump  (FILE* f) const
 
 void           QtTH1F::attach(QwtPlot* p)
 {
-  _curve.attach(p);
   if (p) {
     const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
     p->setAxisTitle(QwtPlot::xBottom,_entry.desc().xtitle());
     p->setAxisTitle(QwtPlot::yLeft  ,_entry.desc().ytitle());
   }
+  _curve.attach(p);
 }
 
 void           QtTH1F::update()
@@ -112,3 +112,11 @@ double QtTH1F::normalization() const
 {
   return static_cast<const EntryTH1F&>(entry()).info(EntryTH1F::Normalization);
 }
+
+void QtTH1F::set_color(unsigned c)
+{
+  QPen pen(_curve.pen());
+  pen.setColor(color(c));
+  _curve.setPen(pen);
+}
+

@@ -3,13 +3,14 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CPostParent.hh"
+#include "ami/qt/OverlayParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
 
 class QLineEdit;
-class QButtonGroup;
 class QTabWidget;
+class QPushButton;
 
 #include <list>
 
@@ -25,6 +26,7 @@ namespace Ami {
     class ProjectionPlot;
     class CursorPlot;
     class CursorPost;
+    class CursorOverlay;
     class ZoomPlot;
     class XYHistogramPlotDesc;
     class XYProjectionPlotDesc;
@@ -32,7 +34,8 @@ namespace Ami {
     class ImageIntegral;
 
     class ImageXYProjection : public QtPWidget,
-                              public CPostParent {
+                              public CPostParent,
+                              public OverlayParent {
       Q_OBJECT
     public:
       ImageXYProjection(QtPWidget* parent,
@@ -51,11 +54,13 @@ namespace Ami {
       void set_channel(int);
       void update_range();
       void plot        ();   // configure the plot
+      void overlay     ();
       void zoom        ();
       void configure_plot();
       void remove_plot (QObject*);
       virtual void setVisible(bool);
       void add_post    ();
+      void plottab_changed(int);
     signals:
       void changed();
     private:
@@ -70,10 +75,10 @@ namespace Ami {
 
       QLineEdit*    _title;
       QTabWidget*   _plot_tab;
+      QPushButton*  _ovlyB;
 
       XYHistogramPlotDesc*  _histogram_plot;
       XYProjectionPlotDesc* _projection_plot;
-      //      ScalarPlotDesc*       _integral_plot;
       ImageIntegral*        _integral_plot;
 
       std::list<ProjectionPlot*> _pplots;
@@ -84,6 +89,12 @@ namespace Ami {
       void remove_cursor_post(CursorPost*);
     private:
       std::list<CursorPost*>     _posts;
+
+    public:
+      void add_overlay   (DescEntry*, QtPlot*, SharedData*);
+      void remove_overlay(QtOverlay*);
+    private:
+      std::list<CursorOverlay*> _ovls;
     };
   };
 };

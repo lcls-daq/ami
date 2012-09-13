@@ -168,6 +168,7 @@ void StyleDialog::_update_lines()
 #undef ADD_STYLE
 }
 
+static const int Initial_symbol_size  = 0;
 static const int Default_symbol_size  = 5;
 static const int Default_symbol_style = int(QwtSymbol::Diamond);
 static const int Default_line_size    = 1;
@@ -175,7 +176,7 @@ static const int Default_line_style   = int(::Qt::SolidLine);
 
 
 QtPlotStyle::QtPlotStyle() :
-  _symbol_size (Default_symbol_size),
+  _symbol_size (Initial_symbol_size),
   _symbol_style(Default_symbol_style),
   _line_size   (Default_line_size),
   _line_style  (Default_line_style)
@@ -227,4 +228,17 @@ void QtPlotStyle::query(QWidget* p)
   _symbol_style = d->symbolStyle();
   _line_size    = d->lineSize();
   _line_style   = d->lineStyle();
+}
+
+void QtPlotStyle::setPlotType(Ami::DescEntry::Type t)
+{
+  if (_symbol_size==Initial_symbol_size) {
+    switch(t) {
+    case Ami::DescEntry::Prof:
+    case Ami::DescEntry::Scan:
+      _symbol_size = Default_symbol_size;
+    default:
+      break;
+    }
+  }
 }

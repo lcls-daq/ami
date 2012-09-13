@@ -5,12 +5,14 @@
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/CursorPost.hh"
+#include "ami/qt/CursorOverlay.hh"
 #include "ami/qt/RPhiProjectionPlotDesc.hh"
 #include "ami/qt/ImageIntegral.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/PostAnalysis.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescTH1F.hh"
@@ -62,6 +64,7 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
     channelBox->addItem(channels[i]->name());
 
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
 
   _plot_tab        = new QTabWidget(0);
@@ -95,6 +98,7 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -104,9 +108,14 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   connect(_annulus  , SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_annulus  , SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
   _integral_plot->post(this, SLOT(add_post()));
+
+  ovlyB->setEnabled(false);
+  _ovlyB = ovlyB;
+  connect(_plot_tab,  SIGNAL(currentChanged(int)), this, SLOT(plottab_changed(int)));
 }
   
 ImageRPhiProjection::~ImageRPhiProjection()
@@ -140,6 +149,10 @@ void ImageRPhiProjection::save(char*& p) const
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert( p, "CursorOverlay", "_ovls",
+                (*it)->save(p) );
+  }
 }
 
 void ImageRPhiProjection::load(const char*& p)
@@ -155,6 +168,7 @@ void ImageRPhiProjection::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  _ovls .clear();
 
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
@@ -184,6 +198,10 @@ void ImageRPhiProjection::load(const char*& p)
     else if (tag.name == "_posts") {
       CursorPost* post = new CursorPost(p);
       _posts.push_back(post);
+    }
+    else if (tag.name == "_ovls") {
+      CursorOverlay* ovl = new CursorOverlay(*this, p);
+      _ovls.push_back(ovl);
     }
   XML_iterate_close(ImageRPhiProjection,tag);
 }
@@ -223,6 +241,9 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,
 		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,
+		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
 }
 
 void ImageRPhiProjection::setup_payload(Cds& cds)
@@ -231,6 +252,8 @@ void ImageRPhiProjection::setup_payload(Cds& cds)
    (*it)->setup_payload(cds);
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+   (*it)->setup_payload(cds);
 }
 
 void ImageRPhiProjection::update()
@@ -238,6 +261,8 @@ void ImageRPhiProjection::update()
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->update();
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->update();
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -344,4 +369,46 @@ void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
 {
   _posts.remove(post);
   emit changed();
+}
+
+void ImageRPhiProjection::plottab_changed(int index)
+{
+  _ovlyB->setEnabled(index==PlotIntegral);
+}
+
+void ImageRPhiProjection::overlay()
+{
+  if (_integral_plot->postAnalysis()) {
+    DescEntry* desc = _integral_plot->desc(qPrintable(_add_post()));
+    new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+  }
+  else {
+    DescEntry* desc = _integral_plot->desc(qPrintable(_title->text()));
+    new QtPlotSelector(*this, *this, desc);
+  }
+}
+
+void ImageRPhiProjection::add_overlay(DescEntry* desc,
+                                      QtPlot*    plot,
+                                      SharedData*)
+{
+  CursorOverlay* ovl = new CursorOverlay(*this, 
+                                         *plot,
+                                         _channel, 
+                                         new BinMath(*desc,
+                                                     _integral_plot->expression()));
+                                     
+  delete desc;
+
+  _ovls.push_back(ovl);
+  
+  emit changed();
+}
+
+void ImageRPhiProjection::remove_overlay(QtOverlay* obj)
+{
+  CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _ovls.remove(ovl);
+  
+  //  emit changed();
 }

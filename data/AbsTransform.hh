@@ -7,6 +7,8 @@ namespace Ami {
     virtual ~AbsTransform() {}
   public:
     virtual double operator()(double) const = 0;
+  public:
+    static AbsTransform& null();
   };
 };
 

@@ -5,6 +5,8 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/PWidgetManager.hh"
 #include "ami/qt/RunMaster.hh"
+#include "ami/qt/QtPlotSelector.hh"
+#include "ami/qt/QtOverlay.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -12,6 +14,7 @@
 #include <QtGui/QInputDialog>
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
+#include <QtGui/QPainter>
 
 #include "qwt_plot.h"
 #include "qwt_plot_curve.h"
@@ -19,13 +22,71 @@
 #include "qwt_symbol.h"
 #include "qwt_scale_engine.h"
 
+namespace Ami {
+  namespace Qt {
+    class QwtLPlot : public QwtPlot {
+    public:
+      QwtLPlot(const QString& name) : QwtPlot(name) { setAutoDelete(false); }
+      ~QwtLPlot() {}
+    public:
+      //
+      //  Draw a legend if more than one QwtPlotCurve is shown
+      //
+      void drawItems(QPainter*     p,
+                     const QRect&  canvasRect,
+                     const QwtScaleMap map[axisCnt],
+                     const QwtPlotPrintFilter &pfilter ) const 
+      {
+        QwtPlot::drawItems(p, canvasRect, map, pfilter);
+
+        const QwtPlotItemList& list = itemList();
+        int row=0;
+        for(int i=0; i<list.size(); i++)
+          if (dynamic_cast<QwtPlotCurve*>(list[i]))
+            if (row++) break;
+
+        if (row>1) {
+          row=0;
+          int width = canvasRect.width();
+          QPainter& painter = *p;
+          for(int i=0; i<list.size(); i++) {
+            QwtPlotCurve* c = dynamic_cast<QwtPlotCurve*>(list[i]);
+            if (c) {
+              painter.setPen  (c->pen().color());
+              painter.drawText(10, 18*row, width-10, 18, ::Qt::AlignLeft, c->title().text());
+              row++;
+            }
+          }
+        }
+      }
+    };
+  };
+};
+
 using namespace Ami::Qt;
+
+static std::vector<QtPlot*> _plots;
+static QStringList          _scalar_plots;
+static QStringList          _1d_plots;
+static QStringList          _2d_plots;
+static QStringList          _no_plots;
+static QStringList*         _plot_names[] = { &_scalar_plots,  // Scalar [Chart]
+                                              &_1d_plots,      // TH1F
+                                              &_no_plots,
+                                              &_2d_plots,      // Prof
+                                              &_no_plots,
+                                              &_2d_plots,      // Waveform
+                                              &_2d_plots,      // Scan
+                                              &_no_plots,
+                                              &_no_plots,
+                                              &_no_plots };
+static QtPlotSelector*      _selector=0;
 
 QtPlot::QtPlot(QWidget* parent,
 	       const QString&   name) :
   QtPWidget(0),
   _name    (name),
-  _frame   (new QwtPlot(name)),
+  _frame   (new QwtLPlot(name)),
   _runnum  (new QLabel("")),
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
@@ -60,6 +121,15 @@ QtPlot::QtPlot(QWidget* parent) :
 QtPlot::~QtPlot()
 {
   PWidgetManager::remove(this);
+  _remove(this);
+
+  if (_grid) delete _grid;
+
+  for(std::list<QtOverlay*>::iterator it=_ovls.begin();
+      it != _ovls.end(); it++) {
+    QtOverlay* o = *it;
+    delete o;
+  }
 }
 
 void QtPlot::_layout()
@@ -79,7 +149,7 @@ void QtPlot::_layout()
       annotate->addAction("X-axis Title (bottom)", this, SLOT(set_xaxis_title()));
       annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
       annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
-      annotate->addAction("Set Plot Style",        this, SLOT(set_style()));
+      annotate->addAction("Set Plot Style",        this, SLOT(query_style()));
       menu_bar->addMenu(annotate); }
     l->addWidget(menu_bar);
     l->addStretch();
@@ -129,7 +199,7 @@ void QtPlot::load(const char*& p)
 
     if (tag.name == "_name") {
       _name  = QtPersistent::extract_s(p);
-      _frame = new QwtPlot(_name);
+      _frame = new QwtLPlot(_name);
       _grid->attach(_frame);
     }
     else if (tag.name == "_frame_title")
@@ -157,6 +227,7 @@ void QtPlot::load(const char*& p)
 
   XML_iterate_close(QtPlot,tag);
 
+  PWidgetManager::add(this, _name);
   _layout();
 }
 
@@ -254,15 +325,13 @@ void QtPlot::update_counts(double n)
   _counts->setText(QString("Np %1").arg(n));
 }
 
-void QtPlot::set_style()
+void QtPlot::query_style()
 {
   _style.query(this);
+}
 
-  QColor qcol(0,0,0);
-  QBrush qbrush(qcol);
-  QPen   qpen(qcol); 
-  qpen.setStyle((::Qt::PenStyle)_style.line_style());
-  qpen.setWidth(_style.line_size());
+void QtPlot::set_style()
+{
   QSize  qsize(_style.symbol_size(),_style.symbol_size());
 
   QwtPlotCurve* item = 0;
@@ -272,12 +341,64 @@ void QtPlot::set_style()
     item = dynamic_cast<QwtPlotCurve*>(list.at(i));
     if (!item) continue;
 
-    QwtSymbol s((QwtSymbol::Style)_style.symbol_style(),
-                qbrush, 
-                qpen, 
-                qsize);
-    item->setSymbol(s);
+    QPen qpen(item->pen());
+    qpen.setStyle((::Qt::PenStyle)_style.line_style());
+    qpen.setWidth(_style.line_size());
     item->setPen(qpen);
+
+    QwtSymbol s(item->symbol());
+    s.setStyle((QwtSymbol::Style)_style.symbol_style());
+    s.setPen  (qpen);
+    s.setSize (qsize);
+    item->setSymbol(s);
   }
   emit redraw();
+}
+
+
+const QStringList& QtPlot::names(Ami::DescEntry::Type t) 
+{
+  return *_plot_names[t]; 
+}
+
+QtPlot* QtPlot::lookup(const QString& name)
+{
+  for(int i=0; i<_plots.size(); i++)
+    if (_plots[i]->_name == name)
+      return _plots[i];
+  return 0;
+}
+
+void QtPlot::_remove(QtPlot* p)
+{
+  for(unsigned i=0; i<_plots.size(); i++)
+    if (_plots[i]==p) {
+      _plots.erase(_plots.begin()+i);
+      _plot_names[p->_type]->removeAll(p->_name);
+      return;
+    }
+}
+
+void QtPlot::select(QtPlotSelector* s) { _selector=s; }
+
+void QtPlot::mousePressEvent(QMouseEvent* e)
+{
+  if (_selector && _plot_names[_selector->type()]->contains(_name))
+    _selector->plot_selected(this);
+
+  QtPWidget::mousePressEvent(e);
+}
+
+void QtPlot::add_overlay(QtOverlay* o)
+{
+  _ovls.push_back(o);
+}
+
+void QtPlot::setPlotType(Ami::DescEntry::Type t)
+{
+  _type = t;
+  _plot_names[t]->push_back(_name);
+  _plots         .push_back(this);
+
+  _style.setPlotType(t);
 }

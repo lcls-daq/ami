@@ -1,10 +1,11 @@
-#include "EdgePlot.hh"
+#include "EdgeOverlay.hh"
 
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtBase.hh"
+#include "ami/qt/QtPlot.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -15,48 +16,40 @@
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
 
-namespace Ami {
-  namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-  };
-};
-
 using namespace Ami::Qt;
 
-static NullTransform noTransform;
-
-EdgePlot::EdgePlot(QWidget*         parent,
-		   const QString&   name,
-		   unsigned         channel,
-		   Ami::EdgeFinder* finder) :
-  QtPlot   (parent, name),
+EdgeOverlay::EdgeOverlay(OverlayParent&   parent,
+                         QtPlot&          plot,
+                         unsigned         channel,
+                         Ami::EdgeFinder* finder) :
+  QtOverlay(parent),
+  _frame   (&plot),
+  _frame_name(plot._name),
   _channel (channel),
   _fcnt    (0)
 {
   for (int i = 0; i < MAX_FINDERS; i++) {
     _finder[i] = 0;
     _plot[i] = 0;
+    _order[i] = -1;
   }
   addfinder(finder);
-  setPlotType(finder->output().type());
 }
 
-EdgePlot::EdgePlot(QWidget* parent,
-		   const char*& p) :
-  QtPlot   (parent),
+EdgeOverlay::EdgeOverlay(OverlayParent& parent,
+                         const char*&   p) :
+  QtOverlay(parent),
+  _frame   (0),
   _fcnt    (0)
 {
   for (int i = 0; i < MAX_FINDERS; i++) {
     _finder[i] = 0;
     _plot[i] = 0;
+    _order[i] = -1;
   }
   XML_iterate_open(p,tag)
-    if (tag.element == "QtPlot")
-      QtPlot::load(p);
+    if (tag.name == "frame_name")
+      _frame_name = QtPersistent::extract_s(p);
     else if (tag.name == "_channel")
       _channel = QtPersistent::extract_i(p);
     else if (tag.name == "_finder") {
@@ -74,16 +67,14 @@ EdgePlot::EdgePlot(QWidget* parent,
             if (i + 1 > _fcnt)
                 _fcnt = i + 1;
         } else {
-            printf("EdgePlot: unknown tag %s/%s\n", tag.element.c_str(), tag.name.c_str());
+            printf("EdgeOverlay: unknown tag %s/%s\n", tag.element.c_str(), tag.name.c_str());
             delete f;
         }
     }
-  XML_iterate_close(EdgePlot,tag);
-
-  setPlotType(_finder[0]->output().type());
+  XML_iterate_close(EdgeOverlay,tag);
 }
 
-EdgePlot::~EdgePlot()
+EdgeOverlay::~EdgeOverlay()
 {
   for (int i = 0; i < _fcnt; i++) {
     if (_finder[i]  ) delete _finder[i];
@@ -91,7 +82,7 @@ EdgePlot::~EdgePlot()
   }
 }
 
-void EdgePlot::savefinder(Ami::EdgeFinder *f, char*& p) const
+void EdgeOverlay::savefinder(Ami::EdgeFinder *f, char*& p) const
 {
     XML_insert( p, "double",   "_threshold", QtPersistent::insert(p,f->threshold()) );
     XML_insert( p, "double",   "_baseline",  QtPersistent::insert(p,f->baseline()) );
@@ -102,7 +93,7 @@ void EdgePlot::savefinder(Ami::EdgeFinder *f, char*& p) const
     XML_insert( p, "Parameter","_parameter", QtPersistent::insert(p,f->parameter()));
 }
 
-Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p) 
+Ami::EdgeFinder *EdgeOverlay::loadfinder(const char*& p) 
 {
   double thresh = 0.0, base = 0.0;
   int alg = Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak, true);
@@ -135,12 +126,11 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
       return NULL;
 }
 
-void EdgePlot::save(char*& p) const
+void EdgeOverlay::save(char*& p) const
 {
   char* buff = new char[8*1024];
 
-  XML_insert( p, "QtPlot", "self",
-              QtPlot::save(p) );
+  XML_insert( p, "QString", "_frame_name", QtPersistent::insert(p,_frame_name));
 
   XML_insert( p, "int", "_channel",
               QtPersistent::insert(p,(int)_channel) );
@@ -159,29 +149,17 @@ void EdgePlot::save(char*& p) const
   delete[] buff;
 }
 
-void EdgePlot::load(const char*& p) 
+void EdgeOverlay::load(const char*& p) 
 {
 }
 
-void EdgePlot::dump(FILE* f)          const { _plot[0]->dump(f); }
-void EdgePlot::dump(FILE* f, int idx) const { _plot[idx]->dump(f); }
+void EdgeOverlay::dump(FILE* f)          const { _plot[0]->dump(f); }
+void EdgeOverlay::dump(FILE* f, int idx) const { _plot[idx]->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
 
-/*
- * This gives the color for the various plots.
- *
- * For now, the first will be black, and the second (and subsequent) will be red.
- */
-QColor &EdgePlot::getcolor(int i)
-{
-  static QColor c;
-  c.setRgb(i ? 0xff : 0, 0, 0);
-  return c;
-}
-
-void EdgePlot::setup_payload(Cds& cds)
+void EdgeOverlay::setup_payload(Cds& cds)
 {
   for (int i = 0; i < _fcnt; i++) {
     Ami::Entry* entry = cds.entry(_output_signature + i);
@@ -194,13 +172,19 @@ void EdgePlot::setup_payload(Cds& cds)
           delete _plot[i];
 
         _plot[i] = PlotFactory::plot(entry->desc().name(),*entry,
-                                     noTransform,noTransform,getcolor(i));
-        _plot[i]->attach(_frame);
+                                     Ami::AbsTransform::null(),
+                                     Ami::AbsTransform::null(),
+                                     QColor(0,0,0));
+
+        if (_frame)
+          _attach(i);
       }
-    }
+      if (!_frame && (_frame = QtPlot::lookup(_frame_name)))
+        _attach(i);
+   }
     else {
       if (_output_signature + i >=0)
-        printf("%s output_signature %d not found\n",qPrintable(_name), _output_signature + i);
+        printf("%s output_signature %d not found\n",_finder[i]->output().name(), _output_signature + i);
       if (_plot[i]) {
           delete _plot[i];
           _plot[i] = 0;
@@ -209,12 +193,12 @@ void EdgePlot::setup_payload(Cds& cds)
   }
 }
 
-void EdgePlot::addfinder(Ami::EdgeFinder *f)
+void EdgeOverlay::addfinder(Ami::EdgeFinder *f)
 {
   _finder[_fcnt++] = f;
 }
 
-void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
+void EdgeOverlay::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			   const AxisInfo& xinfo)
 {
@@ -235,16 +219,24 @@ void EdgePlot::configure(char*& p, unsigned input, unsigned& output,
   }
 }
 
-void EdgePlot::update()
+void EdgeOverlay::update()
 {
-  bool have_change = false;
   for (int i = 0; i < _fcnt; i++) {
-      if (_plot[i]) {
-          _plot[i]->update();
-          emit counts_changed(_plot[0]->normalization());
-          have_change = true;
-      }
+    if (_plot[i]) {
+      _plot[i]->update();
+    }
   }
-  if (have_change)
-    emit redraw();
+}
+
+void EdgeOverlay::_attach(int i)
+{
+  if (_order[i]<0) {
+    _order[i] = _frame->_frame->itemList().size();
+    if (i==0)
+      attach(*_frame);
+  }
+
+  _plot[i]->set_color(_order[i]-1);
+  _plot[i]->attach(_frame->_frame);
+  _frame->set_style();
 }

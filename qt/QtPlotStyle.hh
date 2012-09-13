@@ -1,6 +1,8 @@
 #ifndef AmiQt_PlotStyle_hh
 #define AmiQt_PlotStyle_hh
 
+#include "ami/data/DescEntry.hh"
+
 class QWidget;
 
 namespace Ami {
@@ -20,7 +22,8 @@ namespace Ami {
       void query(QWidget*);
       void save(char*&) const;
       void load(const char*&);
-    private:
+      void setPlotType(Ami::DescEntry::Type);
+   private:
       int _symbol_size;
       int _symbol_style;
       int _line_size;

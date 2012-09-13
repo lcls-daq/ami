@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/PFPostParent.hh"
+#include "ami/qt/OverlayParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -29,6 +30,7 @@ namespace Ami {
     class EdgeCursor;
     class PeakFitPlot;
     class PeakFitPost;
+    class PeakFitOverlay;
 #if 0
     class DescTH1F;
     class DescProf;
@@ -43,7 +45,8 @@ namespace Ami {
 
     class PeakFit : public QtPWidget,
                     public Cursors,
-                    public PFPostParent {
+                    public PFPostParent,
+                    public OverlayParent {
       Q_OBJECT
     public:
       PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
@@ -64,6 +67,7 @@ namespace Ami {
       void set_channel(int); // set the source
       void set_quantity(int); // set the parameter
       void plot        ();   // configure the plot
+      void overlay     ();   // configure the plot
       void remove_plot (QObject*);
       void add_post    ();
       void grab_cursorx();
@@ -112,6 +116,12 @@ namespace Ami {
       std::list<CursorDefinition*> _cursors;
 
       QVBoxLayout*    _clayout;
+
+    public:
+      void add_overlay   (DescEntry*, QtPlot*, SharedData*);
+      void remove_overlay(QtOverlay*);
+    private:
+      std::list<PeakFitOverlay*> _ovls;
     };
   };
 };

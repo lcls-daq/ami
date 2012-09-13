@@ -15,9 +15,6 @@ namespace Ami {
   class DescEntry;
   class EntryScalarRange;
   namespace Qt {
-    class AxisArray;
-    class ChannelDefinition;
-    class EnvDefinition;
     class QtBase;
     class SharedData;
     class EnvPlot : public QtPlot {

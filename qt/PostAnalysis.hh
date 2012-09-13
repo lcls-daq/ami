@@ -1,13 +1,14 @@
 #ifndef AmiQt_PostAnalysis_hh
 #define AmiQt_PostAnalysis_hh
 
+#include "ami/qt/OverlayParent.hh"
+
 class QString;
 
 namespace Ami {
-  class DescEntry;
   namespace Qt {
     class SharedData;
-    class PostAnalysis {
+    class PostAnalysis : public OverlayParent {
     public:
       static PostAnalysis* instance();
     public:

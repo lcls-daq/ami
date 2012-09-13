@@ -8,6 +8,8 @@
 
 #include "qwt_plot.h"
 #include "qwt_scale_draw.h"
+#include "qwt_legend.h"
+#include "qwt_legend_item.h"
 
 namespace Ami {
   namespace Qt {
@@ -68,7 +70,6 @@ QtChart::QtChart(const QString&          title,
   
 QtChart::~QtChart()
 {
-  _curve.attach(NULL);
   delete _xinfo;
   delete[] _x;
   delete[] _y;
@@ -82,15 +83,17 @@ void           QtChart::dump  (FILE* f) const
   }
 }
 
+
 void           QtChart::attach(QwtPlot* p)
 {
+  if (p) {
+    p->setAxisScaleDraw(QwtPlot::xBottom, new TimeScale);
+    p->setAxisLabelRotation (QwtPlot::xBottom, -50.0);
+    p->setAxisLabelAlignment(QwtPlot::xBottom, ::Qt::AlignLeft | ::Qt::AlignBottom);
+    p->setAxisTitle(QwtPlot::xBottom,"Time [sec]");
+    p->setAxisTitle(QwtPlot::yLeft,entry().desc().ytitle());
+  }
   _curve.attach(p);
-  p->setAxisScaleDraw(QwtPlot::xBottom, new TimeScale);
-  p->setAxisLabelRotation (QwtPlot::xBottom, -50.0);
-  p->setAxisLabelAlignment(QwtPlot::xBottom, ::Qt::AlignLeft | ::Qt::AlignBottom);
-  p->setAxisTitle(QwtPlot::xBottom,"Time [sec]");
-
-  p->setAxisTitle(QwtPlot::yLeft,entry().desc().ytitle());
 }
 
 void           QtChart::update()
@@ -163,3 +166,11 @@ const AxisInfo* QtChart::xinfo() const
 {
   return 0;
 }
+
+void QtChart::set_color(unsigned c)
+{
+  QPen pen(_curve.pen());
+  pen.setColor(color(c));
+  _curve.setPen(pen);
+}
+

@@ -111,3 +111,15 @@ const AxisInfo* QtScan::xinfo() const
 {
   return _xinfo;
 }
+
+void QtScan::set_color(unsigned c)
+{
+  QPen pen(_curve.pen());
+  pen.setColor(color(c));
+  _curve.setPen(pen);
+
+  QwtSymbol symbol(_curve.symbol());
+  symbol.setPen(QPen(color(c)));
+  symbol.setBrush(QBrush(color(c)));
+  _curve.setSymbol(symbol);
+}

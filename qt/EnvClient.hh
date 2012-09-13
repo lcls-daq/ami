@@ -24,6 +24,7 @@ namespace Ami {
     class Status;
     class EnvPlot;
     class EnvPost;
+    class EnvOverlay;
     class ScalarPlotDesc;
     class Filter;
     class SharedData;
@@ -56,6 +57,7 @@ namespace Ami {
       void update_configuration();
       void _read_description   (int);
       void plot                ();
+      void overlay             ();
       void remove_plot         (QObject*);
       void select_source       ();
       void validate_source     ();
@@ -100,6 +102,12 @@ namespace Ami {
 
     public:
       void plot(const QString&, DescEntry*, SharedData*);
+
+    public:
+      void add_overlay   (DescEntry*, QtPlot*, SharedData*);
+      void remove_overlay(QtOverlay*);
+    private:
+      std::list<EnvOverlay*> _ovls;
     };
   };
 };

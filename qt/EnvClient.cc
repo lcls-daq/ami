@@ -7,7 +7,10 @@
 #include "ami/qt/Filter.hh"
 #include "ami/qt/EnvPlot.hh"
 #include "ami/qt/EnvPost.hh"
+#include "ami/qt/EnvOverlay.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/QtPlot.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/client/ClientManager.hh"
 
@@ -77,6 +80,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _scalar_plot = new ScalarPlotDesc(this, &FeatureRegistry::instance(_set));
 
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
 
   QVBoxLayout* layout = new QVBoxLayout;
@@ -96,6 +100,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -105,6 +110,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   connect(_source_edit   , SIGNAL(editingFinished()), this, SLOT(validate_source()));
   connect(_source_compose, SIGNAL(clicked()),         this, SLOT(select_source()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()), this, SLOT(update_configuration()));
@@ -152,6 +158,10 @@ void EnvClient::save(char*& p) const
   for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "EnvPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert( p, "EnvOverlay", "_ovls",
+                (*it)->save(p) );
+  }
 
   XML_insert( p, "Control", "_control", 
               _control->save(p) );
@@ -168,6 +178,8 @@ void EnvClient::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  // mem leak?
+  _ovls.clear();
 
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
@@ -186,6 +198,10 @@ void EnvClient::load(const char*& p)
     else if (tag.name == "_posts") {
       EnvPost* post = new EnvPost(p);
       _posts.push_back(post);
+    }
+    else if (tag.name == "_ovls") {
+      EnvOverlay* ovl = new EnvOverlay(*this, p);
+      _ovls.push_back(ovl);
     }
     else if (tag.element == "Control")
       _control->load(p);
@@ -245,6 +261,8 @@ int  EnvClient::configure       (iovec* iov)
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,_input,_output_signature);
   for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
+    (*it)->configure(p,_input,_output_signature);
+  for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->configure(p,_input,_output_signature);
 
   if (p > _request+BufferSize) {
@@ -317,6 +335,8 @@ void EnvClient::_read_description(int size)
 
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(_cds);
+  for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->setup_payload(_cds);
 
   _status->set_state(Status::Described);
 
@@ -349,6 +369,8 @@ void EnvClient::process         ()
   //
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
+  for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->update();
   
   _status->set_state(Status::Processed);
 }
@@ -362,7 +384,7 @@ void EnvClient::managed(ClientManager& mgr)
 
 void EnvClient::request_payload()
 {
-  if (_plots.size()==0) return;
+  if (_plots.size()==0 && _ovls.size()==0) return;
 
   if (_status->state() == Status::Described ||
       _status->state() == Status::Processed) {
@@ -402,6 +424,14 @@ void EnvClient::plot()
   connect(plot, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
 
   emit changed();
+}
+
+void EnvClient::overlay()
+{
+  QString entry(_source_edit->text());
+  DescEntry* desc = _scalar_plot->desc(qPrintable(entry));
+
+  new QtPlotSelector(*this, *this, desc);
 }
 
 void EnvClient::add_post()
@@ -460,3 +490,28 @@ void EnvClient::plot(const QString& name,
 
   emit changed();
 }
+
+void EnvClient::add_overlay(DescEntry*  desc,
+                            QtPlot*     plot,
+                            SharedData* shared)
+{
+  EnvOverlay* ovl = new EnvOverlay(*this,
+                                   *plot,
+                                   *_filter->filter(),
+                                   desc,
+                                   _set,
+                                   shared);
+                                     
+  _ovls.push_back(ovl);
+  
+  emit changed();
+}
+
+void EnvClient::remove_overlay(QtOverlay* obj)
+{
+  EnvOverlay* ovl = static_cast<EnvOverlay*>(obj);
+  _ovls.remove(ovl);
+
+  //  emit changed();
+}
+

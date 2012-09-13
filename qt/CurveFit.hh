@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CFPostParent.hh"
+#include "ami/qt/OverlayParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -26,9 +27,11 @@ namespace Ami {
     class ScalarPlotDesc;
     class CurveFitPlot;
     class CurveFitPost;
+    class CurveFitOverlay;
 
     class CurveFit : public QtPWidget,
-                     public CFPostParent {
+                     public CFPostParent,
+                     public OverlayParent {
       Q_OBJECT
     public:
       CurveFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
@@ -47,6 +50,7 @@ namespace Ami {
       void load_file();
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
+      void overlay       ();   // configure the plot
       void remove_plot   (QObject*);
       void add_post      ();
     signals:
@@ -68,6 +72,12 @@ namespace Ami {
       void remove_curvefit_post(CurveFitPost*);
     private:
       std::list<CurveFitPost*> _posts;
+
+    public:
+      void add_overlay   (DescEntry*, QtPlot*, SharedData*);
+      void remove_overlay(QtOverlay*);
+    private:
+      std::list<CurveFitOverlay*> _ovls;
 
       static char *_opname[];
     };

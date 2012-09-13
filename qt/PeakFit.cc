@@ -14,6 +14,7 @@
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/PeakFitPlot.hh"
 #include "ami/qt/PeakFitPost.hh"
+#include "ami/qt/PeakFitOverlay.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
@@ -21,6 +22,7 @@
 #include "ami/qt/CursorsX.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/PostAnalysis.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #if 0
 #include "ami/data/DescScalar.hh"
@@ -112,6 +114,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   QPushButton *lgrabB  = new QPushButton("Grab");
 
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
   
   QVBoxLayout* layout = new QVBoxLayout;
@@ -179,6 +182,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -186,6 +190,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(qtyBox    , SIGNAL(activated(int)), this, SLOT(set_quantity(int)));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
@@ -240,6 +245,9 @@ void PeakFit::save(char*& p) const
   for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "PeakFitPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert(p, "PeakFitOverlay", "_ovls", (*it)->save(p) );
+  }
 }
 
 void PeakFit::load(const char*& p)
@@ -260,6 +268,7 @@ void PeakFit::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  _ovls .clear();
 
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
@@ -301,6 +310,10 @@ void PeakFit::load(const char*& p)
       PeakFitPost* post = new PeakFitPost(p);
       _posts.push_back(post);
     }
+    else if (tag.name == "_ovls") {
+      PeakFitOverlay* ovl = new PeakFitOverlay(*this, p);
+      _ovls.push_back(ovl);
+    }
   XML_iterate_close(PeakFit,tag);
 }
 
@@ -324,6 +337,8 @@ void PeakFit::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
   for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
@@ -354,8 +369,6 @@ void PeakFit::plot()
   if (_baseline_tab->currentIndex()!=ConstantBL && !_cursors.size())  /* Can't plot if no baseline! */
       return;
 
-#if 0
-#else
   if (_scalar_desc->postAnalysis()) {
     QString     qtitle = _add_post();
     DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
@@ -375,12 +388,6 @@ void PeakFit::plot()
       int bins[MAX_BINS], i = 0;
       for (std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end() && i < MAX_BINS; i++, it++) {
         bins[i] = _frame.xinfo().tick((*it)->location());
-#if 0
-        const AxisBins *xi = dynamic_cast<const AxisBins *>(&_frame.xinfo());
-        printf("PeakFit: (%d,%d,%d) %lg -> bin %d\n", 
-               _frame.xinfo().lo(), _frame.xinfo().hi(), xi ? xi->ticks() : -1,
-               (*it)->location(), bins[i]);
-#endif
       }
       plotter = new Ami::PeakFitPlot(*desc, i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
     }
@@ -395,7 +402,6 @@ void PeakFit::plot()
     connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   emit changed();
-#endif
 }
 
 void PeakFit::remove_plot(QObject* obj)
@@ -409,10 +415,7 @@ void PeakFit::remove_plot(QObject* obj)
 void PeakFit::add_post()
 {
   _add_post();
-#if 0
-#else
   _posts.back()->signup();
-#endif
 }
 
 QString PeakFit::_add_post()
@@ -499,4 +502,58 @@ void PeakFit::remove_peakfit_post(PeakFitPost* post)
 {
   _posts.remove(post);
   emit changed();
+}
+
+void PeakFit::overlay()
+{
+  if (_baseline_tab->currentIndex()!=ConstantBL && !_cursors.size())  /* Can't plot if no baseline! */
+      return;
+
+  DescEntry* desc;
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    desc  = _scalar_desc->desc(qPrintable(qtitle));
+    new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+  }
+  else {
+    QString qtitle = QString("%1:%2")
+      .arg(_title->text())
+      .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity));
+
+    DescEntry* desc = _scalar_desc->desc(qPrintable(qtitle));
+    new QtPlotSelector(*this, *this, desc);
+  }
+}
+
+void PeakFit::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
+{
+  Ami::PeakFitPlot *plotter;
+  if (_baseline_tab->currentIndex()==ConstantBL) {
+    plotter = new Ami::PeakFitPlot(*desc, _baseline->value(), 
+                                   (Ami::PeakFitPlot::Parameter)_quantity);
+  } else {
+    int bins[MAX_BINS], i = 0;
+    for (std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end() && i < MAX_BINS; i++, it++) {
+      bins[i] = _frame.xinfo().tick((*it)->location());
+    }
+    plotter = new Ami::PeakFitPlot(*desc, i, bins, (Ami::PeakFitPlot::Parameter)_quantity);
+  }
+
+  PeakFitOverlay* ovl = new PeakFitOverlay(*this,
+                                           *plot,
+                                           _channel,
+                                           plotter);
+    
+  _ovls.push_back(ovl);
+
+  emit changed();
+}
+
+void PeakFit::remove_overlay(QtOverlay* o)
+{
+  PeakFitOverlay* ovl = static_cast<PeakFitOverlay*>(o);
+
+  _ovls.remove(ovl);
+
+  //  emit changed();
 }

@@ -1,13 +1,13 @@
-#include "EnvPlot.hh"
+#include "EnvOverlay.hh"
 
-#include "ami/qt/AxisArray.hh"
+#include "ami/qt/OverlayParent.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtTH1F.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
-#include "ami/qt/Path.hh"
-#include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/QtPlot.hh"
+#include "ami/qt/QtPlotStyle.hh"
 #include "ami/qt/SharedData.hh"
 
 #include "ami/data/AbsFilter.hh"
@@ -23,42 +23,45 @@
 #include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EnvPlot.hh"
 
-#include <QtGui/QLabel>
 #include "qwt_plot.h"
 
 using namespace Ami::Qt;
 
-EnvPlot::EnvPlot(QWidget*         parent,
-		 const QString&   name,
-		 const Ami::AbsFilter&  filter,
-		 DescEntry*       desc,
-                 Ami::ScalarSet   set,
-                 SharedData*      shared) :
-  QtPlot   (parent, name),
+EnvOverlay::EnvOverlay(OverlayParent&   parent,
+                       QtPlot&          frame,
+                       const Ami::AbsFilter&  filter,
+                       DescEntry*       desc,
+                       Ami::ScalarSet   set,
+                       SharedData*      shared) :
+  QtOverlay(parent),
+  _frame   (&frame),
+  _frame_name(frame._name),
   _filter  (filter.clone()),
   _desc    (desc),
   _set     (set),
   _output_signature  (0),
   _plot    (0),
+  _order   (-1),
   _shared  (shared)
 {
   if (shared) shared->signup();
-  setPlotType(_desc->type());
 }
 
-EnvPlot::EnvPlot(QWidget*     parent,
-		 const char*& p) :
-  QtPlot   (parent),
+EnvOverlay::EnvOverlay(OverlayParent& parent,
+                       const char*& p) :
+  QtOverlay(parent),
+  _frame   (0),
   _filter  (0),
   _set     (Ami::PreAnalysis),
   _output_signature(0),
   _plot    (0),
+  _order   (-1),
   _shared  (0)
 {
   XML_iterate_open(p,tag)
     
-    if (tag.element == "QtPlot")
-      QtPlot::load(p);
+    if (tag.name == "_frame_name")
+      _frame_name = QtPersistent::extract_s(p);
     else if (tag.name == "_filter") {
       Ami::FilterFactory factory;
       const char* b = (const char*)QtPersistent::extract_op(p);
@@ -81,23 +84,21 @@ EnvPlot::EnvPlot(QWidget*     parent,
       _set = Ami::ScalarSet(QtPersistent::extract_i(p));
     }
 
-  XML_iterate_close(EnvPlot,tag);
-
-  setPlotType(_desc->type());
+  XML_iterate_close(EnvOverlay,tag);
 }
 
-EnvPlot::~EnvPlot()
+EnvOverlay::~EnvOverlay()
 {
-  if (_filter  ) delete _filter;
+  if (_shared) _shared->resign();
+  if (_plot  ) delete _plot;
+  if (_filter) delete _filter;
   delete _desc;
-  if (_plot    ) delete _plot;
-  if (_shared  ) _shared->resign();
 }
 
-void EnvPlot::save(char*& p) const
+void EnvOverlay::save(char*& p) const
 {
   char* buff = new char[8*1024];
-  XML_insert( p, "QtPlot", "self", QtPlot::save(p) );
+  XML_insert( p, "QString"  , "_frame_name", QtPersistent::insert(p, _frame_name) );
   XML_insert( p, "AbsFilter", "_filter", QtPersistent::insert(p, buff, (char*)_filter->serialize(buff)-buff) );
   XML_insert( p, "DescEntry", "_desc", QtPersistent::insert(p, _desc, _desc->size()) );
   XML_insert( p, "ScalarSet", "_set" , QtPersistent::insert(p, int(_set)) );
@@ -105,16 +106,14 @@ void EnvPlot::save(char*& p) const
 }
 
 
-void EnvPlot::load(const char*& p)
+void EnvOverlay::load(const char*& p)
 {
 }
-
-void EnvPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
 
-void EnvPlot::setup_payload(Cds& cds)
+void EnvOverlay::setup_payload(Cds& cds)
 {
   _auto_range = 0;
 
@@ -129,14 +128,16 @@ void EnvPlot::setup_payload(Cds& cds)
       if (_plot)
         delete _plot;
 
-      edit_xrange(true);
+      //      edit_xrange(true);
+      QColor c(0,0,0);
 
       switch(entry->desc().type()) {
       case Ami::DescEntry::TH1F: 
-        _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
+        _plot = new QtTH1F(_desc->name(),
+                           *static_cast<const Ami::EntryTH1F*>(entry),
                            Ami::AbsTransform::null(),
                            Ami::AbsTransform::null(),
-                           QColor(0,0,0));
+                           c);
         break;
       case Ami::DescEntry::ScalarRange: 
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
@@ -147,34 +148,42 @@ void EnvPlot::setup_payload(Cds& cds)
         // 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
         // 			    d.pts(),QColor(0,0,0));
         // 	break; }
-        _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-                            QColor(0,0,0));
-        edit_xrange(false);
+        _plot = new QtChart(_desc->name(),
+                            *static_cast<const Ami::EntryScalar*>(entry),
+                            c);
+        //        edit_xrange(false);
         break;
       case Ami::DescEntry::Prof: 
-        _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
+        _plot = new QtProf(_desc->name(),
+                           *static_cast<const Ami::EntryProf*>(entry),
                            Ami::AbsTransform::null(),
                            Ami::AbsTransform::null(),
-                           QColor(0,0,0));
+                           c);
         break;
       case Ami::DescEntry::Scan: 
-        _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
+        _plot = new QtScan(_desc->name(),
+                           *static_cast<const Ami::EntryScan*>(entry),
                            Ami::AbsTransform::null(),
                            Ami::AbsTransform::null(),
-                           QColor(0,0,0),
-                           _style.symbol_size(),_style.symbol_style());
+                           c,
+                           QtPlotStyle().symbol_size(),QtPlotStyle().symbol_style());
         break;
       default:
-        printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
+        printf("EnvOverlay type %d not implemented yet\n",entry->desc().type()); 
         _plot = 0;
         return;
       }
-      _plot->attach(_frame);
+
+      if (_frame)
+        _attach();
     }
+
+    if (!_frame && (_frame = QtPlot::lookup(_frame_name)))
+      _attach();
   }
   else {
     if (_output_signature>=0)
-      printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
+      printf("%s output_signature %d not found\n",_desc->name(),_output_signature);
     if (_plot) {
       delete _plot;
       _plot = 0;
@@ -182,7 +191,7 @@ void EnvPlot::setup_payload(Cds& cds)
   }
 }
 
-void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
+void EnvOverlay::configure(char*& p, unsigned input, unsigned& output)
 {
   Ami::EnvPlot op(*_desc);
   
@@ -196,21 +205,36 @@ void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
   _output_signature = r.output();
 }
 
-void EnvPlot::update()
+void EnvOverlay::update()
 {
   if (_plot) {
+    //  This may be unnecessary
+    if (!_frame && (_frame = QtPlot::lookup(_frame_name))) {
+      printf("Late EnvOverlay attach to %s\n",qPrintable(_frame_name));
+      _attach();
+    }
+
     _plot->update();
-    emit counts_changed(_plot->normalization());
-    emit redraw();
   }
+
   if (_auto_range) {
     double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
-    emit counts_changed(v);
     if (v >= 0) {
       delete _desc;
       _desc = _auto_range->result();
       _auto_range = 0;
-      emit changed();
     }
   }
+}
+
+void EnvOverlay::_attach()
+{
+  if (_order<0) {
+    _order = _frame->_frame->itemList().size();
+    attach(*_frame);
+  }
+
+  _plot->set_color(_order-1);
+  _plot->attach(_frame->_frame);
+  _frame->set_style();
 }

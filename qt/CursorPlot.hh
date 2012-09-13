@@ -16,7 +16,6 @@ namespace Ami {
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
-    class CursorDefinition;
     class QtBase;
     class CursorPlot : public QtPlot {
       Q_OBJECT

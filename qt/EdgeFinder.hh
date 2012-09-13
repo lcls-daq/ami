@@ -2,6 +2,7 @@
 #define AmiQt_EdgeFinder_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/qt/OverlayParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -26,11 +27,13 @@ namespace Ami {
     class ChannelDefinition;
     class EdgeCursor;
     class EdgePlot;
+    class EdgeOverlay;
     class DescTH1F;
     class DescTH2F;
     class WaveformDisplay;
 
-    class EdgeFinder : public QtPWidget {
+    class EdgeFinder : public QtPWidget,
+                       public OverlayParent {
       Q_OBJECT
     public:
       EdgeFinder(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
@@ -49,6 +52,7 @@ namespace Ami {
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
+      void overlay       ();   // configure the plot
       void remove_plot   (QObject*);
     signals:
       void changed();
@@ -69,6 +73,12 @@ namespace Ami {
       QLineEdit* _dead;
 
       std::list<EdgePlot*> _plots;
+
+    public:
+      void add_overlay   (DescEntry*, QtPlot*, SharedData*);
+      void remove_overlay(QtOverlay*);
+    private:
+      std::list<EdgeOverlay*> _ovls;
     };
   };
 };

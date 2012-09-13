@@ -3,6 +3,7 @@
 
 #include <QtCore/QString>
 
+class QColor;
 class QwtPlot;
 
 #include <stdio.h>
@@ -28,10 +29,13 @@ namespace Ami {
       virtual const AxisInfo* xinfo() const = 0;
       virtual const AxisInfo* yinfo() const { return 0; }
       virtual double      normalization() const { return 0; }
+      virtual void        set_color(unsigned) {}
     public:
       const QString& title() const { return _title; }
       const Ami::Entry& entry() const { return *_entry; }
       void              entry(const Ami::Entry& e) { _entry=&e; }
+    public:
+      static const QColor& color(unsigned);
     private:
       QString _title;
       const Ami::Entry* _entry;

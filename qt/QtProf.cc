@@ -114,3 +114,15 @@ double QtProf::normalization() const
 {
   return static_cast<const EntryProf&>(entry()).info(EntryProf::Normalization);
 }
+
+void QtProf::set_color(unsigned c)
+{
+  QPen pen(_curve.pen());
+  pen.setColor(color(c));
+  _curve.setPen(pen);
+
+  QwtSymbol symbol(_curve.symbol());
+  symbol.setPen(QPen(color(c)));
+  symbol.setBrush(QBrush(color(c)));
+  _curve.setSymbol(symbol);
+}

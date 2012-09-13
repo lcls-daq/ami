@@ -5,6 +5,7 @@
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/CursorPost.hh"
+#include "ami/qt/CursorOverlay.hh"
 #include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/XYHistogramPlotDesc.hh"
 #include "ami/qt/XYProjectionPlotDesc.hh"
@@ -14,6 +15,7 @@
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/PostAnalysis.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
@@ -63,6 +65,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 
   QPushButton* zoomB  = new QPushButton("Zoom");
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
 
   _plot_tab        = new QTabWidget(0);
@@ -101,6 +104,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
     layout1->addStretch();
     layout1->addWidget(zoomB);
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -111,10 +115,15 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
   _integral_plot->post(this, SLOT(add_post()));
+
+  ovlyB->setEnabled(false);
+  _ovlyB = ovlyB;
+  connect(_plot_tab,  SIGNAL(currentChanged(int)), this, SLOT(plottab_changed(int)));
 }
   
 ImageXYProjection::~ImageXYProjection()
@@ -153,6 +162,10 @@ void ImageXYProjection::save(char*& p) const
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert( p, "CursorOverlay", "_ovls",
+                (*it)->save(p) );
+  }
 }
 
 void ImageXYProjection::load(const char*& p) 
@@ -173,6 +186,8 @@ void ImageXYProjection::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  // mem leak?
+  _ovls.clear();
 
   XML_iterate_open(p,tag)
    if (tag.element == "QtPWidget")
@@ -210,6 +225,10 @@ void ImageXYProjection::load(const char*& p)
     else if (tag.name == "_posts") {
       CursorPost* post = new CursorPost(p);
       _posts.push_back(post);
+    }
+    else if (tag.name == "_ovls") {
+      CursorOverlay* ovl = new CursorOverlay(*this, p);
+      _ovls.push_back(ovl);
     }
   XML_iterate_close(ImageXYProjection,tag);
 }
@@ -251,6 +270,9 @@ void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,
 		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,
+		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
 }
 
 void ImageXYProjection::setup_payload(Cds& cds)
@@ -261,6 +283,8 @@ void ImageXYProjection::setup_payload(Cds& cds)
     (*it)->setup_payload(cds);
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
    (*it)->setup_payload(cds);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+   (*it)->setup_payload(cds);
 }
 
 void ImageXYProjection::update()
@@ -270,6 +294,8 @@ void ImageXYProjection::update()
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     (*it)->update();
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+    (*it)->update();
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -402,4 +428,46 @@ void ImageXYProjection::remove_cursor_post(CursorPost* post)
 {
   _posts.remove(post);
   emit changed();
+}
+
+void ImageXYProjection::plottab_changed(int index)
+{
+  _ovlyB->setEnabled(index==PlotIntegral);
+}
+
+void ImageXYProjection::overlay()
+{
+  if (_integral_plot->postAnalysis()) {
+    DescEntry* desc = _integral_plot->desc(qPrintable(_add_post()));
+    new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+  }
+  else {
+    DescEntry* desc = _integral_plot->desc(qPrintable(_title->text()));
+    new QtPlotSelector(*this, *this, desc);
+  }
+}
+
+void ImageXYProjection::add_overlay(DescEntry* desc,
+                                    QtPlot*    plot,
+                                    SharedData*)
+{
+  CursorOverlay* ovl = new CursorOverlay(*this, 
+                                         *plot,
+                                         _channel, 
+                                         new BinMath(*desc,
+                                                     _integral_plot->expression()));
+                                     
+  delete desc;
+
+  _ovls.push_back(ovl);
+
+  emit changed();
+}
+
+void ImageXYProjection::remove_overlay(QtOverlay* obj)
+{
+  CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _ovls.remove(ovl);
+  
+  //  emit changed();
 }

@@ -9,8 +9,6 @@ namespace Ami {
   class DescCache;
   class AbsFilter;
   namespace Qt {
-    class AxisInfo;
-    class ChannelDefinition;
     class EnvPost {
     public:
       EnvPost(const AbsFilter& filter,

@@ -9,7 +9,9 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/CurveFitPlot.hh"
 #include "ami/qt/CurveFitPost.hh"
+#include "ami/qt/CurveFitOverlay.hh"
 #include "ami/qt/PostAnalysis.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescWaveform.hh"
@@ -72,6 +74,7 @@ CurveFit::CurveFit(QWidget* parent,
 
   QPushButton* loadB  = new QPushButton("Load");
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB  = new QPushButton("Close");
 
   QVBoxLayout* layout = new QVBoxLayout;
@@ -102,6 +105,7 @@ CurveFit::CurveFit(QWidget* parent,
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -110,6 +114,7 @@ CurveFit::CurveFit(QWidget* parent,
   connect(loadB     , SIGNAL(clicked()),      this, SLOT(load_file()));
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
   _scalar_desc->post(this, SLOT(add_post()));
@@ -135,6 +140,9 @@ void CurveFit::save(char*& p) const
   for(std::list<CurveFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "CurveFitPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert(p, "CurveFitOverlay", "_ovls", (*it)->save(p) );
+  }
 }
 
 void CurveFit::load(const char*& p)
@@ -147,6 +155,7 @@ void CurveFit::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  _ovls .clear();
 
   XML_iterate_open(p,tag)
 
@@ -168,6 +177,10 @@ void CurveFit::load(const char*& p)
     else if (tag.name == "_posts") {
       CurveFitPost* post = new CurveFitPost(p);
       _posts.push_back(post);
+    }
+    else if (tag.name == "_ovls") {
+      CurveFitOverlay* ovl = new CurveFitOverlay(*this, p);
+      _ovls.push_back(ovl);
     }
   XML_iterate_close(CurveFit,tag);
 
@@ -194,17 +207,23 @@ void CurveFit::configure(char*& p, unsigned input, unsigned& output,
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
   for(std::list<CurveFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),ConfigureRequest::Analysis);
+  for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
 }
 
 void CurveFit::setup_payload(Cds& cds)
 {
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->setup_payload(cds);
 }
 
 void CurveFit::update()
 {
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->update();
+  for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -299,4 +318,51 @@ void CurveFit::remove_curvefit_post(CurveFitPost* post)
 {
   _posts.remove(post);
   emit changed();
+}
+
+void CurveFit::overlay()
+{
+  if (_fname.isNull())
+    return;
+
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
+    new QtPlotSelector(*this, *PostAnalysis::instance(), entry, _posts.back());
+  }
+  else {
+    int op = _outBox->currentIndex();
+    DescEntry *desc = _scalar_desc->desc(_opname[op]);
+
+    new QtPlotSelector(*this, *this, desc);
+  }
+}
+
+void CurveFit::add_overlay(DescEntry* desc,
+                           QtPlot*    plot,  
+                           SharedData*)
+{
+  QString norm(_scalar_desc->expr(QString(""))); /* This has the form "()/(NORMVAR)" or "" */
+  
+  if (norm.length()) {
+    norm = norm.mid(4, norm.length() - 5); // Just the name, please!
+  }
+
+  int op = _outBox->currentIndex();
+  CurveFitOverlay* ovl = new CurveFitOverlay(*this, *plot,
+                                             _channel,
+                                             new Ami::CurveFit(qPrintable(_fname),
+                                                               op, *desc, qPrintable(norm)));
+
+  _ovls.push_back(ovl);
+
+  emit changed();
+}
+
+void CurveFit::remove_overlay(QtOverlay* obj)
+{
+  CurveFitOverlay* ovl = static_cast<CurveFitOverlay*>(obj);
+  _ovls.remove(ovl);
+  
+  //  emit changed();
 }

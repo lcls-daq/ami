@@ -25,6 +25,7 @@ namespace Ami {
       void        update()        ;
       void        xscale_update() ;
       void        yscale_update() ;
+      void        set_color(unsigned);
       const AxisInfo* xinfo() const;
       double      normalization() const;
     private:

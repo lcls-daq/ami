@@ -6,8 +6,10 @@
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
 #include "ami/qt/EdgePlot.hh"
+#include "ami/qt/EdgeOverlay.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/PlotFrame.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescTH2F.hh"
@@ -74,6 +76,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   plotTimeB->setChecked(true);
 
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
   
   QVBoxLayout* layout = new QVBoxLayout;
@@ -132,6 +135,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -141,6 +145,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
   connect(_threshold, SIGNAL(changed()),      this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }
   
@@ -163,6 +168,9 @@ void EdgeFinder::save(char*& p) const
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "EdgePlot", "_plots", (*it)->save(p) );
   }
+  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert(p, "EdgeOverlay", "_ovls", (*it)->save(p) );
+  }
 }
 
 void EdgeFinder::load(const char*& p)
@@ -170,6 +178,7 @@ void EdgeFinder::load(const char*& p)
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
+  _ovls .clear();
 
   XML_iterate_open(p,tag)
 
@@ -191,6 +200,10 @@ void EdgeFinder::load(const char*& p)
       EdgePlot* plot = new EdgePlot(this, p);
       _plots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
+    else if (tag.name == "_ovls") {
+      EdgeOverlay* ovl = new EdgeOverlay(*this, p);
+      _ovls.push_back(ovl);
     }
 
   XML_iterate_close(EdgeFinder,tag);
@@ -216,17 +229,23 @@ void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,
 {
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
 }
 
 void EdgeFinder::setup_payload(Cds& cds)
 {
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->setup_payload(cds);
 }
 
 void EdgeFinder::update()
 {
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->update();
+  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -254,19 +273,21 @@ void EdgeFinder::plot()
     return;
 
   Ami::DescEntry* desc = 0;
+  QString name = QString("%1 [%2]").arg(_title->text()).arg(_leading->isChecked() ? "Rise":"Fall");
+
   switch(_vtbutton->checkedId()) {
   case Ami::EdgeFinder::Location:
-    desc = new Ami::DescTH1F(qPrintable(_title->text()),
+    desc = new Ami::DescTH1F(qPrintable(name),
                              "edge location", "pulses",
                              _hist->bins(),_hist->lo(),_hist->hi(),false);  
     break;
   case Ami::EdgeFinder::Amplitude:
-    desc = new Ami::DescTH1F(qPrintable(_title->text()),
+    desc = new Ami::DescTH1F(qPrintable(name),
                              "amplitude", "pulses",
                              _hist->bins(),_hist->lo(),_hist->hi(),false);  
     break;
   case Ami::EdgeFinder::AmplvLoc:
-    desc = new Ami::DescTH2F(qPrintable(_title->text()),
+    desc = new Ami::DescTH2F(qPrintable(name),
                              "location", "amplitude", 
                              _hist2d->xbins(),_hist2d->xlo(),_hist2d->xhi(),
                              _hist2d->ybins(),_hist2d->ylo(),_hist2d->yhi(),
@@ -288,13 +309,15 @@ void EdgeFinder::plot()
 
   if (_leading->isChecked() && _trailing->isChecked()) {
       // Add trailing plot to EdgePlot!
-      plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
-                                          Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                         false),
-                                          deadtime, *desc,
-                                          Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
+    QString tname = QString("%1 [%2]").arg(_title->text()).arg("Fall");
+    strcpy(const_cast<char*>(desc->name()), qPrintable(tname));
+    plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
+                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
+                                                                       false),
+                                        deadtime, *desc,
+                                        Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
   }
-
+  
   _plots.push_back(plot);
 
   delete desc;
@@ -312,3 +335,75 @@ void EdgeFinder::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
+void EdgeFinder::overlay()
+{
+  if (!_leading->isChecked() && !_trailing->isChecked())
+    return;
+
+  QString name = QString("%1 [%2]").arg(_title->text()).arg(_leading->isChecked() ? "Rise":"Fall");
+  Ami::DescEntry* desc = 0;
+  switch(_vtbutton->checkedId()) {
+  case Ami::EdgeFinder::Location:
+    desc = new Ami::DescTH1F(qPrintable(name),
+                             "edge location", "pulses",
+                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
+    break;
+  case Ami::EdgeFinder::Amplitude:
+    desc = new Ami::DescTH1F(qPrintable(name),
+                             "amplitude", "pulses",
+                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
+    break;
+  case Ami::EdgeFinder::AmplvLoc:
+    desc = new Ami::DescTH2F(qPrintable(name),
+                             "location", "amplitude", 
+                             _hist2d->xbins(),_hist2d->xlo(),_hist2d->xhi(),
+                             _hist2d->ybins(),_hist2d->ylo(),_hist2d->yhi(),
+                             false);  
+    break;
+  default:
+    printf("EdgeFinder unknown plot type %d\n",_vtbutton->checkedId());
+    return;
+  }
+
+  new QtPlotSelector(*this, *this, desc);
+}
+
+void EdgeFinder::add_overlay(DescEntry* desc,
+                             QtPlot*    plot,
+                             SharedData*)
+{
+  double deadtime = _dead->text().toDouble();
+  EdgeOverlay* ovl =
+    new EdgeOverlay(*this, *plot,
+                    _channel,
+                    new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
+                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
+                                                                       _leading->isChecked()),
+                                        deadtime, *desc,
+                                        Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
+  
+  if (_leading->isChecked() && _trailing->isChecked()) {
+      // Add trailing plot to EdgePlot!
+    QString tname = QString("%1 [%2]").arg(_title->text()).arg("Fall");
+    strcpy(const_cast<char*>(desc->name()), qPrintable(tname));
+    ovl->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
+                                       Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
+                                                                      false),
+                                       deadtime, *desc,
+                                       Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
+  }
+
+  delete desc;
+
+  _ovls.push_back(ovl);
+
+  emit changed();
+}
+
+void EdgeFinder::remove_overlay(QtOverlay* obj)
+{
+  EdgeOverlay* ovl = static_cast<EdgeOverlay*>(obj);
+  _ovls.remove(ovl);
+  
+  //  emit changed();
+}
