@@ -30,15 +30,16 @@ namespace Ami {
     BinMath(const char*&);
     ~BinMath();
   public:
-    DescEntry& output   () const;
     const char*        expression() const;
   public:
     static const QChar& integrate();
     static const QChar& moment1  ();
     static const QChar& moment2  ();
+    static const QChar& contrast ();
     static const QChar& range    ();
     static const double floatPrecision();
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }

@@ -6,6 +6,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -56,7 +57,7 @@ XYHistogram::~XYHistogram()
   if (_output) delete _output;
 }
 
-DescEntry& XYHistogram::output   () const 
+DescEntry& XYHistogram::_routput   () const 
 { 
   return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
@@ -78,8 +79,9 @@ Entry&     XYHistogram::_operate(const Entry& e) const
 
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   const DescImage& inputd = _input->desc();
+  const ImageMask* mask = inputd.mask();
   if (_input) {
-    switch(output().type()) {
+    switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized
       { EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
         o->clear();
@@ -90,30 +92,30 @@ Entry&     XYHistogram::_operate(const Entry& e) const
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
-        if (inputd.nframes()) {
-          int countdown = (jhi - jlo) * (ihi - ilo);
+        if (mask) {
+          for(unsigned j=jlo; j<jhi; j++) {
+            if (!mask->row(j)) continue;
+            for(unsigned i=ilo; i<ihi; i++)
+              if (mask->rowcol(j,i))
+                o->addcontent(1.,(double(_input->content(i,j))-p)*n);
+          }
+        }
+        else if (inputd.nframes()) {
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
-            const SubFrame& f = inputd.frame(fn);
-            for(unsigned j=f.y; j<f.y+f.ny; j++) {
-              if ((j >= jlo) && (j < jhi)) {
-                for (unsigned k=f.x; k<f.x+f.nx; k++) {
-                  if ((k >= ilo) && (k < ihi)) {
-                    o->addcontent(1.,(double(_input->content(k,j))-p)*n);
-                    if (--countdown == 0) {
-                      goto doneTH1F;
-                    }
-                  }
+            int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
+            if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
+              for(int j=j0; j<j1; j++) {
+                for(int i=i0; i<i1; i++) {
+                  o->addcontent(1.,(double(_input->content(i,j))-p)*n);
                 }
               }
             }
           }
         } else {
-          for(unsigned i=ilo; i<ihi; i++) {
-            for(unsigned j=jlo; j<jhi; j++)
+          for(unsigned j=jlo; j<jhi; j++)
+            for(unsigned i=ilo; i<ihi; i++)
               o->addcontent(1.,(double(_input->content(i,j))-p)*n);
-          }
         }
-doneTH1F:
         o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
         break; }
     case DescEntry::ScalarRange:
@@ -125,30 +127,30 @@ doneTH1F:
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
-        if (inputd.nframes()) {
-          int countdown = (jhi - jlo) * (ihi - ilo);
+        if (mask) {
+          for(unsigned j=jlo; j<jhi; j++) {
+            if (!mask->row(j)) continue;
+            for(unsigned i=ilo; i<ihi; i++)
+              if (mask->rowcol(j,i))
+                o->addcontent((double(_input->content(i,j))-p)*n);
+          }
+        }
+        else if (inputd.nframes()) {
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
-            const SubFrame& f = inputd.frame(fn);
-            for(unsigned j=f.y; j < f.y+f.ny; j++) {
-              if ((j >= jlo) && (j < jhi)) {
-                for (unsigned k=f.x; k < f.x+f.nx; k++) {
-                  if ((k >= ilo) && (k < ihi)) {
-                    o->addcontent((double(_input->content(k,j))-p)*n);
-                    if (--countdown == 0) {
-                      goto doneScalarRange;
-                    }
-                  }
+            int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
+            if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
+              for(int j=j0; j<j1; j++) {
+                for(int i=i0; i<i1; i++) {
+                  o->addcontent((double(_input->content(i,j))-p)*n);
                 }
               }
             }
           }
         } else {
-          for(unsigned i=ilo; i<ihi; i++) {
-            for(unsigned j=jlo; j<jhi; j++)
+          for(unsigned j=jlo; j<jhi; j++)
+            for(unsigned i=ilo; i<ihi; i++)
               o->addcontent((double(_input->content(i,j))-p)*n);
-          }
         }
-doneScalarRange:
         break; }
     default:
       break;

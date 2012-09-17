@@ -9,6 +9,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/PWidgetManager.hh"
+#include "ami/qt/QtUtils.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -47,7 +48,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _proj    (proj),
   _frame   (new WaveformDisplay),
   _showMask(1),
-  _auto_range(0)
+  _auto_range(0),
+  _chrome_changed(false)
 {
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
@@ -65,7 +67,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   QtPWidget(0),
   _output  (-1),
   _frame   (new WaveformDisplay),
-  _auto_range(0)
+  _auto_range(0),
+  _chrome_changed(false)
 {
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
@@ -123,12 +126,14 @@ void ProjectionPlot::_layout()
       layout3->addWidget(peakFitB);
       connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(front())); }
     layout3->addStretch();
-    layout->addLayout(layout3); }
+    layout->addLayout(_chrome_layout=layout3); }
   layout->addWidget(_frame);
   setLayout(layout);
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_peakfit, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
+
   show();
 }
 
@@ -339,4 +344,21 @@ void ProjectionPlot::update()
       emit description_changed();
     }
   }
+}
+
+void ProjectionPlot::set_chrome_visible(bool v)
+{
+  _chrome_changed = true;
+  QtUtils::setChildrenVisible(_chrome_layout, v);
+  updateGeometry();
+  resize(minimumWidth(),minimumHeight());
+}
+
+void ProjectionPlot::paintEvent(QPaintEvent* e)
+{
+  if (_chrome_changed) {
+    resize(minimumWidth(),minimumHeight());
+    _chrome_changed = false;
+  }
+  QWidget::paintEvent(e);
 }

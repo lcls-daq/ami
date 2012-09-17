@@ -76,6 +76,14 @@ namespace Ami {
       ConfigureRequestor _req;
 
       EntryScalarRange*  _auto_range;
+
+    public slots:
+      void set_chrome_visible(bool);
+    protected:
+      void paintEvent(QPaintEvent*);
+    private:
+      QLayout*     _chrome_layout;
+      bool         _chrome_changed;
     };
   };
 };

@@ -117,7 +117,7 @@ CurveFit::~CurveFit()
    }
 }
 
-DescEntry& CurveFit::output   () const 
+DescEntry& CurveFit::_routput   () const 
 {
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }

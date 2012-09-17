@@ -13,9 +13,8 @@ namespace Ami {
     Integral(const DescEntry&,unsigned xlo,unsigned xhi,unsigned ylo,unsigned yhi);
     Integral(const char*&, const DescEntry&);
     ~Integral();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const; 
     bool       _valid    () const { return true; }

@@ -13,6 +13,7 @@
 class QButtonGroup;
 class QLineEdit;
 class QComboBox;
+class QCheckBox;
 
 namespace Ami {
   class AbsOperator;
@@ -25,6 +26,7 @@ namespace Ami {
     class ChannelMath;
     class Transform;
     class QtBase;
+    class MaskDisplay;
     class ChannelDefinition : public QtPWidget {
       Q_OBJECT
     public:
@@ -60,6 +62,8 @@ namespace Ami {
       void show_plot(bool);
       void apply();
       void set_scale();
+      void load_mask();
+      void edit_mask();
     signals:
       void reference_loaded(bool);
       void changed();
@@ -86,6 +90,9 @@ namespace Ami {
       bool          _operator_is_ref;
       bool          _configured_ref;
       ConfigureRequestor _req;
+      QCheckBox*    _maskB;
+      QString       _mask_file;
+      MaskDisplay*  _mask_display;
     };
   };
 };

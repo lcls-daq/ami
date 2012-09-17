@@ -16,9 +16,8 @@ namespace Ami {
     EntryMath(const char* expr);
     EntryMath(const char*&, const DescEntry&, const Cds&, FeatureCache&);
     ~EntryMath();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }

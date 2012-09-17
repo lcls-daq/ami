@@ -8,6 +8,7 @@
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
+#include "ami/qt/QtEmpty.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/FeatureRegistry.hh"
 
@@ -47,9 +48,11 @@ PeakFitPlot::PeakFitPlot(QWidget* parent,
   _channel (channel),
   _input   (input),
   _output_signature  (0),
-  _plot    (0),
+  _plot    (new QtEmpty),
   _auto_range(0)
 {
+  _plot->attach(_frame);
+  setPlotType(input->output().type());
 }
 
 PeakFitPlot::PeakFitPlot(QWidget* parent,
@@ -61,7 +64,10 @@ PeakFitPlot::PeakFitPlot(QWidget* parent,
   load(p);
 
   _output_signature=0;
-  _plot = 0;
+  _plot = new QtEmpty;
+  _plot->attach(_frame);
+
+  setPlotType(_input->output().type());
 }
 
 PeakFitPlot::~PeakFitPlot()
@@ -132,12 +138,11 @@ void PeakFitPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::ScalarRange:
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
-        _plot = 0;
+        _plot = new QtEmpty;
         return;
       default:
         printf("PeakFitPlot type %d not implemented yet\n",entry->desc().type()); 
-        _plot = 0;
-        return;
+        _plot = new QtEmpty;
       }
       _plot->attach(_frame);
     }
@@ -147,7 +152,7 @@ void PeakFitPlot::setup_payload(Cds& cds)
       printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
     if (_plot) {
       delete _plot;
-      _plot = 0;
+      _plot = new QtEmpty;
     }
   }
 }

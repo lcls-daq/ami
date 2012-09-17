@@ -10,6 +10,7 @@
 #include "ami/qt/NullTransform.hh"
 //#include "ami/qt/PrintAction.hh"
 #include "ami/qt/RunMaster.hh"
+#include "ami/qt/QtUtils.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
@@ -126,17 +127,6 @@ const ImageColorControl& ImageDisplay::control() const { return *_zrange; }
 
 ImageGridScale& ImageDisplay::grid_scale() { return *_units; }
 
-static void setChildrenVisible(QLayout* l, bool v)
-{
-  for(int i=0; i<l->count(); i++) {
-    QLayoutItem* item = l->itemAt(i);
-    if (item->widget())
-      item->widget()->setVisible(v);
-    else if (item->layout())
-      setChildrenVisible(item->layout(), v);
-  }
-}
-
 void ImageDisplay::toggle_chrome()
 {
   if (_chrome_is_visible) {
@@ -148,7 +138,7 @@ void ImageDisplay::toggle_chrome()
     _chrome_action->setText("Hide chrome");
   }
 
-  setChildrenVisible(_chrome_layout, _chrome_is_visible);
+  QtUtils::setChildrenVisible(_chrome_layout, _chrome_is_visible);
 
   emit set_chrome_visible(_chrome_is_visible);
 }

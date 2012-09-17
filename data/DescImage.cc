@@ -1,5 +1,8 @@
 #include "ami/data/DescImage.hh"
 
+#include "ami/data/ImageMask.hh"
+
+#include <string.h>
 #include <stdio.h>
 
 using namespace Ami;
@@ -22,7 +25,10 @@ DescImage::DescImage(const char* name,
   _mmppx (0),
   _mmppy (1),
   _nsubframes(0)
-{}
+{
+  _mask_path[0]=0;
+  _mask = 0;
+}
 
 DescImage::DescImage(const Pds::DetInfo& info,
 		     unsigned channel,
@@ -41,7 +47,10 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _mmppx (0),
   _mmppy (1),
   _nsubframes(0)
-{}
+{
+  _mask_path[0]=0;
+  _mask = 0;
+}
 
 DescImage::DescImage(const Pds::DetInfo& info,
 		     const char* name, 
@@ -66,7 +75,62 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _mmppx (0),
   _mmppy (1),
   _nsubframes(0)
-{}
+{
+  _mask_path[0]=0;
+  _mask = 0;
+}
+
+DescImage::DescImage(const DescImage& d) :
+  DescEntry(d),
+  _nbinsx  (d._nbinsx),
+  _nbinsy  (d._nbinsy),
+  _ppbx    (d._ppbx),
+  _ppby    (d._ppby),
+  _xp0     (d._xp0),
+  _yp0     (d._yp0),
+  _mmppx   (d._mmppx),
+  _mmppy   (d._mmppy),
+  _nsubframes(0)
+{
+  for(unsigned i=0; i<d._nsubframes; i++) {
+    const SubFrame& f = d._subframes[i];
+    add_frame(f.x, f.y, f.nx, f.ny);
+  }
+
+  strncpy(_mask_path, d._mask_path, PATHLEN);
+
+  if (strlen(d._mask_path))
+    _mask = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, d._mask_path);
+  else
+    _mask = 0;
+}
+
+DescImage::DescImage(const DescImage& d, const char* mask_path) :
+  DescEntry(d),
+  _nbinsx  (d._nbinsx),
+  _nbinsy  (d._nbinsy),
+  _ppbx    (d._ppbx),
+  _ppby    (d._ppby),
+  _xp0     (d._xp0),
+  _yp0     (d._yp0),
+  _mmppx   (d._mmppx),
+  _mmppy   (d._mmppy),
+  _nsubframes(0)
+{
+  for(unsigned i=0; i<d._nsubframes; i++) {
+    const SubFrame& f = d._subframes[i];
+    add_frame(f.x, f.y, f.nx, f.ny);
+  }
+
+  strncpy(_mask_path, mask_path, PATHLEN);
+
+  _mask = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, mask_path);
+}
+
+DescImage::~DescImage()
+{
+  if (_mask) delete _mask;
+}
 
 void DescImage::params(unsigned nbinsx,
 		       unsigned nbinsy,
@@ -183,4 +247,3 @@ bool DescImage::rphi_bounds(int& x0, int& x1, int& y0, int& y1,
   y1 += f.y;
   return true;
 }
-

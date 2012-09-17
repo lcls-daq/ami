@@ -8,6 +8,7 @@
 #include "ami/qt/CursorOverlay.hh"
 #include "ami/qt/RPhiProjectionPlotDesc.hh"
 #include "ami/qt/ImageIntegral.hh"
+#include "ami/qt/ImageContrast.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
@@ -42,7 +43,7 @@
 
 using namespace Ami::Qt;
 
-enum { PlotProjection, PlotIntegral };
+enum { PlotProjection, PlotIntegral, PlotContrast };
 
 ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
 					 ChannelDefinition* channels[],
@@ -70,8 +71,10 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   _plot_tab        = new QTabWidget(0);
   _projection_plot = new RPhiProjectionPlotDesc(0, *_annulus);
   _integral_plot   = new ImageIntegral(0);
+  _contrast_plot   = new ImageContrast(0);
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
   _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
+  _plot_tab->insertTab(PlotContrast  ,_contrast_plot  ,"Contrast"); 
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
@@ -111,7 +114,8 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
-  _integral_plot->post(this, SLOT(add_post()));
+  _integral_plot->post(this, SLOT(add_integral_post()));
+  _contrast_plot->post(this, SLOT(add_contrast_post()));
 
   ovlyB->setEnabled(false);
   _ovlyB = ovlyB;
@@ -136,6 +140,7 @@ void ImageRPhiProjection::save(char*& p) const
 
   XML_insert( p, "RPhiProjectionPlotDesc", "_projection_plot", _projection_plot->save(p) );
   XML_insert( p, "ImageIntegral", "_integral_plot", _integral_plot->save(p) );
+  XML_insert( p, "ImageContrast", "_contrast_plot", _contrast_plot->save(p) );
 
   XML_insert( p, "AnnulusCursors", "_annulus", _annulus->save(p) );
 
@@ -183,6 +188,8 @@ void ImageRPhiProjection::load(const char*& p)
       _projection_plot->load(p);
     else if (tag.name == "_integral_plot")
       _integral_plot  ->load(p);
+    else if (tag.name == "_contrast_plot")
+      _contrast_plot  ->load(p);
     else if (tag.name == "_annulus")
       _annulus->load(p);
     else if (tag.name == "_pplots") {
@@ -273,6 +280,25 @@ void ImageRPhiProjection::set_channel(int c)
 
 void ImageRPhiProjection::plot()
 {
+#define CASE_PLOT(pplot) {                                              \
+    if (pplot->postAnalysis()) {                                        \
+      QString     qtitle = _add_post(pplot->qtitle(),pplot->expression()); \
+      DescEntry*  entry  = pplot->desc(qPrintable(qtitle));             \
+      PostAnalysis::instance()->plot(qtitle,entry,_posts.back());       \
+    }                                                                   \
+    else {                                                              \
+      DescEntry*  desc = pplot->desc(qPrintable(_title->text()));       \
+      CursorPlot* plot =                                                \
+        new CursorPlot(this, _title->text(), _channel,                  \
+                       new BinMath(*desc,pplot->expression()));         \
+      delete desc;                                                      \
+      _cplots.push_back(plot);                                          \
+      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));        \
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*))); \
+    }                                                                   \
+    emit changed();                                                     \
+  }
+
   double f0 = _annulus->phi0();
   double f1 = _annulus->phi1();
   if (!(f0 < f1)) f1 += 2*M_PI;
@@ -292,48 +318,39 @@ void ImageRPhiProjection::plot()
       break;
     }
   case PlotIntegral:
-    {
-      if (_integral_plot->postAnalysis()) {
-        QString     qtitle = _add_post();
-        DescEntry*  entry  = _integral_plot->desc(qPrintable(qtitle));
-        PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
-      }
-      else {
-        DescEntry*  desc = _integral_plot->desc(qPrintable(_title->text()));
-        CursorPlot* plot = 
-          new CursorPlot(this, _title->text(), _channel, 
-                         new BinMath(*desc,_integral_plot->expression()));
-        delete desc;
-      
-        _cplots.push_back(plot);
-
-        connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
-        connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-      }
-
-      emit changed();
-      break;
-    }
+    CASE_PLOT(_integral_plot);
+    break;
+  case PlotContrast:
+    CASE_PLOT(_contrast_plot);
+    break;
   default:
     break;
   }
+
+#undef CASE_PLOT
 }
 
-void ImageRPhiProjection::add_post() 
+void ImageRPhiProjection::add_integral_post() 
 {
-  _add_post(); 
+  _add_post(_integral_plot->qtitle(),_integral_plot->expression()); 
   _posts.back()->signup();
 }
 
-QString ImageRPhiProjection::_add_post()
+void ImageRPhiProjection::add_contrast_post() 
 {
-  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(_integral_plot->qtitle());
+  _add_post(_contrast_plot->qtitle(),_contrast_plot->expression()); 
+  _posts.back()->signup();
+}
+
+QString ImageRPhiProjection::_add_post(const QString& title, const char* expr)
+{
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(title);
 
   Ami::DescCache*  desc = new Ami::DescCache(qPrintable(qtitle),
                                              qPrintable(qtitle),
                                              Ami::PostAnalysis);
   CursorPost* post = new CursorPost(_channel,
-				    new BinMath(*desc,_integral_plot->expression()),
+				    new BinMath(*desc,expr),
                                     this);
   _posts.push_back(post);
 
@@ -363,6 +380,12 @@ void ImageRPhiProjection::update_range()
                                _annulus->r_outer(),
                                _annulus->phi0(),
                                _annulus->phi1());
+  _contrast_plot->update_range(_annulus->xcenter(),
+                               _annulus->ycenter(),
+                               _annulus->r_inner(),
+                               _annulus->r_outer(),
+                               _annulus->phi0(),
+                               _annulus->phi1());
 }
 
 void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
@@ -373,19 +396,35 @@ void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
 
 void ImageRPhiProjection::plottab_changed(int index)
 {
-  _ovlyB->setEnabled(index==PlotIntegral);
+  _ovlyB->setEnabled(index==PlotIntegral ||
+                     index==PlotContrast);
 }
 
 void ImageRPhiProjection::overlay()
 {
-  if (_integral_plot->postAnalysis()) {
-    DescEntry* desc = _integral_plot->desc(qPrintable(_add_post()));
-    new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+#define CASE_PLOT(pplot) {                                              \
+    if (pplot->postAnalysis()) {                                        \
+      DescEntry* desc = pplot->desc(qPrintable(_add_post(pplot->qtitle(),pplot->expression()))); \
+      new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back()); \
+    }                                                                   \
+    else {                                                              \
+      DescEntry* desc = pplot->desc(qPrintable(_title->text()));        \
+      new QtPlotSelector(*this, *this, desc);                           \
+    }                                                                   \
   }
-  else {
-    DescEntry* desc = _integral_plot->desc(qPrintable(_title->text()));
-    new QtPlotSelector(*this, *this, desc);
+
+  switch(_plot_tab->currentIndex()) {
+  case PlotIntegral:
+    CASE_PLOT(_integral_plot);
+    break;
+  case PlotContrast:
+    CASE_PLOT(_contrast_plot);
+    break;
+  default:
+    break;
   }
+
+#undef CASE_PLOT
 }
 
 void ImageRPhiProjection::add_overlay(DescEntry* desc,
@@ -396,7 +435,9 @@ void ImageRPhiProjection::add_overlay(DescEntry* desc,
                                          *plot,
                                          _channel, 
                                          new BinMath(*desc,
-                                                     _integral_plot->expression()));
+                                                     _plot_tab->currentIndex()==PlotIntegral ?
+                                                     _integral_plot->expression() :
+                                                     _contrast_plot->expression()));
                                      
   delete desc;
 

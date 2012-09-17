@@ -36,11 +36,11 @@ namespace Ami {
     PeakFitPlot(const char*&);
     ~PeakFitPlot();
   public:
-    DescEntry& output   () const;
     unsigned   input    () const;
     Parameter  prm      () const;
     const char* feature() const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }

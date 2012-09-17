@@ -1,6 +1,7 @@
 #include "ChannelDefinition.hh"
 
 #include "ami/qt/Display.hh"
+#include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ChannelMath.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/Transform.hh"
@@ -8,6 +9,8 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/FeatureCalculator.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/MaskDisplay.hh"
+#include "ami/qt/QtBase.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -20,6 +23,7 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryRefOp.hh"
+#include "ami/data/MaskImage.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
@@ -33,6 +37,7 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QIntValidator>
 #include <QtGui/QComboBox>
+#include <QtGui/QCheckBox>
 
 
 #define bold(t) #t
@@ -66,7 +71,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _plot            (0),
   _scale           (new QLineEdit),
   _operator_is_ref (false),
-  _configured_ref  (false)
+  _configured_ref  (false),
+  _mask_display    (new MaskDisplay)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -95,6 +101,10 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   QPushButton* applyB   = new QPushButton("OK");
   QPushButton* closeB   = new QPushButton("Close");
   QPushButton* scaleB   = new QPushButton("Enter");
+
+  _maskB = new QCheckBox  ("Apply Mask");
+  QPushButton* mloadB = new QPushButton("Load");
+  QPushButton* meditB = new QPushButton("Edit");
 
   QVBoxLayout* l = new QVBoxLayout;
   { if (!refnames.empty()) {
@@ -130,6 +140,11 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
       layout1->addWidget(refB);
       layout1->addWidget(loadB);
       layout->addLayout(layout1); }
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addWidget(_maskB);
+      layout1->addWidget(mloadB);
+      layout1->addWidget(meditB);
+      layout->addLayout(layout1); }
     plot_box->setLayout(layout);
     l->addWidget(plot_box); }
   { QHBoxLayout* layout = new QHBoxLayout;
@@ -144,6 +159,14 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     layout->addWidget(closeB);
     layout->addStretch(); 
     l->addLayout(layout); }
+
+  bool use_mask = dynamic_cast<ImageDisplay*>(&frame)!=0;
+  if (!use_mask) {
+    _maskB->hide();
+    mloadB->hide();
+    meditB->hide();
+  }
+
   setLayout(l);
 
   connect(this    , SIGNAL(reference_loaded(bool)), refB, SLOT(setEnabled(bool)));
@@ -155,6 +178,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(_filter , SIGNAL(changed()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
   connect(scaleB  , SIGNAL(clicked()), this, SLOT(set_scale()));
+  connect(mloadB  , SIGNAL(clicked()), this, SLOT(load_mask()));
+  connect(meditB  , SIGNAL(clicked()), this, SLOT(edit_mask()));
 
   noneB  ->setChecked(!init);
   singleB->setChecked(init);
@@ -179,6 +204,8 @@ void ChannelDefinition::save(char*& p) const
   XML_insert( p, "Filter"      , "_filter"  , _filter   ->save(p) );
   XML_insert( p, "Transform"   , "_transform",_transform->save(p) );
   XML_insert( p, "QLineEdit"   , "_scale"   , QtPersistent::insert(p,_scale->text()) );
+  XML_insert( p, "QCheckBox"   , "_maskB"   , QtPersistent::insert(p, _maskB->checkState()==::Qt::Checked) );
+  XML_insert( p, "QString"     , "_mask_file", QtPersistent::insert(p, _mask_file) );
 }
 
 void ChannelDefinition::load(const char*& p)
@@ -217,6 +244,10 @@ void ChannelDefinition::load(const char*& p)
       _transform->load(p);
     else if (tag.name == "_scale")
       _scale    ->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_maskB")
+      _maskB    ->setChecked(QtPersistent::extract_b(p) ? ::Qt::Checked : ::Qt::Unchecked);
+    else if (tag.name == "_mask_file")
+      _mask_file = QtPersistent::extract_s(p);
   XML_iterate_close(ChannelDefinition,tag);
 
   _plot_grp->button(id)->setChecked(true);
@@ -240,7 +271,26 @@ void ChannelDefinition::load_reference()
   _plot_grp->button(_Reference)->setChecked(true);
   apply();
 }
-	  
+
+void ChannelDefinition::load_mask()
+{
+  QString ref_dir(Path::base());
+  QString file = QFileDialog::getOpenFileName(this,
+                                              "Mask File",
+                                              ref_dir, "*.msk;;*.dat");
+  
+  if (file.isNull())
+    ;
+  else
+    _mask_file = file;
+}
+
+void ChannelDefinition::edit_mask()
+{
+  _mask_display->setup(_plot,_mask_file);
+  _mask_display->front();
+}
+
 void ChannelDefinition::show_plot(bool s) 
 {
   //  This should be a slot on the display (QwtPlot)
@@ -263,30 +313,15 @@ void ChannelDefinition::apply()
 
   switch(_mode = _plot_grp->checkedId()) {
   case _Single:
-    if (_refBox) {
-      _operator = new EntryRefOp(_refBox->currentIndex());
-      _operator->next(new Single(scale));
-    }
-    else
-      _operator = new Single(scale);
+    _operator = new Single(scale);
     _operator_is_ref  = false;
     break;
   case _Average     : 
-    if (_refBox) {
-      _operator = new EntryRefOp(_refBox->currentIndex());
-      _operator->next(new Average(_interval->text().toInt(),scale));
-    }
-    else
-      _operator = new Average(_interval->text().toInt(),scale);
+    _operator = new Average(_interval->text().toInt(),scale);
     _operator_is_ref  = false;
     break;
   case _Variance    : 
-    if (_refBox) {
-      _operator = new EntryRefOp(_refBox->currentIndex());
-      _operator->next(new Variance(_interval->text().toInt(),scale));
-    }
-    else
-      _operator = new Variance(_interval->text().toInt(),scale);
+    _operator = new Variance(_interval->text().toInt(),scale);
     _operator_is_ref  = false;
     break;
   case _Reference:
@@ -299,6 +334,26 @@ void ChannelDefinition::apply()
     _operator = 0;
     _operator_is_ref  = false;
     break;
+  }
+
+  if (_maskB->checkState()==::Qt::Checked) {
+    AbsOperator* op = new MaskImage(qPrintable(_mask_file));
+    op->next(_operator);
+    _operator = op;
+  }
+
+  if (_refBox) {
+    switch(_mode) {
+    case _Single:
+    case _Average:
+    case _Variance:
+      {  AbsOperator* op = new EntryRefOp(_refBox->currentIndex());
+        op->next(_operator);
+        _operator = op; }
+      break;
+    default:
+      break;
+    }
   }
 
   _changed = true;

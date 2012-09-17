@@ -96,7 +96,7 @@ Reference::~Reference()
   if (_entry) delete _entry;
 }
 
-DescEntry& Reference::output   () const { return _entry->desc(); }
+DescEntry& Reference::_routput   () const { return _entry->desc(); }
 
 void*      Reference::_serialize(void* p) const
 {

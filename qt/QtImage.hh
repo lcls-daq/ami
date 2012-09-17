@@ -38,6 +38,7 @@ namespace Ami {
       void        yscale_update() ;
       void        canvas_size(const QSize&,
                               QGridLayout&);
+      void        canvas_resize(const QSize&);
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
       float           value(unsigned,unsigned) const;

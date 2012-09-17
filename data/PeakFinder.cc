@@ -66,7 +66,7 @@ PeakFinder::~PeakFinder()
     delete _fn;
 }
 
-DescEntry& PeakFinder::output   () const { return _output_entry->desc(); }
+DescEntry& PeakFinder::_routput   () const { return _output_entry->desc(); }
 
 void*      PeakFinder::_serialize(void* p) const
 {

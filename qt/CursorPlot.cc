@@ -8,6 +8,7 @@
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
+#include "ami/qt/QtEmpty.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/Cds.hh"
@@ -47,16 +48,17 @@ CursorPlot::CursorPlot(QWidget* parent,
   _channel (channel),
   _input   (input),
   _output_signature  (0),
-  _plot    (0),
+  _plot    (new QtEmpty),
   _auto_range(0)
 {
+  _plot->attach(_frame);
   setPlotType(_input->output().type());
 }
 
 CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
   QtPlot   (parent),
-  _plot    (0),
+  _plot    (new QtEmpty),
   _auto_range(0)
 {
   load(p);
@@ -92,6 +94,7 @@ void CursorPlot::load(const char*& p)
   XML_iterate_close(CursorPlot,tag);
 
   _output_signature=0;
+  _plot->attach(_frame);
   setPlotType(_input->output().type());
 }
 
@@ -125,7 +128,7 @@ void CursorPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::ScalarRange:
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
-        _plot = 0;
+        _plot = new QtEmpty;
         return;
       case Ami::DescEntry::Prof: 
         _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
@@ -138,7 +141,7 @@ void CursorPlot::setup_payload(Cds& cds)
         break;
       default:
         printf("CursorPlot type %d not implemented yet\n",entry->desc().type()); 
-        _plot = 0;
+        _plot = new QtEmpty;
         return;
       }
       _plot->attach(_frame);
@@ -149,7 +152,7 @@ void CursorPlot::setup_payload(Cds& cds)
       printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
     if (_plot) {
       delete _plot;
-      _plot = 0;
+      _plot = new QtEmpty;
     }
   }
 }
@@ -187,6 +190,7 @@ void CursorPlot::configure(char*& p, unsigned input, unsigned& output,
     new_expr.replace(QString("]%1[").arg(BinMath::moment1  ()),QString(BinMath::moment1  ()));
     new_expr.replace(QString("]%1[").arg(BinMath::moment2  ()),QString(BinMath::moment2  ()));
     new_expr.replace(QString("]%1[").arg(BinMath::range    ()),QString(BinMath::range    ()));
+    new_expr.replace(QString("]%1[").arg(BinMath::contrast ()),QString(BinMath::contrast ()));
   }
   QString end_expr;
   { int last=0, next=0, pos=0;

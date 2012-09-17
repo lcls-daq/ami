@@ -16,9 +16,8 @@ namespace Ami {
     Average(unsigned n=0, const char* p=0);
     Average(const char*&, const DescEntry&, FeatureCache&);
     ~Average();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }

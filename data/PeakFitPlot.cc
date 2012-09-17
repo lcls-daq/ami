@@ -151,7 +151,7 @@ PeakFitPlot::~PeakFitPlot()
 
 PeakFitPlot::Parameter  PeakFitPlot::prm      () const { return _prm; }
 
-DescEntry& PeakFitPlot::output   () const 
+DescEntry& PeakFitPlot::_routput   () const 
 { 
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }

@@ -9,6 +9,7 @@
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/QtUtils.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescTH1F.hh"
@@ -289,17 +290,6 @@ void WaveformDisplay::toggle_minor_grid()
   emit redraw();
 }
 
-static void setChildrenVisible(QLayout* l, bool v)
-{
-  for(int i=0; i<l->count(); i++) {
-    QLayoutItem* item = l->itemAt(i);
-    if (item->widget())
-      item->widget()->setVisible(v);
-    else if (item->layout())
-      setChildrenVisible(item->layout(), v);
-  }
-}
-
 void WaveformDisplay::toggle_chrome()
 {
   if (_chrome_is_visible) {
@@ -312,7 +302,7 @@ void WaveformDisplay::toggle_chrome()
     _chrome_action->setText("Hide chrome");
   }
 
-  setChildrenVisible(_chrome_layout, _chrome_is_visible);
+  QtUtils::setChildrenVisible(_chrome_layout, _chrome_is_visible);
 
   emit set_chrome_visible(_chrome_is_visible);
 }

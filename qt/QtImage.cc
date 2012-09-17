@@ -98,6 +98,12 @@ void           QtImage::attach(ImageFrame* p)
 
 void           QtImage::update() {}
 
+void           QtImage::canvas_resize(const QSize& sz)
+{
+  _xgrid->resize(sz.width ());
+  _ygrid->resize(sz.height());
+}
+
 void           QtImage::canvas_size(const QSize& sz,
                                     QGridLayout& layout)
 {
@@ -107,14 +113,6 @@ void           QtImage::canvas_size(const QSize& sz,
   }
   layout.addWidget(_xgrid,1,0);
   layout.addWidget(_ygrid,0,1);
-#if 0
-  layout.addItem(new QSpacerItem(0,0),2,0);
-  layout.addItem(new QSpacerItem(0,0),0,2);
-  layout.addItem(new QSpacerItem(0,0),1,1);
-  layout.addItem(new QSpacerItem(0,0),2,2);
-  layout.setColumnStretch(2,2);
-  layout.setRowStretch(2,2);
-#endif
 }
 
 

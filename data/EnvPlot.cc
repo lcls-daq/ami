@@ -88,7 +88,7 @@ EnvPlot::~EnvPlot()
   if (_entry ) delete _entry;
 }
 
-DescEntry& EnvPlot::output   () const 
+DescEntry& EnvPlot::_routput   () const 
 { 
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }

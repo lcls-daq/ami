@@ -6,6 +6,8 @@ using namespace Ami;
 
 AbsOperator::AbsOperator(AbsOperator::Type t) : _type(t), _next(0) {}
 
+AbsOperator::~AbsOperator() { if (_next) delete _next; }
+
 AbsOperator::Type AbsOperator::type() const { return (AbsOperator::Type)_type; }
 
 AbsOperator*      AbsOperator::next() const { return _next; }
@@ -17,6 +19,13 @@ Entry&                 AbsOperator::operator()(const Entry& i) const
   Entry& o = _operate(i);
   return _next ? _next->_operate(o) : o;
 }
+
+
+DescEntry&             AbsOperator::output() const
+{
+  return _next ? _next->output() : _routput();
+}
+
 
 bool                   AbsOperator::valid() const
 {

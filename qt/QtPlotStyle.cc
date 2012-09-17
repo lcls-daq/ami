@@ -208,11 +208,11 @@ void QtPlotStyle::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_symbol_size")
       _symbol_size = QtPersistent::extract_i(p);
-    else if (tag.name == "symbol_style")
+    else if (tag.name == "_symbol_style")
       _symbol_style = QtPersistent::extract_i(p);
-    else if (tag.name == "line_size")
+    else if (tag.name == "_line_size")
       _line_size = QtPersistent::extract_i(p);
-    else if (tag.name == "line_style")
+    else if (tag.name == "_line_style")
       _line_style = QtPersistent::extract_i(p);
   XML_iterate_close(QtPlot,tag);
 }

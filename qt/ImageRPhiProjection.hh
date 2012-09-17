@@ -31,6 +31,7 @@ namespace Ami {
     class CursorOverlay;
     class RPhiProjectionPlotDesc;
     class ImageIntegral;
+    class ImageContrast;
 
     class ImageRPhiProjection : public QtPWidget,
                                 public CPostParent,
@@ -56,12 +57,13 @@ namespace Ami {
       void remove_plot (QObject*);
       virtual void setVisible(bool);
       void update_range();
-      void add_post    ();
+      void add_integral_post    ();
+      void add_contrast_post    ();
       void plottab_changed(int);
     signals:
       void changed();
     private:
-      QString _add_post();
+      QString _add_post(const QString&, const char*);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
@@ -77,6 +79,7 @@ namespace Ami {
 
       RPhiProjectionPlotDesc* _projection_plot;
       ImageIntegral*          _integral_plot;
+      ImageContrast*          _contrast_plot;
 
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;

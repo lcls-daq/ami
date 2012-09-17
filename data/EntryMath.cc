@@ -90,7 +90,7 @@ EntryMath::~EntryMath()
   if (_entry) delete _entry;
 }
 
-DescEntry& EntryMath::output   () const { return _entry->desc(); }
+DescEntry& EntryMath::_routput   () const { return _entry->desc(); }
 
 void*      EntryMath::_serialize(void* p) const
 {

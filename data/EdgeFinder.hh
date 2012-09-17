@@ -40,10 +40,10 @@ namespace Ami {
     inline double deadtime()  { return _deadtime; }
     inline double fraction()  { return _fraction; }
     inline Parameter parameter() { return _parameter; }
-    DescEntry& output   () const;
     void*      desc   () const;
     int        desc_size () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }

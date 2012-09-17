@@ -50,7 +50,7 @@ Single::~Single()
   if (_term ) delete _term;
 }
 
-DescEntry& Single::output   () const { return _entry->desc(); }
+DescEntry& Single::_routput   () const { return _entry->desc(); }
 
 void*      Single::_serialize(void* p) const
 {

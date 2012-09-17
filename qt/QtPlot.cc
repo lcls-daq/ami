@@ -328,6 +328,7 @@ void QtPlot::update_counts(double n)
 void QtPlot::query_style()
 {
   _style.query(this);
+  set_style();
 }
 
 void QtPlot::set_style()

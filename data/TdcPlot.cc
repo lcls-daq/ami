@@ -128,7 +128,7 @@ TdcPlot::~TdcPlot()
   }
 }
 
-DescEntry& TdcPlot::output   () const 
+DescEntry& TdcPlot::_routput   () const 
 { 
   return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
@@ -155,7 +155,7 @@ Entry&     TdcPlot::_operate(const Entry& e) const
 
   const EntryRef* input  = static_cast<const EntryRef*>(&e);
 
-  if (output().type() != DescEntry::TH2F)
+  if (_routput().type() != DescEntry::TH2F)
     _output->reset();
 
   //
@@ -175,7 +175,7 @@ Entry&     TdcPlot::_operate(const Entry& e) const
         _chan[ch]->set(t);
         //  If we've seen at least one of each hit we need
         if ((mask |= 1<<ch)==_mask) {
-          switch(output().type()) {
+          switch(_routput().type()) {
           case DescEntry::TH1F:
             static_cast<EntryTH1F*>(_output)->addcontent(1.,_xterm->evaluate());
             break;
@@ -203,7 +203,7 @@ Entry&     TdcPlot::_operate(const Entry& e) const
     p++;
   }
 
-  switch(output().type()) {
+  switch(_routput().type()) {
   case DescEntry::TH1F:
     static_cast<EntryTH1F* >(_output)->addinfo(1,EntryTH1F ::Normalization); break;
   case DescEntry::TH2F:

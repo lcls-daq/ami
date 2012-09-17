@@ -18,9 +18,8 @@ namespace Ami {
     FFT();
     FFT(const char*&, const DescEntry&);
     ~FFT();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }

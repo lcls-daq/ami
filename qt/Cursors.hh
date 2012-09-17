@@ -12,6 +12,7 @@ namespace Ami {
       virtual void mouseMoveEvent   (double, double) = 0;
       virtual void mouseReleaseEvent(double, double) = 0;
       virtual void remove(CursorDefinition &) {};
+      virtual void mousePressRight  (double, double) {}
     };
   };
 };

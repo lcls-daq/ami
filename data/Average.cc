@@ -69,7 +69,7 @@ Average::~Average()
   if (_term ) delete _term ;
 }
 
-DescEntry& Average::output   () const { return _n ? _cache->desc() : _entry->desc(); }
+DescEntry& Average::_routput   () const { return _n ? _cache->desc() : _entry->desc(); }
 
 void*      Average::_serialize(void* p) const
 {

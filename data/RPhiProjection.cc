@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -61,7 +62,7 @@ RPhiProjection::~RPhiProjection()
   if (_output) delete _output;
 }
 
-DescEntry& RPhiProjection::output   () const 
+DescEntry& RPhiProjection::_routput   () const 
 { 
   return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
@@ -83,22 +84,42 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
     return *_output;
 
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
-  const DescImage& inputd = _input->desc();
+  const DescImage& inputd  = _input->desc();
+  const ImageMask* mask    = inputd.mask();
   const double           p = _input->info(EntryImage::Pedestal);
   double xc = _xc;
   double yc = _yc;
   double lo = _lo;
   double hi = _hi;
   if (_input) {
-    switch(output().type()) {
+    switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized
-      { const DescTH1F& d = static_cast<const DescTH1F&>(output());
+      { const DescTH1F& d = static_cast<const DescTH1F&>(_routput());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	//  Loop over all pixels in the rectangular region within distance R
 	o->reset();
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
-	  if (inputd.nframes()) {
+          if (mask) {
+            if (inputd.rphi_bounds(x0,x1,y0,y1,
+                                   xc,yc, d.xup())) {
+              for(int j=y0; j<y1; j++) {
+                if (!mask->row(j)) continue;
+                double dy  = inputd.biny(j)-yc;
+                double dy2 = dy*dy;
+                for(int k=x0; k<x1; k++) {
+                  if (!mask->rowcol(j,k)) continue;
+                  double dx  = inputd.binx(k)-xc;
+                  double dx2 = dx*dx;
+                  double f   = atan2(dy,dx);
+                  if ( (f>=lo && f<=hi) ||
+                       (f+2*M_PI <= hi) )
+                    o->addcontent(_input->content(k,j)-p,sqrt(dx2+dy2));
+                }
+              }
+            }
+          }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
 	      if (inputd.rphi_bounds(x0,x1,y0,y1,
 				     xc,yc, d.xup(),fn)) {
@@ -134,7 +155,31 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	}
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
-	  if (inputd.nframes()) {
+          if (mask) {
+            if (inputd.rphi_bounds(x0,x1,y0,y1,
+                                   _xc,_yc, hi)) {
+              double losq = lo*lo;
+              double hisq = hi*hi;
+              for(int j=y0; j<y1; j++) {
+                if (!mask->row(j)) continue;
+                double dy  = inputd.biny(j)-yc;
+                double dy2 = dy*dy;
+                for(int k=x0; k<x1; k++) {
+                  if (!mask->rowcol(j,k)) continue;
+                  double dx  = inputd.binx(k)-xc;
+                  double dx2 = dx*dx;
+                  double rsq = dx2 + dy2;
+                  if (rsq >= losq && rsq <= hisq) {
+                    double f = atan2(dy,dx);
+                    double y = _input->content(k,j)-p;
+                    o->addcontent(y, f);
+                    o->addcontent(y, f+2*M_PI);
+                  }
+                }
+              }
+            }
+          }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
 	      if (inputd.rphi_bounds(x0,x1,y0,y1,
 				     _xc,_yc, hi, fn)) {
@@ -181,13 +226,32 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
 	break; }
     case DescEntry::Prof:  // normalized
-      { const DescProf& d = static_cast<const DescProf&>(output());
+      { const DescProf& d = static_cast<const DescProf&>(_routput());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
 	//  Loop over all pixels in the rectangular region within distance R
 	o->reset();
 	if (_axis == R) {
 	  int x0,x1,y0,y1;
-	  if (inputd.nframes()) {
+          if (mask) {
+            if (inputd.rphi_bounds(x0,x1,y0,y1,
+                                   _xc,_yc, d.xup())) {
+              for(int j=y0; j<y1; j++) {
+                if (!mask->row(j)) continue;
+                double dy  = inputd.biny(j)-yc;
+                double dy2 = dy*dy;
+                for(int k=x0; k<x1; k++) {
+                  if (!mask->rowcol(j,k)) continue;
+                  double dx  = inputd.binx(k)-xc;
+                  double dx2 = dx*dx;
+                  double f   = atan2(dy,dx);
+                  if ( (f>=lo && f<=hi) ||
+                       (f+2*M_PI <= hi) )
+                    o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
+                }
+              }
+            }
+	  }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
 	      if (inputd.rphi_bounds(x0,x1,y0,y1,
 				     _xc,_yc, d.xup(),fn)) {
@@ -223,7 +287,31 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 	}
 	else { // (_axis == Phi)
 	  int x0,x1,y0,y1;
-	  if (inputd.nframes()) {
+          if (mask) {
+            if (inputd.rphi_bounds(x0,x1,y0,y1,
+                                   _xc,_yc, hi)) {
+              double losq = lo*lo;
+              double hisq = hi*hi;
+              for(int j=y0; j<y1; j++) {
+                if (!mask->row(j)) continue;
+                double dy  = inputd.biny(j)-yc;
+                double dy2 = dy*dy;
+                for(int k=x0; k<x1; k++) {
+                  if (!mask->rowcol(j,k)) continue;
+                  double dx  = inputd.binx(k)-xc;
+                  double dx2 = dx*dx;
+                  double rsq = dx2 + dy2;
+                  if (rsq >= losq && rsq <= hisq) {
+                    double f = atan2(dy,dx);
+                    double y = _input->content(k,j)-p;
+                    o->addy(y, f);
+                    o->addy(y, f+2*M_PI);
+                  }
+                }
+              }
+            }
+          }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++)
 	      if (inputd.rphi_bounds(x0,x1,y0,y1,
 				     _xc,_yc, hi, fn)) {

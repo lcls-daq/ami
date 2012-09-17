@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -74,7 +75,7 @@ ContourProjection::~ContourProjection()
   if (_offset) delete[] _offset;
 }
 
-DescEntry& ContourProjection::output   () const 
+DescEntry& ContourProjection::_routput   () const 
 { 
   return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
@@ -96,6 +97,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   double ped = (double)(_input->info(EntryImage::Pedestal));
   const DescImage& inputd  = _input->desc();
+  const ImageMask* mask    = inputd.mask();
   ContourProjection* pthis = const_cast<ContourProjection*>(this);
   if (_input) {
     //
@@ -117,48 +119,101 @@ Entry&     ContourProjection::_operate(const Entry& e) const
     //
     //  Fill the projection
     //
-    switch(output().type()) {
+    switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized
-      { const DescTH1F& d = static_cast<const DescTH1F&>(output());
+      { const DescTH1F& d = static_cast<const DescTH1F&>(_routput());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	o->clear();
 	if (_axis == X) {
-	  unsigned ixlo = inputd.xbin(_xlo);
-	  unsigned ixhi = inputd.xbin(_xhi);
-	  unsigned iylo = inputd.ybin(_ylo);
-	  unsigned iyhi = inputd.ybin(_yhi);
-	  const int16_t* off = _offset;
-	  for(unsigned j=iylo; j<=iyhi; j++,off++) {
-	    for(unsigned i=ixlo; i<ixhi; i++) {
-	      double yp = inputd.binx(i) - double(*off);
-	      if (yp >= d.xlow() && yp <= d.xup())
-		if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
-	    }
-	  }
+          if (mask) {
+            unsigned ixlo = inputd.xbin(_xlo);
+            unsigned ixhi = inputd.xbin(_xhi);
+            unsigned iylo = inputd.ybin(_ylo);
+            unsigned iyhi = inputd.ybin(_yhi);
+            const int16_t* off = _offset;
+            for(unsigned j=iylo; j<=iyhi; j++,off++) {
+              if (!mask->row(j)) continue;
+              for(unsigned i=ixlo; i<ixhi; i++) {
+                if (!mask->rowcol(j,i)) continue;
+                double yp = inputd.binx(i) - double(*off);
+                if (yp >= d.xlow() && yp <= d.xup())
+                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+              }
+            }
+          }
+          else {
+            unsigned ixlo = inputd.xbin(_xlo);
+            unsigned ixhi = inputd.xbin(_xhi);
+            unsigned iylo = inputd.ybin(_ylo);
+            unsigned iyhi = inputd.ybin(_yhi);
+            const int16_t* off = _offset;
+            for(unsigned j=iylo; j<=iyhi; j++,off++) {
+              for(unsigned i=ixlo; i<ixhi; i++) {
+                double yp = inputd.binx(i) - double(*off);
+                if (yp >= d.xlow() && yp <= d.xup())
+                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+              }
+            }
+          }
 	}
 	else { // (_axis == Y)
-	  unsigned ixlo = inputd.xbin(_xlo);
-	  unsigned ixhi = inputd.xbin(_xhi);
-	  unsigned iylo = inputd.ybin(_ylo);
-	  unsigned iyhi = inputd.ybin(_yhi);
-	  for(unsigned j=iylo; j<=iyhi; j++) {
-	    const int16_t* off = _offset;
-	    double y = inputd.biny(j);
-	    for(unsigned i=ixlo; i<ixhi; i++) {
-	      double yp = y - double(*off++);
-	      if (yp >= d.xlow() && yp <= d.xup())
-		if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
-	    }
-	  }
+          if (mask) {
+            unsigned ixlo = inputd.xbin(_xlo);
+            unsigned ixhi = inputd.xbin(_xhi);
+            unsigned iylo = inputd.ybin(_ylo);
+            unsigned iyhi = inputd.ybin(_yhi);
+            for(unsigned j=iylo; j<=iyhi; j++) {
+              if (!mask->row(j)) continue;
+              const int16_t* off = _offset;
+              double y = inputd.biny(j);
+              for(unsigned i=ixlo; i<ixhi; i++) {
+                if (!mask->rowcol(j,i)) continue;
+                double yp = y - double(*off++);
+                if (yp >= d.xlow() && yp <= d.xup())
+                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+              }
+            }
+          }
+          else {
+            unsigned ixlo = inputd.xbin(_xlo);
+            unsigned ixhi = inputd.xbin(_xhi);
+            unsigned iylo = inputd.ybin(_ylo);
+            unsigned iyhi = inputd.ybin(_yhi);
+            for(unsigned j=iylo; j<=iyhi; j++) {
+              const int16_t* off = _offset;
+              double y = inputd.biny(j);
+              for(unsigned i=ixlo; i<ixhi; i++) {
+                double yp = y - double(*off++);
+                if (yp >= d.xlow() && yp <= d.xup())
+                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+              }
+            }
+          }
 	}
 	o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
 	break; }
     case DescEntry::Prof:  // normalized
-      { const DescProf& d = static_cast<const DescProf&>(output());
+      { const DescProf& d = static_cast<const DescProf&>(_routput());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
 	o->reset();
 	if (_axis == X) {
-	  if (inputd.nframes()) {
+          if (mask) {
+	    unsigned ixlo = inputd.xbin(_xlo);
+	    unsigned ixhi = inputd.xbin(_xhi);
+	    unsigned iylo = inputd.ybin(_ylo);
+	    unsigned iyhi = inputd.ybin(_yhi);
+	    const int16_t* off = _offset;
+	    for(unsigned j=iylo; j<=iyhi; j++,off++) {
+              if (!mask->row(j)) continue;
+	      for(unsigned i=ixlo; i<ixhi; i++) {
+                if (!mask->rowcol(j,i)) continue;
+		double yp = inputd.binx(i) - double(*off);
+		if (yp >= d.xlow() && yp <= d.xup())
+ 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+	      }
+	    }
+          }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
 	      int ixlo = inputd.xbin(_xlo);
 	      int ixhi = inputd.xbin(_xhi);
@@ -191,7 +246,24 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	  }
 	}
 	else { // (_axis == Y)
-	  if (inputd.nframes()) {
+          if (mask) {
+	    unsigned ixlo = inputd.xbin(_xlo);
+	    unsigned ixhi = inputd.xbin(_xhi);
+	    unsigned iylo = inputd.ybin(_ylo);
+	    unsigned iyhi = inputd.ybin(_yhi);
+	    for(unsigned j=iylo; j<=iyhi; j++) {
+              if (!mask->row(j)) continue;
+	      const int16_t* off = _offset;
+	      double y = inputd.biny(j);
+	      for(unsigned i=ixlo; i<ixhi; i++,off++) {
+                if (!mask->rowcol(j,i)) continue;
+		double yp = y - double(*off);
+		if (yp >= d.xlow() && yp <= d.xup())
+ 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+	      }
+	    }
+          }
+	  else if (inputd.nframes()) {
 	    for(unsigned fn=0; fn<inputd.nframes(); fn++) {
 	      int ixlo = inputd.xbin(_xlo);
 	      int ixhi = inputd.xbin(_xhi);

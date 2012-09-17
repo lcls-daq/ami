@@ -56,7 +56,7 @@ FFT::~FFT()
   if (_output) delete _output;
 }
 
-DescEntry& FFT::output   () const 
+DescEntry& FFT::_routput   () const 
 { 
   return _output->desc();
 }

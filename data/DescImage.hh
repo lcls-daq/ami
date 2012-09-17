@@ -13,6 +13,8 @@ namespace Ami {
     uint16_t ny;
   };
 
+  class ImageMask;
+
   class DescImage : public DescEntry {
   public:
     DescImage(const Pds::DetInfo& info,
@@ -33,6 +35,11 @@ namespace Ami {
 	      int ppbx=1, int ppby=1,  // pixels per bin
               unsigned xp0=0, unsigned yp0=0,   // pixel origin
               bool isnormalized=true);
+
+    DescImage(const DescImage&);
+    DescImage(const DescImage&, const char*);
+
+    ~DescImage();
 
     unsigned nbinsx() const;
     unsigned nbinsy() const;
@@ -67,6 +74,8 @@ namespace Ami {
 
     const SubFrame& frame(unsigned) const;
 
+    const ImageMask* mask() const;
+
     bool xy_bounds(int& x0, int& x1, int& y0, int& y1) const;
     bool xy_bounds(int& x0, int& x1, int& y0, int& y1, unsigned frame) const;
 
@@ -87,6 +96,9 @@ namespace Ami {
     enum { MAX_SUBFRAMES=64 };
     uint32_t _nsubframes;
     SubFrame _subframes[MAX_SUBFRAMES];
+    enum { PATHLEN=256 };
+    char       _mask_path[PATHLEN];
+    ImageMask* _mask;
   };
 
   inline unsigned DescImage::nbinsx() const {return _nbinsx;}
@@ -103,6 +115,7 @@ namespace Ami {
   inline float DescImage::biny(unsigned b) const {return _yp0+float(b)*_ppby;}
   inline unsigned DescImage::nframes() const { return _nsubframes; }
   inline const SubFrame& DescImage::frame(unsigned i) const { return _subframes[i]; }
+  inline const ImageMask* DescImage::mask() const { return _mask; }
 };
 
 #endif

@@ -44,11 +44,13 @@ DescTH1F* EntryScalarRange::result(void* p) const
   float xlow, xhigh;
   if (_desc.stat() == DescScalarRange::MinMax) {
     double r = _desc.extent()*(max()-min());
+    if (r<=0) r = 0.5;
     xlow  = min() - r;
     xhigh = max() + r;
   }
   else {
     double r = _desc.extent()*rms();
+    if (r<=0) r = 0.5;
     xlow  = mean() - r;
     xhigh = mean() + r;
   }

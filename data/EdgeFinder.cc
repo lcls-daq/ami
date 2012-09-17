@@ -86,8 +86,8 @@ EdgeFinder::~EdgeFinder()
     delete _output_entry;
 }
 
-//DescEntry& EdgeFinder::output   () const { return _output_entry->desc(); }
-DescEntry& EdgeFinder::output   () const { return *_output; }
+//DescEntry& EdgeFinder::_routput   () const { return _output_entry->desc(); }
+DescEntry& EdgeFinder::_routput   () const { return *_output; }
 void* EdgeFinder::desc   () const { return (void *)_output; }
 int EdgeFinder::desc_size   () const { return _output->size(); }
 

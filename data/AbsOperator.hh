@@ -22,19 +22,19 @@ namespace Ami {
 		XYProjection, RPhiProjection, 
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
 		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
-                XYHistogram, Zoom, EntryRefOp, Variance, CurveFit };
+                XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage };
     AbsOperator(Type t);
-    virtual ~AbsOperator() {}
+    virtual ~AbsOperator();
     Entry&       operator ()(const Entry&) const;
+    DescEntry&   output   () const;
     void*        serialize(void* p) const;
     Type         type() const;
     AbsOperator* next() const;
     void         next(AbsOperator* o);
     bool         valid() const;   // Operator was constructed without error
-  public:
-    virtual DescEntry& output   () const = 0;
-  private:
+  protected:
     virtual Entry& _operate  (const Entry&) const = 0;
+    virtual DescEntry& _routput          () const = 0;
     virtual void*  _serialize(void* p     ) const = 0;
     virtual bool   _valid     ()            const = 0;
   protected:

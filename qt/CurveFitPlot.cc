@@ -8,6 +8,7 @@
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
+#include "ami/qt/QtEmpty.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -44,17 +45,21 @@ CurveFitPlot::CurveFitPlot(QWidget*         parent,
   _channel (channel),
   _fit     (fit),
   _output_signature (0),
-  _plot    (0)
+  _plot    (new QtEmpty)
 {
+  _plot->attach(_frame);
+  setPlotType(fit->output().type());
 }
 
 CurveFitPlot::CurveFitPlot(QWidget* parent,
 		   const char*& p) :
   QtPlot   (parent),
   _fit     (0),
-  _plot    (0)
+  _plot    (new QtEmpty)
 {
   load(p);
+  _plot->attach(_frame);
+  setPlotType(_fit->output().type());
 }
 
 CurveFitPlot::~CurveFitPlot()
@@ -161,8 +166,7 @@ void CurveFitPlot::setup_payload(Cds& cds)
         break;
       default:
         printf("CurveFitPlot type %d not implemented yet\n",entry->desc().type()); 
-        _plot = 0;
-        return;
+        _plot = new QtEmpty;
       }
       _plot->attach(_frame);
     }
@@ -172,7 +176,7 @@ void CurveFitPlot::setup_payload(Cds& cds)
       printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
     if (_plot) {
       delete _plot;
-      _plot = 0;
+      _plot = new QtEmpty;
     }
   }
 }

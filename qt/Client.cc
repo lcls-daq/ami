@@ -7,6 +7,7 @@
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/QtUtils.hh"
 
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ChannelID.hh"
@@ -467,38 +468,9 @@ void Ami::Qt::Client::hideEvent(QHideEvent* e)
 
 void Ami::Qt::Client::set_chrome_visible(bool v)
 {
-  if (v) {
-    unsigned i = 0;
-    QLayoutItem* item;
-    while ((item = _layout3->itemAt(i++))) {
-      if (item->widget()) {
-        item->widget()->show();
-      }
-    }
-    i = 0;
-    while ((item = _layout->itemAt(i++))) {
-      if (item->widget()) {
-        item->widget()->show();
-      }
-    }
-  }
-  else {
-    unsigned i = 0;
-    QLayoutItem* item;
-    while ((item = _layout3->itemAt(i++))) {
-      if (item->widget()) {
-        item->widget()->hide();
-      }
-    }
-    i = 0;
-    while ((item = _layout->itemAt(i++))) {
-      if (item->widget()) {
-        item->widget()->hide();
-      }
-    }
-  }
-
   _chrome_changed = true;
+  QtUtils::setChildrenVisible(_layout3,v);
+  QtUtils::setChildrenVisible(_layout ,v);
   updateGeometry();
   resize(minimumWidth(),minimumHeight());
 }

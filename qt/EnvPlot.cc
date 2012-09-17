@@ -6,6 +6,7 @@
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
+#include "ami/qt/QtEmpty.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/SharedData.hh"
@@ -39,10 +40,12 @@ EnvPlot::EnvPlot(QWidget*         parent,
   _desc    (desc),
   _set     (set),
   _output_signature  (0),
-  _plot    (0),
+  _plot    (new QtEmpty),
   _shared  (shared)
 {
   if (shared) shared->signup();
+  _plot->attach(_frame);
+
   setPlotType(_desc->type());
 }
 
@@ -52,7 +55,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
   _filter  (0),
   _set     (Ami::PreAnalysis),
   _output_signature(0),
-  _plot    (0),
+  _plot    (new QtEmpty),
   _shared  (0)
 {
   XML_iterate_open(p,tag)
@@ -83,6 +86,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
 
   XML_iterate_close(EnvPlot,tag);
 
+  _plot->attach(_frame);
   setPlotType(_desc->type());
 }
 
@@ -90,7 +94,7 @@ EnvPlot::~EnvPlot()
 {
   if (_filter  ) delete _filter;
   delete _desc;
-  if (_plot    ) delete _plot;
+  delete _plot;
   if (_shared  ) _shared->resign();
 }
 
@@ -166,8 +170,7 @@ void EnvPlot::setup_payload(Cds& cds)
         break;
       default:
         printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
-        _plot = 0;
-        return;
+        _plot = new QtEmpty;
       }
       _plot->attach(_frame);
     }
@@ -177,7 +180,7 @@ void EnvPlot::setup_payload(Cds& cds)
       printf("%s output_signature %d not found\n",qPrintable(_name),_output_signature);
     if (_plot) {
       delete _plot;
-      _plot = 0;
+      _plot = new QtEmpty;
     }
   }
 }

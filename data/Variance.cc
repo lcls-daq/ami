@@ -71,7 +71,7 @@ Variance::~Variance()
   if (_term ) delete _term ;
 }
 
-DescEntry& Variance::output   () const { return _cache->desc(); }
+DescEntry& Variance::_routput   () const { return _cache->desc(); }
 
 void*      Variance::_serialize(void* p) const
 {

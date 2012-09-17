@@ -18,6 +18,7 @@
 #include "ami/data/EntryCache.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
@@ -28,7 +29,7 @@
 
 #include <stdio.h>
 
-enum Moment { None, Zero, First, Second };
+enum Moment { None, Zero, First, Second, Contrast };
 
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
@@ -199,26 +200,62 @@ namespace Ami {
       double evaluate() const {
 	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
 	const DescImage&  d = e.desc();
-	double sum = 0;
+        const ImageMask* mask = d.mask();
+	double s0 = 0, sum = 0, sqsum = 0;
 	double p   = double(e.info(EntryImage::Pedestal));
-	if (d.nframes()) {
+        if (mask) {
+	  unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
+          for(unsigned j=ylo; j<=yhi; j++) {
+            if (!mask->row(j)) continue;
+            for(unsigned i=xlo; i<=xhi; i++)
+              if (mask->rowcol(j,i)) {
+                double v = double(e.content(i,j))-p;
+                s0    += 1;
+                sum   += v;
+                sqsum += v*v;
+              }
+          }
+        }
+	else if (d.nframes()) {
 	  for(unsigned fn=0; fn<d.nframes(); fn++) {
 	    int xlo(_xlo), xhi(_xhi+1), ylo(_ylo), yhi(_yhi+1);
 	    if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
               for(int j=ylo; j<yhi; j++)
-                for(int i=xlo; i<xhi; i++)
-                  sum += double(e.content(i,j))-p;
+                for(int i=xlo; i<xhi; i++) {
+                  double v = double(e.content(i,j))-p;
+                  s0    += 1;
+                  sum   += v;
+                  sqsum += v*v;
+                }
             }
 	  }
 	}
 	else {
 	  unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
           for(unsigned j=ylo; j<=yhi; j++)
-            for(unsigned i=xlo; i<=xhi; i++)
-              sum += double(e.content(i,j))-p;
+            for(unsigned i=xlo; i<=xhi; i++) {
+              double v = double(e.content(i,j))-p;
+              s0    += 1;
+              sum   += v;
+              sqsum += v*v;
+            }
 	}
 	double n = double(e.info(EntryImage::Normalization));
-	return n > 0 ? sum / n : sum;
+        double v;
+        switch(_mom) {
+        case Zero:
+          v = sum;
+          if (n>0) v/=n;
+          break;
+        case Contrast:
+          v = sqrt(s0*sqsum/(sum*sum) - 1);
+          //          if (n>0) v/=sqrt(n);
+          break;
+        default:
+          v = 0;
+          break;
+        }
+        return v;
       }
     private:
       const Entry*& _entry;
@@ -251,10 +288,38 @@ namespace Ami {
       double evaluate() const {
 	const EntryImage& e = *static_cast<const EntryImage*>(_entry);
 	const DescImage& d = e.desc();
-	double sum = 0;
+        const ImageMask* mask = d.mask();
+	double s0 = 0, sum = 0, sqsum = 0;
 	const double p = e.info(EntryImage::Pedestal);
 	int ixlo, ixhi, iylo, iyhi;
-	if (d.nframes()) {
+        if (mask) {
+	  if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
+			    _xc, _yc, _r1)) {
+	    double xc(_xc), yc(_yc);
+	    double r0sq(_r0*_r0), r1sq(_r1*_r1);
+	    for(int j=iylo; j<=iyhi; j++) {
+              if (!mask->row(j)) continue;
+	      double dy  = d.biny(j)-yc;
+	      double dy2 = dy*dy;
+	      for(int i=ixlo; i<=ixhi; i++) {
+                if (!mask->rowcol(j,i)) continue;
+		double dx  = d.binx(i)-xc;
+		double dx2 = dx*dx;
+		double rsq = dx2 + dy2;
+		double f   = atan2(dy,dx);
+		if ( (rsq >= r0sq && rsq <= r1sq) &&
+		     ( (f>=_f0 && f<=_f1) ||
+		       (f+2*M_PI <= _f1) ) ) {
+                  double v = double(e.content(i,j))-p;
+                  s0    += 1;
+                  sum   += v;
+                  sqsum += v*v;
+                }
+	      }
+	    }
+	  }
+        }
+	else if (d.nframes()) {
 	  for(unsigned fn=0; fn<d.nframes(); fn++)
 	    if (d.rphi_bounds(ixlo, ixhi, iylo, iyhi,
 			      _xc, _yc, _r1, fn)) {
@@ -270,8 +335,12 @@ namespace Ami {
 		  double f   = atan2(dy,dx);
 		  if ( (rsq >= r0sq && rsq <= r1sq) &&
 		       ( (f>=_f0 && f<=_f1) ||
-			 (f+2*M_PI <= _f1) ) )
-		    sum += double(e.content(i,j))-p;
+			 (f+2*M_PI <= _f1) ) ) {
+                    double v = double(e.content(i,j))-p;
+                    s0    += 1;
+                    sum   += v;
+                    sqsum += v*v;
+                  }
 		}
 	      }
 	    }
@@ -291,8 +360,12 @@ namespace Ami {
 		double f   = atan2(dy,dx);
 		if ( (rsq >= r0sq && rsq <= r1sq) &&
 		     ( (f>=_f0 && f<=_f1) ||
-		       (f+2*M_PI <= _f1) ) )
-                  sum += double(e.content(i,j))-p;
+		       (f+2*M_PI <= _f1) ) ) {
+                  double v = double(e.content(i,j))-p;
+                  s0    += 1;
+                  sum   += v;
+                  sqsum += v*v;
+                }
 	      }
 	    }
 	  }
@@ -301,7 +374,21 @@ namespace Ami {
           //          }
 	}
 	double n = double(e.info(EntryImage::Normalization));
-	return n > 0 ? sum / n : sum;
+        double v;
+        switch(_mom) {
+        case Zero:
+          v = sum;
+          if (n > 0) v/=n;
+          break;
+        case Contrast:
+          v = sqrt(s0*sqsum/(sum*sum) - 1);
+          if ( n > 0) v/=sqrt(n);
+          break;
+        default:
+          v = 0;
+          break;
+        }
+        return v;
       }
     private:
       const Entry*& _entry;
@@ -317,10 +404,12 @@ using namespace Ami;
 static QChar _integrate(0x002C);  // ,
 static QChar _moment1  (0x0027);  // '
 static QChar _moment2  (0x0022);  // "
+static QChar _contrast (0x0021);  // !
 static QChar _range    (0x0023);  // #
 const QChar& BinMath::integrate() { return _integrate; }
 const QChar& BinMath::moment1  () { return _moment1  ; }
 const QChar& BinMath::moment2  () { return _moment2  ; }
+const QChar& BinMath::contrast () { return _contrast ; }
 const QChar& BinMath::range    () { return _range    ; }
 const double BinMath::floatPrecision() { return 1.e3; }
 
@@ -360,7 +449,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   { QString expr(_expression);
     QString new_expr;
     // parse expression for bin indices
-    QRegExp match("\\[[0-9,\\\'\\\"]+\\]");
+    QRegExp match("\\[[0-9!,\\\'\\\"]+\\]");
     int last=0;
     int pos=0;
     int mlen=0;
@@ -454,7 +543,7 @@ BinMath::~BinMath()
   if (_entry) delete _entry;
 }
 
-DescEntry& BinMath::output   () const 
+DescEntry& BinMath::_routput   () const 
 { 
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
 }
@@ -535,11 +624,14 @@ static bool _parseIndices(const QString& use,
   int index;
   if ((index=use.indexOf(_integrate)) == -1)
     if ((index=use.indexOf(_moment1)) == -1)
-      if ((index=use.indexOf(_moment2)) == -1) {
-        mom = None;
-        lo = hi = use.toInt();
-        return lo <  MAX_INDEX;
-      }
+      if ((index=use.indexOf(_moment2)) == -1) 
+        if ((index=use.indexOf(_contrast)) == -1) {
+          mom = None;
+          lo = hi = use.toInt();
+          return lo <  MAX_INDEX;
+        }
+        else
+          mom = Contrast;
       else
         mom = Second;
     else 
@@ -549,6 +641,7 @@ static bool _parseIndices(const QString& use,
 
   lo = use.mid(0,index).toInt();
   hi = use.mid(index+1,-1).toInt();
+
   return true;
 }
 

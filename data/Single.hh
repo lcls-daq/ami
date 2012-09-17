@@ -15,9 +15,8 @@ namespace Ami {
     Single(const char* =0);
     Single(const char*&, const DescEntry&, FeatureCache&);
     ~Single();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }

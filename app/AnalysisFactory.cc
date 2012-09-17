@@ -14,6 +14,8 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/server/ServerManager.hh"
 
+//#define DBUG
+
 using namespace Ami;
 
 AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
@@ -160,6 +162,11 @@ void AnalysisFactory::configure(unsigned       id,
         for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
           Analysis* a = *it;
           if (a->output().signature()==req.output()) {
+#ifdef DBUG
+            printf("Preserving analysis for %s [%d]\n",
+                   a->output().name(),
+                   a->output().signature());
+#endif
             _analyses.push_back(a);
             oldList.remove(a);
             lFound=true;
@@ -171,6 +178,11 @@ void AnalysisFactory::configure(unsigned       id,
           Analysis* a = new Analysis(id, *input, req.output(),
                                      cds, *_features[req.scalars()], p);
           _analyses.push_back(a);
+#ifdef DBUG
+          printf("Created analysis for %s [%d]\n",
+                 a->output().name(),
+                 a->output().signature());
+#endif
         }
       }
       else if (req.state()==ConfigureRequest::SetOpt) {
@@ -187,6 +199,11 @@ void AnalysisFactory::configure(unsigned       id,
   //
   for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
     Analysis* a = *it;
+#ifdef DBUG
+          printf("Removing analysis for %s [%d]\n",
+                 a->output().name(),
+                 a->output().signature());
+#endif
     delete a;
   }
 

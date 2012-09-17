@@ -22,9 +22,8 @@ namespace Ami {
     XYProjection(const char*&, const DescEntry&);
     XYProjection(const char*&);
     ~XYProjection();
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid() const { return true; }

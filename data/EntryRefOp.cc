@@ -32,12 +32,11 @@ EntryRefOp::EntryRefOp(const char*& p, const DescEntry& e) :
 
 EntryRefOp::~EntryRefOp()
 {
-  if (next()) delete next();
 }
 
 static DescRef _no_entry("NoEntry","none");
 
-DescEntry& EntryRefOp::output   () const 
+DescEntry& EntryRefOp::_routput   () const 
 { 
   return *_output;
 }

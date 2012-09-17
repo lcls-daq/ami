@@ -8,6 +8,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 
 #include <stdio.h>
 
@@ -40,7 +41,7 @@ Integral::~Integral()
   delete _entry;
 }
 
-DescEntry& Integral::output   () const { return _entry->desc(); }
+DescEntry& Integral::_routput   () const { return _entry->desc(); }
 
 void*      Integral::_serialize(void* p) const
 {
@@ -79,7 +80,16 @@ Entry&     Integral::_operate(const Entry& e) const
   case DescEntry::Image:
     { const EntryImage& en = static_cast<const EntryImage&>(e);
       const DescImage& d = en.desc();
-      if (d.nframes())
+      const ImageMask* mask = d.mask();
+      if (mask) {
+        for(unsigned j=_ylo; j<_yhi; j++) {
+          if (!mask->row(j)) continue;
+          for(unsigned k=_xlo; k<_xhi; k++)
+            if (mask->rowcol(j,k))
+              sum += en.content(k,j);
+        }
+      }
+      else if (d.nframes())
 	for(unsigned fn=0; fn<d.nframes(); fn++) {
 	  int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
 	  if (d.xy_bounds(xlo,xhi,ylo,yhi,fn)) {

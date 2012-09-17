@@ -25,9 +25,8 @@ namespace Ami {
     char *name() { return _name; };
     char *norm() { return _norm; };
     int   op()   { return _op; };
-  public:
-    DescEntry& output   () const;
   private:
+    DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
