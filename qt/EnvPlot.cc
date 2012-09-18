@@ -41,6 +41,7 @@ EnvPlot::EnvPlot(QWidget*         parent,
   _set     (set),
   _output_signature  (0),
   _plot    (new QtEmpty),
+  _auto_range(0),
   _shared  (shared)
 {
   if (shared) shared->signup();
@@ -56,6 +57,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
   _set     (Ami::PreAnalysis),
   _output_signature(0),
   _plot    (new QtEmpty),
+  _auto_range(0),
   _shared  (0)
 {
   XML_iterate_open(p,tag)
@@ -120,12 +122,10 @@ void EnvPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void EnvPlot::setup_payload(Cds& cds)
 {
-  _auto_range = 0;
-
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     
-    if (_plot && !_req.changed()) {
+    if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
     }
 
@@ -134,6 +134,8 @@ void EnvPlot::setup_payload(Cds& cds)
         delete _plot;
 
       edit_xrange(true);
+
+      _auto_range = 0;
 
       switch(entry->desc().type()) {
       case Ami::DescEntry::TH1F: 

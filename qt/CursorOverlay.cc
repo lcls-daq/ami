@@ -92,12 +92,10 @@ void CursorOverlay::load(const char*& p)
 
 void CursorOverlay::setup_payload(Cds& cds)
 {
-  _auto_range = 0;
-
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
 
-    if (_plot && !_req.changed()) {
+    if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
     }
     else {
@@ -105,6 +103,7 @@ void CursorOverlay::setup_payload(Cds& cds)
         delete _plot;
     
       QColor c(0,0,0);
+      _auto_range = 0;
 
       QString name(_input->output().name());
       switch(entry->desc().type()) {

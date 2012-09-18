@@ -223,6 +223,7 @@ void ImageXYProjection::load(const char*& p)
       CursorPlot* plot = new CursorPlot(this, p);
       _cplots.push_back(plot);
       connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
     }
     else if (tag.name == "_zplots") {
     ZoomPlot* plot = new ZoomPlot(this, p);

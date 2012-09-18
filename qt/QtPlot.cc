@@ -53,7 +53,9 @@ namespace Ami {
             QwtPlotCurve* c = dynamic_cast<QwtPlotCurve*>(list[i]);
             if (c) {
               painter.setPen  (c->pen().color());
-              painter.drawText(10, 18*row, width-10, 18, ::Qt::AlignLeft, c->title().text());
+              const QString& title = c->title().text();
+              painter.drawText(10, 18*row, width-10, 18, ::Qt::AlignLeft, 
+                               title.mid(0,title.indexOf('#')));
               row++;
             }
           }

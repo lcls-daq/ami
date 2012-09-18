@@ -10,6 +10,8 @@
 #include "ami/qt/QtImage.hh"
 #include "ami/qt/QtPlot.hh"
 #include "ami/qt/ImageDisplay.hh"
+#include "ami/qt/QtPWidget.hh"
+#include "ami/qt/PWidgetManager.hh"
 
 #include "ami/client/ClientManager.hh"
 
@@ -52,6 +54,7 @@ namespace Ami {
     public:
       QtBasePlot(QtBase* b) : QtPlot(NULL,b->title()) 
       {
+        PWidgetManager::remove(this);
         _base.push_back(b); 
         b->attach(_frame); 
       }
@@ -83,10 +86,11 @@ namespace Ami {
       std::list<QtBase*> _base; 
     };
 
-    class PagePlot : public QWidget {
+    class PagePlot : public QtPWidget {
     public:
-      PagePlot(const QString& title) : _title (title),_layout(new QGridLayout) {}
-      ~PagePlot() {}
+      PagePlot(const QString& title) : QtPWidget(0), _title (title),_layout(new QGridLayout) 
+      { PWidgetManager::add(this, _title); }
+      ~PagePlot() { PWidgetManager::remove(this); }
     public:
       const QString& title() const { return _title; }
       void add   (QtBase* plot, int row, int col)

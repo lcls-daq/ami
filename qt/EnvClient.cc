@@ -503,6 +503,7 @@ void EnvClient::add_overlay(DescEntry*  desc,
                                    shared);
                                      
   _ovls.push_back(ovl);
+  connect(ovl, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
   
   emit changed();
 }

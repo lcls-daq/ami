@@ -105,18 +105,18 @@ void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
 
 void CursorPlot::setup_payload(Cds& cds)
 {
-  _auto_range = 0;
-
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
 
-    if (_plot && !_req.changed()) {
+    if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
     }
     else {
       if (_plot)
         delete _plot;
     
+      _auto_range = 0;
+
       switch(entry->desc().type()) {
       case Ami::DescEntry::TH1F: 
         _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),

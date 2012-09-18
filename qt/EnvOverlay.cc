@@ -41,6 +41,7 @@ EnvOverlay::EnvOverlay(OverlayParent&   parent,
   _set     (set),
   _output_signature  (0),
   _plot    (0),
+  _auto_range(0),
   _order   (-1),
   _shared  (shared)
 {
@@ -55,6 +56,7 @@ EnvOverlay::EnvOverlay(OverlayParent& parent,
   _set     (Ami::PreAnalysis),
   _output_signature(0),
   _plot    (0),
+  _auto_range(0),
   _order   (-1),
   _shared  (0)
 {
@@ -115,12 +117,10 @@ void EnvOverlay::load(const char*& p)
 
 void EnvOverlay::setup_payload(Cds& cds)
 {
-  _auto_range = 0;
-
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     
-    if (_plot && !_req.changed()) {
+    if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
     }
 
@@ -130,7 +130,8 @@ void EnvOverlay::setup_payload(Cds& cds)
 
       //      edit_xrange(true);
       QColor c(0,0,0);
-
+      _auto_range = 0;
+      
       switch(entry->desc().type()) {
       case Ami::DescEntry::TH1F: 
         _plot = new QtTH1F(_desc->name(),
@@ -223,6 +224,7 @@ void EnvOverlay::update()
       delete _desc;
       _desc = _auto_range->result();
       _auto_range = 0;
+      emit changed();
     }
   }
 }
