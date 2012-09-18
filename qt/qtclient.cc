@@ -45,7 +45,7 @@ int main(int argc, char **argv)
       loadfile = argv[++i];
     }
     else if (strcmp(argv[i],"-C")==0) {
-      Ami::Qt::ImageColorControl::set_color_choice(atoi(argv[++i]));
+      Ami::Qt::ImageColorControl::parse_palette_set(argv[++i]);
     }
     else if (strcmp(argv[i],"-E")==0) {
       Ami::Qt::ImageDisplay::enable_movie_option();

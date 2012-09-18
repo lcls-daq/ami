@@ -11,13 +11,9 @@
 #include <QtGui/QVBoxLayout>
 
 #include <math.h>
+#include <vector>
 
 using namespace Ami::Qt;
-
-enum { Mono=0, Color=1 };
-
-static int _colorChoice=0;
-void ImageColorControl::set_color_choice(int c) { _colorChoice=c; }
 
 static ColorMaps _colorMaps;
 
@@ -59,23 +55,69 @@ static QVector<QRgb>* thermal_palette()
   return color_table;
 }
 
-static QVector<QRgb>* color_palette()
+class PaletteSet {
+public:
+  PaletteSet() {
+    _v.push_back(monochrome_palette());
+    _v.push_back(thermal_palette());
+  }
+public:
+  unsigned num_palettes() const { return _v.size(); }
+  const QVector<QRgb>& palette(int i) { return *_v[i]; }
+public:
+  bool parse_string(const char* opt) {
+    _v.clear();
+    
+    QString qopt(opt);
+    QStringList qlist = qopt.split(",",::QString::SkipEmptyParts);
+    for(int i=0; i<qlist.size(); i++) {
+      if      (qlist[i].compare("mono",::Qt::CaseInsensitive)==0)
+        _v.push_back(monochrome_palette());
+      else if (qlist[i].compare("jet",::Qt::CaseInsensitive)==0)
+        _v.push_back(jet_palette());
+      else if (qlist[i].compare("thermal",::Qt::CaseInsensitive)==0)
+        _v.push_back(thermal_palette());
+      else if (qlist[i].compare("0")==0) {
+        _v.push_back(monochrome_palette());
+        _v.push_back(jet_palette());
+      }
+      else if (qlist[i].compare("1")==0) {
+        _v.push_back(monochrome_palette());
+        _v.push_back(thermal_palette());
+      }
+      else
+        return false;
+    }
+
+    return (_v.size()>0);
+  }
+private:
+  std::vector< QVector<QRgb>* > _v;
+};
+
+static PaletteSet _palettes;
+
+bool ImageColorControl::parse_palette_set(const char* opt)
 {
-  return _colorChoice==0 ? jet_palette() : thermal_palette();
+  return _palettes.parse_string(opt);
 }
 
 ImageColorControl::ImageColorControl(QWidget* parent,
 				     const QString&  title) :
   QGroupBox(title,parent),
-  _scale (0),
+  _scale (1),
   _pedestal(0),
   _scale_min(new QLineEdit),
   _scale_mid(new QLabel),
-  _scale_max(new QLabel)
+  _scale_max(new QLineEdit)
 {
   _scale_min->setMaximumWidth(60);
   _scale_min->setValidator(new QDoubleValidator(_scale_min));
   _scale_min->setText(QString::number(_pedestal));
+
+  _scale_max->setMaximumWidth(60);
+  _scale_max->setValidator(new QDoubleValidator(_scale_max));
+  //  _scale_max->setText(QString::number(_pedestal));
 
   _scale_min->setAlignment(::Qt::AlignLeft);
   _scale_mid->setAlignment(::Qt::AlignHCenter);
@@ -91,20 +133,19 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   { unsigned char* dst = palette.bits();
     for(unsigned k=0; k<256*16; k++) *dst++ = k&0xff; }
 
-  QRadioButton* monoB  = new QRadioButton; 
-  palette.setColorTable(*(_color_table = monochrome_palette()));
-  QLabel* monoC = new QLabel;
-  monoC->setPixmap(QPixmap::fromImage(palette));
-  delete _color_table;
-
-  QRadioButton* colorB = new QRadioButton; 
-  palette.setColorTable(*(_color_table = color_palette()));
-  QLabel* colorC = new QLabel;
-  colorC->setPixmap(QPixmap::fromImage(palette));
-
+  std::vector<QRadioButton*> paletteButtons(_palettes.num_palettes());
+  std::vector<QLabel*      > palettePixmaps(_palettes.num_palettes());
   _paletteGroup = new QButtonGroup;
-  _paletteGroup->addButton(monoB, Mono);
-  _paletteGroup->addButton(colorB, Color);
+  for(unsigned i=0; i<_palettes.num_palettes(); i++) {
+    palette.setColorTable(_palettes.palette(i));
+    paletteButtons[i] = new QRadioButton;
+    (palettePixmaps[i] = new QLabel)->setPixmap(QPixmap::fromImage(palette));
+    _paletteGroup->addButton(paletteButtons[i], i);
+  }
+
+  _color_table = new QVector<QRgb>;
+  *_color_table = _palettes.palette(_palettes.num_palettes()-1);
+  paletteButtons[_palettes.num_palettes()-1]->setChecked(true);
 
   _logscale = new QCheckBox("Log Scale");
   _logscale->setChecked(false);
@@ -120,13 +161,14 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     { QGridLayout* layout2 = new QGridLayout;
-      layout2->addWidget(monoB,0,0);
-      layout2->addWidget(monoC,0,1,1,3);
-      layout2->addWidget(colorB,1,0);
-      layout2->addWidget(colorC,1,1,1,3);
-      layout2->addWidget(_scale_min,2,1,::Qt::AlignLeft);
-      layout2->addWidget(_scale_mid,2,2,::Qt::AlignCenter); 
-      layout2->addWidget(_scale_max,2,3,::Qt::AlignRight); 
+      unsigned i;
+      for(i=0; i<_palettes.num_palettes(); i++) {
+        layout2->addWidget(paletteButtons[i],i,0);
+        layout2->addWidget(palettePixmaps[i],i,1,1,3);
+      }
+      layout2->addWidget(_scale_min,i,1,::Qt::AlignLeft);
+      layout2->addWidget(_scale_mid,i,2,::Qt::AlignCenter); 
+      layout2->addWidget(_scale_max,i,3,::Qt::AlignRight); 
       //  Set the columns to equal (dynamic) size
       layout2->setColumnMinimumWidth(1,60);
       layout2->setColumnMinimumWidth(2,60);
@@ -144,11 +186,11 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   connect(zoomB , SIGNAL(clicked()), this, SLOT(zoom()));
   connect(panB  , SIGNAL(clicked()), this, SLOT(pan ()));
   connect(_paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
-  connect(_scale_min, SIGNAL(editingFinished()), this, SLOT(scale_min_changed()));
+  connect(_scale_min, SIGNAL(editingFinished()), this, SLOT(scale_changed()));
+  connect(_scale_max, SIGNAL(editingFinished()), this, SLOT(scale_changed()));
   connect(_logscale, SIGNAL(clicked()), this, SIGNAL(windowChanged()));
   connect(this  , SIGNAL(windowChanged()), this, SLOT(show_scale()));
 
-  colorB->setChecked(true);
   show_scale();
 }   
 
@@ -158,7 +200,7 @@ ImageColorControl::~ImageColorControl()
 
 void ImageColorControl::save(char*& p) const
 {
-  XML_insert(p, "int", "scale", QtPersistent::insert(p,_scale) );
+  XML_insert(p, "double", "scale", QtPersistent::insert(p,_scale) );
   XML_insert(p, "QButtonGroup", "_paletteGroup", QtPersistent::insert(p,_paletteGroup->checkedId()) );
   XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,double(_pedestal)) );
   XML_insert(p, "QCheckBox", "_logscale", QtPersistent::insert(p,_logscale->isChecked()) );
@@ -168,7 +210,7 @@ void ImageColorControl::load(const char*& p)
 {
   XML_iterate_open(p,tag)
     if (tag.name == "scale")
-      _scale = QtPersistent::extract_i(p);
+      _scale = QtPersistent::extract_d(p);
     else if (tag.name == "_paletteGroup") {
       int palette = QtPersistent::extract_i(p);
       _paletteGroup->button(palette)->setChecked(true);
@@ -188,14 +230,15 @@ bool   ImageColorControl::linear() const { return !_logscale->isChecked(); }
 
 float ImageColorControl::pedestal() const { return _pedestal; }
 
-float ImageColorControl::scale() const { return powf(2,0.5*float(-_scale)); }
+//float ImageColorControl::scale() const { return powf(2,0.5*float(-_scale)); }
+float ImageColorControl::scale() const { return _scale; }
 
 const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_table; }
 
 void   ImageColorControl::set_palette(int p)
 {
-  delete _color_table;
-  _color_table = (p==Mono) ? monochrome_palette() : color_palette();
+  if (p >= _palettes.num_palettes()) p = _palettes.num_palettes()-1;
+  *_color_table = _palettes.palette(p);
 
   emit windowChanged();
 }
@@ -217,24 +260,25 @@ void   ImageColorControl::show_scale()
 
 void   ImageColorControl::set_auto(bool s)
 {
-  _scale = 0;
+  _scale = 1;
   emit windowChanged();
 }
 
 void   ImageColorControl::zoom ()
 {
-  ++_scale;
+  _scale /= sqrt(2);
   emit windowChanged();
 }
 
 void   ImageColorControl::pan ()
 {
-  --_scale;
+  _scale *= sqrt(2);
   emit windowChanged();
 }
 
-void   ImageColorControl::scale_min_changed()
+void   ImageColorControl::scale_changed()
 {
   _pedestal = _scale_min->text().toFloat();
+  _scale    = (_scale_max->text().toFloat()-_pedestal)/255.;
   emit windowChanged();
 }

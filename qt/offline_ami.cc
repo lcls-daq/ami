@@ -88,7 +88,10 @@ int main(int argc, char* argv[]) {
       path = optarg;
       break;
     case 'C':
-      Ami::Qt::ImageColorControl::set_color_choice(atoi(optarg));
+      if (!Ami::Qt::ImageColorControl::parse_palette_set(optarg)) {
+        usage(argv[0]);
+        exit(0);
+      }
       break;
     case 'E':
       Ami::Qt::ImageDisplay::enable_movie_option();
