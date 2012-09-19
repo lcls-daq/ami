@@ -88,9 +88,8 @@ namespace Ami {
 
     class PagePlot : public QtPWidget {
     public:
-      PagePlot(const QString& title) : QtPWidget(0), _title (title),_layout(new QGridLayout) 
-      { PWidgetManager::add(this, _title); }
-      ~PagePlot() { PWidgetManager::remove(this); }
+      PagePlot(const QString& title) : QtPWidget(0), _title (title),_layout(new QGridLayout) {}
+      ~PagePlot() {}
     public:
       const QString& title() const { return _title; }
       void add   (QtBase* plot, int row, int col)
@@ -162,7 +161,9 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY))
 {
-  setWindowTitle(title);
+  PWidgetManager::add(this, _title);
+
+  setWindowTitle(_title);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this,1);
@@ -180,7 +181,7 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
 }
 
-SummaryClient::~SummaryClient() {}
+SummaryClient::~SummaryClient() { PWidgetManager::remove(this); }
 
 void SummaryClient::save(char*& p) const
 {

@@ -8,4 +8,6 @@ typedef struct {
   Ami::Python::Client* client;
 } amientry;
 
+typedef amientry amientrylist;
+
 #endif

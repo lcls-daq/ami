@@ -26,16 +26,10 @@ static const Pds::DetInfo envInfo(0,
 //
 //  Need all info to identify source and configure plot, filter
 //
-Client::Client(const Pds::DetInfo& info, 
-	       unsigned            channel,
-	       AbsFilter*          filter,
-	       AbsOperator*        op) :
-  _info            (info),
-  _channel         (channel),
-  _filter          (filter),
-  _op              (op),
-  _input           (0),
-  _output_signature(0),
+Client::Client(const std::vector<ClientArgs>& args) :
+  _args            (args),
+  _input           (args.size()),
+  _output          (args.size()),
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
   _cds             ("Client"),
@@ -43,6 +37,8 @@ Client::Client(const Pds::DetInfo& info,
   _niovload        (5),
   _iovload         (new iovec[_niovload])
 {
+  _output[args.size()-1] = 0;
+  
   sem_init(&_initial_sem, 0, 0);
   sem_init(&_payload_sem, 0, 0);
 }
@@ -56,8 +52,11 @@ Client::~Client()
   delete[] _iovload;
   delete[] _description;
   delete[] _request;
-  delete   _filter;
-  delete   _op;
+
+  for(unsigned i=0; i<_args.size(); i++) {
+    delete _args[i].filter;
+    delete _args[i].op;
+  }
 }
 
 void Client::connected()
@@ -76,32 +75,36 @@ void Client::discovered(const DiscoveryRx& rx)
   const DescEntry* e = rx.entries();
 
 #ifdef DBUG
-  printf("Client Discovered info(%08x/%08x), env(%08x/%08x), cds(%d)\n",
-	 _info.log(),_info.phy(), envInfo.log(),envInfo.phy(), e->signature());
+  printf("Client Discovered cds(%d)\n", e->signature());
 #endif
 
-  if (_info == envInfo) {
-    _input = e->signature();
-  }
-  else {
-    for(  const DescEntry* e = rx.entries(); e < rx.end(); 
-	  e = reinterpret_cast<const DescEntry*>
-	    (reinterpret_cast<const char*>(e) + e->size())) {
+  for(unsigned i=0; i<_args.size(); i++) {
+    const Pds::DetInfo& _info    = _args[i].info;
+    unsigned            _channel = _args[i].channel;
 
+    if (_info == envInfo) {
+      _input[i] = e->signature();
+    }
+    else {
+      for(  const DescEntry* e = rx.entries(); e < rx.end(); 
+            e = reinterpret_cast<const DescEntry*>
+              (reinterpret_cast<const char*>(e) + e->size())) {
+        
 #ifdef DBUG
-      printf("Client Discovered info(%08x/%08x), channel(%d)\n",
-             e->info().log(),e->info().phy(), e->channel());
+        printf("Client Discovered info(%08x/%08x), channel(%d)\n",
+               e->info().log(),e->info().phy(), e->channel());
 #endif
 
-      if (e->info().level()==_info.level() &&
-          e->info().phy  ()==_info.phy() &&
-	  e->channel     ()==_channel) {
-	_input = e->signature();
-	break;
+        if (e->info().level()==_info.level() &&
+            e->info().phy  ()==_info.phy() &&
+            e->channel     ()==_channel) {
+          _input[i] = e->signature();
+          break;
+        }
       }
     }
   }
-
+  
 #ifdef DBUG
   printf("Client Discovered (%d)\n",_input);
 #endif
@@ -113,25 +116,17 @@ int  Client::configure       (iovec* iov)
 {
   char* p = _request;
 
-#ifdef DBUG
-  printf("pyami Configuring filter(%p), op(%p)\n",_filter,_op);
-#endif
+  unsigned output = _output[_args.size()-1];
+  for(unsigned i=0; i<_args.size(); i++) {
+    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
+                                                    ConfigureRequest::Discovery,
+                                                    _input[i],
+                                                    _output[i] = ++output,
+                                                    *_args[i].filter, *_args[i].op,
+                                                    Ami::PostAnalysis);
+    p += r.size();
+  }
 
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Discovery,
-						  _input,
-						  ++_output_signature,
-						  *_filter, *_op);
-
-#ifdef DBUG
-  printf("ConfigureRequest\n");
-  const unsigned* d = reinterpret_cast<const unsigned*>(_request);
-  for(unsigned i=0; i<r.size()>>2; i++)
-    printf("%08x%c",d[i],(i%8)==7 ? '\n':' ');
-  printf("\n");
-#endif
-  
-  p += r.size();
 
   if (p > _request+BufferSize) {
     printf("Client request overflow: size = 0x%lx\n", p-_request);
@@ -201,7 +196,7 @@ int  Client::read_payload     (Socket& socket,int)
   return socket.readv(_iovload,_cds.totalentries());
 }
 
-bool Client::svc             () const { return false; }
+bool Client::svc             () const { return true; }
 
 void Client::process         () 
 {
@@ -242,7 +237,7 @@ int  Client::initialize(ClientManager& mgr)
 
   if (result<0)
     return TimedOut;
-  if (_input==0)
+  if (_input[0]==0)
     return NoEntry;
 
   return Success;
@@ -267,10 +262,13 @@ int Client::request_payload()
 #endif
   return result;
 }
-
-const Ami::Entry* Client::payload() const 
+ 
+std::vector<const Ami::Entry*> Client::payload() const 
 {
-  return _cds.entry(_output_signature);
+  std::vector<const Ami::Entry*> entries(_output.size());
+  for(unsigned i=0; i<_output.size(); i++)
+    entries[i] = _cds.entry(_output[i]);
+  return entries;
 }
 
 void Client::reset()

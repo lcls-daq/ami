@@ -27,7 +27,7 @@ using namespace Ami::Qt;
 ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool lNormWeight) :
   QWidget(parent)
 {
-  _title = new QLineEdit  ("title");
+  _title = new QLineEdit  ("name");
   _postB = new QPushButton("Post");
   _postB->setEnabled(false);
 
@@ -45,7 +45,7 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
 
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout2 = new QHBoxLayout;
-    layout2->addWidget(new QLabel("Title"));
+    layout2->addWidget(new QLabel("Entry name   Post:"));
     layout2->addWidget(_title);
     layout2->addStretch();
     layout2->addWidget(_postB);

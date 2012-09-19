@@ -231,7 +231,7 @@ ClientManager::~ClientManager()
   _poll->stop();
   delete _poll;
   if (_reconn ) delete _reconn ;
-  delete &_client;
+  //  delete &_client;
 }
 
 void ClientManager::request_payload()

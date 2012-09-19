@@ -7,7 +7,7 @@
 
 #include "pdsdata/xtc/DetInfo.hh"
 
-#include <list>
+#include <vector>
 
 namespace Ami {
   class AbsFilter;
@@ -17,18 +17,23 @@ namespace Ami {
   class Entry;
 
   namespace Python {
+
+    struct ClientArgs {
+      Pds::DetInfo info; 
+      unsigned     channel;
+      AbsFilter*   filter;
+      AbsOperator* op;
+    };
+    
     class Client : public Ami::AbsClient {
     public:
-      Client(const Pds::DetInfo& info, 
-	     unsigned            channel,
-	     AbsFilter*          filter,
-	     AbsOperator*        op);
+      Client(const std::vector<ClientArgs>& args);
       virtual ~Client();
     public:
       enum { Success, TimedOut, NoEntry };
       int  initialize      (ClientManager&);
       int  request_payload ();
-      const Entry* payload () const;
+      std::vector<const Entry*> payload () const;
       void reset           ();
     public: // AbsClient interface
       void managed         (ClientManager&);
@@ -41,13 +46,10 @@ namespace Ami {
       bool svc             () const;
       void process         ();
     private:
-      Pds::DetInfo        _info;
-      unsigned            _channel;
-      AbsFilter*          _filter;
-      AbsOperator*        _op;
+      std::vector<ClientArgs> _args;
+      std::vector<unsigned  > _input;
+      std::vector<unsigned  > _output;
 
-      unsigned    _input;
-      unsigned    _output_signature;
       char*       _request;
       char*       _description;
 
