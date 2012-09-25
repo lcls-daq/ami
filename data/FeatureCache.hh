@@ -27,6 +27,7 @@ namespace Ami {
     double      cache  (int index, bool* damaged=0) const;
     void        cache  (int index, double, bool damaged=false);
     void        cache  (const FeatureCache&);
+    void        dump   () const;
   public:
     char*  serialize(int& len) const;
   private:

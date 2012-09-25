@@ -100,3 +100,11 @@ bool   FeatureCache::update()
   _update=false;
   return upd;
 }
+
+void   FeatureCache::dump() const
+{
+  printf("FeatureCache entries %d\n",_names.size());
+  for(unsigned k=0; k<_names.size(); k++) {
+    printf("  %s\n",_names[k].c_str());
+  }
+}

@@ -39,6 +39,8 @@ namespace Ami {
     unsigned payload    (iovec*, EntryList);
     void     invalidate_payload();
 
+    enum ReqOpt { None, All };
+    void      request    (ReqOpt);
     void      request    (const Entry&, bool);
     EntryList request    () const { return _request; }
 

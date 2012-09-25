@@ -137,7 +137,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  bool damaged=false; double x=_term->evaluate();
 	  if (!damaged) {
 	    EntryScan* en = static_cast<EntryScan*>(_entry);
-	    en->addy(y,x,w);
+	    en->addy(y,x,w,e.last());
 	    en->addinfo(1.,EntryScan::Normalization);
 	  }
 	} 

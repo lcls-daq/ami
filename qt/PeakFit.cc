@@ -299,7 +299,6 @@ void PeakFit::load(const char*& p)
       _cursors.push_back(d);
       _clayout->addWidget(d);
       _names.removeAll(d->name());
-      printf("Added cursor %s at %g\n",qPrintable(d->name()), d->location());
     }    
     else if (tag.name == "_plots") {
       PeakFitPlot* plot = new PeakFitPlot(this, p);
@@ -346,11 +345,15 @@ void PeakFit::setup_payload(Cds& cds)
 {
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->setup_payload(cds);
 }
 
 void PeakFit::update()
 {
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->update();
+  for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -375,7 +378,7 @@ void PeakFit::plot()
     PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
   }
   else {
-    QString qtitle = QString("%1:%2")
+    QString qtitle = QString("%1_%2")
       .arg(_title->text())
       .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity));
 
@@ -429,7 +432,7 @@ QString PeakFit::_add_post()
                   .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity)));
 #else
   QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).
-    validate_name(QString("%1:%2").arg(_scalar_desc->qtitle())
+    validate_name(QString("%1_%2").arg(_scalar_desc->qtitle())
                   .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity)));
 #endif
 
@@ -516,7 +519,7 @@ void PeakFit::overlay()
     new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
   }
   else {
-    QString qtitle = QString("%1:%2")
+    QString qtitle = QString("%1_%2")
       .arg(_title->text())
       .arg(Ami::PeakFitPlot::name((Ami::PeakFitPlot::Parameter)_quantity));
 

@@ -44,12 +44,6 @@ static const QChar PageIndex('#');
 
 namespace Ami {
   namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-
     class QtBasePlot : public QtPlot {
     public:
       QtBasePlot(QtBase* b) : QtPlot(NULL,b->title()) 
@@ -145,8 +139,7 @@ namespace Ami {
 using namespace Ami::Qt;
 
 static const int BufferSize = 0x8000;
-static NullTransform noTransform;
-
+static Ami::AbsTransform& noTransform = Ami::AbsTransform::null();
 
 SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel,
 			     const QString& title, ConfigureRequest::Source source) :
@@ -158,6 +151,7 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
+  _niovread        (5),
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY))
 {
@@ -377,7 +371,7 @@ void SummaryClient::_read_description(int size)
     delete[] _iovload;
     _iovload = new iovec[_niovload=_cds.totalentries()];
   }
-  _cds.payload(_iovload);
+  _niovread = _cds.payload(_iovload, _cds.request());
 
   for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
     (*it)->layout();
@@ -392,8 +386,10 @@ void SummaryClient::_read_description(int size)
 int  SummaryClient::read_payload     (Socket& socket,int)
 {
   int nbytes = 0;
-  if (_status->state() == Status::Requested) {
-    nbytes = socket.readv(_iovload,_cds.totalentries());
+  if (_niovread==0)
+    ;
+  else if (_status->state() == Status::Requested) {
+    nbytes = socket.readv(_iovload,_niovread);
   }
   else {
     printf("Ami::Qt::Client::read_payload unrequested payload\n");
@@ -427,7 +423,9 @@ void SummaryClient::managed(ClientManager& mgr)
 void SummaryClient::request_payload()
 {
   if (_status->state() >= Status::Described) {
-    _manager->request_payload();
+    _cds.request(isVisible() ? Cds::All : Cds::None);
+    _niovread = _cds.payload(_iovload, _cds.request());
+    _manager->request_payload(_cds.request());
     _status->set_state(Status::Requested);
   }
 }

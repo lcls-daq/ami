@@ -34,11 +34,12 @@ Analysis::Analysis(unsigned      id,
 
 Analysis::~Analysis() 
 {
-  _cds.remove(_cds.entry(_output));
+  if (_op->valid())
+    _cds.remove(_cds.entry(_output));
   delete _filter;
   // bug, possibly double free of entries
   // consequence of not deleting is a small mem-leak
-  //  delete _op;
+  delete _op;
 }
 
 unsigned   Analysis::id() const { return _id; }
@@ -53,3 +54,5 @@ DescEntry& Analysis::output () const
 {
   return _op->output();
 }
+
+bool Analysis::valid() const { return _op->valid(); }

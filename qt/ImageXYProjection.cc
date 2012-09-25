@@ -239,6 +239,8 @@ void ImageXYProjection::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(ImageXYProjection,tag);
+
+  update_range();
 }
 
 void ImageXYProjection::save_plots(const QString& p) const

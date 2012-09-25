@@ -49,6 +49,7 @@ namespace Ami {
       ConfigureRequestor _req;
 
       EntryScalarRange*  _auto_range;
+      bool               _retry;
 
       SharedData*        _shared;
     };

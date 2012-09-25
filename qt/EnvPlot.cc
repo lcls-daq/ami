@@ -42,6 +42,7 @@ EnvPlot::EnvPlot(QWidget*         parent,
   _output_signature  (0),
   _plot    (new QtEmpty),
   _auto_range(0),
+  _retry     (false),
   _shared  (shared)
 {
   if (shared) shared->signup();
@@ -125,7 +126,7 @@ void EnvPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
     
-    if (_plot && !_req.changed() && !_auto_range) {
+    if (_plot && !_req.changed() && !_auto_range && !_retry) {
       _plot->entry(*entry);
     }
 
@@ -175,6 +176,7 @@ void EnvPlot::setup_payload(Cds& cds)
         _plot = new QtEmpty;
       }
       _plot->attach(_frame);
+      _retry = false;
     }
   }
   else {
@@ -183,6 +185,7 @@ void EnvPlot::setup_payload(Cds& cds)
     if (_plot) {
       delete _plot;
       _plot = new QtEmpty;
+      _retry = true;
     }
   }
 }

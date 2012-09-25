@@ -260,7 +260,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
         x = _fterm->evaluate();
         if (!damaged) {
             EntryScan *es = static_cast<EntryScan*>(_entry);
-            es->addy(y, x);
+            es->addy(y, x, 1., e.last());
             es->addinfo(1., EntryScan::Normalization);
         }
         break;

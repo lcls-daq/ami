@@ -23,6 +23,7 @@ namespace Ami {
     unsigned   id     () const;
     void       analyze();
     DescEntry& output () const;
+    bool       valid  () const;
   private:
     unsigned     _id;
     unsigned     _output;

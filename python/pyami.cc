@@ -704,8 +704,153 @@ pyami_connect(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+static unsigned colormap_jet[] = { 0x80, 0x84, 0x89, 0x8d, 0x92, 0x96, 0x9b, 0x9f, 0xa4, 0xa9, 0xad, 0xb2, 0xb6, 0xbb, 0xbf, 0xc4,
+                                   0xc9, 0xcd, 0xd2, 0xd6, 0xdb, 0xdf, 0xe4, 0xe8, 0xed, 0xf2, 0xf6, 0xfb, 0xff, 0xff, 0xff, 0xff,
+                                   0xff, 0x4ff, 0x8ff, 0xcff, 0x10ff, 0x14ff, 0x18ff, 0x1cff, 0x20ff, 0x24ff, 0x28ff, 0x2cff, 0x30ff, 0x34ff, 0x38ff, 0x3cff,
+                                   0x40ff, 0x44ff, 0x48ff, 0x4cff, 0x50ff, 0x54ff, 0x58ff, 0x5cff, 0x60ff, 0x64ff, 0x68ff, 0x6cff, 0x70ff, 0x74ff, 0x78ff, 0x7cff,
+                                   0x81ff, 0x85ff, 0x89ff, 0x8dff, 0x91ff, 0x95ff, 0x99ff, 0x9dff, 0xa1ff, 0xa5ff, 0xa9ff, 0xadff, 0xb1ff, 0xb5ff, 0xb9ff, 0xbdff,
+                                   0xc1ff, 0xc5ff, 0xc9ff, 0xcdff, 0xd1ff, 0xd5ff, 0xd9ff, 0xddff, 0xe1fb, 0xe5f8, 0x2e9f5, 0x5edf2, 0x8f1ee, 0xcf5eb, 0xff9e8, 0x12fde5,
+                                   0x15ffe1, 0x19ffde, 0x1cffdb, 0x1fffd8, 0x22ffd4, 0x26ffd1, 0x29ffce, 0x2cffcb, 0x2fffc7, 0x33ffc4, 0x36ffc1, 0x39ffbe, 0x3cffbb, 0x3fffb7, 0x43ffb4, 0x46ffb1,
+                                   0x49ffae, 0x4cffaa, 0x50ffa7, 0x53ffa4, 0x56ffa1, 0x59ff9d, 0x5dff9a, 0x60ff97, 0x63ff94, 0x66ff90, 0x6aff8d, 0x6dff8a, 0x70ff87, 0x73ff83, 0x77ff80, 0x7aff7d,
+                                   0x7dff7a, 0x80ff77, 0x83ff73, 0x87ff70, 0x8aff6d, 0x8dff6a, 0x90ff66, 0x94ff63, 0x97ff60, 0x9aff5d, 0x9dff59, 0xa1ff56, 0xa4ff53, 0xa7ff50, 0xaaff4c, 0xaeff49,
+                                   0xb1ff46, 0xb4ff43, 0xb7ff3f, 0xbbff3c, 0xbeff39, 0xc1ff36, 0xc4ff33, 0xc7ff2f, 0xcbff2c, 0xceff29, 0xd1ff26, 0xd4ff22, 0xd8ff1f, 0xdbff1c, 0xdeff19, 0xe1ff15,
+                                   0xe5ff12, 0xe8ff0f, 0xebff0c, 0xeeff08, 0xf2fd05, 0xf5f902, 0xf8f500, 0xfbf100, 0xffee00, 0xffea00, 0xffe600, 0xffe200, 0xffdf00, 0xffdb00, 0xffd700, 0xffd400,
+                                   0xffd000, 0xffcc00, 0xffc800, 0xffc500, 0xffc100, 0xffbd00, 0xffba00, 0xffb600, 0xffb200, 0xffae00, 0xffab00, 0xffa700, 0xffa300, 0xffa000, 0xff9c00, 0xff9800,
+                                   0xff9400, 0xff9100, 0xff8d00, 0xff8900, 0xff8600, 0xff8200, 0xff7e00, 0xff7a00, 0xff7700, 0xff7300, 0xff6f00, 0xff6c00, 0xff6800, 0xff6400, 0xff6000, 0xff5d00,
+                                   0xff5900, 0xff5500, 0xff5100, 0xff4e00, 0xff4a00, 0xff4600, 0xff4300, 0xff3f00, 0xff3b00, 0xff3700, 0xff3400, 0xff3000, 0xff2c00, 0xff2900, 0xff2500, 0xff2100,
+                                   0xff1d00, 0xff1a00, 0xff1600, 0xff1200, 0xfb0f00, 0xf60b00, 0xf20700, 0xed0300, 0xe80000, 0xe40000, 0xdf0000, 0xdb0000, 0xd60000, 0xd20000, 0xcd0000, 0xc90000,
+                                   0xc40000, 0xbf0000, 0xbb0000, 0xb60000, 0xb20000, 0xad0000, 0xa90000, 0xa40000, 0x9f0000, 0x9b0000, 0x960000, 0x920000, 0x8d0000, 0x890000, 0x840000, 0x800000 };
+
+static bool Parse_Int(PyObject* o, int& v)
+{
+  if (PyInt_Check(o))
+    v = PyInt_AsLong(o);
+  else if (PyFloat_Check(o))
+    v = int(PyFloat_AsDouble(o));
+  else
+    return false;
+  return true;
+}
+
+static PyObject*
+pyami_map_image(PyObject *self, PyObject *args)
+{
+  PyObject* obuff  = 0;
+  PyObject* shape  = 0;
+  int       stride = 0;
+  PyObject* slice = 0;
+  PyObject* range = 0;
+  const char* map = 0;
+
+  if (!PyArg_ParseTuple(args,"OOIOs|O",&obuff,&shape,&stride,&slice,&map,&range)) 
+    return NULL;
+
+  PyBufferProcs* p = obuff->ob_type->tp_as_buffer;
+  if (p==NULL) {
+    PyErr_SetString(PyExc_RuntimeError,"Argument 0 is not a buffer object");
+    return NULL;
+  }
+
+  const unsigned* mapv = 0;
+  if (strcasecmp(map,"jet")==0)
+    mapv = colormap_jet;
+//   else if (strcasecmp(map,"thermal")==0)
+//     mapv = colormap_thermal;
+
+  if (mapv==0) {
+    char buff[64];
+    sprintf(buff,"failed to lookup color map %s",map);
+    PyErr_SetString(PyExc_RuntimeError,buff);
+    return NULL;
+  }
+
+  if (!PyTuple_Check(shape)) {
+    PyErr_SetString(PyExc_RuntimeError,"Shape is not a tuple");
+    return NULL;
+  }
+  
+  int nrows = PyInt_AsLong(PyTuple_GetItem(shape,0));
+  int ncols = PyInt_AsLong(PyTuple_GetItem(shape,1));
+
+  int row0 = PyInt_AsLong(PyList_GetItem(PyList_GetItem(slice,0),0));
+  int row1 = PyInt_AsLong(PyList_GetItem(PyList_GetItem(slice,0),1))+1;
+  int col0 = PyInt_AsLong(PyList_GetItem(PyList_GetItem(slice,1),0));
+  int col1 = PyInt_AsLong(PyList_GetItem(PyList_GetItem(slice,1),1))+1;
+
+  if (row0 < 0) row0=0;
+  if (row1 > nrows) row1=nrows;
+  if (col0 < 0) col0=0;
+  if (col1 > ncols) col1=ncols;
+
+  int zmin=(unsigned(-1)>>1),zmax=(unsigned(-1)>>1)+1;
+  if (range) {
+    if (!PyList_Check(range)) {
+      PyErr_SetString(PyExc_RuntimeError,"Range is not a list");
+      return NULL;
+    }
+    if (PyList_Size(range)!=2) {
+      PyErr_SetString(PyExc_RuntimeError,"Length of Range is not 2");
+      return NULL;
+    }
+
+    if (!Parse_Int(PyList_GetItem(range,0),zmin) ||
+        !Parse_Int(PyList_GetItem(range,1),zmax)) {
+      PyErr_SetString(PyExc_RuntimeError,"Type of Range is not Int or Float");
+      return NULL;
+    }
+  }      
+  else {  // autorange
+    int imin,jmin,imax,jmax;
+    void* ptr;
+    (*p->bf_getreadbuffer)(obuff,0,&ptr);
+    int8_t* cptr = reinterpret_cast<int8_t*>(ptr);
+    for(int j=row0; j<row1; j++) {
+      int32_t* rowptr = reinterpret_cast<int32_t*>(cptr);
+      for(int i=col0; i<col1; i++) {
+        int v = rowptr[i];
+        if (v < zmin) { zmin = v; imin=i; jmin=j; }
+        if (v > zmax) { zmax = v; imax=i; jmax=j; }
+      }
+      cptr += stride;
+    }
+  }
+
+  if (zmin == zmax) {
+    zmin -= 1;
+    zmax += 1;
+  }
+  
+  double scale = 255./double(zmax-zmin);
+
+  PyObject* out = PyList_New(row1-row0);
+  void* ptr;
+  (*p->bf_getreadbuffer)(obuff,0,&ptr);
+  int8_t* cptr = reinterpret_cast<int8_t*>(ptr);
+  for(int j=row0,jo=0; j<row1; j++,jo++) {
+    PyObject* orow = PyList_New(col1-col0);
+    int32_t* rowptr = reinterpret_cast<int32_t*>(cptr);
+    for(int i=col0,io=0; i<col1; i++,io++) {
+      double v = double(rowptr[i]-zmin)*scale;
+      int iv = v < 0 ? 0 : v > 255 ? 255 : int(v);
+      PyList_SetItem(orow, io, PyInt_FromLong(mapv[iv]));
+    }
+    PyList_SetItem(out,jo,orow);
+    cptr += stride;
+  }
+  
+  PyObject* orange = PyList_New(2);
+  PyList_SetItem(orange,0,PyInt_FromLong(zmin));
+  PyList_SetItem(orange,1,PyInt_FromLong(zmax));
+
+  PyObject* result = PyTuple_New(2);
+  PyTuple_SetItem(result,0,out);
+  PyTuple_SetItem(result,1,orange);
+  return result;
+}
+
 static PyMethodDef PyamiMethods[] = {
-    {"connect",  pyami_connect, METH_VARARGS, "Connect to servers."},
+    {"connect"  , pyami_connect  , METH_VARARGS, "Connect to servers."},
+    {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

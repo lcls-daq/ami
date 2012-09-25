@@ -1,6 +1,6 @@
 #include "ami/data/EntryScan.hh"
 
-#define SIZE(n) (4*n+InfoSize)
+#define SIZE(n) (sizeof(BinV)/sizeof(double)*n+InfoSize)
 
 static const unsigned DefaultNbins = 100;
 
@@ -43,7 +43,7 @@ void EntryScan::build(unsigned nbins)
 const DescScan& EntryScan::desc() const {return _desc;}
 DescScan& EntryScan::desc() {return _desc;}
 
-void EntryScan::addy(double y, double x, double w) 
+void EntryScan::addy(double y, double x, double w, double t) 
 {
   unsigned bin = unsigned(info(Current));
   if (x != _p[bin]._x) {
@@ -56,6 +56,7 @@ void EntryScan::addy(double y, double x, double w)
     _p[bin]._nentries = w;
     _p[bin]._ysum     = y*w;
     _p[bin]._y2sum    = y*y*w;
+    _p[bin]._t        = t;
     info(bin,Current);
   }
   else
@@ -94,6 +95,7 @@ int EntryScan::_insert_bin(const BinV& bv, int& fb)
       _p[ib]._nentries += bv._nentries;
       _p[ib]._ysum     += bv._ysum    ;
       _p[ib]._y2sum    += bv._y2sum   ;
+      if (bv._t > _p[ib]._t)  _p[ib]._t = bv._t;
       return 1;
     }
     ib--;
@@ -104,40 +106,49 @@ int EntryScan::_insert_bin(const BinV& bv, int& fb)
   _p[ib]._x        = bv._x       ;
   _p[ib]._ysum     = bv._ysum    ;
   _p[ib]._y2sum    = bv._y2sum   ;
+  _p[ib]._t        = bv._t       ;
   fb = ib;
   return 1;
 }
 
+//
+//  Merge two EntryScans' contents
+//
 void EntryScan::sum(const double* a,
 		    const double* b)
 {
   unsigned nb = desc().nbins();
-  const BinV* p_a = reinterpret_cast<const BinV*>(a+1);
+  const BinV* p_a = reinterpret_cast<const BinV*>(a+1);           // BinV array
   const BinV* p_b = reinterpret_cast<const BinV*>(b+1);
-  const double* i_a = reinterpret_cast<const double*>(&p_a[nb]);
-  const double* i_b = reinterpret_cast<const double*>(&p_a[nb]);
+  const double* i_a = reinterpret_cast<const double*>(&p_a[nb]);  // Info array
+  const double* i_b = reinterpret_cast<const double*>(&p_b[nb]);
 
   int fb = nb;
-  int cb_a = int(i_a[Current]), last_a = (cb_a+1)%nb;
+  int cb_a = int(i_a[Current]), last_a = (cb_a+1)%nb;    // Start, End in cicular array
   int cb_b = int(i_b[Current]), last_b = (cb_b+1)%nb;
   bool done_a = false, done_b = false;
+  //
+  //  Step through both entries arrays and add contents starting with the most recent (Current)
+  //  Stop when the destination buffer is full
+  //
   do {
-    if (cb_a!=last_a)
-      if (!_insert_bin(p_a[cb_a],fb)) 
-	break;
-      else {
-	cb_a = (cb_a==0) ? nb-1 : cb_a-1;
-	done_a = (cb_a == last_a);
-      }
-    if (cb_b!=last_b)
-      if (!_insert_bin(p_b[cb_b],fb)) 
-	break;
-      else {
-	cb_b = (cb_b==0) ? nb-1 : cb_b-1;
-	done_b = (cb_b == last_b);
-      }
+    double t_a = done_a ? -1 : p_a[cb_a]._t;
+    double t_b = done_b ? -1 : p_b[cb_b]._t;
+    if (t_a > t_b) {
+      if (!_insert_bin(p_a[cb_a],fb))
+        break;
+      cb_a = (cb_a==0) ? nb-1 : cb_a-1;
+      done_a = (cb_a == last_a);
+    }
+    else {
+      if (!_insert_bin(p_b[cb_b],fb))
+        break;
+      cb_b = (cb_b==0) ? nb-1 : cb_b-1;
+      done_b = (cb_b == last_b);
+    }
   } while(!done_a || !done_b);
 
+  //  Clear bins that were never filled
   while( fb-- )
     _p[fb]._nentries = 0;
 
@@ -145,16 +156,6 @@ void EntryScan::sum(const double* a,
   info(i_a[Normalization]+i_b[Normalization],Normalization);
 
   valid( *a<*b ? *b : *a);
-
-//   printf(" bin \t: n_c \t: n_a \t: n_b \t: x_c \t: x_a \t: x_b \t: y_c \t: y_a \t: y_b\n");
-//   for(unsigned i=0; i<desc().nbins(); i++) {
-//     if (p_a[i]._nentries || p_b[i]._nentries || _p[i]._nentries) {
-//       printf(" %03d\t:", i);
-//       printf(" %g\t: %g\t: %g\t:", _p[i]._nentries, p_a[i]._nentries, p_b[i]._nentries);
-//       printf(" %g\t: %g\t: %g\t:", _p[i]._x       , p_a[i]._x       , p_b[i]._x);
-//       printf(" %g\t: %g\t: %g\n" , _p[i]._ysum    , p_a[i]._ysum    , p_b[i]._ysum);
-//     }
-//   }
 }
 
 void EntryScan::sum(const EntryScan& curr, 

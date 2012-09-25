@@ -159,3 +159,9 @@ void Cds::request(const Entry& entry, bool r)
       break;
     }
 }
+
+void Cds::request(ReqOpt o)
+{
+  _request = EntryList(o==None ? EntryList::Empty : EntryList::Full);
+}
+

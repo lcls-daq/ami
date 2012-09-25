@@ -68,6 +68,7 @@ namespace Ami {
       Cds             _cds;
       ClientManager*  _manager;
       unsigned        _niovload;
+      unsigned        _niovread;
       iovec*          _iovload;
 
       Control*        _control;

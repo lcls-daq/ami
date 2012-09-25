@@ -64,6 +64,7 @@ void AnalysisFactory::discover(bool waitForConfigure)
     _waitingForConfigure = true;
   }
 
+  _features[PostAnalysis]->update();  // clear the update flag
   _srv.discover(); 
 
   if (waitForConfigure) {
@@ -161,7 +162,7 @@ void AnalysisFactory::configure(unsigned       id,
         bool lFound=false;
         for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
           Analysis* a = *it;
-          if (a->output().signature()==req.output()) {
+          if (a->output().signature()==req.output() && a->valid()) {
 #ifdef DBUG
             printf("Preserving analysis for %s [%d]\n",
                    a->output().name(),
@@ -214,8 +215,10 @@ void AnalysisFactory::configure(unsigned       id,
   //    This guarantees that the post analyses are performed after the variables
   //      they depend upon are cached.
   //
-  if (_features[PostAnalysis]->update())
+  if (_features[PostAnalysis]->update()) {
+    printf("PostAnalysis updated\n");
     _srv.discover_post();
+  }
 
   if (_waitingForConfigure) {
     _waitingForConfigure = false;

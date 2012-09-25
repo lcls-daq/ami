@@ -402,7 +402,7 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     { double x=_term->evaluate();
       if (!damaged) {
 	EntryScan* en = static_cast<EntryScan*>(_entry);
-	en->addy(y,x);
+	en->addy(y,x,1.,e.last());
 	en->addinfo(1.,EntryScan::Normalization);
       }
       break; }

@@ -35,7 +35,7 @@ namespace Ami {
     void   xbin(double, unsigned bin);
 
     void addy(double y, unsigned bin, double w=1);
-    void addy(double y, double x, double w=1);
+    void addy(double y, double x, double w=1, double t=0);
 
     enum Info { Current, Normalization, InfoSize };
     double info(Info) const;
@@ -59,7 +59,7 @@ namespace Ami {
     DescScan _desc;
 
   private:
-    class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; };
+    class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; double _t; };
     BinV* _p;
 
     int  _insert_bin(const BinV&, int&);
