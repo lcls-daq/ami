@@ -31,6 +31,7 @@
 #include "ami/event/IpmFexHandler.hh"
 #include "ami/event/OceanOpticsHandler.hh"
 #include "ami/event/FliHandler.hh"
+#include "ami/event/AndorHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -314,14 +315,15 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
       case Pds::TypeId::Id_CspadConfig:      
-        if (info.device()==DetInfo::Cspad)   h = new CspadHandler    (info,cache);
-        else                                 h = new CspadMiniHandler(info,cache);
+        if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
+        else                                 h = new CspadMiniHandler  (info,cache);
         break;
-      case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler(info,cache); break;
+      case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;
       case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
-      case Pds::TypeId::Id_FliConfig:        h = new FliHandler      (info,cache); break;
-      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader     (cache); break;
-      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader  (info,cache); break;
+      case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
+      case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
+      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
+      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
