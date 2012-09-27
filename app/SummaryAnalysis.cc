@@ -83,6 +83,12 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_PrincetonConfig:
       h = new princetonDataSpace(detInfo, Pds::TypeId::Id_PrincetonFrame,  Pds::TypeId::Id_PrincetonConfig, payload, "Princeton");
       break;
+    case Pds::TypeId::Id_FliConfig:
+      h = new princetonDataSpace(detInfo, Pds::TypeId::Id_FliFrame,  Pds::TypeId::Id_FliConfig, payload, "Fli");
+      break;
+    case Pds::TypeId::Id_AndorConfig:
+      h = new princetonDataSpace(detInfo, Pds::TypeId::Id_AndorFrame,  Pds::TypeId::Id_AndorConfig, payload, "Andor");
+      break;      
     case Pds::TypeId::Id_pnCCDconfig:
       h = new pnccdDataSpace(detInfo, Pds::TypeId::Id_pnCCDframe,          Pds::TypeId::Id_pnCCDconfig,     payload, "PnCCD");
       break;   
@@ -122,13 +128,14 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
   else if((type.id() == Pds::TypeId::Id_AcqWaveform)     || (type.id() == Pds::TypeId::Id_Frame) || 
           (type.id() == Pds::TypeId::Id_FEEGasDetEnergy) || (type.id() == Pds::TypeId::Id_EBeam) ||
           (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_PrincetonFrame) ||
+          (type.id() == Pds::TypeId::Id_FliFrame)  || (type.id() == Pds::TypeId::Id_AndorFrame) ||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
 #ifdef VERBOSE
-	printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
+  printf("**** ERROR:: event() called while SyncEntry List is Empty \n");
 #endif
-	throttle=true;
+  throttle=true;
       }
     }
     else {
@@ -146,12 +153,12 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
         }
       }
       if(!entryFoundFlag) {
-	if (!throttle2) {
+  if (!throttle2) {
 #ifdef VERBOSE
-	  printf("**** ERROR:: event() called & no Entry Present in List for given detector \n");
+    printf("**** ERROR:: event() called & no Entry Present in List for given detector \n");
 #endif
-	  throttle2=true;
-	}
+    throttle2=true;
+  }
       }
     }  
   }
@@ -218,7 +225,7 @@ void SummaryAnalysis::create   (Cds& cds)
   }
 
   //for 2-D correleation plot
-  if ( (_syncPtrDetX != 0) && (_syncPtrDetY != 0) ) {				
+  if ( (_syncPtrDetX != 0) && (_syncPtrDetY != 0) ) {       
     sprintf(displayTitle,"%s/%s#Ebeam-PhCvty",_syncPtrDetY->getTitle(),_syncPtrDetX->getTitle());
     _scatterPlotEntry = new EntryScan(_syncPtrDetX->detInfo, 0, displayTitle,_syncPtrDetX->getTitle(),_syncPtrDetY->getTitle());
     _scatterPlotEntry->params(DISPLAY_N_POINTS); 
@@ -267,7 +274,7 @@ void SummaryAnalysis::analyze  ()
     for(unsigned i=0;i < _evrEventData->numFifoEvents(); i++) {
       if ( _evrEventData->fifoEvent(i).EventCode == DARK_SHOT_EVENT_CODE) { 
         _darkShot = true;
-   	printf("Dark Shot Found \n");
+    printf("Dark Shot Found \n");
         break;
       } else  _darkShot = false;      
     }
@@ -329,7 +336,7 @@ void SummaryAnalysis::analyze  ()
       if (_plot2DRefill)
         refill2DPlotData(DISPLAY_N_POINTS,includeDarkShot) ;
       else { 
-     	  double dataX = fabs( (_syncPtrDetX->getLiteShotVal()-_syncPtrDetX->getValMin()) * _syncPtrDetX->getScalingFactor());
+        double dataX = fabs( (_syncPtrDetX->getLiteShotVal()-_syncPtrDetX->getValMin()) * _syncPtrDetX->getScalingFactor());
           double dataY = fabs( (_syncPtrDetY->getLiteShotVal()-_syncPtrDetY->getValMin()) * _syncPtrDetY->getScalingFactor());
         _scatterPlotEntry->xbin(dataX,_scatterPlotBinsCount);
         _scatterPlotEntry->ysum(dataY,_scatterPlotBinsCount);    

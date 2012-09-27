@@ -46,12 +46,12 @@ void SyncAnalysis::syncReset()
 
 void SyncAnalysis::logConfigPayload    (void* payload)
 {
-   _configPayload = payload;	
+   _configPayload = payload;  
 }
 
 void SyncAnalysis::logEventDataPayload (void* payload)
 {
-   _dataPayload = payload;	
+   _dataPayload = payload;  
    _newEvent = true;
    this->logDetPayload(payload);   
 }
@@ -133,7 +133,7 @@ namespace Ami {
     Pds::Acqiris::HorizV1& h = acqConfig->horiz();
     unsigned n = acqConfig->nbrChannels();
     double val = 0;  
-    for (unsigned i=0;i<n;i++) {	
+    for (unsigned i=0;i<n;i++) {  
       const int16_t* data = acqData->waveform(h);
       data += acqData->indexFirstPoint();
       float slope = acqConfig->vert(i).slope();
@@ -143,7 +143,7 @@ namespace Ami {
         int16_t swap = (data[j]&0xff<<8) | (data[j]&0xff00>>8);
         val = val + fabs(swap*slope-offset);      //fabs value for area under curve 
       }
-      acqData = acqData->nextChannel(h);	
+      acqData = acqData->nextChannel(h);  
     }
     return val;
   };
@@ -213,14 +213,38 @@ namespace Ami {
   template<> double princetonDataSpace::processData() 
   { 
     PrincetonConfigType& princetonConfig = detConfig; 
-    Pds::Princeton::FrameV1*  princetonFrame   = detDataPtr; 
+    PrincetonDataType*   princetonFrame  = detDataPtr; 
     const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(princetonFrame->data());
-    unsigned totalPixels = princetonConfig.width()*princetonConfig.height();
+    unsigned totalPixels = princetonConfig.frameSize() / sizeof(uint16_t);
     unsigned val = 0;   
     for (unsigned i = 0 ; i<totalPixels ; i++) 
       val = val + (*(dataArray+i) ); 
     return ((double)val);
   }
+
+  template<> double fliDataSpace::processData() 
+  { 
+    FliConfigType& fliConfig = detConfig; 
+    FliDataType*   fliFrame  = detDataPtr; 
+    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(fliFrame->data());
+    unsigned totalPixels = fliConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;   
+    for (unsigned i = 0 ; i<totalPixels ; i++) 
+      val = val + (*(dataArray+i) ); 
+    return ((double)val);
+  }
+
+  template<> double andorDataSpace::processData() 
+  { 
+    AndorConfigType& andorConfig = detConfig; 
+    AndorDataType*   andorFrame  = detDataPtr; 
+    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(andorFrame->data());
+    unsigned totalPixels = andorConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;   
+    for (unsigned i = 0 ; i<totalPixels ; i++) 
+      val = val + (*(dataArray+i) ); 
+    return ((double)val);
+  }  
 
   template<> double ipimbDataSpace::processData() 
   { 

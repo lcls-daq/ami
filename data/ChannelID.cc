@@ -11,24 +11,24 @@ static char _buffer[128];
 
 #define NoChannel(title) { strcpy(_buffer,title); }
 #define AppendChannel(title) { sprintf(_buffer,"%s_%d",title,channel+1); }
-#define AcqChannel(title)			\
+#define AcqChannel(title)     \
   if (info.device()==DetInfo::Acqiris) {        \
     if (channel>>16)                            \
       strcpy(_buffer,title);                    \
     else                                        \
-      AppendChannel(title)			\
+      AppendChannel(title)      \
         }
-#define OpalDetector(title) 				\
+#define OpalDetector(title)         \
   if (info.device()==DetInfo::Opal1000 ||               \
       info.device()==DetInfo::Opal2000 ||               \
       info.device()==DetInfo::Opal4000) {               \
-    if (info.devId()==0)				\
-      strcpy(_buffer,title);				\
-    else						\
-      sprintf(_buffer,"%s_%d",title,info.devId()+1);	\
-  }							
-#define PnccdDetector 				     \
-    if (info.device()==DetInfo::pnCCD)		     \
+    if (info.devId()==0)        \
+      strcpy(_buffer,title);        \
+    else            \
+      sprintf(_buffer,"%s_%d",title,info.devId()+1);  \
+  }             
+#define PnccdDetector              \
+    if (info.device()==DetInfo::pnCCD)         \
       sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
@@ -46,14 +46,14 @@ static void _default(char* b, const DetInfo& info, unsigned channel)
   }
   else
     sprintf(b,"%s_%d_%s_%d",
-	    DetInfo::name(info.detector()),
+      DetInfo::name(info.detector()),
             info.detId(),
-	    DetInfo::name(info.device  ()),
+      DetInfo::name(info.device  ()),
             info.devId());
 }
 
 const char* Ami::ChannelID::name(const Pds::DetInfo& info,
-				 unsigned channel)
+         unsigned channel)
 {
   *_buffer = 0;
   if (info.level()==Pds::Level::Source) {
@@ -99,6 +99,12 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       case DetInfo::Princeton:
         sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId());
         break;
+      case DetInfo::Fli:
+        sprintf(_buffer,"Fli.%d.%d",info.detId(),info.devId());
+        break;
+      case DetInfo::Andor:
+        sprintf(_buffer,"Andor.%d.%d",info.detId(),info.devId());
+        break;
       default: _default(_buffer,info,channel); break;
       }
       break;    
@@ -123,6 +129,12 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
         break;
       case DetInfo::Princeton:
         sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId()); 
+        break;
+      case DetInfo::Fli:
+        sprintf(_buffer,"Fli.%d.%d",info.detId(),info.devId());
+        break;
+      case DetInfo::Andor:
+        sprintf(_buffer,"Andor.%d.%d",info.detId(),info.devId());
         break;
       default: 
         _default(_buffer,info,channel); 

@@ -7,6 +7,7 @@ libincs_pyami := python/include/python2.5
 liblibs_pyami := pdsdata/xtcdata pdsdata/acqdata
 liblibs_pyami += pdsdata/camdata pdsdata/opal1kdata
 liblibs_pyami += pdsdata/pulnixdata pdsdata/princetondata
+liblibs_pyami += pdsdata/flidata pdsdata/andordata
 liblibs_pyami += pdsdata/pnccddata pdsdata/ipimbdata
 liblibs_pyami += pdsdata/evrdata pdsdata/encoderdata
 liblibs_pyami += pdsdata/gsc16aidata
