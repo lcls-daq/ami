@@ -366,7 +366,7 @@ const QStringList& QtPlot::names(Ami::DescEntry::Type t)
 
 QtPlot* QtPlot::lookup(const QString& name)
 {
-  for(int i=0; i<_plots.size(); i++)
+  for(int i=0; i<(int)_plots.size(); i++)
     if (_plots[i]->_name == name)
       return _plots[i];
   return 0;

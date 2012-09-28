@@ -274,7 +274,7 @@ void DetectorSelect::set_setup(const char* p, int size)
     const Ami::XML::StartTag& tag = *it;
 
     printf("DetectorSelect tag %s/%s [%d]\n",
-           tag.element.c_str(),tag.name.c_str(),p-start);
+           tag.element.c_str(),tag.name.c_str(),(int)(p-start));
 
     if (tag.name == "self")
       load(p);

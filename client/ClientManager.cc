@@ -420,7 +420,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     }
   }
 
-  if (size < reply.payload()) {
+  if (size < (int) reply.payload()) {
     switch (reply.type()) {
     case Message::Discover: 
     case Message::Description: 

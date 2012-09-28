@@ -20,7 +20,7 @@ int main()
     iovec* iov = _iov;
     do {
       for(unsigned i=0; i<=cnt; i++)
-        printf(".iov[%d] %p/%x\n",i,_iov[i].iov_base,_iov[i].iov_len);
+        printf(".iov[%d] %p/%x\n",i,_iov[i].iov_base,(unsigned) _iov[i].iov_len);
 
       int r = chunk;
       iovec* iiov = iov;
@@ -32,7 +32,7 @@ int main()
       iov->iov_base = (void*)0x1000000; iov->iov_len = 0x10;
 
       for(int i=0; i<=iiov-iov; i++)
-        printf("iov[%d] %p/%x\n",i,iov[i].iov_base,iov[i].iov_len);
+        printf("iov[%d] %p/%x\n",i,iov[i].iov_base,(unsigned) iov[i].iov_len);
 
       iov        = iiov-1;
       iiov->iov_len   = -r;

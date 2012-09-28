@@ -281,7 +281,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 	       _channels,signatures,NCHANNELS);
 
     if (p > _request+BufferSize) {
-      printf("Client request overflow: size = 0x%x\n", p-_request);
+      printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
       return 0;
     }
     else if (p==hp && !isVisible()) {  // nothing to show

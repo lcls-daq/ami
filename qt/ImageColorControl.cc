@@ -237,7 +237,7 @@ const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_tab
 
 void   ImageColorControl::set_palette(int p)
 {
-  if (p >= _palettes.num_palettes()) p = _palettes.num_palettes()-1;
+  if (p >= (int) _palettes.num_palettes()) p = _palettes.num_palettes()-1;
   *_color_table = _palettes.palette(p);
 
   emit windowChanged();

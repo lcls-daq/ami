@@ -266,7 +266,7 @@ int  EnvClient::configure       (iovec* iov)
     (*it)->configure(p,_input,_output_signature);
 
   if (p > _request+BufferSize) {
-    printf("Client request overflow: size = 0x%x\n", p-_request);
+    printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
     return 0;
   }
   else {
