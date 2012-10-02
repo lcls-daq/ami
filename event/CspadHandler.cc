@@ -26,6 +26,7 @@
 #include <omp.h>
 #endif
 
+#define QUAD_CHECK
 #define UNBINNED
 #define DO_PED_CORR
 
@@ -926,7 +927,7 @@ namespace CspadGeometry {
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
     void fill(Ami::DescImage&    image,
-        Ami::FeatureCache& cache) const
+              Ami::FeatureCache& cache) const
     {
       //
       //  The configuration should tell us how many elements to view
@@ -936,26 +937,44 @@ namespace CspadGeometry {
       unsigned qmask = _config.quadMask();
       const char* detname = DetInfo::name(static_cast<const DetInfo&>(_src).detector());
       for(unsigned i=0; i<4; i++)
-  if (qmask & (1<<i)) {
-    quad[i]->fill(image, _config.roiMask(i));
-    for(unsigned a=0; a<4; a++) {
-      sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
-      _feature[4*i+a] = cache.add(buff);
+        if (qmask & (1<<i)) {
+          quad[i]->fill(image, _config.roiMask(i));
+          for(unsigned a=0; a<4; a++) {
+            sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
+            _feature[4*i+a] = cache.add(buff);
+          }
+        }
     }
-  }
-    }
-    void fill(Ami::EntryImage& image,
-        const Xtc&       xtc) const
+    bool fill(Ami::EntryImage& image,
+              const Xtc&       xtc) const
     {
+#ifdef QUAD_CHECK
+      //
+      //  First, check for duplicate quads
+      //
+      { unsigned qmask = 0;
+        Pds::CsPad::ElementIterator* iter = _config.iter(xtc);
+        for(const Pds::CsPad::ElementHeader* hdr = iter->next(); (hdr); hdr=iter->next()) {
+          unsigned iq = 1<<hdr->quad();
+          if (qmask & iq) {
+            printf("%s: Found duplicate quad %d.  Invalidating.\n",
+                   Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(_src)),hdr->quad());
+            return false;
+          }
+          qmask |= iq;
+        }
+      }
+#endif
+
 #ifdef _OPENMP
       ElementIterator* iters[5];
       int niters=0;
       {
-  ElementIterator* iter = _config.iter(xtc);
+        ElementIterator* iter = _config.iter(xtc);
         do {
           iters[niters++] = new ElementIterator(*iter);
         } while( iter->next() );
-  delete iter;
+        delete iter;
       }            
       niters--;
       if (niters >= 0)
@@ -980,13 +999,15 @@ namespace CspadGeometry {
       ElementIterator* iter = _config.iter(xtc);
       const Pds::CsPad::ElementHeader* hdr;
       while( (hdr=iter->next()) ) {
-  quad[hdr->quad()]->fill(image,*iter); 
-  for(int a=0; a<4; a++)
-    _cache->cache(_feature[4*hdr->quad()+a],
-      CspadTemp::instance().getTemp(hdr->sb_temp(a)));
+        quad[hdr->quad()]->fill(image,*iter); 
+        for(int a=0; a<4; a++)
+          _cache->cache(_feature[4*hdr->quad()+a],
+                        CspadTemp::instance().getTemp(hdr->sb_temp(a)));
       }
       delete iter;
 #endif
+
+      return true;
     }
     void fill(Ami::EntryImage& image,
               double v0, double v1) const
@@ -1203,9 +1224,13 @@ void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
       _options = o;
     }
 
-    _detector->fill(*_entry,*xtc);
-    _entry->info(1,EntryImage::Normalization);
-    _entry->valid(t);
+    if (_detector->fill(*_entry,*xtc)) {
+      _entry->info(1,EntryImage::Normalization);
+      _entry->valid(t);
+    }
+    else {
+      _entry->invalid(); 
+    }
   }
   if (_unbinned_entry) {
     _unbinned_detector->fill(*_unbinned_entry,*xtc);
