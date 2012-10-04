@@ -17,7 +17,7 @@ Discovery::Discovery(unsigned ppinterface,
 		     unsigned serverGroup) :
   _interface  (interface),
   _serverGroup(serverGroup),
-  _connect_mgr(new ConnectionManager(interface)),
+  _connect_mgr(new ConnectionManager(ppinterface)),
   _manager    (new ClientManager(interface,
                                  serverGroup, 
 				 *_connect_mgr,

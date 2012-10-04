@@ -9,6 +9,8 @@
 
 #include <errno.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 static const int BufferSize = 32*1024;
@@ -58,6 +60,11 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
  	 _reply.id(), _reply.type(),_reply.payload(), _socket->socket());
 #endif
 
-  if (_socket->writev(_iov,cnt)<0)
+  int nbytes = _socket->writev(_iov,cnt);
+  if (nbytes < 0)
     printf("Error in Server::reply writev writing %d bytes : %s\n",_reply.payload(),strerror(errno));
+  else if (unsigned(nbytes) != _reply.payload()+sizeof(_reply)) {
+    printf("Error in Server::reply write wrote %d/%d bytes\n",
+           nbytes, _reply.payload()+sizeof(_reply));
+  }
 }

@@ -8,12 +8,26 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define POLL_RCV
+//#define DBUG
+
 using namespace Ami;
 
 TSocket::TSocket() throw(Event)
 {
   if ((_socket = ::socket(AF_INET, SOCK_STREAM, 0)) < 0)
     throw Event("TSocket failed to open socket",strerror(errno));
+
+  int parm = 16*1024*1024;
+  if(setsockopt(_socket, SOL_SOCKET, SO_SNDBUF, (char*)&parm, sizeof(parm)) == -1) {
+    printf("TSocket failed to set sndbuf: %s\n",strerror(errno));
+    throw Event("TSocket failed to set sndbuf",strerror(errno));
+  }
+
+  if(setsockopt(_socket, SOL_SOCKET, SO_RCVBUF, (char*)&parm, sizeof(parm)) == -1) {
+    printf("TSocket failed to set rcvbuf: %s\n",strerror(errno));
+    throw Event("TSocket failed to set sndbuf",strerror(errno));
+  }
 
   _rhdr.msg_name       = 0;
   _rhdr.msg_namelen    = 0;
@@ -24,6 +38,17 @@ TSocket::TSocket() throw(Event)
 
 TSocket::TSocket(int s) throw(Event)
 {
+  int parm = 16*1024*1024;
+  if(setsockopt(s, SOL_SOCKET, SO_SNDBUF, (char*)&parm, sizeof(parm)) == -1) {
+    printf("TSocket failed to set sndbuf: %s\n",strerror(errno));
+    throw Event("TSocket failed to set sndbuf",strerror(errno));
+  }
+
+  if(setsockopt(s, SOL_SOCKET, SO_RCVBUF, (char*)&parm, sizeof(parm)) == -1) {
+    printf("TSocket failed to set rcvbuf: %s\n",strerror(errno));
+    throw Event("TSocket failed to set sndbuf",strerror(errno));
+  }
+
   _rhdr.msg_name       = 0;
   _rhdr.msg_namelen    = 0;
   _rhdr.msg_control    = 0;
@@ -83,6 +108,43 @@ TSocket::~TSocket()
 
 int TSocket::readv(const iovec* iov, int iovcnt)
 {
+#ifdef POLL_RCV
+  //
+  //  Try to handle incomplete reads without hanging
+  //
+  iovec* _iov = new iovec[iovcnt];
+  int remaining = 0;
+  for(int i=0; i<iovcnt; i++) {
+    remaining += iov[i].iov_len;
+  }
+
+  int bytes = 0;
+
+  while(remaining) {
+
+    int _iovcnt = 0;
+    for(int i=0, b=bytes; i<iovcnt; i++) {
+      if (b < iov[i].iov_len) {
+        _iov[_iovcnt].iov_base = (char*)iov[i].iov_base+b;
+        _iov[_iovcnt].iov_len  = iov[i].iov_len-b;
+        b = 0;
+        _iovcnt++;
+      }
+      else {
+        b -= iov[i].iov_len;
+      }
+    }      
+
+    _rhdr.msg_iov    = const_cast<iovec*>(_iov);
+    _rhdr.msg_iovlen = _iovcnt;
+
+    int nb = ::recvmsg(_socket, &_rhdr, 0);
+    if (nb < 0) break;
+    bytes += nb;
+    remaining -= nb;
+  }    
+    
+#else
   _rhdr.msg_iov    = const_cast<iovec*>(iov);
   _rhdr.msg_iovlen = iovcnt;
 
@@ -90,22 +152,8 @@ int TSocket::readv(const iovec* iov, int iovcnt)
   if (iovcnt==0 || iov[0].iov_len==0) return 0;
 
   int bytes = ::recvmsg(_socket, &_rhdr, MSG_WAITALL);
-#ifdef DBUG
-  { printf("\nTSocket %d read %d bytes\n",socket(),bytes);
-    int remaining=bytes;
-    if (remaining>128) remaining=128;
-    for(const iovec* i = iov; remaining>0; i++) {
-      unsigned k=0;
-      const unsigned char* end = (const unsigned char*)i->iov_base
-	+ (i->iov_len > remaining ? remaining : i->iov_len);
-      for(const unsigned char* c = (const unsigned char*)i->iov_base;
-	  c < end; c++,k++)
-	printf("%02x%c",*c,(k%32)==31 ? '\n' : ' ');
-      printf("\n");
-      remaining -= i->iov_len;
-    }
-  }
 #endif
+
   if (bytes<0) {
     //    printf("Error reading from skt %d : %s\n",
     //	   socket(), strerror(errno));

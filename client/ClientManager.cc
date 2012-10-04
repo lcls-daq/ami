@@ -33,6 +33,8 @@
 #include <stdio.h>
 #include <netpacket/packet.h>
 
+//#define DBUG
+
 namespace Ami {
   //
   //  A class to listen for servers that come online
@@ -420,7 +422,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     }
   }
 
-  if (size < (int) reply.payload()) {
+  if (size < int(reply.payload())) {
     switch (reply.type()) {
     case Message::Discover: 
     case Message::Description: 
