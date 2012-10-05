@@ -18,6 +18,7 @@ namespace Ami {
     PeakFinder(double threshold_v0,
                double threshold_v1,
                bool   accumulate);
+    PeakFinder(const char*&);
     PeakFinder(const char*&, const DescEntry&);
     ~PeakFinder();
   public:

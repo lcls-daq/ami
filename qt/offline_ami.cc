@@ -9,6 +9,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
+#include "ami/event/EventHandler.hh"
 #include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Semaphore.hh"
@@ -29,6 +30,7 @@ static void usage(char* progname) {
 	  "         [-o <filename for debugging messages>]\n"
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]"
+          "         [-R (full resolution)"
           "         [-E (expert mode>]\n", progname);
 }
 
@@ -82,7 +84,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:C:L:ETW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:C:L:ERTW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -107,6 +109,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'e':
       errorFile = optarg;
+      break;
+    case 'R':
+      Ami::EventHandler::enable_full_resolution(true);
       break;
     case 'T':
       testMode = true;

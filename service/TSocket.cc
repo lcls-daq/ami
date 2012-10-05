@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define POLL_RCV
+//#define POLL_RCV
 //#define DBUG
 
 using namespace Ami;

@@ -21,6 +21,7 @@
 #include "ami/data/Zoom.hh"
 #include "ami/data/CurveFit.hh"
 #include "ami/data/MaskImage.hh"
+#include "ami/data/BlobFinder.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -70,6 +71,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Zoom      : o = new Zoom   (p,input); break;
   case AbsOperator::CurveFit  : o = new CurveFit (p,input,_f); break;
   case AbsOperator::MaskImage : o = new MaskImage (p,input); break;
+  case AbsOperator::BlobFinder: o = new BlobFinder(p,input); break;
   case AbsOperator::Value     :
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }

@@ -26,7 +26,6 @@ PeakFinder::PeakFinder(double threshold_v0,
   _output_entry(0),
   _fn          (0)
 {
-  printf("PeakFinder acc %c\n",_accumulate ? 't':'f');
 }
 
 #define CASETERM(type) case DescEntry::type: \
@@ -34,6 +33,16 @@ PeakFinder::PeakFinder(double threshold_v0,
 
 static const char* _advance(const char*& p, unsigned size) { const char* o=p; p+=size; return o; }
 #define EXTRACT(p, type) *(reinterpret_cast<const type*>(_advance(p,sizeof(type))))
+
+PeakFinder::PeakFinder(const char*& p) :
+  AbsOperator     (AbsOperator::PeakFinder),
+  _threshold_v0(EXTRACT(p, double)),
+  _threshold_v1(EXTRACT(p, double)),
+  _accumulate  (EXTRACT(p, bool  )),
+  _output_entry(0),
+  _fn          (0)
+{
+}
 
 PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   AbsOperator     (AbsOperator::PeakFinder),
@@ -85,6 +94,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   const DescImage& d = entry.desc();
   const unsigned nx = d.nbinsx();
   const unsigned ny = d.nbinsy();
+  const unsigned q = d.ppxbin()*d.ppybin();
 
   if (!_accumulate)
     memset(_output_entry->contents(), 0, sizeof(unsigned)*nx*ny);
@@ -97,7 +107,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
         const unsigned threshold = _fn->value(j,k) + unsigned(entry.info(EntryImage::Pedestal));
         unsigned v = *a++;
         if (v > threshold)
-          _output_entry->addcontent(1,j,k);
+          _output_entry->addcontent(q,j,k);
       }
     }
   }
@@ -119,7 +129,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
             v > c[j-1] && 
             v > c[j+0] &&
             v > c[j+1])
-          _output_entry->addcontent(1,j,k);
+          _output_entry->addcontent(q,j,k);
       }
     }  }
 

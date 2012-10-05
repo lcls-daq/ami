@@ -9,6 +9,7 @@ namespace Ami {
     class ImageRPhiProjection;
     class ImageContourProjection;
     class PeakFinder;
+    class BlobFinder;
 
     class ImageClient : public Client {
     public:
@@ -34,6 +35,7 @@ namespace Ami {
       ImageRPhiProjection*    _rfproj;
       ImageContourProjection* _cntproj;
       PeakFinder*             _hit;
+      BlobFinder*             _blob;
     };
   };
 };

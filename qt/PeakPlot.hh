@@ -16,6 +16,7 @@
 #include <QtCore/QString>
 
 namespace Ami {
+  class AbsOperator;
   class Cds;
   namespace Qt {
     class ChannelDefinition;
@@ -29,9 +30,7 @@ namespace Ami {
       PeakPlot(QWidget* parent,
 	       const QString&,
 	       unsigned input_channel,
-	       double threshold_0,
-	       double threshold_1,
-               bool   accumulate=true);
+               AbsOperator* op);
       PeakPlot(QWidget*, const char*&);
       ~PeakPlot();
     public:
@@ -56,9 +55,7 @@ namespace Ami {
     private:
       QString          _name;
       unsigned         _input;
-      double           _threshold_0;
-      double           _threshold_1;
-      bool             _accumulate;
+      AbsOperator*     _op;
       unsigned         _signature;
 
       enum {NCHANNELS=4};
@@ -68,6 +65,14 @@ namespace Ami {
       ImageRPhiProjection*    _rfproj;
       unsigned           _showMask;
       ConfigureRequestor _req;
+
+    public slots:
+      void set_chrome_visible(bool);
+    protected:
+      void paintEvent(QPaintEvent*);
+    private:
+      QLayout* _chrome_layout;
+      bool     _chrome_changed;
     };
   };
 };

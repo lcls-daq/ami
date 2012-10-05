@@ -7,11 +7,14 @@
 #include "ami/qt/NullTransform.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
+#include "ami/qt/PWidgetManager.hh"
+#include "ami/qt/QtUtils.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/PeakFinder.hh"
+#include "ami/data/BlobFinder.hh"
 #include "ami/data/ConfigureRequest.hh"
 
 #include <QtGui/QHBoxLayout>
@@ -34,15 +37,11 @@ static QStringList names = QStringList() << QString("ChA") << QString("ChB") << 
 PeakPlot::PeakPlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         input_channel,
-		   double           threshold_0,
-		   double           threshold_1,
-                   bool             accumulate) :
+                   AbsOperator*     op) :
   QtPWidget(0),
   _name    (name),
   _input   (input_channel),
-  _threshold_0(threshold_0),
-  _threshold_1(threshold_1),
-  _accumulate (accumulate),
+  _op      (op),
   _signature(-1),
   _frame   (new ImageDisplay),
   _showMask(1)
@@ -54,6 +53,8 @@ PeakPlot::PeakPlot(QWidget*         parent,
   _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*_frame->plot());
 
   _layout();
+
+  PWidgetManager::add(this, _name);
 }
 
 void PeakPlot::_layout()
@@ -95,11 +96,12 @@ void PeakPlot::_layout()
       layout3->addWidget(cylB);
       connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
     layout3->addStretch();
-    layout->addLayout(layout3); }
+    layout->addLayout(_chrome_layout=layout3); }
 
   layout->addWidget(_frame);
   setLayout(layout);
 
+  connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   show();
@@ -120,14 +122,20 @@ PeakPlot::PeakPlot(QWidget*         parent,
   load(p);
 
   _layout();
+
+  PWidgetManager::add(this, _name);
 }
 
 PeakPlot::~PeakPlot()
 {
+  PWidgetManager::remove(this);
+  delete _op;
 }
 
 void PeakPlot::save(char*& p) const
 {
+  char* buff = new char[8*1024];
+
   XML_insert( p, "QtPWidget", "self",
               QtPWidget::save(p) );
 
@@ -135,12 +143,8 @@ void PeakPlot::save(char*& p) const
               QtPersistent::insert(p,_name) );
   XML_insert( p, "unsigned", "_input",
               QtPersistent::insert(p,_input) );
-  XML_insert( p, "double"  , "_threshold_0",
-              QtPersistent::insert(p,_threshold_0) );
-  XML_insert( p, "double"  , "_threshold_1",
-              QtPersistent::insert(p,_threshold_1) );
-  XML_insert( p, "bool"  , "_accumulate",
-              QtPersistent::insert(p,_accumulate) );
+  XML_insert( p, "AbsOperator", "_op",
+              QtPersistent::insert(p,buff,(char*)_op->serialize(buff)-buff) );
 
   for(unsigned i=0; i<NCHANNELS; i++)
     XML_insert( p, "ChannelDefinition", "_channels",
@@ -165,12 +169,16 @@ void PeakPlot::load(const char*& p)
       _name  = QtPersistent::extract_s(p);
     else if (tag.name == "_input")
       _input = QtPersistent::extract_i(p);
-    else if (tag.name == "_threshold_0")
-      _threshold_0 = QtPersistent::extract_i(p);
-    else if (tag.name == "_threshold_1")
-      _threshold_1 = QtPersistent::extract_i(p);
-    else if (tag.name == "_accumulate")
-      _accumulate = QtPersistent::extract_b(p);
+    else if (tag.name == "_op") {
+      const char* v = (const char*)QtPersistent::extract_op(p);
+      uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(v);
+      v+=2*sizeof(uint32_t); // type and next
+      switch(type) {
+      case AbsOperator::PeakFinder       : _op = new PeakFinder       (v); break;
+      case AbsOperator::BlobFinder       : _op = new BlobFinder       (v); break;
+      default: _op=0; printf("Unable to operator type %d\n",type); break;
+      }
+    }
     else if (tag.name == "_channels") {
       _channels[nchannels]->load(p);
       if (_channels[nchannels]->is_shown())
@@ -212,14 +220,12 @@ void PeakPlot::setup_payload(Cds& cds)
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
-  Ami::PeakFinder op(_threshold_0,_threshold_1,_accumulate);
-
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Analysis,
 						  input_signatures[_input],
 						  -1,
 						  *input_channels[_input]->filter().filter(),
-						  op);
+						  *_op);
   p += r.size();
   _req.request(r, output);
   input = r.output();
@@ -261,3 +267,21 @@ void PeakPlot::update()
   _xyproj ->update();
   _rfproj ->update();
 }
+
+void PeakPlot::set_chrome_visible(bool v)
+{
+  _chrome_changed = true;
+  QtUtils::setChildrenVisible(_chrome_layout ,v);
+  updateGeometry();
+  resize(minimumWidth(),minimumHeight());
+}
+
+void PeakPlot::paintEvent(QPaintEvent* e)
+{
+  if (_chrome_changed) {
+    resize(minimumWidth(),minimumHeight());
+    _chrome_changed = false;
+  }
+  QWidget::paintEvent(e);
+}
+

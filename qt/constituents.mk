@@ -154,6 +154,7 @@ libsrcs_amiqt += PeakFitPlot.cc PeakFitPlot_moc.cc
 libsrcs_amiqt += PeakFitPost.cc PeakFitOverlay.cc
 libsrcs_amiqt += PeakPlot.cc PeakPlot_moc.cc
 libsrcs_amiqt += PeakFinder.cc PeakFinder_moc.cc
+libsrcs_amiqt += BlobFinder.cc BlobFinder_moc.cc
 libsrcs_amiqt += ProjectionPlot.cc ProjectionPlot_moc.cc
 libsrcs_amiqt += TwoDPlot.cc TwoDPlot_moc.cc
 libsrcs_amiqt += ImageGrid.cc

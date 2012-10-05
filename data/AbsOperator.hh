@@ -22,7 +22,8 @@ namespace Ami {
 		XYProjection, RPhiProjection, 
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
 		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
-                XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage };
+                XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage,
+                BlobFinder };
     AbsOperator(Type t);
     virtual ~AbsOperator();
     Entry&       operator ()(const Entry&) const;

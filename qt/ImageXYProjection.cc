@@ -33,7 +33,6 @@
 #include <QtGui/QLabel>
 #include <QtGui/QGroupBox>
 #include <QtGui/QLineEdit>
-#include <QtGui/QDoubleValidator>
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
 #include <QtGui/QTabWidget>

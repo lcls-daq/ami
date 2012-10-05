@@ -8,6 +8,7 @@
 #include "ami/qt/ImageRPhiProjection.hh"
 #include "ami/qt/ImageContourProjection.hh"
 #include "ami/qt/PeakFinder.hh"
+#include "ami/qt/BlobFinder.hh"
 
 #include <QtGui/QPushButton>
 #include <QtGui/QHBoxLayout>
@@ -40,13 +41,19 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
 
   { QPushButton* hitB = new QPushButton("Hit Finder");
     addWidget(hitB);
-    _hit = new PeakFinder(this,_channels,NCHANNELS,wd);
+    _hit = new PeakFinder(this,_channels,NCHANNELS);
     connect(hitB, SIGNAL(clicked()), _hit, SLOT(front()));}
+
+  { QPushButton* blobB = new QPushButton("Blob Finder");
+    addWidget(blobB);
+    _blob = new BlobFinder(this,_channels,NCHANNELS,*wd.plot());
+    connect(blobB, SIGNAL(clicked()), _blob, SLOT(front()));}
 
   connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_blob   , SIGNAL(changed()), this, SIGNAL(changed()));
 }
 
 Ami::Qt::ImageClient::~ImageClient() {}
@@ -59,6 +66,7 @@ void Ami::Qt::ImageClient::save(char*& p) const
   XML_insert(p, "ImageRPhiProjection", "_rfproj", _rfproj ->save(p) );
   XML_insert(p, "ImageContourProjection", "_cntproj", _cntproj->save(p) );
   XML_insert(p, "PeakFinder", "_hit", _hit    ->save(p) );
+  XML_insert(p, "BlobFinder", "_blob", _blob  ->save(p) );
 }
 
 void Ami::Qt::ImageClient::load(const char*& p)
@@ -74,6 +82,8 @@ void Ami::Qt::ImageClient::load(const char*& p)
       _cntproj->load(p);
     else if (tag.name == "_hit")
       _hit    ->load(p);
+    else if (tag.name == "_blob")
+      _blob   ->load(p);
   XML_iterate_close(ImageClient,tag);
 
   update_configuration();
@@ -87,6 +97,7 @@ void Ami::Qt::ImageClient::save_plots(const QString& p) const
   _rfproj ->save_plots(p+"_rfproj");
   _cntproj->save_plots(p+"_cntproj");
   _hit    ->save_plots(p+"_hits");
+  _blob   ->save_plots(p+"_blob");
 }
 
 void Ami::Qt::ImageClient::_configure(char*& p,
@@ -100,6 +111,7 @@ void Ami::Qt::ImageClient::_configure(char*& p,
    _rfproj ->configure(p, input, output, ch, signatures, nchannels);
    _cntproj->configure(p, input, output, ch, signatures, nchannels);
    _hit    ->configure(p, input, output, ch, signatures, nchannels);
+   _blob   ->configure(p, input, output, ch, signatures, nchannels);
 }
 
 void Ami::Qt::ImageClient::_setup_payload(Cds& cds)
@@ -108,6 +120,7 @@ void Ami::Qt::ImageClient::_setup_payload(Cds& cds)
   _rfproj ->setup_payload(cds);
   _cntproj->setup_payload(cds);
   _hit    ->setup_payload(cds);
+  _blob   ->setup_payload(cds);
   static_cast<ImageDisplay&>(display()).grid_scale().setup_payload(cds);
 }
 
@@ -117,6 +130,7 @@ void Ami::Qt::ImageClient::_update()
   _rfproj ->update();
   _cntproj->update();
   _hit    ->update();
+  _blob   ->update();
 }
 
 void Ami::Qt::ImageClient::_prototype(const DescEntry& e)

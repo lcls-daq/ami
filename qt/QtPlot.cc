@@ -54,9 +54,11 @@ namespace Ami {
             if (c) {
               painter.setPen  (c->pen().color());
               const QString& title = c->title().text();
-              painter.drawText(10, 18*row, width-10, 18, ::Qt::AlignLeft, 
-                               title.mid(0,title.indexOf('#')));
-              row++;
+              if (width > 20) {
+                painter.drawText(10, 18*row, width-10, 18, ::Qt::AlignLeft, 
+                                 title.mid(0,title.indexOf('#')));
+                row++;
+              }
             }
           }
         }

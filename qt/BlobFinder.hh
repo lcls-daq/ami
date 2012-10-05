@@ -1,10 +1,11 @@
-#ifndef AmiQt_PeakFinder_hh
-#define AmiQt_PeakFinder_hh
+#ifndef AmiQt_BlobFinder_hh
+#define AmiQt_BlobFinder_hh
 
 #include "ami/qt/QtPWidget.hh"
 
 #include <QtCore/QString>
 
+class QLineEdit;
 class QCheckBox;
 
 #include <list>
@@ -21,13 +22,15 @@ namespace Ami {
     class ImageScale;
     class PeakPlot;
     class DescImage;
+    class ImageFrame;
+    class RectangleCursors;
 
-    class PeakFinder : public QtPWidget {
+    class BlobFinder : public QtPWidget {
       Q_OBJECT
     public:
-      PeakFinder(QWidget* parent,
-		 ChannelDefinition* channels[], unsigned nchannels);
-      ~PeakFinder();
+      BlobFinder(QtPWidget* parent,
+		 ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
+      ~BlobFinder();
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -42,6 +45,7 @@ namespace Ami {
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
       void remove_plot   (QObject*);
+      virtual void setVisible(bool);
     signals:
       void changed();
     private:
@@ -49,8 +53,11 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
 
-      ImageScale*    _threshold;
-      QCheckBox*     _accumulate;
+      ImageFrame&       _frame;
+      RectangleCursors* _rectangle;
+      ImageScale*       _threshold;
+      QLineEdit*        _cluster_size;
+      QCheckBox*        _accumulate;
 
       std::list<PeakPlot*> _plots;
     };

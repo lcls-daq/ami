@@ -1,12 +1,13 @@
-#include "PeakFinder.hh"
+#include "BlobFinder.hh"
 
 #include "ami/qt/ChannelDefinition.hh"
+#include "ami/qt/RectangleCursors.hh"
 #include "ami/qt/PeakPlot.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageScale.hh"
 
 #include "ami/data/DescImage.hh"
-#include "ami/data/PeakFinder.hh"
+#include "ami/data/BlobFinder.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
@@ -17,7 +18,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QGroupBox>
 #include <QtGui/QLineEdit>
-#include <QtGui/QDoubleValidator>
+#include <QtGui/QIntValidator>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
@@ -27,18 +28,22 @@
 
 using namespace Ami::Qt;
 
-PeakFinder::PeakFinder(QWidget* parent,
-		       ChannelDefinition* channels[], unsigned nchannels) :
+BlobFinder::BlobFinder(QtPWidget* parent,
+		       ChannelDefinition* channels[], unsigned nchannels, ImageFrame& frame) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
-  _channel  (0)
+  _channel  (0),
+  _frame    (frame)
 {
+  _rectangle = new RectangleCursors(_frame, parent);
   _threshold = new ImageScale("threshold");
+  _cluster_size = new QLineEdit();
+  new QIntValidator(1,1000000,_cluster_size);
   _accumulate = new QCheckBox("sum events");
   _accumulate->setChecked(true);
 
-  setWindowTitle("PeakFinder Plot");
+  setWindowTitle("BlobFinder Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   QComboBox* channelBox = new QComboBox;
@@ -56,9 +61,19 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
-  { QGroupBox* locations_box = new QGroupBox("Counting Threshold");
-    locations_box->setToolTip("Define threshold value.");
+  { QGroupBox* locations_box = new QGroupBox("Define Boundaries");
+    locations_box->setToolTip("Define search boundaries.");
     QVBoxLayout* layout2 = new QVBoxLayout;
+    layout2->addWidget(_rectangle);
+    locations_box->setLayout(layout2);
+    layout->addWidget(locations_box); }
+  { QGroupBox* locations_box = new QGroupBox("Blob Properties");
+    locations_box->setToolTip("Define required blob properties.");
+    QVBoxLayout* layout2 = new QVBoxLayout;
+    { QHBoxLayout* hl = new QHBoxLayout;
+      hl->addWidget(new QLabel("Min. Size"));
+      hl->addWidget(_cluster_size);
+      layout2->addLayout(hl); }
     layout2->addWidget(_threshold);
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
@@ -72,19 +87,22 @@ PeakFinder::PeakFinder(QWidget* parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 }
   
-PeakFinder::~PeakFinder()
+BlobFinder::~BlobFinder()
 {
 }
 
-void PeakFinder::save(char*& p) const
+void BlobFinder::save(char*& p) const
 {
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
   XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "RectangleCursors", "_rectangle", _rectangle->save(p) );
+  XML_insert(p, "QLineEdit", "_cluster_size", QtPersistent::insert(p, _cluster_size->text()) );
   XML_insert(p, "QLineEdit", "_threshold_0", QtPersistent::insert(p,_threshold->value(0)) );
   XML_insert(p, "QLineEdit", "_threshold_1", QtPersistent::insert(p,_threshold->value(1)) );
   XML_insert(p, "QCheckBox", "_accumulate", QtPersistent::insert(p,_accumulate->isChecked()) );
@@ -94,7 +112,7 @@ void PeakFinder::save(char*& p) const
   }
 }
 
-void PeakFinder::load(const char*& p)
+void BlobFinder::load(const char*& p)
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(description_changed()), this, SIGNAL(changed()));
@@ -107,6 +125,10 @@ void PeakFinder::load(const char*& p)
       QtPWidget::load(p);
     else if (tag.name == "_channel")
       _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_rectangle")
+      _rectangle->load(p);
+    else if (tag.name == "_cluster_size")
+      _cluster_size->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_threshold_0")
       _threshold->value(0,QtPersistent::extract_d(p));
     else if (tag.name == "_threshold_1")
@@ -119,51 +141,62 @@ void PeakFinder::load(const char*& p)
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
-  XML_iterate_close(PeakFinder,tag);
+  XML_iterate_close(BlobFinder,tag);
 }
 
-void PeakFinder::save_plots(const QString& p) const
+void BlobFinder::save_plots(const QString& p) const
 {
 }
 
-void PeakFinder::configure(char*& p, unsigned input, unsigned& output,
+void BlobFinder::setVisible(bool v)
+{
+  if (v)    _frame.add_marker(*_rectangle);
+  else      _frame.remove_marker(*_rectangle);
+  QWidget::setVisible(v);
+}
+
+void BlobFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
 }
 
-void PeakFinder::setup_payload(Cds& cds)
+void BlobFinder::setup_payload(Cds& cds)
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
 }
 
-void PeakFinder::update()
+void BlobFinder::update()
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
 }
 
-void PeakFinder::prototype(const DescEntry& e)
+void BlobFinder::prototype(const DescEntry& e)
 {
   _threshold->prototype(e);
 }
 
-void PeakFinder::set_channel(int c) 
+void BlobFinder::set_channel(int c) 
 { 
   _channel=c; 
 }
 
-void PeakFinder::plot()
+void BlobFinder::plot()
 {
   PeakPlot* plot = new PeakPlot(this,
 				QString("%1 Peaks : %2,%3").arg(_channels[_channel]->name())
                                 .arg(_threshold->value(0))
                                 .arg(_threshold->value(1)),
 				_channel,
-                                new Ami::PeakFinder(_threshold->value(0),
-                                                    _threshold->value(1),
+                                new Ami::BlobFinder(_rectangle->iylo(),
+                                                    _rectangle->iyhi(),
+                                                    _rectangle->ixlo(),
+                                                    _rectangle->ixhi(),
+                                                    unsigned(_threshold->value(0)),
+                                                    _cluster_size->text().toInt(),
                                                     _accumulate->isChecked()));
   _plots.push_back(plot);
 
@@ -173,7 +206,7 @@ void PeakFinder::plot()
   emit changed();
 }
 
-void PeakFinder::remove_plot(QObject* obj)
+void BlobFinder::remove_plot(QObject* obj)
 {
   PeakPlot* plot = static_cast<PeakPlot*>(obj);
   _plots.remove(plot);
