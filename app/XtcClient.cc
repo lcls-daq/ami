@@ -14,6 +14,7 @@
 #include "ami/event/ControlXtcReader.hh"
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/EncoderHandler.hh"
+#include "ami/event/UsdUsbHandler.hh"
 #include "ami/event/Gsc16aiHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/QuartzHandler.hh"
@@ -329,6 +330,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
+      case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
       case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
       case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
