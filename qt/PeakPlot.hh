@@ -23,6 +23,7 @@ namespace Ami {
     class ImageDisplay;
     class ImageXYProjection;
     class ImageRPhiProjection;
+    class ImageContourProjection;
 
     class PeakPlot : public QtPWidget {
       Q_OBJECT
@@ -63,6 +64,7 @@ namespace Ami {
       ImageDisplay*    _frame;
       ImageXYProjection*      _xyproj;
       ImageRPhiProjection*    _rfproj;
+      ImageContourProjection* _cntproj;
       unsigned           _showMask;
       ConfigureRequestor _req;
 

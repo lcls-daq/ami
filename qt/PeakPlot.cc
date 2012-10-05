@@ -7,6 +7,7 @@
 #include "ami/qt/NullTransform.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
+#include "ami/qt/ImageContourProjection.hh"
 #include "ami/qt/PWidgetManager.hh"
 #include "ami/qt/QtUtils.hh"
 
@@ -51,6 +52,7 @@ PeakPlot::PeakPlot(QWidget*         parent,
 
   _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*_frame->plot());
   _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*_frame->plot());
+  _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*_frame->plot());
 
   _layout();
 
@@ -95,6 +97,11 @@ void PeakPlot::_layout()
     { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
       layout3->addWidget(cylB);
       connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
+
+    { QPushButton* cntB = new QPushButton("Contour Projection");
+      layout3->addWidget(cntB);
+      connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(front())); }
+
     layout3->addStretch();
     layout->addLayout(_chrome_layout=layout3); }
 
@@ -104,6 +111,7 @@ void PeakPlot::_layout()
   connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
   show();
 }
 
@@ -118,6 +126,7 @@ PeakPlot::PeakPlot(QWidget*         parent,
 
   _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*_frame->plot());
   _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*_frame->plot());
+  _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*_frame->plot());
 
   load(p);
 
@@ -152,6 +161,7 @@ void PeakPlot::save(char*& p) const
 
   XML_insert(p, "ImageXYProjection", "_xyproj", _xyproj ->save(p) );
   XML_insert(p, "ImageRPhiProjection", "_rfproj", _rfproj ->save(p) );
+  XML_insert(p, "ImageContourProjection", "_cntproj", _cntproj->save(p) );
 
   XML_insert( p, "ImageDisplay", "_frame",
               _frame->save(p) );
@@ -189,6 +199,8 @@ void PeakPlot::load(const char*& p)
       _xyproj ->load(p);
     else if (tag.name == "_rfproj")
       _rfproj ->load(p);
+    else if (tag.name == "_cntproj")
+      _cntproj->load(p);
     else if (tag.name == "_frame")
       _frame->load(p);
   XML_iterate_close(PeakPlot,tag);
@@ -199,6 +211,7 @@ void PeakPlot::save_plots(const QString& p) const
   _frame ->save_plots(p);
   _xyproj->save_plots(p+"_xyproj");
   _rfproj->save_plots(p+"_rfproj");
+  _cntproj->save_plots(p+"_cntproj");
 }
 
 void PeakPlot::update_configuration()
@@ -215,6 +228,7 @@ void PeakPlot::setup_payload(Cds& cds)
 
   _xyproj->setup_payload(cds);
   _rfproj->setup_payload(cds);
+  _cntproj->setup_payload(cds);
 }
 
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
@@ -259,6 +273,8 @@ void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
                      _channels,signatures,NCHANNELS);
   _rfproj->configure(p,input,output,
                      _channels,signatures,NCHANNELS);
+  _cntproj->configure(p,input,output,
+                     _channels,signatures,NCHANNELS);
 }
 
 void PeakPlot::update()
@@ -266,6 +282,7 @@ void PeakPlot::update()
   _frame  ->update();
   _xyproj ->update();
   _rfproj ->update();
+  _cntproj->update();
 }
 
 void PeakPlot::set_chrome_visible(bool v)

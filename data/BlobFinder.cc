@@ -490,7 +490,7 @@ Entry&     BlobFinder::_operate(const Entry& e) const
   if (e.valid()) {
 
     const EntryImage& entry = static_cast<const EntryImage&>(e);
-    const DescImage& d = entry.desc();
+    const DescImage& d = _output_entry->desc();
     const unsigned nx = d.nbinsx();
     const unsigned ny = d.nbinsy();
     const unsigned q  = d.ppxbin()*d.ppybin();
