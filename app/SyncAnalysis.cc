@@ -276,4 +276,11 @@ namespace Ami {
     return val;
   }
 
+  template<> double gmdDataSpace::processData() 
+  {
+    Pds::BldDataGMD* gmdData = detDataPtr; 
+    double val = fabs(gmdData->fChargeQ) + fabs(gmdData->fPhotonEnergy); 
+    return val;
+  }
+  
 };

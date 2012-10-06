@@ -53,6 +53,7 @@ tgtlibs_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
 tgtlibs_ami += pdsdata/cspad2x2data
 tgtlibs_ami += pdsdata/fexampdata
 tgtlibs_ami += pdsdata/phasicsdata pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata
+tgtlibs_ami += pdsdata/compressdata
 tgtlibs_ami += ami/service ami/data ami/server ami/event ami/client ami/app
 tgtincs_ami := $(qtincdir)
 ifneq ($(findstring x86_64-linux,$(tgt_arch)),)

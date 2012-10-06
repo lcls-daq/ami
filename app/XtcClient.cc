@@ -8,6 +8,7 @@
 #include "ami/event/FEEGasDetEnergyReader.hh"
 #include "ami/event/EBeamReader.hh"
 #include "ami/event/PhaseCavityReader.hh"
+#include "ami/event/GMDReader.hh"
 #include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/SharedIpimbReader.hh"
 #include "ami/event/SharedPimHandler.hh"
@@ -328,6 +329,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
+      case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
       case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;

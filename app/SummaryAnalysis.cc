@@ -104,6 +104,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_PhaseCavity:
       h = new phaseCavityDataSpace(detInfo, Pds::TypeId::Id_PhaseCavity,    Pds::TypeId::Id_PhaseCavity,     payload, "PhaseCavity"); 
       break;
+    case Pds::TypeId::Id_GMD:
+      h = new gmdDataSpace(detInfo, Pds::TypeId::Id_GMD,    Pds::TypeId::Id_GMD,     payload, "GMD"); 
+      break;
 
     default: break;
   } 
@@ -127,8 +130,9 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
     _evrEventData = const_cast<Pds::EvrData::DataV3*>(reinterpret_cast<const Pds::EvrData::DataV3*>(payload));
   else if((type.id() == Pds::TypeId::Id_AcqWaveform)     || (type.id() == Pds::TypeId::Id_Frame) || 
           (type.id() == Pds::TypeId::Id_FEEGasDetEnergy) || (type.id() == Pds::TypeId::Id_EBeam) ||
-          (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_PrincetonFrame) ||
-          (type.id() == Pds::TypeId::Id_FliFrame)  || (type.id() == Pds::TypeId::Id_AndorFrame) ||
+          (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_GMD)   ||
+          (type.id() == Pds::TypeId::Id_PrincetonFrame)  || (type.id() == Pds::TypeId::Id_FliFrame)  || 
+          (type.id() == Pds::TypeId::Id_AndorFrame)      ||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
@@ -243,7 +247,8 @@ void SummaryAnalysis::create   (Cds& cds)
 
     Pds::TypeId::Type  dataType = syncPtr->getDataType();
     // Lite Data Plots Entry
-    if( (dataType == Pds::TypeId::Id_FEEGasDetEnergy) || (dataType == Pds::TypeId::Id_EBeam) || (dataType == Pds::TypeId::Id_PhaseCavity) )
+    if( (dataType == Pds::TypeId::Id_FEEGasDetEnergy) || (dataType == Pds::TypeId::Id_EBeam) 
+      || (dataType == Pds::TypeId::Id_PhaseCavity) || (dataType == Pds::TypeId::Id_GMD) )
       sprintf(displayTitle,"LightShotsSummary#%s",syncPtr->getTitle());
     else
       sprintf(displayTitle,"LightShotsSummary#%s/%d/%s/%d",syncPtr->detInfo.name(syncPtr->detInfo.detector()), syncPtr->detInfo.detId(),
@@ -254,7 +259,8 @@ void SummaryAnalysis::create   (Cds& cds)
     cds.add(summaryEntry); 
  
     //Dark Data Plots Entry
-    if( (dataType == Pds::TypeId::Id_FEEGasDetEnergy) || (dataType == Pds::TypeId::Id_EBeam) || (dataType == Pds::TypeId::Id_PhaseCavity) )
+    if( (dataType == Pds::TypeId::Id_FEEGasDetEnergy) || (dataType == Pds::TypeId::Id_EBeam) 
+      || (dataType == Pds::TypeId::Id_PhaseCavity) || (dataType == Pds::TypeId::Id_GMD) )
       sprintf(displayTitle,"DarkShotsSummary#%s",syncPtr->getTitle());
     else
       sprintf(displayTitle,"DarkShotsSummary#%s/%d/%s/%d",syncPtr->detInfo.name(syncPtr->detInfo.detector()), syncPtr->detInfo.detId(),

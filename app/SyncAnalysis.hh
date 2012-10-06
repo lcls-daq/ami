@@ -147,6 +147,7 @@ namespace Ami {
   typedef Ami::DataSpace <Pds::BldDataEBeam,  Pds::BldDataEBeam>         eBeamDataSpace;
   typedef Ami::DataSpace <Pds::BldDataPhaseCavity,     Pds::BldDataPhaseCavity>      phaseCavityDataSpace;
   typedef Ami::DataSpace <Pds::BldDataFEEGasDetEnergy, Pds::BldDataFEEGasDetEnergy>  gasDetectorDataSpace;
+  typedef Ami::DataSpace <Pds::BldDataGMD,     Pds::BldDataGMD>          gmdDataSpace;
 
   template <class CONFIG, class DATA>
   class DataSpace : public SyncAnalysis {
