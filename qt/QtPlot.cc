@@ -105,7 +105,7 @@ QtPlot::QtPlot(QWidget* parent,
   bool gMinor = Defaults::instance()->show_minor_grid();
   _grid->enableXMin(gMinor);
   _grid->enableYMin(gMinor);
-  _grid->setMajPen(QPen(QColor(0x808080)));
+  _grid->setMajPen(QPen(QColor(0xa0a0a0)));
   _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_frame);
 
@@ -120,6 +120,8 @@ QtPlot::QtPlot(QWidget* parent) :
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid)
 {
+  _grid->setMajPen(QPen(QColor(0xa0a0a0)));
+  _grid->setMinPen(QPen(QColor(0xc0c0c0)));
 }
 
 QtPlot::~QtPlot()
