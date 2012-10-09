@@ -3,6 +3,7 @@
 #include "ami/data/FeatureCache.hh"
 
 #include "pdsdata/evr/ConfigV5.hh"
+#include "pdsdata/evr/ConfigV6.hh"
 #include "pdsdata/evr/ConfigV7.hh"
 #include "pdsdata/evr/DataV3.hh"
 #include "pdsdata/xtc/DetInfo.hh"
@@ -42,6 +43,8 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
   sprintf(buffer,"DAQ:EVR%d:",static_cast<const Pds::DetInfo&>(info()).devId());
   char* iptr = buffer+strlen(buffer);
 
+  memset(_index, -1, sizeof(_index));
+
   switch(type.version()) {
   case 5:
     { const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
@@ -52,7 +55,20 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
         _cache.cache(index, delay);
       }
 
-      memset(_index, -1, sizeof(_index));
+      sprintf(buffer,"DAQ:EVR:");
+      iptr = buffer+strlen(buffer);
+      for(unsigned i=0; i<c.neventcodes(); i++) {
+        REGISTER_CODE(c.eventcode(i).code());
+      }
+      break; }
+  case 6:
+    { const Pds::EvrData::ConfigV6& c = *reinterpret_cast<const Pds::EvrData::ConfigV6*>(payload);
+      for(unsigned i=0; i<c.npulses(); i++) {
+        sprintf(iptr,"P%d:Delay",i);
+        int index = _cache.add(buffer);
+        double delay = floor(c.pulse(i).delay()*c.pulse(i).prescale())/119.e6;
+        _cache.cache(index, delay);
+      }
 
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
@@ -68,8 +84,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
         double delay = floor(c.pulse(i).delay()*c.pulse(i).prescale())/119.e6;
         _cache.cache(index, delay);
       }
-
-      memset(_index, -1, sizeof(_index));
 
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
