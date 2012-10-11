@@ -228,19 +228,8 @@ static double frameNoise(const uint16_t*  data,
       unsigned s2 = 0;
       for(unsigned j=i-10; j<i+fnPeakBins; j++) {
         s0 += hist[j];
-  s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
+	s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
       }
-      const double allowedPedestalWidthSquared = 2.5*2.5;
-      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
-      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0; 
-      // this isn't the standard rms around the mean, but should be similar if rms_real < 3
-      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
-
-    }
-    else
-      //      printf("frameNoise : peak not found\n");
-      ;
-  }
 
   return v;
 }
