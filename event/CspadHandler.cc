@@ -228,8 +228,13 @@ static double frameNoise(const uint16_t*  data,
       unsigned s2 = 0;
       for(unsigned j=i-10; j<i+fnPeakBins; j++) {
         s0 += hist[j];
-	s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
+  s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
       }
+    }
+    else
+      //      printf("frameNoise : peak not found\n");
+      ;
+  }
 
   return v;
 }
