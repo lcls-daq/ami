@@ -37,7 +37,7 @@ datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/quartzdata pdsdata/pulnix
 datalibs += pdsdata/timepixdata
 datalibs += pdsdata/phasicsdata
 datalibs += pdsdata/cspad2x2data
-datalibs += pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata
+datalibs += pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata pdsdata/compressdata
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
