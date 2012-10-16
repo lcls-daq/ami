@@ -277,9 +277,8 @@ int Client::request_payload()
 std::vector<const Ami::Entry*> Client::payload() const 
 {
   std::vector<const Ami::Entry*> entries(_output.size());
-  for(unsigned i=0; i<_output.size(); i++) {
-    if (!(entries[i] = _cds.entry(_output[i])))
-      ;
+  for(unsigned i=0; i<_output.size(); i++)
+    entries[i] = _cds.entry(_output[i]);
   return entries;
 }
 
