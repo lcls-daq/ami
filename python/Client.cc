@@ -82,6 +82,8 @@ void Client::discovered(const DiscoveryRx& rx)
     const Pds::DetInfo& _info    = _args[i].info;
     unsigned            _channel = _args[i].channel;
 
+    _input[i] = 0;
+
     if (_info == envInfo) {
       _input[i] = e->signature();
     }
@@ -103,12 +105,11 @@ void Client::discovered(const DiscoveryRx& rx)
         }
       }
     }
+#ifdef DBUG
+    printf("Client Discovered (%d)\n",_input[i]);
+#endif
   }
   
-#ifdef DBUG
-  printf("Client Discovered (%d)\n",_input);
-#endif
-
   _manager->configure();
 }
 
@@ -125,6 +126,9 @@ int  Client::configure       (iovec* iov)
                                                     *_args[i].filter, *_args[i].op,
                                                     Ami::PostAnalysis);
     p += r.size();
+#ifdef DBUG
+    printf("output[%d] = %d\n",i,_output[i]);
+#endif
   }
 
 
@@ -158,6 +162,10 @@ int  Client::read_description(Socket& socket,int len)
     abort();
   }
 
+#ifdef DBUG
+  printf("read_description payload size %d\n",size);
+#endif
+
   _cds.reset();
 
   const char* payload = _description;
@@ -177,7 +185,10 @@ int  Client::read_description(Socket& socket,int len)
     Entry* entry = EntryFactory::entry(*desc);
     _cds.add(entry, desc->signature());
     payload += desc->size();
-//     printf("Received desc %s signature %d\n",desc->name(),desc->signature());
+
+#ifdef DBUG
+    printf("Received desc %s signature %d\n",desc->name(),desc->signature());
+#endif
   }
 
   if (_cds.totalentries()>_niovload) {
@@ -266,8 +277,9 @@ int Client::request_payload()
 std::vector<const Ami::Entry*> Client::payload() const 
 {
   std::vector<const Ami::Entry*> entries(_output.size());
-  for(unsigned i=0; i<_output.size(); i++)
-    entries[i] = _cds.entry(_output[i]);
+  for(unsigned i=0; i<_output.size(); i++) {
+    if (!(entries[i] = _cds.entry(_output[i])))
+      ;
   return entries;
 }
 
