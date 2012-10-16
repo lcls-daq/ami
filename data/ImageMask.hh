@@ -52,7 +52,7 @@ namespace Ami {
 
   inline bool ImageMask::rowcol(unsigned i, unsigned j) const 
   {
-    unsigned k = i*_nrows+j;
+    unsigned k = i*_ncols+j;
     return _rowcol[k>>5] & (1<<(k&0x1f));
   }
 };
