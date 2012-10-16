@@ -16,6 +16,11 @@ void RunMaster::set_entry(Ami::Entry* e)
 {
   _entry = static_cast<Ami::EntryScalar*>(e);
 }
+
+void RunMaster::reset()
+{
+  _entry = 0;
+}
   
 void RunMaster::update   ()
 {

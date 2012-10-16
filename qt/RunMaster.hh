@@ -14,6 +14,7 @@ namespace Ami {
     public:
       void set_entry(Entry*);
       void update   ();
+      void reset    ();
     public:
       QString run_title() const;
     private:

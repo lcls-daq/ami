@@ -115,6 +115,8 @@ void RateDisplay::addLayout(QVBoxLayout* l)
 
 int  RateDisplay::configure       (char*& p)
 { 
+  RunMaster::instance()->reset();
+
   if (_input) {
     { Ami::EnvPlot op(Ami::DescScalar("ProcTime","mean"));
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
