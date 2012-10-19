@@ -26,6 +26,11 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
   _nrows(rows),
   _ncols(cols)
 {
+  printf("rows %d  cols %d\n", rows, cols);
+  for(unsigned i=0; i<nframes; i++)
+    printf("frame %d : x,y %d,%d : nx,ny %d,%d\n",
+           i, frames[i].x,frames[i].y, frames[i].nx,frames[i].ny);
+
   unsigned rsz = (rows+31)>>5;
   unsigned csz = (cols+31)>>5;
   unsigned sz  = (rows*cols+31)>>5;
@@ -38,16 +43,18 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
     memset(p, 0, sz<<2);
     for(unsigned i=0; i<nframes; i++)
       for(unsigned j=0; j<frames[i].ny; j++) {
-        unsigned m = (frames[i].y+j)*cols + frames[i].x;
-        unsigned q = m + frames[i].nx;
+        uint32_t m = (frames[i].y+j)*cols + frames[i].x;
+        uint32_t q = m + frames[i].nx;
         unsigned im = m>>5;
         unsigned iq = q>>5;
+        m &= 0x1f;
+        q &= 0x1f;
 
-        p[im] = ~((1<<(m&0x1f))-1);
-        while( im < iq )
-          p[++im] = 0xff;
+        p[im] |= ~((1<<m)-1);
+        while( ++im < iq )
+          p[im] = 0xffffffff;
         
-        p[iq] &= (1<<(q&0x1f))-1;
+        p[iq] |= (1<<q)-1;
       }
   }
   else {
@@ -60,6 +67,7 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
 
   memset(_rows, 0, rsz<<2);
   memset(_cols, 0, csz<<2);
+  memset(_rowcol, 0, sz<<2);
 
   FILE* f = fopen(path,"r");
   if (f) {
