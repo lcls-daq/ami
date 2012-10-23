@@ -26,11 +26,6 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
   _nrows(rows),
   _ncols(cols)
 {
-  printf("rows %d  cols %d\n", rows, cols);
-  for(unsigned i=0; i<nframes; i++)
-    printf("frame %d : x,y %d,%d : nx,ny %d,%d\n",
-           i, frames[i].x,frames[i].y, frames[i].nx,frames[i].ny);
-
   unsigned rsz = (rows+31)>>5;
   unsigned csz = (cols+31)>>5;
   unsigned sz  = (rows*cols+31)>>5;
