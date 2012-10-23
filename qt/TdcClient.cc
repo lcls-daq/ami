@@ -9,7 +9,7 @@
 #include "ami/qt/ProjectionPlot.hh"
 #include "ami/qt/TwoDPlot.hh"
 #include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescTH2F.hh"
+#include "ami/qt/DescTH2T.hh"
 
 #include "ami/client/ClientManager.hh"
 
@@ -79,7 +79,7 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _plot_desc_1d = new DescTH1F("Hist1D");
   _plot_desc_1d->button()->setEnabled(true);
 
-  _plot_desc_2d = new DescTH2F(vsl);
+  _plot_desc_2d = new DescTH2T(vsl);
   _plot_desc_2d->td_button()->setEnabled(true);
   _plot_desc_2d->im_button()->setEnabled(true);
 
@@ -145,7 +145,7 @@ void TdcClient::save(char*& p) const
   //  _filter->save(p);
 
   XML_insert(p, "DescTH1F", "_plot_desc_1d", _plot_desc_1d->save(p) );
-  XML_insert(p, "DescTH2F", "_plot_desc_2d", _plot_desc_2d->save(p) );
+  XML_insert(p, "DescTH2T", "_plot_desc_2d", _plot_desc_2d->save(p) );
 
   for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "TdcPlot", "_plots", (*it)->save(p) );
@@ -228,7 +228,15 @@ void TdcClient::save_plots(const QString& p) const
   }
 }
 
-void TdcClient::reset_plots() { update_configuration(); }
+void TdcClient::reset_plots()
+{
+  _input_signature++;
+  iovec iov;
+  configure(&iov);
+
+  _input_signature--;
+  update_configuration(); 
+}
 
 void TdcClient::connected()
 {

@@ -12,7 +12,7 @@
 namespace Ami {
   class Cds;
   class DescEntry;
-  class EntryScalarRange;
+  class EntryAutoRange;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
@@ -45,7 +45,7 @@ namespace Ami {
       unsigned _output_signature;
       QtBase*  _plot;
       ConfigureRequestor _req;
-      EntryScalarRange* _auto_range;
+      EntryAutoRange* _auto_range;
     };
   };
 };

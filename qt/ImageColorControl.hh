@@ -10,6 +10,8 @@
 #include <QtGui/QPixmap>
 #include "ColorMaps.hh"
 
+#include <string>
+
 class QButtonGroup;
 class QCheckBox;
 class QLabel;
@@ -32,7 +34,9 @@ namespace Ami {
       float  scale   () const;
       const QVector<QRgb>& color_table() const;
     public:
+      static std::string palette_set();
       static bool parse_palette_set(const char*);
+      static const QVector<QRgb>& current_color_table();
     public slots:
       void show_scale();
       void set_auto(bool);

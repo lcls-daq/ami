@@ -76,14 +76,15 @@ static QStringList          _2d_plots;
 static QStringList          _no_plots;
 static QStringList*         _plot_names[] = { &_scalar_plots,  // Scalar [Chart]
                                               &_1d_plots,      // TH1F
-                                              &_no_plots,
+                                              &_no_plots,      // cant overlap TH2F
                                               &_2d_plots,      // Prof
-                                              &_no_plots,
+                                              &_no_plots,      // cant overlap Image
                                               &_2d_plots,      // Waveform
                                               &_2d_plots,      // Scan
-                                              &_no_plots,
-                                              &_no_plots,
-                                              &_no_plots };
+                                              &_no_plots,      // Ref
+                                              &_no_plots,      // Cache
+                                              &_no_plots,      // ScalarRange
+                                              &_no_plots };    // ScalarDRange
 static QtPlotSelector*      _selector=0;
 
 QtPlot::QtPlot(QWidget* parent,
@@ -297,6 +298,11 @@ void QtPlot::toggle_minor_grid()
 void QtPlot::edit_xrange(bool v)
 {
   _xrange->setVisible(v);
+}
+
+void QtPlot::edit_yrange(bool v)
+{
+  _yrange->setVisible(v);
 }
 
 void QtPlot::xrange_change()

@@ -5,6 +5,7 @@
 #include "ami/qt/Filter.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
@@ -17,10 +18,12 @@
 #include "ami/data/DescEntry.hh"
 
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
@@ -117,17 +120,31 @@ void CursorPlot::setup_payload(Cds& cds)
     
       _auto_range = 0;
 
+      edit_xrange(true);
+      edit_yrange(true);
+
       switch(entry->desc().type()) {
       case Ami::DescEntry::TH1F: 
         _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
                            noTransform,noTransform,QColor(0,0,0));
         break;
+      case Ami::DescEntry::TH2F: 
+        _plot = new QtTH2F(_name,*static_cast<const Ami::EntryTH2F*>(entry),
+                           noTransform,noTransform,QColor(0,0,0));
+        edit_xrange(false);
+        edit_yrange(false);
+        break;
       case Ami::DescEntry::Scalar:  // create a chart from a scalar
         _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
                             QColor(0,0,0));
+        edit_xrange(false);
         break;
       case Ami::DescEntry::ScalarRange:
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+        _plot = new QtEmpty;
+        return;
+      case Ami::DescEntry::ScalarDRange:
+        _auto_range = static_cast<const Ami::EntryScalarDRange*>(entry);
         _plot = new QtEmpty;
         return;
       case Ami::DescEntry::Prof: 
@@ -233,7 +250,7 @@ void CursorPlot::update()
     emit redraw();
   }
   if (_auto_range) {
-    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    double v = _auto_range->entries();
     emit counts_changed(v);
     if (v >= 0) {
       _auto_range->result(&_input->output());

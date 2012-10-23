@@ -11,8 +11,10 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryCache.hh"
@@ -513,7 +515,8 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
   }
 
   if (o.type() == DescEntry::Prof ||
-      o.type() == DescEntry::Scan) {
+      o.type() == DescEntry::Scan ||
+      o.type() == DescEntry::TH2F) {
     QString expr(o.xtitle());
     FeatureExpression parser;
     _fterm = parser.evaluate(features,expr);
@@ -576,10 +579,29 @@ Entry&     BinMath::_operate(const Entry& e) const
       { EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
 	en->addcontent(y);
 	break; }
+    case DescEntry::ScalarDRange:  
+      if (!_fterm)
+	return *_entry;
+      { bool damaged=false; double x=_fterm->evaluate();
+	if (!damaged) {
+          EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
+          en->addcontent(x,y);
+        }
+	break; }
     case DescEntry::TH1F:
       { EntryTH1F* en = static_cast<EntryTH1F*  >(_entry);
 	en->addcontent(1.,y); 
 	en->addinfo(1.,EntryTH1F::Normalization);
+	break; }
+    case DescEntry::TH2F:
+      if (!_fterm)
+	return *_entry;
+      { bool damaged=false; double x=_fterm->evaluate();
+	if (!damaged) {
+          EntryTH2F* en = static_cast<EntryTH2F*  >(_entry);
+          en->addcontent(1.,x,y); 
+          en->addinfo(1.,EntryTH2F::Normalization);
+        }
 	break; }
     case DescEntry::Prof:  
       if (!_fterm)
@@ -606,7 +628,6 @@ Entry&     BinMath::_operate(const Entry& e) const
         en->set(y,false);
         break; }
     case DescEntry::Waveform:
-    case DescEntry::TH2F:
     case DescEntry::Image:
     default:
       printf("BinMath::_operator no implementation for type %d\n",_entry->desc().type());

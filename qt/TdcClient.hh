@@ -24,7 +24,7 @@ namespace Ami {
     class ProjectionPlot;
     class TwoDPlot;
     class DescTH1F;
-    class DescTH2F;
+    class DescTH2T;
     class Filter;
     class TdcClient : public Ami::Qt::AbsClient {
       Q_OBJECT
@@ -98,7 +98,7 @@ namespace Ami {
 
       QButtonGroup* _plot_grp;
       DescTH1F*    _plot_desc_1d;
-      DescTH2F*    _plot_desc_2d;
+      DescTH2T*    _plot_desc_2d;
 
       std::list<TdcPlot*>        _plots;
       std::list<ProjectionPlot*> _pplots;

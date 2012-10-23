@@ -111,7 +111,7 @@ void PeakPlot::_layout()
   connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_cntproj, SIGNAL(changed()), this, SLOT(update_configuration()));
   show();
 }
 

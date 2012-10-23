@@ -3,6 +3,7 @@
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/QtTH1F.hh"
+#include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
 #include "ami/qt/QtScan.hh"
@@ -18,10 +19,12 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 #include "ami/data/EnvPlot.hh"
 
 #include <QtGui/QLabel>
@@ -80,6 +83,8 @@ EnvPlot::EnvPlot(QWidget*     parent,
           CASEENTRY(Prof)
           CASEENTRY(Scan)
           CASEENTRY(Scalar)
+          CASEENTRY(ScalarDRange)
+          CASEENTRY(TH2F)
           default: break;
       }
     }
@@ -135,6 +140,7 @@ void EnvPlot::setup_payload(Cds& cds)
         delete _plot;
 
       edit_xrange(true);
+      edit_yrange(true);
 
       _auto_range = 0;
 
@@ -147,6 +153,10 @@ void EnvPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::ScalarRange: 
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+        _plot = 0;
+        return;
+      case Ami::DescEntry::ScalarDRange: 
+        _auto_range = static_cast<const Ami::EntryScalarDRange*>(entry);
         _plot = 0;
         return;
       case Ami::DescEntry::Scalar:  // create a chart from a scalar
@@ -170,6 +180,14 @@ void EnvPlot::setup_payload(Cds& cds)
                            Ami::AbsTransform::null(),
                            QColor(0,0,0),
                            _style.symbol_size(),_style.symbol_style());
+        break;
+      case Ami::DescEntry::TH2F: 
+        _plot = new QtTH2F(_name,*static_cast<const Ami::EntryTH2F*>(entry),
+                           Ami::AbsTransform::null(),
+                           Ami::AbsTransform::null(),
+                           QColor(0,0,0));
+        edit_xrange(false);
+        edit_yrange(false);
         break;
       default:
         printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 
@@ -212,7 +230,7 @@ void EnvPlot::update()
     emit redraw();
   }
   if (_auto_range) {
-    double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
+    double v = _auto_range->entries();
     emit counts_changed(v);
     if (v >= 0) {
       delete _desc;

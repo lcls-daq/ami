@@ -189,7 +189,15 @@ void Ami::Qt::Client::load(const char*& p)
   XML_iterate_close(Client,tag);
 }
 
-void Ami::Qt::Client::reset_plots() { update_configuration(); }
+void Ami::Qt::Client::reset_plots()
+{
+  _input_entry++;
+  iovec iov;
+  configure(&iov);
+  
+  _input_entry--;
+  update_configuration(); 
+}
 
 void Ami::Qt::Client::addWidget(QWidget* w) { _layout->addWidget(w); }
 

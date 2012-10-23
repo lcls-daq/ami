@@ -17,13 +17,15 @@ namespace Ami {
   class DescEntry;
   namespace Qt {
     class DescTH1F;
+    class DescTH2F;
     class DescChart;
     class DescProf;
     class DescScan;
+    //    class DescText;
 
     class ScalarPlotDesc : public QWidget {
     public:
-      enum Type { TH1F, vT, vF, vS };
+      enum Type { TH1F, vT, vF, vS, TH2F };
       ScalarPlotDesc(QWidget* parent, 
                      FeatureRegistry* registry = &FeatureRegistry::instance(),
                      bool lNormWeight=true);
@@ -55,6 +57,8 @@ namespace Ami {
       DescChart*  _vTime;
       DescProf*   _vFeature;
       DescScan*   _vScan;
+      DescTH2F*   _hist2d;
+      //      DescText*   _text;
     };
   };
 };

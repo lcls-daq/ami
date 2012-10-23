@@ -9,51 +9,31 @@ using namespace Ami;
 EntryScalarRange::~EntryScalarRange() {}
 
 EntryScalarRange::EntryScalarRange(const DescScalarRange& desc) :
-  _desc(desc),
-  _y   (static_cast<double*>(allocate(sizeof(double)*5)))
+  _desc (desc)
 {
-  _y[3] = std::numeric_limits<double>::max();
-  _y[4] = std::numeric_limits<double>::min();
+  _range = new(allocate(sizeof(ScalarRange))) ScalarRange;
 }
+
+double EntryScalarRange::entries() const { return _range->entries() - _desc.nsamples(); }
 
 const DescScalarRange& EntryScalarRange::desc() const {return _desc;}
 DescScalarRange& EntryScalarRange::desc() {return _desc;}
-
-void EntryScalarRange::setto(const EntryScalarRange& entry) 
-{
-  _y[0] = entry._y[0];
-  _y[1] = entry._y[1];
-  _y[2] = entry._y[2];
-  _y[3] = entry._y[3];
-  _y[4] = entry._y[4];
-}
-
-void EntryScalarRange::add(const EntryScalarRange& entry) 
-{
-  _y[0] += entry._y[0];
-  _y[1] += entry._y[1];
-  _y[2] += entry._y[2];
-  if (entry._y[3] < _y[3])
-    _y[3] = entry._y[3];
-  if (entry._y[4] > _y[4])
-    _y[4] = entry._y[4];
-}
 
 DescTH1F* EntryScalarRange::result(void* p) const
 {
   float xlow, xhigh;
   if (_desc.stat() == DescScalarRange::MinMax) {
-    double r = (0.5+_desc.extent())*(max()-min());
+    double r = (0.5+_desc.extent())*(_range->max()-_range->min());
     if (r<=0) r = 0.5;
-    double m = 0.5*(min()+max());
+    double m = 0.5*(_range->min()+_range->max());
     xlow  = m - r;
     xhigh = m + r;
   }
   else {
-    double r = _desc.extent()*rms();
+    double r = _desc.extent()*_range->rms();
     if (r<=0) r = 0.5;
-    xlow  = mean() - r;
-    xhigh = mean() + r;
+    xlow  = _range->mean() - r;
+    xhigh = _range->mean() + r;
   }
   if (p)
     return new(p) DescTH1F(_desc.name(),"",_desc.ytitle(),

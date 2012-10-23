@@ -29,9 +29,11 @@ static void usage(char* progname) {
 	  "         [-L <user plug-in path>]\n"
 	  "         [-o <filename for debugging messages>]\n"
 	  "         [-e <filename for error messages>]\n"
-          "         [-C <color palette>]"
-          "         [-R (full resolution)"
-          "         [-E (expert mode>]\n", progname);
+          "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
+          "         [-R (full resolution)\n"
+          "         [-E (expert mode>]\n", 
+          progname,
+          Ami::Qt::ImageColorControl::palette_set().c_str());
 }
 
 

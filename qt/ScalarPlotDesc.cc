@@ -1,16 +1,20 @@
 #include "ami/qt/ScalarPlotDesc.hh"
 
 #include "ami/qt/DescTH1F.hh"
+#include "ami/qt/DescTH2F.hh"
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
+//#include "ami/qt/DescText.hh"
 #include "ami/qt/QtPersistent.hh"
 
 #include "ami/data/DescTH1F.hh"
+#include "ami/data/DescTH2F.hh"
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/DescScan.hh"
 #include "ami/data/DescScalarRange.hh"
+#include "ami/data/DescScalarDRange.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QPushButton>
@@ -31,10 +35,11 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
   _postB = new QPushButton("Post");
   _postB->setEnabled(false);
 
-  _hist   = new DescTH1F  ("Sum (1dH)");
+  _hist   = new DescTH1F  ("1dH");
   _vTime  = new DescChart ("v Time");
   _vFeature = new DescProf("Mean v Var" , registry);
   _vScan    = new DescScan("Mean v Scan", registry);
+  _hist2d = new DescTH2F  ("2dH", registry);
 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
@@ -57,6 +62,8 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
     tab->addTab(_vTime   , _vTime   ->button()->text());
     tab->addTab(_vFeature, _vFeature->button()->text());
     tab->addTab(_vScan   , _vScan   ->button()->text());
+    tab->addTab(_hist2d  , _hist2d  ->button()->text());
+    //    tab->addTab(_text    , _text    ->button()->text());
     vl->addWidget(tab);
     _plot_grp = tab;
     box->setLayout(vl);
@@ -97,6 +104,7 @@ void ScalarPlotDesc::save(char*& p) const
   XML_insert(p, "DescChart", "_vTime"   , _vTime   ->save(p) );
   XML_insert(p, "DescProf" , "_vFeature", _vFeature->save(p) );
   XML_insert(p, "DescScan" , "_vScan"   , _vScan   ->save(p) );
+  XML_insert(p, "DescTH2F" , "_hist2d"  , _hist2d  ->save(p) );
   XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->currentIndex ()) );
 }
 
@@ -110,7 +118,9 @@ void ScalarPlotDesc::load(const char*& p)
     else if (tag.name == "_vFeature")
       _vFeature->load(p);
     else if (tag.name == "_vScan")
-      _vScan->load(p);
+      _vScan   ->load(p);
+    else if (tag.name == "_hist2d")
+      _hist2d  ->load(p);
     else if (tag.name == "_plot_grp")
       _plot_grp->setCurrentIndex(QtPersistent::extract_i(p));
   XML_iterate_close(ScalarPlotDesc,tag);
@@ -128,18 +138,18 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
   case ScalarPlotDesc::TH1F:
     { QString v = _ynorm->isChecked() ? vn : qtitle;
       switch(_hist->method()) {
-      case DescTH1F::Fixed:
+      case DescBinning::Fixed:
         desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
                                  _hist->bins(),_hist->lo(),_hist->hi()); 
         break;
-      case DescTH1F::Auto1:
+      case DescBinning::Auto1:
         desc = new Ami::DescScalarRange(qPrintable(v),"events",
                                         DescScalarRange::MeanSigma,
                                         _hist->sigma(),
                                         _hist->nsamples(),
                                         _hist->bins());
         break;
-      case DescTH1F::Auto2:
+      case DescBinning::Auto2:
         desc = new Ami::DescScalarRange(qPrintable(v),"events",
                                         DescScalarRange::MinMax,
                                         _hist->extent(),
@@ -184,6 +194,42 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
     }
     break;
+  case ScalarPlotDesc::TH2F:
+    { QString vy = _ynorm->isChecked() ? vn : qtitle;
+      QString vx = _xnorm->isChecked() ? QString("(%1)/(%2)").arg(_hist2d->expr()).arg(_vnorm->entry()) : _hist2d->expr();
+      double ex = _hist2d->xbins().method()==DescBinning::Auto1 ? _hist2d->xbins().sigma() : _hist2d->xbins().extent();
+      double ey = _hist2d->ybins().method()==DescBinning::Auto1 ? _hist2d->ybins().sigma() : _hist2d->ybins().extent();
+      if (_hist2d->xbins().method()==DescBinning::Fixed &&
+          _hist2d->ybins().method()==DescBinning::Fixed)
+        desc = new Ami::DescTH2F(qPrintable(vy),
+                                 qPrintable(vx),qPrintable(vy),
+                                 _hist2d->xbins().bins(),_hist2d->xbins().lo(),_hist2d->xbins().hi(),
+                                 _hist2d->ybins().bins(),_hist2d->ybins().lo(),_hist2d->ybins().hi());
+      else if (_hist2d->xbins().method()==DescBinning::Fixed) 
+        desc = new Ami::DescScalarDRange(qPrintable(vy),
+                                         qPrintable(vx),qPrintable(vy),
+                                         _hist2d->ybins().nsamples(),
+                                         _hist2d->xbins().bins(), _hist2d->xbins().lo(), _hist2d->xbins().hi(),
+                                         _hist2d->ybins().method()==DescBinning::Auto2 ? DescScalarDRange::MinMax : DescScalarDRange::MeanSigma, ey,
+                                         _hist2d->ybins().bins());
+      else if (_hist2d->ybins().method()==DescBinning::Fixed) 
+        desc = new Ami::DescScalarDRange(qPrintable(vy),
+                                         qPrintable(vx),qPrintable(vy),
+                                         _hist2d->xbins().nsamples(),
+                                         _hist2d->xbins().method()==DescBinning::Auto2 ? DescScalarDRange::MinMax : DescScalarDRange::MeanSigma, ex,
+                                         _hist2d->xbins().bins(),
+                                         _hist2d->ybins().bins(), _hist2d->ybins().lo(), _hist2d->ybins().hi());
+      else
+        desc = new Ami::DescScalarDRange(qPrintable(vy),
+                                         qPrintable(vx),qPrintable(vy),
+                                         _hist2d->xbins().nsamples() > _hist2d->ybins().nsamples() ?
+                                         _hist2d->xbins().nsamples() : _hist2d->ybins().nsamples(),
+                                         _hist2d->xbins().method()==DescBinning::Auto2 ? DescScalarDRange::MinMax : DescScalarDRange::MeanSigma, ex,
+                                         _hist2d->xbins().bins(),
+                                         _hist2d->ybins().method()==DescBinning::Auto2 ? DescScalarDRange::MinMax : DescScalarDRange::MeanSigma, ey,
+                                         _hist2d->ybins().bins());
+
+      break; }
   default:
     desc = 0;
     break;
@@ -246,6 +292,13 @@ bool ScalarPlotDesc::postAnalysis() const
     if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
       post = true;
     if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
+      post = true;
+    break;
+
+  case ScalarPlotDesc::TH2F:
+    if (_hist2d->expr().contains(_post_str))
+      post = true;
+    if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
       post = true;
     break;
 

@@ -29,9 +29,9 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
     _fits = new CurveFit(this,_channels,NCHANNELS,wd);
     connect(fitB, SIGNAL(clicked()), _fits, SLOT(front())); }
 
-  connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_cursors, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_edges  , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_fits   , SIGNAL(changed()), this, SIGNAL(changed()));
 }
 
 WaveformClient::~WaveformClient() {}
@@ -49,9 +49,9 @@ void WaveformClient::load(const char*& p)
 {
   _initialized = true;
 
-  disconnect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
-  disconnect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
-  disconnect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
+  disconnect(_cursors, SIGNAL(changed()), this, SIGNAL(changed()));
+  disconnect(_edges  , SIGNAL(changed()), this, SIGNAL(changed()));
+  disconnect(_fits   , SIGNAL(changed()), this, SIGNAL(changed()));
   
   XML_iterate_open(p,tag)
 
@@ -66,9 +66,9 @@ void WaveformClient::load(const char*& p)
 
   XML_iterate_close(WaveformClient,tag);
 
-  connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_edges  , SIGNAL(changed()), this, SLOT(update_configuration()));
-  connect(_fits   , SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_cursors, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_edges  , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_fits   , SIGNAL(changed()), this, SIGNAL(changed()));
 
   update_configuration();
 }

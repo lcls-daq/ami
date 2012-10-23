@@ -1,5 +1,6 @@
 #include "QtTH2F.hh"
 #include "ami/qt/AxisArray.hh"
+#include "ami/qt/ImageColorControl.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryTH2F.hh"
@@ -15,24 +16,29 @@ namespace Ami {
   namespace Qt {
     class QtTH2F::DataCache : public QwtRasterData {
     public:
-      DataCache(const Ami::EntryTH2F& entry) : _entry(entry) 
+      DataCache(const QtBase& base) : _base(base) 
       {
-        const DescTH2F& desc = entry.desc();
+        const DescTH2F& desc = static_cast<const EntryTH2F&>(base.entry()).desc();
         _idx = double(desc.nbinsx())/(desc.xup()-desc.xlow());
         _idy = double(desc.nbinsy())/(desc.yup()-desc.ylow());
-        setBoundingRect(QwtDoubleRect(desc.xlow(),desc.xup(),
-                                      desc.ylow(),desc.yup()));
+        setBoundingRect(QwtDoubleRect(desc.xlow(),desc.ylow(),
+                                      desc.xup()-desc.xlow(),
+                                      desc.yup()-desc.ylow()));
         update();
       }
       ~DataCache() {}
     public:
       //  very slow
       double value(double x,double y) const {
-        const DescTH2F& desc = _entry.desc();
+        const EntryTH2F& e = static_cast<const EntryTH2F&>(_base.entry());
         //  QwtPlot probes the upper left corner of each bin
-        int ix = int((x-desc.xlow())*_idx+0.5);
-        int iy = int((y-desc.ylow())*_idy-0.5);
-        return _entry.content(ix,iy);
+        int ix = int((x-e.desc().xlow())*_idx+0.5);
+        int iy = int((y-e.desc().ylow())*_idy-0.5);
+        if (ix>=0 && ix<int(e.desc().nbinsx()) &&
+            iy>=0 && iy<int(e.desc().nbinsy()))
+          return e.content(ix,iy);
+        else
+          return 0;
       }
       QwtRasterData* copy() const {
         return const_cast<DataCache*>(this);
@@ -41,16 +47,17 @@ namespace Ami {
         return QwtDoubleInterval(_vlo,_vhi);
       }
       QSize rasterHint ( const QwtDoubleRect& rect) const {
-        const DescTH2F& desc = _entry.desc();
+        const DescTH2F& desc = static_cast<const EntryTH2F&>(_base.entry()).desc();
         return QSize(desc.nbinsx(),desc.nbinsy());
       }
     public:
       void update() {
-        _vlo = _vhi = _entry.content(0,0);
-        const Ami::DescTH2F& d = _entry.desc();
+        const EntryTH2F& e = static_cast<const EntryTH2F&>(_base.entry());
+        const DescTH2F&  d = e.desc();
+        _vlo = _vhi = e.content(0,0);
         for(unsigned i=0; i<d.nbinsy(); i++)
           for(unsigned j=0; j<d.nbinsx(); j++) {
-            double z = _entry.content(j,i);
+            double z = e.content(j,i);
             if (z < _vlo) _vlo = z;
             if (z > _vhi) _vhi = z;
           }
@@ -58,7 +65,7 @@ namespace Ami {
     private:
       double _idx, _idy;
       double _vlo, _vhi;
-      const EntryTH2F& _entry;
+      const QtBase& _base;
     };
   };
 };
@@ -72,12 +79,19 @@ QtTH2F::QtTH2F(const QString&   title,
                const QColor&) :
   QtBase(title,entry),
   _curve(entry.desc().name()),
-  _z    (new DataCache(entry))
+  _z    (new DataCache(*this))
 {
   _curve.setData    (*_z);
 
   _curve.setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
   _curve.setDefaultContourPen(QPen(::Qt::NoPen));
+
+#if 0
+  const QVector<QRgb>& palette = ImageColorControl::current_color_table();
+  QwtLinearColorMap map = QwtLinearColorMap(QColor(palette[0]),QColor(palette[palette.size()-1]));
+  for(int k=0; k<palette.size(); k++)
+    map.addColorStop( double(k)/double(palette.size()-1), QColor(palette[k]));
+#else
   QwtLinearColorMap map = QwtLinearColorMap(::Qt::black, ::Qt::white); 
   for(unsigned k=0; k<40; k++)
     map.addColorStop(double(  0+k)/255., QColor(k*6,0,0));
@@ -88,6 +102,7 @@ QtTH2F::QtTH2F(const QString&   title,
   for(unsigned k=0; k<40; k++)
     map.addColorStop(double(215+k)/255., QColor(k*3,0,255-k*3));
   map.addColorStop(1.,QColor(255,255,255));
+#endif
   _curve.setColorMap(map);
 }
   

@@ -5,7 +5,9 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 #include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryCache.hh"
@@ -57,7 +59,9 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   }
 
   if (o.type()==DescEntry::Prof ||
-      o.type()==DescEntry::Scan) {
+      o.type()==DescEntry::Scan ||
+      o.type()==DescEntry::TH2F ||
+      o.type()==DescEntry::ScalarDRange) {
     QString expr(o.xtitle());
     _term = parser.evaluate(features,expr);
     if (!_term) {
@@ -117,6 +121,15 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	{ EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
 	  en->addcontent(y);    
 	  break; }
+      case DescEntry::ScalarDRange: 
+	if (_term) {
+	  bool damaged=false; double x=_term->evaluate();
+	  if (!damaged) {
+            EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
+            en->addcontent(x,y);    
+          }
+        }
+        break;
       case DescEntry::TH1F: 
 	{ EntryTH1F* en = static_cast<EntryTH1F*>(_entry);
 	  en->addcontent(1.,y); 
@@ -146,8 +159,17 @@ Entry&     EnvPlot::_operate(const Entry& e) const
         { EntryCache* en = static_cast<EntryCache*>(_entry);
           en->set(y,false); 
           break; }
-      case DescEntry::Waveform:
       case DescEntry::TH2F:
+	if (_term) {
+	  bool damaged=false; double x=_term->evaluate();
+	  if (!damaged) {
+	    EntryTH2F* en = static_cast<EntryTH2F*>(_entry);
+	    en->addcontent(1.,x,y);
+	    en->addinfo(1.,EntryTH2F::Normalization);
+	  }
+	} 
+        break;
+      case DescEntry::Waveform:
       case DescEntry::Image:
       default:
 	printf("EnvPlot::_operator no implementation for type %d\n",_entry->desc().type());

@@ -1,7 +1,7 @@
 #include "ami/qt/EdgeFinder.hh"
 
 #include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescTH2F.hh"
+#include "ami/qt/DescTH2T.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/EdgeCursor.hh"
@@ -61,7 +61,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   _hist->button()->setChecked(true);
 
   QHBoxLayout* vsl = new QHBoxLayout;
-  _hist2d = new DescTH2F (vsl);
+  _hist2d = new DescTH2T (vsl);
   _hist2d->td_button()->setEnabled(true);
   _hist2d->im_button()->setEnabled(false);
   _hist2d->td_button()->setChecked(true);
@@ -163,7 +163,7 @@ void EdgeFinder::save(char*& p) const
   XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
   XML_insert(p, "QButtonGroup", "_vtbutton", QtPersistent::insert(p,_vtbutton->checkedId()) );
   XML_insert(p, "DescTH1F", "_hist"  , _hist  ->save(p) );
-  XML_insert(p, "DescTH2F", "_hist2d", _hist2d->save(p) );
+  XML_insert(p, "DescTH2T", "_hist2d", _hist2d->save(p) );
 
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "EdgePlot", "_plots", (*it)->save(p) );

@@ -65,6 +65,12 @@ public:
   unsigned num_palettes() const { return _v.size(); }
   const QVector<QRgb>& palette(int i) { return *_v[i]; }
 public:
+  std::string names() const {
+    std::string n("mono");
+    n += ",jet";
+    n += ",thermal";
+    return n;
+  }
   bool parse_string(const char* opt) {
     _v.clear();
     
@@ -97,9 +103,19 @@ private:
 
 static PaletteSet _palettes;
 
+string ImageColorControl::palette_set()
+{
+  return _palettes.names();
+}
+
 bool ImageColorControl::parse_palette_set(const char* opt)
 {
   return _palettes.parse_string(opt);
+}
+
+const QVector<QRgb>& ImageColorControl::current_color_table()
+{
+  return _palettes.palette(_palettes.num_palettes()-1);
 }
 
 ImageColorControl::ImageColorControl(QWidget* parent,

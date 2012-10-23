@@ -9,6 +9,7 @@
 #include "ami/data/EntryCache.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +33,7 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     CASE_NEW(Waveform);
     CASE_NEW(Ref);
     CASE_NEW(ScalarRange);
+    CASE_NEW(ScalarDRange);
   case DescEntry::Cache: 
     { entry = new EntryCache((const DescCache&)desc, _cache); break; }
   default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); abort(); break;

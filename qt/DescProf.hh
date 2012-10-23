@@ -4,7 +4,6 @@
 #include <QtGui/QWidget>
 #include <QtCore/QString>
 
-class QComboBox;
 class QRadioButton;
 class QLineEdit;
 

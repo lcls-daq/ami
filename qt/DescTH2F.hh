@@ -3,42 +3,38 @@
 
 #include <QtGui/QWidget>
 
+#include "ami/qt/DescBinning.hh"
+
 class QRadioButton;
+class QButtonGroup;
 class QLineEdit;
-class QLayout;
 
 namespace Ami {
   namespace Qt {
+    class FeatureRegistry;
     class DescTH2F : public QWidget {
       Q_OBJECT
     public:
-      DescTH2F(QLayout*);
+      DescTH2F(const char*, FeatureRegistry*);
     public:
       void save(char*&) const;
       void load(const char*&);
-    public:
-      QRadioButton* td_button();
-      QRadioButton* im_button();
-      unsigned xbins() const;
-      double   xlo  () const;
-      double   xhi  () const;
-      unsigned ybins() const;
-      double   ylo  () const;
-      double   yhi  () const;
-    public:
-      void xbins(unsigned);
-      void xlo  (double);
-      void xhi  (double);
-      void ybins(unsigned);
-      void ylo  (double);
-      void yhi  (double);
     public slots:
-      void validate();
+      void calc();
+    public:
+      QRadioButton* button();
+      enum Output { TH2F, Image };
+      Output output() const;
+      const DescBinning& xbins() const;
+      const DescBinning& ybins() const;
+      QString expr() const;
     private:
-      QRadioButton* _td_button;
-      QRadioButton* _im_button;
-      QLineEdit *_xbins, *_xlo, *_xhi;
-      QLineEdit *_ybins, *_ylo, *_yhi;
+      QRadioButton* _button;  // vestigial
+      QButtonGroup* _group;
+      DescBinning*  _xbins;
+      DescBinning*  _ybins;
+      QLineEdit*    _expr;
+      FeatureRegistry* _registry;
     };
   };
 };

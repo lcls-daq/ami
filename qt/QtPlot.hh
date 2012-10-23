@@ -31,6 +31,7 @@ namespace Ami {
       virtual void dump(FILE*) const=0;
     public:
       void edit_xrange(bool);
+      void edit_yrange(bool);
     private:
       void _layout();
     signals:

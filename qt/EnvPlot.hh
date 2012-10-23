@@ -13,7 +13,7 @@ namespace Ami {
   class AbsFilter;
   class Cds;
   class DescEntry;
-  class EntryScalarRange;
+  class EntryAutoRange;
   namespace Qt {
     class QtBase;
     class SharedData;
@@ -48,7 +48,7 @@ namespace Ami {
       QtBase*  _plot;
       ConfigureRequestor _req;
 
-      EntryScalarRange*  _auto_range;
+      EntryAutoRange*    _auto_range;
       bool               _retry;
 
       SharedData*        _shared;

@@ -16,7 +16,7 @@ class QwtPlot;
 namespace Ami {
   class Cds;
   class DescEntry;
-  class EntryScalarRange;
+  class EntryAutoRange;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
@@ -52,7 +52,7 @@ namespace Ami {
       QtBase*  _plot;
       ConfigureRequestor _req;
 
-      const EntryScalarRange* _auto_range;
+      const EntryAutoRange* _auto_range;
     };
   };
 };
