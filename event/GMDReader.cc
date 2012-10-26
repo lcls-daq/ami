@@ -51,7 +51,12 @@ void   GMDReader::_event    (const void* payload, const Pds::ClockTime& t)
     _cache.cache(index++,(double)bld.iHvMultIon);
     _cache.cache(index++,bld.fChargeQ);
     _cache.cache(index++,bld.fPhotonEnergy);
-    _cache.cache(index++,bld.fPhotonsPerPulse);
+    _cache.cache(index++,bld.fMultPulseIntensity);
+    _cache.cache(index++,bld.fKeithleyPulseIntensity);
+    _cache.cache(index++,bld.fPulseEnergy);
+    _cache.cache(index++,bld.fPulseEnergyFEE);
+    _cache.cache(index++,bld.fTransmission);
+    _cache.cache(index++,bld.fTransmissionFEE);        
   }
 }
 
@@ -59,6 +64,11 @@ void   GMDReader::_damaged  ()
 {
   if (_index>=0) {
     unsigned index = _index;
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
+    _cache.cache(index++,-1,true);
     _cache.cache(index++,-1,true);
     _cache.cache(index++,-1,true);
     _cache.cache(index++,-1,true);
