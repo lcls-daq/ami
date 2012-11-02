@@ -243,7 +243,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   }
 
   if (_input_entry==0)
-    printf("%s not found\n", channel_name);
+    printf("%s [%08x.%08x.%d] not found\n", channel_name, info.phy(), info.log(), channel);
 
   _manager->configure();
 }
@@ -400,7 +400,8 @@ int Ami::Qt::Client::read_payload     (Socket& socket, int size)
     //
     //  Add together each server's contribution
     //
-    printf("Ami::Qt::Client::read_payload: multiple server processing not implemented\n");
+    printf("Ami::Qt::Client::read_payload: multiple server processing [state %d, socket %d, size %d]\n",
+           _status->state(), socket.socket(), size);
   }
   _status->set_state(Status::Received, nbytes);
 
