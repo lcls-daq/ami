@@ -140,7 +140,12 @@ static double frameNoise(const uint16_t*  data,
       //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
 
     }
-    else printf("frameNoise : peak not found\n");
+    else {
+      static unsigned nPrint=0;
+      nPrint++;
+      if ((nPrint<10) || (nPrint%100)==0)
+        printf("frameNoise : peak not found [%d]\n",nPrint);
+    }
 //    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
   }
 
