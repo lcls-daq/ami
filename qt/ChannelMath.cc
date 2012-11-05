@@ -121,10 +121,12 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
   //
   if (_filter) delete _filter;
   _filter = f.clone();
+#if 0
   for(int i=0; i<nchannels; i++) {
     if (chmask&(1<<i))
       _filter = new LogicAnd(*_filter, *channels[i]->filter().filter()->clone());
   }
+#endif
 
   if (_operator) delete _operator;
   _operator = new EntryMath(qPrintable(expr));
