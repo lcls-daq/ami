@@ -111,11 +111,16 @@ void TM6740Handler::_configure(Pds::TypeId tid,
 {
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_FrameFexConfig) {
+    if (_entry) 
+      delete _entry;
+
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     unsigned columns = TM6740ConfigType::Column_Pixels;
     unsigned rows    = TM6740ConfigType::Row_Pixels;
     if (info().level()==Pds::Level::Source) {
       const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
+      if (c.forwarding() == Pds::Camera::FrameFexConfigV1::NoFrame)
+	return;
       if (c.forwarding() != Pds::Camera::FrameFexConfigV1::FullFrame) {
         columns = c.roiEnd().column-c.roiBegin().column;
         rows    = c.roiEnd().row   -c.roiBegin().row   ;
@@ -125,13 +130,12 @@ void TM6740Handler::_configure(Pds::TypeId tid,
     unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
     columns = (columns+ppb-1)/ppb;
     rows    = (rows   +ppb-1)/ppb;
+
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   //		 columns, rows, ppb, ppb);
 		   rows, columns, ppb, ppb); // rotated size
     desc.set_scale(_scale.xscale,_scale.yscale);
 
-    if (_entry) 
-      delete _entry;
     _entry = new EntryImage(desc);
     _entry->invalid();
   }

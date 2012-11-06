@@ -50,7 +50,10 @@ void   EpicsXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
     }
 
     int index = -1;
-    if (ctrl.iNumElements>1) {
+    if (ctrl.iNumElements>32) {
+      printf("PV array %s[%d] too large. Ignored.\n",ctrl.sPvName,ctrl.iNumElements);
+    }
+    else if (ctrl.iNumElements>1) {
       char buffer[64];
       strncpy(buffer,ctrl.sPvName,64);
       char* iptr = buffer+strlen(buffer);
@@ -88,6 +91,8 @@ void   EpicsXtcReader::_event    (const void* payload, const Pds::ClockTime& t)
 
   if (pvData.iDbrType < DBR_CTRL_STRING) {
     int index = _index[pvData.iPvId];
+    if (index<0)
+      return;
     switch(pvData.iDbrType) {
     CASETOVAL(DBR_TIME_SHORT ,DBR_SHORT)
     CASETOVAL(DBR_TIME_FLOAT ,DBR_FLOAT)
