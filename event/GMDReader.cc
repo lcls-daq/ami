@@ -29,12 +29,17 @@ void   GMDReader::_configure(const void* payload, const Pds::ClockTime& t)
   _index = _cache.add("BLD:GMD:Pressure");
   _cache.add("BLD:GMD:Temperature");
   _cache.add("BLD:GMD:Current");
-  _cache.add("BLD:GMD:HvMeshElectron");
-  _cache.add("BLD:GMD:HvMeshIon");
-  _cache.add("BLD:GMD:HvMultIon");
+  _cache.add("BLD:GMD:VoltageHvMeshElectron");
+  _cache.add("BLD:GMD:VoltageHvMeshIon");
+  _cache.add("BLD:GMD:VoltageHvMultIon");
   _cache.add("BLD:GMD:ChargeQ");
   _cache.add("BLD:GMD:PhotonEnergy");
-  _cache.add("BLD:GMD:PhotonsPerPulse");
+  _cache.add("BLD:GMD:IntensityElecMult");
+  _cache.add("BLD:GMD:IntensityIon");
+  _cache.add("BLD:GMD:EnergyElecMult");
+  _cache.add("BLD:GMD:EnergyIon");
+  _cache.add("BLD:GMD:TranmissionElecMult");
+  _cache.add("BLD:GMD:TranmissionIon");
 }
 
 void   GMDReader::_event    (const void* payload, const Pds::ClockTime& t)
@@ -46,9 +51,9 @@ void   GMDReader::_event    (const void* payload, const Pds::ClockTime& t)
     _cache.cache(index++,bld.fPressure);
     _cache.cache(index++,bld.fTemperature);
     _cache.cache(index++,bld.fCurrent);
-    _cache.cache(index++,(double)bld.iHvMeshElectron);
-    _cache.cache(index++,(double)bld.iHvMeshIon);
-    _cache.cache(index++,(double)bld.iHvMultIon);
+    _cache.cache(index++,bld.fHvMeshElectron);
+    _cache.cache(index++,bld.fHvMeshIon);
+    _cache.cache(index++,bld.fHvMultIon);
     _cache.cache(index++,bld.fChargeQ);
     _cache.cache(index++,bld.fPhotonEnergy);
     _cache.cache(index++,bld.fMultPulseIntensity);
