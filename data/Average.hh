@@ -27,6 +27,7 @@ namespace Ami {
     unsigned       _n;
     Entry*         _entry;
     Entry*         _cache;
+    mutable const Entry* _input;
     Term*          _term ;
     bool           _v;
   };

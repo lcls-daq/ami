@@ -8,7 +8,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
-#include "ami/data/FeatureExpression.hh"
+#include "ami/data/SelfExpression.hh"
 
 #include <stdio.h>
 
@@ -17,6 +17,7 @@ using namespace Ami;
 Single::Single(const char* scale) : 
   AbsOperator(AbsOperator::Single),
   _entry     (0),
+  _input     (0),
   _term      (0)
 {
   if (scale)
@@ -26,7 +27,8 @@ Single::Single(const char* scale) :
 }
 
 Single::Single(const char*& p, const DescEntry& e, FeatureCache& features) :
-  AbsOperator(AbsOperator::Single)
+  AbsOperator(AbsOperator::Single),
+  _input(0)
 {
   _extract(p,_scale_buffer, SCALE_LEN);
 
@@ -35,8 +37,8 @@ Single::Single(const char*& p, const DescEntry& e, FeatureCache& features) :
 
   if (_scale_buffer[0]) {
     QString expr(_scale_buffer);
-    FeatureExpression parser;
-    _term = parser.evaluate(features,expr);
+    SelfExpression parser;
+    _term = parser.evaluate(features,expr,_input,_entry->desc());
     if (!_term)
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
   }
@@ -68,6 +70,7 @@ void*      Single::_serialize(void* p) const
 Entry&     Single::_operate(const Entry& e) const
 {
   if (e.valid()) {
+    _input = &e;
     double v = _term ? _term->evaluate() : 1;
 
     switch(e.desc().type()) {

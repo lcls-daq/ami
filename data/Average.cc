@@ -7,7 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryFactory.hh"
-#include "ami/data/FeatureExpression.hh"
+#include "ami/data/SelfExpression.hh"
 
 #include <QtCore/QString>
 
@@ -24,6 +24,7 @@ Average::Average(unsigned n, const char* scale) :
   _n         (n),
   _entry     (0),
   _cache     (0),
+  _input     (0),
   _term      (0),
   _v         (true)
 {
@@ -35,6 +36,7 @@ Average::Average(unsigned n, const char* scale) :
 
 Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
   AbsOperator(AbsOperator::Average),
+  _input     (0),
   _v         (true)
 {
   _extract(p,_scale_buffer, SCALE_LEN);
@@ -51,8 +53,8 @@ Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
 
   if (_scale_buffer[0]) {
     QString expr(_scale_buffer);
-    FeatureExpression parser;
-    _term = parser.evaluate(features,expr);
+    SelfExpression parser;
+    _term = parser.evaluate(features,expr,_input,_entry->desc());
     if (!_term) {
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
       _v = false;
@@ -82,6 +84,7 @@ Entry&     Average::_operate(const Entry& e) const
 {
   if (e.valid()) {
 
+    _input = &e;
     const double v = _term ? _term->evaluate() : 1;
 
     _entry->valid(e.time());

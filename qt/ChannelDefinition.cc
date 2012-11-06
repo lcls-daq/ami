@@ -24,6 +24,7 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryRefOp.hh"
 #include "ami/data/MaskImage.hh"
+#include "ami/data/SelfExpression.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
@@ -450,7 +451,12 @@ void ChannelDefinition::setup_payload(Cds& cds, bool vis)
 
 void ChannelDefinition::set_scale()
 {
-  FeatureCalculator* c = new FeatureCalculator(this,"%1 : Scale", FeatureRegistry::instance());
+  QStringList self_vars, self_help;
+  self_vars << Ami::SelfExpression::self_sum();
+  self_help << "The Integral";
+  
+  FeatureCalculator* c = new FeatureCalculator(this,"%1 : Scale", FeatureRegistry::instance(Ami::PreAnalysis),
+                                               self_vars, self_help);
   if (c->exec()==QDialog::Accepted) {
     _scale->setText(c->result());
   }

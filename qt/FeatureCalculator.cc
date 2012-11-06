@@ -29,6 +29,18 @@ FeatureCalculator::FeatureCalculator(QWidget* parent, const QString& name, Featu
 {
 }
 
+FeatureCalculator::FeatureCalculator(QWidget* parent, const QString& name, FeatureRegistry& r,
+                                     const QStringList& vars,
+                                     const QStringList& vars_help) :
+  Calculator(parent,
+             name, "",
+	     vars+r.names(),
+	     vops, 
+	     ops,
+	     vars_help+r.help())
+{
+}
+
 QString FeatureCalculator::result()
 {
   QString expr(Calculator::result());

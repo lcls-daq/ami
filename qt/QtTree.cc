@@ -122,6 +122,7 @@ QtTree::QtTree(const QStringList& names,
 void QtTree::fill(const QStringList& names)
 {
   QStringList scan_names;
+  QStringList self_names;
 
   if (names.size()) {
     QStandardItem* root = _model.invisibleRootItem();
@@ -129,7 +130,9 @@ void QtTree::fill(const QStringList& names)
     bool lFirst=true;
     for(int i=0; i<names.size(); i++) {
       QString n(names.at(i));
-      if (n.contains("(SCAN)"))
+      if (n.contains("SELF:"))
+        self_names.push_back(n);
+      else if (n.contains("(SCAN)"))
         scan_names.push_back(n);
       else if (lFirst) {
         lFirst=false;
@@ -140,6 +143,9 @@ void QtTree::fill(const QStringList& names)
     }
     for(int i=0; i<scan_names.size(); i++)
       root->insertRow(0, new QStandardItem(scan_names.at(i)));
+
+    for(int i=0; i<self_names.size(); i++)
+      root->insertRow(0, new QStandardItem(self_names.at(i)));
 
     for(int i=0; i<root->rowCount(); i++) {
       QStandardItem* ch = root->child(i);

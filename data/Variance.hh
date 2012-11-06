@@ -28,6 +28,7 @@ namespace Ami {
     Entry*         _mom1;
     Entry*         _mom2;
     Entry*         _cache;
+    mutable const Entry*   _input;
     Term*          _term ;
     bool           _v;
   };

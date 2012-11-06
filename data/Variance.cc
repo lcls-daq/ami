@@ -7,7 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 #include "ami/data/EntryFactory.hh"
-#include "ami/data/FeatureExpression.hh"
+#include "ami/data/SelfExpression.hh"
 
 #include <QtCore/QString>
 
@@ -25,6 +25,7 @@ Variance::Variance(unsigned n, const char* scale) :
   _mom1      (0),
   _mom2      (0),
   _cache     (0),
+  _input     (0),
   _term      (0),
   _v         (true)
 {
@@ -36,6 +37,7 @@ Variance::Variance(unsigned n, const char* scale) :
 
 Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
   AbsOperator(AbsOperator::Variance),
+  _input     (0),
   _v         (true)
 {
   _extract(p,_scale_buffer, SCALE_LEN);
@@ -52,8 +54,8 @@ Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
 
   if (_scale_buffer[0]) {
     QString expr(_scale_buffer);
-    FeatureExpression parser;
-    _term = parser.evaluate(features,expr);
+    SelfExpression parser;
+    _term = parser.evaluate(features,expr,_input,e);
     if (!_term) {
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
       _v = false; 
@@ -109,6 +111,7 @@ Entry&     Variance::_operate(const Entry& e) const
 {
   if (e.valid()) {
 
+    _input = &e;
     const double v = _term ? _term->evaluate() : 1;
 
     switch(e.desc().type()) {
