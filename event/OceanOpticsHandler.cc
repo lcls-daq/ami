@@ -3,7 +3,6 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pds/config/OceanOpticsConfigType.hh"
 #include "pds/config/OceanOpticsDataType.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 

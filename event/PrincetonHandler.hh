@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "ami/data/FeatureCache.hh"
-#include "pdsdata/princeton/ConfigV3.hh"
+#include "pds/config/PrincetonConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {
@@ -24,7 +24,7 @@ namespace Ami {
     virtual void _damaged  ();
   private:
     //PrincetonHandler(const Pds::DetInfo& info, const EntryImage*);
-    Pds::Princeton::ConfigV3  _config;
+    PrincetonConfigType  _config;
     FeatureCache&             _cache;
     int                       _iCacheIndexTemperature;
     EntryImage*               _entry;

@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 
-#include "pdsdata/oceanoptics/ConfigV1.hh"
+#include "pds/config/OceanOpticsConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {
@@ -25,9 +25,9 @@ namespace Ami {
     void _damaged  ();
   private:
     OceanOpticsHandler(const Pds::DetInfo& info, 
-           const Pds::OceanOptics::ConfigV1& config);
+           const OceanOpticsConfigType& config);
   private:
-    Pds::OceanOptics::ConfigV1 _config;
+    OceanOpticsConfigType _config;
     enum { MaxEntries=32 };
     unsigned       _nentries;    
     EntryWaveform* _entry[MaxEntries];

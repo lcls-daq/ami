@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "ami/data/FeatureCache.hh"
-#include "pdsdata/fli/ConfigV1.hh"
+#include "pds/config/FliConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {
@@ -24,7 +24,7 @@ namespace Ami {
     virtual void _damaged  ();
   private:
     //FliHandler(const Pds::DetInfo& info, const EntryImage*);
-    Pds::Fli::ConfigV1  _config;
+    FliConfigType  _config;
     FeatureCache&       _cache;
     int                 _iCacheIndexTemperature;
     EntryImage*         _entry;

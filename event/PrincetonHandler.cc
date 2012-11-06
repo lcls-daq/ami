@@ -4,17 +4,17 @@
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/princeton/ConfigV1.hh"
 #include "pdsdata/princeton/ConfigV2.hh"
-#include "pdsdata/princeton/FrameV1.hh"
-#include "pdsdata/princeton/InfoV1.hh"
+#include "pdsdata/princeton/ConfigV3.hh"
+#include "pds/config/PrincetonDataType.hh"
 
 #include <string.h>
 
-static inline unsigned height(const Pds::Princeton::ConfigV3& c)
+static inline unsigned height(const PrincetonConfigType& c)
 {
   return (c.height() + c.binY() - 1)/c.binY();
 }
 
-static unsigned width(const Pds::Princeton::ConfigV3& c)
+static unsigned width(const PrincetonConfigType& c)
 {
   return (c.width() + c.binX() - 1)/c.binX();
 }
@@ -55,12 +55,14 @@ void PrincetonHandler::reset() { _entry = 0; }
 
 void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {  
-  if (type.version() == 3)
-    _config = *reinterpret_cast<const Pds::Princeton::ConfigV3*>(payload);
-  if (type.version() == 2)
-    new (&_config) Pds::Princeton::ConfigV3(*reinterpret_cast<const Pds::Princeton::ConfigV2*>(payload));
+  if (type.version() == PrincetonConfigType::Version)
+    _config = *reinterpret_cast<const PrincetonConfigType*>(payload);
+  else if (type.version() == 3)
+    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV3*>(payload));
+  else if (type.version() == 2)
+    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV2*>(payload));
   else if (type.version() == 1)
-    new (&_config) Pds::Princeton::ConfigV2(*reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload));
+    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload));
   else
     printf("PrincetonHandler::_configure(): Unsupported Princeton Version %d\n", type.version());
   
@@ -97,7 +99,7 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
 {
   if (type.id() == Pds::TypeId::Id_PrincetonFrame)
   {
-    const Pds::Princeton::FrameV1& f = *reinterpret_cast<const Pds::Princeton::FrameV1*>(payload);
+    const PrincetonDataType& f = *reinterpret_cast<const PrincetonDataType*>(payload);
     if (!_entry) return;
 
     const DescImage& desc = _entry->desc();
@@ -116,7 +118,7 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
   }
   else if (type.id() == Pds::TypeId::Id_PrincetonInfo)
   {
-    const Pds::Princeton::InfoV1& info1 = *reinterpret_cast<const Pds::Princeton::InfoV1*>(payload);
+    const PrincetonInfoType& info1 = *reinterpret_cast<const PrincetonInfoType*>(payload);
     if (_iCacheIndexTemperature != -1)
       _cache.cache(_iCacheIndexTemperature, info1.temperature());
   }
