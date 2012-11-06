@@ -66,7 +66,7 @@ BinMath::BinMath(const DescEntry& output,
 
 #define CASETERM(type)							\
   case DescEntry::type:							\
-  { t = new Ami::Entry##type##Term(_input,lo,hi,mom);		\
+  { t = new Ami::BinMathC::Entry##type##Term(_input,lo,hi,mom);		\
     break; }
 
 BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features) :
@@ -116,14 +116,14 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 	    mlen += match.matchedLength();
 	    QString zuse = expr.mid(zpos+1,match.matchedLength()-2);
 	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi,mom);
-	    t = new Ami::EntryImageTermF(_input,
-                                         double( lo)/floatPrecision(),double( hi)/floatPrecision(),
-                                         double(ylo)/floatPrecision(),double(yhi)/floatPrecision(),
-                                         double(zlo)/floatPrecision(),double(zhi)/floatPrecision(),
-                                         mom); 
+	    t = new Ami::BinMathC::EntryImageTermF(_input,
+                                                   double( lo)/floatPrecision(),double( hi)/floatPrecision(),
+                                                   double(ylo)/floatPrecision(),double(yhi)/floatPrecision(),
+                                                   double(zlo)/floatPrecision(),double(zhi)/floatPrecision(),
+                                                   mom); 
 	  }
 	  else
-	    t = new Ami::EntryImageTerm(_input,lo,hi,ylo,yhi,mom); 
+	    t = new Ami::BinMathC::EntryImageTerm(_input,lo,hi,ylo,yhi,mom); 
 	}
 	break;
       default:

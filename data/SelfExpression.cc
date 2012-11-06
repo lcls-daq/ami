@@ -16,9 +16,9 @@ namespace Ami {
 
 #define CASETERM(type) case DescEntry::type:                            \
       { const Desc##type& d = static_cast<const Desc##type&>(desc);     \
-        _term = new Entry##type##Term(entry,                            \
-                                      0, d.nbins()-1,                   \
-                                      Zero);                            \
+        _term = new BinMathC::Entry##type##Term(entry,                  \
+                                                0, d.nbins()-1,         \
+                                                Zero);                  \
         break; }
 
       switch(desc.type()) {
@@ -27,10 +27,10 @@ namespace Ami {
         CASETERM(Prof)
         case DescEntry::Image:
         { const DescImage& d = static_cast<const DescImage&>(desc);
-          _term = new EntryImageTerm(entry, 
-                                     0, d.nbinsx()-1,
-                                     0, d.nbinsy()-1,
-                                     Zero);
+          _term = new BinMathC::EntryImageTerm(entry, 
+                                               0, d.nbinsx()-1,
+                                               0, d.nbinsy()-1,
+                                               Zero);
           break; }
       default:
         _term = 0;

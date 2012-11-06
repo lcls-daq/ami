@@ -11,12 +11,12 @@
 
 using namespace Ami;
 
-EntryWaveformTerm::EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi,
-                                     Moment mom) :
+BinMathC::EntryWaveformTerm::EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi,
+                                               Moment mom) :
   _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
 
 
-double EntryWaveformTerm::evaluate() const
+double BinMathC::EntryWaveformTerm::evaluate() const
 { double sum=0;
   unsigned lo=_lo, hi=_hi;
   const EntryWaveform* e = static_cast<const EntryWaveform*>(_entry);
@@ -58,11 +58,11 @@ double EntryWaveformTerm::evaluate() const
   return n > 0 ? sum / n : sum; 
 }
 
-EntryTH1FTerm::EntryTH1FTerm(const Entry*& e, unsigned lo, unsigned hi,
-                             Moment mom) :
+BinMathC::EntryTH1FTerm::EntryTH1FTerm(const Entry*& e, unsigned lo, unsigned hi,
+                                       Moment mom) :
   _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
 
-double EntryTH1FTerm::evaluate() const
+double BinMathC::EntryTH1FTerm::evaluate() const
 { double sum=0;
   unsigned lo=_lo, hi=_hi;
   const EntryTH1F* e = static_cast<const EntryTH1F*>(_entry);
@@ -93,11 +93,11 @@ double EntryTH1FTerm::evaluate() const
   return n > 0 ? sum / n : sum; 
 }
 
-EntryProfTerm::EntryProfTerm(const Entry*& e, unsigned lo, unsigned hi,
-                    Moment mom) :
-        _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
+BinMathC::EntryProfTerm::EntryProfTerm(const Entry*& e, unsigned lo, unsigned hi,
+                                       Moment mom) :
+  _entry(e), _lo(lo), _hi(hi), _mom(mom) {}
 
-double EntryProfTerm::evaluate() const
+double BinMathC::EntryProfTerm::evaluate() const
 { double sum=0;
   unsigned lo=_lo, hi=_hi;
   const EntryProf* e = static_cast<const EntryProf*>(_entry);
@@ -127,10 +127,10 @@ double EntryProfTerm::evaluate() const
   return sum; 
 }
     
-EntryImageTerm::EntryImageTerm(const Entry*& e, 
-                               unsigned xlo, unsigned xhi, 
-                               unsigned ylo, unsigned yhi,
-                               Moment mom) :
+BinMathC::EntryImageTerm::EntryImageTerm(const Entry*& e, 
+                                         unsigned xlo, unsigned xhi, 
+                                         unsigned ylo, unsigned yhi,
+                                         Moment mom) :
   _entry(e), _xlo(xlo), _xhi(xhi), _ylo(ylo), _yhi(yhi), _mom(mom) 
 {
   switch(_mom) {
@@ -139,13 +139,13 @@ EntryImageTerm::EntryImageTerm(const Entry*& e,
     break;
   case Second: 
     printf("EntryImageTerm second moment not implemented\n"); 
-          break;
+    break;
   default:
     break;
   }
 }
 
-double EntryImageTerm::evaluate() const {
+double BinMathC::EntryImageTerm::evaluate() const {
   const EntryImage& e = *static_cast<const EntryImage*>(_entry);
   const DescImage&  d = e.desc();
   const ImageMask* mask = d.mask();
@@ -206,11 +206,11 @@ double EntryImageTerm::evaluate() const {
   return v;
 }
 
-EntryImageTermF::EntryImageTermF(const Entry*& e, 
-                                 double xc, double yc, 
-                                 double r0, double r1, 
-                                 double f0, double f1,
-                                 Moment mom) :
+BinMathC::EntryImageTermF::EntryImageTermF(const Entry*& e, 
+                                           double xc, double yc, 
+                                           double r0, double r1, 
+                                           double f0, double f1,
+                                           Moment mom) :
   _entry(e), _xc(xc), _yc(yc), _r0(r0), _r1(r1), _f0(f0), _f1(f1), _mom(mom) 
 {
   switch(_mom) {
@@ -225,7 +225,7 @@ EntryImageTermF::EntryImageTermF(const Entry*& e,
   }
 }
 
-double EntryImageTermF::evaluate() const 
+double BinMathC::EntryImageTermF::evaluate() const 
 {
   const EntryImage& e = *static_cast<const EntryImage*>(_entry);
   const DescImage& d = e.desc();
