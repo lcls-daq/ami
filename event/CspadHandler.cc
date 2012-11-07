@@ -938,6 +938,9 @@ namespace CspadGeometry {
             _feature[4*i+a] = cache.add(buff);
           }
         }
+
+      sprintf(buff,"%s:Cspad:Sum",detname);
+      _feature[16] = cache.add(buff);
     }
     bool fill(Ami::EntryImage& image,
               const Xtc&       xtc) const
@@ -974,9 +977,22 @@ namespace CspadGeometry {
       if (niters >= 0)
         delete iters[niters];
 
+      unsigned nframes[5];
+      nframes[0] = 0;
+      for(unsigned j=0; j<4; j++) {
+        unsigned m = _config.roiMask(j);
+        unsigned n = nframes[j];
+        while(m) {
+          m = m&(m-1);
+          n++;
+        }
+        nframes[j+1] = n;
+      }
+
       int i;
       Quad* const* quad = this->quad;
       Ami::FeatureCache* cache = _cache;
+      double sum = 0;
 #pragma omp parallel shared(iters,quad,cache) private(i) num_threads(4)
       {
 #pragma omp for schedule(dynamic,1)
@@ -987,6 +1003,22 @@ namespace CspadGeometry {
             cache->cache(_feature[4*hdr->quad()+a],
                          CspadTemp::instance().getTemp(hdr->sb_temp(a)));
           delete iters[i];
+          //  Calculate integral
+          if (image.desc().options()&8) {
+            double s=0;
+            double p   = double(image.info(Ami::EntryImage::Pedestal));
+            for(unsigned fn=nframes[hdr->quad()]; fn<nframes[hdr->quad()+1]; fn++) {
+              int xlo(0), xhi(3000), ylo(0), yhi(3000);
+              if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
+                for(int j=ylo; j<yhi; j++)
+                  for(int i=xlo; i<xhi; i++) {
+                    double v = double(image.content(i,j))-p;
+                    s += v;
+                  }
+              }
+            }
+            sum += s;
+          }
         }
       }
 #else
@@ -997,9 +1029,29 @@ namespace CspadGeometry {
         for(int a=0; a<4; a++)
           _cache->cache(_feature[4*hdr->quad()+a],
                         CspadTemp::instance().getTemp(hdr->sb_temp(a)));
+
+        //  Calculate integral
+        if (image.desc().options()&8) {
+          double s=0;
+          double p   = double(image.info(Ami::EntryImage::Pedestal));
+          for(unsigned fn=nframes[hdr->quad()]; fn<nframes[hdr->quad()+1]; fn++) {
+            int xlo(0), xhi(3000), ylo(0), yhi(3000);
+            if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
+              for(int j=ylo; j<yhi; j++)
+                for(int i=xlo; i<xhi; i++) {
+                  double v = double(image.content(i,j))-p;
+                  s += v;
+                }
+            }
+          }
+          sum += s;
+        }
       }
       delete iter;
 #endif
+
+      if (image.desc().options()&8)
+        _cache->cache(_feature[16],sum);
 
       return true;
     }
@@ -1017,7 +1069,7 @@ namespace CspadGeometry {
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    mutable int _feature[16];
+    mutable int _feature[17];
     unsigned _ppb;
     unsigned _pixels;
   };
