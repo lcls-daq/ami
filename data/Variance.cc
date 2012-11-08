@@ -86,7 +86,7 @@ void*      Variance::_serialize(void* p) const
     Entry##type& _m1 = static_cast<Entry##type&>(*_mom1);               \
     Entry##type& _m2 = static_cast<Entry##type&>(*_mom2);               \
     for(unsigned i=0; i<_m1.desc().nbins(); i++) {                      \
-      double v = static_cast<const Entry##type&>(e).content(i);         \
+      double v = static_cast<const Entry##type&>(e).content(i)/vn;      \
       _m1.addcontent(v,i);                                              \
       _m2.addcontent(v*v,i);                                            \
     }                                                                   \
@@ -112,7 +112,7 @@ Entry&     Variance::_operate(const Entry& e) const
   if (e.valid()) {
 
     _input = &e;
-    const double v = _term ? _term->evaluate() : 1;
+    const double vn = _term ? _term->evaluate() : 1;
 
     switch(e.desc().type()) {
     case DescEntry::TH1F    : HANDLE_1D(TH1F);
@@ -140,7 +140,7 @@ Entry&     Variance::_operate(const Entry& e) const
               const SubFrame& f = d.frame(fn);
               for(unsigned j=f.y; j<f.y+f.ny; j++)
                 for(unsigned k=f.x; k<f.x+f.nx; k++) {
-                  double y = en.content(k,j)-ped;
+                  double y = (en.content(k,j)-ped)/vn;
                   _m1.addcontent(unsigned(y+0.5),k,j);      
                   _m2.addcontent(unsigned(y*y+0.5),k,j);      
                 }
@@ -158,7 +158,7 @@ Entry&     Variance::_operate(const Entry& e) const
 #endif
             for(j=0; j<int(d.nbinsy()); j++)
               for(unsigned k=0; k<d.nbinsx(); k++) {
-                double y = en.content(k,j)-ped;
+                double y = (en.content(k,j)-ped)/vn;
                 _m1.addcontent(unsigned(y+0.5),k,j);
                 _m2.addcontent(unsigned(y*y+0.5),k,j);
               }

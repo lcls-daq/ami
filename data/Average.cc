@@ -22,6 +22,7 @@ using namespace Ami;
 Average::Average(unsigned n, const char* scale) : 
   AbsOperator(AbsOperator::Average),
   _n         (n),
+  _current   (0),
   _entry     (0),
   _cache     (0),
   _input     (0),
@@ -36,6 +37,7 @@ Average::Average(unsigned n, const char* scale) :
 
 Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
   AbsOperator(AbsOperator::Average),
+  _current   (0),
   _input     (0),
   _v         (true)
 {
@@ -94,9 +96,10 @@ Entry&     Average::_operate(const Entry& e) const
       { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
         _en.add(static_cast<const EntryTH1F&>(e));
         if (_n) {
-          if (_en.info(EntryTH1F::Normalization)==_n) {
+          if (++_current>=_n) {
             static_cast<EntryTH1F*>(_cache)->setto(_en);
             _en.reset();
+            _current=0;
           }
           else
             _cache->invalid();
@@ -109,9 +112,10 @@ Entry&     Average::_operate(const Entry& e) const
       { EntryProf& _en = static_cast<EntryProf&>(*_entry);
         _en.sum(_en,static_cast<const EntryProf&>(e));
         if (_n) {
-          if (_en.info(EntryProf::Normalization)==_n) {
+          if (++_current>=_n) {
             static_cast<EntryProf*>(_cache)->setto(_en);
             _en.reset();
+            _current=0;
           }
           else 
             _cache->invalid();
@@ -136,7 +140,7 @@ Entry&     Average::_operate(const Entry& e) const
               for(unsigned j=f.y; j<f.y+f.ny; j++)
                 if (_term)
                   for(unsigned k=f.x; k<f.x+f.nx; k++)
-                    _en.addcontent(unsigned(ped + (en.content(k,j)-ped)/v),k,j);      
+                    _en.addcontent(unsigned(rint(ped + (double(en.content(k,j))-ped)/v)),k,j);      
                 else 
                   for(unsigned k=f.x; k<f.x+f.nx; k++)
                     _en.addcontent(en.content(k,j),k,j);      
@@ -155,22 +159,20 @@ Entry&     Average::_operate(const Entry& e) const
             for(j=0; j<int(d.nbinsy()); j++)
               for(unsigned k=0; k<d.nbinsx(); k++)
                 if (_term)
-                  _en.addcontent(unsigned(rint(double(en.content(k,j)/v))),k,j);      
+                  _en.addcontent(unsigned(rint(ped + (double(en.content(k,j))-ped)/v)),k,j);      
                 else
                   _en.addcontent(en.content(k,j),k,j);
           }
         }
         for(unsigned j=0; j<EntryImage::InfoSize; j++) {
           EntryImage::Info i = (EntryImage::Info)j;
-          if (i == EntryImage::Pedestal)
-            _en.addinfo(en.info(i)/v,i);
-          else
-            _en.addinfo(en.info(i),i);
+          _en.addinfo(en.info(i),i);
         }
         if (_n) {
-          if (_en.info(EntryImage::Normalization)==_n) {
+          if (++_current>=_n) {
             static_cast<EntryImage*>(_cache)->setto(_en);
             _en.reset();
+            _current=0;
           }
           else
             _cache->invalid();
@@ -191,9 +193,10 @@ Entry&     Average::_operate(const Entry& e) const
           _en.addinfo(en.info(i),i);
         }
         if (_n) {
-          if (_en.info(EntryWaveform::Normalization)==_n) {
+          if (++_current>=_n) {
             static_cast<EntryWaveform*>(_cache)->setto(_en);
             _en.reset();
+            _current=0;
           }
           else
             _cache->invalid();

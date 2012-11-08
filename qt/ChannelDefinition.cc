@@ -253,6 +253,8 @@ void ChannelDefinition::load(const char*& p)
 
   _plot_grp->button(id)->setChecked(true);
 
+  show_plot(show);
+
   apply();
 
   emit show_plot_changed(show);

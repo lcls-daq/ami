@@ -25,6 +25,7 @@ namespace Ami {
     enum { SCALE_LEN=256 };
     char           _scale_buffer[SCALE_LEN];
     unsigned       _n;
+    mutable unsigned       _current;
     Entry*         _entry;
     Entry*         _cache;
     mutable const Entry* _input;
