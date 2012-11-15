@@ -26,20 +26,13 @@ GMDReader::~GMDReader()
 void   GMDReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void   GMDReader::_configure(const void* payload, const Pds::ClockTime& t) 
 {
-  _index = _cache.add("BLD:GMD:Pressure");
-  _cache.add("BLD:GMD:Temperature");
-  _cache.add("BLD:GMD:Current");
-  _cache.add("BLD:GMD:VoltageHvMeshElectron");
-  _cache.add("BLD:GMD:VoltageHvMeshIon");
-  _cache.add("BLD:GMD:VoltageHvMultIon");
-  _cache.add("BLD:GMD:ChargeQ");
-  _cache.add("BLD:GMD:PhotonEnergy");
-  _cache.add("BLD:GMD:IntensityElecMult");
-  _cache.add("BLD:GMD:IntensityIon");
-  _cache.add("BLD:GMD:EnergyElecMult");
-  _cache.add("BLD:GMD:EnergyIon");
-  _cache.add("BLD:GMD:TranmissionElecMult");
-  _cache.add("BLD:GMD:TranmissionIon");
+  _index =
+  _cache.add("BLD:GMD:MilliJoulesPerPulse");
+  _cache.add("BLD:GMD:MilliJoulesAverage");
+  _cache.add("BLD:GMD:CorrectedSumPerPulse");
+  _cache.add("BLD:GMD:BgValuePerSample");
+  _cache.add("BLD:GMD:RelativeEnergyPerPulse");
+  _cache.add("BLD:GMD:Spare1");
 }
 
 void   GMDReader::_event    (const void* payload, const Pds::ClockTime& t)
@@ -48,20 +41,12 @@ void   GMDReader::_event    (const void* payload, const Pds::ClockTime& t)
     const Pds::BldDataGMD& bld = 
       *reinterpret_cast<const Pds::BldDataGMD*>(payload);
     unsigned index = _index;
-    _cache.cache(index++,bld.fPressure);
-    _cache.cache(index++,bld.fTemperature);
-    _cache.cache(index++,bld.fCurrent);
-    _cache.cache(index++,bld.fHvMeshElectron);
-    _cache.cache(index++,bld.fHvMeshIon);
-    _cache.cache(index++,bld.fHvMultIon);
-    _cache.cache(index++,bld.fChargeQ);
-    _cache.cache(index++,bld.fPhotonEnergy);
-    _cache.cache(index++,bld.fMultPulseIntensity);
-    _cache.cache(index++,bld.fKeithleyPulseIntensity);
-    _cache.cache(index++,bld.fPulseEnergy);
-    _cache.cache(index++,bld.fPulseEnergyFEE);
-    _cache.cache(index++,bld.fTransmission);
-    _cache.cache(index++,bld.fTransmissionFEE);        
+    _cache.cache(index++,bld.fMilliJoulesPerPulse);
+    _cache.cache(index++,bld.fMilliJoulesAverage);
+    _cache.cache(index++,bld.fCorrectedSumPerPulse);
+    _cache.cache(index++,bld.fBgValuePerSample);
+    _cache.cache(index++,bld.fRelativeEnergyPerPulse);
+    _cache.cache(index++,bld.fSpare1);
   }
 }
 
@@ -75,14 +60,6 @@ void   GMDReader::_damaged  ()
     _cache.cache(index++,-1,true);
     _cache.cache(index++,-1,true);
     _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index  ,-1,true);
   }
 }
 

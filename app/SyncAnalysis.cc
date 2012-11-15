@@ -279,7 +279,7 @@ namespace Ami {
   template<> double gmdDataSpace::processData() 
   {
     Pds::BldDataGMD* gmdData = detDataPtr; 
-    double val = fabs(gmdData->fChargeQ) + fabs(gmdData->fPhotonEnergy); 
+    double val = fabs(gmdData->fMilliJoulesPerPulse) + fabs(gmdData->fMilliJoulesAverage);
     return val;
   }
   
