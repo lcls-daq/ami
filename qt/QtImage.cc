@@ -50,6 +50,7 @@ QtImage::QtImage(const QString&   title,
   _ny =  d.xbin(y1) - _y0 + 1;
 
   _nx &= ~3;
+  if (_nx==0) _nx=4;
 
   _qimage = new QImage(_nx, _ny, QImage::Format_Indexed8);
   _qimage->fill(128);
