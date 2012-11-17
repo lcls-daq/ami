@@ -392,6 +392,9 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::BldInfo::HfxDg3Cam:
     case Pds::BldInfo::XcsDg3Cam:
     case Pds::BldInfo::HfxMonCam:
+    case Pds::BldInfo::CxiDg1Pim:
+    case Pds::BldInfo::CxiDg2Pim:
+    case Pds::BldInfo::CxiDg4Pim:
       client = new Ami::Qt::ImageClient(this, info, channel); break;
     default: 
       printf("Bld type %x not recognized\n", bld.type()); break;

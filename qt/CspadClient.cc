@@ -20,7 +20,7 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
 
   addWidget(_spBox = new QCheckBox("Suppress\nBad Pixels"));
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
-  addWidget(_npBox = new QCheckBox("Suppress\nPedestal"));
+  addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
   addWidget(_piBox = new QCheckBox("Post\nIntegral"));
 }
 
@@ -110,7 +110,7 @@ static const Rotation _tr[] = {  D0  , D90 , D180, D90 ,
 void CspadClient::write_pedestals()
 {
   QString name;
-  unsigned signature=-1UL;
+  unsigned signature=-1U;
 
   for(int i=0; i<NCHANNELS; i++)
     if (_channels[i]->is_shown()) {
@@ -139,63 +139,68 @@ void CspadClient::write_pedestals()
 
     const Ami::EntryImage& entry = *static_cast<const Ami::EntryImage*>(_cds.entry(signature));
     const unsigned nframes = entry.desc().nframes();
+
     //
     //  Load pedestals
     //
     double** _off = new double*[nframes];
-    for(unsigned s=0; s<nframes; s++)
+    for(unsigned s=0; s<nframes; s++) {
       _off[s] = new double[Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2];
-
-    std::string oname;
-    std::string nname;
+      memset(_off[s],0,Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2*sizeof(double));
+    }
 
     char tbuf[32];
     sprintf(tbuf,"%08x.dat",entry.desc().info().phy());
-    oname = std::string("ped.") + tbuf;
 
-    FILE* f;
+    if (!_npBox->isChecked()) {
+
+      std::string iname;
+      iname = std::string("ped.") + tbuf;
+
+      FILE* f = fopen(iname.c_str(),"r");
+      if (!f) {
+        iname = std::string("/reg/g/pcds/pds/cspadcalib/ped.") + tbuf;
+        f = fopen(iname.c_str(),"r");
+      }
+
+      if (f) {
+
+        //  read pedestals
+        size_t sz = 8 * 1024;
+        char* linep = (char *)malloc(sz);
+        char* pEnd;
+
+        for(unsigned s=0; s<nframes; s++) {
+          double* off = _off[s];
+          for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
+            getline(&linep, &sz, f);
+            *off++ = strtod(linep,&pEnd);
+            for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+              *off++ = strtod(pEnd, &pEnd);
+          }
+        }    
+
+        free(linep);
+
+        printf("Write pedestals: Loaded pedestals from %s\n",iname.c_str());
+        fclose(f);
+      }
+    }
+
+    std::string oname;
+
     if (box.clickedButton() == testB)
-      f = fopen(oname.c_str(),"r");
+      oname = std::string("ped.") + tbuf;
     else {
       oname = std::string("/reg/g/pcds/pds/cspadcalib/ped.") + tbuf;
-      f = fopen(oname.c_str(),"r");
     }
 
-    if (f) {
-
-      //  read pedestals
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      char* pEnd;
-
-      for(unsigned s=0; s<nframes; s++) {
-        double* off = _off[s];
-        for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, f);
-          *off++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = strtod(pEnd, &pEnd);
-        }
-      }    
-
-      free(linep);
-
-      //  rename current pedestal file
-
-      printf("Loaded pedestals from %s\n",oname.c_str());
-
-      time_t t = time(0);
-      strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
+    //  rename current pedestal file
+    time_t t = time(0);
+    strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
     
-      nname = oname + "." + tbuf;
-
-      rename(oname.c_str(),nname.c_str());
-    }
-    else
-      printf("Failed to load pedestals\n");
-
-    if (f)
-      fclose(f);
+    std::string nname = oname + "." + tbuf;
+    rename(oname.c_str(),nname.c_str());
 
     bool fail=false;
     FILE* fn = fopen(oname.c_str(),"w");
@@ -257,7 +262,7 @@ void CspadClient::write_pedestals()
         }
       }
       fclose(fn);
-    
+
       // reconfigure
       msg = QString("Success.  Reconfigure to use new pedestals.");
     }
@@ -266,7 +271,8 @@ void CspadClient::write_pedestals()
                          "Write Pedestals", 
                          msg,
                          QMessageBox::Ok);
-    if (fail && f)
+
+    if (fail)
       rename(nname.c_str(),oname.c_str());
     
     for(unsigned s=0; s<nframes; s++)
