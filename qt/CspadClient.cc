@@ -215,10 +215,12 @@ void CspadClient::write_pedestals()
       fclose(fn);
     }
     else {
+      unsigned ppx = entry.desc().ppxbin();
+      unsigned ppy = entry.desc().ppybin();
       for(unsigned i=0; i<nframes; i++) {
         double* off = _off[i];
         const SubFrame& frame = entry.desc().frame(i);
-        double dn   = entry.info(EntryImage::Normalization);
+        double dn   = entry.info(EntryImage::Normalization)*double(ppx*ppy);
         double doff = entry.info(EntryImage::Pedestal);
         switch(_tr[i>>1]) {
         case D0:
@@ -226,7 +228,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y + frame.ny - 1;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+col,y-row))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+col/ppx,y-row/ppy))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -235,7 +237,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+row,y+col))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+row/ppx,y+col/ppy))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -244,7 +246,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-col,y+row))-doff)/dn);
+                    fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-col/ppx,y+row/ppy))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }
@@ -253,7 +255,7 @@ void CspadClient::write_pedestals()
             unsigned y = frame.y + frame.ny - 1;
             for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
               for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-row,y-col))-doff)/dn);
+                fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-row/ppx,y-col/ppy))-doff)/dn);
               fprintf(fn, "\n");
             }
             break; }

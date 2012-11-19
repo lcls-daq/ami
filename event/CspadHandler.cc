@@ -847,7 +847,8 @@ namespace CspadGeometry {
              FILE* g,    // gain
              FILE* rms,  // noise
              FILE* gm,   // geometry
-             unsigned max_pixels) :
+             unsigned max_pixels,
+             bool     full_resolution) :
       _src   (src),
       _config(c)
     {
@@ -901,10 +902,12 @@ namespace CspadGeometry {
       int pixels = ((idx>idy) ? idx : idy);
       const int bin0 = 4;
       _ppb = 1;
-#ifndef UNBINNED
-      while((pixels*4/_ppb+2*bin0) > max_pixels)
-        _ppb<<=1;
-#endif
+
+      if (!full_resolution) {
+        while((pixels*4/_ppb+2*bin0) > max_pixels)
+          _ppb<<=1;
+      }
+
       x += pixel_size*double(bin0*int(_ppb) - xmin*4);
       y -= pixel_size*double(bin0*int(_ppb) - ymin*4);
 
@@ -1230,7 +1233,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels);
+  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution());
 
   if (entry) 
     delete entry;

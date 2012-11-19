@@ -38,9 +38,8 @@ void   EBeamReader::_configure(Pds::TypeId id,
   _cache.add("BLD:EBEAM:LTUX");
   _cache.add("BLD:EBEAM:LTUY");
   _cache.add("BLD:EBEAM:LTUXP");
-  _cache.add("BLD:EBEAM:LTUYP");
+  int index = _cache.add("BLD:EBEAM:LTUYP");
 
-  int index;
   switch(id.version()) {
   case 0: break;
   case 1:
