@@ -25,6 +25,9 @@ namespace Ami {
       Task*    task   ();
       unsigned duration  () const;
       unsigned repetitive() const;
+    public:
+      void pause ();
+      void resume();
     public slots:
       void run   (bool);
       void single();

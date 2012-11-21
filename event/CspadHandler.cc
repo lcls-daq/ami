@@ -34,6 +34,7 @@ typedef Pds::CsPad::ElementV2 CspadElement;
 using Pds::CsPad::ElementIterator;
 
 static const unsigned Offset = 0x4000;
+static const double  dOffset = double(Offset);
 static const double pixel_size = 110e-6;
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
@@ -76,7 +77,9 @@ static inline unsigned sum1(const uint16_t*& data,
   unsigned v;
   if (off==*psp) { psp++; v = Offset; }
   else { 
-    double d = (*gn)*(double(*data + *off - Offset) - fn);
+    //    double d = (*gn)*(double(*data + *off - Offset) - fn);
+    double d = (*gn)*((double(*data + *off) - dOffset) - fn);
+    //    double d = ((double(*data + *off) - dOffset) - fn);
     d += Offset; 
     v = unsigned(d+0.5);
   }

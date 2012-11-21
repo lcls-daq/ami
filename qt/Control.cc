@@ -63,6 +63,15 @@ unsigned Control::duration() const { return _duration; }
 
 unsigned Control::repetitive() const { return _repeat; }
 
+void Control::pause() {
+  cancel();
+}
+
+void Control::resume() {
+  if (_pRun->isChecked() || _pSingle->isChecked())
+    Timer::start();
+}
+
 void Control::run (bool l) {
   _client.one_shot(false);
   _repeat=1; 

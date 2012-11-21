@@ -91,7 +91,7 @@ namespace Ami {
       char*       _request;
       char*       _description;
 
-    private:
+    protected:
       Control*    _control;
       Status*     _status;
 

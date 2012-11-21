@@ -1,5 +1,6 @@
 #include "ami/qt/CspadClient.hh"
 #include "ami/qt/ChannelDefinition.hh"
+#include "ami/qt/Control.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
@@ -136,6 +137,8 @@ void CspadClient::write_pedestals()
   if (box.exec()==QMessageBox::Cancel)
     ;
   else {
+
+    _control->pause();
 
     const Ami::EntryImage& entry = *static_cast<const Ami::EntryImage*>(_cds.entry(signature));
     const unsigned nframes = entry.desc().nframes();
@@ -280,5 +283,7 @@ void CspadClient::write_pedestals()
     for(unsigned s=0; s<nframes; s++)
       delete _off[s];
     delete[] _off;
+
+    _control->resume();
   }
 }
