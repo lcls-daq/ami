@@ -18,6 +18,7 @@
 #include "ami/event/UsdUsbHandler.hh"
 #include "ami/event/Gsc16aiHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
+#include "ami/event/OrcaHandler.hh"
 #include "ami/event/QuartzHandler.hh"
 #include "ami/event/PhasicsHandler.hh"
 #include "ami/event/TimepixHandler.hh"
@@ -44,6 +45,8 @@
 #include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 #include "pdsdata/xtc/Dgram.hh"
+
+#define DBUG
 
 using namespace Ami;
 
@@ -259,6 +262,13 @@ int XtcClient::process(Pds::Xtc* xtc)
                                             xtc->contains,
                                             xtc->payload());
     }
+#ifdef DBUG
+    if (_seq->service()==Pds::TransitionId::Configure) {
+      printf("Type %s  Src %08x.%08x\n", 
+	     TypeId::name(xtc->contains.id()),
+	     xtc->src.phy(),xtc->src.log());
+    }
+#endif
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
       if (h->info().level() == xtc->src.level() &&
@@ -310,6 +320,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
       case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
+      case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
       case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
       case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
       case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;

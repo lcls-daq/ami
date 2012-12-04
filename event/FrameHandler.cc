@@ -49,32 +49,42 @@ const Entry* FrameHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
 void FrameHandler::reset() { _entry = 0; }
 
-void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  unsigned columns,rows;
-  if (c.forwarding() == Pds::Camera::FrameFexConfigV1::FullFrame) {
-    columns = _defColumns;
-    rows    = _defRows;
-  }
-  else {
-    columns = c.roiEnd().column-c.roiBegin().column;
-    rows    = c.roiEnd().row   -c.roiBegin().row   ;
-  }
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
-  DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		 columns, rows, ppb, ppb);
+  Pds::TypeId::Type type = tid.id();
+  if (type == Pds::TypeId::Id_FrameFexConfig) {
+    if (_entry) 
+      delete _entry;
 
-  if (_entry) 
-    delete _entry;
-  _entry = new EntryImage(desc);
-  _entry->invalid();
+    const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+    unsigned columns,rows;
+    switch(c.forwarding()) {
+    case Pds::Camera::FrameFexConfigV1::FullFrame:
+      columns = _defColumns;
+      rows    = _defRows;
+      break;
+    case Pds::Camera::FrameFexConfigV1::RegionOfInterest:
+      columns = c.roiEnd().column-c.roiBegin().column;
+      rows    = c.roiEnd().row   -c.roiBegin().row   ;
+      break;
+    case Pds::Camera::FrameFexConfigV1::NoFrame:
+    default:
+      return;
+    }
+    unsigned pixels  = (columns > rows) ? columns : rows;
+    unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
+    columns = (columns+ppb-1)/ppb;
+    rows    = (rows   +ppb-1)/ppb;
+    DescImage desc(det, (unsigned)0, ChannelID::name(det),
+		   columns, rows, ppb, ppb);
+
+    _entry = new EntryImage(desc);
+    _entry->invalid();
+  }
 }
 
+void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t) {}
 void FrameHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 template <class T>

@@ -352,7 +352,7 @@ void DetectorSelect::save_plots()
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src, 
-               unsigned channel,
+						   unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {
@@ -378,7 +378,10 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Princeton: 
     case Pds::DetInfo::Fli      : 
     case Pds::DetInfo::Andor    : 
-    case Pds::DetInfo::Fccd     : client = new Ami::Qt::ImageClient   (this, info, channel); break;
+    case Pds::DetInfo::Fccd     : 
+    case Pds::DetInfo::OrcaFl40 : 
+      client = new Ami::Qt::ImageClient   (this, info, channel);
+      break;
     case Pds::DetInfo::Cspad    :
     case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel); break;
     default: printf("Device type %x not recognized\n", info.device()); break;

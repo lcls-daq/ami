@@ -23,6 +23,8 @@ namespace Ami {
     void         reset();
   protected:
     void _calibrate(const void* payload, const Pds::ClockTime& t);
+    void _configure(Pds::TypeId, 
+		    const void* payload, const Pds::ClockTime& t);
     void _configure(const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
