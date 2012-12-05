@@ -142,6 +142,65 @@ static inline unsigned sum4(const uint16_t*& data,
     v = unsigned(d+0.5); }
   return v; }
 
+static const unsigned no_threshold = 0x00ffffff;
+
+static inline unsigned thr1(double v0, double v1,
+                            const uint16_t*& off,
+                            const uint16_t* const*& psp,
+                            const float*& rms)
+{ 
+  unsigned v;
+  if (off==*psp) { psp++; v = no_threshold; }
+  else {  v = unsigned(v0 + *rms*v1 + 0.5); }
+  off++;
+  rms++;
+  return v;
+}
+
+static inline unsigned thr2(double v0, double v1,
+                            const uint16_t*& off,
+                            const uint16_t* const*& psp,
+                            const float*& rms)
+{
+  unsigned v;
+  if (off==*psp) { 
+    if (++off==*++psp) psp++;
+    off++;
+    v = no_threshold;
+  }
+  else {
+    double d = 2*v0 + v1*(rms[0]+rms[1]);
+    v = unsigned(d+0.5);
+    off += 2;
+  }
+  rms += 2;
+  return v; }
+
+static inline unsigned thr4(double v0, double v1,
+                            const uint16_t*& off,
+                            const uint16_t* const*& psp,
+                            const float*& rms)
+{
+  unsigned v;
+  if (off==*psp) {
+    if (++off==*++psp) {
+      if (++off==*++psp) {
+        if (++off==*++psp) psp++;
+        off++;
+      }
+      else off+=2;
+    }
+    else off+=3;
+    v = no_threshold;
+  }
+  else {
+    double d = 4*v0 + v1*(rms[0]+rms[1]+rms[2]+rms[3]);
+    v = unsigned(d+0.5); 
+    off += 4;
+  }
+  rms += 4;
+  return v; }
+
 #if 0
 static double frameNoise(const uint16_t*  data,
                          const uint16_t*  off,
@@ -271,84 +330,84 @@ namespace CspadGeometry {
   //  When filling the image, compensate data which
   //    only partially fills a pixel (at the edges)
   //
-#define FRAME_BOUNDS              \
-  const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;              \
-    const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;    \
-    unsigned x0 = CALC_X(column,0,0);         \
-    unsigned x1 = CALC_X(column,ColLen,RowLen);                         \
-    unsigned y0 = CALC_Y(row,0,0);          \
-    unsigned y1 = CALC_Y(row,ColLen,RowLen);        \
-    if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }      \
+#define FRAME_BOUNDS                                            \
+  const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;      \
+    const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;      \
+    unsigned x0 = CALC_X(column,0,0);                           \
+    unsigned x1 = CALC_X(column,ColLen,RowLen);                 \
+    unsigned y0 = CALC_Y(row,0,0);                              \
+    unsigned y1 = CALC_Y(row,ColLen,RowLen);                    \
+    if (x0 > x1) { unsigned t=x0; x0=x1; x1=t; }                \
     if (y0 > y1) { unsigned t=y0; y0=y1; y1=t; }      
 
 
-#define BIN_ITER4 {             \
-    const unsigned ColBins = CsPad::ColumnsPerASIC>>2;      \
-    const unsigned RowBins = CsPad::MaxRowsPerASIC>>1;      \
-    /*  zero the target region  */          \
-    for(unsigned i=0; i<=ColBins; i++) {        \
-      for(unsigned j=0; j<=RowBins; j++) {        \
-  const unsigned x = CALC_X(column,i,j);        \
-  const unsigned y = CALC_Y(row   ,i,j);        \
-  image.content(0,x,y);           \
-      }                 \
-    }                 \
-    /*  fill the target region  */          \
-    for(unsigned i=0; i<ColBins; i++) {         \
-      for(unsigned k=0; k<4; k++) {         \
-  for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
-    const unsigned x = CALC_X(column,i,j);      \
-    const unsigned y = CALC_Y(row   ,i,j);      \
-    image.addcontent(F4,x,y);                                     \
-  }               \
-      }                 \
-    }                 \
-    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */   \
-      const unsigned x = CALC_X(column,ColBins,j);      \
-      const unsigned y = CALC_Y(row   ,ColBins,j);      \
-      image.addcontent(4*F4,x,y);                                       \
-    }                 \
-}
+#define BIN_ITER4(F4) {                                         \
+    const unsigned ColBins = CsPad::ColumnsPerASIC>>2;          \
+    const unsigned RowBins = CsPad::MaxRowsPerASIC>>1;          \
+    /*  zero the target region  */                              \
+    for(unsigned i=0; i<=ColBins; i++) {                        \
+      for(unsigned j=0; j<=RowBins; j++) {                      \
+        const unsigned x = CALC_X(column,i,j);                  \
+        const unsigned y = CALC_Y(row   ,i,j);                  \
+        image.content(0,x,y);                                   \
+      }                                                         \
+    }                                                           \
+    /*  fill the target region  */                              \
+    for(unsigned i=0; i<ColBins; i++) {                         \
+      for(unsigned k=0; k<4; k++) {                             \
+        for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
+          const unsigned x = CALC_X(column,i,j);                \
+          const unsigned y = CALC_Y(row   ,i,j);                \
+          image.addcontent(F4,x,y);                             \
+        }                                                       \
+      }                                                         \
+    }                                                           \
+    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */     \
+      const unsigned x = CALC_X(column,ColBins,j);              \
+      const unsigned y = CALC_Y(row   ,ColBins,j);              \
+      image.addcontent(4*F4,x,y);                               \
+    }                                                           \
+  }
 
-#define BIN_ITER2 {             \
-    const unsigned ColBins = CsPad::ColumnsPerASIC>>1;      \
-    const unsigned RowBins = CsPad::MaxRowsPerASIC;     \
-    /*  zero the target region  */          \
-    for(unsigned i=0; i<=ColBins; i++) {        \
-      for(unsigned j=0; j<=RowBins; j++) {        \
-  const unsigned x = CALC_X(column,i,j);        \
-  const unsigned y = CALC_Y(row   ,i,j);        \
-  image.content(0,x,y);           \
-      }                 \
-    }                 \
-    /*  fill the target region  */          \
-    for(unsigned i=0; i<ColBins; i++) {         \
-      for(unsigned k=0; k<2; k++) {         \
-  for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
-    const unsigned x = CALC_X(column,i,j);      \
-    const unsigned y = CALC_Y(row   ,i,j);      \
-    image.addcontent(F2,x,y);                                     \
-  }               \
-      }                 \
-    }                 \
-    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */   \
-      const unsigned x = CALC_X(column,ColBins,j);      \
-      const unsigned y = CALC_Y(row   ,ColBins,j);      \
-      image.addcontent(2*F2,x,y);                                       \
-    }                 \
-}
+#define BIN_ITER2(F2) {                                         \
+    const unsigned ColBins = CsPad::ColumnsPerASIC>>1;          \
+    const unsigned RowBins = CsPad::MaxRowsPerASIC;             \
+    /*  zero the target region  */                              \
+    for(unsigned i=0; i<=ColBins; i++) {                        \
+      for(unsigned j=0; j<=RowBins; j++) {                      \
+        const unsigned x = CALC_X(column,i,j);                  \
+        const unsigned y = CALC_Y(row   ,i,j);                  \
+        image.content(0,x,y);                                   \
+      }                                                         \
+    }                                                           \
+    /*  fill the target region  */                              \
+    for(unsigned i=0; i<ColBins; i++) {                         \
+      for(unsigned k=0; k<2; k++) {                             \
+        for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
+          const unsigned x = CALC_X(column,i,j);                \
+          const unsigned y = CALC_Y(row   ,i,j);                \
+          image.addcontent(F2,x,y);                             \
+        }                                                       \
+      }                                                         \
+    }                                                           \
+    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */     \
+      const unsigned x = CALC_X(column,ColBins,j);              \
+      const unsigned y = CALC_Y(row   ,ColBins,j);              \
+      image.addcontent(2*F2,x,y);                               \
+    }                                                           \
+  }
 
-#define BIN_ITER1 {             \
+#define BIN_ITER1(F1) {                                 \
     const unsigned ColBins = CsPad::ColumnsPerASIC;     \
-    const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;      \
-    /*  fill the target region  */          \
-    for(unsigned i=0; i<ColBins; i++) {         \
-      for(unsigned j=0; j<RowBins; j++) {       \
-  const unsigned x = CALC_X(column,i,j);        \
-  const unsigned y = CALC_Y(row   ,i,j);        \
-  image.content(F1,x,y);                                          \
-      }                 \
-    }                 \
+    const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;  \
+    /*  fill the target region  */                      \
+    for(unsigned i=0; i<ColBins; i++) {                 \
+      for(unsigned j=0; j<RowBins; j++) {               \
+        const unsigned x = CALC_X(column,i,j);          \
+        const unsigned y = CALC_Y(row   ,i,j);          \
+        image.content(F1,x,y);                          \
+      }                                                 \
+    }                                                   \
   }
 
   //
@@ -376,7 +435,7 @@ namespace CspadGeometry {
     uint16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-#define AsicTemplate(classname,bi,PPB)                                  \
+#define AsicTemplate(classname,bi,ti,PPB)                               \
   class classname : public Asic {                                       \
   public:                                                               \
     classname(double x, double y) : Asic(x,y,PPB) {}                    \
@@ -392,56 +451,53 @@ namespace CspadGeometry {
               const uint16_t*  data) const { bi }                       \
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const {                             \
-      const unsigned ColBins = CsPad::ColumnsPerASIC;                   \
-      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
-                                                                        \
-      int k=0;                                                          \
-      for(unsigned i=0; i<ColBins; i++) {                               \
-        for(unsigned j=0; j<RowBins; j++,k++) {                         \
-          const unsigned x = CALC_X(column,i,j);                        \
-          const unsigned y = CALC_Y(row   ,i,j);                        \
-          image.content(unsigned(v0),x,y);                              \
-        }                                                               \
-      }                                                                 \
+      unsigned u0 = unsigned(v0);                                       \
+      ti                                                                \
     }                                                                   \
   }
 
-#define F1 (*data++)
-#define F2 sum2(data)
-#define F4 sum4(data)
+#define B1 { BIN_ITER1((*data++)) }
+#define B2 { BIN_ITER2(sum2(data)) }
+#define B4 { BIN_ITER4(sum4(data)) }
+#define T1 { BIN_ITER1(u0) }
+#define T2 { BIN_ITER2(2*u0) }
+#define T4 { BIN_ITER4(4*u0) }
 
 #define CALC_X(a,b,c) (a+b)         
 #define CALC_Y(a,b,c) (a-c)          
-  AsicTemplate(  AsicD0B1, BIN_ITER1, 1);
-  AsicTemplate(  AsicD0B2, BIN_ITER2, 2);
-  AsicTemplate(  AsicD0B4, BIN_ITER4, 4);
+  AsicTemplate(  AsicD0B1, B1, T1, 1);
+  AsicTemplate(  AsicD0B2, B2, T2, 2);
+  AsicTemplate(  AsicD0B4, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)         
 #define CALC_Y(a,b,c) (a+b)          
-  AsicTemplate( AsicD90B1, BIN_ITER1, 1);
-  AsicTemplate( AsicD90B2, BIN_ITER2, 2);
-  AsicTemplate( AsicD90B4, BIN_ITER4, 4);
+  AsicTemplate( AsicD90B1, B1, T1, 1);
+  AsicTemplate( AsicD90B2, B2, T2, 2);
+  AsicTemplate( AsicD90B4, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)         
 #define CALC_Y(a,b,c) (a+c)          
-  AsicTemplate(AsicD180B1, BIN_ITER1, 1);
-  AsicTemplate(AsicD180B2, BIN_ITER2, 2);
-  AsicTemplate(AsicD180B4, BIN_ITER4, 4);
+  AsicTemplate(AsicD180B1, B1, T1, 1);
+  AsicTemplate(AsicD180B2, B2, T2, 2);
+  AsicTemplate(AsicD180B4, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)         
 #define CALC_Y(a,b,c) (a-b)          
-  AsicTemplate(AsicD270B1, BIN_ITER1, 1);
-  AsicTemplate(AsicD270B2, BIN_ITER2, 2);
-  AsicTemplate(AsicD270B4, BIN_ITER4, 4);
+  AsicTemplate(AsicD270B1, B1, T1, 1);
+  AsicTemplate(AsicD270B2, B2, T2, 2);
+  AsicTemplate(AsicD270B4, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 
-#undef F1
-#undef F2
-#undef F4
+#undef B1
+#undef B2
+#undef B4
+#undef T1
+#undef T2
+#undef T4
 #undef AsicTemplate
 
   class AsicP : public Asic {
@@ -499,18 +555,19 @@ namespace CspadGeometry {
       
       if (rms) {
         float* r = _rms;
+        float* g = _gn;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           getline(&linep, &sz, rms);
           *r++ = strtod(linep,&pEnd);
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *r++ = strtod(pEnd,&pEnd);
+            *r++ = strtod(pEnd,&pEnd)*(*g++);
         }
       }
       else {
         float* r = _rms;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *r++ = 1.;
+            *r++ = 0;
         }
       }
       
@@ -528,7 +585,7 @@ namespace CspadGeometry {
 
   static uint16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
-#define AsicTemplate(classname,bi,PPB)                                  \
+#define AsicTemplate(classname,bi,ti,PPB)                               \
   class classname : public AsicP {                                      \
   public:                                                               \
     classname(double x, double y,                                       \
@@ -545,25 +602,12 @@ namespace CspadGeometry {
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const                               \
     {                                                                   \
-      const unsigned ColBins = CsPad::ColumnsPerASIC;			\
-      const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;                \
-                                                                        \
-      uint16_t* const* sta = &_sta[0];                                  \
-      int k=0;                                                          \
-      const unsigned no_threshold = -1;                                 \
-      for(unsigned i=0; i<ColBins; i++) {				\
-        for(unsigned j=0; j<RowBins; j++,k++) {                         \
-          const unsigned x = CALC_X(column,i,j);                        \
-          const unsigned y = CALC_Y(row   ,i,j);                        \
-          if (*sta == _off+k) {                                         \
-            image.content(no_threshold,x,y);                            \
-            sta++;                                                      \
-          }                                                             \
-          else {                                                        \
-            image.content(unsigned(v0 + v1*_rms[k]*_gn[k]),x,y);        \
-          }                                                             \
-        }                                                               \
-      }									\
+      bool lsuppress  = image.desc().options()&1;                       \
+      uint16_t* zero = 0;                                               \
+      const uint16_t* off = _off;                                       \
+      const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
+      const float* rms = _rms;                                          \
+      ti;                                                               \
     }                                                                   \
     void fill(Ami::EntryImage& image,                                   \
               const uint16_t*  data) const {                            \
@@ -579,42 +623,48 @@ namespace CspadGeometry {
     }                                                                   \
   }
 
-#define F1 sum1(data,off,sta,fn,gn)
-#define F2 sum2(data,off,sta,fn,gn)
-#define F4 sum4(data,off,sta,fn,gn)
+#define B1 { BIN_ITER1(sum1(data,off,sta,fn,gn)) }
+#define B2 { BIN_ITER2(sum2(data,off,sta,fn,gn)) }
+#define B4 { BIN_ITER4(sum4(data,off,sta,fn,gn)) }
+#define T1 { BIN_ITER1(thr1(v0,v1,off,sta,rms)) }
+#define T2 { BIN_ITER2(thr2(v0,v1,off,sta,rms)) }
+#define T4 { BIN_ITER4(thr4(v0,v1,off,sta,rms)) }
 
 #define CALC_X(a,b,c) (a+b)         
 #define CALC_Y(a,b,c) (a-c)          
-  AsicTemplate(  AsicD0B1P, BIN_ITER1, 1);
-  AsicTemplate(  AsicD0B2P, BIN_ITER2, 2);
-  AsicTemplate(  AsicD0B4P, BIN_ITER4, 4);
+  AsicTemplate(  AsicD0B1P, B1, T1, 1);
+  AsicTemplate(  AsicD0B2P, B2, T2, 2);
+  AsicTemplate(  AsicD0B4P, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)         
 #define CALC_Y(a,b,c) (a+b)          
-  AsicTemplate( AsicD90B1P, BIN_ITER1, 1);
-  AsicTemplate( AsicD90B2P, BIN_ITER2, 2);
-  AsicTemplate( AsicD90B4P, BIN_ITER4, 4);
+  AsicTemplate( AsicD90B1P, B1, T1, 1);
+  AsicTemplate( AsicD90B2P, B2, T2, 2);
+  AsicTemplate( AsicD90B4P, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)         
 #define CALC_Y(a,b,c) (a+c)          
-  AsicTemplate(AsicD180B1P, BIN_ITER1, 1);
-  AsicTemplate(AsicD180B2P, BIN_ITER2, 2);
-  AsicTemplate(AsicD180B4P, BIN_ITER4, 4);
+  AsicTemplate(AsicD180B1P, B1, T1, 1);
+  AsicTemplate(AsicD180B2P, B2, T2, 2);
+  AsicTemplate(AsicD180B4P, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)         
 #define CALC_Y(a,b,c) (a-b)          
-  AsicTemplate(AsicD270B1P, BIN_ITER1, 1);
-  AsicTemplate(AsicD270B2P, BIN_ITER2, 2);
-  AsicTemplate(AsicD270B4P, BIN_ITER4, 4);
+  AsicTemplate(AsicD270B1P, B1, T1, 1);
+  AsicTemplate(AsicD270B2P, B2, T2, 2);
+  AsicTemplate(AsicD270B4P, B4, T4, 4);
 #undef CALC_X
 #undef CALC_Y
 
-#undef F1
-#undef F2
-#undef F4
+#undef B1
+#undef B2
+#undef B4
+#undef T1
+#undef T2
+#undef T4
 #undef AsicTemplate
 
   class TwoByTwo {

@@ -55,12 +55,6 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   printf("PeakFinder2 acc %c\n",_accumulate ? 't':'f');
 
   _output_entry->info(0,EntryImage::Pedestal);
-  int ppbin = 1;
-  ppbin *= _output_entry->desc().ppxbin();
-  ppbin *= _output_entry->desc().ppybin();
-  double dppbin(ppbin);
-  _threshold_v0 *= dppbin;
-  _threshold_v1 *= dppbin;
 
   if ((_fn = _lookup(e.info().phy())))
     _fn->setup(_threshold_v0,
