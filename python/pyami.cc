@@ -29,6 +29,8 @@
 #include "ami/data/Single.hh"
 #include "ami/data/Average.hh"
 
+#include "ami/service/Ins.hh"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -691,7 +693,7 @@ pyami_connect(PyObject *self, PyObject *args)
     return NULL;
   }
   if (mcinterface==0) {
-    if (servergroup & 0x80000000) {
+    if (Ami::Ins::is_multicast(servergroup)) {
       PyErr_SetString(PyExc_RuntimeError,"failed to lookup group interface");
       return NULL;
     }
