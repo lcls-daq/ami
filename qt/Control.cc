@@ -75,8 +75,14 @@ void Control::resume() {
 void Control::run (bool l) {
   _client.one_shot(false);
   _repeat=1; 
-  if (l)  Timer::start(); 
-  else    cancel();
+  if (l)  {
+    Timer::start(); 
+    _pRun->setText("Stop");
+  }
+  else {
+    cancel();
+    _pRun->setText("Run");
+  }
 }
 
 void Control::single() {
