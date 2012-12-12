@@ -12,15 +12,22 @@
 
 using namespace Ami::Qt;
 
+static double _limit(double i, double lo, double hi)
+{
+  if (i<lo) return lo;
+  else if (i>hi) return hi;
+  else return i;
+}
+
 RectangleCursors::RectangleCursors(ImageFrame& f,
                                    QtPWidget*  fParent) :
   QWidget(0),
   _frame(f),
   _frameParent(fParent),
-  _x0(f.size().width()/4),
-  _y0(f.size().width()/4),
-  _x1(f.size().width()*3/4),
-  _y1(f.size().width()*3/4),
+  _x0(0),
+  _y0(0),
+  _x1(-1UL),
+  _y1(-1UL),
   _edit_x0   (new QLineEdit),
   _edit_y0   (new QLineEdit),
   _edit_x1   (new QLineEdit),
@@ -116,10 +123,10 @@ void RectangleCursors::update_edits()
   _x1 = _edit_x1   ->text().toDouble();
   _y1 = _edit_y1   ->text().toDouble();
 
-  if (_x0 > _xmax) _x0 = _xmax;
-  if (_y0 > _ymax) _y0 = _ymax;
-  if (_x1 > _xmax) _x1 = _xmax;
-  if (_y1 > _ymax) _y1 = _ymax;
+  _x0 = _limit(_x0,0,_xmax);
+  _y0 = _limit(_y0,0,_ymax);
+  _x1 = _limit(_x1,0,_xmax);
+  _y1 = _limit(_y1,0,_ymax);
 
   _set_edits();
 
@@ -143,8 +150,15 @@ void RectangleCursors::draw(QImage& image)
 
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
-  _xmax = (unsigned) (xinfo.position(sz.width())-1);
-  _ymax = (unsigned) (yinfo.position(sz.height())-1);
+  { unsigned xmax = (unsigned) (xinfo.position(sz.width ())-1);
+    unsigned ymax = (unsigned) (yinfo.position(sz.height())-1);
+    if (_xmax != xmax || 
+        _ymax != ymax) {
+      _xmax = xmax;
+      _ymax = ymax;
+      update_edits();
+    }
+  }
 
   unsigned jlo = unsigned(xinfo.tick(xlo())), jhi = unsigned(xinfo.tick(xhi()));
   unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));
@@ -169,18 +183,14 @@ void RectangleCursors::draw(QImage& image)
 
 void RectangleCursors::mousePressEvent(double x,double y)
 {
-  _x0=x; _y0=y;
-
-  if (_x0 > _xmax) _x0 = _xmax;
-  if (_y0 > _ymax) _y0 = _ymax;
+  _x0 = _limit(x,0,_xmax);
+  _y0 = _limit(y,0,_ymax);
 }
 
 void RectangleCursors::mouseMoveEvent (double x,double y)
 {
-  _x1=x; _y1=y;
-
-  if (_x1 > _xmax) _x1 = _xmax;
-  if (_y1 > _ymax) _y1 = _ymax;
+  _x1 = _limit(x,0,_xmax);
+  _y1 = _limit(y,0,_ymax);
 
   _set_edits();
   emit changed();

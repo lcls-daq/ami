@@ -208,6 +208,8 @@ void EdgeFinder::load(const char*& p)
 
   XML_iterate_close(EdgeFinder,tag);
 
+  setVisible(false);  // hack to force this hidden
+
   emit changed();
 }
 

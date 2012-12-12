@@ -27,16 +27,24 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
   _ocds      ("Hidden"),
   _features  (cache),
   _user      (user),
+  _user_cds  (user.size()),
   _filter    (filter),
   _waitingForConfigure(false)
 {
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
   EntryFactory::source(*_features[PostAnalysis]);
+
+  unsigned i=0;
+  for(UList::iterator it=user.begin(); it!=user.end(); it++,i++)
+    _user_cds[i] = 0;
 }
 
 AnalysisFactory::~AnalysisFactory()
 {
+  for(unsigned i=0; i<_user_cds.size(); i++)
+    if (_user_cds[i])
+      delete _user_cds[i];
 }
 
 std::vector<FeatureCache*>& AnalysisFactory::features() { return _features; }
@@ -122,8 +130,13 @@ void AnalysisFactory::configure(unsigned       id,
       int i=0;
       for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++) {
         if (req.input() == i) {
-          (*it)->clear();
-          (*it)->create(cds);
+          Cds* ucds = _user_cds[i];
+          if (ucds==0) {
+            _user_cds[i] = ucds = new Cds((*it)->name());
+            (*it)->clear();
+            (*it)->create(*ucds);
+          }
+          ucds->mirror(cds);
           break;
         }
       }

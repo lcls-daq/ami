@@ -5,6 +5,7 @@
 #include "ami/data/Cds.hh"
 
 #include <list>
+#include <vector>
 
 namespace Ami {
 
@@ -40,6 +41,8 @@ namespace Ami {
     std::vector<FeatureCache*>& _features;
     typedef std::list<UserModule*> UList;
     UList&        _user;
+    typedef std::vector<Cds*> CList;
+    CList         _user_cds;
     EventFilter&  _filter;
     pthread_mutex_t _mutex;
     pthread_cond_t _condition;
