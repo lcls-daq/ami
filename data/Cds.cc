@@ -2,6 +2,7 @@
 
 #include "Cds.hh"
 #include "Entry.hh"
+#include "EntryView.hh"
 #include "DescEntry.hh"
 #include "ami/service/Semaphore.hh"
 
@@ -165,3 +166,11 @@ void Cds::request(ReqOpt o)
   _request = EntryList(o==None ? EntryList::Empty : EntryList::Full);
 }
 
+void Cds::mirror(Cds& o)
+{
+  o.reset();
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    const Entry* en = *it;
+    o.add(new EntryView(*en));
+  }
+}

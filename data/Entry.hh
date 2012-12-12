@@ -41,6 +41,7 @@ namespace Ami {
   private:
     unsigned _payloadsize;
     unsigned long long* _payload;
+    friend class EntryView;
   };
 };
 

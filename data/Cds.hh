@@ -38,6 +38,7 @@ namespace Ami {
     void     payload    (iovec*);
     unsigned payload    (iovec*, EntryList);
     void     invalidate_payload();
+    void     mirror     (Cds&);
 
     enum ReqOpt { None, All };
     void      request    (ReqOpt);
