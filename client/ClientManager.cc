@@ -63,8 +63,9 @@ namespace Ami {
         Message msg(0,Message::NoOp);
         if (_skt->read(&msg,sizeof(msg))==sizeof(msg))
           if (msg.type()==Message::Hello) {
-            printf("Hello from socket %d\n",
-		   _skt->socket());
+#ifdef DBUG
+	    printf("Hello from socket %d\n", _skt->socket());
+#endif
             _found = true;
           }
       }
@@ -119,8 +120,10 @@ namespace Ami {
           int len = _skt->read(&msg,sizeof(msg));
           if (len==sizeof(msg)) {
             if (msg.type()==Message::Hello) {
+#ifdef DBUG
               printf("Hello from socket %d\n",
                      _skt->socket());
+#endif
               _found = true;
             }
           }
@@ -196,10 +199,12 @@ ClientManager::ClientManager(unsigned   interface,
 {
   bool mcast = Ins::is_multicast(serverGroup);
 
+#ifdef DBUG
   printf("CM int %x grp %x mcast %c poll %p\n", 
 	 interface, serverGroup,
 	 mcast ? 'T':'F',
          _poll);
+#endif
 
   if (mcast) {
     VClientSocket* so = new VClientSocket;

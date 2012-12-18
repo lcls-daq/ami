@@ -15,6 +15,7 @@ class Semaphore {
   enum semState { EMPTY, FULL};
   Semaphore(semState initial);
   ~Semaphore();
+  bool take(unsigned dt_ms);
   void take();
   void give();
 

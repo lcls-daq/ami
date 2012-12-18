@@ -235,10 +235,12 @@ int  Client::initialize(ClientManager& mgr)
   tmo.tv_sec += 5;
   int result = sem_timedwait(&_initial_sem, &tmo);
 
+#ifdef DBUG
   clock_gettime(CLOCK_REALTIME, &tmo);
   printf("Ami::Client initialize time %f seconds\n",
          double(tmo.tv_sec-btmo.tv_sec) +
          (double(tmo.tv_nsec)-double(btmo.tv_nsec))*1.e-9);
+#endif
 #else
   timespec tmo;
   clock_gettime(CLOCK_REALTIME, &tmo);

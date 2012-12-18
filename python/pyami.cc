@@ -138,7 +138,7 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	  sts = PyArg_ParseTupleAndKeywords(t,kwds,"sI",ekwlist,
 					    &xtitle, &nbins);
           if (sts) {
-            printf( "Creating Scan %s, %s, %d\n" , name,xtitle,nbins);
+            // printf( "Creating Scan %s, %s, %d\n" , name,xtitle,nbins);
             op = new Ami::EnvPlot(Ami::DescScan(name,xtitle,"mean",nbins));
             break;
           }
@@ -184,7 +184,7 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
     sts = PyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
     Py_DECREF(t);
     filter = parse_filter(filter_str);
-    printf("parsed filter from %s\n",filter_str);
+    // printf("parsed filter from %s\n",filter_str);
   }
 
   cl_args.info    = info;

@@ -5,6 +5,7 @@
 
 #include "ami/service/Task.hh"
 #include "ami/service/TaskObject.hh"
+#include "ami/service/Sockaddr.hh"
 
 #include <errno.h>
 #include <string.h>
@@ -52,7 +53,28 @@ void Poll::stop()
 {
   int msg=Shutdown;
   _loopback->write(&msg,sizeof(msg));
-  _sem.take();
+  
+  //  Why does this fail?
+  //  _sem.take();
+  while (!_sem.take(1000)) {
+    printf("Poll::stop() timedout\n");
+    printf("  pfd[0] : {%d,%x}\n", _pfd[0].fd,_pfd[0].events);
+    if (_pfd[0].fd>=0) {
+      socklen_t addrlen = sizeof(sockaddr_in);
+      sockaddr_in name;
+      if (::getsockname(_pfd[0].fd, (sockaddr*)&name, &addrlen) < 0) {
+	perror("  Poll::stop::getsockname");
+      }
+      else {
+	printf("  loopback connected to %x.%d\n",
+	       ntohl(name.sin_addr.s_addr),
+	       ntohs(name.sin_port));      
+      }
+      _loopback->write(&msg,sizeof(msg));
+    }
+    else
+      break;
+  }
 }
 
 //
