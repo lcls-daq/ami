@@ -52,6 +52,7 @@ namespace Ami {
     pollfd*    _pfd;
     Semaphore  _sem;
     char*      _buffer;
+    bool       _shutdown;
   };
 
 };

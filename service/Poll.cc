@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <signal.h>
 
 using namespace Ami;
 
@@ -28,7 +29,8 @@ Poll::Poll(int timeout) :
   _ofd     (new    Fd*[Step]),
   _pfd     (new pollfd[Step]),
   _sem     (Semaphore::EMPTY),
-  _buffer  (new char[BufferSize])
+  _buffer  (new char[BufferSize]),
+  _shutdown(false)
 {
   _pfd[0].fd = _loopback->socket();
   _pfd[0].events = POLLIN | POLLERR;
@@ -52,29 +54,12 @@ void Poll::start()
 void Poll::stop()
 {
   int msg=Shutdown;
-  _loopback->write(&msg,sizeof(msg));
-  
-  //  Why does this fail?
+  _loopback->write(&msg,sizeof(int));
+
+  //  Why does this fail/deadlock?
   //  _sem.take();
-  while (!_sem.take(1000)) {
-    printf("Poll::stop() timedout\n");
-    printf("  pfd[0] : {%d,%x}\n", _pfd[0].fd,_pfd[0].events);
-    if (_pfd[0].fd>=0) {
-      socklen_t addrlen = sizeof(sockaddr_in);
-      sockaddr_in name;
-      if (::getsockname(_pfd[0].fd, (sockaddr*)&name, &addrlen) < 0) {
-	perror("  Poll::stop::getsockname");
-      }
-      else {
-	printf("  loopback connected to %x.%d\n",
-	       ntohl(name.sin_addr.s_addr),
-	       ntohs(name.sin_port));      
-      }
-      _loopback->write(&msg,sizeof(msg));
-    }
-    else
-      break;
-  }
+  while (!_sem.take(1000))
+    _shutdown = true;
 }
 
 //
@@ -181,6 +166,12 @@ void Poll::unmanage(Fd& fd)
 
 int Poll::poll()
 {
+  socklen_t addrlen = sizeof(sockaddr_in);
+  sockaddr_in name;
+  if (::getsockname(_pfd[0].fd, (sockaddr*)&name, &addrlen) < 0) {
+    perror("  Poll::poll::getsockname");
+  }
+
   int result = 1;
   if (::poll(_pfd, _nfds, _timeout) > 0) {
     if (_pfd[0].revents & (POLLIN | POLLERR)) {
@@ -224,6 +215,7 @@ int Poll::poll()
   }
   else {
     result = processTmo();
+    if (_shutdown) result=0;
   }
   return result;
 }
