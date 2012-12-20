@@ -100,14 +100,20 @@ namespace Ami {
     void routine()
     {
       if (_skt==0) {
-        sleep(1);
         TSocket* skt = new TSocket;
         try {
           skt->connect(_ins);
           _skt = skt;
+#ifdef DBUG
+	  printf("Proxy online\n");
+#endif
         }
         catch(Event& e) {
+#ifdef DBUG
+	  printf("ProxyConnect failed\n");
+#endif
           delete skt;
+	  sleep(1);
         }
       }
       else {
@@ -128,7 +134,9 @@ namespace Ami {
             }
           }
           else if (len<=0) {
+#ifdef DBUG
             printf("Proxy offline\n");
+#endif
             delete _skt;
             _skt = 0;
           }
@@ -210,17 +218,18 @@ ClientManager::ClientManager(unsigned   interface,
     VClientSocket* so = new VClientSocket;
     so->set_dst(_server, interface);
     _connect = so;
-  }
-  else {
-    // Connect to a proxy
-    TSocket* so = new TSocket;
-    so->connect(_server);
-    _connect = so;
-  }
-
-  if (mcast)
     _reconn = new ServerConnect(*this, new VServerSocket(_server, interface));
+  }
   else {
+    TSocket* so = new TSocket;
+    _connect = 0;
+    try {
+      so->connect(_server);
+      _connect = so;
+    }
+    catch(Event& e) {
+      delete so;
+    }
     _reconn = new ProxyConnect(*this, _connect, _server);
   }
 

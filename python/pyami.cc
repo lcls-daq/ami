@@ -43,9 +43,11 @@
 
 static const unsigned CDS_SUBNET_LO = 37;
 static const unsigned CDS_SUBNET_HI = 44;
+static const unsigned CDS_SUBNET_L2 = 10;
 
 static const unsigned FEZ_SUBNET_LO = 20;
 static const unsigned FEZ_SUBNET_HI = 27;
+static const unsigned FEZ_SUBNET_L2 =  8;
 
 static PyObject* AmiError;
 
@@ -678,11 +680,13 @@ pyami_connect(PyObject *self, PyObject *args)
         unsigned addr = htonl(((sockaddr_in&)ifr->ifr_addr).sin_addr.s_addr);
         unsigned subn = (addr>>8)&0xff;
         //      printf("Found addr %08x  subn %d\n",addr,subn);
-        if (subn>=CDS_SUBNET_LO &&
-            subn<=CDS_SUBNET_HI)
+        if ((subn>=CDS_SUBNET_LO &&
+	     subn<=CDS_SUBNET_HI) ||
+	    subn==CDS_SUBNET_L2) 
           ppinterface = addr;
-        else if (subn>=FEZ_SUBNET_LO && 
-                 subn<=FEZ_SUBNET_HI)
+        else if ((subn>=FEZ_SUBNET_LO && 
+		  subn<=FEZ_SUBNET_HI) ||
+		 subn==FEZ_SUBNET_L2)
           mcinterface = addr;
       }
     }
