@@ -25,6 +25,7 @@
 
 #include "pdsdata/xtc/BldInfo.hh"
 
+#include <QtGui/QApplication>
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QPushButton>
@@ -127,7 +128,8 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(resetB , SIGNAL(clicked()), this, SLOT(reset_plots()));
     connect(saveB  , SIGNAL(clicked()), this, SLOT(save_plots()));
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
-
+    connect(this   , SIGNAL(destroyed()), qApp, SLOT(closeAllWindws()));
+    
     layout->addWidget(_detList = new QListWidget(this));
 #if 1
     //
