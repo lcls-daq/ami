@@ -25,7 +25,6 @@
 
 #include "pdsdata/xtc/BldInfo.hh"
 
-#include <QtGui/QApplication>
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QPushButton>
@@ -68,7 +67,7 @@ DetectorSelect::DetectorSelect(const QString& label,
                                unsigned ppinterface,
                                unsigned interface,
                                unsigned serverGroup,
-                               QGroupBox* guestBox,
+                               QWidget* guestBox,
                                bool quiet) :
   QtPWidget   (0),
   //  _quiet      (quiet),
@@ -128,7 +127,6 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(resetB , SIGNAL(clicked()), this, SLOT(reset_plots()));
     connect(saveB  , SIGNAL(clicked()), this, SLOT(save_plots()));
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
-    connect(this   , SIGNAL(destroyed()), qApp, SLOT(closeAllWindws()));
     
     layout->addWidget(_detList = new QListWidget(this));
 #if 1
@@ -137,8 +135,8 @@ DetectorSelect::DetectorSelect(const QString& label,
     //
     { DetectorListItem* ditem = new DetectorListItem(_detList, "Env"    , envInfo, 1);
       const char* p=0;
-      Ami::Qt::AbsClient* cl = _create_client(ditem->info,ditem->channel,ditem->text(),p);
-      //      cl->hide(); 
+      _create_client(ditem->info,ditem->channel,ditem->text(),p);
+      // _create_client(ditem->info,ditem->channel,ditem->text(),p)->hide();
     }
 #else
     *new DetectorListItem(_detList, "Env", envInfo, 1);

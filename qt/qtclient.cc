@@ -6,6 +6,9 @@
 
 #include <QtGui/QApplication>
 
+#include <QtGui/QHBoxLayout>
+#include <QtGui/QPushButton>
+
 static void usage(char* p)
 {
   printf("Usage: %s -I <interface> [-i <interface>] -s <address> [-f <path> -F <path> -C <int>]\n" \
@@ -57,7 +60,18 @@ int main(int argc, char **argv)
     }
   }
   QApplication app(argc, argv);
-  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup);
+
+  QWidget* exitW = new QWidget;
+  { QPushButton* b = new QPushButton("Exit");
+    QHBoxLayout* l = new QHBoxLayout;
+    l->addStretch();
+    l->addWidget(b);
+    l->addStretch();
+    exitW->setLayout(l);
+    ::QObject::connect(b, SIGNAL(clicked()), &app, SLOT(closeAllWindows()));
+  }
+
+  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup, exitW, true);
   select->show();
   if (loadfile) {
     select->load_setup(loadfile);

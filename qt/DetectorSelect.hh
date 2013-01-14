@@ -33,7 +33,7 @@ namespace Ami {
                      unsigned ppinterface,
                      unsigned interface,
                      unsigned serverGroup,
-                     QGroupBox* guestBox = NULL,
+                     QWidget* guestBox = NULL,
                      bool quiet = false);
       ~DetectorSelect();
     public:
