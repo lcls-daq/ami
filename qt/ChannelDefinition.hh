@@ -11,6 +11,7 @@
 #include "ami/data/ConfigureRequestor.hh"
 
 class QButtonGroup;
+class QLabel;
 class QLineEdit;
 class QComboBox;
 class QCheckBox;
@@ -64,6 +65,7 @@ namespace Ami {
       void set_scale();
       void load_mask();
       void edit_mask();
+      void update_interval();
     signals:
       void reference_loaded(bool);
       void changed();
@@ -79,6 +81,7 @@ namespace Ami {
       Transform*    _transform;
       ChannelMath*  _math;
       QLineEdit*    _interval;
+      QLabel*       _intervalq;
       unsigned      _mode;
       unsigned      _output_signature;
       bool          _changed;

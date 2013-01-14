@@ -38,6 +38,9 @@ namespace Ami {
     virtual DescWaveform& desc();
 
   private:
+    virtual void _merge(char*) const;
+
+  private:
     void build(unsigned nbins);
 
   private:

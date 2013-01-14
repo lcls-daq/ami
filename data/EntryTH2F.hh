@@ -24,7 +24,7 @@ namespace Ami {
     void  addcontent(float y, unsigned binx, unsigned biny);
     void  addcontent(float y, double vx, double vy);
     void  content   (float y, unsigned binx, unsigned biny);
-
+    
     enum Info { UnderflowX, OverflowX, UnderflowY, OverflowY, Normalization, InfoSize };
     float info   (Info) const;
     void  info   (float y, Info);
@@ -32,10 +32,14 @@ namespace Ami {
 
     void setto(const EntryTH2F& entry);
     void setto(const EntryTH2F& curr, const EntryTH2F& prev);
+    void add  (const EntryTH2F&);
 
     // Implements Entry
     virtual const DescTH2F& desc() const;
     virtual DescTH2F& desc();
+
+  private:
+    virtual void _merge(char*) const;
 
   private:
     void build(unsigned nbinsx, unsigned nbinsy);

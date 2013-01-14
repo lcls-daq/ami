@@ -35,9 +35,11 @@ unsigned FeatureCache::add(const char* name)
 
   _names.push_back(sname);
   unsigned len = _names.size();
+  unsigned index = len - 1;
   _cache  .resize(len);
   _damaged.resize((len+0x1f)>>5);
-  return len-1;
+  _damaged[index>>5] |= 1<<(index&0x1f);
+  return index;
 }
 
 void FeatureCache::add(const FeatureCache& c)
@@ -107,4 +109,10 @@ void   FeatureCache::dump() const
   for(unsigned k=0; k<_names.size(); k++) {
     printf("  %s\n",_names[k].c_str());
   }
+}
+
+void   FeatureCache::start()
+{
+  for(unsigned k=0; k<_damaged.size(); k++)
+    _damaged[k] = -1UL;
 }

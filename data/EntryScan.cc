@@ -2,6 +2,8 @@
 
 #define SIZE(n) (sizeof(BinV)/sizeof(double)*n+InfoSize)
 
+static void _dump(unsigned,const double*,const char*);
+
 static const unsigned DefaultNbins = 100;
 
 using namespace Ami;
@@ -114,12 +116,12 @@ int EntryScan::_insert_bin(const BinV& bv, int& fb)
 //
 //  Merge two EntryScans' contents
 //
-void EntryScan::sum(const double* a,
-		    const double* b)
+void EntryScan::_sum(const BinV* a,
+		     const BinV* b)
 {
   unsigned nb = desc().nbins();
-  const BinV* p_a = reinterpret_cast<const BinV*>(a+1);           // BinV array
-  const BinV* p_b = reinterpret_cast<const BinV*>(b+1);
+  const BinV* p_a = reinterpret_cast<const BinV*>(a);           // BinV array
+  const BinV* p_b = reinterpret_cast<const BinV*>(b);
   const double* i_a = reinterpret_cast<const double*>(&p_a[nb]);  // Info array
   const double* i_b = reinterpret_cast<const double*>(&p_b[nb]);
 
@@ -155,7 +157,7 @@ void EntryScan::sum(const double* a,
   info(double(nb-1), Current);
   info(i_a[Normalization]+i_b[Normalization],Normalization);
 
-  valid( *a<*b ? *b : *a);
+  //  valid( *a<*b ? *b : *a);
 }
 
 void EntryScan::sum(const EntryScan& curr, 
@@ -169,4 +171,75 @@ void EntryScan::sum(const EntryScan& curr,
     *dst++ = *srccurr++ + *srcprev++;
   } while (dst < end);
   valid(curr.time());
+}
+
+void EntryScan::add(const EntryScan& curr)
+{
+  EntryScan* t = new EntryScan(desc());
+  t->_sum(_p,curr._p);
+  memcpy(_p, t->_p, SIZE(_desc.nbins())*sizeof(double));
+  delete t;
+
+  if (curr.last() > last())
+    valid(curr.time());
+}	  
+
+void EntryScan::_merge(char* p) const
+{
+  //  Consider scans that don't gather enough events to see all servers
+  //  Consider bld that is different for every event
+  BinV* dst = reinterpret_cast<BinV*>(p);
+  const BinV* end = dst + _desc.nbins();
+  const BinV* src = _p;
+  
+#if 0
+  unsigned nb = _desc.nbins();
+  _dump(nb,(double*)dst,"\n agg before");
+  _dump(nb,(double*)src,"input");
+#endif
+
+  EntryScan* t = new EntryScan(_desc);
+  t->_sum(dst,src);
+  
+  src = t->_p;
+
+#if 0
+  _dump(nb,(double*)src,"agg after");
+#endif
+
+  memcpy(dst, src, SIZE(_desc.nbins())*sizeof(double));
+
+  delete t;
+}	  
+
+void EntryScan::dump() const
+{
+  printf("\nEntryScan %p %s time %g\n",this,_desc.name(),last());
+  unsigned nb = desc().nbins();
+  int bin = int(info(Current)), last = bin;
+  do {
+    bin = (bin+1)%nb;
+    printf("bin %d\tx %f\tn %f\ty %f\tt %g\n",
+	   bin, _p[bin]._x, _p[bin]._nentries, _p[bin]._ysum, _p[bin]._t);
+  } while(bin != last);
+}
+
+void _dump(unsigned nb,const double* p,const char* title)
+{
+  class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; double _t; };
+
+  const BinV* _p = reinterpret_cast<const BinV*>(p);
+  const double* _i = reinterpret_cast<const double*>(&_p[nb]);  // Info array
+
+  int bin = int(_i[EntryScan::Current]), last = bin;
+
+  const unsigned* t = reinterpret_cast<const unsigned*>(p-1);
+  printf("%s time %d.%09d  current %d\n",title,t[1],t[0],bin);
+
+  do {
+    bin = (bin+1)%nb;
+    if (_p[bin]._nentries)
+      printf("bin %d\tx %f\tn %f\ty %f\tt %f\n",
+	     bin, _p[bin]._x, _p[bin]._nentries, _p[bin]._ysum, _p[bin]._t);
+  } while(bin != last);
 }

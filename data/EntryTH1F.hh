@@ -39,8 +39,11 @@ namespace Ami {
     virtual DescTH1F& desc();
 
   private:
-    void build(unsigned nbins);
+    virtual void _merge(char*) const;
 
+  private:
+    void build(unsigned nbins);
+    
   private:
     DescTH1F _desc;
 

@@ -61,6 +61,27 @@ void EntryTH2F::setto(const EntryTH2F& entry)
   valid(entry.time());
 }
 
+void EntryTH2F::add(const EntryTH2F& entry) 
+{
+  float* dst = _y;
+  const float* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const float* src = entry._y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+  valid(entry.time());
+}
+
+void EntryTH2F::_merge(char* p) const
+{
+  float* dst = reinterpret_cast<float*>(p);
+  const float* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const float* src = _y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+}
+
 void EntryTH2F::setto(const EntryTH2F& curr, 
 			 const EntryTH2F& prev)
 {

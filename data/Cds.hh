@@ -35,6 +35,7 @@ namespace Ami {
     unsigned payload    () const { return totalentries(); }
 
     void     description(iovec*) const;
+    void     description(iovec*, EntryList) const;
     void     payload    (iovec*);
     unsigned payload    (iovec*, EntryList);
     void     invalidate_payload();

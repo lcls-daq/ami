@@ -32,3 +32,16 @@ void ScalarRange::add(const ScalarRange& entry)
   if (entry._y[4] > _y[4])
     _y[4] = entry._y[4];
 }
+
+void ScalarRange::merge(char* p) const
+{
+  double* y = reinterpret_cast<double*>(p);
+  y[0] += _y[0];
+  y[1] += _y[1];
+  y[2] += _y[2];
+  if (_y[3] < y[3])
+    y[3] = _y[3];
+  if (_y[4] > y[4])
+    y[4] = _y[4];
+}
+

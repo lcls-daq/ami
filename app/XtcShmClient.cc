@@ -13,7 +13,7 @@ namespace Ami {
       _c(c), _tag(tag), _id(id) {}
     ~ShmTask() {}
   public:
-    void routine() { _c.run(_tag,_id,0); delete this; }
+    void routine() { _c.run(_tag,_id,_id); delete this; }
   private:
     XtcShmClient& _c;
     char*         _tag;

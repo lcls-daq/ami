@@ -234,11 +234,11 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   for(  const DescEntry* e = rx.entries(); e < rx.end(); 
       e = reinterpret_cast<const DescEntry*>
 	(reinterpret_cast<const char*>(e) + e->size())) {
-    //    printf("Test %s\n",e->name());
     if (strcmp(e->name(),channel_name)==0) {
       _input_entry = e;
       _frame->prototype(e);
       _prototype(*e);
+      break;
     }
   }
 

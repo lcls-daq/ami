@@ -27,7 +27,13 @@ Analysis::Analysis(unsigned      id,
 
   OperatorFactory operators(cache);
   _op = operators.deserialize(p, input, cds, output);
+
+  bool lvalid = input.valid();
+  const_cast<Entry&>(input).invalid();
   Entry& output_entry = (*_op)(input);
+  if (lvalid)
+    const_cast<Entry&>(input).valid(input.time());
+
   if (_op->valid())
     _cds.add(&output_entry,output);
 }

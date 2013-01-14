@@ -22,6 +22,7 @@ namespace Ami {
 
     void   setto(const ScalarRange&);
     void   add  (const ScalarRange&);
+    void   merge(char*) const;
   private:
     double _y[5];
   };

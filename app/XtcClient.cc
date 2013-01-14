@@ -85,6 +85,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
   FeatureCache& cache = *_cache[PreAnalysis];
 
+#ifdef DBUG
+  if (!dg->seq.isEvent())
+    printf("%s %p\n",TransitionId::name(dg->seq.service()),dg);
+#endif
+
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
@@ -107,6 +112,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //
     //  Time the processing
     //
+    cache.start();
     timespec tq;
     clock_gettime(CLOCK_REALTIME, &tq);
     if (_ptime_index>=0) {

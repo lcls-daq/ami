@@ -104,6 +104,8 @@ void Control::save(char*& p) const
 {
   XML_insert( p, "QPushButton", "_pRun",
               QtPersistent::insert(p,_pRun   ->isChecked()) );
+  XML_insert( p, "QLineEdit", "_pRate",
+              QtPersistent::insert(p,_pRate  ->text()) );
 }
 
 void Control::load(const char*& p)
@@ -114,6 +116,11 @@ void Control::load(const char*& p)
       printf("Extract RUN state %c\n",b?'t':'f');
       _pRun   ->setChecked(b);
       run(b);
+    }
+    else if (tag.name == "_pRate") {
+      QString b = QtPersistent::extract_s(p);
+      _pRate  ->setText(b);
+      set_rate();
     }
   XML_iterate_close(Control,tag);
 }

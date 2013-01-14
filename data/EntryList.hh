@@ -10,6 +10,7 @@ namespace Ami {
     EntryList(Option = Empty);
     EntryList(uint32_t lower, uint32_t upper);
     EntryList(const EntryList& o) : _m(o._m) {}
+    EntryList& operator=(const EntryList& o) { _m=o._m; return *this; }
   public:
     void insert(unsigned i) { _m |= 1<<i; }
     void remove(unsigned i) { _m &= ~(1<<i); }

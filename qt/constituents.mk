@@ -94,6 +94,7 @@ libnames := amiqt
 libsrcs_amiqt := Status.cc Status_moc.cc
 libsrcs_amiqt += Path.cc
 libsrcs_amiqt += FeatureRegistry.cc FeatureRegistry_moc.cc
+libsrcs_amiqt += SMPRegistry.cc SMPRegistry_moc.cc
 libsrcs_amiqt += QHComboBox.cc QHComboBox_moc.cc
 libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
 libsrcs_amiqt += QtTree.cc QtTree_moc.cc

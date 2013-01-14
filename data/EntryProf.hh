@@ -40,12 +40,16 @@ namespace Ami {
     void   addinfo(double, Info);
 
     void setto(const EntryProf& entry);
+    void add  (const EntryProf&);
     void sum  (const EntryProf&, const EntryProf&);
     void diff (const EntryProf&, const EntryProf&);
 
     // Implements Entry
     virtual const DescProf& desc() const;
     virtual DescProf& desc();
+
+  private:
+    virtual void _merge(char*) const;
 
   private:
     void build(unsigned nbins);

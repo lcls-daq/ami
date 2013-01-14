@@ -43,14 +43,18 @@ namespace Ami {
     void   addinfo(double, Info);
 
     void setto(const EntryScan& entry);
-    void sum  (const double*, const double*);
     void sum  (const EntryScan&, const EntryScan&);
     void diff (const EntryScan&, const EntryScan&);
     void add  (const EntryScan& entry);
 
+    void dump() const;
+
     // Implements Entry
     virtual const DescScan& desc() const;
     virtual DescScan& desc();
+
+  private:
+    virtual void _merge(char*) const;
 
   private:
     void build(unsigned nbins);
@@ -62,6 +66,7 @@ namespace Ami {
     class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; double _t; };
     BinV* _p;
 
+    void _sum       (const BinV*, const BinV*);
     int  _insert_bin(const BinV&, int&);
   };
 

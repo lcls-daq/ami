@@ -86,6 +86,17 @@ void EntryTH1F::add(const EntryTH1F& entry)
   do {
     *dst++ += *src++;
   } while (dst < end);
+  valid(entry.time());
+}
+
+void EntryTH1F::_merge(char* p) const
+{
+  double* dst = reinterpret_cast<double*>(p);
+  const double* end = dst+SIZE(_desc.nbins());
+  const double* src = _y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
 }
 
 void EntryTH1F::addcontent(double y, double x)

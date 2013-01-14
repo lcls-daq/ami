@@ -25,7 +25,7 @@ namespace Ami {
   private:
     const std::vector<FeatureCache*>& _features;
     const Cds&          _cds;
-    mutable uint32_t    _header[NumberOfSets];
+    mutable uint32_t    _header[NumberOfSets+1];
     std::vector<const char*> _cache;
   };
 
@@ -42,6 +42,9 @@ namespace Ami {
   public:
     const char* payload() const { return _p; }
     unsigned    payload_size() const { return _size; }
+  public:
+    unsigned    nsources() const;
+    void        nsources(unsigned);
   private:
     const char* _p;
     uint32_t    _size;

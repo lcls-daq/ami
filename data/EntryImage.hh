@@ -41,6 +41,9 @@ namespace Ami {
     virtual DescImage& desc();
 
   private:
+    virtual void _merge(char*) const;
+
+  private:
     void build();
 
   private:

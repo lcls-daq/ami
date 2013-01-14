@@ -31,6 +31,10 @@ namespace Ami {
     // Implements EntryAutoRange
     double    entries() const;
     DescTH2F* result(void* =0) const;
+
+  private:
+    virtual void _merge(char*) const;
+
   private:
     DescScalarDRange _desc;
 
@@ -43,7 +47,9 @@ namespace Ami {
   inline void   EntryScalarDRange::setto(const EntryScalarDRange& entry) 
   { _x->setto(*entry._x); _y->setto(*entry._y); }
   inline void   EntryScalarDRange::add  (const EntryScalarDRange& entry) 
-  { _x->add  (*entry._x); _y->add  (*entry._y); }
+  { valid(entry.time()); _x->add  (*entry._x); _y->add  (*entry._y); }
+  inline void   EntryScalarDRange::_merge(char* p) const
+  { _x->merge(p); _y->merge(p+sizeof(ScalarRange)); }
 };
 
 #endif

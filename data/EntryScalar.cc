@@ -43,3 +43,11 @@ void EntryScalar::add(const EntryScalar& entry)
   _y[2] += entry._y[2];
 }
 
+void EntryScalar::_merge(char* p) const
+{
+  double* y = reinterpret_cast<double*>(p);
+  y[0] += _y[0];
+  y[1] += _y[1];
+  y[2] += _y[2];
+}
+

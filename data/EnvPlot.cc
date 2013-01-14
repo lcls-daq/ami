@@ -123,8 +123,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  break; }
       case DescEntry::ScalarDRange: 
 	if (_term) {
-	  bool damaged=false; double x=_term->evaluate();
-	  if (!damaged) {
+	  Feature::damage(false);
+	  double x=_term->evaluate();
+	  if (!Feature::damage()) {
             EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
             en->addcontent(x,y);    
           }
@@ -137,8 +138,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  break; }
       case DescEntry::Prof:    
 	if (_term) {
-	  bool damaged=false; double x=_term->evaluate();
-	  if (!damaged) {
+	  Feature::damage(false);
+	  double x=_term->evaluate();
+	  if (!Feature::damage()) {
 	    EntryProf* en = static_cast<EntryProf*>(_entry);
 	    en->addy(y,x);
 	    en->addinfo(1.,EntryProf::Normalization);
@@ -147,8 +149,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	break;
       case DescEntry::Scan:    
 	if (_term) {
-	  bool damaged=false; double x=_term->evaluate();
-	  if (!damaged) {
+	  Feature::damage(false);
+	  double x=_term->evaluate();
+	  if (!Feature::damage()) {
 	    EntryScan* en = static_cast<EntryScan*>(_entry);
 	    en->addy(y,x,w,e.last());
 	    en->addinfo(1.,EntryScan::Normalization);
@@ -161,8 +164,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
           break; }
       case DescEntry::TH2F:
 	if (_term) {
-	  bool damaged=false; double x=_term->evaluate();
-	  if (!damaged) {
+	  Feature::damage(false);
+	  double x=_term->evaluate();
+	  if (!Feature::damage()) {
 	    EntryTH2F* en = static_cast<EntryTH2F*>(_entry);
 	    en->addcontent(1.,x,y);
 	    en->addinfo(1.,EntryTH2F::Normalization);

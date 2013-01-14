@@ -117,6 +117,24 @@ void Cds::description(iovec* iov) const
   }
 }
 
+void Cds::description(iovec* iov, EntryList request) const
+{
+  Cds* cthis = const_cast<Cds*>(this);
+  cthis->_desc.nentries(totalentries());
+  iov->iov_base = (void*)&cthis->_desc;
+  iov->iov_len  = sizeof(Desc);
+  iov++;
+  unsigned i=0;
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++, i++) {
+    if (request.contains(i)) {
+      const Entry* en = *it;
+      iov->iov_base = (void*)&en->desc();
+      iov->iov_len = en->desc().size();
+      iov++;
+    }
+  }
+}
+
 void Cds::payload(iovec* iov)
 {
   _request.fill(_entries.size());

@@ -27,6 +27,7 @@ namespace Ami {
     class CursorsX;
     class PeakFit;
     class WaveformDisplay;
+
     class ProjectionPlot : public QtPWidget {
       Q_OBJECT
     public:

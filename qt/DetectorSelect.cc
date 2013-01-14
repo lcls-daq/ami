@@ -15,6 +15,7 @@
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/PWidgetManager.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/SMPRegistry.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/service/ConnectionManager.hh"
 #include "ami/service/Task.hh"
@@ -468,6 +469,8 @@ int  DetectorSelect::configured      () { return 0; }
 
 void DetectorSelect::discovered      (const DiscoveryRx& rx) 
 { 
+  SMPRegistry::instance().nservers(rx.nsources());
+
   for(int i=0; i<Ami::NumberOfSets; i++) {
     Ami::ScalarSet set((Ami::ScalarSet)i);
     FeatureRegistry::instance(set).insert(rx.features(set));

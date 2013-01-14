@@ -34,11 +34,14 @@ namespace Ami {
     bool                  valid  () const;
 
     void reset();
+    void merge(char*) const;
 
   protected:
     void* allocate(unsigned size);
 
   private:
+    virtual void _merge (char*) const {}
+
     unsigned _payloadsize;
     unsigned long long* _payload;
     friend class EntryView;

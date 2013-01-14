@@ -4,6 +4,7 @@
 
 #include "pdsdata/ipimb/DataV1.hh"
 #include "pdsdata/ipimb/DataV2.hh"
+#include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -27,13 +28,26 @@ void   IpimbHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
+  char* iptr;
 
-  strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
-  char* iptr = buffer+strlen(buffer);
-  
-  for(unsigned i=0; i<NChannels; i++) {
-    sprintf(iptr,"-Ch%d",i);
-    _index[i] = _cache.add(buffer);
+  switch(info().level()) {
+  case Level::Reporter:
+    strncpy(buffer,Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info())),60);
+    iptr = buffer+strlen(buffer);
+    for(unsigned i=0; i<NChannels; i++) {
+      sprintf(iptr,":DATA[%d]",i);
+      _index[i] = _cache.add(buffer);
+    }
+    break;
+  case Level::Source:
+  default:
+    strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
+    iptr = buffer+strlen(buffer);
+    for(unsigned i=0; i<NChannels; i++) {
+      sprintf(iptr,"-Ch%d",i);
+      _index[i] = _cache.add(buffer);
+    }
+    break;
   }
 }
 

@@ -77,6 +77,17 @@ void EntryWaveform::add  (const EntryWaveform& entry)
   do {
     *dst++ += *src++;
   } while (dst < end);
+  valid(entry.time());
+}
+
+void EntryWaveform::_merge(char* p) const
+{
+  double* dst = reinterpret_cast<double*>(p);
+  const double* end = dst+SIZE(_desc.nbins());
+  const double* src = _y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
 }
 
 void EntryWaveform::addcontent(double y, double x)

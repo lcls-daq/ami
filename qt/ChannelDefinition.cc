@@ -11,6 +11,7 @@
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/MaskDisplay.hh"
 #include "ami/qt/QtBase.hh"
+#include "ami/qt/SMPRegistry.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -43,6 +44,11 @@
 
 #define bold(t) #t
 
+static inline int avgRound(int n, int d)
+{
+  return (n+d-1)/d;
+}
+
 using namespace Ami::Qt;
 
 enum { _None, _Single, _Average, _Variance, _Math, _Reference };
@@ -66,6 +72,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _transform       (new Transform(this,QString("%1 : Y Transform").arg(name),"y")),
   _math            (new ChannelMath(names)),
   _interval        (new QLineEdit),
+  _intervalq       (new QLabel),
   _output_signature(NOT_INIT),
   _changed         (false),
   _show            (false),
@@ -130,7 +137,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
       layout1->addWidget(averageB ,0,0);
       layout1->addWidget(varianceB,1,0);
       layout1->addWidget(new QLabel("Events"),0,1,2,1);
-      layout1->addWidget(_interval,0,2,2,1);
+      layout1->addWidget(_interval ,0,2,2,1);
+      layout1->addWidget(_intervalq,0,3,2,1);
       layout->addLayout(layout1); }
     { QHBoxLayout* layout1 = new QHBoxLayout;
       layout1->addWidget(mathB);
@@ -181,6 +189,9 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(scaleB  , SIGNAL(clicked()), this, SLOT(set_scale()));
   connect(mloadB  , SIGNAL(clicked()), this, SLOT(load_mask()));
   connect(meditB  , SIGNAL(clicked()), this, SLOT(edit_mask()));
+  connect(_interval, SIGNAL(editingFinished()), this, SLOT(update_interval()));
+
+  connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
 
   noneB  ->setChecked(!init);
   singleB->setChecked(init);
@@ -253,6 +264,8 @@ void ChannelDefinition::load(const char*& p)
 
   _plot_grp->button(id)->setChecked(true);
 
+  update_interval();
+
   show_plot(show);
 
   apply();
@@ -294,6 +307,17 @@ void ChannelDefinition::edit_mask()
   _mask_display->front();
 }
 
+void ChannelDefinition::update_interval()
+{
+  unsigned nproc = SMPRegistry::instance().nservers();
+  int n = _interval->text().toInt();
+  int m = nproc*avgRound(n,nproc);
+  if (n>1 && m!=n)
+    _intervalq->setText(QString("(%1)").arg(QString::number(m)));
+  else
+    _intervalq->clear();
+}
+
 void ChannelDefinition::show_plot(bool s) 
 {
   //  This should be a slot on the display (QwtPlot)
@@ -313,6 +337,7 @@ void ChannelDefinition::apply()
   if (_operator) delete _operator;
 
   const char* scale = qPrintable(_scale->text());
+  unsigned nproc = SMPRegistry::instance().nservers();
 
   switch(_mode = _plot_grp->checkedId()) {
   case _Single:
@@ -320,11 +345,11 @@ void ChannelDefinition::apply()
     _operator_is_ref  = false;
     break;
   case _Average     : 
-    _operator = new Average(_interval->text().toInt(),scale);
+    _operator = new Average  (avgRound(_interval->text().toInt(),nproc),scale);
     _operator_is_ref  = false;
     break;
   case _Variance    : 
-    _operator = new Variance(_interval->text().toInt(),scale);
+    _operator = new Variance (avgRound(_interval->text().toInt(),nproc),scale);
     _operator_is_ref  = false;
     break;
   case _Reference:

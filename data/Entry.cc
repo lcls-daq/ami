@@ -4,6 +4,7 @@
 #include <new>
 
 #include "ami/data/Entry.hh"
+#include "ami/data/DescEntry.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
 using namespace Ami;
@@ -78,3 +79,23 @@ void Entry::invalid()
 }
 
 bool Entry::valid() const { return ((*_payload)&1)==0; }
+
+void Entry::merge(char* p) const
+{
+  uint64_t* u = reinterpret_cast<uint64_t*>(p);
+  if (*u > *_payload) {
+    if (desc().aggregate()) {
+      *u = (*u) | (*_payload & 1ULL);
+      _merge((char*)(u+1));
+    }
+  }
+  else {
+    if (desc().aggregate()) {
+      *u = (*_payload) | (*u & 1ULL);
+      _merge((char*)(u+1));
+    }
+    else {
+      memcpy(p,_payload,_payloadsize);
+    }
+  }
+}

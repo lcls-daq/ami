@@ -87,3 +87,24 @@ void EntryProf::sum(const EntryProf& curr,
   } while (dst < end);
   valid(curr.time());
 }
+
+void EntryProf::add(const EntryProf& curr)
+{
+  double* dst = _ysum;
+  const double* end = dst + SIZE(_desc.nbins());
+  const double* src = curr._ysum;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+  valid(curr.time());
+}
+
+void EntryProf::_merge(char* p) const
+{
+  double* dst = reinterpret_cast<double*>(p);
+  const double* end = dst + SIZE(_desc.nbins());
+  const double* src = _ysum;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+}

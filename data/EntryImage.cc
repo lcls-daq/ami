@@ -62,22 +62,57 @@ void EntryImage::setto(const EntryImage& curr,
 			  const EntryImage& prev)
 {
   unsigned* dst = _y;
-  const unsigned* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
   const unsigned* srccurr = curr._y;
   const unsigned* srcprev = prev._y;
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
+
+  float* fdst = reinterpret_cast<float*>(dst);
+  const float* fcurr = reinterpret_cast<const float*>(srccurr);
+  const float* fprev = reinterpret_cast<const float*>(srcprev);
+  const float* fend = reinterpret_cast<const float*>(end)+InfoSize;
+  do {
+    *fdst++ = *fcurr++ - *fprev++;
+  } while (fdst < fend);
+
   valid(curr.time());
 }
 
 void EntryImage::add  (const EntryImage& entry) 
 {
   unsigned* dst = _y;
-  const unsigned* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
   const unsigned* src = entry._y;
   do {
     *dst++ += *src++;
   } while (dst < end);
+
+  float* fdst = reinterpret_cast<float*>(dst);
+  const float* fsrc = reinterpret_cast<const float*>(src);
+  const float* fend = reinterpret_cast<const float*>(end)+InfoSize;
+  do {
+    *fdst++ += *fsrc++;
+  } while (fdst < fend);
+
+  valid(entry.time());
+}
+
+void EntryImage::_merge  (char* p) const
+{
+  unsigned* dst = reinterpret_cast<unsigned*>(p);
+  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
+  const unsigned* src = _y;
+  do {
+    *dst++ += *src++;
+  } while (dst < end);
+
+  float* fdst = reinterpret_cast<float*>(dst);
+  const float* fsrc = reinterpret_cast<const float*>(src);
+  const float* fend = reinterpret_cast<const float*>(end)+InfoSize;
+  do {
+    *fdst++ += *fsrc++;
+  } while (fdst < fend);
 }
 

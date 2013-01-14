@@ -1,7 +1,16 @@
 #include "ami/data/Aggregator.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/Discovery.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
+#include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryProf.hh"
+#include "ami/data/EntryImage.hh"
 #include "ami/data/EntryScan.hh"
+#include "ami/data/EntryScalarRange.hh"
+#include "ami/data/EntryScalarDRange.hh"
 #include "ami/service/BSocket.hh"
 
 #include <sys/types.h>
@@ -10,9 +19,6 @@
 using namespace Ami;
 
 static const int BufferSize = 0x2000000;
-
-template <class T>
-static void agg(iovec*, iovec*, char*);
 
 static const char* State[] = { "Init", "Connected",
                                "Discovering", "Discovered", 
@@ -26,13 +32,15 @@ Aggregator::Aggregator(AbsClient& client) :
   _n               (0),
   _remaining       (0),
   _cds             ("Aggregator"),
+  _ocds            ("Output"),
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _iovdesc         (new iovec[_niovload+1]),
   _buffer          (new BSocket(BufferSize)),
   _state           (Init),
   _latest          (0),
-  _current         (0)
+  _current         (0),
+  _request         (EntryList::Full)
 {
 }
 
@@ -90,12 +98,15 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
     _state = Discovering;
     _remaining = _n-1;
     _current   = id;
+    _nsources  = rx.nsources();
   }
   else {
     _remaining--;
+    _nsources += rx.nsources();
   }
 
   if (_remaining == 0) {
+    const_cast<DiscoveryRx&>(rx).nsources(_nsources);
     _state = Discovered;
     _client.discovered(rx);
   }
@@ -211,46 +222,15 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       _remaining = _n-1;
     }
     else {  // aggregate
-      int niov = _cds.totalentries();
+      int niov = _cds.payload(_iovload,_request);
+      _cds.description(_iovdesc,_request);
       nbytes = s.readv(_iovload,niov);
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
       while(niov--) {
 	DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-	switch(desc->type()) {
-	case DescEntry::Scalar:
-	case DescEntry::TH1F:
-	case DescEntry::Waveform:
-	case DescEntry::Prof:
-          agg<double>(iovd,iovl,payload);
-	  break;
-	case DescEntry::Image:
-          agg<unsigned>(iovd,iovl,payload);
-	  break;
-	case DescEntry::Scan:  // This one's hard
-// 	  printf("Agg Scan\n");
-	  //  Consider scans that don't gather enough events to see all servers
-	  //  Consider bld that is different for every event
-	  { double* dst = reinterpret_cast<double*>(payload);
-	    const double* end = reinterpret_cast<const double*>(payload+iovl->iov_len);
-	    const double* src = reinterpret_cast<const double*>(iovl->iov_base);
-
-	    EntryScan* t = new EntryScan(*reinterpret_cast<const DescScan*>(desc));
-	    t->sum(dst,src);
-
-	    src = reinterpret_cast<const double*>(t->payload());
-	    while(dst < end)
-	      *dst++ = *src++;
-
-	    delete t;
-	  }	  
-	  break;
-	case DescEntry::TH2F:
-	default:
-// 	  printf("Agg Other\n");
-	  break;
-	}
+	_cds.entry(desc->signature())->merge(payload);
 	payload += iovl->iov_len;
 	iovl++;
 	iovd++;
@@ -275,34 +255,6 @@ void Aggregator::process         ()
     _client.process();
 }
 
-template <class T>
-void agg(iovec* iovd, iovec* iovl, char* payload)
-{
-  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-  const char* base = (const char*)iovl->iov_base;
-  //  the first word is the valid flag (update time)
-  T* dst = reinterpret_cast<T*>(payload);
-  const T* src = reinterpret_cast<const T*>(base);
-  const T* end = reinterpret_cast<const T*>(base+iovl->iov_len);
-#if 0
-  { const Pds::ClockTime* dst_clk = reinterpret_cast<const Pds::ClockTime*>(dst);
-    const Pds::ClockTime* src_clk = reinterpret_cast<const Pds::ClockTime*>(src);
-    printf("Agg Std agg %c  dst %09u.%09u  src %09u.%09u\n",
-           desc->aggregate() ? 't':'f', 
-           dst_clk->seconds(), dst_clk->nanoseconds(),
-           src_clk->seconds(), src_clk->nanoseconds()); }
-#endif
-  if (desc->aggregate() && *dst!=0 && *src!=0 ) { // sum them 
-    if (*dst < *src)
-      *dst = *src;   // record later time
-    while (++src < end)
-      *++dst += *src;  
-  }
-  else if (*dst < *src)  // copy most recent (including time)
-    while (src < end)
-      *dst++  = *src++;  
-} 
-
 void Aggregator::tmo()
 {
   //  _checkState("tmo");
@@ -319,4 +271,9 @@ void Aggregator::_checkState(const char* s, unsigned id)
 {
   printf("[%p] : %s : State %s : id %d/%d: remaining %d/%d\n", 
          this, s, State[_state], id, _current, _remaining, _n);
+}
+
+void Aggregator::request_payload(const EntryList& request) 
+{
+  _request = request; 
 }

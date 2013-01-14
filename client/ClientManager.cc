@@ -258,6 +258,7 @@ void ClientManager::request_payload()
 void ClientManager::request_payload(const EntryList& req)
 {
   if (_state == Connected) {
+    _client.request_payload(req);
     _request = Message(_request.id()+1,Message::PayloadReq,req);
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
@@ -452,6 +453,9 @@ int ClientManager::handle_client_io(ClientSocket& socket)
 
 void ClientManager::forward(const Message& request)
 {
+  if (request.type() == Message::PayloadReq)
+    _client.request_payload(request.list());
+
   _request = request;
   _poll->bcast_out(reinterpret_cast<const char*>(&request),
                    sizeof(request));

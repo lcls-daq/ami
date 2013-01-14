@@ -20,6 +20,7 @@ namespace Ami {
     unsigned add   (const char* name);
     void     add   (const FeatureCache&);
     int      lookup(const char* name) const;
+    void     start ();
     bool     update();
   public:
     unsigned    entries() const;

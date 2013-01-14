@@ -20,7 +20,6 @@ Entry&                 AbsOperator::operator()(const Entry& i) const
   return _next ? _next->_operate(o) : o;
 }
 
-
 DescEntry&             AbsOperator::output() const
 {
   return _next ? _next->output() : _routput();

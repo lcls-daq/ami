@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-//#define POLL_RCV
+#define POLL_RCV
 //#define DBUG
 
 using namespace Ami;
@@ -139,7 +139,10 @@ int TSocket::readv(const iovec* iov, int iovcnt)
     _rhdr.msg_iovlen = _iovcnt;
 
     int nb = ::recvmsg(_socket, &_rhdr, 0);
-    if (nb < 0) break;
+    if (nb <= 0) {
+      bytes = nb;
+      break;
+    }
     bytes += nb;
     remaining -= nb;
   }    
