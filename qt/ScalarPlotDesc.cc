@@ -44,9 +44,11 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
   _vnorm = new FeatureList(registry);
+  _vnorm->use_scan(false);
 
   _weightB = new QCheckBox;
   _vweight = new FeatureList(registry);
+  _vweight->use_scan(false);
 
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout2 = new QHBoxLayout;

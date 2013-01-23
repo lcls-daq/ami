@@ -77,9 +77,9 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   _plot_tab->insertTab(PlotContrast  ,_contrast_plot  ,"Contrast"); 
 
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* channel_box = new QGroupBox("Source Channel");
+  { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(new QLabel("Channel"));
+    layout1->addWidget(new QLabel("Source Channel"));
     layout1->addWidget(channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
@@ -89,10 +89,10 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
     layout1->addWidget(_annulus);
     boundary_box->setLayout(layout1);
     layout->addWidget(boundary_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
+  { QGroupBox* plot_box = new QGroupBox;
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
+      layout2->addWidget(new QLabel("Plot Title"));
       layout2->addWidget(_title);
       layout1->addLayout(layout2); }
     layout1->addWidget(_plot_tab);

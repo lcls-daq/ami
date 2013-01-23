@@ -1,6 +1,7 @@
 #include "ami/qt/ImageIntegral.hh"
 #include "ami/data/BinMath.hh"
 
+#include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -15,11 +16,13 @@ ImageIntegral::ImageIntegral(QWidget* p) :
   ScalarPlotDesc(p),
   _expr_edit    (new QLineEdit)
 {
-  _expr_edit->setMinimumWidth(340);
+  _expr_edit->setMinimumWidth(140);
 
   QVBoxLayout* l = static_cast<QVBoxLayout*>(layout());
-  QGroupBox* box = new QGroupBox("Range Expression");
+  QGroupBox* box = new QGroupBox;
   QHBoxLayout* hl = new QHBoxLayout;
+  hl->addStretch();
+  hl->addWidget(new QLabel("Range Expression"));
   hl->addStretch();
   hl->addWidget(_expr_edit);
   hl->addStretch();

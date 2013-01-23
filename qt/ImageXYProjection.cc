@@ -80,23 +80,23 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   _plot_tab->insertTab(PlotContrast  ,_contrast_plot  ,"Contrast"); 
 
   QVBoxLayout* layout = new QVBoxLayout;
-  { QGroupBox* channel_box = new QGroupBox("Source Channel");
+  { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(new QLabel("Channel"));
+    layout1->addWidget(new QLabel("Source Channel"));
     layout1->addWidget(channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
-  { QGroupBox* locations_box = new QGroupBox("Define Boundaries");
+  { QGroupBox* locations_box = new QGroupBox("Region of Interest");
     locations_box->setToolTip("Define projection boundaries.");
     QVBoxLayout* layout2 = new QVBoxLayout;
     layout2->addWidget(_rectangle);
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
+  { QGroupBox* plot_box = new QGroupBox;
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
+      layout2->addWidget(new QLabel("Plot Title"));
       layout2->addWidget(_title);
       layout1->addLayout(layout2); }
     layout1->addWidget(_plot_tab);
@@ -257,14 +257,6 @@ void ImageXYProjection::save_plots(const QString& p) const
   }
 }
 
-void ImageXYProjection::setVisible(bool v)
-{
-  if (v)    _frame.add_marker(*_rectangle);
-  else      _frame.remove_marker(*_rectangle);
-  QWidget::setVisible(v);
-  update_range();
-}
-
 void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
 				  ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
@@ -282,6 +274,8 @@ void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels,
 		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+
+  _histogram_plot->configure(p,_channel,output,channels,signatures,nchannels);
 }
 
 void ImageXYProjection::setup_payload(Cds& cds)
@@ -294,6 +288,8 @@ void ImageXYProjection::setup_payload(Cds& cds)
    (*it)->setup_payload(cds);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
    (*it)->setup_payload(cds);
+
+  _histogram_plot->setup_payload(cds);
 }
 
 void ImageXYProjection::update()
@@ -306,6 +302,8 @@ void ImageXYProjection::update()
     (*it)->update();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+
+  _histogram_plot->update();
 }
 
 void ImageXYProjection::set_channel(int c) 
@@ -446,6 +444,7 @@ void ImageXYProjection::update_range()
                                _rectangle->iylo(),
                                _rectangle->ixhi(),
                                _rectangle->iyhi());
+  emit changed();
 }
 
 void ImageXYProjection::remove_cursor_post(CursorPost* post)
@@ -513,4 +512,18 @@ void ImageXYProjection::remove_overlay(QtOverlay* obj)
   _ovls.remove(ovl);
   
   //  emit changed();
+}
+
+void ImageXYProjection::showEvent(QShowEvent* ev)
+{
+  QtPWidget::showEvent(ev);
+  _frame.add_marker(*_rectangle);
+  update_range();
+}
+
+void ImageXYProjection::hideEvent(QHideEvent* ev)
+{
+  QtPWidget::hideEvent(ev);
+  _frame.remove_marker(*_rectangle);
+  update_range();
 }

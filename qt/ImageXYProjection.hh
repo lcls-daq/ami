@@ -59,7 +59,6 @@ namespace Ami {
       void zoom        ();
       void configure_plot();
       void remove_plot (QObject*);
-      virtual void setVisible(bool);
       void add_integral_post    ();
       void add_contrast_post    ();
       void plottab_changed(int);
@@ -67,6 +66,9 @@ namespace Ami {
       void changed();
     private:
       QString _add_post(const QString&, const char*);
+    protected:
+      void showEvent(QShowEvent*);
+      void hideEvent(QHideEvent*);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;

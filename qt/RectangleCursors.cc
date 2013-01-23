@@ -37,10 +37,10 @@ RectangleCursors::RectangleCursors(ImageFrame& f,
   _delta_x   (new QLabel),
   _delta_y   (new QLabel)
 {
-  _edit_x0->setMaximumWidth(40);
-  _edit_y0->setMaximumWidth(40);
-  _edit_x1->setMaximumWidth(40);
-  _edit_y1->setMaximumWidth(40);
+  _edit_x0->setMaximumWidth(44);
+  _edit_y0->setMaximumWidth(44);
+  _edit_x1->setMaximumWidth(44);
+  _edit_y1->setMaximumWidth(44);
 
   new QDoubleValidator(_edit_x0);
   new QDoubleValidator(_edit_y0);

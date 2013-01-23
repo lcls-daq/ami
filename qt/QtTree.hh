@@ -26,6 +26,7 @@ namespace Ami {
       const QString& entry() const;
       void  clear();
       void  fill (const QStringList&);
+      void  use_scan(bool);
     public slots:
       void set_entry(const QModelIndex&);
       void set_entry(const QString&);
@@ -39,6 +40,7 @@ namespace Ami {
       QTreeView          _view;
       QString            _entry;
       QString            _separator;
+      bool               _use_scan;
     };
   };
 };

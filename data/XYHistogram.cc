@@ -90,6 +90,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
         unsigned ihi = unsigned((_xhi-inputd.xlow())/inputd.ppxbin());
         unsigned jlo = unsigned((_ylo-inputd.ylow())/inputd.ppybin());
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
+	if (ihi >inputd.nbinsx()) ihi=inputd.nbinsx();
+	if (jhi >inputd.nbinsy()) jhi=inputd.nbinsy();
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
         if (mask) {
@@ -125,6 +127,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
         unsigned ihi = unsigned((_xhi-inputd.xlow())/inputd.ppxbin());
         unsigned jlo = unsigned((_ylo-inputd.ylow())/inputd.ppybin());
         unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
+	if (ihi >inputd.nbinsx()) ihi=inputd.nbinsx();
+	if (jhi >inputd.nbinsy()) jhi=inputd.nbinsy();
         double   p(_input->info(EntryImage::Pedestal));
         double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
         if (mask) {

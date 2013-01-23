@@ -81,7 +81,8 @@ QtTree::QtTree(const QString& separator) :
   QPushButton(),
   _view      (this),
   _entry     (),
-  _separator (separator)
+  _separator (separator),
+  _use_scan  (true)
 {
   _view.setWindowFlags(::Qt::Dialog);
   _view.setWindowModality(::Qt::NonModal);
@@ -100,7 +101,8 @@ QtTree::QtTree(const QStringList& names,
   QPushButton(),
   _view      (this),
   _entry     (),
-  _separator (separator)
+  _separator (separator),
+  _use_scan  (true)
 {
 
   QPalette newPalette = palette();
@@ -158,7 +160,7 @@ void QtTree::fill(const QStringList& names)
     root->insertRow( 0, new QStandardItem( QString("[Most Recent]")) );
   }
 
-  if (scan_names.size())
+  if (_use_scan && scan_names.size())
     set_entry(scan_names.at(0));
   else
     set_entry(_entry);
@@ -260,4 +262,6 @@ void QtTree::show_tree()
 }
 
 bool QtTree::_valid_entry(const QString&) const { return true; }
+
+void QtTree::use_scan(bool l) { _use_scan=l; }
 

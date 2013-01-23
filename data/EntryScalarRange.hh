@@ -29,6 +29,7 @@ namespace Ami {
     double    entries() const;
     DescTH1F* result(void* =0) const;
 
+    const ScalarRange& range() const;
   private:
     virtual void _merge(char*) const;
 
@@ -43,6 +44,8 @@ namespace Ami {
   inline void   EntryScalarRange::setto(const EntryScalarRange& entry) { _range->setto(*entry._range); }
   inline void   EntryScalarRange::add  (const EntryScalarRange& entry) { valid(entry.time()); _range->add(*entry._range); }
   inline void   EntryScalarRange::_merge(char* p) const { _range->merge(p); }
+
+  inline const ScalarRange& EntryScalarRange::range() const { return *_range; }
 };
 
 #endif
