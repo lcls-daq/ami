@@ -9,9 +9,8 @@
 #include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/XYHistogramPlotDesc.hh"
 #include "ami/qt/XYProjectionPlotDesc.hh"
-//#include "ami/qt/ScalarPlotDesc.hh"
-#include "ami/qt/ImageIntegral.hh"
-#include "ami/qt/ImageContrast.hh"
+#include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/ImageFunctions.hh"
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisBins.hh"
@@ -41,7 +40,7 @@
 
 using namespace Ami::Qt;
 
-enum { PlotHistogram, PlotProjection, PlotIntegral, PlotContrast };
+enum { PlotHistogram, PlotProjection, PlotFunction };
 
 ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 				     ChannelDefinition* channels[],
@@ -71,13 +70,10 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   _plot_tab        = new QTabWidget(0);
   _histogram_plot  = new XYHistogramPlotDesc (0, *_rectangle);
   _projection_plot = new XYProjectionPlotDesc(0, *_rectangle);
-  //  _integral_plot   = new ScalarPlotDesc(0);
-  _integral_plot   = new ImageIntegral(0);
-  _contrast_plot   = new ImageContrast(0);
+  _function_plot   = new ImageFunctions(0);
   _plot_tab->insertTab(PlotHistogram ,_histogram_plot ,"Histogram");
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
-  _plot_tab->insertTab(PlotIntegral  ,_integral_plot  ,"Integral"); 
-  _plot_tab->insertTab(PlotContrast  ,_contrast_plot  ,"Contrast"); 
+  _plot_tab->insertTab(PlotFunction  ,_function_plot  ,"Function"); 
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* channel_box = new QGroupBox;
@@ -121,8 +117,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
 
-  _integral_plot->post(this, SLOT(add_integral_post()));
-  _contrast_plot->post(this, SLOT(add_contrast_post()));
+  _function_plot->plot_desc().post(this, SLOT(add_function_post()));
 
   ovlyB->setEnabled(false);
   _ovlyB = ovlyB;
@@ -147,8 +142,7 @@ void ImageXYProjection::save(char*& p) const
   
   XML_insert(p, "XYHistogramPlotDesc", "_histogram_plot", _histogram_plot ->save(p) );
   XML_insert(p, "XYProjectionPlotDesc", "_projection_plot", _projection_plot->save(p) );
-  XML_insert(p, "ImageIntegral", "_integral_plot", _integral_plot  ->save(p) );
-  XML_insert(p, "ImageContrast", "_contrast_plot", _contrast_plot  ->save(p) );
+  XML_insert(p, "ImageFunctions", "_function_plot", _function_plot  ->save(p) );
 
   XML_insert(p, "RectangleCursors", "_rectangle", _rectangle->save(p) );
 
@@ -206,10 +200,8 @@ void ImageXYProjection::load(const char*& p)
       _histogram_plot ->load(p);
     else if (tag.name == "_projection_plot")
       _projection_plot->load(p);
-    else if (tag.name == "_integral_plot")
-      _integral_plot  ->load(p);
-    else if (tag.name == "_contrast_plot")
-      _contrast_plot  ->load(p);
+    else if (tag.name == "_function_plot")
+      _function_plot  ->load(p);
     else if (tag.name == "_rectangle")
       _rectangle->load(p);
     else if (tag.name == "_pplots") {
@@ -313,25 +305,6 @@ void ImageXYProjection::set_channel(int c)
 
 void ImageXYProjection::plot()
 {
-#define CASE_PLOT(pplot) {                                              \
-    if (pplot->postAnalysis()) {                                        \
-      QString     qtitle = _add_post(pplot->qtitle(), pplot->expression()); \
-      DescEntry*  entry  = pplot->desc(qPrintable(qtitle));             \
-      PostAnalysis::instance()->plot(qtitle,entry,_posts.back());       \
-    }                                                                   \
-    else {                                                              \
-      DescEntry*  desc = pplot->desc(qPrintable(_title->text()));       \
-      CursorPlot* cplot =                                               \
-        new CursorPlot(this, _title->text(), _channel,                  \
-                       new BinMath(*desc,pplot->expression()));         \
-      delete desc;                                                      \
-      _cplots.push_back(cplot);                                         \
-      connect(cplot, SIGNAL(changed()), this, SIGNAL(changed()));       \
-      connect(cplot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*))); \
-    }                                                                   \
-    emit changed();                                                     \
-  } 
-
   switch(_plot_tab->currentIndex()) {
   case PlotHistogram:
   case PlotProjection:
@@ -349,11 +322,25 @@ void ImageXYProjection::plot()
 
       break;
     }
-  case PlotIntegral:
-    CASE_PLOT(_integral_plot);
-    break;
-  case PlotContrast:
-    CASE_PLOT(_contrast_plot);
+  case PlotFunction:
+    { ScalarPlotDesc* pplot = &_function_plot->plot_desc();
+      if (pplot->postAnalysis()) {
+	QString     qtitle = _add_post(pplot->qtitle(), _function_plot->expression());
+	DescEntry*  entry  = pplot->desc(qPrintable(qtitle));
+	PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
+      }
+      else {
+	DescEntry*  desc = pplot->desc(qPrintable(_title->text()));
+	CursorPlot* cplot =
+	  new CursorPlot(this, _title->text(), _channel,
+			 new BinMath(*desc,_function_plot->expression()));
+	delete desc;
+	_cplots.push_back(cplot);
+      connect(cplot, SIGNAL(changed()), this, SIGNAL(changed()));
+      connect(cplot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      }
+      emit changed();
+    } 
     break;
   default:
     return;
@@ -362,17 +349,10 @@ void ImageXYProjection::plot()
 #undef CASE_PLOT
 }
 
-void ImageXYProjection::add_integral_post() 
+void ImageXYProjection::add_function_post() 
 {
-  _add_post(_integral_plot->qtitle(),
-            _integral_plot->expression()); 
-  _posts.back()->signup();
-}
-
-void ImageXYProjection::add_contrast_post() 
-{
-  _add_post(_contrast_plot->qtitle(),
-            _contrast_plot->expression()); 
+  _add_post(_function_plot->plot_desc().qtitle(),
+            _function_plot->expression()); 
   _posts.back()->signup();
 }
 
@@ -436,11 +416,7 @@ void ImageXYProjection::configure_plot()
 
 void ImageXYProjection::update_range()
 {
-  _integral_plot->update_range(_rectangle->ixlo(),
-                               _rectangle->iylo(),
-                               _rectangle->ixhi(),
-                               _rectangle->iyhi());
-  _contrast_plot->update_range(_rectangle->ixlo(),
+  _function_plot->update_range(_rectangle->ixlo(),
                                _rectangle->iylo(),
                                _rectangle->ixhi(),
                                _rectangle->iyhi());
@@ -455,30 +431,24 @@ void ImageXYProjection::remove_cursor_post(CursorPost* post)
 
 void ImageXYProjection::plottab_changed(int index)
 {
-  _ovlyB->setEnabled(index==PlotIntegral ||
-                     index==PlotContrast);
+  _ovlyB->setEnabled(index==PlotFunction);
 }
 
 void ImageXYProjection::overlay()
 {
-#define CASE_PLOT(plot) {                                               \
-    if (plot->postAnalysis()) {                                         \
-      DescEntry* desc = plot->desc(qPrintable(_add_post(plot->qtitle(), \
-                                                        plot->expression()))); \
-      new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back()); \
-    }                                                                   \
-    else {                                                              \
-      DescEntry* desc = plot->desc(qPrintable(_title->text()));         \
-      new QtPlotSelector(*this, *this, desc);                           \
-    }                                                                   \
-  }
-
   switch (_plot_tab->currentIndex()) {
-  case PlotIntegral:
-    CASE_PLOT(_integral_plot);
-    break;
-  case PlotContrast:
-    CASE_PLOT(_contrast_plot);
+  case PlotFunction:
+    { ScalarPlotDesc* pplot = &_function_plot->plot_desc();
+      if (pplot->postAnalysis()) {
+	DescEntry* desc = pplot->desc(qPrintable(_add_post(pplot->qtitle(),
+							   _function_plot->expression())));
+	new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+      }
+      else {
+	DescEntry* desc = pplot->desc(qPrintable(_title->text()));
+	new QtPlotSelector(*this, *this, desc);
+      }
+    }
     break;
   default:
     break;
@@ -495,9 +465,7 @@ void ImageXYProjection::add_overlay(DescEntry* desc,
                                          *plot,
                                          _channel, 
                                          new BinMath(*desc,
-                                                     _plot_tab->currentIndex()==PlotIntegral ?
-                                                     _integral_plot->expression() :
-                                                     _contrast_plot->expression()));
+						     _function_plot->expression()));
                                      
   delete desc;
 

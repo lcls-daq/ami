@@ -92,6 +92,8 @@ void CursorPost::configure(char*& p, unsigned input, unsigned& output,
     new_expr.replace(QString("]%1[").arg(BinMath::integrate()),QString(BinMath::integrate()));
     new_expr.replace(QString("]%1[").arg(BinMath::contrast ()),QString(BinMath::contrast ()));
     new_expr.replace(QString("]%1[").arg(BinMath::range    ()),QString(BinMath::range    ()));
+    new_expr.replace(QString("]%1[").arg(BinMath::xmoment  ()),QString(BinMath::xmoment  ()));
+    new_expr.replace(QString("]%1[").arg(BinMath::ymoment  ()),QString(BinMath::ymoment  ()));
   }
   QString end_expr;
   { int last=0, next=0, pos=0;

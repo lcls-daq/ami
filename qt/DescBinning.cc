@@ -98,14 +98,16 @@ DescBinning::DescBinning(const char* name) :
   new QIntValidator   (1,100000,_nsigma);
   new QIntValidator   (1,100000,_nrange);
 
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(name));
-  layout->addWidget(_bins);
-  layout->addStretch();
-  layout->addWidget(_method);
-  layout->addStretch();
-  layout->addWidget(range);
-  setLayout(layout);
+  QVBoxLayout* vl = new QVBoxLayout;
+  { QHBoxLayout* layout = new QHBoxLayout;
+    layout->addWidget(new QLabel(name));
+    layout->addWidget(_bins);
+    layout->addStretch();
+    layout->addWidget(_method);
+    layout->addStretch();
+    vl->addLayout(layout); }
+  vl->addWidget(range);
+  setLayout(vl);
   validate();
 
   connect(_lo, SIGNAL(editingFinished()), this, SLOT(validate()));

@@ -150,6 +150,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
   const DescImage&  d = e.desc();
   const ImageMask* mask = d.mask();
   double s0 = 0, sum = 0, sqsum = 0;
+  double xsum = 0, ysum = 0;
   double p   = double(e.info(EntryImage::Pedestal));
   if (mask) {
     unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
@@ -161,6 +162,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
           s0    += 1;
           sum   += v;
           sqsum += v*v;
+	  xsum  += double(i)*v;	    
+	  ysum  += double(j)*v;
         }
     }
   }
@@ -174,6 +177,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
             s0    += 1;
             sum   += v;
             sqsum += v*v;
+	    xsum  += double(i)*v;	    
+	    ysum  += double(j)*v;
           }
       }
     }
@@ -186,6 +191,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
         s0    += 1;
         sum   += v;
         sqsum += v*v;
+	xsum  += double(i)*v;	    
+	ysum  += double(j)*v;
       }
   }
   double n = double(e.info(EntryImage::Normalization));
@@ -198,6 +205,12 @@ double BinMathC::EntryImageTerm::evaluate() const {
   case Contrast:
     v = sqrt(s0*sqsum/(sum*sum) - 1);
     //          if (n>0) v/=sqrt(n);
+    break;
+  case XCenterOfMass:
+    v = xsum/sum*d.ppxbin();
+    break;
+  case YCenterOfMass:
+    v = ysum/sum*d.ppybin();
     break;
   default:
     v = 0;
@@ -231,6 +244,7 @@ double BinMathC::EntryImageTermF::evaluate() const
   const DescImage& d = e.desc();
   const ImageMask* mask = d.mask();
   double s0 = 0, sum = 0, sqsum = 0;
+  double xsum = 0, ysum = 0;
   const double p = e.info(EntryImage::Pedestal);
   int ixlo, ixhi, iylo, iyhi;
   if (mask) {
@@ -255,6 +269,8 @@ double BinMathC::EntryImageTermF::evaluate() const
             s0    += 1;
             sum   += v;
             sqsum += v*v;
+	    xsum  += double(i)*v;	    
+	    ysum  += double(j)*v;
           }
         }
       }
@@ -281,6 +297,8 @@ double BinMathC::EntryImageTermF::evaluate() const
               s0    += 1;
               sum   += v;
               sqsum += v*v;
+	      xsum  += double(i)*v;	    
+	      ysum  += double(j)*v;
             }
           }
         }
@@ -306,6 +324,8 @@ double BinMathC::EntryImageTermF::evaluate() const
             s0    += 1;
             sum   += v;
             sqsum += v*v;
+	    xsum  += double(i)*v;	    
+	    ysum  += double(j)*v;
           }
         }
       }
@@ -323,7 +343,13 @@ double BinMathC::EntryImageTermF::evaluate() const
     break;
   case Contrast:
     v = sqrt(s0*sqsum/(sum*sum) - 1);
-    if ( n > 0) v/=sqrt(n);
+    //    if ( n > 0) v/=sqrt(n);
+    break;
+  case XCenterOfMass:
+    v = xsum/sum*d.ppxbin();
+    break;
+  case YCenterOfMass:
+    v = ysum/sum*d.ppybin();
     break;
   default:
     v = 0;

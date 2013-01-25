@@ -50,12 +50,17 @@ DescTH2F::DescTH2F(const char* name, FeatureRegistry* registry) :
   setLayout(layout);
 #else
   QVBoxLayout* layout = new QVBoxLayout;
+  layout->addStretch();
   { QHBoxLayout* hl = new QHBoxLayout;
     hl->addWidget(_expr);
     hl->addWidget(calcB);
     layout->addLayout(hl); }
-  layout->addWidget(_xbins);
-  layout->addWidget(_ybins);
+  { QHBoxLayout* hl = new QHBoxLayout;
+    hl->addWidget(_xbins);
+    hl->addStretch();
+    hl->addWidget(_ybins);
+    layout->addLayout(hl); }
+  layout->addStretch();
   setLayout(layout);
 #endif
 

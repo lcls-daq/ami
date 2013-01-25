@@ -70,27 +70,26 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
     _plot_grp = tab;
     box->setLayout(vl);
     layout1->addWidget(box); }
-  { QGroupBox* box = new QGroupBox("Normalization");
-    QHBoxLayout* hl = new QHBoxLayout;
-    hl->addStretch();
-    hl->addWidget(new QLabel("Normalize"));
-    { QVBoxLayout* vl = new QVBoxLayout;
-      vl->addWidget(_xnorm);
-      vl->addWidget(_ynorm);
-      hl->addLayout(vl); }
-    hl->addWidget(new QLabel("variable to"));
-    hl->addWidget(_vnorm);
-    box->setLayout(hl);
-    if (!lNormWeight) box->hide();
-    layout1->addWidget(box); }
-  { QGroupBox* box = new QGroupBox("Weighted Average");
-    QHBoxLayout* hl = new QHBoxLayout;
-    hl->addStretch();
-    hl->addWidget(_weightB);
-    hl->addWidget(new QLabel("Weight by"));
-    hl->addWidget(_vweight); 
-    hl->addStretch();
-    box->setLayout(hl); 
+  { QGroupBox* box = new QGroupBox;
+    QVBoxLayout* ll = new QVBoxLayout;
+    { QHBoxLayout* hl = new QHBoxLayout;
+      hl->addStretch();
+      hl->addWidget(new QLabel("Normalize"));
+      { QVBoxLayout* vl = new QVBoxLayout;
+	vl->addWidget(_xnorm);
+	vl->addWidget(_ynorm);
+	hl->addLayout(vl); }
+      hl->addWidget(new QLabel("variable to"));
+      hl->addWidget(_vnorm);
+      ll->addLayout(hl); }
+    { QHBoxLayout* hl = new QHBoxLayout;
+      hl->addStretch();
+      hl->addWidget(_weightB);
+      hl->addWidget(new QLabel("Weight by"));
+      hl->addWidget(_vweight); 
+      hl->addStretch();
+      ll->addLayout(hl); }
+    box->setLayout(ll); 
     if (!lNormWeight) box->hide();
     layout1->addWidget(box); }
   setLayout(layout1);
