@@ -96,12 +96,13 @@ static inline unsigned sum2(const uint16_t*& data,
                             const float*& gn)
 {
   unsigned v;
-  if (off==*psp) { 
-    if (++off==*++psp) psp++;
-    off++;
-    data+=2; 
-    gn += 2;
+  if (*psp && (*psp-off)<2) {
+    off  += 2;
+    data += 2;
+    gn   += 2;
     v = 2*Offset;
+    psp++;
+    while(*psp && *psp<off) psp++;
   }
   else {
     double d; 
@@ -119,18 +120,13 @@ static inline unsigned sum4(const uint16_t*& data,
                             const float*& gn)
 {
   unsigned v;
-  if (off==*psp) {
-    if (++off==*++psp) {
-      if (++off==*++psp) {
-        if (++off==*++psp) psp++;
-        off++;
-      }
-      else off+=2;
-    }
-    else off+=3;
+  if (*psp && (*psp-off)<4) {
+    off  += 4;
     data += 4;
     gn   += 4;
     v = 4*Offset;
+    psp++;
+    while(*psp && *psp<off) psp++;
   }
   else {
     double d;
@@ -163,10 +159,11 @@ static inline unsigned thr2(double v0, double v1,
                             const float*& rms)
 {
   unsigned v;
-  if (off==*psp) { 
-    if (++off==*++psp) psp++;
-    off++;
+  if (*psp && (*psp-off)<2) {
+    off  += 2;
     v = no_threshold;
+    psp++;
+    while(*psp && *psp<off) psp++;
   }
   else {
     double d = 2*v0 + v1*(rms[0]+rms[1]);
@@ -182,16 +179,11 @@ static inline unsigned thr4(double v0, double v1,
                             const float*& rms)
 {
   unsigned v;
-  if (off==*psp) {
-    if (++off==*++psp) {
-      if (++off==*++psp) {
-        if (++off==*++psp) psp++;
-        off++;
-      }
-      else off+=2;
-    }
-    else off+=3;
+  if (*psp && (*psp-off)<4) {
+    off  += 4;
     v = no_threshold;
+    psp++;
+    while(*psp && *psp<off) psp++;
   }
   else {
     double d = 4*v0 + v1*(rms[0]+rms[1]+rms[2]+rms[3]);
@@ -532,6 +524,7 @@ namespace CspadGeometry {
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++, off++)
             if (strtoul(pEnd,&pEnd,0)) *sta++ = off;
         }
+        *sta = 0;
       }
       else
         _sta[0] = 0;
@@ -578,7 +571,7 @@ namespace CspadGeometry {
     void kill_off() { memset(_off,0,sizeof(_off)); }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
-    uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2+1];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _rms[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
