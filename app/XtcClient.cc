@@ -103,6 +103,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         (*it)->clock(dg->seq.clock());
       
       iterate(&dg->xtc); 
+      for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+        if ((*it)->data_type() == Pds::TypeId::NumberOf)
+          (*it)->_event(dg->xtc.contains, dg->xtc.payload(), _seq->clock());
+      }
 
       _cache[PostAnalysis]->cache(cache);
 

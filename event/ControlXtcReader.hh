@@ -3,6 +3,8 @@
 
 #include "ami/event/EventHandler.hh"
 
+#include <vector>
+
 namespace Pds {
   class Dgram;
 };
@@ -28,6 +30,8 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
+    int _index;
+    std::vector<double> _values;
   };
 
 };

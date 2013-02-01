@@ -15,9 +15,11 @@ using namespace Ami;
 
 ControlXtcReader::ControlXtcReader(FeatureCache& f)  : 
   EventHandler(Pds::ProcInfo(Pds::Level::Control,0,-1UL),
-	       Pds::TypeId::NumberOf,   // expect no L1 data
-	       Pds::TypeId::Id_ControlConfig),  // expect no configure
-  _cache(f)
+	       Pds::TypeId::NumberOf,
+	       Pds::TypeId::Id_ControlConfig),
+  _cache(f),
+  _index(-1),
+  _values(0)
 {
 }
 
@@ -30,6 +32,9 @@ void   ControlXtcReader::_calibrate(Pds::TypeId id, const void* payload, const P
 
 void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
+  _index = -1;
+  _values.resize(0);
+
   if (id.version()==Pds::ControlData::ConfigV1::Version) {
     const Pds::ControlData::ConfigV1& c =
       *reinterpret_cast<const Pds::ControlData::ConfigV1*>(payload);
@@ -48,6 +53,8 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
         index = _cache.add(nbuf);
       }
       _cache.cache(index,pv.value());
+      if (_index<0) _index = index;
+      _values.push_back(pv.value());
     }
   }
   else if (id.version()==Pds::ControlData::ConfigV2::Version) {
@@ -68,12 +75,18 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
         index = _cache.add(nbuf);
       }
       _cache.cache(index,pv.value());
+      if (_index<0) _index = index;
+      _values.push_back(pv.value());
     }
   }
 }
 
 //  no L1 data will appear from Control
-void   ControlXtcReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   ControlXtcReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
+{
+  for(unsigned i=0, index=_index; i<_values.size(); i++,index++)
+    _cache.cache(index,_values[i]);
+}
 
 void   ControlXtcReader::_damaged  () {}
 
