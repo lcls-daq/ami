@@ -29,11 +29,13 @@ static Pds::ClockTime _clk;
 SummaryAnalysis::SummaryAnalysis():_darkShot(false),_summaryEntries(0),_analyzeCount(0),_notRefilledCount(0) { }
 SummaryAnalysis::~SummaryAnalysis() 
 {
-  if (!_summaryEntryEList.empty())
-    _summaryEntryEList.clear();
+  for(EList::iterator it = _summaryEntryEList.begin(); it != _summaryEntryEList.end(); it++)
+    delete (*it);
+  _summaryEntryEList.clear();
 
-  if (!_syncAnalysisPList.empty())
-    _syncAnalysisPList.clear(); 
+  for(PList::iterator it = _syncAnalysisPList.begin(); it != _syncAnalysisPList.end(); it++)
+    delete (*it);
+  _syncAnalysisPList.clear(); 
 
   if (_scatterPlotEntry) {  
     delete _scatterPlotEntry;
@@ -181,8 +183,10 @@ void SummaryAnalysis::clear ()
 
   for(EList::iterator itSummary = _summaryEntryEList.begin(); itSummary != _summaryEntryEList.end(); itSummary++) {
     EntryTH1F* summaryEntry = *itSummary;
-    if(summaryEntry)
+    if(summaryEntry) {
       _cds->remove(summaryEntry);
+      delete summaryEntry;
+    }
   }
   if (!_summaryEntryEList.empty())
     _summaryEntryEList.clear();

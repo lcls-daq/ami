@@ -147,6 +147,8 @@ int TSocket::readv(const iovec* iov, int iovcnt)
     remaining -= nb;
   }    
     
+  delete[] _iov;
+
 #else
   _rhdr.msg_iov    = const_cast<iovec*>(iov);
   _rhdr.msg_iovlen = iovcnt;
