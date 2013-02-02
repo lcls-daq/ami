@@ -1,6 +1,5 @@
 #include "XtcClient.hh"
 
-#include "ami/app/SummaryAnalysis.hh"
 #include "ami/app/EventFilter.hh"
 
 #include "ami/event/EventHandler.hh"
@@ -98,7 +97,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       accept = true;
 
       cache.cache(_event_index,_seq->stamp().vector());
-      SummaryAnalysis::instance().clock(dg->seq.clock());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
       
@@ -148,7 +146,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //  Cleanup previous entries
     _factory.discovery().reset();
     _factory.hidden   ().reset();
-    SummaryAnalysis::instance().reset();
     for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++) {
       EventHandler* handler = *hit;
       handler->reset();
@@ -166,7 +163,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _filter.configure(dg);
 
     _seq = &dg->seq;
-    SummaryAnalysis::instance().clock(dg->seq.clock());
     for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->clock(dg->seq.clock());
     
@@ -176,13 +172,14 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //  Create and register new entries
     _entry.clear();
     { ProcInfo info(Pds::Level::Control,0,0);
-      EntryScalar* e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),0,"XtcClient","timestamp");
+      const DetInfo& dinfo = static_cast<const DetInfo&>((Src&)info);
+      EntryScalar* e = new EntryScalar(dinfo,0,"XtcClient","timestamp");
       _factory.discovery().add(e);
       _entry.push_back(e);
       int imod=0;
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++,imod++) {
         info = ProcInfo(Pds::Level::Event,0,imod);
-        e = new EntryScalar(reinterpret_cast<const DetInfo&>(info),0,(*it)->name(),"module");
+        e = new EntryScalar(dinfo,0,(*it)->name(),"module");
         _factory.discovery().add(e);
         _entry.push_back(e);
       }
@@ -262,16 +259,6 @@ int XtcClient::process(Pds::Xtc* xtc)
     iterate(xtc);
   }
   else {
-    if (_seq->service()==Pds::TransitionId::L1Accept) {
-      SummaryAnalysis::instance().event    (xtc->src,
-                                            xtc->contains,
-                                            xtc->payload());
-    }
-    else if (_seq->service()==Pds::TransitionId::Configure) {
-      SummaryAnalysis::instance().configure(xtc->src,
-                                            xtc->contains,
-                                            xtc->payload());
-    }
 #ifdef DBUG
     if (_seq->service()==Pds::TransitionId::Configure) {
       printf("Type %s  Src %08x.%08x\n", 

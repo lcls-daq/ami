@@ -1,6 +1,5 @@
 #include "AnalysisFactory.hh"
 
-#include "ami/app/SummaryAnalysis.hh"
 #include "ami/app/EventFilter.hh"
 #include "ami/data/Analysis.hh"
 #include "ami/data/UserModule.hh"
@@ -115,18 +114,14 @@ void AnalysisFactory::configure(unsigned       id,
   while(payload < end) {
     const ConfigureRequest& req = *reinterpret_cast<const ConfigureRequest*>(payload);
     
-    if (req.size()==0 || req.source() == ConfigureRequest::Summary) {
+    if (req.size()==0) {
       const uint32_t* p = reinterpret_cast<const uint32_t*>(&req);
       printf("AnalysisFactory::configure received corrupt request from id %d\n [%08x %08x %08x %08x %08x %08x]\n",
              id, p[0], p[1], p[2], p[3], p[4], p[5] );
       break;
     }
 
-    if (req.source() == ConfigureRequest::Summary) {
-      SummaryAnalysis::instance().clear();
-      SummaryAnalysis::instance().create(cds);
-    }
-    else if (req.source() == ConfigureRequest::User) {
+    if (req.source() == ConfigureRequest::User) {
       int i=0;
       for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++) {
         if (req.input() == i) {
@@ -245,7 +240,6 @@ void AnalysisFactory::configure(unsigned       id,
 void AnalysisFactory::analyze  ()
 {
   pthread_mutex_lock(&_mutex);
-  SummaryAnalysis::instance().analyze();
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     (*it)->analyze();
   }

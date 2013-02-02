@@ -93,4 +93,4 @@ void   ControlXtcReader::_damaged  () {}
 //  No Entry data
 unsigned     ControlXtcReader::nentries() const { return 0; }
 const Entry* ControlXtcReader::entry   (unsigned) const { return 0; }
-void         ControlXtcReader::reset   () {}
+void         ControlXtcReader::reset   () { _index=-1; }

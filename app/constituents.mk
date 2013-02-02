@@ -72,7 +72,7 @@ libnames := app
 
 # List source files for each library
 #libsrcs_app := $(filter-out Agent.cc ami_agent.cc test.cc ami.cc,$(wildcard *.cc))
-libsrcs_app := $(filter-out test.cc ami.cc ami_proxy.cc tcptest.cc,$(wildcard *.cc))
+libsrcs_app := $(filter-out SummaryAnalysis.cc test.cc ami.cc ami_proxy.cc tcptest.cc,$(wildcard *.cc))
 # libsrcs_lib_b := src_6.cc
 
 # List special include directories (if any) needed by lib_a as
