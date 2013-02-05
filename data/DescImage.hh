@@ -7,6 +7,8 @@ namespace Ami {
 
   class SubFrame {
   public:
+    SubFrame() : x(0), y(0), nx(0), ny(0) {}
+  public:
     uint16_t x;
     uint16_t y;
     uint16_t nx;

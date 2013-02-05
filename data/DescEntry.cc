@@ -19,7 +19,11 @@ DescEntry::DescEntry(const char* name,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size)
+  _size(size),
+  _xwarn(0),
+  _xerr (0),
+  _ywarn(0),
+  _yerr (0)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);
@@ -47,7 +51,11 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size)
+  _size(size),
+  _xwarn(0),
+  _xerr (0),
+  _ywarn(0),
+  _yerr (0)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);
@@ -79,7 +87,11 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size)
+  _size(size),
+  _xwarn(0),
+  _xerr (0),
+  _ywarn(0),
+  _yerr (0)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);

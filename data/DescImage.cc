@@ -26,7 +26,7 @@ DescImage::DescImage(const char* name,
   _mmppy (1),
   _nsubframes(0)
 {
-  _mask_path[0]=0;
+  memset(_mask_path,0,PATHLEN);
   _mask = 0;
 }
 
@@ -48,7 +48,7 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _mmppy (1),
   _nsubframes(0)
 {
-  _mask_path[0]=0;
+  memset(_mask_path,0,PATHLEN);
   _mask = 0;
 }
 
@@ -76,7 +76,7 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _mmppy (1),
   _nsubframes(0)
 {
-  _mask_path[0]=0;
+  memset(_mask_path,0,PATHLEN);
   _mask = 0;
 }
 
