@@ -29,7 +29,7 @@ static std::list<Pds::TypeId::Type> data_type_list()
   return types;
 }
 
-PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache) : 
+PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   EventHandler(info, data_type_list(), Pds::TypeId::Id_PrincetonConfig),
   _cache(cache),
   _iCacheIndexTemperature(-1),
@@ -37,7 +37,7 @@ PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache
 {
 }
 
-//PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
+//PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, const EntryImage* entry) :
 //  EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_PrincetonConfig),
 //  _entry(entry ? new EntryImage(entry->desc()) : 0)
 //{
@@ -54,9 +54,11 @@ const Entry* PrincetonHandler::entry(unsigned i) const { return i==0 ? _entry : 
 void PrincetonHandler::reset() { _entry = 0; }
 
 void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
-{  
+{
   if (type.version() == PrincetonConfigType::Version)
     _config = *reinterpret_cast<const PrincetonConfigType*>(payload);
+  else if (type.version() == 4)
+    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV4*>(payload));
   else if (type.version() == 3)
     new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV3*>(payload));
   else if (type.version() == 2)
@@ -65,7 +67,7 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
     new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload));
   else
     printf("PrincetonHandler::_configure(): Unsupported Princeton Version %d\n", type.version());
-  
+
   unsigned columns = width (_config);
   unsigned rows    = height(_config);
   unsigned pixels  = (columns > rows) ? columns : rows;
@@ -76,11 +78,11 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
      columns, rows, ppb, ppb);
   _entry  = new EntryImage(desc);
-    
+
   /*
    * Setup temperature variable
    */
-  char sTemperatureVar[64];  
+  char sTemperatureVar[64];
   sprintf(sTemperatureVar, "Princeton-%d-T", det.devId());
   _iCacheIndexTemperature = _cache.add(sTemperatureVar);
 }
@@ -115,6 +117,12 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     _entry->info(0,EntryImage::Pedestal);
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);
+
+    if (type.version() >= 2) // Princeton temperature is stored in frame data since version 2
+    {
+      if (_iCacheIndexTemperature != -1)
+        _cache.cache(_iCacheIndexTemperature, f.temperature());
+    }
   }
   else if (type.id() == Pds::TypeId::Id_PrincetonInfo)
   {
