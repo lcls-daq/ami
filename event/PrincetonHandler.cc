@@ -120,7 +120,7 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
 
     if (type.version() >= 2) // Princeton temperature is stored in frame data since version 2
     {
-      if (_iCacheIndexTemperature != -1)
+      if (_iCacheIndexTemperature != -1 && f.temperature() != PrincetonDataType::TemperatureNotDefined)
         _cache.cache(_iCacheIndexTemperature, f.temperature());
     }
   }
