@@ -118,6 +118,7 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);
 
+    printf("PrincetonHandler::_event(): Tempertature: %.1lf\n", f.temperature());
     if (type.version() >= 2) // Princeton temperature is stored in frame data since version 2
     {
       if (_iCacheIndexTemperature != -1 && f.temperature() != PrincetonDataType::TemperatureNotDefined)
