@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 
@@ -48,6 +50,12 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
   _entry = EntryFactory::entry(o);
+
+#ifdef DBUG
+  printf("EnvPlot ctor %s : %s\n",
+	 o.name(),
+	 o.xtitle());
+#endif
 
   FeatureExpression parser;
   { QString expr(o.name());
@@ -111,6 +119,14 @@ Entry&     EnvPlot::_operate(const Entry& e) const
     Feature::damage(false);
     double y = _input->evaluate();
     double w = _weight ? _weight->evaluate() : 1;
+
+#ifdef DBUG
+    printf("EnvPlot::operate %s %s y %f  dmg %c\n", 
+	   _entry->desc().name(), 
+	   _entry->desc().xtitle(), 
+	   y, Feature::damage() ? 't':'f');
+#endif
+
     if (!Feature::damage()) {
       switch(_entry->desc().type()) {
       case DescEntry::Scalar: 

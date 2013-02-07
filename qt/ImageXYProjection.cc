@@ -420,7 +420,9 @@ void ImageXYProjection::update_range()
                                _rectangle->iylo(),
                                _rectangle->ixhi(),
                                _rectangle->iyhi());
+#if 0
   emit changed();
+#endif
 }
 
 void ImageXYProjection::remove_cursor_post(CursorPost* post)

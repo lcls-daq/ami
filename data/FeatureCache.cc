@@ -25,14 +25,13 @@ unsigned FeatureCache::add(const std::string& name)
 
 unsigned FeatureCache::add(const char* name)
 {
-  _update=true;
-
   std::string sname(name);
   
   for(unsigned k=0; k<_names.size(); k++)
     if (sname==_names[k])
       return k;
 
+  _update=true;
   _names.push_back(sname);
   unsigned len = _names.size();
   unsigned index = len - 1;
@@ -81,8 +80,10 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
 
 void        FeatureCache::cache  (const FeatureCache& c)
 {
-  for(unsigned i=0; i<c._cache.size(); i++)
-    cache(i, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+  for(unsigned i=0,j=0; i<c._cache.size(); i++,j++) {
+    while(_names[j]!=c._names[i]) j++;
+    cache(j, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+  }
 }
 
 char*  FeatureCache::serialize(int& len) const

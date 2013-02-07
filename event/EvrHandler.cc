@@ -120,8 +120,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
   sprintf(buffer,"DAQ:EVR%d:",static_cast<const Pds::DetInfo&>(info()).devId());
   char* iptr = buffer+strlen(buffer);
 
-  memset(_index, -1, sizeof(_index));
-
   switch(type.version()) {
   case 5:
     { const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
@@ -205,4 +203,4 @@ void   EvrHandler::_damaged  ()
 //  No Entry data
 unsigned     EvrHandler::nentries() const { return 0; }
 const Entry* EvrHandler::entry   (unsigned) const { return 0; }
-void         EvrHandler::reset   () {}
+void         EvrHandler::reset   () { memset(_index, -1, sizeof(_index)); }

@@ -188,9 +188,10 @@ void AnalysisFactory::configure(unsigned       id,
                                      cds, *_features[req.scalars()], p);
           _analyses.push_back(a);
 #ifdef DBUG
-          printf("Created analysis for %s [%d]\n",
+          printf("Created analysis for %s [%d] features %d\n",
                  a->output().name(),
-                 a->output().signature());
+                 a->output().signature(),
+		 req.scalars());
 #endif
         }
       }

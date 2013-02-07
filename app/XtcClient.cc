@@ -45,7 +45,7 @@
 #include "pdsdata/xtc/XtcIterator.hh"
 #include "pdsdata/xtc/Dgram.hh"
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 

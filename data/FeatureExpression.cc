@@ -3,6 +3,8 @@
 
 #include <QtCore/QRegExp>
 
+//#define DBUG
+
 using namespace Ami;
 
 Feature::Feature(FeatureCache& f, unsigned index) :
@@ -72,12 +74,16 @@ Term* FeatureExpression::evaluate(FeatureCache& features,
       unsigned index = use.toInt();
       Term* t = new Feature(features,index);
       new_expr.append(expr.mid(last,pos-last));
-      new_expr.append(QString("[%1]").arg((ulong)t,0,16));
+      new_expr.append(QString("[%1]").arg(qlonglong(t),0,16));
       pos += match.matchedLength();
       last = pos;
     }
     new_expr.append(expr.mid(last));
   }
+
+#ifdef DBUG
+  printf("FE %s : %s : %s\n",qPrintable(e),qPrintable(expr),qPrintable(new_expr));
+#endif
 
   return Expression::evaluate(new_expr);
 }

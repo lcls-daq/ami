@@ -18,6 +18,8 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QLabel>
 
+//#define SHOW_RANGE
+
 using namespace Ami::Qt;
 
 enum { PlotSum, PlotMean };
@@ -31,7 +33,9 @@ XYHistogramPlotDesc::XYHistogramPlotDesc(QWidget* parent,
 {
   QVBoxLayout* layout1 = new QVBoxLayout;
   layout1->addStretch();
+#ifdef SHOW_RANGE
   layout1->addWidget(_pixel_range = new QLabel("Pixel Range: - / -"));
+#endif
   layout1->addWidget(_desc = new DescTH1F("Pixel Values"));
   layout1->addStretch();
   setLayout(layout1);
@@ -90,16 +94,19 @@ Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const
 
 void XYHistogramPlotDesc::setup_payload(Cds& cds)
 {
+#ifdef SHOW_RANGE  
   _entry = 0;
 
   Ami::Entry* entry = cds.entry(_output);
   if (entry && entry->desc().type() == Ami::DescEntry::ScalarRange)
     _entry = static_cast<const Ami::EntryScalarRange*>(entry);
+#endif
 }
 
 void XYHistogramPlotDesc::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
+#ifdef SHOW_RANGE
   if (!isVisible())
     return;
 
@@ -125,10 +132,12 @@ void XYHistogramPlotDesc::configure(char*& p, unsigned input, unsigned& output,
 
   delete r;
   delete desc;
+#endif
 }
 
 void XYHistogramPlotDesc::update()
 {
+#ifdef SHOW_RANGE
   if (_entry) {
     const Ami::ScalarRange& range = _entry->range();
     if (range.entries()>0)
@@ -136,5 +145,6 @@ void XYHistogramPlotDesc::update()
     else
       _pixel_range->setText(QString("Range: - / -"));
   }
+#endif
 }
 
