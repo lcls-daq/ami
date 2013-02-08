@@ -35,8 +35,10 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
   EntryFactory::source(*_features[PostAnalysis]);
 
   unsigned i=0;
-  for(UList::iterator it=user.begin(); it!=user.end(); it++,i++)
+  for(UList::iterator it=user.begin(); it!=user.end(); it++,i++) {
     _user_cds[i] = 0;
+    (*it)->driver = this;
+  }
 }
 
 AnalysisFactory::~AnalysisFactory()
@@ -125,6 +127,7 @@ void AnalysisFactory::configure(unsigned       id,
       int i=0;
       for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++) {
         if (req.input() == i) {
+	  _srv.register_key(i,id);
           Cds* ucds = _user_cds[i];
           if (ucds==0) {
             _user_cds[i] = ucds = new Cds((*it)->name());
@@ -264,4 +267,15 @@ void AnalysisFactory::remove(unsigned id)
   }
   _analyses = newlist;
   pthread_mutex_unlock(&_mutex);
+}
+
+void AnalysisFactory::recreate(UserModule* user)
+{
+  int i=0;
+  for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++)
+    if (user == *it) {
+      _user_cds[i] = 0;
+      _srv.discover_key(i);
+      break;
+    }
 }

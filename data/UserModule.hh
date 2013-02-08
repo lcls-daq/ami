@@ -7,6 +7,7 @@
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/UserModuleDriver.hh"
 
 namespace Ami {
   class UserModule {
@@ -27,6 +28,10 @@ namespace Ami {
   public:
     virtual void clear (    ) = 0;
     virtual void create(Cds&) = 0;
+  protected:
+    void recreate() { driver->recreate(this); }
+  public:
+    UserModuleDriver* driver;
   };
 };
 

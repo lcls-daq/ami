@@ -86,9 +86,41 @@ void ServerManager::discover_post()
   post(reinterpret_cast<const char*>(&msg),sizeof(msg));
 }
 
+void ServerManager::register_key(unsigned key, int fd)
+{
+  int n = nfds()+1;
+  for(int i=1; i<n; i++) {
+    Fd& ifd = fds(i);
+    if (ifd.fd()==fd) {
+      if (key >= _key_servers.size())
+	_key_servers.resize(key+1);
+      FdList& l = _key_servers[key];
+      for(FdList::const_iterator it=l.begin(); it!=l.end(); it++)
+	if (&ifd == *it) return;
+      l.push_back(&ifd);
+      break;
+    }
+  }
+}
+
+void ServerManager::discover_key(unsigned key)
+{
+  if (key < _key_servers.size()) {
+    Message msg(0,Message::DiscoverReq);
+    FdList& l = _key_servers[key];
+    for(FdList::const_iterator it=l.begin(); it!=l.end(); it++) {
+      (*it)->processIo(reinterpret_cast<const char*>(&msg),sizeof(msg));
+    }
+  }
+}
+
 void ServerManager::unmanage(Fd& fd)
 {
   Server* srv = reinterpret_cast<Server*>(&fd);
+
+  for(unsigned key=0; key<_key_servers.size(); key++)
+    _key_servers[key].remove(srv);
+
   _servers.remove(srv);
 
   Poll::unmanage(fd);

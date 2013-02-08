@@ -5,6 +5,7 @@
 #include "ami/service/Poll.hh"
 
 #include <list>
+#include <vector>
 
 namespace Ami {
 
@@ -28,6 +29,9 @@ namespace Ami {
     void discover  ();
     void discover_post();
   public:
+    void register_key(unsigned, int);
+    void discover_key(unsigned);
+  public:
     void unmanage  (Fd&);
   private:   // Poll interface
     virtual int processTmo();
@@ -43,6 +47,9 @@ namespace Ami {
     Socket*            _socket;
     SvList             _servers;
     Semaphore*         _connect_sem;
+    typedef std::list<Fd*> FdList;
+    typedef std::vector< FdList > KeyList;
+    KeyList            _key_servers;
   };
 };
 

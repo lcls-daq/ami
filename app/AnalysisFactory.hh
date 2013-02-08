@@ -2,6 +2,7 @@
 #define Ami_AnalysisFactory_hh
 
 #include "ami/server/Factory.hh"
+#include "ami/data/UserModuleDriver.hh"
 #include "ami/data/Cds.hh"
 
 #include <list>
@@ -17,7 +18,8 @@ namespace Ami {
   class UserModule;
   class EventFilter;
 
-  class AnalysisFactory : public Factory {
+  class AnalysisFactory : public Factory,
+			  public UserModuleDriver {
   public:
     AnalysisFactory(std::vector<FeatureCache*>&,
 		    ServerManager&,
@@ -32,6 +34,8 @@ namespace Ami {
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void remove   (unsigned);
+  public:
+    void recreate (UserModule*);
   private:
     ServerManager& _srv;
     Cds       _cds;

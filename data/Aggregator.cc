@@ -16,6 +16,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 static const int BufferSize = 0x2000000;
@@ -56,18 +58,18 @@ Aggregator::~Aggregator()
 //
 void Aggregator::connected       () 
 {
-  //  _checkState("conn");
+  _checkState("conn");
   //
   //  Only forward a connection if it is the first, or it
   //    requires a resync of server states
   //
   _n++;
-  _state = Connected;
+  _state = Connecting;
 }
 
 void Aggregator::disconnected    () 
 {
-  //  _checkState("dcon");
+  _checkState("dcon");
   //  printf("Agg disconnect %d %p\n",_n,&_client);
   _n--;
   _client.disconnected(); 
@@ -78,7 +80,7 @@ void Aggregator::disconnected    ()
 //
 int  Aggregator::configure       (iovec* iov) 
 {
-  //  _checkState("conf");
+  _checkState("conf");
   _state = Configured;
   int n = _client.configure(iov);
   // ...
@@ -92,7 +94,7 @@ int  Aggregator::configured      ()
 
 void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 {
-  //  _checkState("dcov",id);
+  _checkState("dcov",id);
 
   if (_state != Discovering || id > _current) {
     _state = Discovering;
@@ -117,7 +119,7 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 //
 int Aggregator::read_description(Socket& socket, int len, unsigned id) 
 {
-  //  _checkState("desc",id);
+  _checkState("desc",id);
 
   int nbytes = 0;
   if (_n == 1) {
@@ -203,7 +205,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 
 int  Aggregator::read_payload    (Socket& s, int sz, unsigned id) 
 {
-  //  _checkState("payl");
+  _checkState("payl");
   int nbytes = 0;
   if (_state != Described) {
     //    printf("[%p] Agg read_payload state %s\n", this, State[_state]);
@@ -250,27 +252,33 @@ bool Aggregator::svc() const { return _client.svc(); }
 //
 void Aggregator::process         () 
 {
-  //  _checkState("proc");
+  _checkState("proc");
   if (_state==Described && _remaining==0)
     _client.process();
 }
 
 void Aggregator::tmo()
 {
-  //  _checkState("tmo");
+  _checkState("tmo");
   if (_state == Connected)    
     _client.connected();
+  else if (_state == Connecting)    
+    _state = Connected;
 }
 
 void Aggregator::_checkState(const char* s)
 {
+#ifdef DBUG
   printf("[%p] : %s : State %s : remaining %d/%d\n", this, s, State[_state], _remaining, _n);
+#endif
 }
 
 void Aggregator::_checkState(const char* s, unsigned id)
 {
+#ifdef DBUG
   printf("[%p] : %s : State %s : id %d/%d: remaining %d/%d\n", 
          this, s, State[_state], id, _current, _remaining, _n);
+#endif
 }
 
 void Aggregator::request_payload(const EntryList& request) 

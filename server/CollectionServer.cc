@@ -11,6 +11,8 @@
 
 #include <errno.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 static const int BufferSize = 32*1024;
