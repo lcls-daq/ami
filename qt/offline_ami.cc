@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
   if (! separateWindowMode) {
     printf("Starting DetectorSelect...\n");
     groupBox = new QGroupBox("Offline");
-    output = new Ami::Qt::DetectorSelect("DAQ Offline Monitoring", interface, interface, serverGroup, groupBox, true);
+    output = new Ami::Qt::DetectorSelect("PS-Mon", interface, interface, serverGroup, groupBox, true);
     output->show();
     printf("Started DetectorSelect.\n");
   } else {
