@@ -22,12 +22,13 @@ using namespace Ami;
 
 static const int BufferSize = 0x2000000;
 
+#ifdef DBUG
 static const char* State[] = { "Init", "Connected",
                                "Discovering", "Discovered", 
                                "Configured", 
                                "Describing", "Described",
                                "Processing" };
-
+#endif
 
 Aggregator::Aggregator(AbsClient& client) :
   _client          (client),

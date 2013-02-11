@@ -200,12 +200,13 @@ static void _connect(const QObject* sender, const char* signal, const QObject* r
   }
 }
 
-XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode, bool liveReadMode) :
   QWidget (0,::Qt::Window),
   _runValid(false),
   _client(client),
   _curdir(curdir),
   _testMode(testMode),
+  _liveReadMode(liveReadMode),
   _task(new Task(TaskObject("amiqt"))),
   _dirSelect(new QPushButton("Change")),
   _dirLabel(new QLabel),
@@ -545,7 +546,7 @@ void XtcFileClient::do_configure(QString runName)
   }
   setStatus("Fetched " + itoa(files.size()) + " paths for run " + runName);
 
-  _run.live_read(false); // These files are already completely written
+  _run.live_read(_liveReadMode); // These files are already completely written
   string file = qPrintable(files.first());
   _run.reset(file);
   files.pop_front();

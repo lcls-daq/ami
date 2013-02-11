@@ -34,7 +34,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine {
       Q_OBJECT
     public:
-      XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode);
+      XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode, bool liveReadMode);
       ~XtcFileClient();
       void configure();
     private slots:
@@ -75,6 +75,7 @@ namespace Ami {
       XtcClient _client;
       QString _curdir;
       bool _testMode;
+      bool _liveReadMode;
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
