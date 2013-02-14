@@ -95,6 +95,7 @@ Ami::Qt::ImageDisplay::~ImageDisplay()
 void ImageDisplay::save(char*& p) const
 {
   XML_insert( p, "ImageColorControl", "_zrange", _zrange->save(p) );
+  XML_insert( p, "ImageGridScale"   , "_units" , _units ->save(p) );
 }
 
 void ImageDisplay::load(const char*& p)
@@ -102,6 +103,8 @@ void ImageDisplay::load(const char*& p)
   XML_iterate_open(p,tag)
     if (tag.name == "_zrange")
       _zrange->load(p);
+    else if (tag.name == "_units")
+      _units ->load(p);
   XML_iterate_close(ImageDisplay,tag);
 }
 

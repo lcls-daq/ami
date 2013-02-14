@@ -3,6 +3,7 @@
 #include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisInfo.hh"
+#include "ami/qt/QtPersistent.hh"
 
 #include <QtGui/QCursor>
 #include <QtGui/QBitmap>
@@ -89,6 +90,25 @@ CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, 
 CrossHair::~CrossHair()
 {
   _frame.remove_marker(*this);
+}
+
+void CrossHair::save(char*& p) const
+{
+  XML_insert( p, "QLineEdit", "_column_edit", QtPersistent::insert(p, _column_edit->text()) );
+  XML_insert( p, "QLineEdit", "_row_edit"   , QtPersistent::insert(p, _row_edit   ->text()) );
+  XML_insert( p, "bool", "_visible"   , QtPersistent::insert(p, _visible) );
+}
+
+void CrossHair::load(const char*& p)
+{
+  XML_iterate_open(p,tag)
+    if (tag.name == "_column_edit")
+      _column_edit->setText( QtPersistent::extract_s(p) );
+    else if (tag.name == "_row_edit")
+      _row_edit   ->setText( QtPersistent::extract_s(p) );
+    else if (tag.name == "_visible")
+      _visible = QtPersistent::extract_b(p);
+  XML_iterate_close(CrossHair,tag);
 }
 
 double CrossHair::column() const { return _column_edit->value(); }

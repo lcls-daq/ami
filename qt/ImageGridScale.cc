@@ -62,10 +62,17 @@ ImageGridScale::~ImageGridScale()
 
 void ImageGridScale::save(char*& p) const
 {
+  for(std::list<CrossHair*>::const_iterator it=_cross_hairs.begin(); it!=_cross_hairs.end(); it++)
+    XML_insert( p, "CrossHair", "_cross_hairs", (*it)->save(p) );
 }
 
 void ImageGridScale::load(const char*& p) 
 {
+  std::list<CrossHair*>::iterator iter=_cross_hairs.begin();
+  XML_iterate_open(p,tag)
+    if (tag.name == "_cross_hairs" && iter!=_cross_hairs.end())
+      (*(iter++))->load(p);
+  XML_iterate_close(ImageGridScale,tag);
 }
 
 void ImageGridScale::update()

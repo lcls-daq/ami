@@ -23,6 +23,9 @@ namespace Ami {
       CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, bool grab);
       ~CrossHair();
     public:
+      void save(char*&) const;
+      void load(const char*&);
+    public:
       double column() const;
       double row   () const;
       void set_scale(double,double);
