@@ -1,7 +1,7 @@
 #ifndef AmiQt_ImageGridScale_hh
 #define AmiQt_ImageGridScale_hh
 
-#include <QtGui/QWidget>
+#include <QtGui/QGroupBox>
 
 class QGridLayout;
 class QButtonGroup;
@@ -17,7 +17,7 @@ namespace Ami {
     class CrossHair;
     //    class CrossHairDelta;
 
-    class ImageGridScale : public QWidget {
+    class ImageGridScale : public QGroupBox {
       Q_OBJECT
     public:
       ImageGridScale(ImageFrame&, bool grab);
@@ -32,6 +32,8 @@ namespace Ami {
     public slots:
       void phy_scale(bool);
       virtual void setVisible(bool);
+      void save_list();
+      void load_list();
     private:
       ImageFrame& _frame;
       QGridLayout* _clayout;

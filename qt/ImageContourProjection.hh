@@ -42,6 +42,7 @@ namespace Ami {
       void use_xaxis(bool);
       void set_channel(int); // set the source
       void plot        ();   // configure the plot
+      void update_range();
       void configure_plot();
       void remove_plot (QObject*);
       virtual void setVisible(bool);

@@ -17,6 +17,7 @@ namespace Ami {
       static FILE*   saveDataFile(QWidget*);
       static FILE*   saveReferenceFile(QWidget*,const QString&);      
       static QString loadReferenceFile(QWidget*,const QString&);
+      static void    saveAmiFile(QWidget*, const char*, int);
     };
   };
 };

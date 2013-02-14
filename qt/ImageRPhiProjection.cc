@@ -386,6 +386,8 @@ void ImageRPhiProjection::update_range()
                                _annulus->r_outer(),
                                _annulus->phi0(),
                                _annulus->phi1());
+
+  _frame.replot();
 }
 
 void ImageRPhiProjection::remove_cursor_post(CursorPost* post)

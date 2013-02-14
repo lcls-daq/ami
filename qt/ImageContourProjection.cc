@@ -120,6 +120,7 @@ ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_rectangle, SIGNAL(done())   ,      this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
@@ -179,6 +180,11 @@ void ImageContourProjection::save_plots(const QString& p) const
   int i=1;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
+}
+
+void ImageContourProjection::update_range()
+{
+  _frame.replot();
 }
 
 void ImageContourProjection::setVisible(bool v)

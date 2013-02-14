@@ -44,6 +44,7 @@ namespace Ami {
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
+      void update_range  ();
       void remove_plot   (QObject*);
       virtual void setVisible(bool);
     signals:

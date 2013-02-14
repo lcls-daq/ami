@@ -127,6 +127,24 @@ namespace Ami {
 	for(std::list<ImageDisplay*>::iterator it = _images.begin(); it!=_images.end(); it++)
 	  (*it)->update(); 
       }
+      void save(char*& p) const
+      {
+	for(std::list<QtBasePlot*>::const_iterator it = _plots.begin(); it!=_plots.end(); it++)
+	  XML_insert(p, "QtBasePlot", "_plots", (*it)->save(p));
+	for(std::list<ImageDisplay*>::const_iterator it = _images.begin(); it!=_images.end(); it++)
+	  XML_insert(p, "ImageDisplay", "_images", (*it)->save(p));
+      }
+      void load(const char*& p) 
+      {
+	std::list<QtBasePlot*  >::iterator it1 = _plots.begin();
+	std::list<ImageDisplay*>::iterator it2 = _images.begin();
+	XML_iterate_open(p,tag)
+	  if (tag.element == "QtBasePlot")
+	    (*it1++)->load(p);
+	  else if (tag.element == "ImageDisplay")
+	    (*it2++)->load(p);
+	XML_iterate_close(PagePlot,tag);
+      }
     private:
       QString                  _title;
       QGridLayout*             _layout;
@@ -181,15 +199,27 @@ void SummaryClient::save(char*& p) const
 {
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
   XML_insert(p, "Control", "_control", _control->save(p) );
+#if 0
+  for(int i=0; i<_tab->count(); i++) {
+    XML_insert( p, "PagePlot", "_tab",
+		static_cast<PagePlot*>(_tab->widget(i))->save(p) );
+  }
+#endif
 }
 
 void SummaryClient::load(const char*& p)
 {
+  int i=0;
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
       QtPWidget::load(p);
     else if (tag.name == "_control")
       _control->load(p);
+#if 0
+    else if (tag.element == "PagePlot") {
+      static_cast<PagePlot*>(_tab->widget(i++))->load(p);
+    }
+#endif
   XML_iterate_close(SummaryClient,tag);
 }
 
@@ -254,6 +284,15 @@ void SummaryClient::_read_description(int size)
 {
   printf("%s Described si\n",qPrintable(_title));
 
+#if 0
+  char* cache = new char[32*1024];
+  { char* cache_p = cache;
+    save(cache_p);
+    sprintf(cache_p,"</SummaryClient>");
+    printf("Saved %d bytes\n", cache_p-cache); 
+    printf("%s\n",cache); }
+#endif
+    
   while(_tab->count()) {
     QWidget* w = _tab->widget(0);
     _tab->removeTab(0);
@@ -377,6 +416,12 @@ void SummaryClient::_read_description(int size)
     (*it)->layout();
     _tab->addTab(*it, (*it)->title());
   }
+
+#if 0
+  { const char* cache_p = cache;
+    load(cache_p); 
+    printf("Loaded %d bytes\n",cache_p-cache); }
+#endif
 
   _status->set_state(Status::Described);
 

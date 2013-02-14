@@ -208,24 +208,7 @@ void DetectorSelect::save_setup ()
      len, MaxConfigSize);
   }
 
-  char time_buffer[32];
-  time_t seq_tm = time(NULL);
-  strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
-
-  QString def = QString("%1/%2.ami").arg(Path::base()).arg(time_buffer);
-  QString fname =     
-    QFileDialog::getSaveFileName(this,"Save Setup to File (.ami)",
-                                 def,"*.ami");
-  FILE* o = fopen(qPrintable(fname),"w");
-  if (o) {
-    fwrite(buffer,len,1,o);
-    fclose(o);
-    printf("Saved %d bytes to %s\n",len,qPrintable(fname));
-  }
-  else {
-    QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
-    QMessageBox::critical(this,"Save Error",msg);
-  }
+  Path::saveAmiFile(this, buffer, len);
 
   delete[] buffer;
 }

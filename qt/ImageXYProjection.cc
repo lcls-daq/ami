@@ -423,6 +423,8 @@ void ImageXYProjection::update_range()
 #if 0
   emit changed();
 #endif
+
+  _frame.replot();
 }
 
 void ImageXYProjection::remove_cursor_post(CursorPost* post)

@@ -87,6 +87,7 @@ BlobFinder::BlobFinder(QtPWidget* parent,
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
@@ -146,6 +147,11 @@ void BlobFinder::load(const char*& p)
 
 void BlobFinder::save_plots(const QString& p) const
 {
+}
+
+void BlobFinder::update_range()
+{
+  _frame.replot();
 }
 
 void BlobFinder::setVisible(bool v)

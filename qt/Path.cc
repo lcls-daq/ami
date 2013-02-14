@@ -4,6 +4,7 @@
 #include <QtGui/QMessageBox>
 
 #include <time.h>
+#include <errno.h>
 
 using namespace Ami::Qt;
 
@@ -72,6 +73,28 @@ FILE* Path::saveReferenceFile(QWidget* parent,const QString& base)
     QMessageBox::critical(parent, "Save Reference", QString("Error opening %s for writing.").arg(file));
 
   return f; 
+}
+
+void Path::saveAmiFile(QWidget* parent, const char* p, int len)
+{
+  char time_buffer[32];
+  time_t seq_tm = time(NULL);
+  strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
+
+  QString def = QString("%1/%2.ami").arg(Path::base()).arg(time_buffer);
+  QString fname =     
+    QFileDialog::getSaveFileName(parent,"Save Setup to File (.ami)",
+                                 def,"*.ami");
+  FILE* o = fopen(qPrintable(fname),"w");
+  if (o) {
+    fwrite(p,len,1,o);
+    fclose(o);
+    printf("Saved %d bytes to %s\n",len,qPrintable(fname));
+  }
+  else {
+    QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
+    QMessageBox::critical(parent,"Save Error",msg);
+  }
 }
 
 QString Path::loadReferenceFile(QWidget* parent,
