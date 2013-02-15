@@ -91,7 +91,7 @@ void ServerManager::register_key(unsigned key, int fd)
   int n = nfds()+1;
   for(int i=1; i<n; i++) {
     Fd& ifd = fds(i);
-    if (ifd.fd()==fd) {
+    if ((&ifd) && ifd.fd()==fd) {
       if (key >= _key_servers.size())
 	_key_servers.resize(key+1);
       FdList& l = _key_servers[key];
