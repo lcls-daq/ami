@@ -1,27 +1,41 @@
 #include "FccdHandler.hh"
 
+#include "ami/event/FccdCalib.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
+#include "pdsdata/fccd/FccdConfigV1.hh"
+#include "pdsdata/fccd/FccdConfigV2.hh"
 #include "pdsdata/camera/FrameV1.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 
+static const unsigned Rows   = Pds::FCCD::FccdConfigV2::Trimmed_Row_Pixels;
+static const unsigned Cols   = Pds::FCCD::FccdConfigV2::Trimmed_Column_Pixels;
+static const unsigned Offset = 0x10000;
+static unsigned _zero_pedestals[Rows*Cols];
+
+
 FccdHandler::FccdHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_FccdConfig),
-  _entry(0)
+  _entry(0),
+  _pedestals(new unsigned[Rows*Cols])
 {
 }
 
 FccdHandler::FccdHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
   EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_FccdConfig),
-  _entry(entry ? new EntryImage(entry->desc()) : 0)
+  _entry(entry ? new EntryImage(entry->desc()) : 0),
+  _pedestals(new unsigned[Rows*Cols])
 {
 }
 
 FccdHandler::~FccdHandler()
 {
+  delete[] _pedestals;
 }
 
 unsigned FccdHandler::nentries() const { return _entry ? 1 : 0; }
@@ -30,25 +44,84 @@ const Entry* FccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
 void FccdHandler::reset() { _entry = 0; }
 
-void FccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void FccdHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::FCCD::FccdConfigV2& c = *reinterpret_cast<const Pds::FCCD::FccdConfigV2*>(payload);
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  DescImage desc(det, (unsigned)0, ChannelID::name(det),
-                  c.trimmedWidth(),
-                  c.trimmedHeight()); // FCCD image is 480 x 480 after removing dark pixels
-  _entry = new EntryImage(desc);
+  //
+  //  Load pedestals
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+
+  sprintf(oname1,"ped.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/fccdcalib/ped.%08x.dat",info().phy());
+  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+
+  if (f) {
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    unsigned* ped = _pedestals;
+    for(unsigned i=0; i<Rows; i++) {
+      getline(&linep, &sz, f);
+      *ped++ = Offset - int(strtod(linep,&pEnd));
+      for(unsigned j=1; j<Cols; j++)
+	*ped++ = Offset - int(strtod(pEnd,&pEnd));
+    }
+
+    free(linep);
+    fclose(f);
+  }
+  else {
+    unsigned* ped = _pedestals;
+    for(unsigned i=0; i<Rows; i++)
+      for(unsigned j=0; j<Cols; j++)
+	*ped++ = Offset;
+  }
+
+  switch(type.version()) {
+  case 1: {
+    const Pds::FCCD::FccdConfigV1& c = *reinterpret_cast<const Pds::FCCD::FccdConfigV1*>(payload);
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+    DescImage desc(det, (unsigned)0, ChannelID::name(det),
+		   c.trimmedWidth(),
+		   c.trimmedHeight()); // FCCD image is 480 x 480 after removing dark pixels
+    _entry = new EntryImage(desc);
+  } break;
+  case 2: {
+    const Pds::FCCD::FccdConfigV2& c = *reinterpret_cast<const Pds::FCCD::FccdConfigV2*>(payload);
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+    DescImage desc(det, (unsigned)0, ChannelID::name(det),
+		   c.trimmedWidth(),
+		   c.trimmedHeight()); // FCCD image is 480 x 480 after removing dark pixels
+    _entry = new EntryImage(desc);
+  } break;
+  default:
+    break;
+  }
+
 }
 
-void FccdHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void FccdHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
 
 void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (!_entry) return;
 
-  memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
-  const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data());
+  //  memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
+  const uint16_t* d  = reinterpret_cast<const uint16_t*>(f.data());
+
+  static unsigned _options = -1;
+  if (_entry->desc().options() != _options) {
+    printf("FccdHandler options %x -> %x\n",_options,_entry->desc().options());
+    _options = _entry->desc().options();
+  }
+	   
+  bool lPeds = (_entry->desc().options()&FccdCalib::option_no_pedestal()) == 0;
+  const unsigned* ped = lPeds ? _pedestals : _zero_pedestals;
 
   //  Height:
   //    500 rows   = 6 + 240 * 7 + 240 + 7
@@ -74,7 +147,8 @@ void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
     for (j = 0; j < 48; j++) {
       // 10 image pixels per output
       for (k = 0; k < 10; k++) {
-        _entry->addcontent(*d, (j*10)+k, i-6);  // 6 rows skipped above
+        _entry->content(*ped+*d, (j*10)+k, i-6);  // 6 rows skipped above
+        ped++;
         d++;
       }
       // 2 info pixels per output (skipped)
@@ -92,15 +166,17 @@ void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
       d += 2;
       // 10 image pixels per output
       for (k = 0; k < 10; k++) {
-        _entry->addcontent(*d, (j*10)+k, i-13); // 13 rows skipped above
+        _entry->content(*ped+*d, (j*10)+k, i-13); // 13 rows skipped above
+        ped++;
         d++;
       }
     }
   }
 
-  _entry->info(f.offset(),EntryImage::Pedestal);
+  _entry->info(lPeds ? Offset: 0,EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
 
 void FccdHandler::_damaged() { _entry->invalid(); }
+

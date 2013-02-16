@@ -1,8 +1,9 @@
 # List libraries (if any) for this package
-libnames := event
+libnames := event calib
 
 # List source files for each library
-libsrcs_event := $(wildcard *.cc)
+libsrcs_calib := Calib.cc FccdCalib.cc
+libsrcs_event := $(filter-out $(libsrcs_calib), $(wildcard *.cc))
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

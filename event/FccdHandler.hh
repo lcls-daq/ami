@@ -5,6 +5,8 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/fccd/FccdConfigV2.hh"
 
+#include <string>
+
 namespace Ami {
   class EntryImage;
 
@@ -16,14 +18,17 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
-  private:
-    void _calibrate(const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t);
+  protected:
+    void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
+    void _calibrate(const void* payload, const Pds::ClockTime& t) {}
+    void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void _configure(const void* payload, const Pds::ClockTime& t) {}
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
     FccdHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
+    unsigned*   _pedestals;
   };
 };
 

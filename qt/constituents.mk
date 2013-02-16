@@ -30,7 +30,7 @@ qt_libs += qwt/qwt
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtlibs_online_ami := pdsdata/xtcdata pdsdata/acqdata
-tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
 
 datalibs := pdsdata/xtcdata pdsdata/opal1kdata pdsdata/quartzdata pdsdata/pulnixdata pdsdata/camdata pdsdata/pnccddata pdsdata/evrdata pdsdata/acqdata pdsdata/controldata pdsdata/princetondata pdsdata/ipimbdata pdsdata/encoderdata pdsdata/fccddata pdsdata/lusidata pdsdata/cspaddata pdsdata/xampsdata pdsdata/fexampdata pdsdata/gsc16aidata pdsdata/epics pdsdata/usdusbdata
@@ -43,19 +43,19 @@ datalibs += pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata pdsdata/or
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
 tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata
-tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/event ami/app ami/amiqt
+tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/calib ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 
 tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg
-tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_blviewer += $(qt_libs)
 
 tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg
-tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_bldipimbclient += $(qt_libs)
 
 tgtlibs_qttest := $(datalibs)
-tgtlibs_qttest += ami/service ami/data ami/server ami/client ami/amiqt
+tgtlibs_qttest += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_qttest += $(qt_libs)
 
 # List special include directories (if any) needed by exe_a as
@@ -179,6 +179,7 @@ libsrcs_amiqt += CrossHairDelta.cc CrossHairDelta_moc.cc
 libsrcs_amiqt += ImageGridScale.cc ImageGridScale_moc.cc
 libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += CspadClient.cc CspadClient_moc.cc
+libsrcs_amiqt += FccdClient.cc FccdClient_moc.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc EnvTable.cc EnvTable_moc.cc
 libsrcs_amiqt += EnvPost.cc EnvOverlay.cc
 libsrcs_amiqt += PostAnalysis.cc
