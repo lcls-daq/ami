@@ -23,6 +23,11 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
   addWidget(_piBox = new QCheckBox("Post\nIntegral"));
+
+  connect(_spBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_piBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 CspadClient::~CspadClient() {}
