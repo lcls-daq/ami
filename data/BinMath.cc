@@ -43,8 +43,8 @@ static QChar _moment1  (0x0027);  // '
 static QChar _moment2  (0x0022);  // "
 static QChar _contrast (0x0021);  // !
 static QChar _range    (0x0023);  // #
-static QChar _xmoment  (0x00AA);  // feminine ordinal
-static QChar _ymoment  (0x00BA);  // masculine ordinal
+static QChar _xmoment  (0x0024);  // $
+static QChar _ymoment  (0x003F);  // &
 const QChar& BinMath::integrate() { return _integrate; }
 const QChar& BinMath::moment1  () { return _moment1  ; }
 const QChar& BinMath::moment2  () { return _moment2  ; }
