@@ -14,7 +14,8 @@
 using namespace Ami::Qt;
 
 FccdClient::FccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
-  ImageClient(w, i, u)
+  ImageClient(w, i, u),
+  _reloadPedestals(false)
 {
   { QPushButton* pedB = new QPushButton("Write Pedestals");
     addWidget(pedB);
@@ -52,6 +53,10 @@ void FccdClient::_configure(char*& p,
 {
   unsigned o = 0;
   if (_npBox->isChecked()) o |= FccdCalib::option_no_pedestal();
+  if (_reloadPedestals) {
+    o |= FccdCalib::option_reload_pedestal();
+    _reloadPedestals = false;
+  }
   ConfigureRequest& req = *new(p) ConfigureRequest(input,o);
   p += req.size();
 
@@ -76,13 +81,11 @@ void FccdClient::write_pedestals()
   box.setText(msg);
   box.addButton(QMessageBox::Cancel);
 
-  QPushButton* prodB = new QPushButton("Prod");
-  QPushButton* testB = new QPushButton("Test");
+  QPushButton* writeB = new QPushButton("Write");
 
-  box.addButton(testB,QMessageBox::AcceptRole);
+  bool lProd = QString(getenv("HOME")).endsWith("opr");
 
-  if (QString(getenv("HOME")).endsWith("opr"))
-    box.addButton(prodB,QMessageBox::AcceptRole);
+  box.addButton(writeB,QMessageBox::AcceptRole);
 
   if (box.exec()==QMessageBox::Cancel)
     ;
@@ -90,13 +93,18 @@ void FccdClient::write_pedestals()
 
     _control->pause();
 
-    QString msg(FccdCalib::save_pedestals(_cds.entry(signature),
-					  box.clickedButton()==prodB).c_str());
-
-    QMessageBox::warning(this, 
-                         "Write Pedestals", 
-                         msg,
-                         QMessageBox::Ok);
+    std::string smsg(FccdCalib::save_pedestals(_cds.entry(signature),lProd));
+    if (smsg.empty()) {
+      _reloadPedestals = true;
+      emit changed();
+    }
+    else {
+      QString msg(smsg.c_str());
+      QMessageBox::warning(this, 
+                           "Write Pedestals", 
+                           msg,
+                           QMessageBox::Ok);
+    }
 
     _control->resume();
   }

@@ -12,8 +12,11 @@ using namespace Ami;
 static const unsigned Rows   = Pds::FCCD::FccdConfigV2::Trimmed_Row_Pixels;
 static const unsigned Cols   = Pds::FCCD::FccdConfigV2::Trimmed_Column_Pixels;
 static const unsigned _option_no_pedestal = 1;
+static const unsigned _option_reload_pedestal = 2;
 
 unsigned FccdCalib::option_no_pedestal() { return _option_no_pedestal; }
+
+unsigned FccdCalib::option_reload_pedestal() { return _option_reload_pedestal; }
 
 std::string FccdCalib::save_pedestals(Entry* entry,
 				      bool   prod)
@@ -93,6 +96,6 @@ std::string FccdCalib::save_pedestals(Entry* entry,
     }
     fclose(fn);
     delete[] pedestals;
-    return std::string("Success.  Reconfigure to use new pedestals.");
+    return std::string();
   }
 }

@@ -46,40 +46,7 @@ void FccdHandler::reset() { _entry = 0; }
 
 void FccdHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
-  //
-  //  Load pedestals
-  //
-  const int NameSize=128;
-  char oname1[NameSize];
-  char oname2[NameSize];
-
-  sprintf(oname1,"ped.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/fccdcalib/ped.%08x.dat",info().phy());
-  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-
-  if (f) {
-    size_t sz = 8 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
-
-    unsigned* ped = _pedestals;
-    for(unsigned i=0; i<Rows; i++) {
-      getline(&linep, &sz, f);
-      *ped++ = Offset - int(strtod(linep,&pEnd));
-      for(unsigned j=1; j<Cols; j++)
-	*ped++ = Offset - int(strtod(pEnd,&pEnd));
-    }
-
-    free(linep);
-    fclose(f);
-  }
-  else {
-    unsigned* ped = _pedestals;
-    for(unsigned i=0; i<Rows; i++)
-      for(unsigned j=0; j<Cols; j++)
-	*ped++ = Offset;
-  }
+  _load_pedestals();
 
   switch(type.version()) {
   case 1: {
@@ -120,6 +87,11 @@ void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
     _options = _entry->desc().options();
   }
 	   
+  if (_entry->desc().options() & FccdCalib::option_reload_pedestal()) {
+    _load_pedestals();
+    _entry->desc().options( _entry->desc().options()&~FccdCalib::option_reload_pedestal() );
+  }
+
   bool lPeds = (_entry->desc().options()&FccdCalib::option_no_pedestal()) == 0;
   const unsigned* ped = lPeds ? _pedestals : _zero_pedestals;
 
@@ -180,3 +152,40 @@ void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
 void FccdHandler::_damaged() { _entry->invalid(); }
 
+void FccdHandler::_load_pedestals() 
+{
+  //
+  //  Load pedestals
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+
+  sprintf(oname1,"ped.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/fccdcalib/ped.%08x.dat",info().phy());
+  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+
+  if (f) {
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    unsigned* ped = _pedestals;
+    for(unsigned i=0; i<Rows; i++) {
+      getline(&linep, &sz, f);
+      *ped++ = Offset - int(strtod(linep,&pEnd));
+      for(unsigned j=1; j<Cols; j++)
+	*ped++ = Offset - int(strtod(pEnd,&pEnd));
+    }
+
+    free(linep);
+    fclose(f);
+  }
+  else {
+    unsigned* ped = _pedestals;
+    for(unsigned i=0; i<Rows; i++)
+      for(unsigned j=0; j<Cols; j++)
+	*ped++ = Offset;
+  }
+}

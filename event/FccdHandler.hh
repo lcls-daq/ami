@@ -26,6 +26,8 @@ namespace Ami {
     void _event    (const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
+    void _load_pedestals();
+  private:
     FccdHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
     unsigned*   _pedestals;
