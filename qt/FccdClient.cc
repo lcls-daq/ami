@@ -93,7 +93,9 @@ void FccdClient::write_pedestals()
 
     _control->pause();
 
-    std::string smsg(FccdCalib::save_pedestals(_cds.entry(signature),lProd));
+    std::string smsg(FccdCalib::save_pedestals(_cds.entry(signature),
+                                               !_npBox->isChecked(),
+                                               lProd));
     if (smsg.empty()) {
       _reloadPedestals = true;
       emit changed();

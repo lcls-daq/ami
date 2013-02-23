@@ -120,7 +120,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()), this, SLOT(update_configuration()));
 
-#if 0
+#if 1
+  //  Is this dangerous?
   if (_set!=Ami::PostAnalysis)
     _scalar_plot->post(this, SLOT(add_post()));
 #endif

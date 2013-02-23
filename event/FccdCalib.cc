@@ -19,6 +19,7 @@ unsigned FccdCalib::option_no_pedestal() { return _option_no_pedestal; }
 unsigned FccdCalib::option_reload_pedestal() { return _option_reload_pedestal; }
 
 std::string FccdCalib::save_pedestals(Entry* entry,
+                                      bool   lsubtract,
 				      bool   prod)
 {
   const EntryImage& image = *static_cast<const EntryImage*>(entry);
@@ -33,7 +34,7 @@ std::string FccdCalib::save_pedestals(Entry* entry,
 	*p++ = (double(image.content(j,i))-o)/n;
   }
 
-  if ((desc.options()&_option_no_pedestal)==0) {
+  if (lsubtract) {
     //
     //  Load pedestals
     //
@@ -94,6 +95,7 @@ std::string FccdCalib::save_pedestals(Entry* entry,
 	fprintf(fn,"%f ",*p++);
       fprintf(fn,"\n");
     }
+    fsync(fileno(fn));
     fclose(fn);
     delete[] pedestals;
     return std::string();
