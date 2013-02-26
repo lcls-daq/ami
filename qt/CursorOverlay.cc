@@ -87,6 +87,8 @@ void CursorOverlay::load(const char*& p)
   _output_signature=0;
 }
 
+void CursorOverlay::dump(FILE* f) const { _plot->dump(f); }
+
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
 
@@ -181,6 +183,8 @@ void CursorOverlay::configure(char*& p, unsigned input, unsigned& output,
     new_expr.replace(QString("]%1[").arg(BinMath::moment1  ()),QString(BinMath::moment1  ()));
     new_expr.replace(QString("]%1[").arg(BinMath::moment2  ()),QString(BinMath::moment2  ()));
     new_expr.replace(QString("]%1[").arg(BinMath::range    ()),QString(BinMath::range    ()));
+    new_expr.replace(QString("]%1[").arg(BinMath::mean     ()),QString(BinMath::mean     ()));
+    new_expr.replace(QString("]%1[").arg(BinMath::variance ()),QString(BinMath::variance ()));
   }
   QString end_expr;
   { int last=0, next=0, pos=0;
@@ -247,3 +251,5 @@ void CursorOverlay::_attach()
   _plot->attach(_frame->_frame);
   _frame->set_style();
 }
+
+const QtBase* CursorOverlay::base() const { return _plot; }

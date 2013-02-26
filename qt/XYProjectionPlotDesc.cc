@@ -82,13 +82,13 @@ Ami::XYProjection* XYProjectionPlotDesc::desc(const char* title) const
 
   if (_axis->checkedId()==0) { // X
     if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(title,
+      Ami::DescTH1F desc(Ami::DescTH1F::Inclusive, title,
 			 "pixel", "sum",
 			 _rectangle.nxbins(), _rectangle.xlo(), _rectangle.xhi());
       proj = new Ami::XYProjection(desc, Ami::XYProjection::X, _rectangle.ylo(), _rectangle.yhi());
     }
     else {
-      Ami::DescProf desc(title,
+      Ami::DescProf desc(Ami::DescProf::Inclusive, title,
 			 "pixel", "mean",
 			 _rectangle.nxbins(), _rectangle.xlo(), _rectangle.xhi(), "");
       proj = new Ami::XYProjection(desc, Ami::XYProjection::X, _rectangle.ylo(), _rectangle.yhi());
@@ -96,13 +96,13 @@ Ami::XYProjection* XYProjectionPlotDesc::desc(const char* title) const
   }
   else { // Y
     if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(title,
+      Ami::DescTH1F desc(Ami::DescTH1F::Inclusive, title,
 			 "pixel", "sum",
 			 _rectangle.nybins(),  _rectangle.ylo(), _rectangle.yhi());
       proj = new Ami::XYProjection(desc, Ami::XYProjection::Y, _rectangle.xlo(), _rectangle.xhi());
     }
     else {
-      Ami::DescProf desc(title,
+      Ami::DescProf desc(Ami::DescProf::Inclusive, title,
 			 "pixel", "mean",
 			 _rectangle.nybins(), _rectangle.ylo(), _rectangle.yhi(), "");
       proj = new Ami::XYProjection(desc, Ami::XYProjection::Y, _rectangle.xlo(), _rectangle.xhi());

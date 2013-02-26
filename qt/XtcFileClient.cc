@@ -451,7 +451,8 @@ void XtcFileClient::insertTransition(TransitionId::Value transition)
 void XtcFileClient::routine()
 {
   emit _setEnabled(_stopButton, true);
-  emit _setEnabled(_runButton, false);
+  emit _setEnabled(_runButton,  false);
+  emit _setEnabled(_runCombo,   false);
   _running = true;
   _stopped = false;
 
@@ -463,7 +464,8 @@ void XtcFileClient::routine()
   _stopped = false;
   _running = false;
   emit _setEnabled(_stopButton, false);
-  emit _setEnabled(_runButton, true);
+  emit _setEnabled(_runButton,  true);
+  emit _setEnabled(_runCombo,   true);
 }
 
 void XtcFileClient::configure_run()

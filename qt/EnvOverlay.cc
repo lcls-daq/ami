@@ -108,9 +108,9 @@ void EnvOverlay::save(char*& p) const
 }
 
 
-void EnvOverlay::load(const char*& p)
-{
-}
+void EnvOverlay::load(const char*& p) {}
+
+void EnvOverlay::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
@@ -240,3 +240,5 @@ void EnvOverlay::_attach()
   _plot->attach(_frame->_frame);
   _frame->set_style();
 }
+
+const QtBase* EnvOverlay::base() const { return _plot; }

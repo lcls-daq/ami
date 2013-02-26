@@ -25,6 +25,18 @@ namespace Ami {
 	     float xup,
 	     bool normalize=true);
 
+    //  Special constructor for centering outer bins
+    //    on xlow,xup.
+    enum InitOpt { Inclusive };
+    DescTH1F(InitOpt,
+             const char* name, 
+	     const char* xtitle, 
+	     const char* ytitle, 
+	     unsigned nbins, 
+	     float xlow, 
+	     float xup,
+	     bool normalize=true);
+
     void params(unsigned nbins, float xlow, float xup);
     void clear();
 

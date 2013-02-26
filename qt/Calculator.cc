@@ -295,11 +295,16 @@ void Calculator::varvarClicked()
 {
   QString text = _display->text();
 
+  if (lengthAtEnd(_variables,text)==0)
+    return;
+
+#if 0
   if (text.isEmpty() ||
       lengthAtEnd(_varvarops,text) ||
       lengthAtEnd(_varconops,text) ||
       numberAtEnd(text))
     return;
+#endif
 
   //  CalculatorButton* clickedButton = qobject_cast<CalculatorButton* >(sender());
   QToolButton* clickedButton = qobject_cast<QToolButton* >(sender());

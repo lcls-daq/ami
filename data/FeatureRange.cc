@@ -41,6 +41,11 @@ bool  FeatureRange::accept() const
     v = _cache->cache(_index,&damaged);
   else
     damaged = true;
+
+#if 0
+  printf("FeatureRange::accept %f<%s[%f]<%f %c\n",
+         _lo,_feature,v,_hi,(v>=_lo && v<=_hi) ? 't':'f');
+#endif
   return !damaged && v>=_lo && v<=_hi;
 }
 

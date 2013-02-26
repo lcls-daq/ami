@@ -31,6 +31,7 @@ namespace Ami {
       QComboBox*      _functions;
       ScalarPlotDesc* _plot_desc;
       QLineEdit*      _expr_edit;
+      QString         _expr;
     };
   };
 };

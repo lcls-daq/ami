@@ -7,6 +7,7 @@
 #include "ami/qt/RunMaster.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/QtOverlay.hh"
+#include "ami/qt/QtBase.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -86,6 +87,7 @@ static QStringList*         _plot_names[] = { &_scalar_plots,  // Scalar [Chart]
                                               &_no_plots,      // ScalarRange
                                               &_no_plots };    // ScalarDRange
 static QtPlotSelector*      _selector=0;
+static QColor ref_color( 64,  64,  64);
 
 QtPlot::QtPlot(QWidget* parent,
 	       const QString&   name) :
@@ -96,7 +98,8 @@ QtPlot::QtPlot(QWidget* parent,
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
-  _grid    (new QwtPlotGrid)
+  _grid    (new QwtPlotGrid),
+  _ref     (0)
 {
   PWidgetManager::add(this, _name);
 
@@ -119,7 +122,8 @@ QtPlot::QtPlot(QWidget* parent) :
   _counts  (new QLabel("Np 0")),
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
-  _grid    (new QwtPlotGrid)
+  _grid    (new QwtPlotGrid),
+  _ref     (0)
 {
   _grid->setMajPen(QPen(QColor(0xa0a0a0)));
   _grid->setMinPen(QPen(QColor(0xc0c0c0)));
@@ -137,6 +141,8 @@ QtPlot::~QtPlot()
     QtOverlay* o = *it;
     delete o;
   }
+
+  if (_ref) delete _ref;
 }
 
 void QtPlot::_layout()
@@ -158,6 +164,14 @@ void QtPlot::_layout()
       annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
       annotate->addAction("Set Plot Style",        this, SLOT(query_style()));
       menu_bar->addMenu(annotate); }
+    { QMenu* m = new QMenu("Reference");
+      m->addAction("Set" , this, SLOT(set_reference()));
+      //      m->addAction("Save", this, SLOT(save_reference()));
+      //      m->addAction("Load", this, SLOT(load_reference()));
+      m->addAction(_show_ref = new QAction("Show", m));
+      _show_ref->setEnabled(false);
+      connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
+      menu_bar->addMenu(m); }
     l->addWidget(menu_bar);
     l->addStretch();
     l->addWidget(_runnum); 
@@ -243,6 +257,9 @@ void QtPlot::save_data()
   FILE* f = Path::saveDataFile(this);
   if (f) {
     dump(f);
+    for(std::list<QtOverlay*>::iterator it=_ovls.begin();
+        it != _ovls.end(); it++)
+      (*it)->dump(f);
     fclose(f);
   }
 }
@@ -414,4 +431,81 @@ void QtPlot::setPlotType(Ami::DescEntry::Type t)
   _plots         .push_back(this);
 
   _style.setPlotType(t);
+}
+
+void QtPlot::set_reference()
+{
+  QStringList titles;
+  QList<QwtPlotCurve*> curves;
+
+  const QwtPlotItemList& list = _frame->itemList();
+  for(int i=0; i<list.size(); i++) {
+    QwtPlotCurve* c = dynamic_cast<QwtPlotCurve*>(list[i]);
+    if (c) {
+      titles << c->title().text();
+      curves << c;
+    }
+  }
+
+  int index = 0;
+  if (titles.size()>1) {
+    bool ok;
+    QString text = QInputDialog::getItem(this, tr("Select Reference"), tr("Plot Title:"), 
+                                         titles, 0, false, &ok);
+    if (!ok) return;
+    index = titles.indexOf(text);
+  }
+
+  QwtPlotCurve* c = curves[index];
+  QwtPlotCurve* curve = new QwtPlotCurve( c->title().text()+"(Ref)");
+  curve->setStyle (c->style());
+  QPen pen(c->pen());
+  pen.setColor(ref_color);
+  curve->setPen   (pen);
+  { QwtSymbol sym(c->symbol());
+    sym.setPen(pen);
+    QBrush brush(c->brush());
+    brush.setColor(ref_color);
+    sym.setBrush(brush);
+    curve->setSymbol(sym); }
+  curve->setCurveAttribute(QwtPlotCurve::Inverted,
+                           c->testCurveAttribute(QwtPlotCurve::Inverted));
+
+  //    curve->setData  (c->data());
+  const int sz = c->dataSize();
+  double* x = new double[sz];
+  double* y = new double[sz];
+  for(int i=0; i<sz; i++) {
+    x[i] = c->x(i);
+    y[i] = c->y(i);
+  }
+  curve->setData(x,y,sz);
+  delete[] x;
+  delete[] y;
+
+  if (_ref) delete _ref;
+  _ref = curve;
+  _ref->attach(_frame);
+  _show_ref->setEnabled(true);
+  _show_ref->setText("Hide");
+}
+
+void QtPlot::save_reference()
+{
+}
+
+void QtPlot::load_reference()
+{
+}
+
+void QtPlot::show_reference()
+{
+  if (_show_ref->text()=="Hide") {
+    _show_ref->setText("Show");
+    _ref->attach(NULL);
+  }
+  else {
+    _show_ref->setText("Hide");
+    _ref->attach(_frame);
+  }
 }

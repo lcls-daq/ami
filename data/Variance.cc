@@ -127,6 +127,7 @@ Entry&     Variance::_operate(const Entry& e) const
         EntryImage& _m2 = static_cast<EntryImage&>(*_mom2);
         const DescImage& d = _m1.desc();
         const double ped = en.info(EntryImage::Pedestal);
+        const double m1_off = double(0x10000);
         if (d.nframes()) {
           int fn;
 #ifdef _OPENMP
@@ -141,7 +142,7 @@ Entry&     Variance::_operate(const Entry& e) const
               for(unsigned j=f.y; j<f.y+f.ny; j++)
                 for(unsigned k=f.x; k<f.x+f.nx; k++) {
                   double y = (en.content(k,j)-ped)/vn;
-                  _m1.addcontent(unsigned(y+0.5),k,j);      
+                  _m1.addcontent(unsigned(y+0.5+m1_off),k,j);      
                   _m2.addcontent(unsigned(y*y+0.5),k,j);      
                 }
             }
@@ -159,7 +160,7 @@ Entry&     Variance::_operate(const Entry& e) const
             for(j=0; j<int(d.nbinsy()); j++)
               for(unsigned k=0; k<d.nbinsx(); k++) {
                 double y = (en.content(k,j)-ped)/vn;
-                _m1.addcontent(unsigned(y+0.5),k,j);
+                _m1.addcontent(unsigned(y+0.5+m1_off),k,j);
                 _m2.addcontent(unsigned(y*y+0.5),k,j);
               }
           }
@@ -168,9 +169,11 @@ Entry&     Variance::_operate(const Entry& e) const
 
         _m1.addinfo(1.,EntryImage::Normalization);
 
-        if (_m1.info(EntryImage::Normalization)>=_n) {
+        double n = _m1.info(EntryImage::Normalization);
+        if (n>=_n && n>1) {
           EntryImage* cache = static_cast<EntryImage*>(_cache);
-          double s = 1./_m1.info(EntryImage::Normalization);
+          double s = 1./n;
+          double r = sqrt(n/(n-1));
           if (d.nframes()) {
             int fn;
 #ifdef _OPENMP
@@ -184,8 +187,8 @@ Entry&     Variance::_operate(const Entry& e) const
                 const SubFrame& f = d.frame(fn);
                 for(unsigned j=f.y; j<f.y+f.ny; j++)
                   for(unsigned k=f.x; k<f.x+f.nx; k++) {
-                    double m = s*_m1.content(k,j);
-                    double y = sqrt(s*_m2.content(k,j)-m*m);
+                    double m = s*double(_m1.content(k,j))-m1_off;
+                    double y = r*sqrt(s*_m2.content(k,j)-m*m);
                     cache->content(unsigned(y+0.5),k,j);
                   }
               }
@@ -202,12 +205,13 @@ Entry&     Variance::_operate(const Entry& e) const
 #endif
               for(j=0; j<int(d.nbinsy()); j++)
                 for(unsigned k=0; k<d.nbinsx(); k++) {
-                  double m = s*_m1.content(k,j);
-                  double y = sqrt(s*_m2.content(k,j)-m*m);
+                  double m = s*(double(_m1.content(k,j))-n*m1_off);
+                  double y = r*sqrt(s*_m2.content(k,j)-m*m);
                   cache->content(unsigned(y+0.5),k,j);
                 }
             }
           }
+
           cache->info(1.,EntryImage::Normalization);
           cache->valid(e.time());
           if (_n) {

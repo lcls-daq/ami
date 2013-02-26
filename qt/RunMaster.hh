@@ -23,6 +23,7 @@ namespace Ami {
     private:
       QString _run_title;
       Ami::EntryScalar*  _entry;
+      double _prev_s, _prev_n;
     };
   };
 };

@@ -240,3 +240,11 @@ void EdgeOverlay::_attach(int i)
   _plot[i]->attach(_frame->_frame);
   _frame->set_style();
 }
+
+const QtBase* EdgeOverlay::base() const 
+{
+  for(int i=0; i<_fcnt; i++) 
+    if (_plot[i])
+      return _plot[i];
+  return 0;
+}

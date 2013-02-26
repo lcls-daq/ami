@@ -12,7 +12,7 @@
 
 #include <math.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami::Qt;
 
@@ -55,22 +55,29 @@ QString& CExpression::_process(QString& text,const QChar& o)
     }
     else if (text[index+1].isLetter()) {  // condition
       // loop through variable names and test against this part of the string
+      // find the longest match
       last=-1;
+      Condition* c=0;
       QString str = text.mid(index+1);
       for(VarList::const_iterator it = _conditions.begin(); it != _conditions.end(); it++) {
 	if (str.startsWith((*it)->name())) {
-	  b = (*it)->clone();
-	  last = index+(*it)->name().size();
-#ifdef DBUG
-	  printf("Found condition %s at %s\n",qPrintable((*it)->name()),qPrintable(str));
-#endif
-	  break;
+          int l = index+(*it)->name().size();
+          if (l > last) {
+            c = *it;
+            last = l;
+          }
 	}
       }
       if (last<0) {
 	printf("Failed to find condition at %s\n",qPrintable(str));
 	text.clear();
 	return text;
+      }
+      else {
+        b = c->clone();
+#ifdef DBUG
+        printf("Found condition %s at %s\n",qPrintable(c->name()),qPrintable(str));
+#endif
       }
     }
     else {
@@ -87,29 +94,39 @@ QString& CExpression::_process(QString& text,const QChar& o)
       printf("Found term %s : %p %x\n",qPrintable(str),a,ua);
 #endif
     }
-    else if (text[index-1].isLetter()) {  // condition
+    //    else if (text[index-1].isLetter()) {  // condition
+    else {  // condition
       // loop through variable names and test against this part of the string
-      first=-1;
+      first=index;
+      Condition* c=0;
       for(VarList::const_iterator it = _conditions.begin(); it != _conditions.end(); it++) {
 	QString str = text.mid(index-(*it)->name().size());
 	if (str.startsWith((*it)->name())) {
-	  a = (*it)->clone();
-	  first = index-(*it)->name().size();
-#ifdef DBUG
-	  printf("Found condition %s at %s\n",qPrintable((*it)->name()),qPrintable(str));
-#endif
-	  break;
-	}
+          int f = index-(*it)->name().size();
+          if (f<first) {
+            c = *it;
+            first = f;
+          }
+        }
       }
-      if (first<0) {
+      if (first==index) {
 	printf("Failed to find variable at %s\n",qPrintable(text.mid(0,index)));
 	text.clear();
 	return text;
       }
+      else {
+        a = c->clone();
+#ifdef DBUG
+	QString str = text.mid(index-c->name().size());
+        printf("Found condition %s at %s\n",qPrintable(c->name()),qPrintable(str));
+#endif
+      }
     }
+#if 0
     else {
       printf("Unrecognized input at %s\n",qPrintable(text.mid(0,index-1)));
     }
+#endif
     text.remove(first,last-first+1);
     Ami::AbsFilter* B = (o == _logicAnd) ?
       (Ami::AbsFilter*)new Ami::LogicAnd(*a,*b) :

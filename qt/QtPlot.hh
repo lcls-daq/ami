@@ -10,8 +10,10 @@
 
 class QLabel;
 class QwtPlot;
+class QwtPlotCurve;
 class QwtPlotGrid;
 class QwtLegend;
+class QAction;
 
 namespace Ami {
   namespace Qt {
@@ -48,6 +50,11 @@ namespace Ami {
       void yrange_change();
       void update_counts(double);
       void query_style();
+
+      void set_reference();
+      void save_reference();
+      void load_reference();
+      void show_reference();
     public:
       void set_style();
     public:
@@ -76,6 +83,8 @@ namespace Ami {
       void add_overlay(QtOverlay*);
     private:
       std::list<QtOverlay*> _ovls;
+      QAction* _show_ref;
+      QwtPlotCurve* _ref;
     };
   };
 };

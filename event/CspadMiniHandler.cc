@@ -3,6 +3,7 @@
 #include "CspadAlignment_Commissioning.hh"
 
 #include "ami/event/CspadTemp.hh"
+#include "ami/event/CspadCalib.hh"
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
@@ -25,6 +26,8 @@
 #define UNBINNED
 #define DO_PED_CORR
 #define POST_INTEGRAL
+
+using Ami::CspadCalib;
 
 typedef Pds::CsPad::MiniElementV1 CspadElement;
 
@@ -397,7 +400,7 @@ namespace CspadMiniGeometry {
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const {                             \
       unsigned data = 0;                                                \
-      bool lsuppress  = image.desc().options()&1;                       \
+      bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       uint16_t* zero = 0;                                               \
       const uint16_t* off = _off;                                       \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
@@ -406,9 +409,9 @@ namespace CspadMiniGeometry {
     }									\
     void fill(Ami::EntryImage& image,					\
 	      const uint16_t*  data) const {                            \
-      bool lsuppress  = image.desc().options()&1;                       \
-      bool lcorrectfn = image.desc().options()&2;                       \
-      bool lnopedestal= image.desc().options()&4;                       \
+      bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
+      bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
+      bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
       uint16_t* zero = 0;                                               \
       const uint16_t*  off = lnopedestal ? off_no_ped : _off;           \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
@@ -583,7 +586,7 @@ namespace CspadMiniGeometry {
         _cache->cache(_feature[a],
                       CspadTemp::instance().getTemp(elem->sb_temp(a)));
 #ifdef POST_INTEGRAL
-      if (image.desc().options()&8) {
+      if (image.desc().options()&CspadCalib::option_post_integral()) {
         double s = 0;
         double p   = double(image.info(Ami::EntryImage::Pedestal));
         for(unsigned fn=0; fn<image.desc().nframes(); fn++) {

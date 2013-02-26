@@ -3,6 +3,7 @@
 #include "CspadAlignment_Commissioning.hh"
 
 #include "ami/event/CspadTemp.hh"
+#include "ami/event/CspadCalib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
@@ -29,6 +30,8 @@
 #define QUAD_CHECK
 #define UNBINNED
 #define DO_PED_CORR
+
+using Ami::CspadCalib;
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 using Pds::CsPad::ElementIterator;
@@ -595,7 +598,7 @@ namespace CspadGeometry {
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const                               \
     {                                                                   \
-      bool lsuppress  = image.desc().options()&1;                       \
+      bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       uint16_t* zero = 0;                                               \
       const uint16_t* off = _off;                                       \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
@@ -604,9 +607,9 @@ namespace CspadGeometry {
     }                                                                   \
     void fill(Ami::EntryImage& image,                                   \
               const uint16_t*  data) const {                            \
-      bool lsuppress  = image.desc().options()&1;                       \
-      bool lcorrectfn = image.desc().options()&2;                       \
-      bool lnopedestal= image.desc().options()&4;                       \
+      bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
+      bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
+      bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
       uint16_t* zero = 0;                                               \
       const uint16_t* off = lnopedestal ? off_no_ped : _off;            \
       const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
@@ -1053,7 +1056,7 @@ namespace CspadGeometry {
                          CspadTemp::instance().getTemp(hdr->sb_temp(a)));
           delete iters[i];
           //  Calculate integral
-          if (image.desc().options()&8) {
+          if (image.desc().options()&CspadCalib::option_post_integral()) {
             double s=0;
             double p   = double(image.info(Ami::EntryImage::Pedestal));
             for(unsigned fn=nframes[hdr->quad()]; fn<nframes[hdr->quad()+1]; fn++) {

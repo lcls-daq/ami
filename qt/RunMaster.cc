@@ -24,9 +24,16 @@ void RunMaster::reset()
   
 void RunMaster::update   ()
 {
-  if (_entry && _entry->valid())
-    if (_entry->mean()>0 && _entry->mean()<100000)
-      _run_title = QString("Run %1").arg(_entry->mean(),0);
+  if (_entry && _entry->valid()) {
+    double n = _entry->entries()-_prev_n;
+    if (n > 0) {
+      double v = (_entry->sum() - _prev_s)/n;
+      if (v>0 && v<100000)
+        _run_title = QString("Run %1").arg(_entry->mean(),0);
+    }
+    _prev_n = _entry->entries();
+    _prev_s = _entry->sum();
+  }
 }
 
 QString RunMaster::run_title() const
@@ -36,7 +43,9 @@ QString RunMaster::run_title() const
 
 RunMaster::RunMaster() :
   _run_title(""),
-  _entry    (0)
+  _entry    (0),
+  _prev_s   (0),
+  _prev_n   (0)
 {
 }
 

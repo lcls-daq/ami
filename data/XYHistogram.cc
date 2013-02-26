@@ -72,6 +72,19 @@ void*      XYHistogram::_serialize(void* p) const
   return p;
 }
 
+static void set_bounds(unsigned& ilo, 
+                       unsigned& ihi,
+                       double _xlo,
+                       double _xhi,
+                       double xlow,
+                       unsigned ppxbin,
+                       unsigned nbinsx) 
+{
+  ilo = unsigned((_xlo-xlow)/ppxbin);
+  ihi = unsigned((_xhi-xlow)/ppxbin);
+  if (ihi >=nbinsx) ihi=nbinsx-1;
+}
+                       
 Entry&     XYHistogram::_operate(const Entry& e) const
 {
   if (!e.valid())
@@ -81,23 +94,23 @@ Entry&     XYHistogram::_operate(const Entry& e) const
   const DescImage& inputd = _input->desc();
   const ImageMask* mask = inputd.mask();
   if (_input) {
+
+    unsigned ilo, ihi;
+    unsigned jlo, jhi;
+    set_bounds(ilo,ihi,_xlo,_xhi,inputd.xlow(),inputd.ppxbin(),inputd.nbinsx());
+    set_bounds(jlo,jhi,_ylo,_yhi,inputd.ylow(),inputd.ppybin(),inputd.nbinsy());
+    
+    double   p(_input->info(EntryImage::Pedestal));
+    double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
+    
     switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized
       { EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
         o->clear();
-
-        unsigned ilo = unsigned((_xlo-inputd.xlow())/inputd.ppxbin());
-        unsigned ihi = unsigned((_xhi-inputd.xlow())/inputd.ppxbin());
-        unsigned jlo = unsigned((_ylo-inputd.ylow())/inputd.ppybin());
-        unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
-	if (ihi >inputd.nbinsx()) ihi=inputd.nbinsx();
-	if (jhi >inputd.nbinsy()) jhi=inputd.nbinsy();
-        double   p(_input->info(EntryImage::Pedestal));
-        double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
         if (mask) {
-          for(unsigned j=jlo; j<jhi; j++) {
+          for(unsigned j=jlo; j<=jhi; j++) {
             if (!mask->row(j)) continue;
-            for(unsigned i=ilo; i<ihi; i++)
+            for(unsigned i=ilo; i<=ihi; i++)
               if (mask->rowcol(j,i))
                 o->addcontent(1.,(double(_input->content(i,j))-p)*n);
           }
@@ -106,35 +119,26 @@ Entry&     XYHistogram::_operate(const Entry& e) const
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
             int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
             if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
-              for(int j=j0; j<j1; j++) {
-                for(int i=i0; i<i1; i++) {
+              for(int j=j0; j<=j1; j++) {
+                for(int i=i0; i<=i1; i++) {
                   o->addcontent(1.,(double(_input->content(i,j))-p)*n);
                 }
               }
             }
           }
         } else {
-          for(unsigned j=jlo; j<jhi; j++)
-            for(unsigned i=ilo; i<ihi; i++)
+          for(unsigned j=jlo; j<=jhi; j++)
+            for(unsigned i=ilo; i<=ihi; i++)
               o->addcontent(1.,(double(_input->content(i,j))-p)*n);
         }
         o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
         break; }
     case DescEntry::ScalarRange:
       { EntryScalarRange* o = static_cast<EntryScalarRange*>(_output);
-
-        unsigned ilo = unsigned((_xlo-inputd.xlow())/inputd.ppxbin());
-        unsigned ihi = unsigned((_xhi-inputd.xlow())/inputd.ppxbin());
-        unsigned jlo = unsigned((_ylo-inputd.ylow())/inputd.ppybin());
-        unsigned jhi = unsigned((_yhi-inputd.ylow())/inputd.ppybin());
-	if (ihi >inputd.nbinsx()) ihi=inputd.nbinsx();
-	if (jhi >inputd.nbinsy()) jhi=inputd.nbinsy();
-        double   p(_input->info(EntryImage::Pedestal));
-        double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
         if (mask) {
-          for(unsigned j=jlo; j<jhi; j++) {
+          for(unsigned j=jlo; j<=jhi; j++) {
             if (!mask->row(j)) continue;
-            for(unsigned i=ilo; i<ihi; i++)
+            for(unsigned i=ilo; i<=ihi; i++)
               if (mask->rowcol(j,i))
                 o->addcontent((double(_input->content(i,j))-p)*n);
           }
@@ -143,16 +147,16 @@ Entry&     XYHistogram::_operate(const Entry& e) const
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
             int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
             if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
-              for(int j=j0; j<j1; j++) {
-                for(int i=i0; i<i1; i++) {
+              for(int j=j0; j<=j1; j++) {
+                for(int i=i0; i<=i1; i++) {
                   o->addcontent((double(_input->content(i,j))-p)*n);
                 }
               }
             }
           }
         } else {
-          for(unsigned j=jlo; j<jhi; j++)
-            for(unsigned i=ilo; i<ihi; i++)
+          for(unsigned j=jlo; j<=jhi; j++)
+            for(unsigned i=ilo; i<=ihi; i++)
               o->addcontent((double(_input->content(i,j))-p)*n);
         }
         break; }

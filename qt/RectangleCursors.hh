@@ -1,3 +1,7 @@
+//
+//  A class for grabbing a rectangular region of interest (ROI).
+//  The ROI is inclusively delmited by the bounding coordinates.
+//
 #ifndef AmiQt_RectangleCursors_hh
 #define AmiQt_RectangleCursors_hh
 
@@ -28,8 +32,8 @@ namespace Ami {
       double ylo() const;
       double xhi() const;
       double yhi() const;
-      unsigned nxbins() const { return ixhi()-ixlo(); }
-      unsigned nybins() const { return iyhi()-iylo(); }
+      unsigned nxbins() const { return ixhi()-ixlo()+1; }
+      unsigned nybins() const { return iyhi()-iylo()+1; }
       unsigned ixlo() const { return _frame.xinfo()->tick(xlo()); }
       unsigned ixhi() const { return _frame.xinfo()->tick(xhi()); }
       unsigned iylo() const { return _frame.yinfo()->tick(ylo()); }
@@ -61,6 +65,7 @@ namespace Ami {
       unsigned   _ymax;
       QLabel*    _delta_x;
       QLabel*    _delta_y;
+      QLabel*    _npixels;
     };
   };
 };

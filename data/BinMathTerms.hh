@@ -4,7 +4,9 @@
 #include "ami/data/Expression.hh"
 
 namespace Ami {
-  enum Moment { None, Zero, First, Second, Contrast, XCenterOfMass, YCenterOfMass };
+  enum Moment { None, Zero, First, Second, 
+                Contrast, XCenterOfMass, YCenterOfMass,
+                Mean, Variance };
   class Entry;
   namespace BinMathC {
 

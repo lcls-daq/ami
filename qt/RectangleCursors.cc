@@ -35,7 +35,8 @@ RectangleCursors::RectangleCursors(ImageFrame& f,
   _xmax      (-1),
   _ymax      (-1),
   _delta_x   (new QLabel),
-  _delta_y   (new QLabel)
+  _delta_y   (new QLabel),
+  _npixels   (new QLabel)
 {
   _edit_x0->setMaximumWidth(44);
   _edit_y0->setMaximumWidth(44);
@@ -68,6 +69,7 @@ RectangleCursors::RectangleCursors(ImageFrame& f,
   layout->addWidget(new QLabel(QString(QChar(0x0394))),row,0);
   layout->addWidget(_delta_x              ,row,1);
   layout->addWidget(_delta_y              ,row,2);
+  layout->addWidget(_npixels              ,row,3);
   
   setLayout(layout);
 
@@ -141,6 +143,7 @@ void RectangleCursors::_set_edits()
   _edit_y1   ->setText(QString::number(_y1));
   _delta_x   ->setText(QString::number(_x1-_x0));
   _delta_y   ->setText(QString::number(_y1-_y0));
+  _npixels   ->setText(QString("%1 pixels").arg((_x1-_x0+1)*(_y1-_y0+1)));
 }
 
 void RectangleCursors::draw(QImage& image)

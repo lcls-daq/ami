@@ -31,6 +31,8 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void dump(FILE*) const;
+      const QtBase* base() const;
     public:
       void configure(char*& p, unsigned input, unsigned& output);
       void setup_payload(Cds&);

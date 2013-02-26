@@ -16,13 +16,20 @@
 
 using namespace Ami::Qt;
 
+enum { Intg, Mean, Vari, Cont, XCoM, YCoM };
+
 ImageFunctions::ImageFunctions(QWidget* p) : 
   QWidget(p),
   _functions    (new QComboBox),
   _expr_edit    (new QLineEdit)
 {
   QStringList functions;
-  functions << "Integral" << "Contrast" << "X-Center of Mass" << "Y-Center of Mass";
+  functions << "Integral"
+            << "Mean"
+            << "Variance"
+            << "Contrast"
+            << "X-Center of Mass"
+            << "Y-Center of Mass";
   _functions->addItems(functions);
 
   _expr_edit->setMinimumWidth(140);
@@ -71,10 +78,13 @@ static QChar qFunction(int i)
 {
   QChar q;
   switch(i) {
-  case 1: q = Ami::BinMath::contrast (); break;
-  case 2: q = Ami::BinMath::xmoment  (); break;
-  case 3: q = Ami::BinMath::ymoment  (); break;
-  case 0: default: q = Ami::BinMath::integrate(); break;
+  case Mean: q = Ami::BinMath::mean     (); break;
+  case Vari: q = Ami::BinMath::variance (); break;
+  case Cont: q = Ami::BinMath::contrast (); break;
+  case XCoM: q = Ami::BinMath::xmoment  (); break;
+  case YCoM: q = Ami::BinMath::ymoment  (); break;
+  case Intg: 
+  default: q = Ami::BinMath::integrate(); break;
   };
   return q;
 }
@@ -94,8 +104,8 @@ void ImageFunctions::update_range(int x1, int y1,
 }
 
 void ImageFunctions::update_range(double xc, double yc,
-                                 double r1, double r2,
-                                 double f0, double f1)
+                                  double r1, double r2,
+                                  double f0, double f1)
 {
   QChar q(qFunction(_functions->currentIndex()));
   while (!(f0<f1)) f1 += 2*M_PI;
@@ -117,6 +127,8 @@ void ImageFunctions::update_function(int index)
   QChar q(qFunction(index));
   QString t = _expr_edit->text();
   t.replace(BinMath::integrate(),q);
+  t.replace(BinMath::mean     (),q);
+  t.replace(BinMath::variance (),q);
   t.replace(BinMath::contrast (),q);
   t.replace(BinMath::xmoment  (),q);
   t.replace(BinMath::ymoment  (),q);

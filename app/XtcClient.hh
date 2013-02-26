@@ -56,6 +56,7 @@ namespace Ami {
     int       _pltnc_index;
     int       _event_index;
     int       _runno_index;
+    double    _runno_value;
   };
 }
 

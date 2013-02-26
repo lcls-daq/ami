@@ -33,13 +33,14 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void dump(FILE*) const;
+      const QtBase* base() const;
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
 		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
-      void dump(FILE*) const;
     private:
       void _attach();
     private:

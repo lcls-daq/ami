@@ -16,6 +16,15 @@ namespace Ami {
 	     const char* name, const char* xtitle, const char* ytitle, 
 	     unsigned nbins, float xlow, float xup, const char* names);
 
+    //  Special constructor for centering outer bins
+    //    on xlow,xup.
+    enum InitOpt { Inclusive };
+    DescProf(InitOpt,
+             const char* name, const char* xtitle, const char* ytitle, 
+	     unsigned nbins, float xlow, float xup, const char* names,
+	     const char* weight="");
+
+
     unsigned nbins() const;
     float xlow() const;
     float xup() const;

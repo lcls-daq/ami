@@ -168,6 +168,7 @@ Entry&     Average::_operate(const Entry& e) const
           EntryImage::Info i = (EntryImage::Info)j;
           _en.addinfo(en.info(i),i);
         }
+
         if (_n) {
           if (++_current>=_n) {
             static_cast<EntryImage*>(_cache)->setto(_en);

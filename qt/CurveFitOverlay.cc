@@ -222,3 +222,5 @@ void CurveFitOverlay::_attach()
   _plot->attach(_frame->_frame);
   _frame->set_style();
 }
+
+const QtBase* CurveFitOverlay::base() const { return _plot; }

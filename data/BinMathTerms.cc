@@ -202,6 +202,14 @@ double BinMathC::EntryImageTerm::evaluate() const {
     v = sum;
     if (n>0) v/=n;
     break;
+  case Mean:
+    v = sum/s0;
+    if (n>0) v/=n;
+    break;
+  case Variance:
+    v = sqrt(sqsum/s0 - pow(sum/s0,2));
+    if (n>0) v/=n;
+    break;
   case Contrast:
     v = sqrt(s0*sqsum/(sum*sum) - 1);
     //          if (n>0) v/=sqrt(n);
@@ -339,6 +347,14 @@ double BinMathC::EntryImageTermF::evaluate() const
   switch(_mom) {
   case Zero:
     v = sum;
+    if (n > 0) v/=n;
+    break;
+  case Mean:
+    v = sum/s0;
+    if (n > 0) v/=n;
+    break;
+  case Variance:
+    v = sqrt(sqsum/s0 - pow(sum/s0,2));
     if (n > 0) v/=n;
     break;
   case Contrast:

@@ -33,6 +33,8 @@ namespace Ami {
     const char*        expression() const;
   public:
     static const QChar& integrate();
+    static const QChar& mean     ();
+    static const QChar& variance ();
     static const QChar& moment1  ();
     static const QChar& moment2  ();
     static const QChar& contrast ();

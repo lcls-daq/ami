@@ -29,13 +29,14 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void dump(FILE*) const;
+      const QtBase* base() const;
     public:
       void configure(char*& p, unsigned input, unsigned& output,
                      ChannelDefinition* ch[], int* signatures, unsigned nchannels,
                      const AxisInfo&);
       void setup_payload(Cds&);
       void update();
-      void dump(FILE*) const;
     private:
       void savefit(char*& p) const;
       Ami::CurveFit *loadfit(const char*& p);

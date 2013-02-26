@@ -176,9 +176,9 @@ bool DescImage::xy_bounds(int& x0, int& x1, int& y0, int& y1) const
       (y1 < 0))
     return false;
   if (x0 < 0) x0=0;
-  if (x1 > (int)nbinsx()) x1=nbinsx();
+  if (x1 >= (int)nbinsx()) x1=nbinsx()-1;
   if (y0 < 0) y0=0;
-  if (y1 > (int)nbinsy()) y1=nbinsy();
+  if (y1 >= (int)nbinsy()) y1=nbinsy()-1;
   return true;
 }
 
@@ -195,9 +195,9 @@ bool DescImage::xy_bounds(int& x0, int& x1, int& y0, int& y1, unsigned fn) const
       (y1 < 0))
     return false;
   if (x0 < 0) x0=0;
-  if (x1 > (int)f.nx) x1=f.nx;
+  if (x1 >= (int)f.nx) x1=f.nx-1;
   if (y0 < 0) y0=0;
-  if (y1 > (int)f.ny) y1=f.ny;
+  if (y1 >= (int)f.ny) y1=f.ny-1;
   x0 += f.x;
   x1 += f.x;
   y0 += f.y;

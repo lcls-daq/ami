@@ -31,6 +31,7 @@ namespace Ami {
       Ami::EdgeFinder *loadfinder(const char *& p);
       void save(char*& p) const;
       void load(const char*& p);
+      const QtBase* base() const;
     public:
       void addfinder(Ami::EdgeFinder *f);
       void configure(char*& p, unsigned input, unsigned& output,

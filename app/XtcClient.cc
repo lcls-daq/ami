@@ -96,6 +96,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     if (_filter.accept(dg)) {
       accept = true;
 
+      cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
@@ -134,7 +135,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     }
   }
   else if (dg->seq.service() == Pds::TransitionId::BeginRun) {
-    cache.cache(_runno_index,dg->env.value());
+    _runno_value = dg->env.value();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 

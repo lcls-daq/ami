@@ -6,6 +6,8 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <libgen.h>
 
 using namespace Ami;
 
@@ -97,6 +99,15 @@ std::string FccdCalib::save_pedestals(Entry* entry,
     }
     fsync(fileno(fn));
     fclose(fn);
+
+    const int NameSize=128;
+    char oname1[NameSize];
+    strncpy(oname1,oname.c_str(),NameSize);
+    int fd = open(dirname(oname1),O_RDONLY|O_DIRECTORY);
+    if (fd>=0) {
+      fsync(fd);
+      close(fd);
+    }
     delete[] pedestals;
     return std::string();
   }
