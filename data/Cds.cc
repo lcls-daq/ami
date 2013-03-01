@@ -192,3 +192,22 @@ void Cds::mirror(Cds& o)
     o.add(new EntryView(*en));
   }
 }
+
+static bool entry_comp(Entry* a, Entry* b)
+{
+  if (a->desc().info().phy() != b->desc().info().phy())
+    return a->desc().info().phy() < b->desc().info().phy();
+  if (a->desc().channel() != b->desc().channel())
+    return a->desc().channel() < b->desc().channel();
+  return strcmp(a->desc().name(),b->desc().name());
+}
+
+void Cds::sort()
+{
+  _entries.sort(entry_comp);
+  for (EnList::iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    Entry* entry = *it;
+    entry->desc().signature(_signature++);
+  }
+  _request.fill(_entries.size());
+}

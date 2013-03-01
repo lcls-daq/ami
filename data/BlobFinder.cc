@@ -500,7 +500,7 @@ Entry&     BlobFinder::_operate(const Entry& e) const
     //  Find the blobs
 
     //  collapse into a 1d array
-    unsigned p = entry.info(EntryImage::Pedestal);
+    unsigned p = unsigned(entry.info(EntryImage::Pedestal));
     int k=0;
     for(int i=_roi_top; i<= _roi_bottom; i++)
       for(int j=_roi_left; j<= _roi_right; j++) {

@@ -16,9 +16,7 @@ namespace Ami {
 
   class XYHistogram : public AbsOperator {
   public:
-    XYHistogram(const DescEntry& output,
-                double xlo, double xhi,
-                double ylo, double yhi);
+    XYHistogram(const DescEntry& output);
     XYHistogram(const char*&, const DescEntry&);
     XYHistogram(const char*&);
     ~XYHistogram();
@@ -30,10 +28,6 @@ namespace Ami {
   private:
     enum { DESC_LEN = sizeof(DescScalarRange) };
     char             _desc_buffer[DESC_LEN];
-    double           _xlo;
-    double           _xhi;
-    double           _ylo;
-    double           _yhi;
     Entry*           _output;
   };
 

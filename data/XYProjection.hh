@@ -17,8 +17,7 @@ namespace Ami {
   class XYProjection : public AbsOperator {
   public:
     enum Axis { X, Y };
-    XYProjection(const DescEntry& output,
-		 Axis, double lo, double hi);
+    XYProjection(const DescEntry& output, Axis);
     XYProjection(const char*&, const DescEntry&);
     XYProjection(const char*&);
     ~XYProjection();
@@ -31,8 +30,6 @@ namespace Ami {
     enum { DESC_LEN = sizeof(DescProf) };
     char             _desc_buffer[DESC_LEN];
     Axis             _axis;
-    double           _lo;
-    double           _hi;
     Entry*           _output;
   };
 

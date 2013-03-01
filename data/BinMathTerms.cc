@@ -154,6 +154,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
   double p   = double(e.info(EntryImage::Pedestal));
   if (mask) {
     unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
+    if (xhi >= d.nbinsx()) xhi = d.nbinsx()-1;
+    if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
     for(unsigned j=ylo; j<=yhi; j++) {
       if (!mask->row(j)) continue;
       for(unsigned i=xlo; i<=xhi; i++)
@@ -185,6 +187,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
   }
   else {
     unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
+    if (xhi >= d.nbinsx()) xhi = d.nbinsx()-1;
+    if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
     for(unsigned j=ylo; j<=yhi; j++)
       for(unsigned i=xlo; i<=xhi; i++) {
         double v = double(e.content(i,j))-p;
@@ -196,6 +200,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
       }
   }
   double n = double(e.info(EntryImage::Normalization));
+  double q = double(d.ppxbin()*d.ppybin());
   double v;
   switch(_mom) {
   case Zero:
@@ -203,11 +208,11 @@ double BinMathC::EntryImageTerm::evaluate() const {
     if (n>0) v/=n;
     break;
   case Mean:
-    v = sum/s0;
+    v = sum/(s0*q);
     if (n>0) v/=n;
     break;
   case Variance:
-    v = sqrt(sqsum/s0 - pow(sum/s0,2));
+    v = sqrt((sqsum/s0 - pow(sum/s0,2))/q);;
     if (n>0) v/=n;
     break;
   case Contrast:

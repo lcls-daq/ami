@@ -15,8 +15,11 @@ namespace Ami {
   //
   class PeakFinder : public AbsOperator {
   public:
+    enum Mode { Count, Sum };
     PeakFinder(double threshold_v0,
                double threshold_v1,
+               Mode   mode,
+               bool   center_only,
                bool   accumulate);
     PeakFinder(const char*&);
     PeakFinder(const char*&, const DescEntry&);
@@ -32,6 +35,8 @@ namespace Ami {
   private:
     double            _threshold_v0;
     double            _threshold_v1;
+    Mode              _mode;
+    bool              _center_only;
     bool              _accumulate;
     EntryImage*       _output_entry;
     PeakFinderFn*     _fn;

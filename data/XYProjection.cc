@@ -15,12 +15,9 @@
 
 using namespace Ami;
 
-XYProjection::XYProjection(const DescEntry& output, 
-			   Axis axis, double lo, double hi) :
+XYProjection::XYProjection(const DescEntry& output, Axis axis) :
   AbsOperator(AbsOperator::XYProjection),
   _axis      (axis),
-  _lo        (lo),
-  _hi        (hi),
   _output    (0)
 {
   memcpy(_desc_buffer, &output, output.size());
@@ -32,11 +29,33 @@ XYProjection::XYProjection(const char*& p, const DescEntry& input) :
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_axis      , sizeof(_axis));
-  _extract(p, &_lo        , sizeof(_lo ));
-  _extract(p, &_hi        , sizeof(_hi ));
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
-  _output = EntryFactory::entry(o);
+  const DescImage& d =  reinterpret_cast<const DescImage&>(input);
+  int nx;
+  double x0,x1;
+  if (_axis==X) {
+    nx = d.nbinsx();
+    x0 = d.xlow();
+    x1 = d.xup ();
+  }
+  else {
+    nx = d.nbinsy();
+    x0 = d.ylow();
+    x1 = d.yup ();
+  }
+
+  switch(o.type()) {
+  case DescEntry::TH1F:
+    _output = EntryFactory::entry(DescTH1F(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1));
+    break;
+  case DescEntry::Prof:
+    _output = EntryFactory::entry(DescProf(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1,""));
+    break;
+  default:
+    _output = 0;
+    break;
+  }
 }
 
 XYProjection::XYProjection(const char*& p) :
@@ -45,8 +64,6 @@ XYProjection::XYProjection(const char*& p) :
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_axis      , sizeof(_axis));
-  _extract(p, &_lo        , sizeof(_lo ));
-  _extract(p, &_hi        , sizeof(_hi ));
 }
 
 XYProjection::~XYProjection()
@@ -63,8 +80,6 @@ void*      XYProjection::_serialize(void* p) const
 {
   _insert(p, _desc_buffer, DESC_LEN);
   _insert(p, &_axis      , sizeof(_axis));
-  _insert(p, &_lo        , sizeof(_lo ));
-  _insert(p, &_hi        , sizeof(_hi ));
   return p;
 }
 
@@ -73,18 +88,18 @@ Entry&     XYProjection::_operate(const Entry& e) const
   if (!e.valid())
     return *_output;
   
-#define SET_BOUNDS_X(T)                                \
-  T ilo = T((d.xlow()-inputd.xlow())/inputd.ppxbin()); \
-  T ihi = T((d.xup ()-inputd.xlow())/inputd.ppxbin()); \
-  T jlo = T((_lo-inputd.ylow())/inputd.ppybin());      \
-  T jhi = T((_hi-inputd.ylow())/inputd.ppybin());
-
+#define SET_BOUNDS_X(T)                         \
+  T ilo = 0;                                    \
+  T ihi = inputd.nbinsx();                      \
+  T jlo = 0;                                    \
+  T jhi = inputd.nbinsy();
+  
 #define SET_BOUNDS_Y(T)                                 \
-  T ilo = T((d.xlow()-inputd.ylow())/inputd.ppybin());  \
-  T ihi = T((d.xup ()-inputd.ylow())/inputd.ppybin());  \
-  T jlo = T((_lo-inputd.xlow())/inputd.ppxbin());       \
-  T jhi = T((_hi-inputd.xlow())/inputd.ppxbin());
-
+  T ilo = 0;                                            \
+  T ihi = inputd.nbinsy();                              \
+  T jlo = 0;                                            \
+  T jhi = inputd.nbinsy(); 
+  
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   const DescImage& inputd = _input->desc();
   if (_input) {
@@ -98,13 +113,15 @@ Entry&     XYProjection::_operate(const Entry& e) const
           if (mask) {
             o->reset();
             SET_BOUNDS_X(unsigned) ;
-            for(unsigned i=ilo; i<=ihi; i++) {
+            for(unsigned i=ilo; i<ihi; i++) {
               if (!mask->col(i)) continue;
-              unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
-              for(unsigned j=jlo; j<=jhi; j++) {
+              double z = 0;
+              for(unsigned j=jlo; j<jhi; j++) {
                 if (mask->rowcol(j,i)) 
-                  o->addcontent(double(_input->content(i,j))-p,k);
+                  z += double(_input->content(i,j))-p;
               }
+              unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
+              o->addcontent(z,k);
             }
           }
 	  else if (inputd.nframes()) {
@@ -113,19 +130,21 @@ Entry&     XYProjection::_operate(const Entry& e) const
               SET_BOUNDS_X(int) ;
 	      if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn))
 		for(int i=ilo; i<=ihi; i++) {
-		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
+                  unsigned z=0;
 		  for(int j=jlo; j<=jhi; j++)
-		    o->addcontent(double(_input->content(i,j))-p,k);
+		    z += _input->content(i,j);
+		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
+                  o->addcontent(double(z)-double(jhi-jlo+1)*p,k);
 		}
 	    }
 	  }
           else {
             SET_BOUNDS_X(unsigned) ;
-            for(unsigned i=ilo; i<=ihi; i++) {
-              unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
+            for(unsigned i=ilo; i<ihi; i++) {
               unsigned z=0;
-              for(unsigned j=jlo; j<=jhi; j++)
+              for(unsigned j=jlo; j<jhi; j++)
                 z += _input->content(i,j);
+              unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
               o->content(double(z)-p*double(jhi-jlo),k);
             }
 	  }
@@ -134,12 +153,14 @@ Entry&     XYProjection::_operate(const Entry& e) const
           if (mask) {
             o->reset();
             SET_BOUNDS_Y(unsigned) ;
-            for(unsigned i=ilo; i<=ihi; i++) {
+            for(unsigned i=ilo; i<ihi; i++) {
               if (!mask->row(i)) continue;
-              unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
-              for(unsigned j=jlo; j<=jhi; j++)
+              double z=0;
+              for(unsigned j=jlo; j<jhi; j++)
                 if (mask->rowcol(i,j))
-                  o->addcontent(_input->content(j,i)-p,k);
+                  z += double(_input->content(j,i))-p;
+              unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
+              o->addcontent(z,k);
             }
           }
 	  else if (inputd.nframes()) {
@@ -148,19 +169,21 @@ Entry&     XYProjection::_operate(const Entry& e) const
               SET_BOUNDS_Y(int) ;
 	      if (inputd.xy_bounds(jlo,jhi,ilo,ihi,fn))
 		for(int i=ilo; i<=ihi; i++) {
-		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
+                  unsigned z=0;
 		  for(int j=jlo; j<=jhi; j++)
-		    o->addcontent(double(_input->content(j,i))-p,k);
+                    z += _input->content(j,i);
+		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
+                  o->addcontent(double(z)-double(jhi-jlo+1)*p,k);
 		}
 	    }
 	  }
           else {
             SET_BOUNDS_Y(unsigned) ;
-            for(unsigned i=ilo; i<=ihi; i++) {
-              unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
+            for(unsigned i=ilo; i<ihi; i++) {
               unsigned z=0;
-              for(unsigned j=jlo; j<=jhi; j++)
+              for(unsigned j=jlo; j<jhi; j++)
                 z += _input->content(j,i);
+              unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
               o->content(double(z)-p*double(jhi-jlo),k);
             }
 	  }
@@ -171,18 +194,19 @@ Entry&     XYProjection::_operate(const Entry& e) const
       { const DescProf& d = static_cast<const DescProf&>(_routput());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
 	const double    p = _input->info(EntryImage::Pedestal);
+        const double    q = double(inputd.ppxbin()*inputd.ppybin());
         const ImageMask* mask = inputd.mask();
 	o->reset();
 	
 	if (_axis == X) {
 	  if (mask) {
             SET_BOUNDS_X(unsigned) ;
-	    for(unsigned i=ilo; i<=ihi; i++) {
+	    for(unsigned i=ilo; i<ihi; i++) {
               if (!mask->col(i)) continue;
 	      unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
-	      for(unsigned j=jlo; j<=jhi; j++)
+	      for(unsigned j=jlo; j<jhi; j++)
                 if (mask->rowcol(j,i))
-                  o->addy(double(_input->content(i,j))-p,k);
+                  o->addy((double(_input->content(i,j))-p)/q,k);
 	    }
 	  }
 	  else if (inputd.nframes()) {
@@ -192,28 +216,28 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		for(int i=ilo; i<=ihi; i++) {
 		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
 		  for(int j=jlo; j<=jhi; j++)
-		    o->addy(double(_input->content(i,j))-p,k);
+		    o->addy((double(_input->content(i,j))-p)/q,k);
 		}
 	    }
 	  }
 	  else {
             SET_BOUNDS_X(unsigned) ;
-	    for(unsigned i=ilo; i<=ihi; i++) {
+	    for(unsigned i=ilo; i<ihi; i++) {
 	      unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
-	      for(unsigned j=jlo; j<=jhi; j++)
-		o->addy(double(_input->content(i,j))-p,k);
+	      for(unsigned j=jlo; j<jhi; j++)
+		o->addy((double(_input->content(i,j))-p)/q,k);
 	    }
 	  }
 	}
 	else {
           if (mask) {
             SET_BOUNDS_Y(unsigned) ;
-	    for(unsigned i=ilo; i<=ihi; i++) {
+	    for(unsigned i=ilo; i<ihi; i++) {
               if (!mask->row(i)) continue;
 	      unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
-	      for(unsigned j=jlo; j<=jhi; j++)
+	      for(unsigned j=jlo; j<jhi; j++)
                 if (mask->rowcol(i,j))
-                  o->addy(double(_input->content(j,i))-p,k);
+                  o->addy((double(_input->content(j,i))-p)/q,k);
 	    }
           }
 	  else if (inputd.nframes()) {
@@ -223,16 +247,16 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		for(int i=ilo; i<=ihi; i++) {
 		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
 		  for(int j=jlo; j<=jhi; j++)
-		    o->addy(double(_input->content(j,i))-p,k);
+		    o->addy((double(_input->content(j,i))-p)/q,k);
 		}
 	    }
 	  }
 	  else {
             SET_BOUNDS_Y(unsigned) ;
-	    for(unsigned i=ilo; i<=ihi; i++) {
+	    for(unsigned i=ilo; i<ihi; i++) {
 	      unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
-	      for(unsigned j=jlo; j<=jhi; j++)
-		o->addy(double(_input->content(j,i))-p,k);
+	      for(unsigned j=jlo; j<jhi; j++)
+		o->addy((double(_input->content(j,i))-p)/q,k);
 	    }
 	  }
 	}

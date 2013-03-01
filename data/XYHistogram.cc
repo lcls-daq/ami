@@ -14,14 +14,8 @@
 
 using namespace Ami;
 
-XYHistogram::XYHistogram(const DescEntry& output, 
-                         double xlo, double xhi,
-                         double ylo, double yhi) :
+XYHistogram::XYHistogram(const DescEntry& output) :
   AbsOperator(AbsOperator::XYHistogram),
-  _xlo        (xlo),
-  _xhi        (xhi),
-  _ylo        (ylo),
-  _yhi        (yhi),
   _output    (0)
 {
   memcpy(_desc_buffer, &output, output.size());
@@ -32,10 +26,6 @@ XYHistogram::XYHistogram(const char*& p, const DescEntry& input) :
   AbsOperator(AbsOperator::XYHistogram)
 {
   _extract(p, _desc_buffer, DESC_LEN);
-  _extract(p, &_xlo        , sizeof(_xlo ));
-  _extract(p, &_xhi        , sizeof(_xhi ));
-  _extract(p, &_ylo        , sizeof(_ylo ));
-  _extract(p, &_yhi        , sizeof(_yhi ));
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
   _output = EntryFactory::entry(o);
@@ -46,10 +36,6 @@ XYHistogram::XYHistogram(const char*& p) :
   _output    (0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
-  _extract(p, &_xlo        , sizeof(_xlo ));
-  _extract(p, &_xhi        , sizeof(_xhi ));
-  _extract(p, &_ylo        , sizeof(_ylo ));
-  _extract(p, &_yhi        , sizeof(_yhi ));
 }
 
 XYHistogram::~XYHistogram()
@@ -65,26 +51,9 @@ DescEntry& XYHistogram::_routput   () const
 void*      XYHistogram::_serialize(void* p) const
 {
   _insert(p, _desc_buffer, DESC_LEN);
-  _insert(p, &_xlo        , sizeof(_xlo ));
-  _insert(p, &_xhi        , sizeof(_xhi ));
-  _insert(p, &_ylo        , sizeof(_ylo ));
-  _insert(p, &_yhi        , sizeof(_yhi ));
   return p;
 }
 
-static void set_bounds(unsigned& ilo, 
-                       unsigned& ihi,
-                       double _xlo,
-                       double _xhi,
-                       double xlow,
-                       unsigned ppxbin,
-                       unsigned nbinsx) 
-{
-  ilo = unsigned((_xlo-xlow)/ppxbin);
-  ihi = unsigned((_xhi-xlow)/ppxbin);
-  if (ihi >=nbinsx) ihi=nbinsx-1;
-}
-                       
 Entry&     XYHistogram::_operate(const Entry& e) const
 {
   if (!e.valid())
@@ -95,10 +64,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
   const ImageMask* mask = inputd.mask();
   if (_input) {
 
-    unsigned ilo, ihi;
-    unsigned jlo, jhi;
-    set_bounds(ilo,ihi,_xlo,_xhi,inputd.xlow(),inputd.ppxbin(),inputd.nbinsx());
-    set_bounds(jlo,jhi,_ylo,_yhi,inputd.ylow(),inputd.ppybin(),inputd.nbinsy());
+    unsigned ilo(0), ihi(inputd.nbinsx());
+    unsigned jlo(0), jhi(inputd.nbinsy());
     
     double   p(_input->info(EntryImage::Pedestal));
     double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
@@ -108,9 +75,9 @@ Entry&     XYHistogram::_operate(const Entry& e) const
       { EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
         o->clear();
         if (mask) {
-          for(unsigned j=jlo; j<=jhi; j++) {
+          for(unsigned j=jlo; j<jhi; j++) {
             if (!mask->row(j)) continue;
-            for(unsigned i=ilo; i<=ihi; i++)
+            for(unsigned i=ilo; i<ihi; i++)
               if (mask->rowcol(j,i))
                 o->addcontent(1.,(double(_input->content(i,j))-p)*n);
           }
@@ -127,8 +94,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
             }
           }
         } else {
-          for(unsigned j=jlo; j<=jhi; j++)
-            for(unsigned i=ilo; i<=ihi; i++)
+          for(unsigned j=jlo; j<jhi; j++)
+            for(unsigned i=ilo; i<ihi; i++)
               o->addcontent(1.,(double(_input->content(i,j))-p)*n);
         }
         o->info(_input->info(EntryImage::Normalization),EntryTH1F::Normalization);
@@ -136,9 +103,9 @@ Entry&     XYHistogram::_operate(const Entry& e) const
     case DescEntry::ScalarRange:
       { EntryScalarRange* o = static_cast<EntryScalarRange*>(_output);
         if (mask) {
-          for(unsigned j=jlo; j<=jhi; j++) {
+          for(unsigned j=jlo; j<jhi; j++) {
             if (!mask->row(j)) continue;
-            for(unsigned i=ilo; i<=ihi; i++)
+            for(unsigned i=ilo; i<ihi; i++)
               if (mask->rowcol(j,i))
                 o->addcontent((double(_input->content(i,j))-p)*n);
           }
@@ -155,8 +122,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
             }
           }
         } else {
-          for(unsigned j=jlo; j<=jhi; j++)
-            for(unsigned i=ilo; i<=ihi; i++)
+          for(unsigned j=jlo; j<jhi; j++)
+            for(unsigned i=ilo; i<ihi; i++)
               o->addcontent((double(_input->content(i,j))-p)*n);
         }
         break; }

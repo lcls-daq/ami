@@ -28,6 +28,7 @@ namespace Ami {
     unsigned short totaldescs  () const { return _entries.size()+1; }
 
     void reset      ();
+    void sort       ();
     void showentries() const;
 
     //  serialize
