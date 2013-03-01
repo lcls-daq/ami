@@ -517,9 +517,20 @@ namespace CspadMiniGeometry {
       double x,y;
 
       Ami::Cspad::TwoByTwoAlignment qalign = qalign_def[0].twobytwo(0);
-      if (gm) 
+      Rotation qrot = D0;
+      if (gm) {
         qalign = Ami::Cspad::QuadAlignment::load(gm)->twobytwo(0);
 
+        size_t sz=256;
+        char* linep = (char *)malloc(sz);
+        while(1) {
+          if (getline(&linep, &sz, gm)==-1) break;
+          if (linep[0]=='#') continue;
+          qrot = Rotation(strtoul(linep,0,0));
+          break;
+        }
+        free(linep);
+      }
       //
       //  Create a default layout
       //
@@ -529,7 +540,7 @@ namespace CspadMiniGeometry {
 	x =  0.5*frame;
 	y = -0.5*frame;
       }
-      mini = new TwoByTwo(x,y,_ppb,D0,qalign);
+      mini = new TwoByTwo(x,y,_ppb,qrot,qalign);
 
       //
       //  Test extremes and narrow the focus
@@ -557,7 +568,7 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,D0,qalign, f,s,g,rms);
+      mini = new TwoByTwo(x,y,_ppb,qrot,qalign, f,s,g,rms);
     }
     ~Detector() { delete mini; }
 

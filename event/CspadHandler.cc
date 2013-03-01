@@ -911,9 +911,22 @@ namespace CspadGeometry {
       double x,y;
 
       const Ami::Cspad::QuadAlignment* qalign = qalign_def;
-      if (gm) 
+      Rotation qrot[] = { D0, D90, D180, D270 };
+      if (gm) {
         qalign = Ami::Cspad::QuadAlignment::load(gm);
 
+        size_t sz=256;
+        char* linep = (char *)malloc(sz);
+        while(1) {
+          if (getline(&linep, &sz, gm)==-1) break;
+          if (linep[0]=='#') continue;
+          unsigned irot = strtoul(linep,0,0);
+          for(unsigned j=0; j<NPHI; j++)
+            qrot[j] = Rotation((irot+j)%NPHI);
+          break;
+        }
+        free(linep);
+      }
       //
       //  Create a default layout
       //
@@ -923,10 +936,8 @@ namespace CspadGeometry {
         x =  0.5*frame;
         y = -0.5*frame;
       }
-      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0]);
-      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1]);
-      quad[2] = new Quad(x,y,_ppb,D180,qalign[2]);
-      quad[3] = new Quad(x,y,_ppb,D270,qalign[3]);
+      for(unsigned j=0; j<4; j++)
+        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j]);
 
       //
       //  Test extremes and narrow the focus
@@ -962,10 +973,8 @@ namespace CspadGeometry {
 
       _pixels = pixels*4 + 2*bin0*_ppb;
 
-      quad[0] = new Quad(x,y,_ppb,D0  ,qalign[0],f,s,g,rms);
-      quad[1] = new Quad(x,y,_ppb,D90 ,qalign[1],f,s,g,rms);
-      quad[2] = new Quad(x,y,_ppb,D180,qalign[2],f,s,g,rms);
-      quad[3] = new Quad(x,y,_ppb,D270,qalign[3],f,s,g,rms);
+      for(unsigned j=0; j<4; j++)
+        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],f,s,g,rms);
 
       if (gm)
         delete[] qalign;
