@@ -31,12 +31,17 @@ namespace Ami {
 	       unsigned y0,
 	       unsigned x1,
 	       unsigned y1);
+      ZoomPlot(QWidget*,
+	       const QString&);
       ZoomPlot(QWidget*,const char*& p);
       ~ZoomPlot();
     public:
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      void configure(char*& p, 
+		     unsigned input, 
+		     unsigned& output);
       void configure(char*& p, 
 		     unsigned input, 
 		     unsigned& output,

@@ -3,6 +3,7 @@
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/QtPersistent.hh"
+#include "ami/qt/Rect.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
@@ -75,11 +76,11 @@ RectangleCursors::RectangleCursors(ImageFrame& f,
 
   connect(grab, SIGNAL(clicked()), this, SLOT(grab()));
 
-  connect(_edit_x0   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
-  connect(_edit_y0   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
-  connect(_edit_x1   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
-  connect(_edit_y1   , SIGNAL(editingFinished()), this, SLOT(update_edits()));
-
+  connect(_edit_x0   , SIGNAL(editingFinished()), this, SIGNAL(edited()));
+  connect(_edit_y0   , SIGNAL(editingFinished()), this, SIGNAL(edited()));
+  connect(_edit_x1   , SIGNAL(editingFinished()), this, SIGNAL(edited()));
+  connect(_edit_y1   , SIGNAL(editingFinished()), this, SIGNAL(edited()));
+  connect( this      , SIGNAL(edited())         , this, SLOT(update_edits()));
   _set_edits();
 }
 
@@ -109,6 +110,24 @@ void RectangleCursors::load(const char*& p)
   XML_iterate_close(RectangleCursors,tag);
 
   _set_edits();
+}
+
+void RectangleCursors::save(Rect& r) const
+{
+  r.x0 = unsigned(_x0);
+  r.y0 = unsigned(_y0);
+  r.x1 = unsigned(_x1);
+  r.y1 = unsigned(_y1);
+}
+
+void RectangleCursors::load(const Rect& r)
+{
+  _x0 = double(r.x0);
+  _y0 = double(r.y0);
+  _x1 = double(r.x1);
+  _y1 = double(r.y1);
+  _set_edits();
+  update_edits();
 }
 
 void RectangleCursors::grab() 

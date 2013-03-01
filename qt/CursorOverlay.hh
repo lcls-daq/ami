@@ -34,6 +34,8 @@ namespace Ami {
       const QtBase* base() const;
     public:
       void configure(char*& p, unsigned input, unsigned& output,
+		     const AxisInfo&, ConfigureRequest::Source);
+      void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
 		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);

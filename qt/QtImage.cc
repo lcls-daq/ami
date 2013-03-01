@@ -31,9 +31,9 @@ QtImage::QtImage(const QString&   title,
 
   _scalexy = false;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
-                         _x0*double(d.ppxbin()), double(d.ppxbin()*_nx), _nx);
+                         d.binx(_x0), double(d.ppxbin()*_nx), _nx);
   _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
-                         _y0*double(d.ppybin()), double(d.ppybin()*_ny), _ny);
+                         d.biny(_y0), double(d.ppybin()*_ny), _ny);
 }
   
   
@@ -46,8 +46,8 @@ QtImage::QtImage(const QString&   title,
   const DescImage& d = entry.desc();
   _x0 = (d.xbin(x0)+3)&~3;
   _y0 =  d.ybin(y0);
-  _nx =  d.xbin(x1) - _x0 + 1;
-  _ny =  d.xbin(y1) - _y0 + 1;
+  _nx =  d.xbin(x1) - _x0;
+  _ny =  d.ybin(y1) - _y0;
 
   _nx &= ~3;
   if (_nx==0) _nx=4;
@@ -63,12 +63,9 @@ QtImage::QtImage(const QString&   title,
 
   _scalexy = true;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
-                         d.binx(_x0), d.binx(_x0+_nx), _nx);
+                         d.binx(_x0), double(d.ppxbin()*_nx), _nx);
   _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
-                         d.biny(_y0), d.biny(_y0+_ny), _ny);
-
-  printf("QtImage: xbins %d,%d -> %d,%d  ybins %d,%d -> %d,%d\n",
-         x0,x1,_x0,_nx, y0,y1,_y0,_ny);
+                         d.biny(_y0), double(d.ppybin()*_ny), _ny);
 }
   
   
@@ -182,8 +179,8 @@ void QtImage::set_color_table(const QVector<QRgb>& colors) { _qimage->setColorTa
 void QtImage::set_grid_scale(double scalex, double scaley)
 {
   const DescImage& d = static_cast<const EntryImage&>(entry()).desc();
-  _xgrid->set_scale(scalex*double(d.ppxbin()*_x0), 
+  _xgrid->set_scale(scalex*d.binx(_x0),
                     scalex*double(d.ppxbin()*_nx));
-  _ygrid->set_scale(scaley*double(d.ppybin()*_y0), 
+  _ygrid->set_scale(scaley*d.biny(_y0),
                     scaley*double(d.ppybin()*_ny));
 }

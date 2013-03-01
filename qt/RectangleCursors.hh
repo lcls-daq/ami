@@ -16,6 +16,7 @@ class QLineEdit;
 
 namespace Ami {
   namespace Qt {
+    class Rect;
     class RectangleCursors : public QWidget,
 			     public Cursors,
 			     public ImageMarker {
@@ -27,6 +28,8 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void load(const Rect&);
+      void save(Rect&) const;
     public:
       double xlo() const;
       double ylo() const;
@@ -50,6 +53,7 @@ namespace Ami {
       void grab();
       void update_edits();
     signals:
+      void edited ();
       void changed();
       void done   ();
     private:

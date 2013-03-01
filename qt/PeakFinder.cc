@@ -35,8 +35,12 @@ PeakFinder::PeakFinder(QWidget* parent,
   _channel  (0)
 {
   _threshold = new ImageScale("threshold");
-  _accumulate = new QCheckBox("sum events");
+  
+  _accumulate = new QCheckBox("accumulate events");
   _accumulate->setChecked(true);
+
+  _center_only = new QCheckBox("local max only");
+  _center_only->setChecked(true);
 
   setWindowTitle("PeakFinder Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -44,6 +48,12 @@ PeakFinder::PeakFinder(QWidget* parent,
   QComboBox* channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
+
+  _proc_grp = new QButtonGroup;
+  QRadioButton* countB = new QRadioButton("count hits");
+  QRadioButton* sumB   = new QRadioButton("sum values");
+  _proc_grp->addButton(countB, Ami::PeakFinder::Count);
+  _proc_grp->addButton(sumB  , Ami::PeakFinder::Sum);
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -62,6 +72,12 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout2->addWidget(_threshold);
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
+  { QHBoxLayout* layout1 = new QHBoxLayout;
+    layout1->addWidget(countB);
+    layout1->addStretch();
+    layout1->addWidget(sumB); 
+    layout->addLayout(layout1); }
+  { layout->addWidget(_center_only); }
   { layout->addWidget(_accumulate); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
@@ -74,6 +90,8 @@ PeakFinder::PeakFinder(QWidget* parent,
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+
+  _proc_grp->button(Ami::PeakFinder::Count)->setChecked(true);
 }
   
 PeakFinder::~PeakFinder()
@@ -87,6 +105,8 @@ void PeakFinder::save(char*& p) const
   XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
   XML_insert(p, "QLineEdit", "_threshold_0", QtPersistent::insert(p,_threshold->value(0)) );
   XML_insert(p, "QLineEdit", "_threshold_1", QtPersistent::insert(p,_threshold->value(1)) );
+  XML_insert(p, "QButtonGroup", "_proc_grp", QtPersistent::insert(p,_proc_grp->checkedId()) );
+  XML_insert(p, "QCheckBox", "_center_only", QtPersistent::insert(p,_center_only->isChecked()) );
   XML_insert(p, "QCheckBox", "_accumulate", QtPersistent::insert(p,_accumulate->isChecked()) );
 
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
@@ -113,6 +133,10 @@ void PeakFinder::load(const char*& p)
       _threshold->value(1,QtPersistent::extract_d(p));
     else if (tag.name == "_accumulate")
       _accumulate->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_center_only")
+      _center_only->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_proc_grp")
+      _proc_grp->button(QtPersistent::extract_i(p))->setChecked(true);
     else if (tag.name == "_plots") {
       PeakPlot* plot = new PeakPlot(this, p);
       _plots.push_back(plot);
@@ -164,6 +188,8 @@ void PeakFinder::plot()
 				_channel,
                                 new Ami::PeakFinder(_threshold->value(0),
                                                     _threshold->value(1),
+                                                    Ami::PeakFinder::Mode(_proc_grp->checkedId()),
+                                                    _center_only->isChecked(),
                                                     _accumulate->isChecked()));
   _plots.push_back(plot);
 

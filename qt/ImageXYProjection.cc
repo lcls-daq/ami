@@ -16,10 +16,10 @@
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
+#include "ami/qt/RectROI.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
-#include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/BinMath.hh"
 #include "ami/data/XYHistogram.hh"
@@ -37,10 +37,12 @@
 #include <QtGui/QTabWidget>
 
 #include <sys/socket.h>
+#include <limits.h>
 
 using namespace Ami::Qt;
 
 enum { PlotHistogram, PlotProjection, PlotFunction };
+
 
 ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 				     ChannelDefinition* channels[],
@@ -62,14 +64,18 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
+  _roiButton = new QPushButton("New");
+  _roiBox = new QComboBox;
+  new_roi();
+
   QPushButton* zoomB  = new QPushButton("Zoom");
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
 
   _plot_tab        = new QTabWidget(0);
-  _histogram_plot  = new XYHistogramPlotDesc (0, *_rectangle);
-  _projection_plot = new XYProjectionPlotDesc(0, *_rectangle);
+  _histogram_plot  = new XYHistogramPlotDesc (0);
+  _projection_plot = new XYProjectionPlotDesc(0);
   _function_plot   = new ImageFunctions(0);
   _plot_tab->insertTab(PlotHistogram ,_histogram_plot ,"Histogram");
   _plot_tab->insertTab(PlotProjection,_projection_plot,"Projection");
@@ -86,6 +92,13 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   { QGroupBox* locations_box = new QGroupBox("Region of Interest");
     locations_box->setToolTip("Define projection boundaries.");
     QVBoxLayout* layout2 = new QVBoxLayout;
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addStretch();
+      layout1->addWidget(new QLabel("Select"));
+      layout1->addWidget(_roiBox);
+      layout1->addWidget(_roiButton);
+      layout1->addStretch();
+      layout2->addLayout(layout1); }
     layout2->addWidget(_rectangle);
     locations_box->setLayout(layout2);
     layout->addWidget(locations_box); }
@@ -111,7 +124,11 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
+  connect(_rectangle, SIGNAL(edited()),       this, SIGNAL(changed()));
   connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
+  connect(_rectangle, SIGNAL(done()),         this, SIGNAL(changed()));
+  connect(_roiButton, SIGNAL(clicked()),      this, SLOT(new_roi()));
+  connect(_roiBox   , SIGNAL(currentIndexChanged(int)), this, SLOT(select_roi(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
@@ -126,10 +143,13 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   
 ImageXYProjection::~ImageXYProjection()
 {
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
-    delete *it;
-  }
-  _posts.clear();
+  for(unsigned i=0; i<_rect.size(); i++)
+    delete _rect[i];
+  _rect.clear();
+
+  for(unsigned i=0; i<_rois.size(); i++)
+    delete _rois[i];
+  _rois.clear();
 }
 
 void ImageXYProjection::save(char*& p) const
@@ -146,46 +166,25 @@ void ImageXYProjection::save(char*& p) const
 
   XML_insert(p, "RectangleCursors", "_rectangle", _rectangle->save(p) );
 
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
-    XML_insert(p, "ProjectionPlot", "_pplots", (*it)->save(p) );
+  for(unsigned i=0; i<_rect.size(); i++) {
+    XML_insert(p, "Rect", "_rect", _rect[i]->save(p) );
   }
-
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
-    XML_insert(p, "CursorPlot", "_cplots", (*it)->save(p) );
-  }
-
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
-    XML_insert(p, "ZoomPlot", "_zplots", (*it)->save(p) );
-  }
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
-    XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
-  }
-  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
-    XML_insert( p, "CursorOverlay", "_ovls",
-                (*it)->save(p) );
+  for(unsigned i=0; i<_rois.size(); i++) {
+    XML_insert(p, "RectROI", "_rois", _rois[i]->save(p) );
   }
 }
 
 void ImageXYProjection::load(const char*& p) 
 {
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  _pplots.clear();
+  for(unsigned i=0; i<_rect.size(); i++)
+    delete _rect[i];
+  _rect.clear();
 
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  _cplots.clear();
+  for(unsigned i=0; i<_rois.size(); i++)
+    delete _rois[i];
+  _rois.clear();
 
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  _zplots.clear();
-
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
-    delete *it;
-  }
-  _posts.clear();
-  // mem leak?
-  _ovls.clear();
+  _roiBox->clear();
 
   XML_iterate_open(p,tag)
    if (tag.element == "QtPWidget")
@@ -204,30 +203,21 @@ void ImageXYProjection::load(const char*& p)
       _function_plot  ->load(p);
     else if (tag.name == "_rectangle")
       _rectangle->load(p);
-    else if (tag.name == "_pplots") {
-      ProjectionPlot* plot = new ProjectionPlot(this, p);
-      _pplots.push_back(plot);
-      connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
-      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+    else if (tag.name == "_rect") {
+      Rect* r = new Rect;
+      r->load(p); 
+      _rect.push_back(r);
     }
-    else if (tag.name == "_cplots") {
-      CursorPlot* plot = new CursorPlot(this, p);
-      _cplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
-      connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
-    }
-    else if (tag.name == "_zplots") {
-    ZoomPlot* plot = new ZoomPlot(this, p);
-    _zplots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-    }
-    else if (tag.name == "_posts") {
-      CursorPost* post = new CursorPost(p);
-      _posts.push_back(post);
-    }
-    else if (tag.name == "_ovls") {
-      CursorOverlay* ovl = new CursorOverlay(*this, p);
-      _ovls.push_back(ovl);
+    else if (tag.name == "_rois") {
+      int rect = _rois.size()/_nchannels;
+      QString name = QString("ROI%1").arg(rect);
+      unsigned channel = _rois.size()%_nchannels;
+      if (channel==0)
+        _roiBox->addItem(name);
+      RectROI* roi = new RectROI(this, name, channel, *_rect[rect]);
+      roi->load(p);
+      _rois.push_back(roi);
+      connect(roi, SIGNAL(changed()), this, SIGNAL(changed()));
     }
   XML_iterate_close(ImageXYProjection,tag);
 
@@ -236,64 +226,33 @@ void ImageXYProjection::load(const char*& p)
 
 void ImageXYProjection::save_plots(const QString& p) const
 {
-  int i=1;
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg(i++);
-    FILE* f = fopen(qPrintable(s),"w");
-    if (f) {
-      (*it)->dump(f);
-      fclose(f);
-    }
+  for(unsigned i=0; i<_rois.size(); i++) {
+    QString q = QString("%1_ROI%2_%3").arg(p).arg(i/4).arg(i%4);
+    _rois[i]->save_plots(q);
   }
 }
 
 void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
 				  ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
-  const unsigned maxpixels=1024;
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+  for(std::vector<RectROI*>::iterator it=_rois.begin(); it!=_rois.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels);
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
-  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
-
+    
   _histogram_plot->configure(p,_channel,output,channels,signatures,nchannels);
 }
 
-void ImageXYProjection::setup_payload(Cds& cds)
+void ImageXYProjection::setup_payload(Ami::Cds& cds)
 {
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-   (*it)->setup_payload(cds);
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    (*it)->setup_payload(cds);
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-   (*it)->setup_payload(cds);
-  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-   (*it)->setup_payload(cds);
+  for(unsigned i=0; i<_rois.size(); i++) 
+    _rois[i]->setup_payload(cds);
 
   _histogram_plot->setup_payload(cds);
 }
 
 void ImageXYProjection::update()
 {
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->update();
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    (*it)->update();
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    (*it)->update();
-  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->update();
+  for(unsigned i=0; i<_rois.size(); i++)
+    _rois[i]->update();
 
   _histogram_plot->update();
 }
@@ -311,126 +270,53 @@ void ImageXYProjection::plot()
     { AbsOperator* op = _plot_tab->currentIndex()==PlotHistogram ?
         static_cast<AbsOperator*>(_histogram_plot ->desc(qPrintable(_title->text()))) :
         static_cast<AbsOperator*>(_projection_plot->desc(qPrintable(_title->text())));
-      ProjectionPlot* plot = 
-	new ProjectionPlot(this,_title->text(), _channel, op);
-                           
-      _pplots.push_back(plot);
-
-      connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-      emit changed();
-
+      _roi().add_projection(op);
       break;
     }
   case PlotFunction:
     { ScalarPlotDesc* pplot = &_function_plot->plot_desc();
       if (pplot->postAnalysis()) {
-	QString     qtitle = _add_post(pplot->qtitle(), _function_plot->expression());
+        SharedData* post;
+        QString qtitle = _roi().add_post(pplot->qtitle(),
+                                         _function_plot->expression(),
+                                         post);
 	DescEntry*  entry  = pplot->desc(qPrintable(qtitle));
-	PostAnalysis::instance()->plot(qtitle,entry,_posts.back());
+	PostAnalysis::instance()->plot(qtitle,entry,post);
       }
       else {
 	DescEntry*  desc = pplot->desc(qPrintable(_title->text()));
-	CursorPlot* cplot =
-	  new CursorPlot(this, _title->text(), _channel,
-			 new BinMath(*desc,_function_plot->expression()));
+        _roi().add_cursor_plot(new BinMath(*desc,_function_plot->expression()));
 	delete desc;
-	_cplots.push_back(cplot);
-      connect(cplot, SIGNAL(changed()), this, SIGNAL(changed()));
-      connect(cplot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
       }
-      emit changed();
     } 
     break;
   default:
     return;
   }
-
-#undef CASE_PLOT
 }
 
 void ImageXYProjection::add_function_post() 
 {
-  _add_post(_function_plot->plot_desc().qtitle(),
-            _function_plot->expression()); 
-  _posts.back()->signup();
-}
-
-QString ImageXYProjection::_add_post(const QString& title,
-                                     const char* expr)
-{
-  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(title);
-
-  Ami::DescCache*  desc = new Ami::DescCache(qPrintable(qtitle),
-                                             qPrintable(qtitle),
-                                             Ami::PostAnalysis);
-  CursorPost* post = new CursorPost(_channel,
-				    new BinMath(*desc,expr),
-                                    this);
-  _posts.push_back(post);
-
-  delete desc;
-
-  emit changed();
-
-  return qtitle;
+  SharedData* post;
+  _roi().add_post(_function_plot->plot_desc().qtitle(),
+                  _function_plot->expression(),
+                  post);
+  post->signup();
 }
 
 void ImageXYProjection::zoom()
 {
-  ZoomPlot* plot = new ZoomPlot(this,
-				_channels[_channel]->name(),
-				_channel,
-				unsigned(_rectangle->xlo()),
-				unsigned(_rectangle->ylo()),
-                                unsigned(_rectangle->xhi()),
-                                unsigned(_rectangle->yhi()));
-  _zplots.push_back(plot);
-
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-  emit changed();
-}
-
-void ImageXYProjection::remove_plot(QObject* obj)
-{
-  printf("Removing plot %p\n",obj);
-  { ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
-    _pplots.remove(plot); }
-
-  { CursorPlot* plot = static_cast<CursorPlot*>(obj);
-    _cplots.remove(plot); }
-
-  { ZoomPlot* plot = static_cast<ZoomPlot*>(obj);
-    _zplots.remove(plot); }
-
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
-  emit changed();
-}
-
-void ImageXYProjection::configure_plot()
-{
-  emit changed();
+  _roi().add_zoom_plot();  
 }
 
 void ImageXYProjection::update_range()
 {
-  _function_plot->update_range(_rectangle->ixlo(),
-                               _rectangle->iylo(),
-                               _rectangle->ixhi(),
-                               _rectangle->iyhi());
-#if 0
-  emit changed();
-#endif
+  _function_plot->update_range(0,0,INT_MAX,INT_MAX);
 
   _frame.replot();
-}
 
-void ImageXYProjection::remove_cursor_post(CursorPost* post)
-{
-  _posts.remove(post);
-  emit changed();
+  if (_roiBox->currentIndex()>=0)
+    _rectangle->save(*_rect[_roiBox->currentIndex()]);
 }
 
 void ImageXYProjection::plottab_changed(int index)
@@ -444,9 +330,11 @@ void ImageXYProjection::overlay()
   case PlotFunction:
     { ScalarPlotDesc* pplot = &_function_plot->plot_desc();
       if (pplot->postAnalysis()) {
-	DescEntry* desc = pplot->desc(qPrintable(_add_post(pplot->qtitle(),
-							   _function_plot->expression())));
-	new QtPlotSelector(*this, *PostAnalysis::instance(), desc, _posts.back());
+        SharedData* post;
+	DescEntry* desc = pplot->desc(qPrintable(_roi().add_post(pplot->qtitle(),
+                                                                 _function_plot->expression(),
+                                                                 post)));
+	new QtPlotSelector(*this, *PostAnalysis::instance(), desc, post);
       }
       else {
 	DescEntry* desc = pplot->desc(qPrintable(_title->text()));
@@ -457,34 +345,15 @@ void ImageXYProjection::overlay()
   default:
     break;
   }
-
-#undef CASE_PLOT
 }
 
-void ImageXYProjection::add_overlay(DescEntry* desc,
-                                    QtPlot*    plot,
-                                    SharedData*)
+void ImageXYProjection::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
 {
-  CursorOverlay* ovl = new CursorOverlay(*this, 
-                                         *plot,
-                                         _channel, 
-                                         new BinMath(*desc,
-						     _function_plot->expression()));
-                                     
+  _roi().add_overlay(*plot, new BinMath(*desc,_function_plot->expression()));
   delete desc;
-
-  _ovls.push_back(ovl);
-
-  emit changed();
 }
 
-void ImageXYProjection::remove_overlay(QtOverlay* obj)
-{
-  CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
-  _ovls.remove(ovl);
-  
-  //  emit changed();
-}
+void ImageXYProjection::remove_overlay(QtOverlay*) {}
 
 void ImageXYProjection::showEvent(QShowEvent* ev)
 {
@@ -499,3 +368,25 @@ void ImageXYProjection::hideEvent(QHideEvent* ev)
   _frame.remove_marker(*_rectangle);
   update_range();
 }
+
+void ImageXYProjection::new_roi()
+{
+  int i=_rois.size()/_nchannels;
+  _rect.push_back(new Rect());
+  QString name = QString("ROI%1").arg(i);
+  _roiBox->addItem(name);
+  for(unsigned j=0; j<_nchannels; j++) {
+    RectROI* roi = new RectROI(this, name,j,*_rect[i]);
+    _rois.push_back(roi);
+    connect(roi, SIGNAL(changed()), this, SIGNAL(changed()));
+  }
+  _roiBox->setCurrentIndex(i);
+}
+
+void ImageXYProjection::select_roi(int i)
+{
+  if (i>=0)
+    _rectangle->load(*_rect[i]);
+}
+
+RectROI& ImageXYProjection::_roi() { return *_rois[_roiBox->currentIndex()*_nchannels + _channel]; }

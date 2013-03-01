@@ -6,6 +6,7 @@
 #include <QtCore/QString>
 
 class QCheckBox;
+class QButtonGroup;
 
 #include <list>
 
@@ -50,6 +51,8 @@ namespace Ami {
       unsigned _channel;
 
       ImageScale*    _threshold;
+      QButtonGroup*  _proc_grp;
+      QCheckBox*     _center_only;
       QCheckBox*     _accumulate;
 
       std::list<PeakPlot*> _plots;

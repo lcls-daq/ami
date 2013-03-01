@@ -19,8 +19,7 @@ namespace Ami {
 
     class XYHistogramPlotDesc : public QWidget {
     public:
-      XYHistogramPlotDesc(QWidget* parent,
-                          const RectangleCursors& r);
+      XYHistogramPlotDesc(QWidget* parent);
       ~XYHistogramPlotDesc();
     public:
       void save(char*& p) const;
@@ -28,7 +27,6 @@ namespace Ami {
     public:
       Ami::XYHistogram* desc(const char*) const;
     private:
-      const RectangleCursors& _rectangle;
       DescTH1F* _desc;
 
       //  Interface for displaying pixel range

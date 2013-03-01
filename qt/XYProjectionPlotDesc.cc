@@ -17,10 +17,8 @@ using namespace Ami::Qt;
 
 enum { PlotSum, PlotMean };
 
-XYProjectionPlotDesc::XYProjectionPlotDesc(QWidget* parent,
-					   const RectangleCursors& r) :
-  QWidget(parent),
-  _rectangle(r)
+XYProjectionPlotDesc::XYProjectionPlotDesc(QWidget* parent) :
+  QWidget(parent)
 {
   QRadioButton* xaxisB = new QRadioButton("X");
  QRadioButton* yaxisB = new QRadioButton("Y");
@@ -82,30 +80,22 @@ Ami::XYProjection* XYProjectionPlotDesc::desc(const char* title) const
 
   if (_axis->checkedId()==0) { // X
     if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(Ami::DescTH1F::Inclusive, title,
-			 "pixel", "sum",
-			 _rectangle.nxbins(), _rectangle.xlo(), _rectangle.xhi());
-      proj = new Ami::XYProjection(desc, Ami::XYProjection::X, _rectangle.ylo(), _rectangle.yhi());
+      Ami::DescTH1F desc(title, "pixel", "sum", 1, 0, 0);
+      proj = new Ami::XYProjection(desc, Ami::XYProjection::X);
     }
     else {
-      Ami::DescProf desc(Ami::DescProf::Inclusive, title,
-			 "pixel", "mean",
-			 _rectangle.nxbins(), _rectangle.xlo(), _rectangle.xhi(), "");
-      proj = new Ami::XYProjection(desc, Ami::XYProjection::X, _rectangle.ylo(), _rectangle.yhi());
+      Ami::DescProf desc(title, "pixel", "mean", 1, 0, 0, "");
+      proj = new Ami::XYProjection(desc, Ami::XYProjection::X);
     }
   }
   else { // Y
     if (_norm->checkedId()==0) {
-      Ami::DescTH1F desc(Ami::DescTH1F::Inclusive, title,
-			 "pixel", "sum",
-			 _rectangle.nybins(),  _rectangle.ylo(), _rectangle.yhi());
-      proj = new Ami::XYProjection(desc, Ami::XYProjection::Y, _rectangle.xlo(), _rectangle.xhi());
+      Ami::DescTH1F desc(title, "pixel", "sum", 1, 0, 0);
+      proj = new Ami::XYProjection(desc, Ami::XYProjection::Y);
     }
     else {
-      Ami::DescProf desc(Ami::DescProf::Inclusive, title,
-			 "pixel", "mean",
-			 _rectangle.nybins(), _rectangle.ylo(), _rectangle.yhi(), "");
-      proj = new Ami::XYProjection(desc, Ami::XYProjection::Y, _rectangle.xlo(), _rectangle.xhi());
+      Ami::DescProf desc(title, "pixel", "mean", 1, 0, 0, "");
+      proj = new Ami::XYProjection(desc, Ami::XYProjection::Y);
     }
   }
   

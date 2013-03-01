@@ -58,6 +58,30 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 }
 
 ZoomPlot::ZoomPlot(QWidget*         parent,
+		   const QString&   name) :
+  QtPWidget(0),
+  _name    (name),
+  _input   (0),
+  _signature(-1),
+  _x0     (1),
+  _y0     (1),
+  _x1     (0),
+  _y1     (0),
+  _frame   (new ImageDisplay(false))
+{
+  setWindowTitle(name);
+  setAttribute(::Qt::WA_DeleteOnClose, true);
+
+  QHBoxLayout* layout = new QHBoxLayout;
+  layout->addWidget(_frame);
+  setLayout(layout);
+
+  show();
+
+  PWidgetManager::add(this, _name);
+}
+
+ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const char*&     p) :
   QtPWidget(0),
   _signature(-1),
@@ -79,7 +103,6 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 
 ZoomPlot::~ZoomPlot()
 {
-  printf("ZoomPlot %p deleted\n",this);
 }
 
 void ZoomPlot::save(char*& p) const
@@ -122,10 +145,22 @@ void ZoomPlot::setup_payload(Cds& cds)
   _frame->reset();
   const Entry* entry = cds.entry(_signature);
   if (entry) {
-    _frame->add( new QtImage(entry->desc().name(),
-			     *static_cast<const EntryImage*>(entry),
-			     _x0, _y0, _x1, _y1),
-		 true);
+    if (_x1<_x0) {
+      const DescImage& d = static_cast<const DescImage&>(entry->desc());
+      unsigned x0 = unsigned(d.xlow());
+      unsigned y0 = unsigned(d.ylow());
+      unsigned x1 = unsigned(d.xup ());
+      unsigned y1 = unsigned(d.yup ());
+      _frame->add( new QtImage(entry->desc().name(),
+                               *static_cast<const EntryImage*>(entry),
+                               x0,y0,x1,y1),
+                   true);
+    }
+    else 
+      _frame->add( new QtImage(entry->desc().name(),
+                               *static_cast<const EntryImage*>(entry),
+                               _x0, _y0, _x1, _y1),
+                   true);
     _frame->grid_scale().setup_payload(cds);
   }
 }
@@ -137,25 +172,14 @@ void ZoomPlot::configure(char*& p,
                          int* input_signatures, 
                          unsigned input_nchannels)
 {
-#if 0
-  DescImage image(qPrintable(_name),
-                  unsigned(_x1-_x0+1), unsigned(_y1-_y0+1),
-                    1,   1,
-                  _x0, _y0);
-  Ami::Zoom zoom(image, input_channels[_input]->oper());
+  configure(p, input_signatures[_input], output);
+}
 
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Hidden,
-						  input,
-						  -1,
-						  *input_channels[_input]->filter().filter(),
-						  zoom);
-  p += r.size();
-  _req.request(r,output);
-  _signature = r.output();
-#else
-  _signature = input_signatures[_input];
-#endif
+void ZoomPlot::configure(char*& p, 
+                         unsigned input, 
+                         unsigned& output)
+{
+  _signature = input;
 }
 
 void ZoomPlot::update()

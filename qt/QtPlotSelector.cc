@@ -24,6 +24,7 @@ QtPlotSelector::QtPlotSelector(QWidget&       parent,
 
   const QStringList& plots = QtPlot::names(desc->type());
   if (plots.size()==0) {
+    printf("QtPlotSelector no existing plots of type %d\n",desc->type());
     delete this;
     return;
   }

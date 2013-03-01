@@ -70,8 +70,8 @@ void QtPWidget::load(const char*& p)
 
 void QtPWidget::front()
 {
-  if (_parent)
-    move(_parent->pos());
+  //  if (_parent)
+  //    move(_parent->pos());
 
   if (!isVisible())
     show();

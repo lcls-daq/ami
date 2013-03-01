@@ -8,6 +8,7 @@
 #include "ami/data/BinMath.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/RawFilter.hh"
 
 #include <QtCore/QString>
 
@@ -66,7 +67,12 @@ void CursorPost::configure(char*& p, unsigned input, unsigned& output,
 {
   unsigned channel = _channel;
   unsigned input_signature = signatures[channel];
+  configure(p,input_signature,output,xinfo,source);
+}
 
+void CursorPost::configure(char*& p, unsigned input, unsigned& output,
+			   const AxisInfo& xinfo, ConfigureRequest::Source source)
+{
   // replace cursor values with bin indices
   QString expr(_input->expression());
   QString new_expr;
@@ -121,9 +127,9 @@ void CursorPost::configure(char*& p, unsigned input, unsigned& output,
   
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  source,
-						  input_signature,
+						  input,
 						  -1,
-						  *channels[channel]->filter().filter(),
+						  RawFilter(),
 						  op);
   p += r.size();
   _req.request(r,output);
