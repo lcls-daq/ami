@@ -198,6 +198,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       }
     }
     printf("XC\n");
+    _factory.discovery().sort();  // Need to set a consistent order across all server processes
     _factory.discovery().showentries();
     //    _factory.hidden   ().showentries();
 
