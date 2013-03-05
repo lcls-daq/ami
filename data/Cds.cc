@@ -12,7 +12,7 @@ using namespace Ami;
 
 Cds::Cds(const char* name) :
   _desc       (name),
-  _payload_sem(Semaphore::FULL),
+  _payload_sem(new Semaphore(Semaphore::FULL)),
   _signature  (0)
 {
   _desc.signature(_signature++);

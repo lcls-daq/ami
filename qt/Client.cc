@@ -242,8 +242,15 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
     }
   }
 
-  if (_input_entry==0)
+  if (_input_entry==0) {
     printf("%s [%08x.%08x.%d] not found\n", channel_name, info.phy(), info.log(), channel);
+
+    for(  const DescEntry* e = rx.entries(); e < rx.end(); 
+          e = reinterpret_cast<const DescEntry*>
+            (reinterpret_cast<const char*>(e) + e->size())) {
+      printf("  [%d] %s\n",e->signature(),e->name());
+    }
+  }
 
   _manager->configure();
 }
