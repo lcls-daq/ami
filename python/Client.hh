@@ -7,6 +7,7 @@
 
 #include "pdsdata/xtc/DetInfo.hh"
 
+#include <semaphore.h>
 #include <vector>
 
 namespace Ami {
