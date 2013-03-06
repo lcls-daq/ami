@@ -64,6 +64,10 @@ void XtcFileClient::setStatusLabelText(const QString status) {
   _statusLabel->setText(status);
 }
 
+void XtcFileClient::setPauseButtonLabel(const QString label) {
+  _pauseButton->setText(label);
+}
+
 void XtcFileClient::setStatus(const QString status) {
   cout << qPrintable(status) << endl;
   if (pthread_equal(pthread_self(), _qtThread)) {
@@ -134,15 +138,22 @@ void XtcFileClient::printDgram(const Dgram dg) {
     }
 
     time_t t = (time_t) _start;
-    QString label = "Run " + _runName + " date is " + asctime(t);
+    QString label = "Run " + _runName + " date: " + asctime(t);
     if (_length > 0) {
       if (_length > 2 * 60) {
-        label += ", length is " + dtoa(_length / 60, 1) + " min";
+        label += " duration: " + dtoa(_length / 60, 1) + " min";
       } else {
-        label += ", length is " + dtoa(_length, 1) + " sec";
+        label += " duration: " + dtoa(_length, 1) + " sec";
       }
     }
+
+    int numTotalEvent = 0, numCalib = 0;
+    _run.numTotalEvent(numTotalEvent);
+    _run.numCalib     (numCalib);
+    label += "\nTotal event# " + dtoa(numTotalEvent,0) + " calib# " + dtoa(numCalib,0);
+
     _startLabel->setText(label);
+    _eventLabel->setText("");
     _damageLabel->setText("");
     _hzLabel->setText("");
 
@@ -156,13 +167,27 @@ void XtcFileClient::printDgram(const Dgram dg) {
     _runSliderBeingSet = false;
   }
 
+  int iEventGlobal, iCalib, iEventInCalib;
+  _run.curEventId( iEventGlobal, iCalib, iEventInCalib );
+  double clockDelta = clockTime - _start;
+  int minDelta   = 0;
+  if (clockDelta >= 60)
+  {
+    minDelta = int(clockDelta/60);
+    clockDelta = clockDelta - minDelta * 60;
+    sprintf(buf, "Current calib# %d event %d (global %d); Progress: %d min %.1f sec", iCalib, iEventInCalib, iEventGlobal, minDelta, clockDelta);
+  }
+  else
+    sprintf(buf, "Current calib# %d event %d (global %d); Progress: %.1f sec", iCalib, iEventInCalib, iEventGlobal, clockDelta);
+  _eventLabel->setText(buf);
+
+
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
   _damageLabel->setText(buf);
 
   double executionTime = now() - _executionStart;
   double payloadTotalGB = _payloadTotal / 1024.0 / 1024.0 / 1024.0;
-  double clockDelta = clockTime - _start;
-  sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s); Progress: %.1f sec", _dgCount / executionTime, payloadTotalGB / executionTime, clockDelta);
+  sprintf(buf, "Rate: %.0f Hz (%0.3f GB/s)", _dgCount / executionTime, payloadTotalGB / executionTime);
   _hzLabel->setText(buf);
 }
 
@@ -214,10 +239,26 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _runName(""),
 
   _runButton(new QPushButton("Run")),
+  _pauseButton(new QPushButton("Pause")),
   _stopButton(new QPushButton("Stop")),
   _exitButton(new QPushButton("Exit")),
 
+  _prevCalibButton(new QPushButton("prev Calib")),
+  _prevEventButton(new QPushButton("Prev Event")),
+  _nextEventButton(new QPushButton("Next Event")),
+  _nextCalibButton(new QPushButton("Next Calib")),
+
+  _jumpLabel1(new QLabel("Jump to Calib:")),
+  _jumpCalibInput(new QLineEdit),
+  _jumpLabel2(new QLabel("Event:")),
+  _jumpEventInput(new QLineEdit),
+  _jumpLabel3(new QLabel("OR Time: Min")),
+  _jumpMinInput(new QLineEdit),
+  _jumpLabel4(new QLabel("Sec")),
+  _jumpSecInput(new QLineEdit),
+
   _startLabel(new QLabel),
+  _eventLabel(new QLabel),
   _damageLabel(new QLabel),
 
   _runSlider(new QSlider(::Qt::Horizontal)),
@@ -226,6 +267,13 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _runSliderMovedTo(-1),
   _runSliderBeingSet(false),
 
+  _iJumpCalib(-1),
+  _iJumpEvent(-1),
+  _fJumpMin(-1),
+  _fJumpSec(-1),
+  _iJumpToNextCalib(0),
+  _iJumpToNextEvent(0),
+
   _hzLabel(new QLabel),
   _hzSlider(new QSlider(::Qt::Horizontal)),
   _hzSliderLabel(new QLabel),
@@ -233,6 +281,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _statusLabel(new QLabel("Initializing...")),
 
   _running(false),
+  _paused (false),
   _stopped(false),
 
   _damageMask(0),
@@ -274,13 +323,47 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   hbox1->addStretch();
   hbox1->addWidget(_runButton);
   hbox1->addStretch();
+  hbox1->addWidget(_pauseButton);
+  hbox1->addStretch();
   hbox1->addWidget(_stopButton);
   hbox1->addStretch();
   hbox1->addWidget(_exitButton);
   hbox1->addStretch();
   l->addLayout(hbox1);
 
+  QHBoxLayout* hboxNextEvent = new QHBoxLayout;
+  hboxNextEvent->addStretch();
+  hboxNextEvent->addWidget(_prevCalibButton);
+  hboxNextEvent->addStretch();
+  hboxNextEvent->addWidget(_prevEventButton);
+  hboxNextEvent->addStretch();
+  hboxNextEvent->addWidget(_nextEventButton);
+  hboxNextEvent->addStretch();
+  hboxNextEvent->addWidget(_nextCalibButton);
+  hboxNextEvent->addStretch();
+  l->addLayout(hboxNextEvent);
+
+  QHBoxLayout* hboxjump = new QHBoxLayout;
+  hboxjump->addWidget(_jumpLabel1);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpCalibInput);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpLabel2);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpEventInput);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpLabel3);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpMinInput);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpLabel4);
+  hboxjump->addStretch();
+  hboxjump->addWidget(_jumpSecInput);
+  hboxjump->addStretch();
+  l->addLayout(hboxjump);
+
   l->addWidget(_startLabel);
+  l->addWidget(_eventLabel);
   l->addWidget(_damageLabel);
   l->addWidget(_hzLabel);
 
@@ -307,17 +390,33 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
 
   _connect(_dirSelect, SIGNAL(clicked()), this, SLOT(selectDir()));
   _connect(_runButton, SIGNAL(clicked()), this, SLOT(runClicked()));
+  _connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseClicked()));
   _connect(_stopButton, SIGNAL(clicked()), this, SLOT(stopClicked()));
   _connect(_exitButton, SIGNAL(clicked()), qApp, SLOT(closeAllWindows()));
+
+  _connect(_prevCalibButton, SIGNAL(clicked()), this, SLOT(prevCalibClicked()));
+  _connect(_prevEventButton, SIGNAL(clicked()), this, SLOT(prevEventClicked()));
+  _connect(_nextEventButton, SIGNAL(clicked()), this, SLOT(nextEventClicked()));
+  _connect(_nextCalibButton, SIGNAL(clicked()), this, SLOT(nextCalibClicked()));
+
+  _connect(_jumpCalibInput, SIGNAL(returnPressed()), this, SLOT(jumpToCalibAndEvent()));
+  _connect(_jumpEventInput, SIGNAL(returnPressed()), this, SLOT(jumpToCalibAndEvent()));
+  _connect(_jumpMinInput, SIGNAL(returnPressed()), this, SLOT(jumpToTime()));
+  _connect(_jumpSecInput, SIGNAL(returnPressed()), this, SLOT(jumpToTime()));
+
   _connect(_runCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(selectRun(int)));
   _connect(_hzSlider, SIGNAL(valueChanged(int)), this, SLOT(hzSliderChanged(int)));
   _connect(_runSlider, SIGNAL(valueChanged(int)), this, SLOT(runSliderChanged(int)));
   _connect(this, SIGNAL(_printDgram(const Dgram)), this, SLOT(printDgram(const Dgram)));
   _connect(this, SIGNAL(_setStatusLabelText(const QString)), this, SLOT(setStatusLabelText(const QString)));
+  _connect(this, SIGNAL(_setPauseButtonLabel(const QString)), this, SLOT(setPauseButtonLabel(const QString)));
   _connect(this, SIGNAL(_setEnabled(QWidget*, bool)), this, SLOT(setEnabled(QWidget*, bool)));
   _connect(this, SIGNAL(_updateDirLabel()), this, SLOT(updateDirLabel()));
   _connect(this, SIGNAL(_updateRunCombo()), this, SLOT(updateRunCombo()));
   _connect(this, SIGNAL(_updateRun()), this, SLOT(updateRun()));
+
+  emit _setEnabled(_pauseButton, false);
+  emit _setEnabled(_stopButton, false);
 
   setDir(QString(_curdir));
   configure_run();
@@ -427,7 +526,7 @@ void XtcFileClient::setDir(QString dir)
   }
 }
 
-void XtcFileClient::runClicked() 
+void XtcFileClient::runClicked()
 {
   setStatus("Run requested...");
   _runButton->setEnabled(false);
@@ -435,9 +534,83 @@ void XtcFileClient::runClicked()
   _task->call(this);
 }
 
+void XtcFileClient::pauseClicked() {
+  if (!_running) return;
+
+  if (!_paused)
+  {
+    setStatus("Pause requested...");
+    _paused = true;
+    emit _setPauseButtonLabel("Resume");
+  }
+  else
+  {
+    setStatus("Resume requested...");
+    _paused = false;
+    emit _setPauseButtonLabel("Pause");
+  }
+}
+
 void XtcFileClient::stopClicked() {
+  if (!_running) return;
   setStatus("Stop requested...");
   _stopped = true;
+}
+
+void XtcFileClient::nextEventClicked() {
+  if (!_running) return;
+  setStatus("nextEvent requested...");
+  _iJumpToNextCalib = 0;
+  _iJumpToNextEvent = 1;
+}
+
+void XtcFileClient::prevEventClicked() {
+  if (!_running) return;
+  setStatus("prevEvent requested...");
+  _iJumpToNextCalib = 0;
+  _iJumpToNextEvent = -1;
+}
+
+void XtcFileClient::nextCalibClicked() {
+  if (!_running) return;
+  setStatus("nextCalib requested...");
+  _iJumpToNextCalib = 1;
+  _iJumpToNextEvent = 1;
+}
+
+void XtcFileClient::prevCalibClicked() {
+  if (!_running) return;
+  setStatus("prevCalib requested...");
+  _iJumpToNextCalib = -1;
+  _iJumpToNextEvent = 1;
+}
+
+void XtcFileClient::jumpToCalibAndEvent() {
+  int iCalib = _jumpCalibInput->text().toInt();
+  int iEvent = _jumpEventInput->text().toInt();
+
+  if ( iCalib == 0 )
+    iCalib = 1;
+
+  if ( iEvent == 0 )
+    iEvent = 1;
+
+  if (iCalib > 0 && iEvent > 0)
+  {
+    _iJumpCalib = iCalib;
+    _iJumpEvent = iEvent;
+  }
+
+  _jumpMinInput->setText("");
+  _jumpSecInput->setText("");
+}
+
+void XtcFileClient::jumpToTime() {
+  _fJumpMin = _jumpMinInput->text().toDouble();
+  _fJumpSec = _jumpSecInput->text().toDouble();
+
+  _jumpCalibInput->setText("");
+  _jumpEventInput->setText("");
 }
 
 void XtcFileClient::insertTransition(TransitionId::Value transition)
@@ -450,19 +623,33 @@ void XtcFileClient::insertTransition(TransitionId::Value transition)
 
 void XtcFileClient::routine()
 {
+  emit _setEnabled(_nextEventButton, true);
+  emit _setEnabled(_prevEventButton, true);
+  emit _setEnabled(_nextCalibButton, true);
+  emit _setEnabled(_prevCalibButton, true);
+  emit _setEnabled(_pauseButton,true);
   emit _setEnabled(_stopButton, true);
   emit _setEnabled(_runButton,  false);
   emit _setEnabled(_runCombo,   false);
-  _running = true;
-  _stopped = false;
+  emit _setPauseButtonLabel("Pause");
 
   do_configure(_runName);
   if (_runValid) {
+    _running = true;
+    _stopped = false;
+    _paused  = false;
     run();
   }
 
+  _paused  = false;
   _stopped = false;
   _running = false;
+  emit _setPauseButtonLabel("Pause");
+  emit _setEnabled(_nextEventButton, false);
+  emit _setEnabled(_prevEventButton, false);
+  emit _setEnabled(_nextCalibButton, false);
+  emit _setEnabled(_prevCalibButton, false);
+  emit _setEnabled(_pauseButton, false);
   emit _setEnabled(_stopButton, false);
   emit _setEnabled(_runButton,  true);
   emit _setEnabled(_runCombo,   true);
@@ -510,6 +697,7 @@ void XtcFileClient::configure()
         _runName = _runList.at(j);
         emit _updateRun();
         _stopped = false;
+        _paused  = false;
         _running = false;
         do_configure(_runName);
         if (! _runValid) {
@@ -609,21 +797,48 @@ void XtcFileClient::do_configure(QString runName)
   _runValid = true;
 }
 
-void XtcFileClient::seekTime(double time) {
-  uint32_t seconds = (uint32_t) time;
+int XtcFileClient::seekTime(double time) {
+  uint32_t seconds     = (uint32_t) time;
+  uint32_t nanoseconds = (uint32_t) ((time - seconds) * 1e9);
   int iCalib = -1;
   int iEvent = -1;
   bool bExactMatch = false;
   bool bOvertime = false;
-  if (_run.findTime(seconds, 0, iCalib, iEvent, bExactMatch, bOvertime) != 0) {
-    setStatus("Failed to find event for " + dtoa(time - _start, 0) + " seconds after start");
-    return;
+  if (_run.findTime(seconds, nanoseconds, iCalib, iEvent, bExactMatch, bOvertime) != 0) {
+    setStatus("Failed to find event for " + dtoa(time - _start, 1) + " seconds after start");
+    return 1;
   }
   int eventNum;
   if (_run.jump(iCalib, iEvent, eventNum) != 0) {
-    setStatus("Failed to move to event for " + dtoa(time - _start, 0) + " seconds after start");
-    return;
+    setStatus("Failed to jump to event for " + dtoa(time - _start, 1) + " seconds after start");
+    return 2;
   }
+
+  setStatus("Jump to event for " + dtoa(time - _start, 1) + " seconds after start");
+  return 0;
+}
+
+int XtcFileClient::jumpToNext(int iJumpToNextCalib, int iJumpToNextEvent)
+{
+  int iNewEventGlobal   = -1;
+  int iNewCalib         = -1;
+  int iNewEventInCalib  = -1;
+
+  int iError = _run.nextCalibEventId(iJumpToNextCalib, iJumpToNextEvent, true, iNewEventGlobal, iNewCalib, iNewEventInCalib);
+  if (iError != 0)
+  {
+    setStatus("Failed to find the relatve Calib " + itoa(iJumpToNextCalib) + " Event " + itoa(iJumpToNextEvent));
+    return 1;
+  }
+
+  int iFinalEventNum;
+  if (_run.jump(iNewCalib, iNewEventInCalib, iFinalEventNum) != 0)
+  {
+    setStatus("Failed to jump to Calib " + itoa(iNewCalib) + " Event " + itoa(iNewEventInCalib));
+    return 2;
+  }
+
+  return 0;
 }
 
 void XtcFileClient::run()
@@ -639,9 +854,57 @@ void XtcFileClient::run()
   Dgram* last_printed_dg = NULL;
 
   while (! _stopped) {
+    if (_paused)
+    {
+      if (! (_stopped || (_runSliderMovedTo >= 0) ||
+              (_iJumpCalib > 0 && _iJumpEvent > 0) ||
+              (_fJumpMin >= 0 && _fJumpSec >= 0)   ||
+              (_iJumpToNextCalib != 0 || _iJumpToNextEvent != 0)
+            )
+         )
+      {
+        d_sleep(0.1);
+        continue;
+      }
+    }
+
     if (_runSliderMovedTo >= 0) {
-      seekTime(_start + _runSliderMovedTo);
+      int iError = seekTime(_start + _runSliderMovedTo);
       _runSliderMovedTo = -1;
+      if (iError != 0 && _paused)
+        continue;
+    }
+
+    if (_fJumpMin >= 0 && _fJumpSec >= 0)
+    {
+      int iError = seekTime(_start + _fJumpMin * 60 + _fJumpSec);
+      _fJumpMin = -1;
+      _fJumpSec = -1;
+      if (iError != 0 && _paused)
+        continue;
+    }
+
+    if (_iJumpCalib > 0 && _iJumpEvent > 0)
+    {
+      int eventNum;
+      int iError = _run.jump(_iJumpCalib, _iJumpEvent, eventNum);
+      if (iError  != 0)
+        setStatus("Failed to jump to Calib " + itoa(_iJumpCalib) + " Event " + itoa(_iJumpEvent));
+      else
+        setStatus("Jumped to Calib " + itoa(_iJumpCalib) + " Event " + itoa(_iJumpEvent) + " (Global Event " + itoa(eventNum) + ")");
+      _iJumpCalib = -1;
+      _iJumpEvent = -1;
+      if (iError != 0 && _paused)
+        continue;
+    }
+
+    if (_iJumpToNextCalib != 0 || _iJumpToNextEvent != 0)
+    {
+      int iError = jumpToNext(_iJumpToNextCalib, _iJumpToNextEvent);
+      _iJumpToNextCalib = 0;
+      _iJumpToNextEvent = 0;
+      if (iError != 0 && _paused)
+        continue;
     }
 
     Dgram* dg = NULL;
