@@ -13,6 +13,7 @@
 #include "ami/qt/QtPlot.hh"
 #include "ami/qt/QtPlotSelector.hh"
 
+#include "ami/app/XtcClient.hh"
 #include "ami/client/ClientManager.hh"
 
 #include "ami/data/ConfigureRequest.hh"
@@ -21,7 +22,6 @@
 #include "ami/data/DescCache.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryScalar.hh"
-#include "ami/data/EnvPlot.hh"
 #include "ami/data/RawFilter.hh"
 
 #include "ami/service/Socket.hh"
@@ -265,8 +265,13 @@ void EnvClient::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
 
-  const DescEntry* e = rx.entries();
-  _input = e->signature();
+  const DescEntry* e = rx.entry(Ami::EntryScalar::input_entry());
+  if (e)
+    _input = e->signature();
+  else {
+    printf("EnvClient failed to find input\n");
+    _input = -1;
+  }
 
   //  iterate through discovery and print
 #if 0

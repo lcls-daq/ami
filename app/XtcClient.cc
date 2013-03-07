@@ -174,7 +174,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _entry.clear();
     { ProcInfo info(Pds::Level::Control,0,0);
       const DetInfo& dinfo = static_cast<const DetInfo&>((Src&)info);
-      EntryScalar* e = new EntryScalar(dinfo,0,"XtcClient","timestamp");
+      EntryScalar* e = new EntryScalar(dinfo,0,EntryScalar::input_entry(),"timestamp");
       _factory.discovery().add(e);
       _entry.push_back(e);
       int imod=0;

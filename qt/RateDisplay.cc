@@ -147,7 +147,13 @@ int  RateDisplay::configure       (char*& p)
 
 void RateDisplay::discovered      (const DiscoveryRx& rx) 
 { 
-  _input = rx.entries()->signature();
+  const DescEntry* e = rx.entry(Ami::EntryScalar::input_entry());
+  if (e)
+    _input = e->signature();
+  else {
+    printf("RateDisplay failed to find input\n");
+    _input = -1;
+  }
 }
 
 void RateDisplay::read_description(Socket& s,int len) {

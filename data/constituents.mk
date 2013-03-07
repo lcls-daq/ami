@@ -8,7 +8,7 @@ endif
 libnames := data
 
 # List source files for each library
-unused_srcs  := Assembler.cc
+unused_srcs  := Assembler.cc DescImageC.cc EntryImageC.cc
 libsrcs_data := $(filter-out $(unused_srcs), $(wildcard *.cc))
 
 libincs_data := $(qtincdir)

@@ -51,3 +51,4 @@ void EntryScalar::_merge(char* p) const
   y[2] += _y[2];
 }
 
+const char* EntryScalar::input_entry() { return "XtcClient"; }

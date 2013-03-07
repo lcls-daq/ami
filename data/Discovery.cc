@@ -91,6 +91,16 @@ const DescEntry* DiscoveryRx::end() const
   return reinterpret_cast<const DescEntry*>(_p+_size);
 }
 
+const DescEntry* DiscoveryRx::entry(const char* name) const
+{
+  for(  const DescEntry* e = entries(); e < end(); 
+        e = reinterpret_cast<const DescEntry*>
+          (reinterpret_cast<const char*>(e) + e->size()))
+    if (strcmp(e->name(),name)==0)
+      return e;
+  return 0;
+}
+
 unsigned DiscoveryRx::nsources() const
 {
   return reinterpret_cast<const uint32_t*>(_p)[NumberOfSets];

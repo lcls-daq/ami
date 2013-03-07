@@ -262,20 +262,13 @@ void TdcClient::discovered(const DiscoveryRx& rx)
 
   char channel_name [128];
   strcpy(channel_name ,ChannelID::name(info,channel));
-  const unsigned INIT = -1;
-  _input_signature = INIT;
-
-  for(  const DescEntry* e = rx.entries(); e < rx.end();
-      e = reinterpret_cast<const DescEntry*>
-        (reinterpret_cast<const char*>(e) + e->size())) {
-    if (strcmp(e->name(),channel_name)==0) {
-      _input_signature = e->signature();
-      break;
-    }
-  }
-
-  if (_input_signature==INIT)
+  const DescEntry* e = rx.entry(channel_name);
+  if (e)
+    _input_signature = e->signature();
+  else {
     printf("%s not found\n", channel_name);
+    _input_signature = -1;
+  }
 
   _manager->configure();
 }
