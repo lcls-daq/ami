@@ -243,7 +243,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
   _stopButton(new QPushButton("Stop")),
   _exitButton(new QPushButton("Exit")),
 
-  _prevCalibButton(new QPushButton("prev Calib")),
+  _prevCalibButton(new QPushButton("Prev Calib")),
   _prevEventButton(new QPushButton("Prev Event")),
   _nextEventButton(new QPushButton("Next Event")),
   _nextCalibButton(new QPushButton("Next Calib")),
@@ -417,6 +417,10 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char*
 
   emit _setEnabled(_pauseButton, false);
   emit _setEnabled(_stopButton, false);
+  emit _setEnabled(_prevCalibButton, false);
+  emit _setEnabled(_prevEventButton, false);
+  emit _setEnabled(_nextEventButton, false);
+  emit _setEnabled(_nextCalibButton, false);
 
   setDir(QString(_curdir));
   configure_run();
@@ -623,15 +627,15 @@ void XtcFileClient::insertTransition(TransitionId::Value transition)
 
 void XtcFileClient::routine()
 {
-  emit _setEnabled(_nextEventButton, true);
-  emit _setEnabled(_prevEventButton, true);
-  emit _setEnabled(_nextCalibButton, true);
-  emit _setEnabled(_prevCalibButton, true);
   emit _setEnabled(_pauseButton,true);
   emit _setEnabled(_stopButton, true);
   emit _setEnabled(_runButton,  false);
   emit _setEnabled(_runCombo,   false);
   emit _setPauseButtonLabel("Pause");
+  emit _setEnabled(_nextEventButton, true);
+  emit _setEnabled(_prevEventButton, true);
+  emit _setEnabled(_nextCalibButton, true);
+  emit _setEnabled(_prevCalibButton, true);
 
   do_configure(_runName);
   if (_runValid) {
