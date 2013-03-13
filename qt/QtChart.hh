@@ -3,9 +3,9 @@
 
 #include "ami/qt/QtBase.hh"
 
-#include "ami/data/EntryScalar.hh"
+#include "ami/qt/QtPlotCurve.hh"
 
-#include "qwt_plot_curve.h"
+#include "ami/data/EntryScalar.hh"
 
 #include <QtGui/QPen>
 
@@ -36,7 +36,7 @@ namespace Ami {
       unsigned         _n;  // max # of pts
       unsigned         _skip;
       unsigned         _current;
-      QwtPlotCurve     _curve;
+      QtPlotCurve      _curve;
       unsigned         _pts; // accumulate # of pts
       double*          _x;
       double*          _y;

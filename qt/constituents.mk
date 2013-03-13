@@ -127,6 +127,7 @@ libsrcs_amiqt += Contour.cc
 libsrcs_amiqt += Filter.cc Filter_moc.cc
 libsrcs_amiqt += ChannelMath.cc ChannelMath_moc.cc
 libsrcs_amiqt += QtBase.cc
+libsrcs_amiqt += QtPlotCurve.cc QtPlotCurve_moc.cc
 libsrcs_amiqt += QtWaveform.cc QtTH2F.cc QtTH1F.cc QtProf.cc QtChart.cc QtImage.cc QtScan.cc QtChannelMath.cc QtEmpty.cc QtTable.cc QtTable_moc.cc
 libsrcs_amiqt += PlotFactory.cc
 libsrcs_amiqt += PlotFrame.cc PlotFrame_moc.cc

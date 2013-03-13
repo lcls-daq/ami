@@ -252,6 +252,8 @@ void PeakFit::save(char*& p) const
 
 void PeakFit::load(const char*& p)
 {
+  disconnect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
+
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
     delete *it;
@@ -314,6 +316,8 @@ void PeakFit::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(PeakFit,tag);
+
+  connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
 }
 
 void PeakFit::save_plots(const QString& p) const

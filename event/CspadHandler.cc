@@ -1021,6 +1021,7 @@ namespace CspadGeometry {
           }
           qmask |= iq;
         }
+        delete iter;
       }
 #endif
 

@@ -23,10 +23,10 @@ DescProf::DescProf(const char* name,
       dst++;
       names++;
     }
-    *dst++ = 0;
-    *dst++ = 0;
+    while (dst <= last)
+      *dst++ = 0;
   } else {
-    _names[0] = 0;
+    memset(_names, 0, NamesSize);
   }
 }
 

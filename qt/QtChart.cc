@@ -63,10 +63,7 @@ QtChart::QtChart(const QString&          title,
     _y[k] = 0;
   }
 
-  //  Reference (dangerous?)
   _curve.setRawData(_x,_y,0);  // QwtPlotCurve wants the x-endpoint
-  //  Deep copy
-  //  _curve.setData(_x,_y,0);  // QwtPlotCurve wants the x-endpoint
   _xinfo = new AxisArray(_x,nb);
 }
   
@@ -151,14 +148,10 @@ void           QtChart::update()
       _current = 0;
 
     if (_pts++ < _n) {
-      //  Reference (dangerous?)
       _curve.setRawData(&_x[0],&_y[0], _pts);
-      //  Deep copy
-      //      _curve.setData(&_x[0],&_y[0], _pts);
     }
     else {
-      //      _curve.setRawData(&_x[_current],&_y[_current], _n);
-      _curve.setData(&_x[_current],&_y[_current], _n);
+      _curve.setRawData(&_x[_current],&_y[_current], _n);
     }
   }
 }

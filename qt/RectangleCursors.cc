@@ -114,10 +114,10 @@ void RectangleCursors::load(const char*& p)
 
 void RectangleCursors::save(Rect& r) const
 {
-  r.x0 = unsigned(_x0);
-  r.y0 = unsigned(_y0);
-  r.x1 = unsigned(_x1);
-  r.y1 = unsigned(_y1);
+  r.x0 = unsigned(xlo());
+  r.y0 = unsigned(ylo());
+  r.x1 = unsigned(xhi());
+  r.y1 = unsigned(yhi());
 }
 
 void RectangleCursors::load(const Rect& r)

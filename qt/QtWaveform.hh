@@ -2,8 +2,8 @@
 #define AmiQt_QtWaveform_hh
 
 #include "ami/qt/QtBase.hh"
+#include "ami/qt/QtPlotCurve.hh"
 
-#include "qwt_plot_curve.h"
 class QwtPlot;
 class QColor;
 
@@ -29,7 +29,7 @@ namespace Ami {
     private:
       const AbsTransform&   _xscale;
       const AbsTransform&   _yscale;
-      QwtPlotCurve   _curve;
+      QtPlotCurve    _curve;
       double*        _x;
       double*        _y;
       AxisInfo*      _xinfo;

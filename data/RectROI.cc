@@ -29,6 +29,28 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
                  int((o.yup()-o.ylow())/i.ppybin())+1,
                  i.ppxbin(), i.ppybin(), 
                  unsigned(o.xlow()), unsigned(o.ylow()));
+
+  for(unsigned j=0; j<i.nframes(); j++) {
+    int x0 = int(o.xlow())/i.ppxbin(), 
+      y0 = int(o.ylow())/i.ppybin(), 
+      x1 = int(o.xup())/i.ppxbin(),
+      y1 = int(o.yup())/i.ppybin();
+
+    { const SubFrame& f = i.frame(j);
+      printf("frame %d (%d x %d) at (%d,%d)\n",
+             j, f.nx, f.ny, f.x, f.y); }
+           
+    if (i.xy_bounds(x0,x1,y0,y1,j)) {
+      int nx = x1-x0+1;
+      int ny = y1-y0+1;
+      x0 -= int(o.xlow())/i.ppxbin();
+      y0 -= int(o.ylow())/i.ppybin();
+      printf("%s adding frame [%d] (%d x %d) at (%d,%d)\n",
+             o.name(), j, x1-x0+1, y1-y0+1, x0, y0);
+      desc.add_frame(x0,y0,nx,ny);
+    }
+  }
+
   _output = new EntryImage(desc);
 }
 
@@ -88,9 +110,13 @@ Entry&     RectROI::_operate(const Entry& e) const
       o->reset();
       for(unsigned fn=0; fn<inputd.nframes(); fn++) {
         SET_BOUNDS(int) ;
-        if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn))
-          for(int i=ilo,ii=0; i<ihi; i++,ii++) {
-            for(int j=jlo,jj=0; j<jhi; j++,jj++)
+        ihi--;
+        jhi--;
+        int iilo = int(d.xlow())/inputd.ppxbin();
+        int jjlo = int(d.ylow())/inputd.ppybin();
+        if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn))  // inclusive
+          for(int i=ilo,ii=ilo-iilo; i<=ihi; i++,ii++) {
+            for(int j=jlo,jj=jlo-jjlo; j<=jhi; j++,jj++)
               o->content(_input->content(i,j),ii,jj);
           }
       }

@@ -50,10 +50,7 @@ QtScan::QtScan(const QString&   title,
     }
     b++;
   }
-  //  Reference (dangerous?)
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
-  //  Deep copy
-  //  _curve.setData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
   _xinfo = new AxisArray(_xa,nb);
 }
   
@@ -97,10 +94,7 @@ void           QtScan::update()
       _y[i] = _entry.ymean(b);
       i++;
     }
-  //  Reference (dangerous?)
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
-  //  Deep copy
-  //  _curve.setData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint
 }
 
 void QtScan::xscale_update()
