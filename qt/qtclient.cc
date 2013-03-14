@@ -21,7 +21,7 @@ static void usage(char* p)
          "-f <path>      : default path for load/save operations\n" \
          "-F <path>      : file to load initial configuration\n" \
          "-C <int>       : color palette choice (0-jette, 1-radiation)" \
-         "-E             : expert mode\n",p);
+         "-E             : expert mode/movie option\n",p);
 }
 
 int main(int argc, char **argv) 

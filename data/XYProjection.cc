@@ -98,7 +98,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
   T ilo = 0;                                            \
   T ihi = inputd.nbinsy();                              \
   T jlo = 0;                                            \
-  T jhi = inputd.nbinsy(); 
+  T jhi = inputd.nbinsx(); 
   
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   const DescImage& inputd = _input->desc();

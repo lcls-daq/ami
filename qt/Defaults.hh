@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 
 class QCheckBox;
+class QComboBox;
 
 namespace Ami {
   namespace Qt {
@@ -12,7 +13,7 @@ namespace Ami {
       bool select_run     () const;
       bool show_grid      () const;
       bool show_minor_grid() const;
-
+      QString movie_format() const;
     public:
       static Defaults* instance();
     private:
@@ -25,6 +26,7 @@ namespace Ami {
       QCheckBox* _run;
       QCheckBox* _grid;
       QCheckBox* _minor_grid;
+      QComboBox* _movie_format_box;
     };
   };
 };

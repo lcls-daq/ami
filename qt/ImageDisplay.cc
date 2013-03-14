@@ -8,6 +8,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/NullTransform.hh"
+#include "ami/qt/Defaults.hh"
 //#include "ami/qt/PrintAction.hh"
 #include "ami/qt/RunMaster.hh"
 #include "ami/qt/QtUtils.hh"
@@ -351,7 +352,10 @@ void Ami::Qt::ImageDisplay::start_movie()
 
 void Ami::Qt::ImageDisplay::update_movie()
 {
-  QString fname = QString("%1%2.jpg").arg(_movie_fname).arg(double(_movie_index++)*1e-4,0,'f',4);
+  QString fname = QString("%1%2.%3")
+    .arg(_movie_fname)
+    .arg(double(_movie_index++)*1e-4,0,'f',4)
+    .arg(Defaults::instance()->movie_format());
   QPixmap pixmap(QWidget::size());
   QWidget::render(&pixmap);
   pixmap.toImage().save(fname);

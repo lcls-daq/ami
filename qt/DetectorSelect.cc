@@ -302,7 +302,7 @@ void DetectorSelect::print_setup()
 
 void DetectorSelect::default_setup()
 {
-  Defaults::instance()->show();
+  Defaults::instance()->front();
 }
 
 void DetectorSelect::set_filters()

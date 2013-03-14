@@ -24,15 +24,14 @@ using namespace std;
 static void usage(char* progname) {
   fprintf(stderr,
 	  "Usage: %s -p <xtc path>\n"
-	  "         [-i <interface address>]\n"
-	  "         [-s <server mcast group>]\n"
+	  "         [-f <path for save/load files>]\n"
 	  "         [-L <user plug-in path>]\n"
 	  "         [-o <filename for debugging messages>]\n"
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "         [-R (full resolution)\n"
 	  "         [-l (live read mode)]\n"
-          "         [-E (expert mode>]\n", 
+          "         [-E (expert mode/movie option)]\n", 
           progname,
           Ami::Qt::ImageColorControl::palette_set().c_str());
 }

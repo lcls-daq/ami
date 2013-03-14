@@ -86,6 +86,12 @@ namespace Ami {
 
 using namespace Ami;
 
+static void showUsage(const char* p)
+{
+  printf("Usage: %s -I <cds interface> -i <fez interface> -s <mcast group>\n",p);
+}
+
+
 int main(int argc, char **argv) 
 {
   unsigned ppinterface = 0x7f000001;
@@ -102,6 +108,8 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-s")==0) {
       serverGroup = Ami::Ins::parse_ip(argv[++i]);
     }
+    else if (strcmp(argv[i],"-h")==0) 
+      showUsage(argv[0]);
   }
 
   Ins mcast(serverGroup, Port::serverPort());

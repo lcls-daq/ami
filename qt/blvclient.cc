@@ -269,6 +269,10 @@ unsigned parse_interface(char* iarg)
   return interface;
 }
 
+static void showUsage(const char* p)
+{
+  printf("Usage: %s -i <interface> -f <loadfile> -c <configdb path>\n",p);
+}
 
 int main(int argc, char **argv) 
 {
@@ -285,6 +289,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-c")==0) {
       configdb = argv[++i];
+    }
+    else if (strcmp(argv[i],"-h")==0) {
+      showUsage(argv[0]);
     }
   }
 
