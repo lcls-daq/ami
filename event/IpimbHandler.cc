@@ -25,7 +25,7 @@ IpimbHandler::~IpimbHandler()
 }
 
 void   IpimbHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
   char* iptr;
@@ -38,6 +38,16 @@ void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
       sprintf(iptr,":DATA[%d]",i);
       _index[i] = _cache.add(buffer);
     }
+    if (id.version()>1) {
+      for(unsigned i=0; i<NChannels; i++) {
+        sprintf(iptr,":PS:DATA[%d]",i);
+        _index[i+NChannels] = _cache.add(buffer);
+      }
+    }
+    else
+      for(unsigned i=0; i<NChannels; i++)
+        _index[i+NChannels] = _index[0];
+
     break;
   case Level::Source:
   default:
@@ -47,6 +57,16 @@ void   IpimbHandler::_configure(const void* payload, const Pds::ClockTime& t)
       sprintf(iptr,"-Ch%d",i);
       _index[i] = _cache.add(buffer);
     }
+    if (id.version()>1) {
+      for(unsigned i=0; i<NChannels; i++) {
+        sprintf(iptr,"-Ch%d:PS",i);
+        _index[i+NChannels] = _cache.add(buffer);
+      }
+    }
+    else
+      for(unsigned i=0; i<NChannels; i++)
+        _index[i+NChannels] = _index[0];
+
     break;
   }
 }
@@ -69,6 +89,10 @@ void   IpimbHandler::_event    (Pds::TypeId id,
     _cache.cache(_index[1], d.channel1Volts());
     _cache.cache(_index[2], d.channel2Volts());
     _cache.cache(_index[3], d.channel3Volts());
+    _cache.cache(_index[4], d.channelps0Volts());
+    _cache.cache(_index[5], d.channelps1Volts());
+    _cache.cache(_index[6], d.channelps2Volts());
+    _cache.cache(_index[7], d.channelps3Volts());
   }
   else 
     ;
@@ -76,10 +100,8 @@ void   IpimbHandler::_event    (Pds::TypeId id,
 
 void   IpimbHandler::_damaged  ()
 {
-  _cache.cache(_index[0], 0, true);
-  _cache.cache(_index[1], 0, true);
-  _cache.cache(_index[2], 0, true);
-  _cache.cache(_index[3], 0, true);
+  for(unsigned i=0; i<2*NChannels; i++)
+    _cache.cache(_index[i], 0, true);
 }
 
 //  No Entry data

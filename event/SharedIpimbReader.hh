@@ -12,9 +12,13 @@ namespace Ami {
     SharedIpimbReader(const Pds::BldInfo&, FeatureCache&);
     ~SharedIpimbReader();
   public:
-    void   _configure(const void* payload, const Pds::ClockTime& t);
+    void   _configure(const void* payload, const Pds::ClockTime& t) {}
+    void   _event    (const void* payload, const Pds::ClockTime& t) {}
     void   _calibrate(const void* payload, const Pds::ClockTime& t);
-    void   _event    (const void* payload, const Pds::ClockTime& t);
+    void   _configure(Pds::TypeId id, 
+                      const void* payload, const Pds::ClockTime& t);
+    void   _event    (Pds::TypeId id,
+                      const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;
@@ -22,7 +26,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
-    enum { NChannels= 11 };
+    enum { NChannels= 14 };
     int                     _index[NChannels];
   };
 
