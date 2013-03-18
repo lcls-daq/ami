@@ -142,7 +142,10 @@ QtPlot::~QtPlot()
     delete o;
   }
 
-  if (_ref) delete _ref;
+  if (_ref) {
+    _ref->attach(NULL);
+    delete _ref;
+  }
 }
 
 void QtPlot::_layout()
@@ -483,7 +486,10 @@ void QtPlot::set_reference()
   delete[] x;
   delete[] y;
 
-  if (_ref) delete _ref;
+  if (_ref) {
+    _ref->attach(NULL);
+    delete _ref;
+  }
   _ref = curve;
   _ref->attach(_frame);
   _show_ref->setEnabled(true);

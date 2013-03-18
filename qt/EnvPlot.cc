@@ -102,7 +102,9 @@ EnvPlot::~EnvPlot()
 {
   if (_filter  ) delete _filter;
   delete _desc;
-  delete _plot;
+  { QtBase* plot = _plot;
+    _plot = 0;
+    delete plot; }
   if (_shared  ) _shared->resign();
 }
 
