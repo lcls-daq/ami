@@ -89,10 +89,10 @@ void   IpimbHandler::_event    (Pds::TypeId id,
     _cache.cache(_index[1], d.channel1Volts());
     _cache.cache(_index[2], d.channel2Volts());
     _cache.cache(_index[3], d.channel3Volts());
-    _cache.cache(_index[4], d.channelps0Volts());
-    _cache.cache(_index[5], d.channelps1Volts());
-    _cache.cache(_index[6], d.channelps2Volts());
-    _cache.cache(_index[7], d.channelps3Volts());
+    _cache.cache(_index[4], d.channel0psVolts());
+    _cache.cache(_index[5], d.channel1psVolts());
+    _cache.cache(_index[6], d.channel2psVolts());
+    _cache.cache(_index[7], d.channel3psVolts());
   }
   else 
     ;
