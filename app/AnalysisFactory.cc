@@ -97,6 +97,8 @@ void AnalysisFactory::configure(unsigned       id,
 {
   pthread_mutex_lock(&_mutex);
 
+  _cds.clear_used();
+
   //
   //  Segregate the entries belonging to the configuring client
   //
@@ -106,8 +108,10 @@ void AnalysisFactory::configure(unsigned       id,
     Analysis* a = *it;
     if (a->id() == id)
       oldList.push_back(a);
-    else
+    else {
+      a->input().desc().used(true);
       newlist.push_back(a);
+    }
   }
   _analyses = newlist;
 
@@ -179,6 +183,7 @@ void AnalysisFactory::configure(unsigned       id,
                    a->output().name(),
                    a->output().signature());
 #endif
+            a->input().desc().used(true);
             _analyses.push_back(a);
             oldList.remove(a);
             lFound=true;
@@ -189,6 +194,7 @@ void AnalysisFactory::configure(unsigned       id,
           const char*  p     = reinterpret_cast<const char*>(&req+1);
           Analysis* a = new Analysis(id, *input, req.output(),
                                      cds, *_features[req.scalars()], p);
+          a->input().desc().used(true);
           _analyses.push_back(a);
 #ifdef DBUG
           printf("Created analysis for %s [%d] features %d\n",
@@ -256,14 +262,19 @@ void AnalysisFactory::analyze  ()
 void AnalysisFactory::remove(unsigned id)
 {
   pthread_mutex_lock(&_mutex);
+
+  _cds.clear_used();
+
   AnList newlist;
   for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
     Analysis* a = *it;
     if (a->id() == id) {
       delete a;
     }
-    else
+    else {
+      a->input().desc().used(true);
       newlist.push_back(a);
+    }
   }
   _analyses = newlist;
   pthread_mutex_unlock(&_mutex);
