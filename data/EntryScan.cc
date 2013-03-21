@@ -2,7 +2,9 @@
 
 #define SIZE(n) (sizeof(BinV)/sizeof(double)*n+InfoSize)
 
+#ifdef DBUG
 static void _dump(unsigned,const double*,const char*);
+#endif
 
 static const unsigned DefaultNbins = 100;
 
@@ -189,10 +191,9 @@ void EntryScan::_merge(char* p) const
   //  Consider scans that don't gather enough events to see all servers
   //  Consider bld that is different for every event
   BinV* dst = reinterpret_cast<BinV*>(p);
-  const BinV* end = dst + _desc.nbins();
   const BinV* src = _p;
   
-#if 0
+#ifdef DBUG
   unsigned nb = _desc.nbins();
   _dump(nb,(double*)dst,"\n agg before");
   _dump(nb,(double*)src,"input");
@@ -203,7 +204,7 @@ void EntryScan::_merge(char* p) const
   
   src = t->_p;
 
-#if 0
+#ifdef DBUG
   _dump(nb,(double*)src,"agg after");
 #endif
 
@@ -224,6 +225,7 @@ void EntryScan::dump() const
   } while(bin != last);
 }
 
+#ifdef DBUG
 void _dump(unsigned nb,const double* p,const char* title)
 {
   class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; double _t; };
@@ -243,3 +245,4 @@ void _dump(unsigned nb,const double* p,const char* title)
 	     bin, _p[bin]._x, _p[bin]._nentries, _p[bin]._ysum, _p[bin]._t);
   } while(bin != last);
 }
+#endif

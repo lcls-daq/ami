@@ -46,6 +46,8 @@ namespace Ami {
     void      request    (const Entry&, bool);
     EntryList request    () const { return _request; }
 
+    void      clear_used();
+
     Semaphore& payload_sem() const { return *_payload_sem; }
   private:
     void adjust();

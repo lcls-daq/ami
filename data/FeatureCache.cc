@@ -115,5 +115,5 @@ void   FeatureCache::dump() const
 void   FeatureCache::start()
 {
   for(unsigned k=0; k<_damaged.size(); k++)
-    _damaged[k] = -1UL;
+    _damaged[k] = uint32_t(-1UL);
 }

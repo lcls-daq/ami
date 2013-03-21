@@ -125,6 +125,7 @@ bool DescEntry::isweighted_type() const {return (_type==Scan);}
 bool DescEntry::hasPedCalib    () const {return _options&(1<<CalibMom0);}
 bool DescEntry::hasGainCalib   () const {return _options&(1<<CalibMom1);}
 bool DescEntry::hasRmsCalib    () const {return _options&(1<<CalibMom2);}
+bool DescEntry::used           () const {return _options&(1<<Used);}
 
 void DescEntry::normalize(bool v) {
   if (v) _options |=  (1<<Normalized);
@@ -149,6 +150,11 @@ void DescEntry::gaincalib(bool v) {
 void DescEntry::rmscalib(bool v) {
   if (v) _options |=  (1<<CalibMom2);
   else   _options &= ~(1<<CalibMom2);
+}
+
+void DescEntry::used(bool v) const {
+  if (v) _options |=  (1<<Used);
+  else   _options &= ~(1<<Used);
 }
 
 void DescEntry::options(unsigned o) {

@@ -26,6 +26,7 @@ namespace Ami {
     bool hasPedCalib () const;
     bool hasGainCalib() const;
     bool hasRmsCalib () const;
+    bool used        () const;
     unsigned options() const { return _options>>User; }
 
 
@@ -34,6 +35,7 @@ namespace Ami {
     void pedcalib (bool);
     void gaincalib(bool);
     void rmscalib (bool);
+    void used     (bool) const;  // not really a property of this object (mutable?)
     void options  (unsigned);
 
     void xwarnings(float warn, float err);
@@ -70,7 +72,7 @@ namespace Ami {
     char _ytitle[TitleSize];
     char _zunits[TitleSize];
     int16_t   _group;
-    int16_t   _options;
+    mutable int16_t   _options;
     uint16_t  _type;
     uint16_t  _size;
     float _xwarn;
@@ -81,7 +83,7 @@ namespace Ami {
   private:
     enum Option {Normalized, Aggregate, XWarnings, YWarnings, 
                  CalibMom0, CalibMom1, CalibMom2,  // has calibrations of these orders { Ped, Gain, Sigma }
-                 User};
+                 Used, User};
   };
 };
 

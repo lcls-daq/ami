@@ -34,8 +34,9 @@ Analysis::Analysis(unsigned      id,
   if (lvalid)
     const_cast<Entry&>(input).valid(input.time());
 
-  if (_op->valid())
+  if (_op->valid()) {
     _cds.add(&output_entry,output);
+  }
 }
 
 Analysis::~Analysis() 
@@ -62,3 +63,5 @@ DescEntry& Analysis::output () const
 }
 
 bool Analysis::valid() const { return _op->valid(); }
+
+const Entry& Analysis::input() const { return _input; }

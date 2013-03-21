@@ -211,3 +211,10 @@ void Cds::sort()
   }
   _request.fill(_entries.size());
 }
+
+void Cds::clear_used()
+{
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    (*it)->desc().used(false);
+  }
+}

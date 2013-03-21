@@ -24,6 +24,7 @@ namespace Ami {
     void       analyze();
     DescEntry& output () const;
     bool       valid  () const;
+    const Entry& input() const;
   private:
     unsigned     _id;
     unsigned     _output;
