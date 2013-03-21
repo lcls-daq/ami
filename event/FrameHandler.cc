@@ -6,6 +6,9 @@
 #include "pdsdata/camera/FrameFexConfigV1.hh"
 #include "pdsdata/opal1k/ConfigV1.hh"
 
+#include "pdsdata/compress/Camera_FrameV1.hh"
+#include <boost/shared_ptr.hpp>
+
 #include <string.h>
 
 using namespace Ami;
@@ -119,13 +122,38 @@ void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
   entry.info(1,EntryImage::Normalization);
 }
 
+void FrameHandler::_event    (Pds::TypeId id,
+                              const void* payload, const Pds::ClockTime& t)
+{
+  if (!_entry || !_entry->desc().used()) return;
+
+  if (id.compressed()) {
+    switch(id.compressed_version()) {
+    case 1: {
+      const Camera::CompressedFrameV1& pframe = 
+        *reinterpret_cast<const Camera::CompressedFrameV1*>(payload);
+
+      boost::shared_ptr<Camera::FrameV1> p = pframe.uncompressed();
+      if (p)
+        _event(p.get(), t);
+      else
+        printf("decompress %x failed\n",id.value());
+      break; }
+    default:
+      break;
+    }
+  }
+  else
+    _event(payload, t);
+}
+
+#include "pdsdata/xtc/ClockTime.hh"
+
 void FrameHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
-  if (!_entry) return;
-
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
+  const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (f.depth_bytes()==2)
     _fill<uint16_t>(f,*_entry);
   else

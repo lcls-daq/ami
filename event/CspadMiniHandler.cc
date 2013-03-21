@@ -807,7 +807,7 @@ void CspadMiniHandler::_calibrate(Pds::TypeId::Type, const void* payload, const 
 void CspadMiniHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
-  if (_entry) {
+  if (_entry && _entry->desc().used()) {
     unsigned o = _entry->desc().options();
     if (_options != o) {
       printf("CspadMiniHandler::event options %x -> %x\n", _options, o);

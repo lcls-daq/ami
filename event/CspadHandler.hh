@@ -29,7 +29,9 @@ namespace Ami {
     void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _configure(const void* payload, const Pds::ClockTime& t) {}
     void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
+    void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _event    (const void* payload, const Pds::ClockTime& t);
+    void _event    (Pds::TypeId, const char*, size_t, const Pds::ClockTime&);
     void _damaged  ();
   private:
     void _create_entry(const CspadGeometry::ConfigCache& cfg,

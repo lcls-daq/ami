@@ -18,6 +18,11 @@
 #include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
 
+#include "pdsdata/compress/Cspad_ElementV1.hh"
+#include "pdsdata/compress/Cspad_ElementV2.hh"
+#include <boost/shared_ptr.hpp>
+
+
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -855,24 +860,29 @@ namespace CspadGeometry {
     ~ConfigCache() 
     { delete[] _payload; }
   public:
-    ElementIterator* iter(const Xtc& xtc) const
+    ElementIterator* iter(const Xtc& xtc) { return iter(xtc.contains,
+                                                        xtc.payload(),
+                                                        xtc.sizeofPayload()); }
+    ElementIterator* iter(TypeId      contains,
+                          const char* payload,
+                          size_t      sizeofPayload) const
     {
       ElementIterator* iter;
       switch(_type.version()) {
       case 1: 
         { const Pds::CsPad::ConfigV1& c = 
             *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
-          iter = new ElementIterator(c,xtc);
+          iter = new ElementIterator(c,contains,payload,sizeofPayload);
           break; }
       case 2: 
         { const Pds::CsPad::ConfigV2& c = 
             *reinterpret_cast<Pds::CsPad::ConfigV2*>(_payload);
-          iter = new ElementIterator(c,xtc);
+          iter = new ElementIterator(c,contains,payload,sizeofPayload);
           break; }
       default:
         { const CsPadConfigType& c = 
             *reinterpret_cast<CsPadConfigType*>(_payload);
-          iter = new ElementIterator(c,xtc);
+          iter = new ElementIterator(c,contains,payload,sizeofPayload);
           break; }
       }
       return iter;
@@ -1004,14 +1014,16 @@ namespace CspadGeometry {
       _feature[16] = cache.add(buff);
     }
     bool fill(Ami::EntryImage& image,
-              const Xtc&       xtc) const
+              TypeId           contains,
+              const char*      payload,
+              size_t           sizeofPayload) const
     {
 #ifdef QUAD_CHECK
       //
       //  First, check for duplicate quads
       //
       { unsigned qmask = 0;
-        Pds::CsPad::ElementIterator* iter = _config.iter(xtc);
+        Pds::CsPad::ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
         for(const Pds::CsPad::ElementHeader* hdr = iter->next(); (hdr); hdr=iter->next()) {
           unsigned iq = 1<<hdr->quad();
           if (qmask & iq) {
@@ -1029,7 +1041,7 @@ namespace CspadGeometry {
       ElementIterator* iters[5];
       int niters=0;
       {
-        ElementIterator* iter = _config.iter(xtc);
+        ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
         do {
           iters[niters++] = new ElementIterator(*iter);
         } while( iter->next() );
@@ -1084,7 +1096,7 @@ namespace CspadGeometry {
         }
       }
 #else
-      ElementIterator* iter = _config.iter(xtc);
+      ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
       const Pds::CsPad::ElementHeader* hdr;
       while( (hdr=iter->next()) ) {
         quad[hdr->quad()]->fill(image,*iter); 
@@ -1322,17 +1334,57 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
 void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void CspadHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
 
-void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void CspadHandler::_event    (Pds::TypeId id,
+                              const void* payload, const Pds::ClockTime& t)
 {
+  if (!(_entry && _entry->desc().used()) &&
+      !(_unbinned_entry && _unbinned_entry->desc().used())) return;
+
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
-  if (_entry) {
+
+  if (id.compressed()) {
+    TypeId did(id.id(),id.compressed_version());
+    switch(id.compressed_version()) {
+    case 1: {
+      const CsPad::CompressedElementV1& pframe = 
+        *reinterpret_cast<const CsPad::CompressedElementV1*>(payload);
+
+      boost::shared_ptr<CsPad::ElementV1> p = pframe.uncompressed();
+      if (p)
+        _event(did, (const char*)p.get(), pframe.pd().dsize(), t);
+      else
+        printf("decompress %x failed\n",id.value());
+      break; }
+    case 2: {
+      const CsPad::CompressedElementV2& pframe = 
+        *reinterpret_cast<const CsPad::CompressedElementV2*>(payload);
+
+      boost::shared_ptr<CsPad::ElementV2> p = pframe.uncompressed();
+      if (p)
+        _event(did, (const char*)p.get(), pframe.pd().dsize(), t);
+      else
+        printf("decompress %x failed\n",id.value());
+      break; }
+    default:
+      break;
+    }
+  }
+  else
+    _event(xtc->contains, xtc->payload(), xtc->sizeofPayload(), t);
+}
+
+void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t) {}
+
+void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeofPayload, const Pds::ClockTime& t)
+{
+  if (_entry && _entry->desc().used()) {
     unsigned o = _entry->desc().options();
     if (_options != o) {
       printf("CspadHandler::event options %x -> %x\n", _options, o);
       _options = o;
     }
 
-    if (_detector->fill(*_entry,*xtc)) {
+    if (_detector->fill(*_entry,contains,payload,sizeofPayload)) {
       _entry->info(1,EntryImage::Normalization);
       _entry->valid(t);
     }
@@ -1340,8 +1392,8 @@ void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t)
       _entry->invalid(); 
     }
   }
-  if (_unbinned_entry) {
-    _unbinned_detector->fill(*_unbinned_entry,*xtc);
+  if (_unbinned_entry && _unbinned_entry->desc().used()) {
+    _unbinned_detector->fill(*_unbinned_entry,contains,payload,sizeofPayload);
     _unbinned_entry->info(1,EntryImage::Normalization);
     _unbinned_entry->valid(t);
   }

@@ -156,7 +156,6 @@ void TM6740Handler::_configure(Pds::TypeId tid,
 void TM6740Handler::_event    (const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
-  if (!_entry) return;
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 

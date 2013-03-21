@@ -14,7 +14,7 @@
 using namespace Ami;
 
 ControlXtcReader::ControlXtcReader(FeatureCache& f)  : 
-  EventHandler(Pds::ProcInfo(Pds::Level::Control,0,-1UL),
+  EventHandler(Pds::ProcInfo(Pds::Level::Control,0,unsigned(-1UL)),
 	       Pds::TypeId::NumberOf,
 	       Pds::TypeId::Id_ControlConfig),
   _cache(f),

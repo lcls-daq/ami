@@ -95,7 +95,6 @@ void PhasicsHandler::_rotate(double Ixy[], double Ixyr[], double phi) {
 template <class T>
 void PhasicsHandler::_fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
 {
-  const DescImage& desc = entry.desc();
   const T* d = reinterpret_cast<const T*>(f.data());
   double Ixy[_npx * _npy];
   for (unsigned y = 0; y < f.height(); y++) {
