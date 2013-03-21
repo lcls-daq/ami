@@ -42,7 +42,7 @@ datalibs += pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata pdsdata/or
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
-tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata
+tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata pdsdata/compressdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/calib ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 
@@ -105,7 +105,7 @@ libsrcs_amiqt += Calculator.cc Calculator_moc.cc
 libsrcs_amiqt += FeatureCalculator.cc
 libsrcs_amiqt += DescTH2T.cc DescTH2T_moc.cc
 libsrcs_amiqt += DescTH2F.cc DescTH2F_moc.cc
-libsrcs_amiqt += DescTH1F.cc DescTH1F_moc.cc
+libsrcs_amiqt += DescTH1F.cc
 libsrcs_amiqt += DescBinning.cc DescBinning_moc.cc
 libsrcs_amiqt += DescProf.cc DescProf_moc.cc
 libsrcs_amiqt += DescScan.cc DescScan_moc.cc

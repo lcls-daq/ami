@@ -44,13 +44,6 @@ namespace Ami {
 
 using namespace Ami::Qt;
 
-static void dumpCursorSize(::Qt::CursorShape shape)
-{
-  QPixmap c = QCursor(shape).pixmap();
-  printf("cursor[%d] pixmap (%d,%d)\n",
-	 shape,c.width(),c.height());
-}
-
 CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, bool grab) :
   _parent      ( parent ),
   _frame       ( parent.frame() ),

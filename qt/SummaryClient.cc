@@ -209,7 +209,9 @@ void SummaryClient::save(char*& p) const
 
 void SummaryClient::load(const char*& p)
 {
+#if 0
   int i=0;
+#endif
   XML_iterate_open(p,tag)
     if (tag.element == "QtPWidget")
       QtPWidget::load(p);
