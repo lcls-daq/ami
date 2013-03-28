@@ -133,12 +133,23 @@ void AnalysisFactory::configure(unsigned       id,
         if (req.input() == i) {
 	  _srv.register_key(i,id);
           Cds* ucds = _user_cds[i];
-          if (ucds==0) {
-            _user_cds[i] = ucds = new Cds((*it)->name());
-            (*it)->clear();
-            (*it)->create(*ucds);
+
+          switch(req.state()) {
+          case ConfigureRequest::Destroy:
+            if (ucds) ucds->reset_plots();
+            break;
+          case ConfigureRequest::Create:
+            if (ucds==0) {
+              _user_cds[i] = ucds = new Cds((*it)->name());
+              (*it)->clear();
+              (*it)->create(*ucds);
+            }
+            ucds->mirror(cds);
+            break;
+          default:
+            break;
           }
-          ucds->mirror(cds);
+
           break;
         }
       }

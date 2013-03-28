@@ -76,6 +76,7 @@ namespace Ami {
       QTabWidget*     _tab;
 
       Semaphore*  _sem;
+      bool        _reset_plots;
     };
   };
 };

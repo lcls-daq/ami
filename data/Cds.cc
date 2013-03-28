@@ -218,3 +218,10 @@ void Cds::clear_used()
     (*it)->desc().used(false);
   }
 }
+
+void Cds::reset_plots()
+{
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    (*it)->reset();
+  }
+}

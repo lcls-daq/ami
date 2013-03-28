@@ -171,7 +171,8 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   _niovload        (5),
   _niovread        (5),
   _iovload         (new iovec[_niovload]),
-  _sem             (new Semaphore(Semaphore::EMPTY))
+  _sem             (new Semaphore(Semaphore::EMPTY)),
+  _reset_plots     (false)
 {
   PWidgetManager::add(this, _title);
 
@@ -245,9 +246,14 @@ int  SummaryClient::configure       (iovec* iov)
   printf("%s Configure\n",qPrintable(_title));
 
   char* p = _request;
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create, _source, info.phy());
-  p += r.size();
-
+  if (_reset_plots) {
+    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Destroy, _source, info.phy());
+    p += r.size();
+  }
+  else {
+    ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create, _source, info.phy());
+    p += r.size();
+  }
   iov[0].iov_base = _request;
   iov[0].iov_len  = p - _request;
   return 1;
@@ -480,4 +486,11 @@ void SummaryClient::request_payload()
 const QString& SummaryClient::title() const { return _title; }
 
 void SummaryClient::save_plots(const QString&) const {}
-void SummaryClient::reset_plots() { if (_manager) _manager->configure(); }
+void SummaryClient::reset_plots() 
+{
+  if (_manager) {
+    _reset_plots = true;
+    _manager->configure(); 
+    _reset_plots = false;
+  }
+}
