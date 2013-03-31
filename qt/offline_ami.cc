@@ -37,6 +37,27 @@ static void usage(char* progname) {
 }
 
 
+static void QtAssertHandler(QtMsgType type, 
+                            const char* msg)
+{
+  switch(type) {
+  case QtDebugMsg:
+    fprintf(stderr, "Debug: %s\n", msg); 
+    break;
+  case QtWarningMsg:
+    fprintf(stderr, "Warning: %s\n", msg);
+    break;
+  case QtCriticalMsg:
+    fprintf(stderr, "Critical: %s\n", msg);
+    break;
+  case QtFatalMsg:
+    fprintf(stderr, "Fatal: %s\n", msg);
+    __asm("int3");
+    abort();
+  }
+}
+
+
 static void redirect(const char *output, const char *error) {
   if (output) {
     if (freopen(output, "w", stdout) == NULL) {
@@ -80,6 +101,8 @@ int main(int argc, char* argv[]) {
   bool separateWindowMode = false;
   char* outputFile = NULL;
   char* errorFile = NULL;
+
+  qInstallMsgHandler(QtAssertHandler);
 
   QApplication::setStyle("plastique");
   QApplication app(argc, argv);

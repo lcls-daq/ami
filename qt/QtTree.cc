@@ -48,7 +48,8 @@ static void push(QStandardItem& root,
       else {
         //  Create a new root with these two children
         QStringList common = name.split(separator,QString::SkipEmptyParts).mid(0,level);
-        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
+        //        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
+        while( name_f.size()>1 && row_f.size() && name_f[0] == row_f[0] ) {
           common.append( name_f.takeFirst() );
           row_f.takeFirst();
         }
@@ -66,7 +67,7 @@ static void push(QStandardItem& root,
       }
     }
     //  Insert before or after
-    else if (name_f[0] < row_f[0]) {
+    else if (row_f.size() && name_f[0] < row_f[0]) {
       root.insertRow(i, new QStandardItem(name));
     }
     else
