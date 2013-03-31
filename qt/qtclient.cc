@@ -24,12 +24,34 @@ static void usage(char* p)
          "-E             : expert mode/movie option\n",p);
 }
 
+static void QtAssertHandler(QtMsgType type, 
+                            const char* msg)
+{
+  switch(type) {
+  case QtDebugMsg:
+    fprintf(stderr, "Debug: %s\n", msg); 
+    break;
+  case QtWarningMsg:
+    fprintf(stderr, "Warning: %s\n", msg);
+    break;
+  case QtCriticalMsg:
+    fprintf(stderr, "Critical: %s\n", msg);
+    break;
+  case QtFatalMsg:
+    fprintf(stderr, "Fatal: %s\n", msg);
+    __asm("int3");
+    abort();
+  }
+}
+
 int main(int argc, char **argv) 
 {
   unsigned ppinterface = 0x7f000001;
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   const char* loadfile = 0;
+
+  qInstallMsgHandler(QtAssertHandler);
 
   for(int i=0; i<argc; i++) {
     if (strcmp(argv[i],"-I")==0) {
