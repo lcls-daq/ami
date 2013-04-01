@@ -529,7 +529,8 @@ void DetectorSelect::change_detectors(const char* c)
           printf("\tSkip.\n");
         }
       } else {
-        new DetectorListItem(_detList, e->name(), e->info(), e->channel());
+        (new DetectorListItem(_detList, e->name(), e->info(), e->channel()))
+          ->setState(e->recorded() ? DetectorListItem::OK : DetectorListItem::Warning);
       }
       if (e->size() == 0) {
         printf("Stopped discovering because size is 0 for %s [%08x.%08x]\n",e->name(),e->info().log(),e->info().phy());

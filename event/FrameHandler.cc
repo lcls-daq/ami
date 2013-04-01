@@ -6,9 +6,6 @@
 #include "pdsdata/camera/FrameFexConfigV1.hh"
 #include "pdsdata/opal1k/ConfigV1.hh"
 
-#include "pdsdata/compress/Camera_FrameV1.hh"
-#include <boost/shared_ptr.hpp>
-
 #include <string.h>
 
 using namespace Ami;
@@ -127,24 +124,7 @@ void FrameHandler::_event    (Pds::TypeId id,
 {
   if (!_entry || !_entry->desc().used()) return;
 
-  if (id.compressed()) {
-    switch(id.compressed_version()) {
-    case 1: {
-      const Camera::CompressedFrameV1& pframe = 
-        *reinterpret_cast<const Camera::CompressedFrameV1*>(payload);
-
-      boost::shared_ptr<Camera::FrameV1> p = pframe.uncompressed();
-      if (p)
-        _event(p.get(), t);
-      else
-        printf("decompress %x failed\n",id.value());
-      break; }
-    default:
-      break;
-    }
-  }
-  else
-    _event(payload, t);
+  _event(payload, t);
 }
 
 #include "pdsdata/xtc/ClockTime.hh"

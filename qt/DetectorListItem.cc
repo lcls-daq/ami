@@ -1,5 +1,8 @@
 #include "DetectorListItem.hh"
 
+#include <QtGui/QBrush>
+#include <QtGui/QColor>
+
 using namespace Ami::Qt;
 
 DetectorListItem::DetectorListItem(QListWidget*        parent,
@@ -15,4 +18,15 @@ DetectorListItem::DetectorListItem(QListWidget*        parent,
 
 DetectorListItem::~DetectorListItem() 
 {
+}
+
+void DetectorListItem::setState(DetectorListItem::State state)
+{
+  switch(state) {
+  case Warning:
+    setBackground(QBrush(::Qt::yellow)); break;
+  case OK:
+  default:
+    setBackground(QBrush(::Qt::color0)); break;
+  }
 }

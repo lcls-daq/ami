@@ -67,7 +67,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
 #else
   _title = QString("Env");
 #endif
-  setWindowTitle(_title);
+  setWindowTitle(QString("%1[*]").arg(_title));
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this,2.5);
@@ -266,8 +266,10 @@ void EnvClient::discovered(const DiscoveryRx& rx)
   _status->set_state(Status::Discovered);
 
   const DescEntry* e = rx.entry(Ami::EntryScalar::input_entry());
-  if (e)
+  if (e) {
     _input = e->signature();
+    setWindowModified(!e->recorded());
+  }
   else {
     printf("EnvClient failed to find input\n");
     _input = -1;

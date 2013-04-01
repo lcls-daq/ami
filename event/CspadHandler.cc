@@ -18,11 +18,6 @@
 #include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
 
-#include "pdsdata/compress/Cspad_ElementV1.hh"
-#include "pdsdata/compress/Cspad_ElementV2.hh"
-#include <boost/shared_ptr.hpp>
-
-
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -1342,35 +1337,7 @@ void CspadHandler::_event    (Pds::TypeId id,
 
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
 
-  if (id.compressed()) {
-    TypeId did(id.id(),id.compressed_version());
-    switch(id.compressed_version()) {
-    case 1: {
-      const CsPad::CompressedElementV1& pframe = 
-        *reinterpret_cast<const CsPad::CompressedElementV1*>(payload);
-
-      boost::shared_ptr<CsPad::ElementV1> p = pframe.uncompressed();
-      if (p)
-        _event(did, (const char*)p.get(), pframe.pd().dsize(), t);
-      else
-        printf("decompress %x failed\n",id.value());
-      break; }
-    case 2: {
-      const CsPad::CompressedElementV2& pframe = 
-        *reinterpret_cast<const CsPad::CompressedElementV2*>(payload);
-
-      boost::shared_ptr<CsPad::ElementV2> p = pframe.uncompressed();
-      if (p)
-        _event(did, (const char*)p.get(), pframe.pd().dsize(), t);
-      else
-        printf("decompress %x failed\n",id.value());
-      break; }
-    default:
-      break;
-    }
-  }
-  else
-    _event(xtc->contains, xtc->payload(), xtc->sizeofPayload(), t);
+  _event(xtc->contains, xtc->payload(), xtc->sizeofPayload(), t);
 }
 
 void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t) {}

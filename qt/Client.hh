@@ -84,6 +84,7 @@ namespace Ami {
       ChannelDefinition* _channels[NCHANNELS];
       Display*           _frame;
       const DescEntry*   _input_entry;
+      unsigned           _input;
 
     private:
       QString     _title;

@@ -17,6 +17,9 @@ namespace Ami {
 		       unsigned            dchannel);
       ~DetectorListItem();
     public:
+      enum State { OK, Warning };
+      void setState(State);
+    public:
       Pds::DetInfo    info;
       unsigned        channel;
     };

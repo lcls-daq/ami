@@ -30,6 +30,8 @@ void RunMaster::update   ()
       double v = (_entry->sum() - _prev_s)/n;
       if (v>0 && v<100000)
         _run_title = QString("Run %1").arg(_entry->mean(),0);
+      else
+        _run_title.clear();
     }
     _prev_n = _entry->entries();
     _prev_s = _entry->sum();

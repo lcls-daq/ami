@@ -48,6 +48,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   Ami::Qt::AbsClient(parent,src,channel),
   _frame           (frame),
   _input_entry     (0),
+  _input           (0),
   _title           (ChannelID::name(src,channel)),
   _output_signature(0), 
   _request         (new char[BufferSize]),
@@ -64,7 +65,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _denials         (0),
   _attempts        (0)
 {
-  setWindowTitle(ChannelID::name(src, channel));
+  setWindowTitle(QString("%1[*]").arg(ChannelID::name(src, channel)));
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
@@ -191,11 +192,11 @@ void Ami::Qt::Client::load(const char*& p)
 
 void Ami::Qt::Client::reset_plots()
 {
-  _input_entry++;
+  _input++;
   iovec iov;
   configure(&iov);
   
-  _input_entry--;
+  _input--;
   update_configuration(); 
 }
 
@@ -230,6 +231,8 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   char channel_name [128]; 
   strcpy(channel_name ,ChannelID::name(info,channel));
   if ((_input_entry = rx.entry(channel_name))) {
+    _input = _input_entry->signature();
+    setWindowModified(!_input_entry->recorded());
     _frame->prototype(_input_entry);
     _prototype(*_input_entry);
   }
@@ -271,7 +274,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
       lAdded=false;
       for(unsigned i=0; i<NCHANNELS; i++) {
 	if (signatures[i]<0) {
-	  int sig = _channels[i]->configure(p,_input_entry->signature(),_output_signature,
+	  int sig = _channels[i]->configure(p,_input,_output_signature,
 					    _channels,signatures,NCHANNELS);
 	  if (sig >= 0) {
 	    signatures[i] = sig;
@@ -284,7 +287,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 
     char* hp = p;
 
-    _configure(p,_input_entry->signature(),_output_signature,
+    _configure(p,_input,_output_signature,
 	       _channels,signatures,NCHANNELS);
 
     if (p > _request+BufferSize) {

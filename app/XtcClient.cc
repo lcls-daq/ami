@@ -40,10 +40,16 @@
 #include "ami/data/UserModule.hh"
 #include "ami/server/Factory.hh"
 
+#include "pdsdata/compress/CompressedXtc.hh"
+
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 #include "pdsdata/xtc/Dgram.hh"
+
+#include <boost/shared_ptr.hpp>
+
+static void Destroy(Xtc*) {}
 
 //#define DBUG
 
@@ -245,6 +251,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) {
   for (int i = 0; i < nentries; i++) {
     const Entry* entry = h->entry(i);
     const DescEntry& desc = entry->desc();
+    const_cast<DescEntry&>(desc).recorded(_recorded);  // flag recorded/unrecorded data
     const DescEntry* descPtr = &desc;
     const char* name = descPtr->name();
     printf("%s XtcClient::_configure: %s (%s): entry[%d]=%s\n", time, infoName, typeName, i, name);
@@ -258,6 +265,8 @@ int XtcClient::process(Pds::Xtc* xtc)
     return 0;
 
   if (xtc->contains.id() == Pds::TypeId::Id_Xtc) {
+    //  Recorded data has xtc version 0
+    _recorded = _sync | xtc->contains.version()==0;
     iterate(xtc);
   }
   else {
@@ -275,14 +284,19 @@ int XtcClient::process(Pds::Xtc* xtc)
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
           const std::list<Pds::TypeId::Type>& types = h->data_types();
-          Pds::TypeId::Type type = xtc->contains.id();
+
+          boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
+            Pds::CompressedXtc::uncompress(*xtc) :
+            boost::shared_ptr<Xtc>(xtc,Destroy);
+
+          Pds::TypeId::Type type = pxtc->contains.id();
           for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
               it != types.end(); it++) {
             if (*it == type) {
-              if (xtc->damage.value())
+              if (pxtc->damage.value())
                 h->_damaged();
               else
-                h->_event(xtc->contains,xtc->payload(),_seq->clock());
+                h->_event(pxtc->contains,pxtc->payload(),_seq->clock());
             }
             else
               continue;

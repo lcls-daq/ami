@@ -57,6 +57,7 @@ namespace Ami {
     int       _event_index;
     int       _runno_index;
     double    _runno_value;
+    bool      _recorded;
   };
 }
 

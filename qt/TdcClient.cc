@@ -57,7 +57,7 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false)
 {
-  setWindowTitle(ChannelID::name(info,channel));
+  setWindowTitle(QString("%1[*]").arg(ChannelID::name(info,channel)));
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this,1.);
@@ -263,8 +263,10 @@ void TdcClient::discovered(const DiscoveryRx& rx)
   char channel_name [128];
   strcpy(channel_name ,ChannelID::name(info,channel));
   const DescEntry* e = rx.entry(channel_name);
-  if (e)
+  if (e) {
     _input_signature = e->signature();
+    setWindowModified(!e->recorded());
+  }
   else {
     printf("%s not found\n", channel_name);
     _input_signature = -1;

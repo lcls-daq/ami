@@ -108,8 +108,6 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _zunits[TitleSize-1] = 0;
 }
 
-
-
 DescEntry::Type DescEntry::type() const {return Type(_type);}
 unsigned short DescEntry::size() const {return _size;}
 const char* DescEntry::xtitle() const {return _xtitle;}
@@ -126,6 +124,7 @@ bool DescEntry::hasPedCalib    () const {return _options&(1<<CalibMom0);}
 bool DescEntry::hasGainCalib   () const {return _options&(1<<CalibMom1);}
 bool DescEntry::hasRmsCalib    () const {return _options&(1<<CalibMom2);}
 bool DescEntry::used           () const {return _options&(1<<Used);}
+bool DescEntry::recorded       () const {return !(_options&(1<<NotRecorded));}
 
 void DescEntry::normalize(bool v) {
   if (v) _options |=  (1<<Normalized);
@@ -155,6 +154,11 @@ void DescEntry::rmscalib(bool v) {
 void DescEntry::used(bool v) const {
   if (v) _options |=  (1<<Used);
   else   _options &= ~(1<<Used);
+}
+
+void DescEntry::recorded(bool v) {
+  if (!v) _options |=  (1<<NotRecorded);
+  else    _options &= ~(1<<NotRecorded);
 }
 
 void DescEntry::options(unsigned o) {
