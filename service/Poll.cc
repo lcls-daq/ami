@@ -44,6 +44,7 @@ Poll::~Poll()
   delete[] _ofd;
   delete[] _pfd;
   delete[] _buffer;
+  delete _loopback;
 }
 
 void Poll::start()
@@ -233,6 +234,14 @@ int Poll::processIn(const char*, int)
 void Poll::routine()
 {
   while(poll());
+
+  for (unsigned short n=1; n<_nfds; n++) {
+    Fd* fd = _ofd[n];
+    if (fd) {
+      unmanage(*fd);
+      delete fd;
+    }
+  }
   _sem.give();
 }
 

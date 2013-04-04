@@ -94,7 +94,6 @@ namespace Ami {
     }
     ~ProxyConnect() {
       _task->destroy_b();
-      delete _skt;
     }
   public:
     void routine()
@@ -247,6 +246,7 @@ ClientManager::~ClientManager()
   _poll->stop();
   delete _poll;
   if (_reconn ) delete _reconn ;
+  if (_connect) delete _connect;
   //  delete &_client;
 }
 
