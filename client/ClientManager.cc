@@ -158,7 +158,7 @@ namespace Ami {
 
   class ClPoll : public Poll {
   public:
-    ClPoll(ClientManager& cm) : Poll(1000), _cm(cm) {}
+    ClPoll(ClientManager& cm) : Poll(250), _cm(cm) {}
   public:
     int processTmo() { _cm.processTmo(); return 1; }
   private:
@@ -281,7 +281,14 @@ void ClientManager::connect()
                        Message::Connect,
                        _connect_mgr.ins().address(),
                        _connect_mgr.ins().portId());
-    _connect->write(&_request,sizeof(_request));
+    if (_connect->write(&_request,sizeof(_request))==-1) {
+      perror("ClientManager::connect sendmsg failed");
+    }
+    else {
+#ifdef DBUG
+      printf("CM request conn (id %d)\n",_connect_id);
+#endif
+    }
   }
 }
 
@@ -329,6 +336,9 @@ unsigned ClientManager::connection_id() const
 
 void ClientManager::handle(int s)
 {
+#ifdef DBUG
+  printf("CM handle skt %d  connectid %d\n",s, _connect_id);
+#endif
   new ClientSocket(*this,s);
   _state = Connected;
 }
@@ -388,8 +398,8 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   }
 
 #ifdef DBUG
-  printf("CM handle_client_io %d:%d %x\n",
-         reply.id(), reply.type(), reply.payload());
+//   printf("CM handle_client_io %d:%d %x\n",
+//          reply.id(), reply.type(), reply.payload());
 #endif
 
   int size = 0;
@@ -460,8 +470,8 @@ void ClientManager::forward(const Message& request)
   _poll->bcast_out(reinterpret_cast<const char*>(&request),
                    sizeof(request));
 #ifdef DBUG
-  printf("Forward %d:%d %x to %d clients\n",
-         request.id(), request.type(), 0,_poll->nfds());
+//   printf("Forward %d:%d %x to %d clients\n",
+//          request.id(), request.type(), 0,_poll->nfds());
 #endif
 }
 
@@ -472,20 +482,23 @@ void ClientManager::forward(const Message& request,
 
   unsigned len = request.payload();
   char* p = new char[len];
-  socket.read(p, len);
+  int n = socket.read(p, len);
+  if (n==len) {
+    iovec iov[2];
+    iov[0].iov_base = const_cast<Message*>(&request);
+    iov[0].iov_len  = sizeof(request);
+    iov[1].iov_base = p;
+    iov[1].iov_len  = len;
 
-  iovec iov[2];
-  iov[0].iov_base = const_cast<Message*>(&request);
-  iov[0].iov_len  = sizeof(request);
-  iov[1].iov_base = p;
-  iov[1].iov_len  = len;
-
-  _poll->bcast_out(iov,2);
-
+    _poll->bcast_out(iov,2);
+  }
+  else {
+    printf("CM forward failed to read payload\n");
+  }
 #ifdef DBUG
-  printf("Forward %d:%d %x to %d clients\n",
-         request.id(), request.type(),
-         len,_poll->nfds());
+//   printf("Forward %d:%d %x to %d clients\n",
+//          request.id(), request.type(),
+//          len,_poll->nfds());
 #endif
 
   delete[] p;

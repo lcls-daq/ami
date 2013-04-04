@@ -36,17 +36,11 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
       x1 = int(o.xup())/i.ppxbin(),
       y1 = int(o.yup())/i.ppybin();
 
-    { const SubFrame& f = i.frame(j);
-      printf("frame %d (%d x %d) at (%d,%d)\n",
-             j, f.nx, f.ny, f.x, f.y); }
-           
     if (i.xy_bounds(x0,x1,y0,y1,j)) {
       int nx = x1-x0+1;
       int ny = y1-y0+1;
       x0 -= int(o.xlow())/i.ppxbin();
       y0 -= int(o.ylow())/i.ppybin();
-      printf("%s adding frame [%d] (%d x %d) at (%d,%d)\n",
-             o.name(), j, x1-x0+1, y1-y0+1, x0, y0);
       desc.add_frame(x0,y0,nx,ny);
     }
   }

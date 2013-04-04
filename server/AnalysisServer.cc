@@ -61,7 +61,26 @@ int AnalysisServer::processIo()
       reply(request.id(), Message::Discover, n); }
     break;
   case Message::ConfigReq:
-    _socket->read(_buffer,request.payload());
+    //
+    //  Hack: break this read into two pieces to detect the errant
+    //        "disconnect" that sometimes interrupts this message.
+    //        I tried protecting the sending messages (ClientManager)
+    //        with a semaphore, but it did not help.  I don't know how
+    //        the ConfigReq message gets preempted.
+    //
+    if (request.payload() >= sizeof(Message)) {
+      _socket->read(_buffer,sizeof(Message));
+      const Message& msg = *reinterpret_cast<const Message*>(_buffer);
+      if (msg.id() == request.id()+1 &&
+          msg.type() == Message::Disconnect) {
+        printf("AS intercepted disconnected config request\n");
+        return 0;
+      }
+      _socket->read(_buffer+sizeof(Message),request.payload()-sizeof(Message));
+    }
+    else {
+      _socket->read(_buffer,request.payload());
+    }
     _factory.configure(fd(), request,_buffer,_cds);
     _described = true;
   case Message::DescriptionReq:

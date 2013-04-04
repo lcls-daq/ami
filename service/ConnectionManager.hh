@@ -33,6 +33,7 @@ namespace Ami {
     TSocket*                      _socket;
     Task*                         _task;
     Semaphore                     _listen_sem;
+    Semaphore                     _list_sem;
     std::list<ConnectionHandler*> _handlers;
     unsigned                      _connect_id;
   };
