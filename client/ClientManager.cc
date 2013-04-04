@@ -103,6 +103,7 @@ namespace Ami {
         try {
           skt->connect(_ins);
           _skt = skt;
+          _found = true;
 #ifdef DBUG
 	  printf("Proxy online\n");
 #endif
@@ -136,6 +137,7 @@ namespace Ami {
 #ifdef DBUG
             printf("Proxy offline\n");
 #endif
+            _mgr.disconnect();
             delete _skt;
             _skt = 0;
           }

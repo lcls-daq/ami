@@ -40,6 +40,14 @@ Poll::Poll(int timeout) :
 
 Poll::~Poll()
 {
+  // assumes we are stopped
+  for (unsigned short n=1; n<_nfds; n++) {
+    Fd* fd = _ofd[n];
+    if (fd) {
+      unmanage(*fd);
+      delete fd;
+    }
+  }
   _task->destroy_b();
   delete[] _ofd;
   delete[] _pfd;
@@ -234,14 +242,6 @@ int Poll::processIn(const char*, int)
 void Poll::routine()
 {
   while(poll());
-
-  for (unsigned short n=1; n<_nfds; n++) {
-    Fd* fd = _ofd[n];
-    if (fd) {
-      unmanage(*fd);
-      delete fd;
-    }
-  }
   _sem.give();
 }
 
