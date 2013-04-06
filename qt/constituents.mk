@@ -195,6 +195,7 @@ libsrcs_amiqt += SummaryClient.cc SummaryClient_moc.cc
 libsrcs_amiqt += DetectorListItem.cc
 libsrcs_amiqt += Defaults.cc
 libsrcs_amiqt += RateCalculator.cc RateCalculator_moc.cc
+libsrcs_amiqt += RecvCalculator.cc RecvCalculator_moc.cc
 libsrcs_amiqt += RateDisplay.cc RunMaster.cc
 libsrcs_amiqt += FilterSetup.cc FilterSetup_moc.cc
 libsrcs_amiqt += PWidgetManager.cc PWidgetManager_moc.cc

@@ -1,5 +1,6 @@
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/RateCalculator.hh"
+#include "ami/qt/RecvCalculator.hh"
 #include "ami/qt/RunMaster.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -23,32 +24,6 @@ static const int BufferSize = 0x8000;
 static const unsigned InputRateSignature  = 1;
 static const unsigned AcceptRateSignature = 2;
 static const unsigned RunNumberSignature  = 3;
-
-namespace Ami {
-  namespace Qt {
-    class RecvCalculator : public QLabel {
-    public:
-      RecvCalculator(ConnectionManager& m) : 
-        QLabel("-.-- MB/s"),
-        _m(m) {}
-    public:
-      void update() 
-      {
-        unsigned v = _m.receive_bytes(); 
-        if (v > 1e8)
-          setText(QString("%1 GB/s").arg(double(v)*1.e-9,0,'f',1));
-        else if (v > 1e5)
-          setText(QString("%1 MB/s").arg(double(v)*1.e-6,0,'f',1));
-        else if (v > 1e2)
-          setText(QString("%1 kB/s").arg(double(v)*1.e-3,0,'f',1));
-        else
-          setText(QString("%1  B/s").arg(double(v),0));
-      }
-    private:
-      ConnectionManager& _m;
-    };
-  };
-};
 
 using namespace Ami::Qt;
 
@@ -89,8 +64,6 @@ void RateDisplay::expired()
 
   if (_ready)
     _manager->request_payload();
-  else
-    process();
 
   _ready = false;
 }

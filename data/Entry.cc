@@ -78,7 +78,7 @@ void Entry::invalid()
   *_payload |= 1ULL;
 }
 
-bool Entry::valid() const { return ((*_payload)&1)==0; }
+bool Entry::valid() const { return _payload!=0 && ((*_payload)&1)==0; }
 
 void Entry::merge(char* p) const
 {

@@ -548,10 +548,8 @@ void DetectorSelect::change_detectors(const char* c)
   setUpdatesEnabled(true);
 
   // Let DetectorSelect::discovered know that we are done.
-  pthread_mutex_lock(&_mutex);
   _discovered = true;
   pthread_cond_signal(&_condition);
-  pthread_mutex_unlock(&_mutex);
 }
 
 int DetectorSelect::read_description(Socket& s,int len) {
