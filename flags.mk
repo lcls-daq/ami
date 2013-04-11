@@ -1,9 +1,5 @@
 include $(RELEASE_DIR)/make/sw/flags.mk
+include $(RELEASE_DIR)/make/sw/qtflags.mk
 
 #DEFINES += -DDBUG
-
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-  DEFINES += -fopenmp
-else
-  DEFINES += -fopenmp
-endif
+DEFINES += -fopenmp
