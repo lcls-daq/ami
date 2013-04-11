@@ -9,6 +9,8 @@
 #include <QtGui/QDoubleValidator>
 #include <QtGui/QLabel>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 DescTH2T::DescTH2T(QLayout* v) :

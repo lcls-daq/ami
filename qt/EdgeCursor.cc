@@ -11,6 +11,8 @@
 
 #include "qwt_plot_marker.h"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 EdgeCursor::EdgeCursor(const QString& name,

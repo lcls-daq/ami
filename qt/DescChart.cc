@@ -9,6 +9,8 @@
 #include <QtGui/QDoubleValidator>
 #include <QtGui/QLabel>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 DescChart::DescChart(const char* name) :
@@ -25,7 +27,7 @@ DescChart::DescChart(const char* name) :
   _pts->setMaximumWidth(60);
   new QIntValidator   (_pts);
   _dpt->setMaximumWidth(60);
-  new QIntValidator   (1,(1<<16 -1),_dpt);
+  new QIntValidator   (1,((1<<16)-1),_dpt);
   QHBoxLayout* layout = new QHBoxLayout;
 //   layout->addWidget(_button);
   layout->addWidget(_stat);

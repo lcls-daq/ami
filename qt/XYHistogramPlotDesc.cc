@@ -17,6 +17,8 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QLabel>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 enum { PlotSum, PlotMean };

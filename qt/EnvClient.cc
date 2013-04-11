@@ -268,7 +268,7 @@ void EnvClient::discovered(const DiscoveryRx& rx)
   const DescEntry* e = rx.entry(Ami::EntryScalar::input_entry());
   if (e) {
     _input = e->signature();
-    setWindowModified(!e->recorded());
+    //    setWindowModified(!e->recorded());
   }
   else {
     printf("EnvClient failed to find input\n");

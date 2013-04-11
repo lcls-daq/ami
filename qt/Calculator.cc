@@ -13,6 +13,7 @@
 #include <QtGui/QToolTip>
 
 #include <math.h>
+#include <stdio.h>
 
 #include "Calculator.hh"
 

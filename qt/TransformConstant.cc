@@ -6,6 +6,8 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QLabel>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 

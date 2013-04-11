@@ -24,6 +24,7 @@
 #include <QtGui/QCheckBox>
 
 #include <sys/socket.h>
+#include <stdio.h>
 
 using namespace Ami::Qt;
 

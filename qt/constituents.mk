@@ -1,9 +1,3 @@
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-qtincdir  := qt/include_64
-else
-qtincdir  := qt/include
-endif
-
 # List targets (if any) for this package
 tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
 
@@ -23,7 +17,7 @@ tgtsrcs_qttest := qttest.cc
 # <lib> for 'libc.so' is 'c'. Low level first.
 # tgtslib_exe_a := $(USRLIBDIR)/rt
 
-qt_libs := qt/QtGui qt/QtCore
+qt_libs := $(qtlibdir)
 qt_libs += qwt/qwt
 
 # List project libraries (if any) needed by exe_a as <project>/<lib>.
@@ -61,22 +55,7 @@ tgtlibs_qttest += $(qt_libs)
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-qt_incs := $(qtincdir) qwt/include
-# qwt includes qt headers without package prefix!
-qt_incs += $(qtincdir)/Qt
-qt_incs += $(qtincdir)/Qt3Support
-qt_incs += $(qtincdir)/QtAssistant
-qt_incs += $(qtincdir)/QtCore
-qt_incs += $(qtincdir)/QtDesigner
-qt_incs += $(qtincdir)/QtGui
-qt_incs += $(qtincdir)/QtNetwork
-qt_incs += $(qtincdir)/QtOpenGL
-qt_incs += $(qtincdir)/QtScript
-qt_incs += $(qtincdir)/QtSql
-qt_incs += $(qtincdir)/QtSvg
-qt_incs += $(qtincdir)/QtTest
-qt_incs += $(qtincdir)/QtUiTools
-qt_incs += $(qtincdir)/QtXml
+qt_incs := $(qtincdir) $(qwtincs) qwt/include
 
 tgtincs_online_ami  := $(qt_incs)
 tgtincs_offline_ami := $(qt_incs)
@@ -207,7 +186,8 @@ libsrcs_amiblv := blv
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_amiqt := $(qt_incs)
+libincs_amiqt := $(qt_incs) qwt/include
+libsinc_amiqt := $(qwtsinc)
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

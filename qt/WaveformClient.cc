@@ -7,6 +7,8 @@
 
 #include <QtGui/QPushButton>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :

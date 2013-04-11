@@ -11,6 +11,8 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QDoubleValidator>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 

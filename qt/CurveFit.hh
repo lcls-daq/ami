@@ -78,8 +78,6 @@ namespace Ami {
       void remove_overlay(QtOverlay*);
     private:
       std::list<CurveFitOverlay*> _ovls;
-
-      static char *_opname[];
     };
   };
 };

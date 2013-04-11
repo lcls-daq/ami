@@ -4,6 +4,8 @@
 
 #include <QtGui/QPalette>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 static QStringList _most_recent;

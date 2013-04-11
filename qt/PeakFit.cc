@@ -57,6 +57,7 @@
 #include <QtGui/QTabWidget>
 
 #include <sys/socket.h>
+#include <stdio.h>
 
 // works for labels not buttons
 //#define bold(t) "<b>" #t "</b>"

@@ -265,7 +265,7 @@ void TdcClient::discovered(const DiscoveryRx& rx)
   const DescEntry* e = rx.entry(channel_name);
   if (e) {
     _input_signature = e->signature();
-    setWindowModified(!e->recorded());
+    //    setWindowModified(!e->recorded());
   }
   else {
     printf("%s not found\n", channel_name);

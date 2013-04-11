@@ -10,6 +10,8 @@
 #include <QtGui/QIntValidator>
 #include <QtGui/QLabel>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 DescScan::DescScan(const char* name, FeatureRegistry* registry) :

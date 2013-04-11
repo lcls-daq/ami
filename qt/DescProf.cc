@@ -13,6 +13,8 @@
 #include <QtGui/QLabel>
 #include <QtGui/QPushButton>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 

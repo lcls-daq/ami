@@ -34,6 +34,8 @@
 
 #include "qwt_plot.h"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 static QColor  color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };

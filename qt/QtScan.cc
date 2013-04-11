@@ -23,9 +23,10 @@ QtScan::QtScan(const QString&   title,
 {
   if (entry.desc().scatter()) {
     _curve.setStyle(QwtPlotCurve::Dots);
+    QBrush b(c);
+    QPen   p(c);
     QwtSymbol symbol(QwtSymbol::Style(symbol_style),
-                     QBrush(c),
-                     QPen(c),
+                     b,p,
                      QSize(symbol_size,symbol_size));
     _curve.setSymbol(symbol);
   }

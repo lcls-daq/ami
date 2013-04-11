@@ -13,6 +13,8 @@
 
 #include <QtCore/QString>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 CurveFitPost::CurveFitPost(unsigned       channel, 

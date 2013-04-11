@@ -13,6 +13,7 @@
 #include <QtGui/QComboBox>
 
 #include <math.h>
+#include <stdio.h>
 
 using namespace Ami::Qt;
 

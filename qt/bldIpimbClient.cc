@@ -172,7 +172,7 @@ Control::Control(const QString& label,
 }
 
 
-unsigned parse_interface(char* iarg)
+unsigned parse_interface(const char* iarg)
 {
   unsigned interface = 0;
   if (iarg[0]<'0' || iarg[0]>'9') {
@@ -221,8 +221,8 @@ int main(int argc, char **argv)
 {
   unsigned interface   = parse_interface("eth0"); //0x7f000001;
   unsigned controlPort = CONTROL_PORT;
-  char* configdb = IPIMB_CONFIG_DB;
-  char* hostName = IPIMB_HOSTNAME;
+  const char* configdb = IPIMB_CONFIG_DB;
+  const char* hostName = IPIMB_HOSTNAME;
   
   extern char* optarg;
   int c;
@@ -252,7 +252,7 @@ int main(int argc, char **argv)
   SList servers;
   Ami::Blv::ServerEntry entry;
   unsigned det;
-  char* host = strtok(hostName,",");
+  const char* host = strtok(const_cast<char*>(hostName),",");
   do {
     sprintf(entry.name,host);
     sprintf(entry.host,host);

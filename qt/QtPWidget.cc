@@ -2,6 +2,8 @@
 
 #include <QtCore/QPoint>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 QtPWidget::QtPWidget() :

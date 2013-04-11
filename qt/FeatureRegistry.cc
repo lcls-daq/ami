@@ -4,6 +4,8 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Discovery.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 static FeatureRegistry* _instance[Ami::NumberOfSets] = {0,0};

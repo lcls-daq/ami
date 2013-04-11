@@ -8,6 +8,8 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QVBoxLayout>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 QtPlotSelector::QtPlotSelector(QWidget&       parent,

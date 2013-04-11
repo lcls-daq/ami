@@ -3,6 +3,8 @@
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/QtPersistent.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 FeatureBox::FeatureBox() :

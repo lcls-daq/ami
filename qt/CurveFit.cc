@@ -40,7 +40,7 @@
 
 using namespace Ami::Qt;
 
-char *CurveFit::_opname[] = {
+static const char* opname[] = {
     "scale",
     "shift",
     "chi squared"
@@ -260,7 +260,7 @@ void CurveFit::plot()
   }
   else {
     int op = _outBox->currentIndex();
-    DescEntry *desc = _scalar_desc->desc(_opname[op]);
+    DescEntry *desc = _scalar_desc->desc(opname[op]);
     QString norm(_scalar_desc->expr(QString(""))); /* This has the form "()/(NORMVAR)" or "" */
   
     if (norm.length()) {
@@ -332,7 +332,7 @@ void CurveFit::overlay()
   }
   else {
     int op = _outBox->currentIndex();
-    DescEntry *desc = _scalar_desc->desc(_opname[op]);
+    DescEntry *desc = _scalar_desc->desc(opname[op]);
 
     new QtPlotSelector(*this, *this, desc);
   }

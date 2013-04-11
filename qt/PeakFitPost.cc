@@ -10,6 +10,8 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/DescEntry.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 PeakFitPost::PeakFitPost(unsigned          channel,

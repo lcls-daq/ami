@@ -10,6 +10,8 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QStackedWidget>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 DescBinning::DescBinning(const char* name) :

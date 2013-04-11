@@ -4,6 +4,7 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <string>
 #include <cassert>

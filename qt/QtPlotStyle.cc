@@ -13,6 +13,7 @@
 #include "qwt_symbol.h"
 #include <vector>
 
+#include <stdio.h>
 
 namespace Ami {
   namespace Qt {

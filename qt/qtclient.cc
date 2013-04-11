@@ -9,6 +9,8 @@
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QPushButton>
 
+#include <stdio.h>
+
 static void usage(char* p)
 {
   printf("Usage: %s -I <interface> [-i <interface>] -s <address> [-f <path> -F <path> -C <int>]\n" \

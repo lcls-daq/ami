@@ -300,7 +300,9 @@ void SummaryClient::_read_description(int size)
     printf("Saved %d bytes\n", cache_p-cache); 
     printf("%s\n",cache); }
 #endif
-    
+
+  setUpdatesEnabled(false);
+
   while(_tab->count()) {
     QWidget* w = _tab->widget(0);
     _tab->removeTab(0);
@@ -388,7 +390,7 @@ void SummaryClient::_read_description(int size)
       break;
     default:
       printf("%s type %d not implemented yet\n",qPrintable(_title),desc->type()); 
-      return;
+      break;
     }
 
     bool lFound=false;
@@ -396,7 +398,7 @@ void SummaryClient::_read_description(int size)
       if ((*it)->title() == page_title) {
         if (plot)
           (*it)->add(plot,row,col);
-        else
+        else if (img)
           (*it)->add(img ,row,col);
         lFound=true;
         break;
@@ -406,7 +408,7 @@ void SummaryClient::_read_description(int size)
       PagePlot* page = new PagePlot(page_title);
       if (plot)
         page->add(plot,row,col);
-      else
+      else if (img)
         page->add(img ,row,col);
       pages.push_back(page);
     }
@@ -432,6 +434,8 @@ void SummaryClient::_read_description(int size)
 #endif
 
   _status->set_state(Status::Described);
+
+  setUpdatesEnabled(true);
 
   _sem->give();
 }

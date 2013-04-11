@@ -11,6 +11,7 @@
 #include "ami/qt/QtTable.hh"
 #include <QtCore/QString>
 
+#include <stdio.h>
 
 using namespace Ami::Qt;
 

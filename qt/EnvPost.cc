@@ -8,6 +8,8 @@
 #include "ami/data/DescCache.hh"
 #include "ami/qt/QtPersistent.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 EnvPost::EnvPost(const Ami::AbsFilter& filter,

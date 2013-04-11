@@ -14,6 +14,8 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QButtonGroup>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 #define USE_TH2F

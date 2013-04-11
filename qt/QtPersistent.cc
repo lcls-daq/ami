@@ -1,5 +1,9 @@
 #include "ami/qt/QtPersistent.hh"
 
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 using namespace Ami::Qt;
 
 const int StringSize = 64;

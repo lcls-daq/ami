@@ -26,6 +26,8 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool lNormWeight) :

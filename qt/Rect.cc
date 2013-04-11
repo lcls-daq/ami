@@ -1,6 +1,8 @@
 #include "ami/qt/Rect.hh"
 #include "ami/qt/QtPersistent.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 void Rect::save(char*& p) const

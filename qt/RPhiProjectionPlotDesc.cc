@@ -14,6 +14,7 @@
 #include <QtGui/QLabel>
 
 #include <math.h>
+#include <stdio.h>
 
 using namespace Ami::Qt;
 

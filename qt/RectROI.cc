@@ -16,6 +16,8 @@
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescCache.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 RectROI::RectROI(QWidget*         p,

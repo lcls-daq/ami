@@ -232,7 +232,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   strcpy(channel_name ,ChannelID::name(info,channel));
   if ((_input_entry = rx.entry(channel_name))) {
     _input = _input_entry->signature();
-    setWindowModified(!_input_entry->recorded());
+    //    setWindowModified(!_input_entry->recorded());
     _frame->prototype(_input_entry);
     _prototype(*_input_entry);
   }

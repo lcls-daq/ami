@@ -30,6 +30,7 @@
 #include <QtGui/QPushButton>
 
 #include "qwt_plot.h"
+#include <stdio.h>
 
 using namespace Ami::Qt;
 

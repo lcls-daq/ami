@@ -7,6 +7,8 @@
 
 #include "qwt_plot_marker.h"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 CursorDefinition::CursorDefinition(const QString& name,

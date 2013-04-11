@@ -12,6 +12,8 @@
 
 #include <QtCore/QString>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 CursorPost::CursorPost(unsigned         channel,
