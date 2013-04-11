@@ -6,6 +6,7 @@
 #include "pdsdata/bld/bldData.hh"
 
 #include <stdio.h>
+#include <string.h>
 
 using namespace Ami;
 

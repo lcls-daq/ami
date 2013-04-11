@@ -4,6 +4,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/DescEntry.hh"
 
+#include <string.h>
+
 using namespace Ami;
 
 static const unsigned FEATURE_NAMELEN = FeatureCache::FEATURE_NAMELEN;

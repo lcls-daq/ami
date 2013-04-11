@@ -1,6 +1,8 @@
 #include <Python.h>
 #include <structmember.h>
 
+#define MyArg_ParseTupleAndKeywords(args,kwds,fmt,kwlist,...) PyArg_ParseTupleAndKeywords(args,kwds,fmt,const_cast<char**>(kwlist),__VA_ARGS__)
+
 #include "ami/python/Client.hh"
 #include "ami/python/Discovery.hh"
 #include "ami/python/pyami.hh"
@@ -116,10 +118,10 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
   Ami::AbsFilter*   filter = 0;
   
   while(1) {
-    { char* kwlist[] = {"name","entry_type",NULL};
+    { const char* kwlist[] = {"name","entry_type",NULL};
       const char *name = 0, *entry_type=0;
       t = PyTuple_GetSlice(args,index,index_n=2);
-      sts = PyArg_ParseTupleAndKeywords(t,kwds,"s|s",kwlist,
+      sts = MyArg_ParseTupleAndKeywords(t,kwds,"s|s",kwlist,
 					&name, &entry_type);
 
       Py_DECREF(t);
@@ -135,9 +137,9 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
         else if (strcmp(entry_type,"Scan")==0) {
 	  unsigned nbins = 0;
           char* xtitle = 0;
-	  char* ekwlist[] = {"xtitle","nbins",NULL};
+	  const char* ekwlist[] = {"xtitle","nbins",NULL};
 	  t = PyTuple_GetSlice(args,index,index_n+=2);
-	  sts = PyArg_ParseTupleAndKeywords(t,kwds,"sI",ekwlist,
+	  sts = MyArg_ParseTupleAndKeywords(t,kwds,"sI",ekwlist,
 					    &xtitle, &nbins);
           if (sts) {
             // printf( "Creating Scan %s, %s, %d\n" , name,xtitle,nbins);
@@ -150,9 +152,9 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	  unsigned nbins = 0;
 	  float    range_lo = 0;
 	  float    range_hi = 0;
-	  char* ekwlist[] = {"nbins","range_lo","range_hi",NULL};
+	  const char* ekwlist[] = {"nbins","range_lo","range_hi",NULL};
 	  t = PyTuple_GetSlice(args,index,index_n+=3);
-	  sts = PyArg_ParseTupleAndKeywords(t,kwds,"Iff",ekwlist,
+	  sts = MyArg_ParseTupleAndKeywords(t,kwds,"Iff",ekwlist,
 					    &nbins, &range_lo, &range_hi);
 	  Py_DECREF(t);
 	  if (sts) {
@@ -164,9 +166,9 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	return -1;
       }
     }
-    { char* kwlist[] = {"det_id","channel",NULL};
+    { const char* kwlist[] = {"det_id","channel",NULL};
       t = PyTuple_GetSlice(args,index,index_n=2);
-      sts = PyArg_ParseTupleAndKeywords(t,kwds,"II",kwlist,
+      sts = MyArg_ParseTupleAndKeywords(t,kwds,"II",kwlist,
 					&phy, &channel);
       Py_DECREF(t);
       if (sts) {
@@ -180,10 +182,10 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
     return -1;
   }
 
-  { char* kwlist[] = {"filter",NULL};
+  { const char* kwlist[] = {"filter",NULL};
     const char* filter_str = 0;
     t = PyTuple_GetSlice(args,index,index_n+=1);
-    sts = PyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
+    sts = MyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
     Py_DECREF(t);
     filter = parse_filter(filter_str);
     // printf("parsed filter from %s\n",filter_str);
@@ -432,8 +434,8 @@ static PyMethodDef amientry_methods[] = {
 //  Register amientry members
 //
 static PyMemberDef amientry_members[] = {
-  {"phy"    , T_INT, offsetof(amientry, phy    ), 0, "detector identifier"},
-  {"channel", T_INT, offsetof(amientry, channel), 0, "detector channel"},
+  {const_cast<char*>("phy")    , T_INT, offsetof(amientry, phy    ), 0, const_cast<char*>("detector identifier")},
+  {const_cast<char*>("channel"), T_INT, offsetof(amientry, channel), 0, const_cast<char*>("detector channel")},
   {NULL} 
 };
 
@@ -571,8 +573,8 @@ static PyMethodDef amientrylist_methods[] = {
 //  Register amientrylist members
 //
 static PyMemberDef amientrylist_members[] = {
-  {"phy"    , T_INT, offsetof(amientrylist, phy    ), 0, "detector identifier"},
-  {"channel", T_INT, offsetof(amientrylist, channel), 0, "detector channel"},
+  {const_cast<char*>("phy")    , T_INT, offsetof(amientrylist, phy    ), 0, const_cast<char*>("detector identifier")},
+  {const_cast<char*>("channel"), T_INT, offsetof(amientrylist, channel), 0, const_cast<char*>("detector channel")},
   {NULL} 
 };
 
@@ -891,7 +893,7 @@ initpyami(void)
   Py_INCREF(&amientrylist_type);
   PyModule_AddObject(m, "EntryList", (PyObject*)&amientrylist_type);
 
-  AmiError = PyErr_NewException("pyami.error", NULL, NULL);
+  AmiError = PyErr_NewException(const_cast<char*>("pyami.error"), NULL, NULL);
   Py_INCREF(AmiError);
   PyModule_AddObject(m, "error", AmiError);
 }

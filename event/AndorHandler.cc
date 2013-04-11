@@ -5,6 +5,7 @@
 #include "pds/config/AndorDataType.hh"
 
 #include <string.h>
+#include <stdlib.h>
 
 static inline unsigned height(const AndorConfigType& c)
 {

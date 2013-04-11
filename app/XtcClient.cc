@@ -266,7 +266,7 @@ int XtcClient::process(Pds::Xtc* xtc)
 
   if (xtc->contains.id() == Pds::TypeId::Id_Xtc) {
     //  Recorded data has xtc version 0
-    _recorded = _sync | xtc->contains.version()==0;
+    _recorded = _sync | (xtc->contains.version()==0);
     iterate(xtc);
   }
   else {

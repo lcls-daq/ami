@@ -1,6 +1,7 @@
 #include "FeatureCache.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 

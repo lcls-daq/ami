@@ -40,6 +40,7 @@ Poll::Poll(int timeout) :
 
 Poll::~Poll()
 {
+  stop();
   // assumes we are stopped
   for (unsigned short n=1; n<_nfds; n++) {
     Fd* fd = _ofd[n];
@@ -67,6 +68,7 @@ void Poll::stop()
 
   //  Why does this fail/deadlock?
   //  _sem.take();
+  _timeout = 10;
   while (!_sem.take(1000))
     _shutdown = true;
 }
@@ -198,7 +200,7 @@ int Poll::poll()
 	  const char* payload = _buffer+sizeof(int);
           if (cmd==BroadcastIn || cmd==BroadcastOut) {
             for (unsigned short n=1; n<_nfds; n++) {
-              if (_ofd[n])
+              if (_ofd[n]) {
                 if (cmd==BroadcastOut)
                   ::write(_ofd[n]->fd(), payload, size);
                 else if (!_ofd[n]->processIo(payload,size)) {
@@ -206,6 +208,7 @@ int Poll::poll()
                   unmanage(*fd);
                   delete fd;
                 }
+              }
             }
           }
           else if (cmd==PostIn)

@@ -8,6 +8,8 @@
 #include "ami/data/Discovery.hh"
 
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
 
 using namespace Ami;
 

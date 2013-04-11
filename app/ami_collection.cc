@@ -2,6 +2,8 @@
 #include "ami/server/CollectionServerManager.hh"
 #include "ami/service/Ins.hh"
 
+#include <stdlib.h>
+
 using Ami::AmiApp;
 
 static void usage(char* progname) {

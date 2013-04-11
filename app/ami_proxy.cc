@@ -13,6 +13,7 @@
 
 #include <list>
 #include <poll.h>
+#include <stdlib.h>
 
 namespace Ami {
 

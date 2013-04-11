@@ -5,6 +5,8 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pds/config/CsPadConfigType.hh"
 
+#include <stdio.h>
+
 namespace CspadGeometry { 
   class Detector; 
   class ConfigCache;

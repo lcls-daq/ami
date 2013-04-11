@@ -7,6 +7,7 @@
 #include "pds/config/TM6740ConfigType.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 

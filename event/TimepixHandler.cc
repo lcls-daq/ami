@@ -8,6 +8,7 @@
 #include "pdsdata/timepix/ConfigV2.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 

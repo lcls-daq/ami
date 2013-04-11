@@ -6,7 +6,7 @@
 namespace Ami {
   class Calib {
   public:
-    static FILE *fopen_dual(char *path1,char * path2, char *description);
+    static FILE *fopen_dual(const char *path1, const char * path2, const char *description);
   };
 };
 

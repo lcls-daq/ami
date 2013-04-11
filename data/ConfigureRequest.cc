@@ -1,5 +1,7 @@
 #include "ami/data/ConfigureRequest.hh"
 
+#include <string.h>
+
 using namespace Ami;
 
 ConfigureRequest::ConfigureRequest(const ConfigureRequest& r)

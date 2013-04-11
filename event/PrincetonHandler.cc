@@ -8,6 +8,7 @@
 #include "pds/config/PrincetonDataType.hh"
 
 #include <string.h>
+#include <stdlib.h>
 
 static inline unsigned height(const PrincetonConfigType& c)
 {

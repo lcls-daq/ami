@@ -13,6 +13,8 @@
 
 #include "pdsdata/xtc/DetInfo.hh"
 
+#include <string.h>
+
 using namespace Ami;
 
 typedef Pds::DetInfo DI;

@@ -5,6 +5,9 @@
 
 #include <list>
 #include <poll.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
 
 using namespace Ami;
 

@@ -26,7 +26,7 @@ namespace Ami {
     void         reset   ();
   private:
     FeatureCache& _cache;
-    enum { NChannels= 14 };
+    enum { NChannels= 15 };
     int                     _index[NChannels];
   };
 

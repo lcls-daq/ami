@@ -10,6 +10,8 @@
 #include "ami/data/Discovery.hh"
 
 #include <errno.h>
+#include <string.h>
+#include <stdlib.h>
 
 //#define DBUG
 

@@ -4,6 +4,7 @@
 
 #include "ami/event/CspadTemp.hh"
 #include "ami/event/CspadCalib.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
@@ -20,6 +21,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include <errno.h>
 
@@ -296,28 +298,6 @@ static double frameNoise(const uint16_t*  data,
   return v;
 }
 #endif
-
-static FILE *fopen_dual(char *path1,char * path2, char *description)
-{
-  const int ErrMsgSize=200;
-  char errmsg[ErrMsgSize];
-  FILE *f = fopen(path1, "r");
-
-  if (f) {
-    printf("Loaded %s from %s\n", description, path1);
-  } else {
-    snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path1);
-    perror(errmsg);
-    f = fopen(path2, "r");
-    if (f) {
-      printf("Loaded %s from %s\n", description, path2);
-    } else {
-      snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path2);
-      perror(errmsg);
-    }
-  }
-  return (f);
-}
 
 namespace CspadGeometry {
 
@@ -1247,23 +1227,23 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
 
   sprintf(oname1,"ped.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
-  FILE *f = fopen_dual(oname1, oname2, "pedestals");
+  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
 
   sprintf(oname1,"sta.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
-  FILE *s = fopen_dual(oname1, oname2, "status map");
+  FILE *s = Calib::fopen_dual(oname1, oname2, "status map");
 
   sprintf(oname1,"gain.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
-  FILE *g = fopen_dual(oname1, oname2, "gain map");
+  FILE *g = Calib::fopen_dual(oname1, oname2, "gain map");
 
   sprintf(oname1,"res.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
-  FILE *rms = fopen_dual(oname1, oname2, "noise");
+  FILE *rms = Calib::fopen_dual(oname1, oname2, "noise");
 
   sprintf(oname1,"geo.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
-  FILE *gm = fopen_dual(oname1, oname2, "geometry");
+  FILE *gm = Calib::fopen_dual(oname1, oname2, "geometry");
 
   CspadGeometry::ConfigCache cfg(type,payload);
 

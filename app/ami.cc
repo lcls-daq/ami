@@ -2,6 +2,9 @@
 #include "ami/service/Ins.hh"
 #include "ami/event/EventHandler.hh"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 using Ami::AmiApp;
 
 static void usage(char* progname) {

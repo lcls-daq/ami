@@ -5,6 +5,7 @@
 #include "pds/config/FliDataType.hh"
 
 #include <string.h>
+#include <stdlib.h>
 
 static inline unsigned height(const FliConfigType& c)
 {

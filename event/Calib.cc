@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-FILE* Ami::Calib::fopen_dual(char *path1,char * path2, char *description)
+FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2, const char *description)
 {
   const int ErrMsgSize=200;
   char errmsg[ErrMsgSize];

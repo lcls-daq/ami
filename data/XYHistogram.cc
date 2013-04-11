@@ -11,6 +11,7 @@
 #include "ami/data/Cds.hh"
 
 #include <stdio.h>
+#include <string.h>
 
 using namespace Ami;
 

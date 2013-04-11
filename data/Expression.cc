@@ -16,6 +16,8 @@
 #include <QtCore/QChar>
 
 #include <math.h>
+#include <stdio.h>
+#include <stdint.h>
 
 //#define DBUG
 

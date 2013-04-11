@@ -2,6 +2,8 @@
 #include "pds/config/PhasicsConfigType.hh"
 #include "pdsdata/camera/FrameFexConfigV1.hh"
 
+#include <stdio.h>
+
 using namespace Ami;
 
 static std::list<Pds::TypeId::Type> config_type_list()

@@ -6,6 +6,9 @@
 #include "TSocket.hh"
 #include "ConnectionHandler.hh"
 
+#include <stdlib.h>
+#include <unistd.h>
+
 //#define DBUG
 
 using namespace Ami;

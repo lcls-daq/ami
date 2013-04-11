@@ -68,7 +68,6 @@ namespace Ami {
     char*           _discovery;
     
     Socket*         _connect;
-    Semaphore       _client_sem;
     Ins             _server;
     Routine*        _reconn;
 

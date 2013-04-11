@@ -160,7 +160,7 @@ void AnalysisFactory::configure(unsigned       id,
     }
     else {
       const Cds* pcds = 0;
-      char *reqType = NULL;
+      const char *reqType = NULL;
       switch(req.source()) {
         case ConfigureRequest::Discovery: pcds = &_cds; reqType = "Discovery"; break;
         case ConfigureRequest::Analysis : pcds = & cds; reqType = "Analysis"; break;

@@ -4,6 +4,8 @@
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
+#include <stdio.h>
+
 namespace CspadMiniGeometry { 
   class Detector; 
 };

@@ -1,9 +1,3 @@
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-qtincdir  := qt/include_64
-else
-qtincdir  := qt/include
-endif
-
 # List targets (if any) for this package
 tgtnames := ami ami_proxy ami_collection test tcptest
 
@@ -25,19 +19,13 @@ tgtslib_tcptest := $(USRLIBDIR)/rt
 
 tgtlibs_ami_proxy := ami/service ami/data ami/server ami/client
 tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/acqdata
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-  tgtlibs_ami_proxy += qt/QtCore
-else
-  tgtlibs_ami_proxy += qt/QtCore
-endif
+tgtlibs_ami_proxy += $(qtlibdir)
+tgtslib_ami_proxy += $(qtslibdir)
 
 tgtlibs_ami_collection := ami/service ami/data ami/server ami/client
 tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/acqdata
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-  tgtlibs_ami_collection += qt/QtCore
-else
-  tgtlibs_ami_collection += qt/QtCore
-endif
+tgtlibs_ami_collection += $(qtlibdir)
+tgtslib_ami_collection += $(qtslibdir)
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
@@ -57,11 +45,8 @@ tgtlibs_ami += pdsdata/orcadata pdsdata/quartzdata
 tgtlibs_ami += pdsdata/compressdata
 tgtlibs_ami += ami/service ami/data ami/server ami/calib ami/event ami/client ami/app
 tgtincs_ami := $(qtincdir)
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-  tgtlibs_ami += qt/QtCore
-else
-  tgtlibs_ami += qt/QtCore
-endif
+tgtlibs_ami += $(qtlibdir)
+tgtslib_ami += $(qtslibdir)
 
 tgtlibs_tcptest := ami/service pdsdata/xtcdata
 

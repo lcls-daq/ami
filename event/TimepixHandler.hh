@@ -4,6 +4,8 @@
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
+#include <stdlib.h>
+
 namespace Ami {
   class EntryImage;
 

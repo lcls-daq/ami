@@ -199,7 +199,6 @@ ClientManager::ClientManager(unsigned   interface,
   _buffer     (new char[BufferSize]),
   _discovery_size(BufferSize),
   _discovery  (new char[BufferSize]),
-  _client_sem (Semaphore::EMPTY),
   _server     (serverGroup, Port::serverPort()),
   _connect_mgr(connect_mgr),
   _connect_id (connect_mgr.add(*this)),
@@ -245,7 +244,6 @@ ClientManager::~ClientManager()
   delete[] _iovs;
   delete[] _buffer;
   delete[] _discovery;
-  _poll->stop();
   delete _poll;
   if (_reconn ) delete _reconn ;
   if (_connect) delete _connect;
@@ -341,7 +339,7 @@ void ClientManager::handle(int s)
 #ifdef DBUG
   printf("CM handle skt %d  connectid %d\n",s, _connect_id);
 #endif
-  new ClientSocket(*this,s);
+  _poll->manage(*new ClientSocket(*this,s));
   _state = Connected;
 }
 
@@ -355,14 +353,11 @@ unsigned ClientManager::receive_bytes()
 void ClientManager::add_client(ClientSocket& socket) 
 {
   _client.connected();
-  _poll->manage(socket);
 }
 
 void ClientManager::remove_client(ClientSocket& socket)
 {
-  _poll->unmanage(socket);
   _client.disconnected();
-  _client_sem.give();
 }
 
 void ClientManager::_flush_sockets(const Message& reply,

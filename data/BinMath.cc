@@ -101,6 +101,8 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
     mex += _contrast;
     mex += _xmoment;
     mex += _ymoment;
+    //    mex += QString("\\\%1").arg(_xmoment);
+    //    mex += QString("\\\%1").arg(_ymoment);
     mex += QString("\\\'\\\"]+\\]");
     QRegExp match(mex);
     int last=0;

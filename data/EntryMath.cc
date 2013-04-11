@@ -20,6 +20,7 @@
 #include <QtCore/QRegExp>
 
 #include <stdio.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
