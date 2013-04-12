@@ -373,8 +373,13 @@ int XtcClient::process(Pds::Xtc* xtc)
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
       }
       else {
-        const char* infoName = xtc->src.level()==Pds::Level::Source ? 
-          Pds::DetInfo::name(info) : Pds::BldInfo::name(bldInfo);
+	char buff[128];
+	const char* infoName = buff;
+	switch(xtc->src.level()) {
+	case Level::Source  : infoName = Pds::DetInfo::name(info); break;
+	case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
+	default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
+	}
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
         printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);
 

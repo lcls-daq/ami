@@ -18,7 +18,7 @@ using namespace Ami;
 const int Step=32;
 const int BufferSize=0x100000;
 
-enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn };
+enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn, Manage };
 
 Poll::Poll(int timeout) :
   _timeout (timeout),
@@ -68,9 +68,11 @@ void Poll::stop()
 
   //  Why does this fail/deadlock?
   //  _sem.take();
+  int timeout = _timeout;
   _timeout = 10;
   while (!_sem.take(1000))
     _shutdown = true;
+  _timeout = timeout;
 }
 
 //
@@ -130,6 +132,18 @@ void Poll::post    (const char* msg, int size)
   iovec* iov = new iovec[iovcnt];
   iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
   iov[1].iov_base = (void*)msg; iov[1].iov_len = size;
+  _loopback->writev(iov,iovcnt);
+  delete[] iov;
+}
+
+void Poll::manage_p(Fd& fd)
+{
+  int hdr = Manage;
+  Fd* p = &fd;
+  int iovcnt=2;
+  iovec* iov = new iovec[iovcnt];
+  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
+  iov[1].iov_base = &p        ; iov[1].iov_len = sizeof(p);
   _loopback->writev(iov,iovcnt);
   delete[] iov;
 }
@@ -213,6 +227,11 @@ int Poll::poll()
           }
           else if (cmd==PostIn)
             processIn(payload,size);
+	  else if (cmd==Manage) {
+	    Fd* fd = *reinterpret_cast<Fd**>(const_cast<char*>(payload));
+	    manage(*fd);
+	    return result;  // not safe to loop over _ofd's below
+	  }
 	}
       }
     }

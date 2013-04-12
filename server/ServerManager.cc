@@ -174,6 +174,12 @@ int ServerManager::processIo()
              request.type());
       return 1;
     }
+    else {
+      VServerSocket& s = *static_cast<VServerSocket*>(_socket);
+      printf("ServerManager::connect req from %x.%d\n",
+	     s.peer().get().address(),
+	     s.peer().get().portId());
+    }
 
     TSocket* s = new TSocket;
     try {

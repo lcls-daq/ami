@@ -26,6 +26,8 @@ namespace Ami {
     int  nfds() const;
     Fd&  fds(int) const;
     void manage  (Fd&);
+  public:
+    void manage_p(Fd&);
     virtual void unmanage(Fd&);
     void bcast_in (const char*,int);
     void bcast_out(const char*,int);

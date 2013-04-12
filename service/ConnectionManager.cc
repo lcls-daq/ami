@@ -95,7 +95,8 @@ void ConnectionManager::routine()
         }
         else {
 #ifdef DBUG
-          printf("ConnMgr handling skt %d  connid %d\n",s,connect_id);
+          printf("ConnMgr handling skt %d  connid %d from %x.%d\n",
+		 s,connect_id,name.get().address(),name.get().portId());
 #endif
           _list_sem.take();
           for(std::list<ConnectionHandler*>::iterator it = _handlers.begin();

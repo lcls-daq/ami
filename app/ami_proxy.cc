@@ -145,9 +145,7 @@ int main(int argc, char **argv)
       printf("ami_proxy accepting connection from %x.%d\n",
 	     remote.address(),remote.portId());
 
-      clients.stop();
-      clients.manage(*new PSocket(s,client));
-      clients.start();
+      clients.manage_p(*new PSocket(s,client));
     }
   }
 

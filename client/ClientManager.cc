@@ -201,7 +201,7 @@ ClientManager::ClientManager(unsigned   interface,
   _discovery  (new char[BufferSize]),
   _server     (serverGroup, Port::serverPort()),
   _connect_mgr(connect_mgr),
-  _connect_id (connect_mgr.add(*this)),
+  _connect_id (-1),
   _receive_bytes(0),
   _receive_last (0)
 {
@@ -229,11 +229,15 @@ ClientManager::ClientManager(unsigned   interface,
     }
     catch(Event& e) {
       delete so;
+      printf("ClientManager failed to connect to %x.%d\n",
+	     _server.address(),_server.portId());
     }
     _reconn = new ProxyConnect(*this, _connect, _server);
   }
 
   _poll->start();
+
+  _connect_id = connect_mgr.add(*this);
 }
 
 
@@ -339,7 +343,7 @@ void ClientManager::handle(int s)
 #ifdef DBUG
   printf("CM handle skt %d  connectid %d\n",s, _connect_id);
 #endif
-  _poll->manage(*new ClientSocket(*this,s));
+  _poll->manage_p(*new ClientSocket(*this,s));
   _state = Connected;
 }
 

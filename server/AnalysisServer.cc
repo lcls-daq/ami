@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 using namespace Ami;
 
@@ -71,11 +72,16 @@ int AnalysisServer::processIo()
     //        the ConfigReq message gets preempted.
     //
     if (request.payload() >= sizeof(Message)) {
+      timespec tv; clock_gettime(CLOCK_REALTIME,&tv);
       _socket->read(_buffer,sizeof(Message));
+      timespec tw; clock_gettime(CLOCK_REALTIME,&tw);
       const Message& msg = *reinterpret_cast<const Message*>(_buffer);
       if (msg.id() == request.id()+1 &&
           msg.type() == Message::Disconnect) {
-        printf("AS intercepted disconnected config request\n");
+        printf("%s intercepted disconnected config request\n",_cds_name(*_socket));
+	printf("\tconfig req id %d  payload %d\n",request.id(),request.payload());
+	printf("\tdiscon req id %d  readtime %fs\n",msg.id(),
+	       double(tw.tv_sec-tv.tv_sec)+1.e-9*(double(tw.tv_nsec)-double(tv.tv_nsec)));
         return 0;
       }
       _socket->read(_buffer+sizeof(Message),request.payload()-sizeof(Message));

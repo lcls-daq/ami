@@ -11,7 +11,7 @@ tgtsrcs_tcptest := tcptest.cc
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-tgtslib_ami := $(USRLIBDIR)/rt
+tgtslib_ami := $(USRLIBDIR)/rt $(USRLIBDIR)/dl
 tgtslib_ami_proxy := $(USRLIBDIR)/rt
 tgtslib_ami_collection := $(USRLIBDIR)/rt
 tgtslib_test := $(USRLIBDIR)/rt

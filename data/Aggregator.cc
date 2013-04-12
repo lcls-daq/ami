@@ -23,7 +23,7 @@ using namespace Ami;
 static const int BufferSize = 0x2000000;
 
 #ifdef DBUG
-static const char* State[] = { "Init", "Connected",
+static const char* State[] = { "Init", "Connecting", "Connected",
                                "Discovering", "Discovered", 
                                "Configured", 
                                "Describing", "Described",
