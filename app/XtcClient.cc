@@ -34,6 +34,7 @@
 #include "ami/event/OceanOpticsHandler.hh"
 #include "ami/event/FliHandler.hh"
 #include "ami/event/AndorHandler.hh"
+#include "ami/event/ImpWaveformHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -331,6 +332,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       switch(xtc->contains.id()) {
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
+      case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
       case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
       case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;

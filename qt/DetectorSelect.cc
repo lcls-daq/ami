@@ -349,6 +349,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel); break;
     case Pds::DetInfo::OceanOptics : 
+    case Pds::DetInfo::Imp      :
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
     case Pds::DetInfo::Opal1000 : 
