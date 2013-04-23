@@ -275,10 +275,7 @@ void ClientManager::request_payload(const EntryList& req)
 //
 void ClientManager::connect()
 {
-  //  Remove previous connections
-  unsigned n = nconnected();
-  while(n)
-    delete &_poll->fds(n--);
+  disconnect();
 
   if (_connect) {
     _request = Message((_client.svc() ? (1<<31):0) | _connect_id,
@@ -304,6 +301,7 @@ int ClientManager::nconnected() const { return _poll->nfds(); }
 void ClientManager::disconnect()
 {
   if (_state != Disconnected && nconnected()) {
+    printf("Disconnecting %d\n",nconnected());
     _request = Message(_request.id()+1,Message::Disconnect);
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
