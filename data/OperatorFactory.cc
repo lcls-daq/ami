@@ -56,7 +56,6 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Mean      :
   case AbsOperator::Integral  : o = new Integral  (p,input); break;
   case AbsOperator::Reference : o = new Reference (p,input); break;
-  case AbsOperator::EntryRefOp: o = new EntryRefOp(p,input); break;
   case AbsOperator::EntryMath : o = new EntryMath (p,input,output_cds,_f); break;
   case AbsOperator::BinMath   : o = new BinMath   (p,input,_f); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
@@ -87,6 +86,22 @@ AbsOperator* OperatorFactory::deserialize(const char*& p,
 					  Cds&         output_cds,
 					  unsigned     output_signature) const
 {
-  AbsOperator* o = _extract(p,input.desc(),output_cds);
-  return o;
+  AbsOperator* o;
+  //
+  //  Handle special case for EntryRefOp
+  //
+  uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(p);
+  if (type == AbsOperator::EntryRefOp) {
+    p+=sizeof(uint32_t);
+    uint32_t next = *reinterpret_cast<const uint32_t*>(p);
+    p+=sizeof(next);
+    o = new EntryRefOp(p, input);
+    if (next)
+      o->next(_extract(p,o->output(),output_cds));
+    return o;
+  }
+  else {
+    o = _extract(p,input.desc(),output_cds);
+    return o;
+  }
 }

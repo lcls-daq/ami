@@ -15,6 +15,9 @@
 #include "pdsdata/cspad/ElementHeader.hh"
 #include "pdsdata/cspad/ConfigV1.hh"
 #include "pdsdata/cspad/ConfigV2.hh"
+#include "pdsdata/cspad/ConfigV3.hh"
+#include "pdsdata/cspad/ConfigV4.hh"
+#include "pdsdata/cspad/ConfigV5.hh"
 #include "pds/config/CsPadConfigType.hh"
 #include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -24,6 +27,8 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+
+#define DBUG
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -401,6 +406,7 @@ namespace CspadGeometry {
           const uint16_t*  data) const = 0;
     virtual void fill(Ami::EntryImage& image,
                       double v0, double v1) const = 0;
+    virtual void set_pedestals(FILE*) {}
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
         unsigned& y0, unsigned& y1) const = 0;
@@ -550,6 +556,28 @@ namespace CspadGeometry {
       if (linep) {
         free(linep);
       }
+    }
+    void set_pedestals(FILE* ped) 
+    {
+      size_t sz = 8 * 1024;
+      char* linep = (char *)malloc(sz);
+      memset(linep, 0, sz);
+      char* pEnd = linep;
+
+      if (ped) {
+        uint16_t* off = _off;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          getline(&linep, &sz, ped);
+          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
+          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+        }
+      }
+      else
+        memset(_off,0,sizeof(_off));
+
+      if (linep)
+        free(linep);
     }
     void kill_off() { memset(_off,0,sizeof(_off)); }
   protected:
@@ -733,6 +761,11 @@ namespace CspadGeometry {
       for(unsigned ie=0; ie<2; ie++)
         asic[ie]->fill(image,v0,v1);
     }
+    void set_pedestals(FILE* f)
+    {
+      for(unsigned ie=0; ie<2; ie++)
+        asic[ie]->set_pedestals(f);
+    }
   public:
     Asic* asic[2];
   };
@@ -779,6 +812,11 @@ namespace CspadGeometry {
       for(unsigned ie=0; ie<4; ie++)
         element[ie]->fill(image,v0,v1);
     }
+    void set_pedestals(FILE* f)
+    {
+      for(unsigned ie=0; ie<4; ie++)
+        element[ie]->set_pedestals(f);
+    }
   public:
     TwoByTwo* element[4];
   };
@@ -788,6 +826,15 @@ namespace CspadGeometry {
     ConfigCache(Pds::TypeId type, const void* payload) : 
       _type(type)
     {
+#define CASE_VSN(v) case v:                                             \
+      { const Pds::CsPad::ConfigV##v& c =                               \
+          *reinterpret_cast<const Pds::CsPad::ConfigV##v*>(payload);    \
+        size = sizeof(c);                                               \
+        _quadMask   = c.quadMask();                                     \
+        for(unsigned i=0; i<4; i++)                                     \
+          _roiMask[i] = c.roiMask(i);                                   \
+        break; }
+
       unsigned size;
       switch(type.version()) {
       case 1:  
@@ -798,14 +845,10 @@ namespace CspadGeometry {
           for(unsigned i=0; i<4; i++)
             _roiMask[i] = (_quadMask&(1<<i)) ? 0xff : 0;
           break; }
-      case 2:
-        { const Pds::CsPad::ConfigV2& c = 
-            *reinterpret_cast<const Pds::CsPad::ConfigV2*>(payload); 
-          size = sizeof(c);
-          _quadMask   = c.quadMask();
-          for(unsigned i=0; i<4; i++)
-            _roiMask[i] = c.roiMask(i);
-          break; }
+        CASE_VSN(2)
+        CASE_VSN(3)
+        CASE_VSN(4)
+        CASE_VSN(5)
       default:
         { const CsPadConfigType& c = 
             *reinterpret_cast<const CsPadConfigType*>(payload); 
@@ -817,6 +860,8 @@ namespace CspadGeometry {
       }
       _payload = new char[size];
       memcpy(_payload,payload,size);
+
+#undef CASE_VSN
     }
     ConfigCache(const ConfigCache& c) : _type(c._type)
     { 
@@ -824,6 +869,9 @@ namespace CspadGeometry {
       switch(_type.version()) {
       case 1:  size = sizeof(Pds::CsPad::ConfigV1); break;
       case 2:  size = sizeof(Pds::CsPad::ConfigV2); break;
+      case 3:  size = sizeof(Pds::CsPad::ConfigV3); break;
+      case 4:  size = sizeof(Pds::CsPad::ConfigV4); break;
+      case 5:  size = sizeof(Pds::CsPad::ConfigV5); break;
       default: size = sizeof(CsPadConfigType); break;
       }
       _payload = new char[size];
@@ -842,24 +890,26 @@ namespace CspadGeometry {
                           const char* payload,
                           size_t      sizeofPayload) const
     {
+#define CASE_VSN(v) case v:                                             \
+      { const Pds::CsPad::ConfigV##v& c =                               \
+          *reinterpret_cast<Pds::CsPad::ConfigV##v*>(_payload);         \
+        iter = new ElementIterator(c,contains,payload,sizeofPayload);   \
+        break; }
+      
       ElementIterator* iter;
       switch(_type.version()) {
-      case 1: 
-        { const Pds::CsPad::ConfigV1& c = 
-            *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
-          iter = new ElementIterator(c,contains,payload,sizeofPayload);
-          break; }
-      case 2: 
-        { const Pds::CsPad::ConfigV2& c = 
-            *reinterpret_cast<Pds::CsPad::ConfigV2*>(_payload);
-          iter = new ElementIterator(c,contains,payload,sizeofPayload);
-          break; }
+        CASE_VSN(1)
+        CASE_VSN(2)
+        CASE_VSN(3)
+        CASE_VSN(4)
+        CASE_VSN(5)
       default:
         { const CsPadConfigType& c = 
             *reinterpret_cast<CsPadConfigType*>(_payload);
           iter = new ElementIterator(c,contains,payload,sizeofPayload);
           break; }
       }
+#undef CASE_VSN
       return iter;
     }
   public:
@@ -1110,6 +1160,11 @@ namespace CspadGeometry {
       for(unsigned iq=0; iq<4; iq++)
         quad[iq]->fill(image,v0,v1);
     }
+    void set_pedestals(FILE* f)
+    {
+      for(unsigned iq=0; iq<4; iq++)
+        quad[iq]->set_pedestals(f);
+    }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
@@ -1331,6 +1386,21 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
       _options = o;
     }
 
+    if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
+      const int NameSize=128;
+      char oname1[NameSize];
+      char oname2[NameSize];
+      
+      sprintf(oname1,"ped.%08x.dat",info().phy());
+      sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
+      FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+
+      _detector->set_pedestals(f);
+      _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
+
+      fclose(f);
+    }
+    
     if (_detector->fill(*_entry,contains,payload,sizeofPayload)) {
       _entry->info(1,EntryImage::Normalization);
       _entry->valid(t);

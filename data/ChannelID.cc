@@ -10,26 +10,25 @@ using namespace Pds;
 static char _buffer[128];
 
 #define NoChannel(title) { strcpy(_buffer,title); }
-#define AppendChannel(title) { sprintf(_buffer,"%s_%d",title,channel+1); }
-#define AcqChannel(title)     \
-  if (info.device()==DetInfo::Acqiris) {        \
-    if (channel>>16)                            \
-      strcpy(_buffer,title);                    \
-    else                                        \
-      AppendChannel(title)      \
-        }
-#define OpalDetector(title)         \
+#define AcqChannel(title)                                       \
+  if (info.device()==DetInfo::Acqiris) {                        \
+    if (channel.is_mask())                                      \
+      strcpy(_buffer,title);                                    \
+    else                                                        \
+      sprintf(_buffer,"%s_%d",title,channel+1);                 \
+  }
+#define OpalDetector(title)                             \
   if (info.device()==DetInfo::Opal1000 ||               \
       info.device()==DetInfo::Opal2000 ||               \
       info.device()==DetInfo::Opal4000) {               \
-    if (info.devId()==0)        \
-      strcpy(_buffer,title);        \
-    else            \
-      sprintf(_buffer,"%s_%d",title,info.devId()+1);  \
+    if (info.devId()==0)                                \
+      strcpy(_buffer,title);                            \
+    else                                                \
+      sprintf(_buffer,"%s_%d",title,info.devId()+1);    \
   }             
-#define PnccdDetector              \
-    if (info.device()==DetInfo::pnCCD)         \
-      sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
+#define PnccdDetector                                   \
+  if (info.device()==DetInfo::pnCCD)                    \
+    sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
@@ -52,8 +51,10 @@ static void _default(char* b, const DetInfo& info, unsigned channel)
             info.devId());
 }
 
-const char* Ami::ChannelID::name(const Pds::DetInfo& info,
-         unsigned channel)
+const char* Ami::ChannelID::name(const Pds::DetInfo& info)
+{ return Ami::ChannelID::name(info, Channel(0)); }
+
+const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
 {
   *_buffer = 0;
   if (info.level()==Pds::Level::Source) {
@@ -90,7 +91,7 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info,
       case DetInfo::Acqiris : {
         char buff[32];
         sprintf(buff,"ACQ%d",info.devId());
-        AppendChannel(buff); 
+        AcqChannel(buff); 
         break;
       }
       case DetInfo::Opal1000: 

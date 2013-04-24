@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <libgen.h>
 
+#define DBUG
+
 using namespace Ami;
 
 static const unsigned _option_no_pedestal         = 0x01;
@@ -108,13 +110,26 @@ std::string CspadCalib::save_pedestals(Entry* e,
     fclose(fn);
   }
   else {
-    unsigned ppx = entry.desc().ppxbin();
-    unsigned ppy = entry.desc().ppybin();
+    const unsigned ppx = entry.desc().ppxbin();
+    const unsigned ppy = entry.desc().ppybin();
+    const double dn    = entry.info(EntryImage::Normalization)*double(ppx*ppy);
+    const double doff  = entry.info(EntryImage::Pedestal);
+
+#ifdef DBUG
+    {  // dump the first pixel's inputs, output
+      const SubFrame& frame = entry.desc().frame(0);
+      unsigned ix = frame.x;
+      unsigned iy = frame.y+frame.ny-1;
+      printf("CspadCalib::save_pedestals:  norm %f  doff %f  off[0] %f  content[0] %u  ped[0] %f\n",
+             dn, doff,
+             *_off[0], entry.content(ix,iy),
+             double(*_off[0]) + (double(entry.content(ix,iy)-doff)/dn));
+    }
+#endif
+
     for(unsigned i=0; i<nframes; i++) {
       double* off = _off[i];
       const SubFrame& frame = entry.desc().frame(i);
-      double dn   = entry.info(EntryImage::Normalization)*double(ppx*ppy);
-      double doff = entry.info(EntryImage::Pedestal);
 
       enum Rotation { D0, D90, D180, D270, NPHI=4 };
       static const Rotation _tr[] = {  D0  , D90 , D180, D90 ,

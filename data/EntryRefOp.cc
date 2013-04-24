@@ -18,23 +18,21 @@ EntryRefOp::EntryRefOp(unsigned index) :
 {
 }
 
-EntryRefOp::EntryRefOp(const char*& p, const DescEntry& e) :
+EntryRefOp::EntryRefOp(const char*& p, const Entry& e) :
   AbsOperator(AbsOperator::EntryRefOp)
 {
   _extract(p, &_index, sizeof(_index));
   
-  void* data;
-  sscanf(e.ytitle(),"%p",&data);
-
-  Entry** ptr = reinterpret_cast<Entry**>(data);
-  _output = &ptr[_index]->desc();
+  const EntryRef& ref = static_cast<const EntryRef&>(e);
+  Entry** entries = reinterpret_cast<Entry**>(const_cast<void*>(ref.data()));
+  _output = &entries[_index]->desc();
 }
 
 EntryRefOp::~EntryRefOp()
 {
 }
 
-static DescRef _no_entry("NoEntry","none");
+static DescRef _no_entry("NoEntry");
 
 DescEntry& EntryRefOp::_routput   () const 
 { 

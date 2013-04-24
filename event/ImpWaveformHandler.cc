@@ -67,12 +67,10 @@ void ImpWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
     _entry[k] = new EntryWaveform(desc);
   }
 
-  unsigned channelMask = ((1<<NumberOfEntries)-1) << 16;
   if (NumberOfEntries > 1) {
-    char buff[32];
-    sprintf(buff,"%p",_entry);
+    Channel channelMask((1<<NumberOfEntries)-1, Channel::BitMask);
     _ref = new EntryRef(DescRef(det, channelMask,
-                                ChannelID::name(det,channelMask),buff));
+                                ChannelID::name(det,channelMask)));
     _ref->set(_entry);
   }
 

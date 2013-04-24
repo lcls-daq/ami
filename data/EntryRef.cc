@@ -5,9 +5,8 @@ using namespace Ami;
 EntryRef::~EntryRef() {}
 
 EntryRef::EntryRef(const Pds::DetInfo& info, unsigned channel,
-		   const char* name, 
-		   const char* ytitle) :
-  _desc(info, channel, name, ytitle),
+		   const char* name) :
+  _desc(info, channel, name),
   _y   (allocate(sizeof(void*)))
 {
 }

@@ -76,12 +76,10 @@ void AcqWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
     channelMask >>= 1;
   }
 
-  channelMask = c.channelMask() << 16;
+  channelMask = c.channelMask();
   if (channelMask & (channelMask-1)) {
-    char buff[32];
-    sprintf(buff,"%p",_entry);
-    _ref = new EntryRef(DescRef(det,channelMask,
-                                ChannelID::name(det,channelMask),buff));
+    Channel ch(channelMask,Channel::BitMask);
+    _ref = new EntryRef(DescRef(det,ch,ChannelID::name(det,ch)));
     _ref->set(_entry);
   }
 

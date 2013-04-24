@@ -10,7 +10,7 @@ namespace Ami {
 
   class EntryRef : public Entry {
   public:
-    EntryRef(const Pds::DetInfo& info, unsigned channel, const char* name, const char* ytitle);
+    EntryRef(const Pds::DetInfo& info, unsigned channel, const char* name);
     EntryRef(const DescRef& desc);
 
     virtual ~EntryRef();

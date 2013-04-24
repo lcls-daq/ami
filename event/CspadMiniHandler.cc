@@ -221,6 +221,7 @@ namespace CspadMiniGeometry {
 		      double, double) const = 0;
     virtual void fill(Ami::EntryImage& image,
 		      const uint16_t*  data) const = 0;
+    virtual void set_pedestals(FILE*) {}
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
 			  unsigned& y0, unsigned& y1) const = 0;
@@ -355,6 +356,27 @@ namespace CspadMiniGeometry {
         free(linep);
       }
     }
+    void set_pedestals(FILE* ped)
+    {
+      size_t sz = 8 * 1024;
+      char* linep = (char *)malloc(sz);
+      char* pEnd;
+
+      if (ped) {
+        uint16_t* off = _off;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          getline(&linep, &sz, ped);
+          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
+          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+        }
+      }
+      else
+        memset(_off,0,sizeof(_off));
+
+      if (linep)
+        free(linep);
+    }
   protected:
     uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
@@ -478,6 +500,11 @@ namespace CspadMiniGeometry {
       asic[0]->fill(image,&element.pair[0][0].s0);
       asic[1]->fill(image,&element.pair[0][0].s1);
     }
+    void set_pedestals(FILE* f)
+    {
+      asic[0]->set_pedestals(f);
+      asic[1]->set_pedestals(f);
+    }
   public:
     Asic* asic[2];
   };
@@ -598,6 +625,10 @@ namespace CspadMiniGeometry {
               double v0,double v1) const
     {
       mini->fill(image, (1<<2)-1, v0, v1);
+    }
+    void set_pedestals(FILE* f)
+    {
+      mini->set_pedestals(f);
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
@@ -792,6 +823,21 @@ void CspadMiniHandler::_event    (const void* payload, const Pds::ClockTime& t)
     if (_options != o) {
       printf("CspadMiniHandler::event options %x -> %x\n", _options, o);
       _options = o;
+    }
+
+    if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
+      const int NameSize=128;
+      char oname1[NameSize];
+      char oname2[NameSize];
+      
+      sprintf(oname1,"ped.%08x.dat",info().phy());
+      sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
+      FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+
+      _detector->set_pedestals(f);
+      _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
+
+      fclose(f);
     }
 
     _detector->fill(*_entry,*xtc);

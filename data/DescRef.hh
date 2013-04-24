@@ -7,13 +7,11 @@ namespace Ami {
 
   class DescRef : public DescEntry {
   public:
-    DescRef(const char* name, 
-	    const char* ytitle);
+    DescRef(const char* name);
 
     DescRef(const Pds::DetInfo& info,
 	    unsigned channel,
-	    const char* name, 
-	    const char* ytitle);
+	    const char* name);
   };
 };
 

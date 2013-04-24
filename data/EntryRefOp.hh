@@ -17,7 +17,7 @@ namespace Ami {
   class EntryRefOp : public AbsOperator {
   public:
     EntryRefOp (unsigned index);
-    EntryRefOp (const char*&, const DescEntry&);
+    EntryRefOp (const char*&, const Entry&);
     ~EntryRefOp();
   private:
     DescEntry& _routput   () const;

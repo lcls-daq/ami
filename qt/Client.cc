@@ -80,11 +80,9 @@ Ami::Qt::Client::Client(QWidget*            parent,
     names << QString("%1_Ch%2").arg(_title).arg(char('A'+i));
 
   QStringList refnames;
-  unsigned ref_mask = channel>>16;
-  for(unsigned i=0; ref_mask!=0; i++) {
-    if (ref_mask&1)
-      refnames << QString("Chan %1").arg(i+1);
-    ref_mask>>=1;
+  { std::vector<unsigned> ch(Channel(channel).channels());
+    for(unsigned i=0; i<ch.size(); i++)
+      refnames << QString("Chan %1").arg(ch[i]+1);
   }
   
   QHBoxLayout* layout = new QHBoxLayout;

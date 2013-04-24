@@ -42,9 +42,13 @@ namespace Ami {
     virtual void   _event    (Pds::TypeId,
                               const void* payload, const Pds::ClockTime& t);
   public:
+    //  Number of existing entries to advertise
     virtual unsigned     nentries() const = 0;
+    //  Advertised entries
     virtual const Entry* entry            (unsigned) const = 0;
+    //  Additional set of entries to advertised (not implemented)
     virtual const Entry* hidden_entry     (unsigned) const { return 0; }
+    //  Cleanup existing entries
     virtual void         reset   () = 0;
   public:
     const Pds::Src&     info() const { return _info; }
