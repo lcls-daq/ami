@@ -63,7 +63,7 @@ void ImpWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   for(unsigned k=0; k<NumberOfEntries; k++) {
     sprintf(s, "IMP Chan%u", k);
-    DescWaveform desc(det, k, s, "Time [microsec]","ADU", _numberOfSamples, 0., (1e-6)*_numberOfSamples);
+    DescWaveform desc(det, k, s, "Samples","ADU", _numberOfSamples, 0., _numberOfSamples);
     _entry[k] = new EntryWaveform(desc);
   }
 
