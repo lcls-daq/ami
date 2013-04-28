@@ -5,12 +5,17 @@
 
 #include <time.h>
 #include <errno.h>
+#include <sys/stat.h>
 
 using namespace Ami::Qt;
 
 static QString _base("ami");
 
-void Path::setBase(const QString& p) { _base=p; }
+void Path::setBase(const QString& p) {
+  _base=p; 
+  mode_t m = 0777;
+  mkdir(qPrintable(p),m);
+}
 
 const QString& Path::base() { return _base; }
 
