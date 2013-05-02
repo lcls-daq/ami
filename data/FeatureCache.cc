@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define DBUG
+
 using namespace Ami;
 
 FeatureCache::FeatureCache() :
@@ -82,8 +84,24 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
 void        FeatureCache::cache  (const FeatureCache& c)
 {
   for(unsigned i=0,j=0; i<c._cache.size(); i++,j++) {
-    while(_names[j]!=c._names[i]) j++;
-    cache(j, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+    unsigned k=j;
+    while(1) {
+      if (_names[k]==c._names[i]) {
+        cache(k, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+        j=k;
+        break;
+      }
+      if (++k==_cache.size()) {
+#ifdef DBUG
+        //
+        //  There is some condition by which c._names[i] may not be 
+        //  found within _names.
+        //
+        printf("FC::cache[%d] missed [%d]%s\n", j,i,c._names[i].c_str());
+#endif
+        break;
+      }
+    }
   }
 }
 
