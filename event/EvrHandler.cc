@@ -14,83 +14,6 @@
 
 using namespace Ami;
 
-struct slot_s { 
-  unsigned code;
-  unsigned tick;
-};
-
-typedef struct slot_s slot_t;
-
-static const slot_t slots[] = { 
-  {   9, 12900 },
-  {  10, 12951 },
-  {  11, 12961 },
-  {  12, 12971 },
-  {  13, 12981 },
-  {  14, 12991 },
-  {  15, 13001 },
-  {  16, 13011 },
-  {  40, 12954 },
-  {  41, 12964 },
-  {  42, 12974 },
-  {  43, 12984 },
-  {  44, 12994 },
-  {  45, 13004 },
-  {  46, 13014 },
-  { 162, 11840 } 
-};
-
-static unsigned timeslot(unsigned code)
-{
-  unsigned n = sizeof(slots)/sizeof(slot_t);
-  for(unsigned i=0; i<n; i++)
-    if (slots[i].code==code)
-      return slots[i].tick;
-  if (code >= 140 && code <= 159)
-    return 11850+(code-140);
-  if (code >= 67 && code <= 98)
-    return 11900+code;
-  if (code >= 167 && code <= 198)
-    return 11900+code;
-  return 0;
-}
-
-static int _delay_offs(const Pds::EvrData::ConfigV5& cfg,
-		       unsigned pulse_id)
-{
-  for(unsigned i=0; i<cfg.neventcodes(); i++)
-    if (cfg.eventcode(i).maskTrigger() & (1<<pulse_id)) {
-      return int(timeslot(cfg.eventcode(i).code())) 
-	-    int(timeslot(140));
-    }
-
-  return 0;
-}
-
-static int _delay_offs(const Pds::EvrData::ConfigV6& cfg,
-		       unsigned pulse_id)
-{
-  for(unsigned i=0; i<cfg.neventcodes(); i++)
-    if (cfg.eventcode(i).maskTrigger() & (1<<pulse_id)) {
-      return int(timeslot(cfg.eventcode(i).code())) 
-	-    int(timeslot(140));
-    }
-
-  return 0;
-}
-
-static int _delay_offs(const Pds::EvrData::ConfigV7& cfg,
-		       unsigned pulse_id)
-{
-  for(unsigned i=0; i<cfg.neventcodes(); i++)
-    if (cfg.eventcode(i).maskTrigger() & (1<<pulse_id)) {
-      return int(timeslot(cfg.eventcode(i).code())) 
-	-    int(timeslot(140));
-    }
-
-  return 0;
-}
-
 EvrHandler::EvrHandler(const Pds::DetInfo& info, FeatureCache& f) :
   EventHandler(info,
 	       Pds::TypeId::Id_EvrData,
@@ -124,13 +47,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
   switch(type.version()) {
   case 5:
     { const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
-      for(unsigned i=0; i<c.npulses(); i++) {
-        sprintf(iptr,"P%d:Delay",i);
-        int index = _cache.add(buffer);
-        double delay = floor((c.pulse(i).delay()+_delay_offs(c,c.pulse(i).pulseId()))*c.pulse(i).prescale())/119.e6;
-        _cache.cache(index, delay);
-      }
-
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
@@ -139,13 +55,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
       break; }
   case 6:
     { const Pds::EvrData::ConfigV6& c = *reinterpret_cast<const Pds::EvrData::ConfigV6*>(payload);
-      for(unsigned i=0; i<c.npulses(); i++) {
-        sprintf(iptr,"P%d:Delay",i);
-        int index = _cache.add(buffer);
-        double delay = floor((c.pulse(i).delay()+_delay_offs(c,c.pulse(i).pulseId()))*c.pulse(i).prescale())/119.e6;
-        _cache.cache(index, delay);
-      }
-
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
@@ -154,13 +63,6 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
       break; }
   case 7:
     { const Pds::EvrData::ConfigV7& c = *reinterpret_cast<const Pds::EvrData::ConfigV7*>(payload);
-      for(unsigned i=0; i<c.npulses(); i++) {
-        sprintf(iptr,"P%d:Delay",i);
-        int index = _cache.add(buffer);
-        double delay = floor((c.pulse(i).delay()+_delay_offs(c,c.pulse(i).pulseId()))*c.pulse(i).prescale())/119.e6;
-        _cache.cache(index, delay);
-      }
-
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
@@ -174,6 +76,7 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
 
   REGISTER_CODE(140);
   REGISTER_CODE(162);
+  REGISTER_CODE(163);
 }
 
 #undef REGISTER_CODE
