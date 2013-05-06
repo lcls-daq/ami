@@ -2,6 +2,7 @@
 #include "ami/qt/RateCalculator.hh"
 #include "ami/qt/RecvCalculator.hh"
 #include "ami/qt/RunMaster.hh"
+#include "ami/qt/FeatureRegistry.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
