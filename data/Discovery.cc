@@ -113,3 +113,15 @@ void DiscoveryRx::nsources(unsigned n)
   char* p = const_cast<char*>(_p);
   reinterpret_cast<uint32_t*>(p)[NumberOfSets] = n;
 }
+
+void DiscoveryRx::dump() const
+{
+  printf("Discovery @%p [%u]\n",_p,_size);
+  const DescEntry* d_entries = entries();
+  const DescEntry* d_end     = end();
+  while(d_entries < d_end) {
+    printf("\t%s\n",d_entries->name());
+    const char* p = reinterpret_cast<const char*>(d_entries);
+    d_entries = reinterpret_cast<const DescEntry*>(p+d_entries->size());
+  }
+}

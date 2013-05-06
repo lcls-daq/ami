@@ -2,7 +2,6 @@
 #include "ami/qt/RateCalculator.hh"
 #include "ami/qt/RecvCalculator.hh"
 #include "ami/qt/RunMaster.hh"
-#include "ami/qt/FeatureRegistry.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
@@ -128,11 +127,7 @@ void RateDisplay::discovered      (const DiscoveryRx& rx)
     printf("RateDisplay failed to find input\n");
     _input = -1;
 
-    //  iterate through discovery and print
-    for(int i=0; i<Ami::NumberOfSets; i++) {
-      Ami::ScalarSet set((Ami::ScalarSet)i);
-      FeatureRegistry::instance(set).insert(rx.features(set));
-    }
+    rx.dump();
   }
 }
 
@@ -185,3 +180,4 @@ void RateDisplay::process         () {
   RunMaster::instance()->update();
   _ready = true;
 }
+ 

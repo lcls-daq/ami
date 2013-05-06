@@ -46,6 +46,8 @@ namespace Ami {
   public:
     unsigned    nsources() const;
     void        nsources(unsigned);
+  public:
+    void        dump() const;
   private:
     const char* _p;
     uint32_t    _size;
