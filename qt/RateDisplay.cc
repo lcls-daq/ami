@@ -126,6 +126,12 @@ void RateDisplay::discovered      (const DiscoveryRx& rx)
   else {
     printf("RateDisplay failed to find input\n");
     _input = -1;
+
+    //  iterate through discovery and print
+    for(int i=0; i<Ami::NumberOfSets; i++) {
+      Ami::ScalarSet set((Ami::ScalarSet)i);
+      FeatureRegistry::instance(set).insert(rx.features(set));
+    }
   }
 }
 

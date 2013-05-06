@@ -253,7 +253,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
   _status->set_state(Status::Configured);
   //  printf("%s Configure\n",qPrintable(title()));
   if (_input_entry==0) {
-    printf("input_entry not found\n");
+    //    printf("input_entry not found\n");
     return 0;
   }
   else {
