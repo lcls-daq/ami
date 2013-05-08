@@ -135,9 +135,6 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       return nbytes;
     }
 
-    int size = socket.read(_buffer->data(),len);
-    nbytes += size;
-
     if (_state == Discovering) {
       //      printf("[%p]   ...discovering .. abort\n",this);
       return nbytes;
@@ -146,6 +143,9 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
     if (_state != Describing || id > _current) {
       _current = id;
       _cds.reset();
+    
+      int size = socket.read(_buffer->data(),len);
+      nbytes += size;
     
       const char* payload = _buffer->data();
       const char* const end = payload + size;
@@ -160,13 +160,13 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 	Entry* entry = EntryFactory::entry(*desc);
 	_cds.add(entry, desc->signature());
 	payload += desc->size();
-// 	printf("%s[%d]  norm %c  agg %c\n",
-// 	       desc->name(),
-// 	       desc->signature(),
-// 	       desc->isnormalized() ? 't':'f',
-// 	       desc->aggregate() ? 't':'f');
+	// 	printf("%s[%d]  norm %c  agg %c\n",
+	// 	       desc->name(),
+	// 	       desc->signature(),
+	// 	       desc->isnormalized() ? 't':'f',
+	// 	       desc->aggregate() ? 't':'f');
       }
-
+    
       if (_cds.totalentries()>_niovload) {
 	delete[] _iovload;
 	_iovload = new iovec[_niovload=_cds.totalentries()];
@@ -182,9 +182,11 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
     }
     else if (id < _current)
       ;
-    else if (--_remaining == 0) {
+    else if (--_remaining == 0)
       _state = Described;
-    }
+
+    _remaining = 0;
+    _state = Described;
   }
   return nbytes;
 }
@@ -223,6 +225,27 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       _current = id;
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
+      //
+      // validate
+      //
+      if (nbytes) {
+	char* payload = _buffer->data();
+	uint64_t ts_i = *reinterpret_cast<uint64_t*>(payload);
+	int niov = _cds.payload(_iovload,_request);
+	iovec* iovl = _iovload;
+	iovec* iovd = _iovdesc+1;
+	while(niov--) {
+	  if (ts_i != *reinterpret_cast<uint64_t*>(payload)) {
+	    DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+	    printf("Buff timestamp error [%s] %016llx/%016llx rem %d\n",
+		   desc->name(),
+		   ts_i, *reinterpret_cast<uint64_t*>(payload),_remaining);
+	  }
+	  payload += iovl->iov_len;
+	  iovl++;
+	  iovd++;
+	}
+      }
     }
     else {  // aggregate
       int niov = _cds.payload(_iovload,_request);
@@ -231,12 +254,27 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
-      while(niov--) {
-	DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-	_cds.entry(desc->signature())->merge(payload);
-	payload += iovl->iov_len;
-	iovl++;
-	iovd++;
+      if (niov) {
+	uint64_t ts_b = *reinterpret_cast<uint64_t*>(iovl->iov_base);
+	uint64_t ts_i = *reinterpret_cast<uint64_t*>(payload);
+	while(niov--) {
+	  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+	  //  Verify timestamps are the same
+	  if (ts_b != *reinterpret_cast<uint64_t*>(iovl->iov_base)) {
+	    printf("Recv timestamp error [%s] %016llx/%016llx rem %d\n",
+		   desc->name(),
+		   ts_b, *reinterpret_cast<uint64_t*>(iovl->iov_base), _remaining);
+	  }
+	  if (ts_i != *reinterpret_cast<uint64_t*>(payload)) {
+	    printf("Buff timestamp error [%s] %016llx/%016llx rem %d\n",
+		   desc->name(),
+		   ts_i, *reinterpret_cast<uint64_t*>(payload), _remaining);
+	  }
+	  _cds.entry(desc->signature())->merge(payload);
+	  payload += iovl->iov_len;
+	  iovl++;
+	  iovd++;
+	}
       }
       if (--_remaining == 0) {
 	_client.read_payload(*_buffer,sz);
@@ -260,7 +298,7 @@ void Aggregator::process         ()
 
 void Aggregator::tmo()
 {
-  _checkState("tmo");
+  //  _checkState("tmo");
   if (_state == Connected)    
     _client.connected();
   else if (_state == Connecting)    

@@ -14,6 +14,8 @@
 
 using namespace Ami;
 
+//#define DBUG
+
 static const int BufferSize = 32*1024;
 
 static const char* _cds_name(Socket& s)
@@ -105,6 +107,11 @@ int AnalysisServer::processIo()
       reply(request.id(), Message::Payload, n); 
       //      _cds.invalidate_payload();
     }
+#ifdef DBUG
+    else
+      printf("PayloadReq %d ignored\n",request.id());
+#endif
+
     break;
   default:
     break;

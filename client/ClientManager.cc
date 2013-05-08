@@ -397,8 +397,8 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   }
 
 #ifdef DBUG
-//   printf("CM handle_client_io %d:%d %x\n",
-//          reply.id(), reply.type(), reply.payload());
+  printf("CM handle_client_io %d:%d %x\n",
+	 reply.id(), reply.type(), reply.payload());
 #endif
 
   int size = 0;

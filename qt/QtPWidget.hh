@@ -20,6 +20,8 @@ namespace Ami {
       void front();
     private:
       QWidget* _parent;
+    protected:
+      bool _initial_hide;
     };
   };
 };

@@ -483,6 +483,7 @@ void DetectorSelect::change_detectors(const char* c)
 
   setUpdatesEnabled(false);
 
+#if 0
   //  Remove all clients not discovered
   {
     std::list<QtTopWidget*> remove;
@@ -507,7 +508,8 @@ void DetectorSelect::change_detectors(const char* c)
       _client.remove(*it);
     }
   }
-
+#endif
+  
   //  Register new buttons
   {
     _detList->clear();

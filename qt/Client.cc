@@ -186,6 +186,8 @@ void Ami::Qt::Client::load(const char*& p)
     else if (tag.name == "_control")
       _control->load(p);
   XML_iterate_close(Client,tag);
+
+  printf("Client %s is %s\n",qPrintable(_title),isVisible()?"Visible":"Hidden");
 }
 
 void Ami::Qt::Client::reset_plots()
@@ -489,6 +491,10 @@ void Ami::Qt::Client::paintEvent(QPaintEvent* e)
   if (_chrome_changed) {
     resize(minimumWidth(),minimumHeight());
     _chrome_changed = false;
+  }
+  if (_initial_hide) {
+    _initial_hide = false;
+    setVisible(false);
   }
   QWidget::paintEvent(e);
 }

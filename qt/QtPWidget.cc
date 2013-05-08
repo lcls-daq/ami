@@ -68,6 +68,7 @@ void QtPWidget::load(const char*& p)
   }
 
   setVisible(v);
+  _initial_hide = !v;
 }
 
 void QtPWidget::front()
