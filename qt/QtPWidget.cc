@@ -15,7 +15,8 @@ QtPWidget::QtPWidget() :
 QtPWidget::QtPWidget(QWidget* parent) : 
   //  QWidget(parent,::Qt::Window) 
   QWidget(0),
-  _parent(parent)
+  _parent(parent),
+  _initial_hide(false)
 {
 }
 
