@@ -65,6 +65,7 @@ namespace Ami {
       void set_scale();
       void load_mask();
       void edit_mask();
+      void load_fir();
       void update_interval();
     signals:
       void reference_loaded(bool);
@@ -96,6 +97,8 @@ namespace Ami {
       QCheckBox*    _maskB;
       QString       _mask_file;
       MaskDisplay*  _mask_display;
+      QCheckBox*    _firB;
+      QString       _fir_file;
     };
   };
 };

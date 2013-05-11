@@ -25,6 +25,7 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryRefOp.hh"
 #include "ami/data/MaskImage.hh"
+#include "ami/data/FIR.hh"
 #include "ami/data/SelfExpression.hh"
 
 #include <QtGui/QVBoxLayout>
@@ -92,6 +93,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   QRadioButton* varianceB = new QRadioButton(bold(Variance));
   QRadioButton* mathB     = new QRadioButton(bold(Math));
   QRadioButton* refB      = new QRadioButton(bold(Reference));
+
   _plot_grp->addButton(noneB    , _None); 
   _plot_grp->addButton(singleB  , _Single); 
   _plot_grp->addButton(averageB , _Average);
@@ -113,6 +115,9 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _maskB = new QCheckBox  ("Apply Mask");
   QPushButton* mloadB = new QPushButton("Load");
   QPushButton* meditB = new QPushButton("Edit");
+
+  _firB  = new QCheckBox  ("Apply FIR Filter");
+  QPushButton* floadB = new QPushButton("Load");
 
   QVBoxLayout* l = new QVBoxLayout;
   { if (!refnames.empty()) {
@@ -154,6 +159,10 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
       layout1->addWidget(mloadB);
       layout1->addWidget(meditB);
       layout->addLayout(layout1); }
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addWidget(_firB);
+      layout1->addWidget(floadB);
+      layout->addLayout(layout1); }
     plot_box->setLayout(layout);
     l->addWidget(plot_box); }
   { QHBoxLayout* layout = new QHBoxLayout;
@@ -169,8 +178,11 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     layout->addStretch(); 
     l->addLayout(layout); }
 
-  bool use_mask = dynamic_cast<ImageDisplay*>(&frame)!=0;
-  if (!use_mask) {
+  if (dynamic_cast<ImageDisplay*>(&frame)!=0) {
+    _firB ->hide();
+    floadB->hide();
+  }
+  else {
     _maskB->hide();
     mloadB->hide();
     meditB->hide();
@@ -189,6 +201,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(scaleB  , SIGNAL(clicked()), this, SLOT(set_scale()));
   connect(mloadB  , SIGNAL(clicked()), this, SLOT(load_mask()));
   connect(meditB  , SIGNAL(clicked()), this, SLOT(edit_mask()));
+  connect(floadB  , SIGNAL(clicked()), this, SLOT(load_fir()));
   connect(_interval, SIGNAL(editingFinished()), this, SLOT(update_interval()));
 
   connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
@@ -218,6 +231,8 @@ void ChannelDefinition::save(char*& p) const
   XML_insert( p, "QLineEdit"   , "_scale"   , QtPersistent::insert(p,_scale->text()) );
   XML_insert( p, "QCheckBox"   , "_maskB"   , QtPersistent::insert(p, _maskB->checkState()==::Qt::Checked) );
   XML_insert( p, "QString"     , "_mask_file", QtPersistent::insert(p, _mask_file) );
+  XML_insert( p, "QCheckBox"   , "_firB"     , QtPersistent::insert(p, _firB->checkState()==::Qt::Checked) );
+  XML_insert( p, "QString"     , "_fir_file" , QtPersistent::insert(p, _fir_file) );
 }
 
 void ChannelDefinition::load(const char*& p)
@@ -260,6 +275,10 @@ void ChannelDefinition::load(const char*& p)
       _maskB    ->setChecked(QtPersistent::extract_b(p) ? ::Qt::Checked : ::Qt::Unchecked);
     else if (tag.name == "_mask_file")
       _mask_file = QtPersistent::extract_s(p);
+    else if (tag.name == "_firB")
+      _firB     ->setChecked(QtPersistent::extract_b(p) ? ::Qt::Checked : ::Qt::Unchecked);
+    else if (tag.name == "_fir_file")
+      _fir_file = QtPersistent::extract_s(p);
   XML_iterate_close(ChannelDefinition,tag);
 
   _plot_grp->button(id)->setChecked(true);
@@ -305,6 +324,19 @@ void ChannelDefinition::edit_mask()
 {
   _mask_display->setup(_plot,_mask_file);
   _mask_display->front();
+}
+
+void ChannelDefinition::load_fir()
+{
+  QString ref_dir(Path::base());
+  QString file = QFileDialog::getOpenFileName(this,
+                                              "Finite Impulse Response",
+                                              ref_dir, "*.fir");
+  
+  if (file.isNull())
+    ;
+  else
+    _fir_file = file;
 }
 
 void ChannelDefinition::update_interval()
@@ -364,8 +396,14 @@ void ChannelDefinition::apply()
     break;
   }
 
-  if (_maskB->checkState()==::Qt::Checked) {
+  if (_maskB->checkState()==::Qt::Checked && _operator) {
     AbsOperator* op = new MaskImage(qPrintable(_mask_file));
+    op->next(_operator);
+    _operator = op;
+  }
+
+  if (_firB->checkState()==::Qt::Checked && _operator) {
+    AbsOperator* op = new FIR(qPrintable(_fir_file));
     op->next(_operator);
     _operator = op;
   }
@@ -375,7 +413,7 @@ void ChannelDefinition::apply()
     case _Single:
     case _Average:
     case _Variance:
-      {  AbsOperator* op = new EntryRefOp(_refBox->currentIndex());
+      { AbsOperator* op = new EntryRefOp(_refBox->currentIndex());
         op->next(_operator);
         _operator = op; }
       break;
