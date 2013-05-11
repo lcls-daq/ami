@@ -341,7 +341,7 @@ void WaveformDisplay::add   (QtBase* b, bool show)
     _hidden.push_back(b);
     b->xscale_update();
     b->update();
-    b->attach(_plot);
+    b->attach((QwtPlot*)0);
   }
 }
 
