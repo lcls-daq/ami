@@ -16,7 +16,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-//#define DBUG
+#define DBUG
 
 using namespace Ami;
 
@@ -140,7 +140,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       return nbytes;
     }
 
-    if (_state != Describing || id > _current) {
+    if (_state == Configured || id > _current) {
       _current = id;
       _cds.reset();
     
@@ -178,15 +178,12 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 
       _client.read_description(*_buffer,len);
       _remaining = _n-1;
-      _state = Describing;
+      _state = Described;
     }
     else if (id < _current)
       ;
-    else if (--_remaining == 0)
-      _state = Described;
-
-    _remaining = 0;
-    _state = Described;
+    else 
+      --_remaining;
   }
   return nbytes;
 }
@@ -208,7 +205,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 
 int  Aggregator::read_payload    (Socket& s, int sz, unsigned id) 
 {
-  _checkState("payl");
+  //  _checkState("payl");
   int nbytes = 0;
   if (_state != Described) {
     //    printf("[%p] Agg read_payload state %s\n", this, State[_state]);
@@ -225,6 +222,7 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       _current = id;
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
+#ifdef DBUG
       //
       // validate
       //
@@ -237,7 +235,7 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 	while(niov--) {
 	  if (ts_i != *reinterpret_cast<uint64_t*>(payload)) {
 	    DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-	    printf("Buff timestamp error [%s] %016llx/%016llx rem %d\n",
+	    printf("Buff timestamp warning [%s] %016llx/%016llx rem %d\n",
 		   desc->name(),
 		   ts_i, *reinterpret_cast<uint64_t*>(payload),_remaining);
 	  }
@@ -246,6 +244,7 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 	  iovd++;
 	}
       }
+#endif
     }
     else {  // aggregate
       int niov = _cds.payload(_iovload,_request);
@@ -259,17 +258,19 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 	uint64_t ts_i = *reinterpret_cast<uint64_t*>(payload);
 	while(niov--) {
 	  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+#ifdef DBUG
 	  //  Verify timestamps are the same
 	  if (ts_b != *reinterpret_cast<uint64_t*>(iovl->iov_base)) {
-	    printf("Recv timestamp error [%s] %016llx/%016llx rem %d\n",
+	    printf("Recv timestamp warning [%s] %016llx/%016llx rem %d\n",
 		   desc->name(),
 		   ts_b, *reinterpret_cast<uint64_t*>(iovl->iov_base), _remaining);
 	  }
 	  if (ts_i != *reinterpret_cast<uint64_t*>(payload)) {
-	    printf("Buff timestamp error [%s] %016llx/%016llx rem %d\n",
+	    printf("Buff timestamp warning [%s] %016llx/%016llx rem %d\n",
 		   desc->name(),
 		   ts_i, *reinterpret_cast<uint64_t*>(payload), _remaining);
 	  }
+#endif
 	  _cds.entry(desc->signature())->merge(payload);
 	  payload += iovl->iov_len;
 	  iovl++;
@@ -291,7 +292,7 @@ bool Aggregator::svc() const { return _client.svc(); }
 //
 void Aggregator::process         () 
 {
-  _checkState("proc");
+  //  _checkState("proc");
   if (_state==Described && _remaining==0)
     _client.process();
 }
@@ -299,6 +300,11 @@ void Aggregator::process         ()
 void Aggregator::tmo()
 {
   //  _checkState("tmo");
+#ifdef DBUG
+  if (_remaining != 0) {
+    printf("[%p] : tmo : State %s : remaining %d/%d\n", this, State[_state], _remaining, _n);
+  }
+#endif
   if (_state == Connected)    
     _client.connected();
   else if (_state == Connecting)    
