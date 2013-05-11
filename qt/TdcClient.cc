@@ -432,6 +432,7 @@ void TdcClient::request_payload()
   }
   else if (_status->state() == Status::Requested &&
            !_throttled) {
+    _status->set_state(Status::Throttled);
     _throttled = true;
     printf("TdcClient request_payload throttling\n");
   }

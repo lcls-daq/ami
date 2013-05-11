@@ -439,8 +439,10 @@ void Ami::Qt::Client::request_payload()
   }
   else if (_status->state() == Status::Requested) {
     _denials++;
-    if (!_throttled)
+    if (!_throttled) {
       _throttled = true;
+      _status->set_state(Status::Throttled);
+    }
     if ((_denials%20)==1)
       printf("Client %s request_payload throttled %d/%d\n",
 	     qPrintable(_title),_denials,_attempts);
