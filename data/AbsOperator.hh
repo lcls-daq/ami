@@ -23,7 +23,9 @@ namespace Ami {
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
 		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
                 XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage,
-                BlobFinder, RectROI };
+                BlobFinder, RectROI, FIR };
+    static const char* type_str(Type);
+
     AbsOperator(Type t);
     virtual ~AbsOperator();
     Entry&       operator ()(const Entry&) const;

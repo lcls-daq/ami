@@ -17,7 +17,7 @@ void                   AbsOperator::next(AbsOperator* o) { _next=o; }
 Entry&                 AbsOperator::operator()(const Entry& i) const
 {
   Entry& o = _operate(i);
-  return _next ? _next->_operate(o) : o;
+  return _next ? (*_next)(o) : o;
 }
 
 DescEntry&             AbsOperator::output() const
@@ -54,3 +54,12 @@ void AbsOperator::_extract(const char*& p, void* b, unsigned size)
   p += size;
 }
 
+static const char* _type_str[] =  { "Single", "Average", "Mean", "Integral", "Value",
+                                    "XYProjection", "RPhiProjection",
+                                    "Reference", "EntryMath", "BinMath", "EdgeFinder", "PeakFinder",
+                                    "EnvPlot", "PeakFitPlot", "FFT", "ContourProjection", "TdcPlot",
+                                    "XYHistogram", "Zoom", "EntryRefOp", "Variance", "CurveFit", "MaskImage",
+                                    "BlobFinder", "RectROI", "FIR", NULL };
+
+
+const char* AbsOperator::type_str(Type t) { return _type_str[t]; }
