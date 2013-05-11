@@ -23,6 +23,7 @@
 #include "ami/data/MaskImage.hh"
 #include "ami/data/BlobFinder.hh"
 #include "ami/data/RectROI.hh"
+#include "ami/data/FIR.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -46,8 +47,6 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   uint32_t next = *reinterpret_cast<const uint32_t*>(p);
   p+=sizeof(next);
 
-  //  printf("OperatorFactory type %d\n",type);
-  
   AbsOperator* o = 0;
   switch(type) {
   case AbsOperator::Single    : o = new Single    (p,input,_f); break;
@@ -73,6 +72,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::MaskImage : o = new MaskImage (p,input); break;
   case AbsOperator::BlobFinder: o = new BlobFinder(p,input); break;
   case AbsOperator::RectROI   : o = new RectROI   (p,input); break;
+  case AbsOperator::FIR       : o = new FIR       (p,input); break;
   case AbsOperator::Value     :
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
@@ -91,6 +91,7 @@ AbsOperator* OperatorFactory::deserialize(const char*& p,
   //  Handle special case for EntryRefOp
   //
   uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(p);
+
   if (type == AbsOperator::EntryRefOp) {
     p+=sizeof(uint32_t);
     uint32_t next = *reinterpret_cast<const uint32_t*>(p);

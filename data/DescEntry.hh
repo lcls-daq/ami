@@ -11,6 +11,7 @@ namespace Ami {
   public:
     enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan, Ref, Cache, ScalarRange, ScalarDRange};
     Type type() const;
+    static const char* type_str(Type);
 
     const Pds::DetInfo& info()    const;
     unsigned            channel() const;

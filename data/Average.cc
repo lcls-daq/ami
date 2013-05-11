@@ -105,9 +105,6 @@ Entry&     Average::_operate(const Entry& e) const
             _cache->invalid();
         }
         break; }
-    case DescEntry::TH2F:
-      printf("Averaging TH2F not implemented\n");
-      break;
     case DescEntry::Prof:
       { EntryProf& _en = static_cast<EntryProf&>(*_entry);
         _en.sum(_en,static_cast<const EntryProf&>(e));
@@ -204,6 +201,7 @@ Entry&     Average::_operate(const Entry& e) const
         }
         break; }
     default:
+      printf("Averaging %s not implemented\n",DescEntry::type_str(e.desc().type()));
       break;
     }
   }

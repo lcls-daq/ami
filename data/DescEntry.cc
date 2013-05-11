@@ -188,3 +188,18 @@ float DescEntry::xerr() const {return _xerr;}
 
 float DescEntry::ywarn() const {return _ywarn;}
 float DescEntry::yerr() const {return _yerr;}
+
+static const char* _type_str[] = { "Scalar",
+                                   "TH1F",
+                                   "TH2F",
+                                   "Prof",
+                                   "Image",
+                                   "Waveform",
+                                   "Scan",
+                                   "Ref",
+                                   "Cache",
+                                   "ScalarRange",
+                                   "ScalarDRange",
+                                   NULL };
+
+const char* DescEntry::type_str(Type t) { return _type_str[t]; }
