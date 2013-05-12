@@ -198,7 +198,7 @@ void XtcFileClient::getPathsForRun(QStringList& list, QString run) {
     return;
   }
 
-  QString pattern = _curdir + "/xtc/*-r" + run + "-s*.xtc";
+  QString pattern = _curdir + "/xtc/*-r" + run + "-s*.xtc*";
   glob_t g;
   glob(qPrintable(pattern), 0, 0, &g);
 
@@ -505,7 +505,7 @@ void XtcFileClient::setDir(QString dir)
   _runList.clear();
   _runName = "";
   glob_t g;
-  QString gpath = _curdir + "/xtc/*-r*-s*.xtc";
+  QString gpath = _curdir + "/xtc/*-r*-s*.xtc*";
   setStatus("Looking for runs under " + gpath + "...");
   glob(qPrintable(gpath), 0, 0, &g);
   for (unsigned i = 0; i < g.gl_pathc; i++) {
