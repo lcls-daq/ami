@@ -21,6 +21,13 @@ Status::~Status()
 {
 }
 
+Status::State Status::state() const
+{
+  State s(_state);
+  if (s==Throttled) s=Requested;
+  return s;
+}
+
 void Status::set_state(State s, unsigned v)
 {
   _state = s;

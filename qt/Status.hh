@@ -23,7 +23,7 @@ namespace Ami {
 		   Processed,
                    Throttled };
       void set_state(State, unsigned=0);
-      State state() const { return _state; }
+      State state() const;
     public slots:
       void update_state();
     signals:
