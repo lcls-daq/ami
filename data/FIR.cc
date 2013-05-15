@@ -32,7 +32,7 @@ FIR::FIR(const char*& p, const DescEntry& e) :
   if (f) {
     float v;
     while(!feof(f)) {
-      if (fscanf(f,"%f",&v))
+      if (fscanf(f,"%f",&v)==1)
         _response->push_back(v);
     }
   }
