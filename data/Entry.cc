@@ -7,6 +7,8 @@
 #include "ami/data/DescEntry.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
+#include <stdio.h>
+
 using namespace Ami;
 
 Entry::Entry() : 
@@ -35,6 +37,7 @@ void Entry::payload(iovec& iov) const
 void Entry::reset()
 {
   memset(_payload, 0, _payloadsize);
+  invalid();
 }
 
 void* Entry::allocate(unsigned size)
@@ -83,19 +86,19 @@ bool Entry::valid() const { return _payload!=0 && ((*_payload)&1)==0; }
 void Entry::merge(char* p) const
 {
   uint64_t* u = reinterpret_cast<uint64_t*>(p);
-  if (*u > *_payload) {
-    if (desc().aggregate()) {
-      *u = (*u) | (*_payload & 1ULL);
-      _merge((char*)(u+1));
-    }
-  }
-  else {
-    if (desc().aggregate()) {
-      *u = (*_payload) | (*u & 1ULL);
-      _merge((char*)(u+1));
+
+  if (valid()) {
+    if (*u & 1ULL) {  // if the existing data is invalid, replace it
+      memcpy(p,_payload,_payloadsize);
     }
     else {
-      memcpy(p,_payload,_payloadsize);
+      if (desc().aggregate()) {  // merge the data, keeping the latest timestamp
+	if (*_payload > *u) *u = *_payload;
+	_merge((char*)(u+1));
+      }
+      else if (*_payload > *u) { // keep only the latest data
+	memcpy(p,_payload,_payloadsize);
+      }
     }
   }
 }
