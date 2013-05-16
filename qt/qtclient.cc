@@ -3,6 +3,7 @@
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/service/Ins.hh"
+#include "ami/qt/QOnline.hh"
 
 #include <QtGui/QApplication>
 
@@ -17,7 +18,8 @@ static void usage(char* p)
          "arguments: <interface> = IP address (dot notation) or ethX\n" \
          "           <address>   = IP address (dot notation)\n" \
          "           <path>      = full file path\n" \
-         "-I <interface> : point-to-point interface (cds subnet)\n" \
+         "-p <platform>  : DAQ platform number\n" \
+	 "-P <partition> : DAQ partition name\n" \
          "-i <interface> : multicast interface (fez subnet), reqd if -s is multicast group\n" \
          "-s <address>   : server multicast group or proxy address\n" \
          "-f <path>      : default path for load/save operations\n" \
@@ -52,6 +54,10 @@ int main(int argc, char **argv)
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   const char* loadfile = 0;
+  const unsigned NO_PLATFORM = -1;
+  unsigned platform    = NO_PLATFORM;
+  const char* partition = 0;
+  const char* nodes = 0;
 
   qInstallMsgHandler(QtAssertHandler);
 
@@ -77,6 +83,15 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-E")==0) {
       Ami::Qt::ImageDisplay::enable_movie_option();
     }
+    else if (strcmp(argv[i],"-p")==0) {
+      platform = strtoul(argv[++i],NULL,0);
+    }
+    else if (strcmp(argv[i],"-P")==0) {
+      partition = argv[++i];
+    }
+    else if (strcmp(argv[i],"-n")==0) {
+      nodes = argv[++i];
+    }
     else if (strcmp(argv[i],"-h")==0 ||
              strcmp(argv[i],"-?")==0) {
       usage(argv[0]);
@@ -85,17 +100,10 @@ int main(int argc, char **argv)
   }
   QApplication app(argc, argv);
 
-  QWidget* exitW = new QWidget;
-  { QPushButton* b = new QPushButton("Exit");
-    QHBoxLayout* l = new QHBoxLayout;
-    l->addStretch();
-    l->addWidget(b);
-    l->addStretch();
-    exitW->setLayout(l);
-    ::QObject::connect(b, SIGNAL(clicked()), &app, SLOT(closeAllWindows()));
-  }
+  QWidget* onlW = new Ami::Qt::QOnline(nodes);
+  ::QObject::connect(onlW, SIGNAL(exit()), &app, SLOT(closeAllWindows()));
 
-  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup, exitW, true);
+  Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup, onlW, true);
   select->show();
   if (loadfile) {
     select->load_setup(loadfile);

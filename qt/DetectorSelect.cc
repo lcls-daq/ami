@@ -89,7 +89,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
   setWindowTitle(label);
-  setAttribute(::Qt::WA_DeleteOnClose, false);
+  //  setAttribute(::Qt::WA_DeleteOnClose, false);
 
   QVBoxLayout* l = new QVBoxLayout;
 
