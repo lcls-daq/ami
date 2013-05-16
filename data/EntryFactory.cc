@@ -38,6 +38,7 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     { entry = new EntryCache((const DescCache&)desc, _cache); break; }
   default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); abort(); break;
   }
+  if (entry) entry->reset();
   return entry;
 }
 

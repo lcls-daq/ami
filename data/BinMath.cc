@@ -215,9 +215,10 @@ void*      BinMath::_serialize(void* p) const
 
 Entry&     BinMath::_operate(const Entry& e) const
 {
-  _entry->valid(e.time());
-  if (!e.valid())
+  if (!e.valid()) {
+    _entry->invalid();
     return *_entry;
+  }
 
   if (_term) {
     _input = &e;
@@ -287,6 +288,7 @@ Entry&     BinMath::_operate(const Entry& e) const
       break;
     }
   }
+  _entry->valid(e.time());
   return *_entry;
 }
 

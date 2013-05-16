@@ -21,6 +21,7 @@ Cds::Cds(const char* name) :
 Cds::~Cds()
 {
   reset();
+  delete _payload_sem;
 }
 
 unsigned Cds::add(Entry* entry) 

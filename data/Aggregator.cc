@@ -16,7 +16,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 
@@ -179,6 +179,10 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       _client.read_description(*_buffer,len);
       _remaining = _n-1;
       _state = Described;
+
+#ifdef DBUG
+      printf("Described id[%d] socket[%d]\n",id,socket.socket());
+#endif
     }
     else if (id < _current)
       ;
