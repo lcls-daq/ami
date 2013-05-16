@@ -258,8 +258,10 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
       if (niov) {
+#ifdef DBUG
 	uint64_t ts_b = *reinterpret_cast<uint64_t*>(iovl->iov_base);
 	uint64_t ts_i = *reinterpret_cast<uint64_t*>(payload);
+#endif
 	while(niov--) {
 	  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
 #ifdef DBUG
