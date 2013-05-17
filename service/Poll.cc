@@ -202,7 +202,7 @@ int Poll::poll()
     if (_pfd[0].revents & (POLLIN | POLLERR)) {
       int size;
       int& cmd = *reinterpret_cast<int*>(_buffer);
-      if ((size=_loopback->read(_buffer,BufferSize))<0)
+      if ((size=_loopback->read(_buffer,BufferSize))<=0)
 	printf("Error reading loopback\n");
       else if (cmd==Shutdown)
 	result = 0;

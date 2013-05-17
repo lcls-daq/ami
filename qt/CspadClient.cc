@@ -11,6 +11,10 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
 
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+
 using namespace Ami::Qt;
 
 CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
@@ -132,6 +136,20 @@ void CspadClient::write_pedestals()
   QPushButton* writeB = new QPushButton("Write");
 
   bool lProd = QString(getenv("HOME")).endsWith("opr");
+  if (!lProd) {
+    int so = socket(AF_INET, SOCK_DGRAM, 0);
+    if (so) {
+      ifreq ifr;
+      strcpy(ifr.ifr_name,"eth0");
+      int rv = ioctl(so, SIOCGIFADDR, (char*)&ifr);
+      ::close(so);
+      if (rv==0) {
+	unsigned interface = ntohl( *(unsigned*)&(ifr.ifr_addr.sa_data[2]) );
+	if (((interface>>8)&0xff)==10)
+	  lProd=true;
+      }
+    }
+  }
 
   box.addButton(writeB,QMessageBox::AcceptRole);
 

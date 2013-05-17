@@ -1395,10 +1395,15 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
       sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
       FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
 
-      _detector->set_pedestals(f);
-      _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
-
-      fclose(f);
+      if (f) {
+	_detector->set_pedestals(f);
+	_entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
+	fclose(f);
+      }
+      else {
+	printf("CspadHandler pedestal reload failed\n");
+	_entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
+      }
     }
     
     if (_detector->fill(*_entry,contains,payload,sizeofPayload)) {
