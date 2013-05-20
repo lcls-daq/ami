@@ -103,89 +103,98 @@ Ami::Qt::QOnline::QOnline(const char* nodes) :
   QGroupBox("Sources"),
   Poll(1000)
 {
-  QStringList qnodes;
+  if (nodes) {
+    QStringList qnodes;
 
-  char* node = strtok(const_cast<char*>(nodes),",");
-  while(node) {
-    QString qnode(node);
-    //    qnode.strip(" ");
-    qnodes << qnode;
+    char* node = strtok(const_cast<char*>(nodes),",");
+    while(node) {
+      QString qnode(node);
+      //    qnode.strip(" ");
+      qnodes << qnode;
 
-    ShmServer* s = new ShmServer(*this,qnode);
-    _servers.push_back(s);
-    manage(*s);
+      ShmServer* s = new ShmServer(*this,qnode);
+      _servers.push_back(s);
+      manage(*s);
 
-    node = strtok(NULL,",");
-  }
-
-  QHBoxLayout* hl = new QHBoxLayout;
-  _applyB = new QPushButton("Apply");
-  _applyB->setEnabled(false);
-  connect(_applyB, SIGNAL(clicked()), this, SLOT(apply_mask()));
-  
-  QPushButton* exitB = new QPushButton("Exit");
-  connect(exitB, SIGNAL(clicked()), this, SIGNAL(exit()));
-  
-  hl->addWidget(_applyB);
-  hl->addStretch();
-  hl->addWidget(exitB);
-  
-  QVBoxLayout* layout = new QVBoxLayout;
-  layout->addLayout(hl);
-  layout->addLayout(_layout = new QGridLayout);
-
-  QGridLayout* l = new QGridLayout;
-
-  _rows.clear();
-
-  int row = 0;
-  
-  _mask_group = new QButtonGroup;
-  _mask_group->setExclusive(false);
-  
-  { // create title row
-    const ShmServer& s = *_servers[0];
-    int col=0;
-    l->addWidget(new QLabel("Mon Node"), row, col++,1,1,::Qt::AlignBottom);
-    l->addWidget(new QLabel("Dss Nodes"), row, col, 1, s.info().groups, ::Qt::AlignHCenter);
-    col += s.info().groups;
-    //    for(unsigned j=0; j<s.info().groups; j++)
-    //      l->addWidget(new Ami::Qt::QrLabel(QString("DSS0%1").arg(j+1)),row, col++,1,1,::Qt::AlignHCenter);
-    l->addWidget(new QLabel("Evt"),row,col++,1,1,::Qt::AlignBottom);
-    l->addWidget(new QLabel("Dmg"),row,col++,1,1,::Qt::AlignBottom);
-    row++;
-  }
-
-  for(unsigned i=0; i<_servers.size(); i++) {
-    const ShmServer& s = *_servers[i];
-    
-    //  Add node row
-    RowWidgets qrow;
-    int col=0;
-    l->addWidget(new QLabel(s.info().name.c_str()), row, col++);
-    //    for(unsigned j=0; j<s.info().groups; j++) {
-    for(unsigned j=0; j<s.info().groups; j++) {
-      QCheckBox* box = new QCheckBox;
-      l->addWidget(box, row, col++);
-      qrow._box.push_back(box);
-      box->setChecked(s.info().mask & (1<<j));
-      _mask_group->addButton(box,i*10+j);
+      node = strtok(NULL,",");
     }
-    l->addWidget(qrow._events=new QLabel, row, col++);
-    l->addWidget(qrow._dmg   =new QLabel, row, col++);
-    _rows.push_back(qrow);
+
+    QHBoxLayout* hl = new QHBoxLayout;
+    _applyB = new QPushButton("Apply");
+    _applyB->setEnabled(false);
+    connect(_applyB, SIGNAL(clicked()), this, SLOT(apply_mask()));
+  
+    QPushButton* exitB = new QPushButton("Exit");
+    connect(exitB, SIGNAL(clicked()), this, SIGNAL(exit()));
+  
+    hl->addWidget(_applyB);
+    hl->addStretch();
+    hl->addWidget(exitB);
+  
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addLayout(hl);
+    layout->addLayout(_layout = new QGridLayout);
+
+    QGridLayout* l = new QGridLayout;
+
+    _rows.clear();
+
+    int row = 0;
+  
+    _mask_group = new QButtonGroup;
+    _mask_group->setExclusive(false);
+  
+    { // create title row
+      const ShmServer& s = *_servers[0];
+      int col=0;
+      l->addWidget(new QLabel("Mon Node"), row, col++,1,1,::Qt::AlignBottom);
+      l->addWidget(new QLabel("Dss Nodes"), row, col, 1, s.info().groups, ::Qt::AlignHCenter);
+      col += s.info().groups;
+      //    for(unsigned j=0; j<s.info().groups; j++)
+      //      l->addWidget(new Ami::Qt::QrLabel(QString("DSS0%1").arg(j+1)),row, col++,1,1,::Qt::AlignHCenter);
+      l->addWidget(new QLabel("Evt"),row,col++,1,1,::Qt::AlignBottom);
+      l->addWidget(new QLabel("Dmg"),row,col++,1,1,::Qt::AlignBottom);
+      row++;
+    }
+
+    for(unsigned i=0; i<_servers.size(); i++) {
+      const ShmServer& s = *_servers[i];
     
-    row++;
+      //  Add node row
+      RowWidgets qrow;
+      int col=0;
+      l->addWidget(new QLabel(s.info().name.c_str()), row, col++);
+      //    for(unsigned j=0; j<s.info().groups; j++) {
+      for(unsigned j=0; j<s.info().groups; j++) {
+	QCheckBox* box = new QCheckBox;
+	l->addWidget(box, row, col++);
+	qrow._box.push_back(box);
+	box->setChecked(s.info().mask & (1<<j));
+	_mask_group->addButton(box,i*10+j);
+      }
+      l->addWidget(qrow._events=new QLabel, row, col++);
+      l->addWidget(qrow._dmg   =new QLabel, row, col++);
+      _rows.push_back(qrow);
+    
+      row++;
+    }
+
+    connect(_mask_group, SIGNAL(buttonClicked(int)), this, SLOT(update_mask(int)));
+    layout->addLayout(l);
+
+    setLayout(layout);
+    connect(this, SIGNAL(updated()), this, SLOT(_update()));
+    connect(this, SIGNAL(removed(int)), this, SLOT(_remove(int)));
+
+    start();
   }
-
-  connect(_mask_group, SIGNAL(buttonClicked(int)), this, SLOT(update_mask(int)));
-  layout->addLayout(l);
-
-  setLayout(layout);
-  connect(this, SIGNAL(updated()), this, SLOT(_update()));
-  connect(this, SIGNAL(removed(int)), this, SLOT(_remove(int)));
-
-  start();
+  else {
+    QPushButton* exitB = new QPushButton("Exit");
+    connect(exitB, SIGNAL(clicked()), this, SIGNAL(exit()));
+    QHBoxLayout* hl = new QHBoxLayout;
+    hl->addWidget(exitB);
+    setLayout(hl);
+  }
 }
 
 Ami::Qt::QOnline::~QOnline()
