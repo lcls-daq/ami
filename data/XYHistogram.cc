@@ -70,6 +70,9 @@ Entry&     XYHistogram::_operate(const Entry& e) const
     
     double   p(_input->info(EntryImage::Pedestal));
     double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
+    double   nh  = _input->info(EntryImage::Normalization);
+    if (nh>=1)
+      n /= nh;
     
     switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized
@@ -94,7 +97,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
               }
             }
           }
-        } else {
+        } 
+	else {
           for(unsigned j=jlo; j<jhi; j++)
             for(unsigned i=ilo; i<ihi; i++)
               o->addcontent(1.,(double(_input->content(i,j))-p)*n);
