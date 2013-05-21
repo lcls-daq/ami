@@ -52,6 +52,10 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _auto_range(0),
   _chrome_changed(false)
 {
+  //
+  //  Ideally, we would set the attribute DeleteOnClose to false and destroy this object
+  //  when all of its child plots are closed.
+  //
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
 
@@ -86,6 +90,11 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 
 ProjectionPlot::~ProjectionPlot()
 {
+  for(int i=0; i<NCHANNELS; i++)
+    delete _channels[i];
+  delete _cursors;
+  delete _peakfit;
+
   PWidgetManager::remove(this);
   delete _proj;
 }

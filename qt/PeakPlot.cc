@@ -47,6 +47,10 @@ PeakPlot::PeakPlot(QWidget*         parent,
   _frame   (new ImageDisplay),
   _showMask(1)
 {
+  //
+  //  Ideally, we would set the attribute DeleteOnClose to false and destroy this object
+  //  when all of its child plots are closed.
+  //
   for(int i=0; i<NCHANNELS; i++)
     _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
 
@@ -137,6 +141,12 @@ PeakPlot::PeakPlot(QWidget*         parent,
 
 PeakPlot::~PeakPlot()
 {
+  for(int i=0; i<NCHANNELS; i++)
+    delete _channels[i];
+  delete _xyproj;
+  delete _rfproj;
+  delete _cntproj;
+
   PWidgetManager::remove(this);
   delete _op;
 }
