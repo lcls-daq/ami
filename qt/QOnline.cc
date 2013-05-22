@@ -266,7 +266,7 @@ void Ami::Qt::QOnline::update_mask(int b)
       _rows[i]._box[col]->setChecked(false);
     }
     else {
-      _servers[i]->info().mask |= (1<<col);
+      _servers[i]->info().mask ^= (1<<col);
     }
   }
 }

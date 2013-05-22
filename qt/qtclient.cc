@@ -14,7 +14,7 @@
 
 static void usage(char* p)
 {
-  printf("Usage: %s -I <interface> [-i <interface>] -s <address> [-f <path> -F <path> -C <int>]\n" \
+  printf("Usage: %s -I <interface> [-i <interface>] -s <address> [-n <addresses] [-f <path> -F <path> -C <int>]\n" \
          "arguments: <interface> = IP address (dot notation) or ethX\n" \
          "           <address>   = IP address (dot notation)\n" \
          "           <path>      = full file path\n" \
@@ -22,6 +22,7 @@ static void usage(char* p)
 	 "-P <partition> : DAQ partition name\n" \
          "-i <interface> : multicast interface (fez subnet), reqd if -s is multicast group\n" \
          "-s <address>   : server multicast group or proxy address\n" \
+         "-n <addresses> : comma-separated list of monshmserver node addresses\n" \
          "-f <path>      : default path for load/save operations\n" \
          "-F <path>      : file to load initial configuration\n" \
          "-C <int>       : color palette choice (0-jette, 1-radiation)" \
