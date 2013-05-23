@@ -15,6 +15,29 @@
 
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/errno.h>
+
+static FILE* open_pref(const char* title, unsigned platform, const char* mode)
+{
+  const int BUFF_SIZE=256;
+  char* buff = new char[BUFF_SIZE];
+
+  char* home = getenv("HOME");
+  if (home) {
+    snprintf(buff, BUFF_SIZE-1, "%s/.%s for platform %u", home, title, platform);
+  }
+  else {
+    snprintf(buff, BUFF_SIZE-1, ".%s for platform %u", title, platform);
+  }
+  
+  FILE* f = fopen(buff,mode);
+  if (!f) {
+    printf("Failed to open %s\n", buff);
+  }
+  delete[] buff;
+
+  return f;
+}
 
 //
 //  Communications with monshmservers:
@@ -38,10 +61,10 @@ namespace Ami {
 
     class ShmServer : public Fd {
     public:
-      ShmServer(QOnline& qo, QString& qnode) : _qo(qo) 
+      ShmServer(QOnline& qo, QString& qnode, unsigned platform) : _qo(qo) 
       {
 	Ami::Ins ins(Ami::Ins::parse_ip(qPrintable(qnode)),
-		     Pds::MonShmComm::ServerPort);
+		     Pds::MonShmComm::ServerPort+platform);
 	while(1) {
 	  try {
 	    _socket.connect(ins);
@@ -99,25 +122,59 @@ namespace Ami {
   }
 }
 
-Ami::Qt::QOnline::QOnline(const char* nodes) :
+Ami::Qt::QOnline::QOnline(const char* nodes, unsigned platform) :
   QGroupBox("Sources"),
-  Poll(1000)
+  Poll(1000),
+  _platform(platform)
 {
   if (nodes) {
-    QStringList qnodes;
-
     char* node = strtok(const_cast<char*>(nodes),",");
     while(node) {
       QString qnode(node);
       //    qnode.strip(" ");
-      qnodes << qnode;
+      _qnodes << qnode;
 
-      ShmServer* s = new ShmServer(*this,qnode);
+      ShmServer* s = new ShmServer(*this,qnode,platform);
       _servers.push_back(s);
       manage(*s);
 
       node = strtok(NULL,",");
     }
+
+    //
+    //  Read preference file
+    //
+    FILE* f = open_pref("monshmami_masks",platform,"r");
+    if (f) {
+      const unsigned NODE_BUFF_SIZE=256;
+      char *buff = (char *)malloc(NODE_BUFF_SIZE);  // use malloc w/ getline
+      if (!buff)
+	printf("%s: malloc(%d) failed, errno=%d\n", __PRETTY_FUNCTION__, NODE_BUFF_SIZE, errno);
+      else {
+	char* lptr=buff;
+	size_t linesz = NODE_BUFF_SIZE;         // initialize for getline
+	QStringList     qnodes_pref;
+	QList<unsigned> qnodes_pref_mask;
+	while(getline(&lptr,&linesz,f)!=-1) {
+	  QString p(lptr);
+	  p.chop(1);  // remove new-line
+	  printf("Read preference %s\n",qPrintable(p));
+	  QStringList ls = p.split(';');
+	  qnodes_pref     .push_back(ls[0]);
+	  qnodes_pref_mask.push_back(ls[1].toULong(0,0));
+	}
+	free(buff);
+
+	if (qnodes_pref == _qnodes)
+	  for(unsigned i=0; i<_servers.size(); i++) {
+	    printf("Setting preference %s;0x%x\n", qPrintable(_qnodes[i]),qnodes_pref_mask[i]);
+	    _servers[i]->info().mask = qnodes_pref_mask[i];
+	    _servers[i]->set_node_mask(qnodes_pref_mask[i]);
+	  }
+      }
+      fclose(f);
+    }
+
 
     QHBoxLayout* hl = new QHBoxLayout;
     _applyB = new QPushButton("Apply");
@@ -280,5 +337,12 @@ void Ami::Qt::QOnline::apply_mask()
       if (_rows[i]._box[j]->isChecked())
 	mask |= (1<<j);
     _servers[i]->set_node_mask(mask);
+  }
+
+  FILE* f = open_pref("monshmami_masks",_platform,"w");
+  if (f) {
+    for(unsigned i=0; i<_servers.size(); i++)
+      fprintf(f,"%s;0x%x\n",qPrintable(_qnodes[i]),_servers[i]->info().mask);
+    fclose(f);
   }
 }

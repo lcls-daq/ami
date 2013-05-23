@@ -19,7 +19,6 @@ static void usage(char* p)
          "           <address>   = IP address (dot notation)\n" \
          "           <path>      = full file path\n" \
          "-p <platform>  : DAQ platform number\n" \
-	 "-P <partition> : DAQ partition name\n" \
          "-i <interface> : multicast interface (fez subnet), reqd if -s is multicast group\n" \
          "-s <address>   : server multicast group or proxy address\n" \
          "-n <addresses> : comma-separated list of monshmserver node addresses\n" \
@@ -55,9 +54,7 @@ int main(int argc, char **argv)
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
   const char* loadfile = 0;
-  const unsigned NO_PLATFORM = -1;
-  unsigned platform    = NO_PLATFORM;
-  const char* partition = 0;
+  unsigned platform = 0;
   const char* nodes = 0;
 
   qInstallMsgHandler(QtAssertHandler);
@@ -87,9 +84,6 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-p")==0) {
       platform = strtoul(argv[++i],NULL,0);
     }
-    else if (strcmp(argv[i],"-P")==0) {
-      partition = argv[++i];
-    }
     else if (strcmp(argv[i],"-n")==0) {
       nodes = argv[++i];
     }
@@ -101,7 +95,7 @@ int main(int argc, char **argv)
   }
   QApplication app(argc, argv);
 
-  QWidget* onlW = new Ami::Qt::QOnline(nodes);
+  QWidget* onlW = new Ami::Qt::QOnline(nodes,platform);
   ::QObject::connect(onlW, SIGNAL(exit()), &app, SLOT(closeAllWindows()));
 
   Ami::Qt::DetectorSelect* select = new Ami::Qt::DetectorSelect("DAQ Online Monitoring", ppinterface, interface, serverGroup, onlW, true);

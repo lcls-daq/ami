@@ -4,6 +4,7 @@
 #include "ami/service/Poll.hh"
 
 #include <QtGui/QGroupBox>
+#include <QtCore/QStringList>
 
 #include <vector>
 
@@ -21,7 +22,7 @@ namespace Ami {
     {
       Q_OBJECT
     public:
-      QOnline(const char* nodes);
+      QOnline(const char* nodes, unsigned platform);
       ~QOnline();
     public:
       int processTmo();
@@ -48,6 +49,8 @@ namespace Ami {
       QGridLayout* _layout;
       QButtonGroup* _mask_group;
       std::vector<RowWidgets> _rows;
+      QStringList _qnodes;
+      unsigned    _platform;
     };
   };
 };
