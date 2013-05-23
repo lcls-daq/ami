@@ -43,6 +43,7 @@ Aggregator::Aggregator(AbsClient& client) :
   _state           (Init),
   _latest          (0),
   _current         (0),
+  _tag             (-1),
   _request         (EntryList::Full)
 {
 }
@@ -97,10 +98,10 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 {
   _checkState("dcov",id);
 
-  if (_state != Discovering || id > _current) {
+  if (_state != Discovering || id != _tag) {
     _state = Discovering;
     _remaining = _n-1;
-    _current   = id;
+    _tag       = id;
     _nsources  = rx.nsources();
   }
   else {
@@ -110,6 +111,7 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 
   if (_remaining == 0) {
     const_cast<DiscoveryRx&>(rx).nsources(_nsources);
+    const_cast<DiscoveryRx&>(rx).tag     (id);
     _state = Discovered;
     _client.discovered(rx);
   }

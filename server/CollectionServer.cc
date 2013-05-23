@@ -103,7 +103,7 @@ void CollectionServer::discovered      (const DiscoveryRx& rx)
   _adjust(2);
   _iov[1].iov_base = const_cast<char*>(rx.payload());
   _iov[1].iov_len  = rx.payload_size();
-  reply(-1, Message::Discover, 2);
+  reply(rx.tag(), Message::Discover, 2);
 }
 int  CollectionServer::read_description(Socket& s,int len)
 {

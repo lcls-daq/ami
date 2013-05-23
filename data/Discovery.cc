@@ -31,9 +31,10 @@ unsigned DiscoveryTx::niovs() const
 void DiscoveryTx::serialize(iovec* iov)
 {
   iov[0].iov_base = &_header[0];
-  iov[0].iov_len  = (NumberOfSets+1)*sizeof(uint32_t);
+  iov[0].iov_len  = (NumberOfSets+InfoSize)*sizeof(uint32_t);
 
-  _header[NumberOfSets] = 1;
+  _header[NumberOfSets+SourceInfo] = 1;
+  _header[NumberOfSets+TagInfo   ] = 0;
 
   for(unsigned i=0; i<_features.size(); i++) {
 
@@ -59,7 +60,7 @@ DiscoveryRx::~DiscoveryRx() {}
 
 std::vector<std::string> DiscoveryRx::features(ScalarSet set) const
 {
-  const char* p = _p + sizeof(uint32_t)*(NumberOfSets+1);
+  const char* p = _p + sizeof(uint32_t)*(NumberOfSets+InfoSize);
   for(unsigned i=0; i<unsigned(set); i++)
     p += reinterpret_cast<const uint32_t*>(_p)[i]*FEATURE_NAMELEN;
 
@@ -76,7 +77,7 @@ std::vector<std::string> DiscoveryRx::features(ScalarSet set) const
 
 const Desc*      DiscoveryRx::title_desc() const
 {
-  const char* p = _p + sizeof(uint32_t)*(NumberOfSets+1);
+  const char* p = _p + sizeof(uint32_t)*(NumberOfSets+InfoSize);
   for(unsigned i=0; i<NumberOfSets; i++)
     p += reinterpret_cast<const uint32_t*>(_p)[i]*FEATURE_NAMELEN;
   
@@ -105,13 +106,24 @@ const DescEntry* DiscoveryRx::entry(const char* name) const
 
 unsigned DiscoveryRx::nsources() const
 {
-  return reinterpret_cast<const uint32_t*>(_p)[NumberOfSets];
+  return reinterpret_cast<const uint32_t*>(_p)[NumberOfSets+SourceInfo];
 }
 
 void DiscoveryRx::nsources(unsigned n) 
 {
   char* p = const_cast<char*>(_p);
-  reinterpret_cast<uint32_t*>(p)[NumberOfSets] = n;
+  reinterpret_cast<uint32_t*>(p)[NumberOfSets+SourceInfo] = n;
+}
+
+unsigned DiscoveryRx::tag() const
+{
+  return reinterpret_cast<const uint32_t*>(_p)[NumberOfSets+TagInfo];
+}
+
+void DiscoveryRx::tag(unsigned n) 
+{
+  char* p = const_cast<char*>(_p);
+  reinterpret_cast<uint32_t*>(p)[NumberOfSets+TagInfo] = n;
 }
 
 void DiscoveryRx::dump() const

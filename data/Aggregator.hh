@@ -47,6 +47,7 @@ namespace Ami {
            Describing, Described, Processing } _state;
     double     _latest;
     unsigned   _current;
+    unsigned   _tag;
     EntryList  _request;
   };
 };

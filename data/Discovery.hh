@@ -15,6 +15,8 @@ namespace Ami {
   class Desc;
   class DescEntry;
 
+  enum { SourceInfo=0, TagInfo, InfoSize };
+
   class DiscoveryTx {
   public:
     DiscoveryTx(const std::vector<FeatureCache*>&, const Cds&);
@@ -25,7 +27,7 @@ namespace Ami {
   private:
     const std::vector<FeatureCache*>& _features;
     const Cds&          _cds;
-    mutable uint32_t    _header[NumberOfSets+1];
+    mutable uint32_t    _header[NumberOfSets+InfoSize];
     std::vector<const char*> _cache;
   };
 
@@ -46,6 +48,8 @@ namespace Ami {
   public:
     unsigned    nsources() const;
     void        nsources(unsigned);
+    unsigned    tag     () const;
+    void        tag     (unsigned);
   public:
     void        dump() const;
   private:
