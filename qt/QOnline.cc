@@ -63,13 +63,19 @@ namespace Ami {
     public:
       ShmServer(QOnline& qo, QString& qnode, unsigned platform) : _qo(qo) 
       {
-	Ami::Ins ins(Ami::Ins::parse_ip(qPrintable(qnode)),
-		     Pds::MonShmComm::ServerPort+platform);
+        unsigned ip = Ami::Ins::parse_ip(qPrintable(qnode));
+        unsigned short insp = Pds::MonShmComm::ServerPort;
+        if (((ip>>8)&0xff) < 20)
+          insp -= platform;
+
+        Ami::Ins ins(ip,insp);
 	while(1) {
 	  try {
 	    _socket.connect(ins);
 	  }
 	  catch(Event& e) {
+            printf("connect to %x.%d failed\n",ins.address(),ins.portId());
+            printf("caught exception %s:%s\n",e.who(),e.what());
 	    sleep(1);
 	    continue;
 	  }
