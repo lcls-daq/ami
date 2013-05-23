@@ -51,7 +51,6 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
-  _channel  (0),
   _frame    (frame),
   _title    (new QLineEdit("Projection"))
 {
@@ -60,9 +59,10 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   setWindowTitle("Image Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  QComboBox* channelBox = new QComboBox;
+  _channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
-    channelBox->addItem(channels[i]->name());
+    _channelBox->addItem(channels[i]->name());
+  _channelBox->setCurrentIndex(0);
 
   _roiButton = new QPushButton("New");
   _roiBox = new QComboBox;
@@ -85,7 +85,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Source Channel"));
-    layout1->addWidget(channelBox);
+    layout1->addWidget(_channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
@@ -122,7 +122,6 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
 
   setLayout(layout);
 
-  connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_rectangle, SIGNAL(edited()),       this, SIGNAL(changed()));
   connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
@@ -156,7 +155,7 @@ void ImageXYProjection::save(char*& p) const
 {
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
 
-  XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channelBox->currentIndex()) );
   XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
   XML_insert(p, "QComboBox", "_plot_tab", QtPersistent::insert(p,_plot_tab->currentIndex()) );
   
@@ -190,7 +189,7 @@ void ImageXYProjection::load(const char*& p)
    if (tag.element == "QtPWidget")
       QtPWidget::load(p);
     else if (tag.name == "_channel")
-      _channel = QtPersistent::extract_i(p);
+      _channelBox->setCurrentIndex(QtPersistent::extract_i(p));
     else if (tag.name == "_title")
       _title->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_plot_tab")
@@ -238,7 +237,7 @@ void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::vector<RectROI*>::iterator it=_rois.begin(); it!=_rois.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
     
-  _histogram_plot->configure(p,_channel,output,channels,signatures,nchannels);
+  _histogram_plot->configure(p,_channelBox->currentIndex(),output,channels,signatures,nchannels);
 }
 
 void ImageXYProjection::setup_payload(Ami::Cds& cds)
@@ -255,11 +254,6 @@ void ImageXYProjection::update()
     _rois[i]->update();
 
   _histogram_plot->update();
-}
-
-void ImageXYProjection::set_channel(int c) 
-{ 
-  _channel=c; 
 }
 
 void ImageXYProjection::plot()
@@ -389,4 +383,4 @@ void ImageXYProjection::select_roi(int i)
     _rectangle->load(*_rect[i]);
 }
 
-RectROI& ImageXYProjection::_roi() { return *_rois[_roiBox->currentIndex()*_nchannels + _channel]; }
+RectROI& ImageXYProjection::_roi() { return *_rois[_roiBox->currentIndex()*_nchannels + _channelBox->currentIndex()]; }

@@ -52,7 +52,6 @@ namespace Ami {
     private:
       RectROI& _roi();
     public slots:
-      void set_channel(int);
       void update_range();
       void plot        ();   // configure the plot
       void overlay     ();
@@ -69,7 +68,7 @@ namespace Ami {
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;
-      unsigned _channel;
+      QComboBox*            _channelBox;
 
       ImageFrame&       _frame;
       RectangleCursors* _rectangle;
