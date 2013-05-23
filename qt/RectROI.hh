@@ -64,6 +64,7 @@ namespace Ami {
       QWidget*           _parent;
       QString            _name;
       unsigned           _channel;
+      unsigned           _signature;
       const Rect&        _rect;
       ConfigureRequestor _req;
       std::list<ProjectionPlot*> _pplots;

@@ -207,5 +207,7 @@ void PeakFinder::remove_plot(QObject* obj)
 
   disconnect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+  emit changed();
 }
 

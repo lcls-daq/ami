@@ -238,6 +238,8 @@ void ProjectionPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output);
   if (entry && entry->desc().type() == Ami::DescEntry::ScalarRange)
     _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
+  else
+    cds.request(*entry, false);  // not shown
 
   _frame->reset();
 

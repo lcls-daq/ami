@@ -238,6 +238,9 @@ void PeakPlot::update_configuration()
 
 void PeakPlot::setup_payload(Cds& cds)
 {
+  Entry* entry = cds.entry(_signature);
+  cds.request(*entry, false);   // the prototype is never shown
+
   _frame->reset();
 
   for(unsigned i=0; i<NCHANNELS; i++)
@@ -259,7 +262,7 @@ void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
 						  *_op);
   p += r.size();
   _req.request(r, output);
-  input = r.output();
+  input = _signature = r.output();
 
   int signatures[NCHANNELS];
   for(int i=0; i<NCHANNELS; i++)

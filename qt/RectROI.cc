@@ -15,6 +15,8 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescCache.hh"
+#include "ami/data/Cds.hh"
+#include "ami/data/Entry.hh"
 
 #include <stdio.h>
 
@@ -27,6 +29,7 @@ RectROI::RectROI(QWidget*         p,
   _parent (p),
   _name   (n),
   _channel(ch),
+  _signature(-1),
   _rect   (r)
 {
 }
@@ -155,7 +158,7 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
                                                     op);
   p += req.size();
   _req.request(req, output);
-  input = req.output();
+  input = _signature = req.output();
 
   //  Configure the derived plots
   const unsigned maxpixels=1024;
@@ -184,6 +187,10 @@ void RectROI::setup_payload(Cds& cds)
    (*it)->setup_payload(cds);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
    (*it)->setup_payload(cds);
+
+  Entry* entry = cds.entry(_signature);
+  if (entry && entry->desc().type() != DescEntry::ScalarRange && _zplots.empty())
+    cds.request(*entry, false);
 }
 
 void RectROI::update()
