@@ -31,6 +31,9 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
                  i.ppxbin(), i.ppybin(), 
                  unsigned(o.xlow()), unsigned(o.ylow()));
 
+  desc.aggregate(i.aggregate());
+  desc.normalize(i.normalize());
+
   for(unsigned j=0; j<i.nframes(); j++) {
     int x0 = int(o.xlow())/i.ppxbin(), 
       y0 = int(o.ylow())/i.ppybin(), 
