@@ -49,6 +49,7 @@ namespace Ami {
       void update();
     public slots:
       void update_configuration();
+      void update_configuration(bool);
     signals:
       void description_changed();
     private:

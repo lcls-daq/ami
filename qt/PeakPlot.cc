@@ -83,13 +83,15 @@ void PeakPlot::_layout()
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
+	  connect(_channels[i], SIGNAL(show_plot_changed(bool)), box, SLOT(setChecked(bool))); // new
 	  box->setChecked( _showMask & (1<<i) );
 	  layout4->addWidget(box);
 	  layout4->addWidget(chanB[i]);
 	  layout1->addLayout(layout4);
 	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
 	  connect(_channels[i], SIGNAL(changed()), this, SLOT(update_configuration()));
-	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); }
+	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool)));
+	  connect(box, SIGNAL(toggled(bool)), this, SLOT(update_configuration(bool))); } // new
       }
       chanBox->setLayout(layout1);
       layout3->addWidget(chanBox); }
@@ -222,6 +224,11 @@ void PeakPlot::save_plots(const QString& p) const
   _xyproj->save_plots(p+"_xyproj");
   _rfproj->save_plots(p+"_rfproj");
   _cntproj->save_plots(p+"_cntproj");
+}
+
+void PeakPlot::update_configuration(bool)
+{
+  update_configuration();
 }
 
 void PeakPlot::update_configuration()

@@ -70,7 +70,7 @@ Entry&     XYHistogram::_operate(const Entry& e) const
     
     double   p(_input->info(EntryImage::Pedestal));
     double   n   = 1./double(inputd.ppxbin()*inputd.ppybin());
-    double   nh  = _input->info(EntryImage::Normalization);
+    double   nh  = inputd.isnormalized() ? _input->info(EntryImage::Normalization) : 1;
     if (nh>=1)
       n /= nh;
     

@@ -311,8 +311,8 @@ namespace CspadGeometry {
   //    only partially fills a pixel (at the edges)
   //
 #define FRAME_BOUNDS                                            \
-  const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;      \
-    const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;      \
+  const unsigned ColLen   = (  CsPad::ColumnsPerASIC+ppb-1)/ppb-1;	\
+    const unsigned RowLen = (2*CsPad::MaxRowsPerASIC+ppb-1)/ppb-1;	\
     unsigned x0 = CALC_X(column,0,0);                           \
     unsigned x1 = CALC_X(column,ColLen,RowLen);                 \
     unsigned y0 = CALC_Y(row,0,0);                              \

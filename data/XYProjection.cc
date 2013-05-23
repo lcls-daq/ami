@@ -108,6 +108,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
       { const DescTH1F& d = static_cast<const DescTH1F&>(_routput());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	const double    p = _input->info(EntryImage::Pedestal);
+	const unsigned up = unsigned(p);
         const ImageMask*   mask = inputd.mask();
 	if (_axis == X) {
           if (mask) {
@@ -132,9 +133,9 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		for(int i=ilo; i<=ihi; i++) {
                   unsigned z=0;
 		  for(int j=jlo; j<=jhi; j++)
-		    z += _input->content(i,j);
+		    z += _input->content(i,j)-up;
 		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
-                  o->addcontent(double(z)-double(jhi-jlo+1)*p,k);
+                  o->addcontent(double(z),k);
 		}
 	    }
 	  }
@@ -143,9 +144,9 @@ Entry&     XYProjection::_operate(const Entry& e) const
             for(unsigned i=ilo; i<ihi; i++) {
               unsigned z=0;
               for(unsigned j=jlo; j<jhi; j++)
-                z += _input->content(i,j);
+                z += _input->content(i,j)-up;
               unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
-              o->content(double(z)-p*double(jhi-jlo),k);
+              o->content(double(z),k);
             }
 	  }
 	}
@@ -171,9 +172,9 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		for(int i=ilo; i<=ihi; i++) {
                   unsigned z=0;
 		  for(int j=jlo; j<=jhi; j++)
-                    z += _input->content(j,i);
+                    z += _input->content(j,i)-up;
 		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
-                  o->addcontent(double(z)-double(jhi-jlo+1)*p,k);
+                  o->addcontent(double(z),k);
 		}
 	    }
 	  }
@@ -182,9 +183,9 @@ Entry&     XYProjection::_operate(const Entry& e) const
             for(unsigned i=ilo; i<ihi; i++) {
               unsigned z=0;
               for(unsigned j=jlo; j<jhi; j++)
-                z += _input->content(j,i);
+                z += _input->content(j,i)-up;
               unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
-              o->content(double(z)-p*double(jhi-jlo),k);
+              o->content(double(z),k);
             }
 	  }
 	}

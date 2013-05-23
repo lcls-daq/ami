@@ -60,10 +60,9 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   _output_entry(static_cast<EntryImage*>(EntryFactory::entry(e))),
   _fn          (0)
 {
-  printf("PeakFinder2 acc %c\n",_accumulate ? 't':'f');
-
   _output_entry->info(0,EntryImage::Pedestal);
   _output_entry->desc().aggregate(_accumulate);
+  _output_entry->desc().normalize(!_accumulate);
 
   if ((_fn = _lookup(e.info().phy())))
     _fn->setup(_threshold_v0,
