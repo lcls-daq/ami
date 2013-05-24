@@ -6,6 +6,7 @@
 #include "ami/data/Discovery.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/EntryScalar.hh"
 
 #include "ami/service/Socket.hh"
 
@@ -87,7 +88,8 @@ void Client::discovered(const DiscoveryRx& rx)
     _input[i] = 0;
 
     if (_info == envInfo) {
-      _input[i] = e->signature();
+      const DescEntry* desc = rx.entry(Ami::EntryScalar::input_entry());
+      _input[i] = desc->signature();
     }
     else {
       for(  const DescEntry* e = rx.entries(); e < rx.end(); 
