@@ -301,7 +301,6 @@ int ClientManager::nconnected() const { return _poll->nfds(); }
 void ClientManager::disconnect()
 {
   if (_state != Disconnected && nconnected()) {
-    printf("Disconnecting %d\n",nconnected());
     _request = Message(_request.id()+1,Message::Disconnect);
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));

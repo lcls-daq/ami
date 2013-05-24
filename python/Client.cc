@@ -89,7 +89,8 @@ void Client::discovered(const DiscoveryRx& rx)
 
     if (_info == envInfo) {
       const DescEntry* desc = rx.entry(Ami::EntryScalar::input_entry());
-      _input[i] = desc->signature();
+      if (desc)
+        _input[i] = desc->signature();
     }
     else {
       for(  const DescEntry* e = rx.entries(); e < rx.end(); 

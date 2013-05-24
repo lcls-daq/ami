@@ -86,12 +86,7 @@ void        FeatureCache::cache  (const FeatureCache& c)
   for(unsigned i=0,j=0; i<c._cache.size(); i++,j++) {
     unsigned k=j;
     while(1) {
-      if (_names[k]==c._names[i]) {
-        cache(k, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
-        j=k;
-        break;
-      }
-      if (++k==_cache.size()) {
+      if (k>=_cache.size()) {
 #ifdef DBUG
         //
         //  There is some condition by which c._names[i] may not be 
@@ -101,6 +96,12 @@ void        FeatureCache::cache  (const FeatureCache& c)
 #endif
         break;
       }
+      if (_names[k]==c._names[i]) {
+        cache(k, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+        j=k;
+        break;
+      }
+      ++k;
     }
   }
 }
