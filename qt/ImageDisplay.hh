@@ -21,6 +21,7 @@ namespace Ami {
     class ImageGridScale;
     class ImageColorControl;
     class ImageFrame;
+    class ImageInspect;
     class QtBase;
 
     class ImageDisplay : public QWidget,
@@ -69,6 +70,7 @@ namespace Ami {
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
+      ImageInspect* _inspect;
 
     public slots:
       void toggle_chrome();

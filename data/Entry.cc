@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 Entry::Entry() : 
@@ -86,6 +88,15 @@ bool Entry::valid() const { return _payload!=0 && ((*_payload)&1)==0; }
 void Entry::merge(char* p) const
 {
   uint64_t* u = reinterpret_cast<uint64_t*>(p);
+
+#ifdef DBUG
+  printf("Merge %s(%d) %016llx[%016llx] agg %c\n",
+	 desc().name(),
+	 desc().signature(),
+	 *u,
+	 *_payload,
+	 desc().aggregate() ? 't':'f');
+#endif
 
   if (valid()) {
     if (*u & 1ULL) {  // if the existing data is invalid, replace it

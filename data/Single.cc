@@ -12,6 +12,8 @@
 
 #include <stdio.h>
 
+#define DBUG
+
 using namespace Ami;
 
 Single::Single(const char* scale) : 
@@ -30,10 +32,16 @@ Single::Single(const char*& p, const DescEntry& e, FeatureCache& features) :
   AbsOperator(AbsOperator::Single),
   _input(0)
 {
+#ifdef DBUG
+  printf("Single %s agg %c\n",
+	 e.name(), e.aggregate() ? 't':'f');
+#endif
+
   _extract(p,_scale_buffer, SCALE_LEN);
 
   _entry = EntryFactory::entry(e);
-  _entry->desc().aggregate(false);
+  _entry->desc().aggregate(e.aggregate());
+  _entry->desc().normalize(e.isnormalized());
 
   if (_scale_buffer[0]) {
     QString expr(_scale_buffer);

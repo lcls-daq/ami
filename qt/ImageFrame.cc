@@ -4,6 +4,7 @@
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageColorControl.hh"
+#include "ami/qt/ImageInspect.hh"
 #include "ami/qt/ImageMarker.hh"
 #include "ami/qt/QtImage.hh"
 #include "ami/data/Entry.hh"
@@ -11,11 +12,10 @@
 
 #include <QtGui/QMouseEvent>
 
-#include <QtGui/QHBoxLayout>
+#include <QtGui/QBoxLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QImage>
 #include <QtGui/QPixmap>
-#include <QtGui/QPaintEngine>
 
 using namespace Ami::Qt;
 
@@ -85,6 +85,14 @@ void ImageFrame::scale_changed()
 void ImageFrame::add_marker   (ImageMarker& m) { _markers.push_back(&m); }
 void ImageFrame::remove_marker(ImageMarker& m) { _markers.remove(&m); }
 
+ImageInspect* ImageFrame::inspector()
+{
+  ImageInspect* r = new ImageInspect(*this);
+  add_marker(*r);
+  connect(r, SIGNAL(changed()), this, SLOT(replot()));
+  return r;
+}
+
 void ImageFrame::replot()
 {
   if (_qimage) {
@@ -123,7 +131,8 @@ void ImageFrame::mouseMoveEvent(QMouseEvent* e)
     _c->mouseMoveEvent(xinfo()->position(ix),
 		       yinfo()->position(iy));
 
-  QWidget::mousePressEvent(e);
+  //  QWidget::mousePressEvent(e);
+  QWidget::mouseMoveEvent(e);
 }
 
 void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
@@ -143,6 +152,13 @@ void ImageFrame::set_cursor_input(Cursors* c)
 {
   _c=c; 
   raise();
+}
+
+void ImageFrame::track_cursor_input(Cursors* c)
+{
+  set_cursor_input(c);
+  setMouseTracking(true);
+  _canvas->setMouseTracking(true);
 }
 
 void ImageFrame::set_grid_scale(double scalex, double scaley)

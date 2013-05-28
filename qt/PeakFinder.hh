@@ -7,6 +7,8 @@
 
 class QCheckBox;
 class QButtonGroup;
+class QLineEdit;
+class QLabel;
 
 #include <list>
 
@@ -43,6 +45,7 @@ namespace Ami {
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
       void remove_plot   (QObject*);
+      void update_interval();
     signals:
       void changed();
     private:
@@ -54,6 +57,8 @@ namespace Ami {
       QButtonGroup*  _proc_grp;
       QCheckBox*     _center_only;
       QCheckBox*     _accumulate;
+      QLineEdit*     _interval;
+      QLabel*        _intervalq;
 
       std::list<PeakPlot*> _plots;
     };

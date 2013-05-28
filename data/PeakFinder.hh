@@ -20,7 +20,7 @@ namespace Ami {
                double threshold_v1,
                Mode   mode,
                bool   center_only,
-               bool   accumulate);
+               int    accumulate);
     PeakFinder(const char*&);
     PeakFinder(const char*&, const DescEntry&);
     ~PeakFinder();
@@ -37,8 +37,10 @@ namespace Ami {
     double            _threshold_v1;
     Mode              _mode;
     bool              _center_only;
-    bool              _accumulate;
+    int               _accumulate;
+    mutable int       _current;
     EntryImage*       _output_entry;
+    EntryImage*       _cache;
     PeakFinderFn*     _fn;
   };
 

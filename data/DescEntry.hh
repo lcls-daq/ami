@@ -32,8 +32,9 @@ namespace Ami {
     unsigned options() const { return _options>>User; }
 
 
-    void normalize(bool);
-    void aggregate(bool);
+    void normalize(bool);  // divide contents by normalization when displaying or reducing
+    void aggregate(bool);  // merge distributed data = sum contents and normalization
+                           // else just keep latest set
     void pedcalib (bool);
     void gaincalib(bool);
     void rmscalib (bool);

@@ -3,6 +3,7 @@
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageColorControl.hh"
+#include "ami/qt/ImageInspect.hh"
 #include "ami/qt/Transform.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/Path.hh"
@@ -60,8 +61,13 @@ void Ami::Qt::ImageDisplay::_layout()
     file_menu->addAction("Save reference" , this, SLOT(save_reference()));
     file_menu->addSeparator();
     _menu_bar->addMenu(file_menu);
+
+    _inspect = _plot->inspector();
+    _menu_bar->addAction("Inspect"       , _inspect, SLOT(toggle()));
+
     _chrome_is_visible = true;
     _chrome_action = _menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
+
     if (_enable_movie_option)
       _movie_action = _menu_bar->addAction("Start movie"    , this, SLOT(start_movie()));
   }
@@ -91,6 +97,7 @@ void Ami::Qt::ImageDisplay::_layout()
 
 Ami::Qt::ImageDisplay::~ImageDisplay()
 {
+  delete _inspect;
 }
 
 void ImageDisplay::save(char*& p) const
@@ -306,6 +313,7 @@ void Ami::Qt::ImageDisplay::update()
   _sem.take();
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->update();
+  _inspect->update();
   _sem.give();
 
   emit redraw();

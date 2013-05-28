@@ -17,6 +17,7 @@ namespace Ami {
     class AxisInfo;
     class Cursors;
     class ImageColorControl;
+    class ImageInspect;
     class ImageMarker;
     class QtImage;
     class ImageFrame : public QWidget,
@@ -37,6 +38,7 @@ namespace Ami {
     public:
       void add_marker   (ImageMarker&);
       void remove_marker(ImageMarker&);
+      ImageInspect*     inspector();
     public slots:
       void replot();
       void scale_changed();
@@ -46,6 +48,7 @@ namespace Ami {
       void mousePressEvent  (QMouseEvent* e);
     public:
       void set_cursor_input(Cursors* c);
+      void track_cursor_input(Cursors* c);
       void set_grid_scale(double,double);
     private:
       const ImageColorControl& _control;

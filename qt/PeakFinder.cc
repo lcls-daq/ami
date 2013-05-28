@@ -4,6 +4,7 @@
 #include "ami/qt/PeakPlot.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageScale.hh"
+#include "ami/qt/SMPRegistry.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/PeakFinder.hh"
@@ -26,6 +27,11 @@
 #include <sys/socket.h>
 #include <stdio.h>
 
+static inline int avgRound(int n, int d)
+{
+  return (n+d-1)/d;
+}
+
 using namespace Ami::Qt;
 
 PeakFinder::PeakFinder(QWidget* parent,
@@ -39,6 +45,10 @@ PeakFinder::PeakFinder(QWidget* parent,
   
   _accumulate = new QCheckBox("accumulate events");
   _accumulate->setChecked(true);
+
+  _interval  = new QLineEdit;
+  _intervalq = new QLabel;
+  new QIntValidator(_interval);
 
   _center_only = new QCheckBox("local max only");
   _center_only->setChecked(true);
@@ -79,7 +89,11 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout1->addWidget(sumB); 
     layout->addLayout(layout1); }
   { layout->addWidget(_center_only); }
-  { layout->addWidget(_accumulate); }
+  { QHBoxLayout* layout1 = new QHBoxLayout;
+    layout1->addWidget(_accumulate);
+    layout1->addWidget(_interval);
+    layout1->addWidget(_intervalq);
+    layout->addLayout(layout1); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -91,6 +105,8 @@ PeakFinder::PeakFinder(QWidget* parent,
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(_interval , SIGNAL(editingFinished()), this, SLOT(update_interval()));
+  connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
 
   _proc_grp->button(Ami::PeakFinder::Count)->setChecked(true);
 }
@@ -109,6 +125,7 @@ void PeakFinder::save(char*& p) const
   XML_insert(p, "QButtonGroup", "_proc_grp", QtPersistent::insert(p,_proc_grp->checkedId()) );
   XML_insert(p, "QCheckBox", "_center_only", QtPersistent::insert(p,_center_only->isChecked()) );
   XML_insert(p, "QCheckBox", "_accumulate", QtPersistent::insert(p,_accumulate->isChecked()) );
+  XML_insert( p, "QLineEdit"   , "_interval", QtPersistent::insert(p,_interval->text()) );
 
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakPlot", "_plots", (*it)->save(p) );
@@ -134,6 +151,8 @@ void PeakFinder::load(const char*& p)
       _threshold->value(1,QtPersistent::extract_d(p));
     else if (tag.name == "_accumulate")
       _accumulate->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_interval")
+      _interval->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_center_only")
       _center_only->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_proc_grp")
@@ -145,6 +164,8 @@ void PeakFinder::load(const char*& p)
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
   XML_iterate_close(PeakFinder,tag);
+
+  update_interval();
 }
 
 void PeakFinder::save_plots(const QString& p) const
@@ -182,16 +203,19 @@ void PeakFinder::set_channel(int c)
 
 void PeakFinder::plot()
 {
+  unsigned nproc = SMPRegistry::instance().nservers();
+  Ami::PeakFinder* op = new Ami::PeakFinder(_threshold->value(0),
+					    _threshold->value(1),
+					    Ami::PeakFinder::Mode(_proc_grp->checkedId()),
+					    _center_only->isChecked(),
+					    _accumulate->isChecked() ? avgRound(_interval->text().toInt(),nproc) : -1);
+
   PeakPlot* plot = new PeakPlot(this,
 				QString("%1 Peaks : %2,%3").arg(_channels[_channel]->name())
                                 .arg(_threshold->value(0))
                                 .arg(_threshold->value(1)),
 				_channel,
-                                new Ami::PeakFinder(_threshold->value(0),
-                                                    _threshold->value(1),
-                                                    Ami::PeakFinder::Mode(_proc_grp->checkedId()),
-                                                    _center_only->isChecked(),
-                                                    _accumulate->isChecked()));
+				op);
   _plots.push_back(plot);
 
   connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
@@ -209,5 +233,16 @@ void PeakFinder::remove_plot(QObject* obj)
   disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
   emit changed();
+}
+
+void PeakFinder::update_interval()
+{
+  unsigned nproc = SMPRegistry::instance().nservers();
+  int n = _interval->text().toInt();
+  int m = nproc*avgRound(n,nproc);
+  if (n>1 && m!=n)
+    _intervalq->setText(QString("(%1)").arg(QString::number(m)));
+  else
+    _intervalq->clear();
 }
 

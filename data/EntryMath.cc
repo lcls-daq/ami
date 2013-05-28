@@ -108,6 +108,8 @@ void*      EntryMath::_serialize(void* p) const
 
 #define CASE_2D(type) case DescEntry::type:				\
   { Entry##type& en = static_cast<Entry##type&>(*_entry);		\
+    const Entry##type& ei = static_cast<const Entry##type&>(e);		\
+    en.info(ei.info(Entry##type::Pedestal),Entry##type::Pedestal);	\
     _index = 0;								\
     for(unsigned j=0; j<en.desc().nbinsy(); j++)			\
       for(unsigned k=0; k<en.desc().nbinsx(); k++) {			\

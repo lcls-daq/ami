@@ -139,6 +139,7 @@ libsrcs_amiqt += ProjectionPlot.cc ProjectionPlot_moc.cc
 libsrcs_amiqt += TwoDPlot.cc TwoDPlot_moc.cc
 libsrcs_amiqt += ImageGrid.cc
 libsrcs_amiqt += ImageFrame.cc ImageFrame_moc.cc
+libsrcs_amiqt += ImageInspect.cc ImageInspect_moc.cc
 libsrcs_amiqt += ImageColorControl.cc ImageColorControl_moc.cc
 libsrcs_amiqt += ImageXYControl.cc ImageXYControl_moc.cc
 libsrcs_amiqt += ColorMaps.cc
