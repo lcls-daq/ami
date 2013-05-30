@@ -26,7 +26,7 @@ using namespace Ami;
 
 ServerManager::ServerManager(unsigned interface,
 			     unsigned serverGroup) :
-  Poll        (1000),
+  Poll        (1000,"ServerManager"),
   _interface  (interface),
   _serverGroup(serverGroup),
   _socket     (0),

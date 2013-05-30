@@ -159,7 +159,7 @@ namespace Ami {
 
   class ClPoll : public Poll {
   public:
-    ClPoll(ClientManager& cm) : Poll(250), _cm(cm) {}
+    ClPoll(ClientManager& cm) : Poll(250, "ClientManager"), _cm(cm) {}
   public:
     int processTmo() { _cm.processTmo(); return 1; }
   private:
@@ -481,7 +481,7 @@ void ClientManager::forward(const Message& request,
   unsigned len = request.payload();
   char* p = new char[len];
   int n = socket.read(p, len);
-  if (n==len) {
+  if (n==int(len)) {
     iovec iov[2];
     iov[0].iov_base = const_cast<Message*>(&request);
     iov[0].iov_len  = sizeof(request);

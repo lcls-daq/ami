@@ -5,6 +5,8 @@
 #include "ami/service/Semaphore.hh"
 
 #include <poll.h>
+#include <string>
+using std::string;
 
 class iovec;
 
@@ -16,7 +18,7 @@ namespace Ami {
 
   class Poll : public Routine {
   public:
-    Poll(int timeout);
+    Poll(int timeout, const char* s="N/A");
     ~Poll();
   public:
     void start();
@@ -46,6 +48,7 @@ namespace Ami {
     virtual int processIn (const char*,int);
   private:
     int        _timeout;
+    string     _context;
     Task*      _task;
     Socket*    _loopback;
     int        _nfds;

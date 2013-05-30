@@ -55,6 +55,7 @@ namespace Ami {
     int       _ptime_index, _ptime_acc_index;    
     int       _pltnc_index;
     int       _event_index;
+    int       _evtim_index;
     int       _runno_index;
     double    _runno_value;
     bool      _recorded;

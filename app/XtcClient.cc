@@ -71,6 +71,7 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _ptime_acc_index(-1),
   _pltnc_index    (-1),
   _event_index    (-1),
+  _evtim_index    (-1),
   _runno_index    (-1)
 {
 }
@@ -104,6 +105,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
       cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
+      cache.cache(_evtim_index,_seq->clock().asDouble());
       for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
         (*it)->clock(dg->seq.clock());
       
@@ -215,6 +217,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _ptime_acc_index = cache.add("ProcTimeAcc");
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
+    _evtim_index     = cache.add("EventTime");
     _runno_index     = cache.add("RunNumber");
 
     _cache[PostAnalysis]->add(cache);

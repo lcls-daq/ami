@@ -20,8 +20,9 @@ const int BufferSize=0x100000;
 
 enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn, Manage };
 
-Poll::Poll(int timeout) :
+Poll::Poll(int timeout, const char* s) :
   _timeout (timeout),
+  _context (s),
   _task    (new Task(TaskObject("vmonMgr"))),
   _loopback(new Loopback),
   _nfds    (1),
