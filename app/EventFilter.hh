@@ -10,6 +10,8 @@
 namespace Pds { class Dgram; class Xtc; class Sequence; };
 
 namespace Ami {
+  class AbsFilter;
+  class ConfigureRequest;
   class FeatureCache;
 
   class EventFilter : private Pds::XtcIterator {
@@ -19,14 +21,16 @@ namespace Ami {
     ~EventFilter();
   public:
     void reset       ();
-    void enable      (unsigned);
+    void enable      (const ConfigureRequest&);
     void configure   (Dgram*);
     bool accept      (Dgram*);
+    bool accept      ();
   private:
     int process(Xtc*);
   private:
     std::list<UserModule*>& _filters;
     FeatureCache&           _cache;
+    const AbsFilter*        _f;
     unsigned                _enable;
     const Pds::Sequence*    _seq;
   };

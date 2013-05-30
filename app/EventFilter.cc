@@ -1,6 +1,9 @@
 #include "ami/app/EventFilter.hh"
 
+#include "ami/data/ConfigureRequest.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/FilterFactory.hh"
+#include "ami/data/RawFilter.hh"
 
 #include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -14,6 +17,7 @@ EventFilter::EventFilter(list<UserModule*>& filters,
                          FeatureCache& cache) :
   _filters(filters),
   _cache  (cache),
+  _f      (new RawFilter),
   _enable (0)
 {
 }
@@ -23,12 +27,17 @@ EventFilter::~EventFilter()
   for(list<UserModule*>::iterator it=_filters.begin(); 
       it!=_filters.end(); it++)
     delete (*it);
-
+  delete _f;
 }
 
-void EventFilter::enable (unsigned o)
+void EventFilter::enable (const ConfigureRequest& req)
 {
-  _enable = o;
+  const uint32_t* u = reinterpret_cast<const uint32_t*>(&req+1);
+  _enable = *u;
+
+  const char* p = reinterpret_cast<const char*>(u+1);
+  FilterFactory factory(_cache);
+  _f = factory.deserialize(p);
 }
 
 void EventFilter::reset  ()
@@ -67,6 +76,11 @@ bool Ami::EventFilter::accept(Dgram* dg)
       result = result && ((_enable&(1<<i))==0);
   }
   return result;
+}
+
+bool Ami::EventFilter::accept()
+{
+  return _f->accept();
 }
 
 int Ami::EventFilter::process(Xtc* xtc)

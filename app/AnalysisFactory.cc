@@ -155,8 +155,7 @@ void AnalysisFactory::configure(unsigned       id,
       }
     }
     else if (req.source() == ConfigureRequest::Filter) {
-      unsigned o = *reinterpret_cast<const uint32_t*>(&req+1);
-      _filter.enable(o);
+      _filter.enable(req);
     }
     else {
       const Cds* pcds = 0;

@@ -75,8 +75,6 @@ void Client::discovered(const DiscoveryRx& rx)
   //  Find the appropriate source entry
   //    and filter inputs
   //
-  const DescEntry* e = rx.entries();
-
 #ifdef DBUG
   printf("Client Discovered cds(%d)\n", e->signature());
 #endif

@@ -187,6 +187,8 @@ int DetectorSelect::get_setup(char* buffer) const
 
   char* p = buffer;
 
+  XML_insert( p, "FilterSetup", "_filters", _filters->save(p) );
+
   for(std::list<QtTopWidget*>::const_iterator it = _client.begin();
       it != _client.end(); it++)
     if ((*it)) {
@@ -263,6 +265,8 @@ void DetectorSelect::set_setup(const char* p, int size)
 
     if (tag.name == "self")
       load(p);
+    else if (tag.name == "_filters")
+      _filters->load(p);
     else {
 
       uint32_t log, phy, channel;
@@ -440,7 +444,8 @@ int  DetectorSelect::configure       (iovec* iov)
   char* p = _request;
   { ConfigureRequest& r = 
       *new(p) ConfigureRequest(ConfigureRequest::Filter,
-                               _filters->selected());
+                               _filters->selected(),
+			       _filters->filter());
     p += r.size(); }
 
   _rate_display->configure(p);

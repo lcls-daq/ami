@@ -101,7 +101,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _seq = &dg->seq;
 
     if (_filter.accept(dg)) {
-      accept = true;
 
       cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
@@ -116,8 +115,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
       _cache[PostAnalysis]->cache(cache);
 
-      _entry.front()->valid(_seq->clock());
-      _factory.analyze();
+      if (_filter.accept()) {
+	accept = true;
+	_entry.front()->valid(_seq->clock());
+	_factory.analyze();
+      }
     }
     //
     //  Time the processing

@@ -43,8 +43,8 @@ namespace Ami {
     {
       *reinterpret_cast<uint32_t*>(this+1)=options;
     }
-    ConfigureRequest(Source       source,
-                     unsigned     options) :
+    ConfigureRequest(Source           source,
+                     unsigned         options) :
       _state (SetOpt),
       _source(source),
       _scalars(PreAnalysis),
@@ -53,6 +53,20 @@ namespace Ami {
       _size  (sizeof(*this)+sizeof(uint32_t))
     {
       *reinterpret_cast<uint32_t*>(this+1)=options;
+    }
+    ConfigureRequest(Source           source,
+                     unsigned         options,
+                     const AbsFilter& filter) :
+      _state (SetOpt),
+      _source(source),
+      _scalars(PreAnalysis),
+      _input (-1),
+      _output(-1)
+    {
+      uint32_t* u = reinterpret_cast<uint32_t*>(this+1);
+      *u=options;
+      char* e = (char*)filter.serialize(u+1);
+      _size = e - (char*)this;
     }
     ConfigureRequest(const ConfigureRequest&);
     ~ConfigureRequest() {}
