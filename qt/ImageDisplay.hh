@@ -35,7 +35,7 @@ namespace Ami {
       void load(const char*& p);
       void save_plots(const QString&) const;
     public:
-      void prototype(const Ami::DescEntry*) {}
+      void prototype(const Ami::DescEntry*);
       void add   (QtBase*, bool);
       void reset ();
       void show  (QtBase*);

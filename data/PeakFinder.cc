@@ -69,6 +69,7 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   _output_entry->info(0,EntryImage::Pedestal);
   _output_entry->desc().aggregate(_accumulate>=0);
   _output_entry->desc().normalize(_accumulate<0);
+  _output_entry->desc().countmode(_mode==Count);
 
   if (_accumulate > 0) {
     _cache = static_cast<EntryImage*>(EntryFactory::entry(_output_entry->desc()));
@@ -111,8 +112,9 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   const DescImage& d = entry.desc();
   const unsigned nx = d.nbinsx();
   const unsigned ny = d.nbinsy();
-  const unsigned p = unsigned(entry.info(EntryImage::Pedestal));
-  const unsigned q = d.ppxbin()*d.ppybin() + p;
+  const unsigned p  = unsigned(entry.info(EntryImage::Pedestal));
+  const unsigned dn = d.ppxbin()*d.ppybin();
+  const unsigned q  = 1 + p;
 
   if (_accumulate<0)
     _output_entry->reset();
@@ -133,7 +135,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
       const unsigned* b = a + nx;
       const unsigned* c = b + nx;
       for(unsigned j=1; j<nx-1; j++) {
-        const unsigned threshold = (_fn) ? _fn->value(j,k) + p : unsigned(_threshold_v0) + p;
+        const unsigned threshold = p + dn*(_fn ? _fn->value(j,k): unsigned(_threshold_v0));
         unsigned v = b[j];
         if (!(v > threshold &&
               v > b[j-1] && 
@@ -152,7 +154,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   else {
     for(unsigned k=0; k<ny; k++) {
       for(unsigned j=0; j<nx; j++) {
-        const unsigned threshold = (_fn) ? _fn->value(j,k) + p : unsigned(_threshold_v0) + p;
+        const unsigned threshold = p + dn*(_fn ? _fn->value(j,k) : unsigned(_threshold_v0));
         unsigned v = *a++;
         if      (v < threshold)  v = p;
         else if (_mode == Count) v = q;

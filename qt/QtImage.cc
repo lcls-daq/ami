@@ -138,7 +138,8 @@ QImage&        QtImage::image(float p0, float s, bool linear)
 //   else      n>>=-s;
   float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
-  n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+  if (!d.countmode())
+    n = (n ? n : 1)*d.ppxbin()*d.ppybin();
   p += float(n)*p0;
 
   const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;

@@ -12,6 +12,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QCheckBox>
+#include <QtGui/QPalette>
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -131,7 +132,9 @@ namespace Ami {
 Ami::Qt::QOnline::QOnline(const char* nodes, unsigned platform) :
   QGroupBox("Sources"),
   Poll(1000),
-  _platform(platform)
+  _platform(platform),
+  _red     (new QPalette(::Qt::red)),
+  _std     (new QPalette)
 {
   if (nodes) {
     char* node = strtok(const_cast<char*>(nodes),",");
@@ -262,6 +265,8 @@ Ami::Qt::QOnline::QOnline(const char* nodes, unsigned platform) :
 
 Ami::Qt::QOnline::~QOnline()
 {
+  delete _red;
+  delete _std;
 }
 
 void Ami::Qt::QOnline::update()
@@ -296,12 +301,12 @@ void Ami::Qt::QOnline::_update()
 
     _rows[i]._events->setText(QString::number(info.revents-info.events));
     if (info.rdmg!=info.dmg) {
-      _rows[i]._dmg   ->setPalette(QPalette(::Qt::yellow));
       _rows[i]._dmg   ->setText(QString::number(info.rdmg-info.dmg));
+      _rows[i]._dmg   ->setPalette(*_red);
     }
     else {
-      _rows[i]._dmg   ->setPalette(QPalette());
       _rows[i]._dmg   ->setText("0");
+      _rows[i]._dmg   ->setPalette(*_std);
     }
   }
   _applyB->setEnabled(lmask);

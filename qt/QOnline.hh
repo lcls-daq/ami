@@ -51,6 +51,8 @@ namespace Ami {
       std::vector<RowWidgets> _rows;
       QStringList _qnodes;
       unsigned    _platform;
+      QPalette*   _red;
+      QPalette*   _std;
     };
   };
 };

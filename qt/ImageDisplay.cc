@@ -245,6 +245,10 @@ void Ami::Qt::ImageDisplay::save_reference()
   }
 }
 	  
+void Ami::Qt::ImageDisplay::prototype(const DescEntry* e)
+{
+}
+
 void Ami::Qt::ImageDisplay::add   (QtBase* b, bool show) 
 {
   if (show) {

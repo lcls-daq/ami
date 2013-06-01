@@ -119,6 +119,7 @@ unsigned            DescEntry::channel() const { return _channel; }
 
 bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
 bool DescEntry::aggregate   () const {return _options&(1<<Aggregate);}
+bool DescEntry::countmode   () const {return _options&(1<<CountMode);}
 bool DescEntry::isweighted_type() const {return (_type==Scan);}
 bool DescEntry::hasPedCalib    () const {return _options&(1<<CalibMom0);}
 bool DescEntry::hasGainCalib   () const {return _options&(1<<CalibMom1);}
@@ -134,6 +135,11 @@ void DescEntry::normalize(bool v) {
 void DescEntry::aggregate(bool v) {
   if (v) _options |=  (1<<Aggregate);
   else   _options &= ~(1<<Aggregate);
+}
+
+void DescEntry::countmode(bool v) {
+  if (v) _options |=  (1<<CountMode);
+  else   _options &= ~(1<<CountMode);
 }
 
 void DescEntry::pedcalib(bool v) {

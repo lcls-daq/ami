@@ -2,6 +2,7 @@
 
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/QtImage.hh"
+#include "ami/qt/AxisInfo.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QLabel>
@@ -55,8 +56,10 @@ void ImageInspect::mousePressEvent(double x,double y)
 
 void ImageInspect::mouseMoveEvent (double x,double y)
 {
-  _x0 = int(x);
-  _y0 = int(y);
+  _x0 = _frame.xinfo()->tick(x);
+  _y0 = _frame.yinfo()->tick(y);
+  _x0 -= _width/2;
+  _y0 -= _height/2;
 
   emit changed();
 }

@@ -23,6 +23,7 @@ namespace Ami {
 
     bool isnormalized() const;
     bool aggregate   () const;
+    bool countmode   () const;
     bool isweighted_type() const;
     bool hasPedCalib () const;
     bool hasGainCalib() const;
@@ -35,6 +36,7 @@ namespace Ami {
     void normalize(bool);  // divide contents by normalization when displaying or reducing
     void aggregate(bool);  // merge distributed data = sum contents and normalization
                            // else just keep latest set
+    void countmode(bool);  // bin contents count events, else sum ADUs
     void pedcalib (bool);
     void gaincalib(bool);
     void rmscalib (bool);
@@ -85,7 +87,7 @@ namespace Ami {
     float _yerr;
 
   private:
-    enum Option {Normalized, Aggregate, XWarnings, YWarnings, 
+    enum Option {Normalized, Aggregate, CountMode, XWarnings, YWarnings, 
                  CalibMom0, CalibMom1, CalibMom2,  // has calibrations of these orders { Ped, Gain, Sigma }
                  Used, NotRecorded, User};
   };
