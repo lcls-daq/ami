@@ -17,6 +17,7 @@ namespace Ami {
     virtual int readv(const iovec* iov, int iovcnt);
   public:
     char* data();
+    unsigned size() const;
   private:
     unsigned _size;
     char*    _buffer;

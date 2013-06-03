@@ -53,3 +53,6 @@ int BSocket::readv(const iovec* iov, int iovcnt)
 }
 
 char* BSocket::data() { return _buffer; }
+
+unsigned BSocket::size() const { return _size; }
+

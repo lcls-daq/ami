@@ -146,6 +146,10 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       _current = id;
       _cds.reset();
     
+      if (len > _buffer->size()) {
+	delete _buffer;
+	_buffer = new BSocket(len+BufferSize);
+      }
       int size = socket.read(_buffer->data(),len);
       nbytes += size;
     
@@ -226,6 +230,10 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 
     if (_remaining==0 || id > _current) {  // simply copy
       _current = id;
+      if (sz > _buffer->size()) {
+	delete _buffer;
+	_buffer = new BSocket(sz+BufferSize);
+      }
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
 #ifdef DBUG
