@@ -268,25 +268,8 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
       if (niov) {
-#ifdef DBUG
-	uint64_t ts_b = *reinterpret_cast<uint64_t*>(iovl->iov_base);
-	uint64_t ts_i = *reinterpret_cast<uint64_t*>(payload);
-#endif
 	while(niov--) {
 	  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-#ifdef DBUG
-	  //  Verify timestamps are the same
-	  if (ts_b != *reinterpret_cast<uint64_t*>(iovl->iov_base)) {
-	    printf("Recv timestamp warning [%s] %016llx/%016llx rem %d\n",
-		   desc->name(),
-		   ts_b, *reinterpret_cast<uint64_t*>(iovl->iov_base), _remaining);
-	  }
-	  if (ts_i != *reinterpret_cast<uint64_t*>(payload)) {
-	    printf("Buff timestamp warning [%s] %016llx/%016llx rem %d\n",
-		   desc->name(),
-		   ts_i, *reinterpret_cast<uint64_t*>(payload), _remaining);
-	  }
-#endif
 	  _cds.entry(desc->signature())->merge(payload);
 	  payload += iovl->iov_len;
 	  iovl++;

@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 typedef Pds::DetInfo DI;
@@ -246,6 +248,11 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
       printf("  [%d] %s\n",e->signature(),e->name());
     }
   }
+#ifdef DBUG
+  else if (_throttled) {
+    printf("%s [%08x.%08x.%d] found while throttled\n", channel_name, info.phy(), info.log(), channel);
+  }
+#endif
 
   _manager->configure();
 }
@@ -443,9 +450,14 @@ void Ami::Qt::Client::request_payload()
       _throttled = true;
       _status->set_state(Status::Throttled);
     }
-    if ((_denials%20)==1)
+    if ((_denials%20)==1) {
       printf("Client %s request_payload throttled %d/%d\n",
 	     qPrintable(_title),_denials,_attempts);
+#ifdef DBUG
+      printf("..resetting throttle.\n");
+      _status->set_state(Status::Processed);
+#endif
+    }
   }
 }
 

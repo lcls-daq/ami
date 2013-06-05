@@ -7,7 +7,7 @@ static const unsigned DefaultPedestal = 128;
 
 using namespace Ami;
 
-#define SIZE(nx,ny) (nx*ny+InfoSize*sizeof(float)/sizeof(unsigned))
+#define SIZE(nx,ny) (nx*ny+InfoSize*sizeof(float)/sizeof(uint32_t))
 
 EntryImage::~EntryImage() {}
 
@@ -40,7 +40,7 @@ void EntryImage::params(const DescImage& desc)
 
 void EntryImage::build()
 {
-  _y = static_cast<unsigned*>(allocate(sizeof(unsigned)*SIZE(_desc.nbinsx(), _desc.nbinsy())));
+  _y = static_cast<uint32_t*>(allocate(sizeof(uint32_t)*SIZE(_desc.nbinsx(), _desc.nbinsy())));
   info(DefaultPedestal, EntryImage::Pedestal);
 }
 
@@ -49,9 +49,9 @@ DescImage& EntryImage::desc() {return _desc;}
 
 void EntryImage::setto(const EntryImage& entry) 
 {
-  unsigned* dst = _y;
-  const unsigned* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
-  const unsigned* src = entry._y;
+  uint32_t* dst = _y;
+  const uint32_t* end = dst+SIZE(_desc.nbinsx(),_desc.nbinsy());
+  const uint32_t* src = entry._y;
   do {
     *dst++ = *src++;
   } while (dst < end);
@@ -61,10 +61,10 @@ void EntryImage::setto(const EntryImage& entry)
 void EntryImage::setto(const EntryImage& curr, 
 			  const EntryImage& prev)
 {
-  unsigned* dst = _y;
-  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
-  const unsigned* srccurr = curr._y;
-  const unsigned* srcprev = prev._y;
+  uint32_t* dst = _y;
+  const uint32_t* end = dst+_desc.nbinsx()*_desc.nbinsy();
+  const uint32_t* srccurr = curr._y;
+  const uint32_t* srcprev = prev._y;
   do {
     *dst++ = *srccurr++ - *srcprev++;
   } while (dst < end);
@@ -82,9 +82,9 @@ void EntryImage::setto(const EntryImage& curr,
 
 void EntryImage::add  (const EntryImage& entry) 
 {
-  unsigned* dst = _y;
-  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
-  const unsigned* src = entry._y;
+  uint32_t* dst = _y;
+  const uint32_t* end = dst+_desc.nbinsx()*_desc.nbinsy();
+  const uint32_t* src = entry._y;
   do {
     *dst++ += *src++;
   } while (dst < end);
@@ -101,9 +101,9 @@ void EntryImage::add  (const EntryImage& entry)
 
 void EntryImage::_merge  (char* p) const
 {
-  unsigned* dst = reinterpret_cast<unsigned*>(p);
-  const unsigned* end = dst+_desc.nbinsx()*_desc.nbinsy();
-  const unsigned* src = _y;
+  uint32_t* dst = reinterpret_cast<uint32_t*>(p);
+  const uint32_t* end = dst+_desc.nbinsx()*_desc.nbinsy();
+  const uint32_t* src = _y;
   do {
     *dst++ += *src++;
   } while (dst < end);

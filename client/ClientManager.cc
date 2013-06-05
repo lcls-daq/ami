@@ -340,7 +340,7 @@ void ClientManager::handle(int s)
 #ifdef DBUG
   printf("CM handle skt %d  connectid %d\n",s, _connect_id);
 #endif
-  _poll->manage_p(*new ClientSocket(*this,s));
+  *new ClientSocket(*this,s);
   _state = Connected;
 }
 
@@ -353,6 +353,7 @@ unsigned ClientManager::receive_bytes()
 
 void ClientManager::add_client(ClientSocket& socket) 
 {
+  _poll->manage_p(socket);
   _client.connected();
 }
 

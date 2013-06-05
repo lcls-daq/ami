@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <signal.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 const int Step=32;
@@ -216,8 +218,16 @@ int Poll::poll()
           if (cmd==BroadcastIn || cmd==BroadcastOut) {
             for (unsigned short n=1; n<_nfds; n++) {
               if (_ofd[n]) {
-                if (cmd==BroadcastOut)
+                if (cmd==BroadcastOut) {
                   ::write(_ofd[n]->fd(), payload, size);
+#ifdef DBUG
+                  const uint32_t* d = reinterpret_cast<const uint32_t*>(payload);
+                  printf("Poll:Bcast_Out skt %d %08x:%08x:%08x:%08x sz %d\n",
+                         _ofd[n]->fd(), 
+                         d[0],d[1],d[2],d[3],
+                         size);
+#endif
+                }
                 else if (!_ofd[n]->processIo(payload,size)) {
                   Fd* fd = _ofd[n];
                   unmanage(*fd);

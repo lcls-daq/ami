@@ -24,8 +24,8 @@ namespace Ami {
     void     addcontent(unsigned y, unsigned binx, unsigned biny);
     void     content   (unsigned y, unsigned binx, unsigned biny);
 
-    unsigned*       contents();
-    const unsigned* contents() const;
+    uint32_t*       contents();
+    const uint32_t* contents() const;
 
     enum Info { Pedestal, Normalization, InfoSize };
     double   info   (Info) const;
@@ -50,7 +50,7 @@ namespace Ami {
     DescImage _desc;
 
   private:
-    unsigned* _y;
+    uint32_t* _y;
   };
 
   inline unsigned EntryImage::content(unsigned bin) const 
@@ -69,11 +69,11 @@ namespace Ami {
   {
     *(_y+binx+biny*_desc.nbinsx()) = y;
   }
-  inline unsigned* EntryImage::contents()
+  inline uint32_t* EntryImage::contents()
   {
     return _y;
   }
-  inline const unsigned* EntryImage::contents() const
+  inline const uint32_t* EntryImage::contents() const
   {
     return _y;
   }
