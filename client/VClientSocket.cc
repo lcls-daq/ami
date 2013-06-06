@@ -14,7 +14,7 @@ VClientSocket::VClientSocket() :
 {
   int sockfd = ::socket(AF_INET, SOCK_DGRAM, 0);
   if (sockfd<0)
-    printf("VClientSocket failed to allocate socket\n");
+    perror("VClientSocket failed to allocate socket");
 
   _socket = sockfd;
   _hdr.msg_name    = _addr.name();
