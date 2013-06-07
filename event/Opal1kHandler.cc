@@ -14,11 +14,24 @@ static std::list<Pds::TypeId::Type> config_type_list()
   return types;
 }
 
+static unsigned columns(const Pds::DetInfo& info) 
+{
+  unsigned n = Opal1kConfigType::max_column_pixels(info);
+  if (!n) n = Opal1kConfigType::Column_Pixels;
+  return n;
+}
+
+static unsigned rows(const Pds::DetInfo& info) 
+{
+  unsigned n = Opal1kConfigType::max_row_pixels(info);
+  if (!n) n = Opal1kConfigType::Row_Pixels;
+  return n;
+}
 
 Opal1kHandler::Opal1kHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
-               Opal1kConfigType::max_column_pixels(info),
-               Opal1kConfigType::max_row_pixels(info)) 
+               columns(info),
+               rows   (info))
 {
 }

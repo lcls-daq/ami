@@ -387,6 +387,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::BldInfo::HfxMonCam:
     case Pds::BldInfo::CxiDg1Pim:
     case Pds::BldInfo::CxiDg2Pim:
+    case Pds::BldInfo::CxiDg3Spec:
     case Pds::BldInfo::CxiDg4Pim:
       client = new Ami::Qt::ImageClient(this, info, channel); break;
     default: 
