@@ -61,12 +61,12 @@ namespace Ami {
 
     DescEntry(const Pds::DetInfo& info, unsigned channel,
 	      const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=true,
+	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=false,
               unsigned options=0);
 
     DescEntry(const Pds::DetInfo& info, unsigned channel,
 	      const char* name, const char* xtitle, const char* ytitle, const char* zunits,
-	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=true,
+	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=false,
               bool hasPedCalib=false, bool hasGainCalib=false, bool hasRmsCalib=false,
               unsigned options=0);
 
