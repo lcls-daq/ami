@@ -72,6 +72,8 @@ namespace Ami {
 		   unsigned nx,
 		   unsigned ny);
 
+    void set_mask(const ImageMask&);
+
     unsigned nframes() const;
 
     const SubFrame& frame(unsigned) const;

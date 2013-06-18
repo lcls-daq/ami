@@ -25,6 +25,8 @@ namespace Ami {
     bool row(unsigned i) const;
     bool col(unsigned j) const;
     bool rowcol(unsigned i,unsigned j) const;
+    ImageMask roi(unsigned row0, unsigned col0,
+                  unsigned rows, unsigned cols) const;
   public:
     void clear ();
     void fill  ();
@@ -32,6 +34,7 @@ namespace Ami {
     void clear(unsigned,unsigned);
     void fill (unsigned,unsigned);
     void update();
+    void dump() const;
   private:
     unsigned _nrows;
     unsigned _ncols;

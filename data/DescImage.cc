@@ -101,6 +101,8 @@ DescImage::DescImage(const DescImage& d) :
 
   if (strlen(d._mask_path))
     _mask = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, d._mask_path);
+  else if (d.mask())
+    _mask = new ImageMask(*d.mask());
   else
     _mask = 0;
 }
@@ -124,7 +126,10 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
 
   strncpy(_mask_path, mask_path, PATHLEN);
 
-  _mask = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, mask_path);
+  if (strlen(mask_path))
+    _mask = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, mask_path);
+  else
+    _mask = 0;
 }
 
 DescImage::~DescImage()
@@ -246,4 +251,13 @@ bool DescImage::rphi_bounds(int& x0, int& x1, int& y0, int& y1,
   y0 += f.y;
   y1 += f.y;
   return true;
+}
+
+void DescImage::set_mask(const ImageMask& mask) {
+  if (_mask)
+    delete _mask;
+
+  memset(_mask_path,0,PATHLEN);
+  
+  _mask = new ImageMask(mask);
 }

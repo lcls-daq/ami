@@ -102,6 +102,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
   
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   const DescImage& inputd = _input->desc();
+
   if (_input) {
     switch(_routput().type()) {
     case DescEntry::TH1F:  // unnormalized

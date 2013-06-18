@@ -193,9 +193,9 @@ void ImageMask::update()
   memset(_rows, 0, ((_nrows+31)>>5)<<2); 
   memset(_cols, 0, ((_ncols+31)>>5)<<2); 
 
-  for(unsigned j=0,k=0; j<_nrows; j++,k++) { 
+  for(unsigned j=0,k=0; j<_nrows; j++) { 
     unsigned jb = 1<<(j&0x1f); 
-    for(unsigned i=0; i<_ncols; i++) { 
+    for(unsigned i=0; i<_ncols; i++,k++) { 
       unsigned ib = 1<<(i&0x1f);
       unsigned kb = 1<<(k&0x1f);
       if (_rowcol[k>>5]&kb) {
@@ -210,6 +210,54 @@ ImageMask ImageMask::operator ~ () const {
   ImageMask m(*this);
   m.invert();
   return m;
+}
+
+ImageMask ImageMask::roi(unsigned row0, unsigned col0,
+                         unsigned rows, unsigned cols) const
+{
+  ImageMask m(rows,cols);
+  m.clear();
+  for(unsigned r=row0, i=0; i<rows; r++,i++) {
+    if (row(r)) {
+      for(unsigned c=col0, j=0; j<cols; c++,j++) {
+        if (rowcol(r,c)) m.fill(i,j);
+      }
+    }
+  }
+  m.update();
+  return m;
+}
+
+void ImageMask::dump() const 
+{
+  unsigned i;
+  for(i=0; i<_nrows; i++) {
+    unsigned j=0;
+    while(j < _ncols) {
+      unsigned u = 0;
+      for(unsigned k=0; k<4; k++,j++)
+        u = (u<<1) | (rowcol(i,j)?1:0);
+      printf("%01X",u);
+    }
+    printf("\n");
+  }
+  printf("rows:\n");
+  i=0;
+  while(i<_nrows) {
+    unsigned u = 0;
+    for(unsigned k=0; k<4; k++,i++)
+      u = (u<<1) | (row(i)?1:0);
+    printf("%01X",u);
+  }
+  printf("\ncols:\n");
+  i=0;
+  while(i<_ncols) {
+    unsigned u = 0;
+    for(unsigned k=0; k<4; k++,i++)
+      u = (u<<1) | (col(i)?1:0);
+    printf("%01X",u);
+  }
+  printf("\n");
 }
 
 #define MASK_OPERATOR(o)                                        \

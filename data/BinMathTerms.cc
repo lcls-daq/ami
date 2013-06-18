@@ -171,10 +171,10 @@ double BinMathC::EntryImageTerm::evaluate() const {
   }
   else if (d.nframes()) {
     for(unsigned fn=0; fn<d.nframes(); fn++) {
-      int xlo(_xlo), xhi(_xhi+1), ylo(_ylo), yhi(_yhi+1);
+      int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-        for(int j=ylo; j<yhi; j++)
-          for(int i=xlo; i<xhi; i++) {
+        for(int j=ylo; j<=yhi; j++)
+          for(int i=xlo; i<=xhi; i++) {
             double v = double(e.content(i,j))-p;
             s0    += 1;
             sum   += v;

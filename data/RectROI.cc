@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 using namespace Ami;
 
 RectROI::RectROI(const DescImage& output) :
@@ -25,27 +26,36 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
 
   const DescImage& o = *reinterpret_cast<const DescImage*>(_desc_buffer);
   const DescImage& i =  reinterpret_cast<const DescImage&>(input);
-  DescImage desc(o.name(),
-                 int((o.xup()-o.xlow())/i.ppxbin())+1,
-                 int((o.yup()-o.ylow())/i.ppybin())+1,
+  int col0 = int(o.xlow()/i.ppybin());
+  int col1 = int(o.xup ()/i.ppybin());
+  int row0 = int(o.ylow()/i.ppybin());
+  int row1 = int(o.yup ()/i.ppybin());
+  int nrows = row1-row0+1;
+  int ncols = col1-col0+1;
+  DescImage desc(o.name(), ncols, nrows,
                  i.ppxbin(), i.ppybin(), 
                  unsigned(o.xlow()), unsigned(o.ylow()));
 
   desc.aggregate(i.aggregate());
   desc.normalize(i.isnormalized());
 
-  for(unsigned j=0; j<i.nframes(); j++) {
-    int x0 = int(o.xlow())/i.ppxbin(), 
-      y0 = int(o.ylow())/i.ppybin(), 
-      x1 = int(o.xup())/i.ppxbin(),
-      y1 = int(o.yup())/i.ppybin();
+  if (i.mask()) {
+    desc.set_mask(i.mask()->roi(row0,col0,nrows,ncols));
+  }
+  else {
+    for(unsigned j=0; j<i.nframes(); j++) {
+      int x0 = int(o.xlow())/i.ppxbin(), 
+        y0 = int(o.ylow())/i.ppybin(), 
+        x1 = int(o.xup())/i.ppxbin(),
+        y1 = int(o.yup())/i.ppybin();
 
-    if (i.xy_bounds(x0,x1,y0,y1,j)) {
-      int nx = x1-x0+1;
-      int ny = y1-y0+1;
-      x0 -= int(o.xlow())/i.ppxbin();
-      y0 -= int(o.ylow())/i.ppybin();
-      desc.add_frame(x0,y0,nx,ny);
+      if (i.xy_bounds(x0,x1,y0,y1,j)) {
+        int nx = x1-x0+1;
+        int ny = y1-y0+1;
+        x0 -= int(o.xlow())/i.ppxbin();
+        y0 -= int(o.ylow())/i.ppybin();
+        desc.add_frame(x0,y0,nx,ny);
+      }
     }
   }
 
