@@ -48,10 +48,12 @@ Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
   _entry->reset();
   if (_n) {
     _cache = EntryFactory::entry(e);
-    _cache->desc().aggregate(false);
+    _cache->desc().aggregate(true);
   }
-  else
+  else {
     _cache = (Entry*)0;
+    _entry->desc().aggregate(true);
+  }
 
   if (_scale_buffer[0]) {
     QString expr(_scale_buffer);

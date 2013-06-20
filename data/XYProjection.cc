@@ -45,17 +45,24 @@ XYProjection::XYProjection(const char*& p, const DescEntry& input) :
     x1 = d.yup ();
   }
 
+  DescEntry* e = 0;
   switch(o.type()) {
   case DescEntry::TH1F:
-    _output = EntryFactory::entry(DescTH1F(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1));
+    e = new DescTH1F(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1);
     break;
   case DescEntry::Prof:
-    _output = EntryFactory::entry(DescProf(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1,""));
+    e = new DescProf(o.name(),o.xtitle(),o.ytitle(),nx,x0,x1,"");
     break;
   default:
-    _output = 0;
     break;
   }
+
+  if (e) {
+    e->aggregate(d.aggregate());
+    _output = EntryFactory::entry(*e);
+  }
+  else
+    _output = 0;
 }
 
 XYProjection::XYProjection(const char*& p) :
