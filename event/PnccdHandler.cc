@@ -1,5 +1,6 @@
 #include "PnccdHandler.hh"
 
+#include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/pnCCD/ConfigV1.hh"
@@ -10,8 +11,6 @@
 #include <time.h>
 #include <errno.h>
 
-static const int PixelsPerBin = 2;
-
 static const unsigned rows = 1024;
 static const unsigned cols = 1024;
 static const unsigned rows_segment = 512;
@@ -19,8 +18,10 @@ static const unsigned cols_segment = 512;
 
 static const unsigned PixelVMask = 0x3fff;
 static const unsigned Offset=1024;
-static const unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
 static const unsigned MinCalib=25;
+
+static int PixelsPerBin = 1;
+static unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
 
 #define COMMONMODE
 
@@ -60,16 +61,19 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
 			   const FeatureCache& cache) : 
   EventHandler(info, Pds::TypeId::Id_pnCCDframe, Pds::TypeId::Id_pnCCDconfig),
   _cache   (cache),
-  _correct (new EntryImage(DescImage(Pds::DetInfo(), (unsigned)0, "PNCCD",
-				     cols / PixelsPerBin,
-				     rows / PixelsPerBin,
-				     PixelsPerBin, PixelsPerBin))),
-  _calib   (new PixelCalibration[ArraySize]),
   _collect (false),
   _ncollect(0),
   _entry   (0),
   _tform   (true)
 {
+  PixelsPerBin = _full_resolution() ? 1 : 2;
+  ArraySize    = rows*cols/(PixelsPerBin*PixelsPerBin);
+
+  _correct = new EntryImage(DescImage(Pds::DetInfo(), (unsigned)0, "PNCCD",
+                                      cols / PixelsPerBin,
+                                      rows / PixelsPerBin,
+                                      PixelsPerBin, PixelsPerBin));
+  _calib   = new PixelCalibration[ArraySize];
 }
   
 PnccdHandler::~PnccdHandler()
@@ -87,38 +91,37 @@ void PnccdHandler::reset() { _entry = 0; }
 void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   _config = *reinterpret_cast<const Pds::PNCCD::ConfigV1*>(payload);
-
+  //
   //  Load calibration from a file
-  memset(_correct->contents(), 0, ArraySize*sizeof(unsigned)); 
-
+  //    Always read and write values for each pixel (even when binned)
+  //
   const int NameSize=128;
-  char oname[NameSize];
-  sprintf(oname,"ped.%08x.dat",info().phy());
-  FILE* f = fopen(oname,"r");
-  if (!f) {
-    perror("fopen");
-    printf("Failed to open %s\n",oname);
-    sprintf(oname,"/reg/g/pcds/pds/pnccdcalib/ped.%08x.dat",info().phy());
-    f = fopen(oname,"r");
-    if (!f) {
-      perror("fopen");
-    }
-  }
+  char oname1[NameSize];
+  char oname2[NameSize];
+  sprintf(oname1,"ped.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
-    printf("Loading pedestals from %s\n",oname);
-    fread(_correct->contents(), sizeof(unsigned), ArraySize, f);
+    uint32_t* c = new uint32_t[rows*cols];
+    fread(c, sizeof(uint32_t), rows*cols, f);
     fclose(f);
+    unsigned ppb = PixelsPerBin;
+    for(unsigned iy=0; iy<rows/ppb; iy++)
+      for(unsigned ix=0; ix<cols/ppb; ix++) {
+        unsigned v = 0;
+        for(unsigned i=0; i<ppb; i++)
+          for(unsigned j=0; j<ppb; j++)
+            v += c[ix*ppb + j + cols*(iy*ppb + i)];
+        _correct->content(v/(ppb*ppb),ix,iy);
+      }
+    delete[] c;
   }
-  else {
-    printf("Failed to load pedestals %s\n",oname);
-  }
+  else
+    memset(_correct->contents(), 0, ArraySize*sizeof(unsigned)); 
 
-  sprintf(oname,"rot.%08x.dat",info().phy());
-  f = fopen(oname,"r");
-  if (!f) {
-    sprintf(oname,"/reg/g/pcds/pds/pnccdcalib/rot.%08x.dat",info().phy());
-    f = fopen(oname,"r");
-  }
+  sprintf(oname1,"rot.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
+  f = Calib::fopen_dual(oname1,oname2,"rotation");
   if (f) {
     _tform = false;
     fclose(f);
@@ -154,13 +157,12 @@ void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
   _fillQuadrant (f->data(), cols_segment, 0);           // upper right
   f = f->next(_config);
 
-  _entry->info(Offset*PixelsPerBin*PixelsPerBin,EntryImage::Pedestal);
-  //      _entry->info(0,EntryImage::Pedestal);
-  _entry->info(1,EntryImage::Normalization);
+  double n = double(PixelsPerBin*PixelsPerBin);
+  _entry->info(double(Offset)*n,EntryImage::Pedestal);
+  _entry->info(n,EntryImage::Normalization);
   _entry->valid(t);
 
   _ncollect++;
-
 }
 
 void PnccdHandler::_damaged() { _entry->invalid(); }
@@ -179,12 +181,10 @@ void PnccdHandler::_end_calib()
   if (_ncollect >= MinCalib) {
 
     // compute, store to a file 
-    for(unsigned i=0; i<ArraySize; i++) {
-      unsigned iy = i>>9;
-      unsigned ix = i&0x1ff;
-      _correct->content(_calib[i].avg(_ncollect), ix, iy);
-    }
-
+    for(unsigned iy=0,i=0; iy<rows/PixelsPerBin; iy++)
+      for(unsigned ix=0; ix<cols/PixelsPerBin; ix++,i++)
+        _correct->content(_calib[i].avg(_ncollect), ix, iy);
+        
     //  Rename the old calibration file
     const int NameSize=128;
     char oname[NameSize], nname[NameSize];
@@ -198,7 +198,10 @@ void PnccdHandler::_end_calib()
     //  Store the new calibration file
     FILE* f = fopen(oname,"w");
     if (f) {
-      fwrite(_correct->contents(), sizeof(unsigned), ArraySize, f);
+      int ppb = PixelsPerBin;
+      for(unsigned iy=0; iy<rows; iy++)
+        for(unsigned ix=0; ix<cols; ix++)
+          fwrite(_correct->contents()+(ix/ppb)+(cols/ppb)*(iy/ppb), sizeof(uint32_t), 1, f);
       fclose(f);
     }
     else
@@ -208,53 +211,94 @@ void PnccdHandler::_end_calib()
 
 void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 {
+  //
   //  Common mode
-  int32_t common[256];
+  //
+  //    determined for each column by summing pixel rows 2-33 (next to outer edge)
+  //
+  int32_t common[cols_segment];
+  const int ppb = PixelsPerBin;
 #ifdef COMMONMODE
-  for(unsigned ix=0; ix<256; ) {
-    for(unsigned i=0; i<8; i++,ix++) {
-      const uint16_t* p  = 2*512 + (ix<<1) + d;
-      const uint16_t* p1 = 3*512 + (ix<<1) + d;
-      int32_t v = 0;
-      for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
-        v += 
-          (p [0]&0x3fff) +
-          (p [1]&0x3fff) +
-          (p1[0]&0x3fff) +
-          (p1[1]&0x3fff);
-        v -= _correct->content(ix+(x>>1),iy);
+  if (ppb==2) {
+    for(unsigned ix=0; ix<256; ) {
+      for(unsigned i=0; i<8; i++,ix++) {
+        const uint16_t* p  = 2*512 + (ix<<1) + d;
+        const uint16_t* p1 = 3*512 + (ix<<1) + d;
+        int32_t v = 0;
+        for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
+          v += 
+            (p [0]&0x3fff) +
+            (p [1]&0x3fff) +
+            (p1[0]&0x3fff) +
+            (p1[1]&0x3fff);
+          v -= _correct->content(ix+(x>>1),iy);
+        }
+        common[ix] = v/16;
       }
-      common[ix] = v/16;
+    }
+  }
+  else { // ppb = 1
+    for(unsigned ix=0; ix<cols_segment; ) {
+      for(unsigned i=0; i<8; i++,ix++) {
+        const uint16_t* p  = 2*cols_segment + ix + d;
+        int32_t v = 0;
+        for(unsigned iy=y; iy<32+y; iy++, p+=cols_segment) {
+          v += (*p & 0x3fff);
+          v -= _correct->content(ix,iy);
+        }
+        common[ix] = v/32;
+      }
     }
   }
 #else
-  memset(common, 0, 256*sizeof(int32_t));
+  memset(common, 0, cols_segment*sizeof(int32_t));
 #endif
 
-  //  PixelsPerBin = 2
-  unsigned iy = y>>1;
-  for(unsigned j=0; j<rows_segment; j+=2,iy++,d+=cols_segment) {
-    const uint16_t* d1 = d+cols_segment;
-    unsigned ix = x>>1;
-    for(unsigned k=0; k<cols_segment; k+=2,ix++) {
-      unsigned v =
-	(d [0]&0x3fff) + 
-	(d [1]&0x3fff) + 
-	(d1[0]&0x3fff) +
-	(d1[1]&0x3fff);
+  if (ppb==2) {
+    unsigned iy = y>>1;
+    for(unsigned j=0; j<rows_segment; j+=2,iy++,d+=cols_segment) {
+      const uint16_t* d1 = d+cols_segment;
+      unsigned ix = x>>1;
+      for(unsigned k=0; k<cols_segment; k+=2,ix++) {
+        unsigned v =
+          (d [0]&0x3fff) + 
+          (d [1]&0x3fff) + 
+          (d1[0]&0x3fff) +
+          (d1[1]&0x3fff);
 
-//       if (_collect)
-// 	_calib[iy*(cols>>1)+ix].add(v);
+        //       if (_collect)
+        // 	_calib[iy*(cols>>1)+ix].add(v);
 
-      v += Offset<<2;
-      v -= _correct->content(ix, iy);
-      v -= common[ix-(x>>1)];
-      if (_tform)
-        _entry->content(v, iy, 511-ix);
-      else
-        _entry->content(v, ix, iy);
-      d  += 2;
-      d1 += 2;
+        v += Offset<<2;
+        v -= _correct->content(ix, iy);
+        v -= common[ix-(x>>1)];
+        if (_tform)
+          _entry->content(v, iy, 511-ix);
+        else
+          _entry->content(v, ix, iy);
+        d  += 2;
+        d1 += 2;
+      }
+    }
+  }
+  else {
+    unsigned iy = y;
+    for(unsigned j=0; j<rows_segment; j++,iy++) {
+      unsigned ix = x;
+      for(unsigned k=0; k<cols_segment; k++,ix++,d++) {
+        unsigned v = *d & 0x3fff;
+
+        //       if (_collect)
+        // 	_calib[iy*(cols)+ix].add(v);
+
+        v += Offset;
+        v -= _correct->content(ix, iy);
+        v -= common[ix-x];
+        if (_tform)
+          _entry->content(v, iy, 1023-ix);
+        else
+          _entry->content(v, ix, iy);
+      }
     }
   }
 }
@@ -262,51 +306,89 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
 void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 {
   //  Common mode
-  int32_t common[256];
+  int32_t common[cols_segment];
+  const int ppb = PixelsPerBin;
 #ifdef COMMONMODE
-  for(unsigned ix=0; ix<256; ) {
-    for(unsigned i=0; i<8; i++,ix++) {
-      const uint16_t* p  = 2*512 + (ix<<1) + d;
-      const uint16_t* p1 = 3*512 + (ix<<1) + d;
-      int32_t v = 0;
-      for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
-        v += 
-          (p [0]&0x3fff) +
-          (p [1]&0x3fff) +
-          (p1[0]&0x3fff) +
-          (p1[1]&0x3fff);
-        v -= _correct->content((x>>1)-ix,iy);
+  if (ppb==2) {
+    for(unsigned ix=0; ix<256; ) {
+      for(unsigned i=0; i<8; i++,ix++) {
+        const uint16_t* p  = 2*512 + (ix<<1) + d;
+        const uint16_t* p1 = 3*512 + (ix<<1) + d;
+        int32_t v = 0;
+        for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
+          v += 
+            (p [0]&0x3fff) +
+            (p [1]&0x3fff) +
+            (p1[0]&0x3fff) +
+            (p1[1]&0x3fff);
+          v -= _correct->content((x>>1)-ix,iy);
+        }
+        common[ix] = v/16;
       }
-      common[ix] = v/16;
+    }
+  }
+  else {
+    for(unsigned ix=0; ix<512; ) {
+      for(unsigned i=0; i<8; i++,ix++) {
+        const uint16_t* p  = d + 2*512 + ix;
+        int32_t v = 0;
+        for(unsigned iy=y-1; iy>y-33; iy--, p+=512) {
+          v += (p[0]&0x3fff);
+          v -= _correct->content(x-ix,iy);
+        }
+        common[ix] = v/32;
+      }
     }
   }
 #else
-  memset(common, 0, 256*sizeof(int32_t));
+  memset(common, 0, cols_segment*sizeof(int32_t));
 #endif
   //  PixelsPerBin = 2
-  unsigned iy = y>>1;
-  for(unsigned j=0; j<rows_segment; j+=2,iy--,d+=cols_segment) {
-    const uint16_t* d1 = d+cols_segment;
-    unsigned ix = x>>1;
-    for(unsigned k=0; k<cols_segment; k+=2,ix--) {
-      unsigned v = 
-	(d [0]&0x3fff) + 
-	(d [1]&0x3fff) + 
-	(d1[0]&0x3fff) +
-	(d1[1]&0x3fff);
+  if (ppb==2) {
+    unsigned iy = y>>1;
+    for(unsigned j=0; j<rows_segment; j+=2,iy--,d+=cols_segment) {
+      const uint16_t* d1 = d+cols_segment;
+      unsigned ix = x>>1;
+      for(unsigned k=0; k<cols_segment; k+=2,ix--) {
+        unsigned v = 
+          (d [0]&0x3fff) + 
+          (d [1]&0x3fff) + 
+          (d1[0]&0x3fff) +
+          (d1[1]&0x3fff);
 
-//       if (_collect)
-// 	_calib[iy*(cols>>1)+ix].add(v);
+        //       if (_collect)
+        // 	_calib[iy*(cols>>1)+ix].add(v);
 
-      v += Offset<<2;
-      v -= _correct->content(ix, iy);
-      v -= common[(x>>1)-ix];
-      if (_tform)
-        _entry->content(v, iy, 511-ix);
-      else
-        _entry->content(v, ix, iy);
-      d  += 2;
-      d1 += 2;
+        v += Offset<<2;
+        v -= _correct->content(ix, iy);
+        v -= common[(x>>1)-ix];
+        if (_tform)
+          _entry->content(v, iy, 511-ix);
+        else
+          _entry->content(v, ix, iy);
+        d  += 2;
+        d1 += 2;
+      }
+    }
+  }
+  else {
+    unsigned iy = y;
+    for(unsigned j=0; j<rows_segment; j++,iy--) {
+      unsigned ix = x;
+      for(unsigned k=0; k<cols_segment; k++,ix--,d++) {
+        unsigned v = (*d&0x3fff);
+
+        //       if (_collect)
+        // 	_calib[iy*cols+ix].add(v);
+
+        v += Offset;
+        v -= _correct->content(ix, iy);
+        v -= common[x-ix];
+        if (_tform)
+          _entry->content(v, iy, 1023-ix);
+        else
+          _entry->content(v, ix, iy);
+      }
     }
   }
 }
