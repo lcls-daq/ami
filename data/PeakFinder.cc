@@ -118,6 +118,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
 
   if (_accumulate<0)
     _output_entry->reset();
+  printf("PeakFinder)_operate() line 120 RESET !!!!\n");
 
   // find the peak positions which are above the threshold
   const unsigned* a = entry.contents();
@@ -176,6 +177,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
       if (++_current >= _accumulate) {
 	_cache->setto(*_output_entry);
 	_output_entry->reset();
+	printf("PeakFinder)_operate() line 179 RESET !!!!\n");
 	_current = 0;
       }
       else
