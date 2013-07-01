@@ -262,13 +262,15 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       double x0=0;      // location of half-maximum left of the peak
       { double   x =y;  // value of last valid point
 	unsigned xi=v;  // index of last valid point
-	unsigned i=v-1; // test index
+	int       i=v-1;// test index
+	valid      =false;
 	while(i>0) {
 	  bool lv;
-	  double z = acc->bin_value(i,lv)-BASELINE(i);
+	  double z = acc->bin_value(unsigned(i),lv)-BASELINE(i);
 	  if (lv) {
 	    if (z < y2) {  // found it. interpolate
 	      x0 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
+	      valid = true;
 	      break;
 	    }
 	    x  = z;
@@ -276,6 +278,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 	  }
 	  i--;
 	}
+	if (!valid)
+	  return *_entry;
       }
 
       //
@@ -285,12 +289,14 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       { double   x =y;         // value of last valid point
 	unsigned xi=v;         // index of last valid point 
 	unsigned i=v+1;        // test index
+	valid     =false;
 	while(i<nbins) {
 	  bool lv;
 	  double z = acc->bin_value(i,lv)-BASELINE(i);
 	  if (lv) {
 	    if (z < y2) {  // found it. interpolate
 	      x1 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
+	      valid = true;
 	      break;
 	    }
 	    x  = z;
@@ -298,6 +304,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 	  }
 	  i++;
 	}
+	if (!valid)
+	  return *_entry;
       }
 
       //  scale the width from bins into physical units      
@@ -322,16 +330,16 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 	//
 	//  Find the first valid points left and right of the peak
 	//
-	unsigned il=v-1; // test index
+	int il=v-1; // test index
 	double yl;
 	while(il>0) {
 	  bool lv;
-	  yl = acc->bin_value(il,lv)-BASELINE(il);
+	  yl = acc->bin_value(unsigned(il),lv)-BASELINE(il);
 	  if (lv) 
 	    break;
 	  il--;
 	}
-	if (il == 0)
+	if (il <= 0)
 	  return *_entry;
 
 	unsigned ir=v+1; // test index
