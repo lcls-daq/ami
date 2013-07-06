@@ -84,7 +84,8 @@ int AnalysisServer::processIo()
 	printf("\tconfig req id %d  payload %d\n",request.id(),request.payload());
 	printf("\tdiscon req id %d  readtime %fs\n",msg.id(),
 	       double(tw.tv_sec-tv.tv_sec)+1.e-9*(double(tw.tv_nsec)-double(tv.tv_nsec)));
-        return 0;
+        printf("  == Not breaking === \n");
+        //        return 0;
       }
       _socket->read(_buffer+sizeof(Message),request.payload()-sizeof(Message));
     }
