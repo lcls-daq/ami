@@ -35,9 +35,12 @@ void EventFilter::enable (const ConfigureRequest& req)
   const uint32_t* u = reinterpret_cast<const uint32_t*>(&req+1);
   _enable = *u;
 
+  delete _f;
+
   const char* p = reinterpret_cast<const char*>(u+1);
   FilterFactory factory(_cache);
-  _f = factory.deserialize(p);
+  AbsFilter* f = factory.deserialize(p);
+  _f = f ? f : new RawFilter;
 }
 
 void EventFilter::reset  ()
