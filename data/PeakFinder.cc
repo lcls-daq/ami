@@ -116,9 +116,10 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   const unsigned dn = d.ppxbin()*d.ppybin();
   const unsigned q  = 1 + p;
 
-  if (_accumulate<0)
+  if (_accumulate<0) {
     _output_entry->reset();
-  printf("PeakFinder)_operate() line 120 RESET !!!!\n");
+    printf("PeakFinder)_operate() line 120 RESET !!!!\n");
+  }
 
   // find the peak positions which are above the threshold
   const unsigned* a = entry.contents();
