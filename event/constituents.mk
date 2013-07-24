@@ -2,7 +2,7 @@
 libnames := event calib
 
 # List source files for each library
-libsrcs_calib := Calib.cc FccdCalib.cc CspadCalib.cc
+libsrcs_calib := Calib.cc FccdCalib.cc CspadCalib.cc PnccdCalib.cc
 libsrcs_event := $(filter-out $(libsrcs_calib), $(wildcard *.cc))
 
 # List special include directories (if any) needed by lib_a as

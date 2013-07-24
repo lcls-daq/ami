@@ -1,5 +1,6 @@
 #include "PnccdHandler.hh"
 
+#include "ami/event/PnccdCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
@@ -22,8 +23,6 @@ static const unsigned MinCalib=25;
 
 static int PixelsPerBin = 1;
 static unsigned ArraySize=rows*cols/(PixelsPerBin*PixelsPerBin);
-
-#define COMMONMODE
 
 namespace Ami {
   class PixelCalibration {
@@ -69,7 +68,7 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
   PixelsPerBin = _full_resolution() ? 1 : 2;
   ArraySize    = rows*cols/(PixelsPerBin*PixelsPerBin);
 
-  _correct = new EntryImage(DescImage(Pds::DetInfo(), (unsigned)0, "PNCCD",
+  _correct = new EntryImage(DescImage(info, (unsigned)0, "PNCCD",
                                       cols / PixelsPerBin,
                                       rows / PixelsPerBin,
                                       PixelsPerBin, PixelsPerBin));
@@ -91,43 +90,6 @@ void PnccdHandler::reset() { _entry = 0; }
 void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {
   _config = *reinterpret_cast<const Pds::PNCCD::ConfigV1*>(payload);
-  //
-  //  Load calibration from a file
-  //    Always read and write values for each pixel (even when binned)
-  //
-  const int NameSize=128;
-  char oname1[NameSize];
-  char oname2[NameSize];
-  sprintf(oname1,"ped.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
-  if (f) {
-    uint32_t* c = new uint32_t[rows*cols];
-    fread(c, sizeof(uint32_t), rows*cols, f);
-    fclose(f);
-    unsigned ppb = PixelsPerBin;
-    for(unsigned iy=0; iy<rows/ppb; iy++)
-      for(unsigned ix=0; ix<cols/ppb; ix++) {
-        unsigned v = 0;
-        for(unsigned i=0; i<ppb; i++)
-          for(unsigned j=0; j<ppb; j++)
-            v += c[ix*ppb + j + cols*(iy*ppb + i)];
-        _correct->content(v/(ppb*ppb),ix,iy);
-      }
-    delete[] c;
-  }
-  else
-    memset(_correct->contents(), 0, ArraySize*sizeof(unsigned)); 
-
-  sprintf(oname1,"rot.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  f = Calib::fopen_dual(oname1,oname2,"rotation");
-  if (f) {
-    _tform = false;
-    fclose(f);
-  }
-  else
-    _tform = true;
 
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
@@ -135,18 +97,41 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
 		 rows / PixelsPerBin,
 		 PixelsPerBin, PixelsPerBin);
   _entry = new EntryImage(desc);
+
+  char oname1[256];
+  char oname2[256];
+  sprintf(oname1,"rot.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"rotation");
+  if (f) {
+    _tform = false;
+    fclose(f);
+  }
+  else
+    _tform = true;
+
+  PnccdCalib::load_pedestals(_correct,_tform);
 }
 
 void PnccdHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 
 void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  //
-  //  Determine if a dark frame run has begun or ended
-  //
-
   const Pds::PNCCD::FrameV1* f = reinterpret_cast<const Pds::PNCCD::FrameV1*>(payload);
   if (!_entry) return;
+
+  if (_entry && _entry->desc().used()) {
+    unsigned o = _entry->desc().options();
+    if (_options != o) {
+      printf("PnccdHandler options %x -> %x\n",_options,o);
+      _options = o;
+    }
+
+    if (_entry->desc().options() & PnccdCalib::option_reload_pedestal()) {
+      PnccdCalib::load_pedestals(_correct,_tform);
+      _entry->desc().options( _entry->desc().options()&~PnccdCalib::option_reload_pedestal() );
+    }
+  }
 
   _fillQuadrant (f->data(), 0, 0);                      // upper left
   f = f->next(_config);
@@ -159,7 +144,7 @@ void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
 
   double n = double(PixelsPerBin*PixelsPerBin);
   _entry->info(double(Offset)*n,EntryImage::Pedestal);
-  _entry->info(n,EntryImage::Normalization);
+  _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 
   _ncollect++;
@@ -218,41 +203,44 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
   //
   int32_t common[cols_segment];
   const int ppb = PixelsPerBin;
-#ifdef COMMONMODE
-  if (ppb==2) {
-    for(unsigned ix=0; ix<256; ) {
-      for(unsigned i=0; i<8; i++,ix++) {
-        const uint16_t* p  = 2*512 + (ix<<1) + d;
-        const uint16_t* p1 = 3*512 + (ix<<1) + d;
-        int32_t v = 0;
-        for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
-          v += 
-            (p [0]&0x3fff) +
-            (p [1]&0x3fff) +
-            (p1[0]&0x3fff) +
-            (p1[1]&0x3fff);
-          v -= _correct->content(ix+(x>>1),iy);
+
+  bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
+  bool lcommon = _options & PnccdCalib::option_correct_common_mode();
+  if (lcommon) {
+    if (ppb==2) {
+      for(unsigned ix=0; ix<256; ) {
+        for(unsigned i=0; i<8; i++,ix++) {
+          const uint16_t* p  = 2*512 + (ix<<1) + d;
+          const uint16_t* p1 = 3*512 + (ix<<1) + d;
+          int32_t v = 0;
+          for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
+            v += 
+              (p [0]&0x3fff) +
+              (p [1]&0x3fff) +
+              (p1[0]&0x3fff) +
+              (p1[1]&0x3fff);
+            if (lped)
+              v -= _correct->content(ix+(x>>1),iy);
+          }
+          common[ix] = v/16;
         }
-        common[ix] = v/16;
+      }
+    }
+    else { // ppb = 1
+      for(unsigned ix=0; ix<cols_segment; ) {
+        for(unsigned i=0; i<8; i++,ix++) {
+          const uint16_t* p  = 2*cols_segment + ix + d;
+          int32_t v = 0;
+          for(unsigned iy=y; iy<32+y; iy++, p+=cols_segment) {
+            v += (*p & 0x3fff);
+            if (lped)
+              v -= _correct->content(ix+x,iy);
+          }
+          common[ix] = v/32;
+        }
       }
     }
   }
-  else { // ppb = 1
-    for(unsigned ix=0; ix<cols_segment; ) {
-      for(unsigned i=0; i<8; i++,ix++) {
-        const uint16_t* p  = 2*cols_segment + ix + d;
-        int32_t v = 0;
-        for(unsigned iy=y; iy<32+y; iy++, p+=cols_segment) {
-          v += (*p & 0x3fff);
-          v -= _correct->content(ix,iy);
-        }
-        common[ix] = v/32;
-      }
-    }
-  }
-#else
-  memset(common, 0, cols_segment*sizeof(int32_t));
-#endif
 
   if (ppb==2) {
     unsigned iy = y>>1;
@@ -270,12 +258,15 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
         // 	_calib[iy*(cols>>1)+ix].add(v);
 
         v += Offset<<2;
-        v -= _correct->content(ix, iy);
-        v -= common[ix-(x>>1)];
+        if (lped)
+          v -= _correct->content(ix, iy);
+        if (lcommon)
+          v -= common[ix-(x>>1)];
         if (_tform)
           _entry->content(v, iy, 511-ix);
         else
           _entry->content(v, ix, iy);
+
         d  += 2;
         d1 += 2;
       }
@@ -292,8 +283,10 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
         // 	_calib[iy*(cols)+ix].add(v);
 
         v += Offset;
-        v -= _correct->content(ix, iy);
-        v -= common[ix-x];
+        if (lped)
+          v -= _correct->content(ix, iy);
+        if (lcommon)
+          v -= common[ix-x];
         if (_tform)
           _entry->content(v, iy, 1023-ix);
         else
@@ -308,41 +301,45 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
   //  Common mode
   int32_t common[cols_segment];
   const int ppb = PixelsPerBin;
-#ifdef COMMONMODE
-  if (ppb==2) {
-    for(unsigned ix=0; ix<256; ) {
-      for(unsigned i=0; i<8; i++,ix++) {
-        const uint16_t* p  = 2*512 + (ix<<1) + d;
-        const uint16_t* p1 = 3*512 + (ix<<1) + d;
-        int32_t v = 0;
-        for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
-          v += 
-            (p [0]&0x3fff) +
-            (p [1]&0x3fff) +
-            (p1[0]&0x3fff) +
-            (p1[1]&0x3fff);
-          v -= _correct->content((x>>1)-ix,iy);
+
+  bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
+  bool lcommon = _options & PnccdCalib::option_correct_common_mode();
+  if (lcommon) {
+    if (ppb==2) {
+      for(unsigned ix=0; ix<256; ) {
+        for(unsigned i=0; i<8; i++,ix++) {
+          const uint16_t* p  = 2*512 + (ix<<1) + d;
+          const uint16_t* p1 = 3*512 + (ix<<1) + d;
+          int32_t v = 0;
+          for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
+            v += 
+              (p [0]&0x3fff) +
+              (p [1]&0x3fff) +
+              (p1[0]&0x3fff) +
+              (p1[1]&0x3fff);
+            if (lped)
+              v -= _correct->content((x>>1)-ix,iy);
+          }
+          common[ix] = v/16;
         }
-        common[ix] = v/16;
+      }
+    }
+    else {
+      for(unsigned ix=0; ix<512; ) {
+        for(unsigned i=0; i<8; i++,ix++) {
+          const uint16_t* p  = d + 2*512 + ix;
+          int32_t v = 0;
+          for(unsigned iy=y-1; iy>y-33; iy--, p+=512) {
+            v += (p[0]&0x3fff);
+            if (lped)
+              v -= _correct->content(x-ix,iy);
+          }
+          common[ix] = v/32;
+        }
       }
     }
   }
-  else {
-    for(unsigned ix=0; ix<512; ) {
-      for(unsigned i=0; i<8; i++,ix++) {
-        const uint16_t* p  = d + 2*512 + ix;
-        int32_t v = 0;
-        for(unsigned iy=y-1; iy>y-33; iy--, p+=512) {
-          v += (p[0]&0x3fff);
-          v -= _correct->content(x-ix,iy);
-        }
-        common[ix] = v/32;
-      }
-    }
-  }
-#else
-  memset(common, 0, cols_segment*sizeof(int32_t));
-#endif
+
   //  PixelsPerBin = 2
   if (ppb==2) {
     unsigned iy = y>>1;
@@ -360,8 +357,10 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
         // 	_calib[iy*(cols>>1)+ix].add(v);
 
         v += Offset<<2;
-        v -= _correct->content(ix, iy);
-        v -= common[(x>>1)-ix];
+        if (lped)
+          v -= _correct->content(ix, iy);
+        if (lcommon)
+          v -= common[(x>>1)-ix];
         if (_tform)
           _entry->content(v, iy, 511-ix);
         else
@@ -382,8 +381,10 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
         // 	_calib[iy*cols+ix].add(v);
 
         v += Offset;
-        v -= _correct->content(ix, iy);
-        v -= common[x-ix];
+        if (lped)
+          v -= _correct->content(ix, iy);
+        if (lcommon)
+          v -= common[x-ix];
         if (_tform)
           _entry->content(v, iy, 1023-ix);
         else
