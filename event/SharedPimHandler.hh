@@ -20,6 +20,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry            (unsigned) const;
     void         reset   ();
+    bool         used    () const { return true; }
   private:
     TM6740Handler _handler;
   };

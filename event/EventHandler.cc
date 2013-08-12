@@ -1,5 +1,8 @@
 #include "EventHandler.hh"
 
+#include "ami/data/DescEntry.hh"
+#include "ami/data/Entry.hh"
+
 #include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/xtc/Sequence.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -77,3 +80,10 @@ static bool _full_res = false;
 void   EventHandler::enable_full_resolution(bool v) { _full_res = v; }
 
 bool   EventHandler::_full_resolution() const { return _full_res; }
+
+bool   EventHandler::used() const
+{
+  for(unsigned i=0; i<nentries(); i++)
+    if (entry(i)->desc().used()) return true;
+  return false;
+}

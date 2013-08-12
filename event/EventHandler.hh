@@ -50,6 +50,8 @@ namespace Ami {
     virtual const Entry* hidden_entry     (unsigned) const { return 0; }
     //  Cleanup existing entries
     virtual void         reset   () = 0;
+    //  Event data needs to be parsed
+    virtual bool  used() const;
   public:
     const Pds::Src&     info() const { return _info; }
     const Pds::TypeId::Type&  data_type() const { return _data_type.front(); }

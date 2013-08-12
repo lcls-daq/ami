@@ -24,6 +24,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     void         reset   ();
+    bool         used    () const { return true; }
   private:
     FeatureCache& _cache;
     enum { MaxPvs=1024 };
