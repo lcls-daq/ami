@@ -22,13 +22,11 @@ using namespace Ami;
 
 static const int BufferSize = 0x2000000;
 
-#ifdef DBUG
 static const char* State[] = { "Init", "Connecting", "Connected",
                                "Discovering", "Discovered", 
                                "Configured", 
                                "Describing", "Described",
                                "Processing" };
-#endif
 
 Aggregator::Aggregator(AbsClient& client) :
   _client          (client),
@@ -146,7 +144,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       _current = id;
       _cds.reset();
     
-      if (len > _buffer->size()) {
+      if (len > int(_buffer->size())) {
 	delete _buffer;
 	_buffer = new BSocket(len+BufferSize);
       }
@@ -230,7 +228,7 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 
     if (_remaining==0 || id > _current) {  // simply copy
       _current = id;
-      if (sz > _buffer->size()) {
+      if (sz > int(_buffer->size())) {
 	delete _buffer;
 	_buffer = new BSocket(sz+BufferSize);
       }
@@ -328,4 +326,9 @@ void Aggregator::_checkState(const char* s, unsigned id)
 void Aggregator::request_payload(const EntryList& request) 
 {
   _request = request; 
+}
+
+void Aggregator::dump_throttle() const
+{
+  printf("[%p] : %s : State %s : remaining %d/%d\n", this, "throttled", State[_state], _remaining, _n);
 }

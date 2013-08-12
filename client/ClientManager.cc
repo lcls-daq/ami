@@ -508,3 +508,5 @@ int ClientManager::processTmo()
   _client.tmo();
   return 1;
 }
+
+void ClientManager::dump_throttle() const { _client.dump_throttle(); }

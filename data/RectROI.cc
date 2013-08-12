@@ -26,6 +26,7 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
 
   const DescImage& o = *reinterpret_cast<const DescImage*>(_desc_buffer);
   const DescImage& i =  reinterpret_cast<const DescImage&>(input);
+
   int col0 = int(o.xlow()/i.ppybin());
   int col1 = int(o.xup ()/i.ppybin());
   int row0 = int(o.ylow()/i.ppybin());

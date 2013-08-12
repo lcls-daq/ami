@@ -47,10 +47,10 @@ namespace Ami {
     unsigned nbinsy() const;
     int ppxbin() const;
     int ppybin() const;
-    float xlow() const;
-    float xup() const;
-    float ylow() const;
-    float yup() const;
+    float xlow() const; // Inclusive bound
+    float xup() const;  // Exclusive bound
+    float ylow() const; // Inclusive bound
+    float yup() const;  // Exclusive bound
     int xbin(float) const;
     int ybin(float) const;
     float binx(unsigned) const;
@@ -80,6 +80,7 @@ namespace Ami {
 
     const ImageMask* mask() const;
 
+    //  Find inclusive bounds
     bool xy_bounds(int& x0, int& x1, int& y0, int& y1) const;
     bool xy_bounds(int& x0, int& x1, int& y0, int& y1, unsigned frame) const;
 

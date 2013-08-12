@@ -55,6 +55,8 @@ namespace Ami {
   private:
     void _flush_sockets(const Message&, ClientSocket&);
     void _flush_socket (ClientSocket&, int);
+  public:
+    void dump_throttle() const;
   private:
     enum State { Disconnected, Connected };
     Aggregator      _client;

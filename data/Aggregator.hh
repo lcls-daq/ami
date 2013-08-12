@@ -28,6 +28,7 @@ namespace Ami {
     void tmo             () ;
   public:
     void request_payload (const EntryList&);
+    void dump_throttle   () const;
   private:
     void _checkState     (const char*);
     void _checkState     (const char*, unsigned);
