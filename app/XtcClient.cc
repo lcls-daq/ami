@@ -35,6 +35,7 @@
 #include "ami/event/FliHandler.hh"
 #include "ami/event/AndorHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
+#include "ami/event/EpixHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -289,6 +290,9 @@ int XtcClient::process(Pds::Xtc* xtc)
           (h->info().phy  () == (uint32_t)-1 ||
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
+
+	  if (!h->used()) return 1;
+
           const std::list<Pds::TypeId::Type>& types = h->data_types();
 
           boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
@@ -328,13 +332,15 @@ int XtcClient::process(Pds::Xtc* xtc)
       }
     }
     //  Wasn't handled
-    if (_seq->service()==Pds::TransitionId::Configure) {
+    if (_seq->service()==Pds::TransitionId::Configure &&
+	xtc->damage.value()==0) {
       const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       FeatureCache& cache = *_cache[PreAnalysis];
       EventHandler* h = 0;
       
       switch(xtc->contains.id()) {
+      case Pds::TypeId::Any:                 h = new EpixHandler       (info); break;
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
       case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
       case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
