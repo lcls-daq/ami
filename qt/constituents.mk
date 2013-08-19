@@ -158,6 +158,7 @@ libsrcs_amiqt += CrossHairDelta.cc CrossHairDelta_moc.cc
 libsrcs_amiqt += ImageGridScale.cc ImageGridScale_moc.cc
 libsrcs_amiqt += ImageClient.cc
 libsrcs_amiqt += CspadClient.cc CspadClient_moc.cc
+libsrcs_amiqt += EpixClient.cc EpixClient_moc.cc
 libsrcs_amiqt += FccdClient.cc FccdClient_moc.cc
 libsrcs_amiqt += PnccdClient.cc PnccdClient_moc.cc
 libsrcs_amiqt += EnvPlot.cc EnvPlot_moc.cc EnvTable.cc EnvTable_moc.cc
