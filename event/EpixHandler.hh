@@ -8,6 +8,8 @@
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
+#include "ndarray/ndarray.h"
+
 #include <list>
 
 namespace Pds {
@@ -75,8 +77,12 @@ namespace Ami {
     //  event data needs to be parsed
     bool  used() const;
   private:
+    void _load_pedestals(const DescImage&);
+
     EntryImage*   _entry;
     Epix::ConfigT _config;
+    unsigned      _options;
+    ndarray<unsigned,3> _pedestals;
   };
 };
 

@@ -1,5 +1,7 @@
 #include "EpixHandler.hh"
 
+#include "ami/event/FrameCalib.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/xtc/TypeId.hh"
@@ -8,10 +10,13 @@
 
 using namespace Ami;
 
+static const unsigned offset=1<<16;
+
 EpixHandler::EpixHandler(const Pds::Src& info) :
   EventHandler(info, Pds::TypeId::Any, Pds::TypeId::Any),
   _entry (0),
-  _config(0,0,0,0,0)
+  _config(0,0,0,0,0),
+  _pedestals(make_ndarray<unsigned>(1,1,1))
 {
 }
 
@@ -57,6 +62,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     _entry->invalid();
 
     _config = c;
+
+    _load_pedestals(desc);
   }
 }
 
@@ -69,28 +76,100 @@ bool EpixHandler::used() const { return (_entry && _entry->desc().used()); }
 
 void EpixHandler::_event    (const void* payload, const Pds::ClockTime& t)
 {
-  const Ami::Epix::DataT& f = *reinterpret_cast<const Ami::Epix::DataT*>(payload);
-
-  _entry->reset();
-  const DescImage& d = _entry->desc();
-
-  const uint16_t* p = reinterpret_cast<const uint16_t*>(&f+1);
-
-  for(unsigned i=0; i<_config.nrows; i++)
-    for(unsigned j=0; j<_config.ncolumns; j++) {
-      unsigned fn=0;
-      for(unsigned k=0; k<_config.nchip_rows; k++)
-	for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
-	  const SubFrame& f = _entry->desc().frame(fn);
-	  _entry->addcontent(p[fn], f.x+j/d.ppxbin(), f.y+i/d.ppybin());
-	}
-      p += ((fn+1)&~1)*_config.nsamples;
+  if (_entry && _entry->desc().used()) {
+    unsigned o = _entry->desc().options();
+    if (_options != o) {
+      printf("EpixHandler::event options %x -> %x\n", _options, o);
+      _options = o;
     }
 
-  _entry->info(0.,EntryImage::Pedestal);
-  _entry->info(1.,EntryImage::Normalization);
-  _entry->valid(t);
+    if (_entry->desc().options() & FrameCalib::option_reload_pedestal())
+      _load_pedestals(_entry->desc());
 
+    const Ami::Epix::DataT& f = *reinterpret_cast<const Ami::Epix::DataT*>(payload);
+
+    _entry->reset();
+    const DescImage& d = _entry->desc();
+
+    const uint16_t* p = reinterpret_cast<const uint16_t*>(&f+1);
+    
+    if (d.options()&FrameCalib::option_no_pedestal()) {
+      for(unsigned i=0; i<_config.nrows; i++)
+	for(unsigned j=0; j<_config.ncolumns; j++) {
+	  unsigned fn=0;
+	  for(unsigned k=0; k<_config.nchip_rows; k++)
+	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
+	      const SubFrame& f = _entry->desc().frame(fn);
+	      _entry->addcontent(p[fn]+offset, f.x+j/d.ppxbin(), f.y+i/d.ppybin());
+	    }
+	  p += ((fn+1)&~1)*_config.nsamples;
+	}
+    
+    }
+    else {
+      for(unsigned i=0; i<_config.nrows; i++)
+	for(unsigned j=0; j<_config.ncolumns; j++) {
+	  unsigned fn=0;
+	  for(unsigned k=0; k<_config.nchip_rows; k++)
+	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
+	      const SubFrame& f = _entry->desc().frame(fn);
+	      _entry->addcontent(p[fn]+offset-_pedestals[fn][k][m], f.x+j/d.ppxbin(), f.y+i/d.ppybin());
+	    }
+	  p += ((fn+1)&~1)*_config.nsamples;
+	}
+    
+    }
+
+    _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
+    _entry->info(1.,EntryImage::Normalization);
+    _entry->valid(t);
+  }
 }
 
 void EpixHandler::_damaged() { _entry->invalid(); }
+
+void EpixHandler::_load_pedestals(const DescImage& desc)
+{
+  unsigned nf = desc.nframes();
+  if (nf==0) nf=1;
+  unsigned nx = _config.ncolumns;
+  unsigned ny = _config.nrows;
+  _pedestals = make_ndarray<unsigned>(nf,ny,nx);
+
+  //
+  //  Load pedestals
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+    
+  sprintf(oname1,"ped.%08x.dat",desc.info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/framecalib/ped.%08x.dat",desc.info().phy());
+  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+
+  if (f) {
+
+    //  read pedestals
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    char* pEnd;
+
+    if (nf) {
+      for(unsigned s=0; s<nf; s++) {
+	for (unsigned row=0; row < ny; row++) {
+	  if (feof(f)) return;
+	  getline(&linep, &sz, f);
+	  _pedestals[s][row][0] = strtoul(linep,&pEnd,0);
+	  for(unsigned col=1; col<nx; col++) 
+	    _pedestals[s][row][col] = strtoul(pEnd, &pEnd,0);
+	}
+      }    
+    }
+      
+    free(linep);
+    fclose(f);
+  }
+  else {
+    memset(&_pedestals[0][0][0],0,nf*nx*ny*sizeof(unsigned));
+  }
+}
