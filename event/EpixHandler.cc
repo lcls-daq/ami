@@ -83,8 +83,10 @@ void EpixHandler::_event    (const void* payload, const Pds::ClockTime& t)
       _options = o;
     }
 
-    if (_entry->desc().options() & FrameCalib::option_reload_pedestal())
+    if (_entry->desc().options() & FrameCalib::option_reload_pedestal()) {
       _load_pedestals(_entry->desc());
+      _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
+    }
 
     const Ami::Epix::DataT& f = *reinterpret_cast<const Ami::Epix::DataT*>(payload);
 
