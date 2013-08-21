@@ -15,9 +15,11 @@ using namespace Ami;
 
 static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
+static const unsigned _option_correct_common_mode = 0x04;
 
 unsigned FrameCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned FrameCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
+unsigned FrameCalib::option_correct_common_mode() { return _option_correct_common_mode; }
 
 std::string FrameCalib::save_pedestals(Entry* e,
                                        bool   subtract,

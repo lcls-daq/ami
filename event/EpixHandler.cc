@@ -12,6 +12,89 @@ using namespace Ami;
 
 static const unsigned offset=1<<16;
 
+static double frameNoise(const ndarray<const uint32_t,2> data,
+			 unsigned off)
+{
+  const int fnPixelMin = -100 + off;
+  const int fnPixelMax =  100 + off;
+  const int fnPixelBins = fnPixelMax - fnPixelMin;
+  const int peakSpace   = 5;
+  
+  //  histogram the pixel values
+  unsigned hist[fnPixelBins];
+  { memset(hist, 0, fnPixelBins*sizeof(unsigned));
+    for(unsigned i=0; i<data.shape()[0]; i++) {
+      for(unsigned j=0; j<data.shape()[1]; j++) {
+	int v = data[i][j] - fnPixelMin;
+	if (v >= 0 && v < int(fnPixelBins))
+	  hist[v]++;
+      }
+    }
+  }
+
+  double v = 0;
+  // the first peak from the left above this is the pedestal
+  { const int fnPeakBins = 5;
+    const int fnPixelRange = fnPixelBins-fnPeakBins-1;
+    const unsigned fnPedestalThreshold = 1000;
+    
+    unsigned i=fnPeakBins;
+    while( int(i)<fnPixelRange ) {
+      if (hist[i]>fnPedestalThreshold) break;
+      i++;
+    }
+
+    unsigned thresholdPeakBin=i;
+    unsigned thresholdPeakBinContent=hist[i];
+    while( int(++i)<fnPixelRange ) {
+      if (hist[i]<thresholdPeakBinContent) {
+        if (i > thresholdPeakBin+peakSpace)
+          break;
+      }
+      else {
+        thresholdPeakBin = i;
+        thresholdPeakBinContent = hist[i];
+      }
+    }
+
+    i = thresholdPeakBin;
+    if ( int(i)+fnPeakBins<=fnPixelRange ) {
+      unsigned s0 = 0;
+      unsigned s1 = 0;
+      for(unsigned j=i-fnPeakBins-1; j<i+fnPeakBins; j++) {
+        s0 += hist[j];
+        s1 += hist[j]*j;
+      }
+      
+      double binMean = double(s1)/double(s0);
+      v =  binMean + fnPixelMin - off;
+      
+      s0 = 0;
+      unsigned s2 = 0;
+      for(unsigned j=i-10; j<i+fnPeakBins; j++) {
+        s0 += hist[j];
+	s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
+      }
+//      const double allowedPedestalWidthSquared = 2.5*2.5;
+      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
+//      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0;
+      // this isn't the standard rms around the mean, but should be similar if rms_real < 3
+      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
+
+    }
+    else {
+      static unsigned nPrint=0;
+      nPrint++;
+      if ((nPrint<10) || (nPrint%100)==0)
+        printf("frameNoise : peak not found [%d]\n",nPrint);
+    }
+//    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
+  }
+
+  return v;
+}
+
+
 EpixHandler::EpixHandler(const Pds::Src& info) :
   EventHandler(info, Pds::TypeId::Any, Pds::TypeId::Any),
   _entry (0),
@@ -119,7 +202,15 @@ void EpixHandler::_event    (const void* payload, const Pds::ClockTime& t)
 	    }
 	  p += ((fn+1)&~1)*_config.nsamples;
 	}
-    
+    }
+
+    if (d.options()&FrameCalib::option_correct_common_mode()) {
+      for(unsigned k=0; k<_entry->desc().nframes(); k++) {
+	ndarray<uint32_t,2> a = _entry->contents(k);
+	int fn = int(frameNoise(a,offset*d.ppxbin()*d.ppybin()));
+	for(uint32_t* it = a.begin(); it!=a.end(); it++)
+	  *it -= fn;
+      }	
     }
 
     _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
