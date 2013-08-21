@@ -29,7 +29,8 @@ unsigned CspadCalib::option_post_integral      () { return _option_post_integral
 
 std::string CspadCalib::save_pedestals(Entry* e,
                                        bool   subtract,
-                                       bool   prod)
+                                       bool   prod,
+                                       bool   reqfull)
 {
   std::string msg;
 
@@ -103,8 +104,9 @@ std::string CspadCalib::save_pedestals(Entry* e,
     msg = std::string("Unable to write new pedestal file ") + oname;
     fail=true;
   }
-  else if ((entry.desc().info().device()==Pds::DetInfo::Cspad2x2 && nframes != 2) ||
-           (entry.desc().info().device()==Pds::DetInfo::Cspad    && nframes != 32)) {
+  else if ( reqfull &&
+            ((entry.desc().info().device()==Pds::DetInfo::Cspad2x2 && nframes != 2) ||
+             (entry.desc().info().device()==Pds::DetInfo::Cspad    && nframes != 32)) ) {
     msg = std::string("Failed.  Must readout entire detector.  Check configuration.");
     fail=true;
     fclose(fn);

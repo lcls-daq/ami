@@ -136,6 +136,7 @@ void CspadClient::write_pedestals()
   QPushButton* writeB = new QPushButton("Write");
 
   bool lProd = QString(getenv("HOME")).endsWith("opr");
+  bool lReqFull = true;
   if (!lProd) {
     int so = socket(AF_INET, SOCK_DGRAM, 0);
     if (so) {
@@ -145,8 +146,10 @@ void CspadClient::write_pedestals()
       ::close(so);
       if (rv==0) {
 	unsigned interface = ntohl( *(unsigned*)&(ifr.ifr_addr.sa_data[2]) );
-	if (((interface>>8)&0xff)==10)
+	if (((interface>>8)&0xff)==10) {
 	  lProd=true;
+          lReqFull=false;
+        }
       }
     }
   }
@@ -159,7 +162,7 @@ void CspadClient::write_pedestals()
 
     _control->pause();
 
-    std::string smsg(CspadCalib::save_pedestals(_cds.entry(signature),!_npBox->isChecked(),lProd));
+    std::string smsg(CspadCalib::save_pedestals(_cds.entry(signature),!_npBox->isChecked(),lProd,lReqFull));
     if (smsg.empty()) {
       _reloadPedestals = true;
       emit changed();

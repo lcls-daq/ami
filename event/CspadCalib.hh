@@ -12,7 +12,7 @@ namespace Ami {
     static unsigned    option_correct_common_mode();
     static unsigned    option_suppress_bad_pixels();
     static unsigned    option_post_integral      ();
-    static std::string save_pedestals(Entry*,bool corrected,bool prod);
+    static std::string save_pedestals(Entry*,bool corrected,bool prod, bool reqfull);
   };
 };
 
