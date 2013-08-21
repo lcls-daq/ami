@@ -3,6 +3,7 @@
 
 #include "ami/data/Entry.hh"
 #include "ami/data/DescImage.hh"
+#include "ndarray/ndarray.h"
 
 namespace Ami {
 
@@ -19,13 +20,34 @@ namespace Ami {
 		int ppybin);
     void params(const DescImage& desc);
 
-    unsigned content   (unsigned bin) const;
-    unsigned content   (unsigned binx, unsigned biny) const;
-    void     addcontent(unsigned y, unsigned binx, unsigned biny);
-    void     content   (unsigned y, unsigned binx, unsigned biny);
+    /*
+    **  Access the contents by bin index
+    */
+    unsigned                        content(unsigned bin) const;
+    unsigned                        content(unsigned binx, unsigned biny) const;
 
-    uint32_t*       contents();
-    const uint32_t* contents() const;
+    /*
+    **  Access the contents array
+    */
+    uint32_t*                       contents();
+    const uint32_t*                 contents() const;
+
+    /*
+    **  Access the contents by ndarray
+    */
+    ndarray<uint32_t,2>             content();
+    const ndarray<const uint32_t,2> content() const;
+    /*
+     *  Access the SubFrame contents by ndarray
+     */
+    ndarray<uint32_t,2>             contents(unsigned);
+    const ndarray<const uint32_t,2> contents(unsigned) const;
+
+    /*
+     *  Modify contents
+     */
+    void                            addcontent(unsigned y, unsigned binx, unsigned biny);
+    void                            content   (unsigned y, unsigned binx, unsigned biny);
 
     enum Info { Pedestal, Normalization, InfoSize };
     double   info   (Info) const;
@@ -88,6 +110,14 @@ namespace Ami {
   inline void EntryImage::addinfo(double y, Info i) 
   {
     reinterpret_cast<float*>(_y+_desc.nbinsx()*_desc.nbinsy())[i] += y;
+  }
+  inline ndarray<uint32_t,2> EntryImage::content()
+  {
+    return make_ndarray(_y,_desc.nbinsy(),_desc.nbinsx());
+  }
+  inline const ndarray<const uint32_t,2> EntryImage::content() const
+  {
+    return make_ndarray(_y,_desc.nbinsy(),_desc.nbinsx());
   }
 };
 

@@ -116,3 +116,26 @@ void EntryImage::_merge  (char* p) const
   } while (fdst < fend);
 }
 
+ndarray<uint32_t,2> EntryImage::contents(unsigned fn)
+{
+  const SubFrame& f = _desc.frame(fn);
+  unsigned shape[] = {f.ny,f.nx};
+  ndarray<uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
+
+  int strides[] = {_desc.nbinsx(),1};
+  result.strides(strides);
+
+  return result;
+}
+
+const ndarray<const uint32_t,2> EntryImage::contents(unsigned fn) const
+{
+  const SubFrame& f = _desc.frame(fn);
+  unsigned shape[] = {f.ny,f.nx};
+  ndarray<const uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
+
+  int strides[] = {_desc.nbinsx(),1};
+  result.strides(strides);
+
+  return result;
+}
