@@ -19,9 +19,12 @@ namespace Ami {
 
     //  The contents are organized as 
     //  [ data0, data1, ..., dataN-1, underflow, overflow, normalization ]
-    double content(unsigned bin) const;
+    double        content(unsigned bin) const;
+    double*       content();
+    const double* content() const;
+    void          content(double y, unsigned bin);
+
     void   addcontent(double y, unsigned bin);
-    void   content(double y, unsigned bin);
     void   addcontent(double y, double x);
 
     enum Info { Underflow, Overflow, Normalization, InfoSize };
@@ -50,7 +53,10 @@ namespace Ami {
     double* _y;
   };
 
-  inline double EntryWaveform::content   (unsigned bin) const { return *(_y+bin); }
+  inline double         EntryWaveform::content(unsigned bin) const { return *(_y+bin); }
+  inline double*        EntryWaveform::content() { return _y; }
+  inline const double*  EntryWaveform::content() const { return _y; }
+
   inline void   EntryWaveform::addcontent(double y, unsigned bin) { *(_y+bin) += y; }
   inline void   EntryWaveform::content   (double y, unsigned bin) { *(_y+bin)  = y; }
 

@@ -11,15 +11,8 @@
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/PeakFinderFn.hh"
 
-#include "pdsdata/cspad/ElementIterator.hh"
-#include "pdsdata/cspad/ElementHeader.hh"
-#include "pdsdata/cspad/ConfigV1.hh"
-#include "pdsdata/cspad/ConfigV2.hh"
-#include "pdsdata/cspad/ConfigV3.hh"
-#include "pdsdata/cspad/ConfigV4.hh"
-#include "pdsdata/cspad/ConfigV5.hh"
+#include "pdsdata/psddl/cspad.ddl.h"
 #include "pds/config/CsPadConfigType.hh"
-#include "pdsdata/cspad/ElementV2.hh"
 #include "pdsdata/xtc/Xtc.hh"
 
 #include <string.h>
@@ -41,7 +34,6 @@
 using Ami::CspadCalib;
 
 typedef Pds::CsPad::ElementV2 CspadElement;
-using Pds::CsPad::ElementIterator;
 
 static const unsigned Offset = 0x4000;
 static const double  dOffset = double(Offset);
@@ -65,12 +57,12 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
 //  factor the 90-degree rotations
 //
 
-static inline unsigned sum2(const uint16_t*& data)
+static inline unsigned sum2(const int16_t*& data)
 { unsigned v = *data++;
   v += *data++; 
   return v; }
 
-static inline unsigned sum4(const uint16_t*& data)
+static inline unsigned sum4(const int16_t*& data)
 { unsigned v = *data++;
   v += *data++;
   v += *data++;
@@ -78,9 +70,9 @@ static inline unsigned sum4(const uint16_t*& data)
   return v; }
 
 
-static inline unsigned sum1(const uint16_t*& data,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+static inline unsigned sum1(const int16_t*& data,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const double fn,
                             const float*& gn)
 { 
@@ -99,9 +91,9 @@ static inline unsigned sum1(const uint16_t*& data,
   return v;
 }
 
-static inline unsigned sum2(const uint16_t*& data,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+static inline unsigned sum2(const int16_t*& data,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const double fn,
                             const float*& gn)
 {
@@ -123,9 +115,9 @@ static inline unsigned sum2(const uint16_t*& data,
   }
   return v; }
 
-static inline unsigned sum4(const uint16_t*& data,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+static inline unsigned sum4(const int16_t*& data,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const double fn,
                             const float*& gn)
 {
@@ -151,8 +143,8 @@ static inline unsigned sum4(const uint16_t*& data,
 static const unsigned no_threshold = 0x00ffffff;
 
 static inline unsigned thr1(double v0, double v1,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const float*& rms)
 { 
   unsigned v;
@@ -164,8 +156,8 @@ static inline unsigned thr1(double v0, double v1,
 }
 
 static inline unsigned thr2(double v0, double v1,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const float*& rms)
 {
   unsigned v;
@@ -184,8 +176,8 @@ static inline unsigned thr2(double v0, double v1,
   return v; }
 
 static inline unsigned thr4(double v0, double v1,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const float*& rms)
 {
   unsigned v;
@@ -204,15 +196,15 @@ static inline unsigned thr4(double v0, double v1,
   return v; }
 
 #if 0
-static double frameNoise(const uint16_t*  data,
-                         const uint16_t*  off,
-                         const uint16_t* const* sta)
+static double frameNoise(const int16_t*  data,
+                         const int16_t*  off,
+                         const int16_t* const* sta)
 {
   double sum = 0;
   const unsigned ColBins = CsPad::ColumnsPerASIC;
   const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;
-  const uint16_t* d(data);
-  const uint16_t* o(off );
+  const int16_t* d(data);
+  const int16_t* o(off );
   for(unsigned i=0; i<ColBins; i++) {
     for(unsigned j=0; j<RowBins; j++, d++, o++) {
       int v = *d + *o - Offset;
@@ -222,9 +214,9 @@ static double frameNoise(const uint16_t*  data,
   return sum/double(ColBins*RowBins);
 }
 #else
-static double frameNoise(const uint16_t*  data,
-                         const uint16_t*  off,
-                         const uint16_t* const* sta,
+static double frameNoise(const int16_t*  data,
+                         const int16_t*  off,
+                         const int16_t* const* sta,
                          bool noped = false)
 {
   const unsigned ColBins = CsPad::ColumnsPerASIC;
@@ -236,8 +228,8 @@ static double frameNoise(const uint16_t*  data,
   //  histogram the pixel values
   unsigned hist[fnPixelBins];
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
-    const uint16_t* d(data);
-    const uint16_t* o(off );
+    const int16_t* d(data);
+    const int16_t* o(off );
     for(unsigned i=0; i<ColBins; i++) {
       for(unsigned j=0; j<RowBins; j++, d++, o++) {
         if (*sta == o)
@@ -403,7 +395,7 @@ namespace CspadGeometry {
   public:
     virtual void fill(Ami::DescImage& image) const = 0;
     virtual void fill(Ami::EntryImage& image,
-          const uint16_t*  data) const = 0;
+          const int16_t*  data) const = 0;
     virtual void fill(Ami::EntryImage& image,
                       double v0, double v1) const = 0;
     virtual void set_pedestals(FILE*) {}
@@ -413,7 +405,7 @@ namespace CspadGeometry {
   protected:
     unsigned column, row;
     unsigned ppb;
-    uint16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    int16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
 #define AsicTemplate(classname,bi,ti,PPB)                               \
@@ -429,7 +421,7 @@ namespace CspadGeometry {
       image.add_frame(x0,y0,x1-x0+1,y1-y0+1);                           \
     }                                                                   \
     void fill(Ami::EntryImage& image,                                   \
-              const uint16_t*  data) const { bi }                       \
+              const int16_t*  data) const { bi }                       \
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const {                             \
       unsigned u0 = unsigned(v0);                                       \
@@ -492,20 +484,20 @@ namespace CspadGeometry {
       char* pEnd = linep;
 
       if (ped) {
-        uint16_t* off = _off;
+        int16_t* off = _off;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           getline(&linep, &sz, ped);
-          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
+          *off++ = Offset - int16_t(strtod(linep,&pEnd));
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
       else
         memset(_off,0,sizeof(_off));
 
       if (status) {
-        uint16_t*  off = _off;
-        uint16_t** sta = _sta;
+        int16_t*  off = _off;
+        int16_t** sta = _sta;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           getline(&linep, &sz, status);
           if (strtoul(linep,&pEnd,0)) *sta++ = off;
@@ -565,12 +557,12 @@ namespace CspadGeometry {
       char* pEnd = linep;
 
       if (ped) {
-        uint16_t* off = _off;
+        int16_t* off = _off;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           getline(&linep, &sz, ped);
-          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
+          *off++ = Offset - int16_t(strtod(linep,&pEnd));
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
       else
@@ -581,13 +573,13 @@ namespace CspadGeometry {
     }
     void kill_off() { memset(_off,0,sizeof(_off)); }
   protected:
-    uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
-    uint16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2+1];
+    int16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    int16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2+1];
     float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     float     _rms[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-  static uint16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+  static int16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
 #define AsicTemplate(classname,bi,ti,PPB)                               \
   class classname : public AsicP {                                      \
@@ -607,20 +599,20 @@ namespace CspadGeometry {
               double v0, double v1) const                               \
     {                                                                   \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
-      uint16_t* zero = 0;                                               \
-      const uint16_t* off = _off;                                       \
-      const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
+      int16_t* zero = 0;                                               \
+      const int16_t* off = _off;                                       \
+      const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* rms = _rms;                                          \
       ti;                                                               \
     }                                                                   \
     void fill(Ami::EntryImage& image,                                   \
-              const uint16_t*  data) const {                            \
+              const int16_t*  data) const {                             \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
-      uint16_t* zero = 0;                                               \
-      const uint16_t* off = lnopedestal ? off_no_ped : _off;            \
-      const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
+      int16_t* zero = 0;                                               \
+      const int16_t* off = lnopedestal ? off_no_ped : _off;            \
+      const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = _gn;                                            \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
       bi;                                                               \
@@ -750,10 +742,10 @@ namespace CspadGeometry {
       if (mask&2) asic[1]->fill(image);
     }
     void fill(Ami::EntryImage&           image,
-        const Pds::CsPad::Section* sector,
-        unsigned                   sector_id) const
+              const int16_t*             sector,
+              unsigned                   sector_id) const
     {
-      asic[sector_id&1]->fill(image,&(sector->pixel[0][0]));
+      asic[sector_id&1]->fill(image,sector);
     }
     void fill(Ami::EntryImage& image,
               double v0, double v1) const
@@ -797,14 +789,15 @@ namespace CspadGeometry {
         if (mask&3)
           element[i]->fill(image, mask&3);
     }
-    void fill(Ami::EntryImage&             image,
-        ElementIterator& iter) const
+    void fill(Ami::EntryImage&                image,
+              const ndarray<const int16_t,3>& a,
+              unsigned                        mask) const
     {
-      unsigned id;
-      const Pds::CsPad::Section* s;
-      while( (s=iter.next(id)) ) {
-        element[id>>1]->fill(image,s,id);
-      }
+      for(unsigned id=0,j=0; mask!=0; id++)
+        if (mask&(1<<id)) {
+          element[id>>1]->fill(image,&a[j][0][0],id);
+          j++;
+        }
     }      
     void fill(Ami::EntryImage& image,
               double v0, double v1) const
@@ -883,34 +876,99 @@ namespace CspadGeometry {
     ~ConfigCache() 
     { delete[] _payload; }
   public:
-    ElementIterator* iter(const Xtc& xtc) { return iter(xtc.contains,
-                                                        xtc.payload(),
-                                                        xtc.sizeofPayload()); }
-    ElementIterator* iter(TypeId      contains,
-                          const char* payload,
-                          size_t      sizeofPayload) const
+    bool validate(TypeId      contains,
+                  const char* payload) const
     {
-#define CASE_VSN(v) case v:                                             \
+#define CASE_DVSN(v) case v:                                            \
+      { const Pds::CsPad::DataV##v& d =                                 \
+          *reinterpret_cast<const Pds::CsPad::DataV##v*>(payload);      \
+        unsigned mask(0);                                               \
+        for(unsigned i=0; i<c.numQuads(); i++) {                        \
+          const Pds::CsPad::ElementV##v& e = d.quads(c,i);              \
+          if (mask&(1<<e.quad())) {                                     \
+            printf("CsPad: Found duplicate quad %d.  Invalidating.\n",  \
+                   e.quad());                                           \
+            return false;                                               \
+          }                                                             \
+          mask |= (1<<e.quad());                                        \
+        } } break;
+#define CASE_CVSN(v) case v:                                            \
       { const Pds::CsPad::ConfigV##v& c =                               \
           *reinterpret_cast<Pds::CsPad::ConfigV##v*>(_payload);         \
-        iter = new ElementIterator(c,contains,payload,sizeofPayload);   \
-        break; }
+        switch(contains.version()) {                                    \
+          CASE_DVSN(1)                                                  \
+          CASE_DVSN(2)                                                  \
+            default: break;                                             \
+        } } break;
       
-      ElementIterator* iter;
       switch(_type.version()) {
-        CASE_VSN(1)
-        CASE_VSN(2)
-        CASE_VSN(3)
-        CASE_VSN(4)
-        CASE_VSN(5)
+      case 1:
+      { const Pds::CsPad::ConfigV1& c =
+          *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
+        switch(contains.version()) {
+          CASE_DVSN(1)
+            default: break;
+        } } break;
+        CASE_CVSN(2)
+        CASE_CVSN(3)
+        CASE_CVSN(4)
+        CASE_CVSN(5)
       default:
-        { const CsPadConfigType& c = 
-            *reinterpret_cast<CsPadConfigType*>(_payload);
-          iter = new ElementIterator(c,contains,payload,sizeofPayload);
-          break; }
+        break;
       }
-#undef CASE_VSN
-      return iter;
+#undef CASE_CVSN
+#undef CASE_DVSN
+      return true;
+    }
+    
+    bool data(TypeId        contains,
+              const char*   payload,
+              unsigned      quad, 
+              unsigned&     mask,
+              ndarray<const int16_t ,3>& da,
+              ndarray<const uint16_t,1>& ta) const 
+    {
+#define CASE_DVSN(v) case v:                                            \
+      { const Pds::CsPad::DataV##v& d =                                 \
+          *reinterpret_cast<const Pds::CsPad::DataV##v*>(payload);      \
+        for(unsigned i=0; i<c.numQuads(); i++) {                        \
+          const Pds::CsPad::ElementV##v& e = d.quads(c,i);              \
+          if (e.quad()==quad) {                                         \
+            mask = e.sectionMask(c);                                    \
+            da = e.data(c);                                             \
+            ta = e.sb_temp();                                           \
+            return true;                                                \
+          } } } break;
+#define CASE_CVSN(v) case v:                                            \
+      { const Pds::CsPad::ConfigV##v& c =                               \
+          *reinterpret_cast<Pds::CsPad::ConfigV##v*>(_payload);         \
+        switch(contains.version()) {                                    \
+          CASE_DVSN(1)                                                  \
+          CASE_DVSN(2)                                                  \
+            default: break;                                             \
+        } } break;
+      
+      switch(_type.version()) {
+      case 1:
+      { const Pds::CsPad::ConfigV1& c =
+          *reinterpret_cast<Pds::CsPad::ConfigV1*>(_payload);
+        switch(contains.version()) {
+          CASE_DVSN(1)
+            default: break;
+        } } break;
+        CASE_CVSN(2)
+        CASE_CVSN(3)
+        CASE_CVSN(4)
+        CASE_CVSN(5)
+      default:
+        break;
+      }
+#undef CASE_CVSN
+#undef CASE_DVSN
+      mask = 0;
+      da = ndarray<const  int16_t,3>();
+      ta = ndarray<const uint16_t,1>();
+      return false;
     }
   public:
     unsigned quadMask()           const { return _quadMask; }
@@ -1047,39 +1105,17 @@ namespace CspadGeometry {
       //
       //  First, check for duplicate quads
       //
-      { unsigned qmask = 0;
-        Pds::CsPad::ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
-        for(const Pds::CsPad::ElementHeader* hdr = iter->next(); (hdr); hdr=iter->next()) {
-          unsigned iq = 1<<hdr->quad();
-          if (qmask & iq) {
-            printf("%s: Found duplicate quad %d.  Invalidating.\n",
-                   Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(_src)),hdr->quad());
-            return false;
-          }
-          qmask |= iq;
-        }
-        delete iter;
+      if (!_config.validate(contains, payload)) {
+        return false;
       }
 #endif
 
 #ifdef _OPENMP
-      ElementIterator* iters[5];
-      int niters=0;
-      {
-        ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
-        do {
-          iters[niters++] = new ElementIterator(*iter);
-        } while( iter->next() );
-        delete iter;
-      }            
-      niters--;
-      if (niters >= 0)
-        delete iters[niters];
-
       unsigned nframes[5];
       nframes[0] = 0;
       for(unsigned j=0; j<4; j++) {
-        unsigned m = _config.roiMask(j);
+        unsigned m;
+        m = _config.roiMask(j);
         unsigned n = nframes[j];
         while(m) {
           m = m&(m-1);
@@ -1088,52 +1124,30 @@ namespace CspadGeometry {
         nframes[j+1] = n;
       }
 
-      int i;
+      int q;
       Quad* const* quad = this->quad;
       Ami::FeatureCache* cache = _cache;
       double sum = 0;
-#pragma omp parallel shared(iters,quad,cache) private(i) num_threads(4)
+#pragma omp parallel shared(quad,cache) private(q) num_threads(4)
       {
 #pragma omp for schedule(dynamic,1)
-        for(i=0; i<niters; i++) {
-          const Pds::CsPad::ElementHeader* hdr = iters[i]->next();
-          quad[hdr->quad()]->fill(image,*iters[i]); 
-          for(int a=0; a<4; a++)
-            cache->cache(_feature[4*hdr->quad()+a],
-                         CspadTemp::instance().getTemp(hdr->sb_temp(a)));
-          delete iters[i];
-          //  Calculate integral
-          if (image.desc().options()&CspadCalib::option_post_integral()) {
-            double s=0;
-            double p   = double(image.info(Ami::EntryImage::Pedestal));
-            for(unsigned fn=nframes[hdr->quad()]; fn<nframes[hdr->quad()+1]; fn++) {
-              int xlo(0), xhi(3000), ylo(0), yhi(3000);
-              if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-                for(int j=ylo; j<yhi; j++)
-                  for(int i=xlo; i<xhi; i++) {
-                    double v = double(image.content(i,j))-p;
-                    s += v;
-                  }
-              }
-            }
-            sum += s;
-          }
-        }
-      }
-#else
-      ElementIterator* iter = _config.iter(contains, payload, sizeofPayload);
-      const Pds::CsPad::ElementHeader* hdr;
-      while( (hdr=iter->next()) ) {
-        quad[hdr->quad()]->fill(image,*iter); 
-        for(int a=0; a<4; a++)
-          _cache->cache(_feature[4*hdr->quad()+a],
-                        CspadTemp::instance().getTemp(hdr->sb_temp(a)));
+        for(q=0; q<4; q++) {
+          unsigned mask;
+          ndarray<const  int16_t,3> data;
+          ndarray<const uint16_t,1> temp;
+          if (!_config.data(contains,payload,q,mask,data,temp)) continue;
 
-        //  Calculate integral
-        if (image.desc().options()&8) {
+          quad[q]->fill(image,data,mask);
+
+          for(int a=0; a<4; a++)
+            cache->cache(_feature[4*q+a],
+                         CspadTemp::instance().getTemp(temp[a]));
+
+          //  Calculate integral
+          if (image.desc().options()&8) {
           double s=0;
           double p   = double(image.info(Ami::EntryImage::Pedestal));
-          for(unsigned fn=nframes[hdr->quad()]; fn<nframes[hdr->quad()+1]; fn++) {
+          for(unsigned fn=nframes[q]; fn<nframes[q+1]; fn++) {
             int xlo(0), xhi(3000), ylo(0), yhi(3000);
             if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
               for(int j=ylo; j<yhi; j++)
@@ -1144,9 +1158,37 @@ namespace CspadGeometry {
             }
           }
           sum += s;
+          }
         }
       }
-      delete iter;
+#else
+      for(int q=0; q<4; q++)
+        if (_config.hasQuad(q)) {
+          unsigned mask;
+          ndarray<const int16_t,3> data = _config.data(q,mask);
+          quad[q]->fill(image,data,mask);
+          for(int a=0; a<4; a++)
+            cache->cache(_feature[4*q+a],
+                         CspadTemp::instance().getTemp(_config.sb_temp(q,a)));
+
+          //  Calculate integral
+          if (image.desc().options()&8) {
+          double s=0;
+          double p   = double(image.info(Ami::EntryImage::Pedestal));
+          for(unsigned fn=nframes[q]; fn<nframes[q+1]; fn++) {
+            int xlo(0), xhi(3000), ylo(0), yhi(3000);
+            if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
+              for(int j=ylo; j<yhi; j++)
+                for(int i=xlo; i<xhi; i++) {
+                  double v = double(image.content(i,j))-p;
+                  s += v;
+                }
+            }
+          }
+          sum += s;
+          }
+        }
+
 #endif
 
       if (image.desc().options()&8)
@@ -1247,8 +1289,8 @@ CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, uns
   _max_pixels(max_pixels),
   _options   (0)
 {
-  unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(uint16_t);
-  for (unsigned i=0; i<s; i++) CspadGeometry::off_no_ped[i] = (uint16_t)Offset;
+  unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(int16_t);
+  for (unsigned i=0; i<s; i++) CspadGeometry::off_no_ped[i] = (int16_t)Offset;
 }
 
 CspadHandler::~CspadHandler()
@@ -1361,11 +1403,9 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
 }
 
 
-void CspadHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void CspadHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
+void CspadHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void CspadHandler::_event    (Pds::TypeId id,
-                              const void* payload, const Pds::ClockTime& t)
+void CspadHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   if (!(_entry && _entry->desc().used()) &&
       !(_unbinned_entry && _unbinned_entry->desc().used())) return;
@@ -1374,8 +1414,6 @@ void CspadHandler::_event    (Pds::TypeId id,
 
   _event(xtc->contains, xtc->payload(), xtc->sizeofPayload(), t);
 }
-
-void CspadHandler::_event    (const void* payload, const Pds::ClockTime& t) {}
 
 void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeofPayload, const Pds::ClockTime& t)
 {

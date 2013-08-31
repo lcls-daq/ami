@@ -3,6 +3,9 @@
 
 #include "ami/data/AbsOperator.hh"
 
+#include "ndarray/ndarray.h"
+#include <vector>
+
 namespace Ami {
 
   class Cds;
@@ -11,6 +14,13 @@ namespace Ami {
   class FeatureCache;
   class Term;
 
+  /**
+   *   An operator to compute the root-mean-square variance of each element
+   *   of the data.  Thus, this operator acting on a waveform produces a waveform
+   *   where each sample is replaced by the RMS of that sample.  The variance is
+   *   calculated over either a fixed number of events or a running calculation over
+   *   all events.
+   */
   class Variance : public AbsOperator {
   public:
     Variance(unsigned n=0, const char* p=0);
@@ -25,9 +35,10 @@ namespace Ami {
     enum { SCALE_LEN=256 };
     char           _scale_buffer[SCALE_LEN];
     unsigned       _n;
-    Entry*         _mom1;
-    Entry*         _mom2;
-    Entry*         _cache;
+    mutable unsigned _i;
+    mutable std::vector<ndarray<double,2> > _m1;
+    mutable std::vector<ndarray<double,2> > _m2;
+    mutable Entry*         _cache;
     mutable const Entry*   _input;
     Term*          _term ;
     bool           _v;

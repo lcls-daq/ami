@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
-#include "pdsdata/pnCCD/ConfigV1.hh"
+#include "pdsdata/psddl/pnccd.ddl.h"
 
 namespace Ami {
   class EntryImage;
@@ -19,9 +19,9 @@ namespace Ami {
     const Entry* entry(unsigned) const;
     void         reset();
   private:
-    void _calibrate(const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t);
-    void _event    (const void* payload, const Pds::ClockTime& t);
+    void _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
     //    PnccdHandler(const Pds::DetInfo& info, const EntryImage*);

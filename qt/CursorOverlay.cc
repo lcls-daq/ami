@@ -91,7 +91,6 @@ void CursorOverlay::load(const char*& p)
 void CursorOverlay::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void CursorOverlay::setup_payload(Cds& cds)
 {

@@ -4,7 +4,7 @@
 #include "pdsdata/xtc/Level.hh"
 #include "pdsdata/xtc/Xtc.hh"
 #include "pdsdata/xtc/BldInfo.hh"
-#include "pdsdata/bld/bldData.hh"
+#include "pdsdata/psddl/bld.ddl.h"
 
 #include <stdio.h>
 
@@ -23,8 +23,8 @@ FEEGasDetEnergyReader::~FEEGasDetEnergyReader()
 {
 }
 
-void   FEEGasDetEnergyReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   FEEGasDetEnergyReader::_configure(const void* payload, const Pds::ClockTime& t) 
+void   FEEGasDetEnergyReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   FEEGasDetEnergyReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
   _index = _cache.add("BLD:FEE:GDET1:PMT1:ENRC");
   _cache.add("BLD:FEE:GDET1:PMT2:ENRC");
@@ -32,16 +32,16 @@ void   FEEGasDetEnergyReader::_configure(const void* payload, const Pds::ClockTi
   _cache.add("BLD:FEE:GDET2:PMT2:ENRC");
 }
 
-void   FEEGasDetEnergyReader::_event    (const void* payload, const Pds::ClockTime& t)
+void   FEEGasDetEnergyReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   if (_index>=0) {
-    const Pds::BldDataFEEGasDetEnergy& bld = 
-      *reinterpret_cast<const Pds::BldDataFEEGasDetEnergy*>(payload);
+    const Pds::Bld::BldDataFEEGasDetEnergy& bld = 
+      *reinterpret_cast<const Pds::Bld::BldDataFEEGasDetEnergy*>(payload);
     unsigned index = _index;
-    _cache.cache(index++,bld.f_11_ENRC);
-    _cache.cache(index++,bld.f_12_ENRC);
-    _cache.cache(index++,bld.f_21_ENRC);
-    _cache.cache(index  ,bld.f_22_ENRC);
+    _cache.cache(index++,bld.f_11_ENRC());
+    _cache.cache(index++,bld.f_12_ENRC());
+    _cache.cache(index++,bld.f_21_ENRC());
+    _cache.cache(index  ,bld.f_22_ENRC());
   }
 }
 

@@ -91,7 +91,6 @@ void PeakFitOverlay::load(const char*& p)
 void PeakFitOverlay::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void PeakFitOverlay::setup_payload(Cds& cds)
 {

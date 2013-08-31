@@ -1,12 +1,12 @@
 #ifndef SummaryAnalysis_hh
 #define SummaryAnalysis_hh
 
-#include "pdsdata/acqiris/ConfigV1.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 #include "ami/app/SyncAnalysis.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryScan.hh"
-#include "pdsdata/evr/DataV3.hh" 
+#include "pdsdata/psddl/evr.ddl.h" 
 #include <list>
 
 namespace Pds {

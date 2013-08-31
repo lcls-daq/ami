@@ -18,6 +18,8 @@
 #include <fstream>
 #include <QtGui/QApplication>
 
+#include <stdlib.h>
+
 using namespace Ami;
 using namespace std;
 
@@ -95,13 +97,14 @@ int main(int argc, char* argv[]) {
   const char* path = "/reg/d";
   unsigned interface = 0x7f000001;
   unsigned serverGroup = getLocallyUniqueServerGroup();
-  list<UserModule*> userModules;
+  unsigned nclients = 1;
   bool testMode = false;
   bool liveReadMode = false;
   bool separateWindowMode = false;
   char* outputFile = NULL;
   char* errorFile = NULL;
-
+  char* userModulesArg = NULL;
+  
   qInstallMsgHandler(QtAssertHandler);
 
   QApplication::setStyle("plastique");
@@ -110,7 +113,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:C:L:lERTW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:C:L:N:lERTW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -125,7 +128,10 @@ int main(int argc, char* argv[]) {
       Ami::Qt::ImageDisplay::enable_movie_option();
       break;
     case 'L':
-      Ami::AmiApp::load_syms<UserModule,create_m>(userModules, optarg);
+      userModulesArg = optarg;
+      break;
+    case 'N':
+      nclients = atoi(optarg);
       break;
     case 'f':
       Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
@@ -162,16 +168,36 @@ int main(int argc, char* argv[]) {
   // Error goes to console if no other file was specified with -e
   redirect(outputFile, errorFile);
 
-  // Create ServerManager
-  AnalysisServerManager srv(interface, serverGroup);
+  std::vector<XtcClient*> clients;
+  while(nclients--) {
+    //  Create User Modules
+    list<UserModule*>& userModules = *new list<UserModule*>;
+    Ami::AmiApp::load_syms<UserModule,create_m>(userModules, userModulesArg);
 
-  // Construct features, filter, and factory
-  vector<FeatureCache*> features;
-  for(unsigned i=0; i<Ami::NumberOfSets; i++) {
-    features.push_back(new FeatureCache);
+    // Create ServerManager
+    AnalysisServerManager& srv = *new AnalysisServerManager(interface, serverGroup);
+
+    // Construct features, filter, and factory
+    vector<FeatureCache*>& features = *new vector<FeatureCache*>;
+    for(unsigned i=0; i<Ami::NumberOfSets; i++)
+      features.push_back(new FeatureCache);
+
+    EventFilter& filter = *new EventFilter(userModules, *features[PostAnalysis]);
+    AnalysisFactory& factory = *new AnalysisFactory(features, srv, userModules, filter);
+
+    // Run ServerManager in a background thread
+    Semaphore& connect_sem = *new Semaphore(Semaphore::EMPTY);
+    srv.serve(factory,&connect_sem);
+    srv.start();
+    //    connect_sem.take();
+
+    // Start the XtcFileClient inside of the DetectorSelect GUI.
+    bool sync = true;
+    //    bool sync = nclients == 0;
+    //    bool sync = false;
+    
+    clients.push_back(new XtcClient(features, factory, userModules, filter, sync));
   }
-  EventFilter filter(userModules, *features[PostAnalysis]);
-  AnalysisFactory factory(features, srv, userModules, filter);
 
   // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.
   QGroupBox* groupBox = NULL;
@@ -186,16 +212,7 @@ int main(int argc, char* argv[]) {
     printf("NOT Starting DetectorSelect...\n");
   }
 
-  // Run ServerManager in a background thread
-  Semaphore connect_sem(Semaphore::EMPTY);
-  srv.serve(factory,&connect_sem);
-  srv.start();
-  connect_sem.take();
-
-  // Start the XtcFileClient inside of the DetectorSelect GUI.
-  bool sync = true;
-  XtcClient client(features, factory, userModules, filter, sync);
-  Ami::Qt::XtcFileClient input(groupBox, client, path, testMode, liveReadMode);
+  Ami::Qt::XtcFileClient input(groupBox, clients, path, testMode, liveReadMode);
 
   app.exec();
 

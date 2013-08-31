@@ -23,30 +23,35 @@ qt_libs += qwt/qwt
 # List project libraries (if any) needed by exe_a as <project>/<lib>.
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
-tgtlibs_online_ami := pdsdata/xtcdata pdsdata/acqdata
+tgtlibs_online_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
+tgtlibs_online_ami += pdsalg/pdsalg
 
-#  Get datalibs macro
-include ../../pdsdata/packages.mk
+datalibs := pdsdata/xtcdata pdsdata/aliasdata pdsdata/psddl_pdsdata
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
 tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata pdsdata/compressdata
 tgtlibs_offline_ami += ami/service ami/data ami/server ami/client ami/calib ami/event ami/app ami/amiqt
+tgtlibs_offline_ami += pds/configdata
 tgtlibs_offline_ami += $(qt_libs)
+tgtlibs_offline_ami += pdsalg/pdsalg
 
-tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg
+tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg pds/configdata
 tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
+tgtlibs_blviewer += pdsalg/pdsalg
 tgtlibs_blviewer += $(qt_libs)
 
-tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg
+tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg pds/configdata
 tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
+tgtlibs_bldipimbclient += pdsalg/pdsalg
 tgtlibs_bldipimbclient += $(qt_libs)
 
 tgtlibs_qttest := $(datalibs)
 tgtlibs_qttest += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
+tgtlibs_qttest += pdsalg/pdsalg
 tgtlibs_qttest += $(qt_libs)
 
 # List special include directories (if any) needed by exe_a as
@@ -54,11 +59,11 @@ tgtlibs_qttest += $(qt_libs)
 # already in the search path.
 qt_incs := $(qtincdir) $(qwtincs) qwt/include
 
-tgtincs_online_ami  := $(qt_incs)
-tgtincs_offline_ami := $(qt_incs)
-tgtincs_blviewer    := $(qt_incs)
-tgtincs_bldipimbclient   := $(qt_incs)
-tgtincs_qttest := $(qt_incs)
+tgtincs_online_ami  := $(qt_incs) pdsdata/include
+tgtincs_offline_ami := $(qt_incs) pdsdata/include
+tgtincs_blviewer    := $(qt_incs) pdsdata/include
+tgtincs_bldipimbclient   := $(qt_incs) pdsdata/include
+tgtincs_qttest := $(qt_incs) pdsdata/include
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
@@ -186,7 +191,7 @@ libsrcs_amiblv := blv
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_amiqt := $(qt_incs) qwt/include ndarray/include
+libincs_amiqt := $(qt_incs) qwt/include boost/include ndarray/include pdsdata/include
 libsinc_amiqt := $(qwtsinc)
 
 # List system include directories (if any) needed by lib_a as <incdir>.

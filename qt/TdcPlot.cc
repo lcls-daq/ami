@@ -95,7 +95,6 @@ void TdcPlot::load(const char*& p)
 void TdcPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void TdcPlot::setup_payload(Cds& cds)
 {

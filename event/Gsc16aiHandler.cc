@@ -2,7 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/gsc16ai/DataV1.hh"
+#include "pdsdata/psddl/gsc16ai.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -22,8 +22,8 @@ Gsc16aiHandler::~Gsc16aiHandler()
 {
 }
 
-void   Gsc16aiHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   Gsc16aiHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   Gsc16aiHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   Gsc16aiHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[68];
   strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),59);
@@ -61,7 +61,7 @@ void   Gsc16aiHandler::_configure(const void* payload, const Pds::ClockTime& t)
   }
 }
 
-void   Gsc16aiHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void   Gsc16aiHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   int ii;
   const Pds::Gsc16ai::DataV1& d = *reinterpret_cast<const Pds::Gsc16ai::DataV1*>(payload);
@@ -69,10 +69,10 @@ void   Gsc16aiHandler::_event    (const void* payload, const Pds::ClockTime& t)
   for (ii = 0; ii <= _config.lastChan() - _config.firstChan(); ii++) {
     if (_config.dataFormat() == Pds::Gsc16ai::ConfigV1::DataFormat_OffsetBinary) {
       // offset binary data format
-      _cache.cache(_index+ii, _voltsMin + (_voltsPerCount * d.channelValue(_config.firstChan() + ii)));
+      _cache.cache(_index+ii, _voltsMin + (_voltsPerCount * d.channelValue(_config)[ii]));
     } else {
       // two's complement data format
-      _cache.cache(_index+ii, _voltsPerCount * (int16_t)d.channelValue(_config.firstChan() + ii));
+      _cache.cache(_index+ii, _voltsPerCount * (int16_t)d.channelValue(_config)[ii]);
     }
   }
 }

@@ -2,6 +2,7 @@
 #define Ami_PeakFinder_hh
 
 #include "ami/data/AbsOperator.hh"
+#include "ndarray/ndarray.h"
 
 namespace Ami {
 
@@ -42,6 +43,7 @@ namespace Ami {
     EntryImage*       _output_entry;
     EntryImage*       _cache;
     PeakFinderFn*     _fn;
+    ndarray<unsigned,2> _threshold;
   };
 
 };

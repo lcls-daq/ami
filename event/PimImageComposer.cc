@@ -3,7 +3,7 @@
 #include "ami/event/EventHandler.hh"
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
-#include "pdsdata/lusi/PimImageConfigV1.hh"
+#include "pdsdata/psddl/lusi.ddl.h"
 
 using namespace Ami;
 
@@ -17,5 +17,5 @@ PimImageComposer::PimImageComposer(const Pds::Src& info,
 void PimImageComposer::compose(EventHandler& h)
 {
   EntryImage* image = static_cast<EntryImage*>(const_cast<Entry*>(h.entry(0)));
-  image->desc().set_scale(_config.xscale, _config.yscale);
+  image->desc().set_scale(_config.xscale(), _config.yscale());
 }

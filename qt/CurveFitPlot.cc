@@ -133,7 +133,6 @@ void CurveFitPlot::load(const char*& p)
 void CurveFitPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void CurveFitPlot::setup_payload(Cds& cds)
 {

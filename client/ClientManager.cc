@@ -392,7 +392,9 @@ void ClientManager::_flush_socket(ClientSocket& socket,
 int ClientManager::handle_client_io(ClientSocket& socket)
 {
   Message reply(0,Message::NoOp);
-  if (socket.read(&reply,sizeof(reply))!=sizeof(reply)) {
+  int size = socket.read(&reply,sizeof(reply));
+  if (size!=sizeof(reply)) {
+    printf("CM::handle_client_io read %d/%d bytes\n",size,sizeof(reply));
     return 0;
   }
 
@@ -401,7 +403,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
 	 reply.id(), reply.type(), reply.payload());
 #endif
 
-  int size = 0;
+  size = 0;
 
   if (reply.type() == Message::Discover) { // unsolicited message
     if (_discovery_size < reply.payload()) {

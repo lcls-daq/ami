@@ -11,6 +11,10 @@ namespace Ami {
   class FeatureCache;
   class Term;
 
+  /**
+   *   An operator to average over events, either a fixed number or 
+   *   a running sum of all events.
+   */
   class Average : public AbsOperator {
   public:
     Average(unsigned n=0, const char* p=0);

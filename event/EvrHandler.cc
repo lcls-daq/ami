@@ -2,10 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/evr/ConfigV5.hh"
-#include "pdsdata/evr/ConfigV6.hh"
-#include "pdsdata/evr/ConfigV7.hh"
-#include "pdsdata/evr/DataV3.hh"
+#include "pdsdata/psddl/evr.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -50,7 +47,7 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcode(i).code());
+        REGISTER_CODE(c.eventcodes()[i].code());
       }
       break; }
   case 6:
@@ -58,7 +55,7 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcode(i).code());
+        REGISTER_CODE(c.eventcodes()[i].code());
       }
       break; }
   case 7:
@@ -66,7 +63,7 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
       sprintf(buffer,"DAQ:EVR:");
       iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcode(i).code());
+        REGISTER_CODE(c.eventcodes()[i].code());
       }
       break; }
   default:
@@ -91,7 +88,7 @@ void   EvrHandler::_event    (Pds::TypeId type, const void* payload, const Pds::
     const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
 
     for(unsigned i=0; i<d.numFifoEvents(); i++) {
-      int index = _index[d.fifoEvent(i).EventCode];
+      int index = _index[d.fifoEvents()[i].eventCode()];
       if (index >=0) _cache.cache(index, 1);
     }
   }

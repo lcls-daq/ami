@@ -52,8 +52,6 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Single    : o = new Single    (p,input,_f); break;
   case AbsOperator::Average   : o = new Average   (p,input,_f); break;
   case AbsOperator::Variance  : o = new Variance  (p,input,_f); break;
-  case AbsOperator::Mean      :                                           // unused?
-  case AbsOperator::Integral  : o = new Integral  (p,input); break;       // unused?
   case AbsOperator::Reference : o = new Reference (p,input); break;
   case AbsOperator::EntryMath : o = new EntryMath (p,input,output_cds,_f); break;
   case AbsOperator::BinMath   : o = new BinMath   (p,input,_f); break;
@@ -73,7 +71,6 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::BlobFinder: o = new BlobFinder(p,input); break;
   case AbsOperator::RectROI   : o = new RectROI   (p,input); break;
   case AbsOperator::FIR       : o = new FIR       (p,input); break;
-  case AbsOperator::Value     :
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
   if (next)

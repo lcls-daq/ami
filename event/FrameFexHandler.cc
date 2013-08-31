@@ -2,8 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/camera/TwoDGaussianV1.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
+#include "pdsdata/psddl/camera.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>

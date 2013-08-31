@@ -24,6 +24,7 @@
 #include "pdsdata/xtc/ProcInfo.hh"
 
 #include <errno.h>
+#include <vector>
 
 using namespace Ami;
 using namespace Pds;
@@ -35,7 +36,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine {
       Q_OBJECT
     public:
-      XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode, bool liveReadMode);
+      XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& client, const char* curdir, bool testMode, bool liveReadMode);
       ~XtcFileClient();
       void configure();
     private slots:
@@ -83,7 +84,8 @@ namespace Ami {
       void setDir(QString dir);
       XtcRun _run;
       bool _runValid;
-      XtcClient _client;
+      std::vector<XtcClient*>& _client;
+      unsigned _iclient;
       QString _curdir;
       bool _testMode;
       bool _liveReadMode;

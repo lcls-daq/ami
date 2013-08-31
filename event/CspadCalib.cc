@@ -3,7 +3,7 @@
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 
-#include "pdsdata/cspad/Detector.hh"
+#include "pdsdata/psddl/cspad.ddl.h"
 
 #include <string.h>
 #include <stdio.h>

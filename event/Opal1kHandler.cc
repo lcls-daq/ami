@@ -16,14 +16,14 @@ static std::list<Pds::TypeId::Type> config_type_list()
 
 static unsigned columns(const Pds::DetInfo& info) 
 {
-  unsigned n = Opal1kConfigType::max_column_pixels(info);
-  if (!n) n = Opal1kConfigType::Column_Pixels;
+  unsigned n = Pds::Opal1k::max_column_pixels(info);
+  if (!n)  n = Opal1kConfigType::Column_Pixels;
   return n;
 }
 
 static unsigned rows(const Pds::DetInfo& info) 
 {
-  unsigned n = Opal1kConfigType::max_row_pixels(info);
+  unsigned n = Pds::Opal1k::max_row_pixels(info);
   if (!n) n = Opal1kConfigType::Row_Pixels;
   return n;
 }

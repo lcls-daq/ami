@@ -12,9 +12,9 @@ namespace Ami {
     FEEGasDetEnergyReader(FeatureCache&);
     ~FEEGasDetEnergyReader();
   public:
-    void   _configure(const void* payload, const Pds::ClockTime& t);
-    void   _calibrate(const void* payload, const Pds::ClockTime& t);
-    void   _event    (const void* payload, const Pds::ClockTime& t);
+    void   _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void   _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
   public:
     unsigned     nentries() const;

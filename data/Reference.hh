@@ -9,6 +9,10 @@ namespace Ami {
   class DescEntry;
   class Entry;
 
+  /**
+   *   An operator to add a previously saved reference event to the data stream
+   *   for overlay or EntryMath calculations.
+   */
   class Reference : public AbsOperator {
   public:
     Reference(const char* path);

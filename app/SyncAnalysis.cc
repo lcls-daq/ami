@@ -111,9 +111,10 @@ namespace Ami {
   
   // for taking care of extra data in Config (e.g - for EVR & Opal) -- Use "detConfigPtr" for complete config
   template<>  opalDataSpace::DataSpace(const Pds::DetInfo& detInfo, Pds::TypeId::Type dataType,Pds::TypeId::Type configType, void* payload, const char* title):
-    SyncAnalysis(detInfo, dataType, configType, payload, title) { 
-    detConfig = *reinterpret_cast<Opal1kConfigType*>(payload);
-    unsigned configSize = detConfig.size();
+    SyncAnalysis(detInfo, dataType, configType, payload, title),
+    detConfig(*reinterpret_cast<Opal1kConfigType*>(payload))
+  { 
+    unsigned configSize = detConfig._sizeof();
     detConfigPtr = (Opal1kConfigType*)(new unsigned [(configSize/sizeof(unsigned))+1]);
     memcpy(detConfigPtr, payload, configSize);
   }
@@ -130,20 +131,17 @@ namespace Ami {
   { 
     Pds::Acqiris::ConfigV1* acqConfig = &detConfig;
     Pds::Acqiris::DataDescV1* acqData = detDataPtr;
-    Pds::Acqiris::HorizV1& h = acqConfig->horiz();
+    ndarray<const Acqiris::VertV1,1> vert = acqConfig->vert();
     unsigned n = acqConfig->nbrChannels();
-    double val = 0;  
+    double val=0;
     for (unsigned i=0;i<n;i++) {  
-      const int16_t* data = acqData->waveform(h);
-      data += acqData->indexFirstPoint();
-      float slope = acqConfig->vert(i).slope();
-      float offset = acqConfig->vert(i).offset();
-      unsigned nbrSamples = h.nbrSamples();
-      for (unsigned j=0;j<nbrSamples;j++) {
-        int16_t swap = (data[j]&0xff<<8) | (data[j]&0xff00>>8);
+      ndarray<const int16_t,2> wfs = acqData->data(*acqConfig,i).waveforms(*acqConfig);
+      float slope  = vert[i].slope();
+      float offset = vert[i].offset();
+      for (unsigned j=0;j<wfs.shape()[1];j++) {
+        int16_t swap = wfs[i][j];
         val = val + fabs(swap*slope-offset);      //fabs value for area under curve 
       }
-      acqData = acqData->nextChannel(h);  
     }
     return val;
   };
@@ -152,7 +150,7 @@ namespace Ami {
   template<> double opalDataSpace::processData()  
   {
     Pds::Camera::FrameV1* opalFrame = detDataPtr;
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(opalFrame->data()); 
+    const uint16_t* dataArray = opalFrame->data16().data(); 
     unsigned totalPixels = opalFrame->width()*opalFrame->height(); 
     unsigned offset = opalFrame->offset();
     unsigned val = 0; 
@@ -167,7 +165,7 @@ namespace Ami {
   template<> double fccdDataSpace::processData() 
   {
     Pds::Camera::FrameV1* fccdFrame = detDataPtr;
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(fccdFrame->data());  
+    const uint16_t* dataArray = fccdFrame->data16().data();
     unsigned totalPixels = fccdFrame->width()*fccdFrame->height();
     unsigned offset = fccdFrame->offset();
     unsigned val = 0; 
@@ -182,7 +180,7 @@ namespace Ami {
   template<> double pulnixDataSpace::processData() 
   { 
     Pds::Camera::FrameV1* pulnixFrame = detDataPtr;
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(pulnixFrame->data());  
+    const uint16_t* dataArray = pulnixFrame->data16().data();  
     unsigned totalPixels = pulnixFrame->width()*pulnixFrame->height();
     unsigned offset = pulnixFrame->offset();
     unsigned val = 0; 
@@ -197,15 +195,16 @@ namespace Ami {
   { 
     pnCCDConfigType& pnccdConfig = detConfig;
     const Pds::PNCCD::FrameV1*  pnccdFrame   = detDataPtr;
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(pnccdFrame->data());
     unsigned val = 0;
     for (unsigned j=0; j<4 ; j++ ) {                // for all 4 quadrants in sequence UpL+LoL+LoR+UpR
-      unsigned dataSize = pnccdFrame->sizeofData(pnccdConfig);
-      for(unsigned i= 0; i< dataSize ; i++) {
-        val = val + ( ((*(dataArray+i) ) & 0x3fff) >>1 ); 
-      }
-      pnccdFrame = pnccdFrame->next(pnccdConfig);
-      dataArray = reinterpret_cast<const uint16_t*>(pnccdFrame->data());
+      const ndarray<const uint16_t,2> dataArray = pnccdFrame->data(pnccdConfig);
+      for(unsigned i=0; i<dataArray.shape()[0]; i++)
+        for(unsigned j=0; j<dataArray.shape()[1]; j++)
+          val += dataArray[i][j];
+
+      pnccdFrame = reinterpret_cast<const Pds::PNCCD::FrameV1*>
+        (reinterpret_cast<const char*>(pnccdFrame)+
+         pnccdFrame->_sizeof(pnccdConfig));
     }
     return ((double)val);
   }
@@ -214,7 +213,7 @@ namespace Ami {
   { 
     PrincetonConfigType& princetonConfig = detConfig; 
     PrincetonDataType*   princetonFrame  = detDataPtr; 
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(princetonFrame->data());
+    const uint16_t* dataArray = princetonFrame->data(princetonConfig).data();
     unsigned totalPixels = princetonConfig.frameSize() / sizeof(uint16_t);
     unsigned val = 0;   
     for (unsigned i = 0 ; i<totalPixels ; i++) 
@@ -226,7 +225,7 @@ namespace Ami {
   { 
     FliConfigType& fliConfig = detConfig; 
     FliDataType*   fliFrame  = detDataPtr; 
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(fliFrame->data());
+    const uint16_t* dataArray = fliFrame->data(fliConfig).data();
     unsigned totalPixels = fliConfig.frameSize() / sizeof(uint16_t);
     unsigned val = 0;   
     for (unsigned i = 0 ; i<totalPixels ; i++) 
@@ -238,7 +237,7 @@ namespace Ami {
   { 
     AndorConfigType& andorConfig = detConfig; 
     AndorDataType*   andorFrame  = detDataPtr; 
-    const uint16_t* dataArray = reinterpret_cast<const uint16_t*>(andorFrame->data());
+    const uint16_t* dataArray = andorFrame->data(andorConfig).data();
     unsigned totalPixels = andorConfig.frameSize() / sizeof(uint16_t);
     unsigned val = 0;   
     for (unsigned i = 0 ; i<totalPixels ; i++) 
@@ -255,31 +254,31 @@ namespace Ami {
 
   template<> double eBeamDataSpace::processData()   
   {
-    Pds::BldDataEBeam* EBeamData = detDataPtr; 
-    double val = fabs(EBeamData->fEbeamCharge);
+    Pds::Bld::BldDataEBeamV3* EBeamData = detDataPtr; 
+    double val = fabs(EBeamData->ebeamCharge());
     return val; 
   }
 
   template<> double gasDetectorDataSpace::processData() 
   {
-    Pds::BldDataFEEGasDetEnergy* gasDetectorData = detDataPtr;
+    Pds::Bld::BldDataFEEGasDetEnergy* gasDetectorData = detDataPtr;
     //gas detector abs() adddition of 4 energy sensors 
-    double val = fabs(gasDetectorData->f_11_ENRC) + fabs(gasDetectorData->f_12_ENRC) + fabs(gasDetectorData->f_21_ENRC) + fabs(gasDetectorData->f_22_ENRC); 
+    double val = fabs(gasDetectorData->f_11_ENRC()) + fabs(gasDetectorData->f_12_ENRC()) + fabs(gasDetectorData->f_21_ENRC()) + fabs(gasDetectorData->f_22_ENRC()); 
     return val;
   }
 
 
   template<> double phaseCavityDataSpace::processData() 
   {
-    Pds::BldDataPhaseCavity* phaseCavityData = detDataPtr; 
-    double val = fabs(phaseCavityData->fCharge1) + fabs(phaseCavityData->fCharge2); 
+    Pds::Bld::BldDataPhaseCavity* phaseCavityData = detDataPtr; 
+    double val = fabs(phaseCavityData->charge1()) + fabs(phaseCavityData->charge2()); 
     return val;
   }
 
   template<> double gmdDataSpace::processData() 
   {
-    Pds::BldDataGMD* gmdData = detDataPtr; 
-    double val = fabs(gmdData->fMilliJoulesPerPulse) + fabs(gmdData->fMilliJoulesAverage);
+    Pds::Bld::BldDataGMDV1* gmdData = detDataPtr; 
+    double val = fabs(gmdData->milliJoulesPerPulse()) + fabs(gmdData->milliJoulesAverage());
     return val;
   }
   

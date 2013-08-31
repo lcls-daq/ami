@@ -18,36 +18,29 @@ tgtslib_test := $(USRLIBDIR)/rt
 tgtslib_tcptest := $(USRLIBDIR)/rt
 
 tgtlibs_ami_proxy := ami/service ami/data ami/server ami/client
-tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/acqdata
+tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_proxy += $(qtlibdir)
 tgtslib_ami_proxy += $(qtslibdir)
+tgtlibs_ami_proxy += pdsalg/pdsalg
 
 tgtlibs_ami_collection := ami/service ami/data ami/server ami/client
-tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/acqdata
+tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_collection += $(qtlibdir)
 tgtslib_ami_collection += $(qtslibdir)
+tgtlibs_ami_collection += pdsalg/pdsalg
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
-tgtlibs_ami := pdsdata/xtcdata pdsdata/acqdata pdsdata/timepixdata
-tgtlibs_ami += pdsdata/camdata pdsdata/opal1kdata pdsdata/quartzdata
-tgtlibs_ami += pdsdata/pulnixdata pdsdata/princetondata
-tgtlibs_ami += pdsdata/pnccddata pdsdata/ipimbdata
-tgtlibs_ami += pdsdata/evrdata pdsdata/encoderdata pdsdata/usdusbdata
-tgtlibs_ami += pdsdata/gsc16aidata
-tgtlibs_ami += pdsdata/controldata pdsdata/epics 
-tgtlibs_ami += pdsdata/cspaddata pdsdata/lusidata pdsdata/appdata
-tgtlibs_ami += pdsdata/cspad2x2data
-tgtlibs_ami += pdsdata/fexampdata
-tgtlibs_ami += pdsdata/phasicsdata pdsdata/oceanopticsdata pdsdata/flidata pdsdata/andordata
-tgtlibs_ami += pdsdata/orcadata pdsdata/quartzdata
-tgtlibs_ami += pdsdata/impdata
+tgtlibs_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
+tgtlibs_ami += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_ami += pdsdata/compressdata
+tgtlibs_ami += pds/configdata
 tgtlibs_ami += ami/service ami/data ami/server ami/calib ami/event ami/client ami/app
-tgtincs_ami := $(qtincdir)
+tgtincs_ami := $(qtincdir) pdsdata/include
 tgtlibs_ami += $(qtlibdir)
 tgtslib_ami += $(qtslibdir)
+tgtlibs_ami += pdsalg/pdsalg
 
 tgtlibs_tcptest := ami/service pdsdata/xtcdata
 
@@ -65,7 +58,7 @@ libsrcs_app := $(filter-out SummaryAnalysis.cc test.cc ami.cc ami_proxy.cc tcpte
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_app := ndarray/include
+libincs_app := ndarray/include boost/include pdsdata/include 
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

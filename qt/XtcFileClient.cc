@@ -226,10 +226,11 @@ static void _connect(const QObject* sender, const char* signal, const QObject* r
   }
 }
 
-XtcFileClient::XtcFileClient(QGroupBox* groupBox, XtcClient& client, const char* curdir, bool testMode, bool liveReadMode) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& client, const char* curdir, bool testMode, bool liveReadMode) :
   QWidget (0,::Qt::Window),
   _runValid(false),
   _client(client),
+  _iclient(0),
   _curdir(curdir),
   _testMode(testMode),
   _liveReadMode(liveReadMode),
@@ -623,7 +624,8 @@ void XtcFileClient::insertTransition(TransitionId::Value transition)
   Dgram dg;
   new((void*)&dg.seq) Sequence(Sequence::Event, transition, ClockTime(0,0), TimeStamp(0,0,0,0));
   new((char*)&dg.xtc) Xtc(TypeId(TypeId::Id_Xtc,0),ProcInfo(Level::Recorder,0,0));
-  _client.processDgram(&dg);
+  for(unsigned i=0; i<_client.size(); i++)
+    _client[i]->processDgram(&dg);
 }
 
 void XtcFileClient::routine()
@@ -797,7 +799,11 @@ void XtcFileClient::do_configure(QString runName)
   emit _printDgram(*dg);
 
   setStatus("Configuring run " + runName);
-  _client.processDgram(dg);
+  for(unsigned i=0; i<_client.size(); i++)
+    _client[i]->processDgram(dg);
+  for(unsigned i=0; i<_client.size(); i++)
+    _client[i]->discover_wait();
+
   setStatus("Finished configuring run " + runName + ".");
   _runValid = true;
 }
@@ -922,7 +928,9 @@ void XtcFileClient::run()
     last_dg = dg;
     _dgCount++;
     _payloadTotal += dg->xtc.sizeofPayload();
-    _client.processDgram(dg);
+
+    _client[_iclient++]->processDgram(dg);
+    if (_iclient == _client.size()) _iclient=0;
 
     uint32_t damage = dg->xtc.damage.value();
     if (damage) {

@@ -2,10 +2,7 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/timepix/DataV1.hh"
-#include "pdsdata/timepix/DataV2.hh"
-#include "pdsdata/timepix/ConfigV1.hh"
-#include "pdsdata/timepix/ConfigV2.hh"
+#include "pdsdata/psddl/timepix.ddl.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -83,7 +80,7 @@ void _fill(const Pds::Timepix::DataV2& f, EntryImage& entry)
   unsigned destWidth = entry.desc().nbinsx();
   unsigned srcHeight = f.height();
   unsigned destHeight = entry.desc().nbinsy();
-  const T* d = reinterpret_cast<const T*>(f.data());
+  const T* d = reinterpret_cast<const T*>(f.data().data());
 
   // Copy 4 equally sized quadrants to the corners of the (larger) destination array.
   // Display error pixels (those over MaxPixelValue) as 0.
@@ -119,16 +116,24 @@ void TimepixHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cl
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
-  if (type.version() == 2) {
-    const Pds::Timepix::DataV2& dataV2 = *reinterpret_cast<const Pds::Timepix::DataV2*>(payload);
-    _fill<uint16_t>(dataV2, *_entry);
-  } else if (type.version() == 1) {
-    const Pds::Timepix::DataV1& dataV1 = *reinterpret_cast<const Pds::Timepix::DataV1*>(payload);
-    char buf[sizeof(dataV1) + dataV1.data_size()];
-    const Pds::Timepix::DataV2& dataV2 = *new (buf) Pds::Timepix::DataV2(dataV1);
-    _fill<uint16_t>(dataV2, *_entry);
-  } else {
+  switch(type.version()) {
+  case 2:
+    { const Pds::Timepix::DataV2& dataV2 = *reinterpret_cast<const Pds::Timepix::DataV2*>(payload);
+      _fill<uint16_t>(dataV2, *_entry); } break;
+  case 1:
+    { const Pds::Timepix::DataV1& dataV1 = *reinterpret_cast<const Pds::Timepix::DataV1*>(payload);
+#if 0
+      //
+      //  This transformation is missing psddl_pdsdata
+      //
+      char buf[sizeof(dataV1) + dataV1.data_size()];
+      const Pds::Timepix::DataV2& dataV2 = *new (buf) Pds::Timepix::DataV2(dataV1);
+      _fill<uint16_t>(dataV2, *_entry);
+#endif
+    } break;
+  default:
     printf("TimepixHandler: type.version()=%d is not supported\n", type.version());
+    break;
   }
 
   _entry->valid(t);

@@ -26,7 +26,7 @@ OceanOpticsHandler::OceanOpticsHandler(const Pds::DetInfo&   info,
   _nentries(0)
 {
   Pds::ClockTime t;
-  _configure(&config, t);
+  _configure(_oceanOpticsConfigType, &config, t);
 }
 
 OceanOpticsHandler::~OceanOpticsHandler()
@@ -47,15 +47,16 @@ void OceanOpticsHandler::reset() {
   _nentries = 0;
 }
 
-void OceanOpticsHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void OceanOpticsHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void OceanOpticsHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void OceanOpticsHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const OceanOpticsConfigType& c = *reinterpret_cast<const OceanOpticsConfigType*>(payload);
 
+  ndarray<const double,1> p = c.waveLenCalib();
   unsigned  channelNumber = 0;  
-  double    fMinX         = OceanOpticsDataType::waveLength1stOrder(c, 0);
-  double    fMaxX         = OceanOpticsDataType::waveLength1stOrder(c, OceanOpticsDataType::iNumPixels - 1);
+  double    fMinX         = p[0];
+  double    fMaxX         = p[0] + p[1]*double(OceanOpticsDataType::iNumPixels - 1);
   
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescWaveform desc(det, channelNumber,ChannelID::name(det,channelNumber),
@@ -65,7 +66,7 @@ void OceanOpticsHandler::_configure(const void* payload, const Pds::ClockTime& t
   _config = c;
 }
 
-void OceanOpticsHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void OceanOpticsHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   OceanOpticsDataType* d = (OceanOpticsDataType*)payload;
   

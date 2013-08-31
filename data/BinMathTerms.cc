@@ -9,6 +9,8 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/ImageMask.hh"
 
+#include "pdsalg/pdsalg.h"
+
 using namespace Ami;
 
 BinMathC::EntryWaveformTerm::EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi,
@@ -32,28 +34,18 @@ double BinMathC::EntryWaveformTerm::evaluate() const
     lo -= offset;
     hi -= offset;
   }
+
+  double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+  double x0 = desc.xlow()+(double(lo)+0.5)*dx;
+  ndarray<const double,1> a = make_ndarray(e->content()+lo,hi-lo+1);
+  ndarray<double,1> m = pdsalg::moments(a, x0, dx);
+
   switch(_mom) {
-  case First:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->content(i)*x;
-    }
-    break;
-  case Second:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->content(i)*x*x;
-    }
-    break;
-  default:
-    for(unsigned i=lo; i<=hi; i++)
-      sum += e->content(i);
-    break;
+  case First : sum = m[1]; break;
+  case Second: sum = m[2]; break;
+  default    : sum = m[0]; break;
   }
+
   double n = e->info(EntryWaveform::Normalization);
   return n > 0 ? sum / n : sum; 
 }
@@ -67,28 +59,18 @@ double BinMathC::EntryTH1FTerm::evaluate() const
   unsigned lo=_lo, hi=_hi;
   const EntryTH1F* e = static_cast<const EntryTH1F*>(_entry);
   const DescTH1F& desc = e->desc();
+
+  double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+  double x0 = desc.xlow()+(double(lo)+0.5)*dx;
+  ndarray<const double,1> a = make_ndarray(e->content()+lo,hi-lo+1);
+  ndarray<double,1> m = pdsalg::moments(a, x0, dx);
+
   switch(_mom) {
-  case First:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->content(i)*x;
-    }
-    break;
-  case Second:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->content(i)*x*x;
-    }
-    break;
-  default:
-    for(unsigned i=lo; i<=hi; i++)
-      sum += e->content(i);
-    break;
+  case First : sum = m[1]; break;
+  case Second: sum = m[2]; break;
+  default    : sum = m[0]; break;
   }
+
   double n = e->info(EntryTH1F::Normalization);
   return n > 0 ? sum / n : sum; 
 }
@@ -102,28 +84,19 @@ double BinMathC::EntryProfTerm::evaluate() const
   unsigned lo=_lo, hi=_hi;
   const EntryProf* e = static_cast<const EntryProf*>(_entry);
   const DescProf& desc = e->desc();
+
+  double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
+  double x0 = desc.xlow()+(double(lo)+0.5)*dx;
+  ndarray<const double,1> a = make_ndarray(e->ysum   ()+lo,hi-lo+1);
+  ndarray<const double,1> b = make_ndarray(e->entries()+lo,hi-lo+1);
+  ndarray<double,1> m = pdsalg::moments(a, b, x0, dx);
+
   switch(_mom) {
-  case First:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->ymean(i)*x;
-    }
-    break;
-  case Second:
-    {
-      double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
-      double x  = desc.xlow()+(double(lo)+0.5)*dx;
-      for(unsigned i=lo; i<=hi; i++, x+=dx)
-        sum += e->ymean(i)*x*x;
-    }
-    break;
-  default:
-    for(unsigned i=lo; i<=hi; i++)
-      sum += e->ymean(i);
-    break;
+  case First : sum = m[1]; break;
+  case Second: sum = m[2]; break;
+  default    : sum = m[0]; break;
   }
+
   return sum; 
 }
     
@@ -149,39 +122,30 @@ double BinMathC::EntryImageTerm::evaluate() const {
   const EntryImage& e = *static_cast<const EntryImage*>(_entry);
   const DescImage&  d = e.desc();
   const ImageMask* mask = d.mask();
-  double s0 = 0, sum = 0, sqsum = 0;
-  double xsum = 0, ysum = 0;
+
+  unsigned shape[] = {d.nbinsy(),d.nbinsx()};
+  ndarray<const unsigned,2> a(e.contents(),shape);
+
+  unsigned mshape[] = {5};
+  ndarray<double,1> m(mshape);
   double p   = double(e.info(EntryImage::Pedestal));
   if (mask) {
     unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
     if (xhi >= d.nbinsx()) xhi = d.nbinsx()-1;
     if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
-    for(unsigned j=ylo; j<=yhi; j++) {
-      if (!mask->row(j)) continue;
-      for(unsigned i=xlo; i<=xhi; i++)
-        if (mask->rowcol(j,i)) {
-          double v = double(e.content(i,j))-p;
-          s0    += 1;
-          sum   += v;
-          sqsum += v*v;
-	  xsum  += double(i)*v;	    
-	  ysum  += double(j)*v;
-        }
-    }
+
+    unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
+    m = pdsalg::moments(a, mask->row_mask(), mask->all_mask(), p, bounds);
   }
   else if (d.nframes()) {
     for(unsigned fn=0; fn<d.nframes(); fn++) {
       int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-        for(int j=ylo; j<=yhi; j++)
-          for(int i=xlo; i<=xhi; i++) {
-            double v = double(e.content(i,j))-p;
-            s0    += 1;
-            sum   += v;
-            sqsum += v*v;
-	    xsum  += double(i)*v;	    
-	    ysum  += double(j)*v;
-          }
+
+        unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
+        ndarray<double,1> fm = pdsalg::moments(a, p, bounds);
+        for(unsigned j=0; j<5; j++)
+          m[j] += fm[j];
       }
     }
   }
@@ -189,45 +153,23 @@ double BinMathC::EntryImageTerm::evaluate() const {
     unsigned xlo=_xlo, xhi=_xhi, ylo=_ylo, yhi=_yhi;
     if (xhi >= d.nbinsx()) xhi = d.nbinsx()-1;
     if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
-    for(unsigned j=ylo; j<=yhi; j++)
-      for(unsigned i=xlo; i<=xhi; i++) {
-        double v = double(e.content(i,j))-p;
-        s0    += 1;
-        sum   += v;
-        sqsum += v*v;
-	xsum  += double(i)*v;	    
-	ysum  += double(j)*v;
-      }
+
+    unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
+    m = pdsalg::moments(a, p, bounds);
   }
+
   double n = double(e.info(EntryImage::Normalization));
   double q = double(d.ppxbin()*d.ppybin());
+  if (n>0) q*=n;
   double v;
   switch(_mom) {
-  case Zero:
-    v = sum;
-    if (n>0) v/=n;
-    break;
-  case Mean:
-    v = sum/(s0*q);
-    if (n>0) v/=n;
-    break;
-  case Variance:
-    v = sqrt((sqsum/s0 - pow(sum/s0,2))/q);;
-    if (n>0) v/=n;
-    break;
-  case Contrast:
-    v = sqrt(s0*sqsum/(sum*sum) - 1);
-    //          if (n>0) v/=sqrt(n);
-    break;
-  case XCenterOfMass:
-    v = xsum/sum*d.ppxbin();
-    break;
-  case YCenterOfMass:
-    v = ysum/sum*d.ppybin();
-    break;
-  default:
-    v = 0;
-    break;
+  case Zero         : v = m[1]; break;
+  case Mean         : v = m[1]/(m[0]*q); break;
+  case Variance     : v = sqrt((m[2]/m[0] - pow(m[1]/m[0],2))/q); break;
+  case Contrast     : v = sqrt(m[0]*m[2]/(m[1]*m[1]) - 1); break;
+  case XCenterOfMass: v = m[3]/m[1]*d.ppxbin(); break;
+  case YCenterOfMass: v = m[4]/m[1]*d.ppybin(); break;
+  default           : v = 0; break;
   }
   return v;
 }

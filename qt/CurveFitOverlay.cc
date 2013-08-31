@@ -121,7 +121,6 @@ void CurveFitOverlay::load(const char*& p)
 void CurveFitOverlay::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void CurveFitOverlay::setup_payload(Cds& cds)
 {

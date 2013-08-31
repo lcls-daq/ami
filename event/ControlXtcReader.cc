@@ -5,9 +5,7 @@
 #include "pdsdata/xtc/Level.hh"
 #include "pdsdata/xtc/Xtc.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
-#include "pdsdata/control/ConfigV1.hh"
-#include "pdsdata/control/ConfigV2.hh"
-#include "pdsdata/control/PVControl.hh"
+#include "pdsdata/psddl/control.ddl.h"
 
 #include <stdio.h>
 
@@ -42,7 +40,7 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
     //  Add the PVControl variables
     char nbuf[FeatureCache::FEATURE_NAMELEN];
     for(unsigned k=0; k<c.npvControls(); k++) {
-      const Pds::ControlData::PVControl& pv = c.pvControl(k);
+      const Pds::ControlData::PVControl& pv = c.pvControls()[k];
       int index;
       if (pv.array()) {
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
@@ -64,7 +62,7 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
     //  Add the PVControl variables
     char nbuf[FeatureCache::FEATURE_NAMELEN];
     for(unsigned k=0; k<c.npvControls(); k++) {
-      const Pds::ControlData::PVControl& pv = c.pvControl(k);
+      const Pds::ControlData::PVControl& pv = c.pvControls()[k];
       int index;
       if (pv.array()) {
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());

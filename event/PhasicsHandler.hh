@@ -16,9 +16,8 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/camera/FrameV1.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
-#include "pdsdata/opal1k/ConfigV1.hh"
+#include "pdsdata/psddl/camera.ddl.h"
+#include "pdsdata/psddl/opal1k.ddl.h"
 
 #include <string.h>
 

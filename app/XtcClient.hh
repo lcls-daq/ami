@@ -35,6 +35,7 @@ namespace Ami {
     void insert(EventHandler*);
     void remove(EventHandler*);
     void processDgram(Pds::Dgram*);
+    void discover_wait();
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;

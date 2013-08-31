@@ -2,8 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/encoder/ConfigV1.hh"
-#include "pdsdata/encoder/DataV2.hh"
+#include "pdsdata/psddl/encoder.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -23,8 +22,8 @@ EncoderHandler::~EncoderHandler()
 {
 }
 
-void   EncoderHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   EncoderHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   EncoderHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   EncoderHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
   strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),59);
@@ -38,7 +37,7 @@ void   EncoderHandler::_configure(const void* payload, const Pds::ClockTime& t)
   _cache.add(buffer);
 }
 
-void   EncoderHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void   EncoderHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Encoder::DataV2& d = *reinterpret_cast<const Pds::Encoder::DataV2*>(payload);
   _cache.cache(_index+0, d.value(0));

@@ -57,6 +57,7 @@ EventHandler::~EventHandler()
 {
 }
 
+/*
 void   EventHandler::_configure(Pds::TypeId type, 
 				const void* payload, const Pds::ClockTime& t)
 {
@@ -74,6 +75,7 @@ void   EventHandler::_event(Pds::TypeId type,
 {
   _event(payload,t);
 }
+*/
 
 static bool _full_res = false;
 

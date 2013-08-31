@@ -1,6 +1,6 @@
 #include "ami/event/PhasicsHandler.hh"
 #include "pds/config/PhasicsConfigType.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
+#include "pdsdata/psddl/camera.ddl.h"
 
 #include <stdio.h>
 

@@ -24,12 +24,10 @@ namespace Ami {
     const Entry* entry(unsigned) const;
     const Entry* hidden_entry(unsigned) const;
     void         reset();
-  protected:
-    void _calibrate(const void* payload, const Pds::ClockTime& t);
+  public:
     void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t) {}
-    void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
-    void _event    (const void* payload, const Pds::ClockTime& t);
+    void _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   public:
     void _create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,

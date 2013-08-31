@@ -142,8 +142,8 @@ void*      TdcPlot::_serialize(void* p) const
 
 #include "pdsdata/xtc/ClockTime.hh"
 
-typedef AcqTdcDataType::Marker  MarkerType;
-typedef AcqTdcDataType::Channel ChannelType;
+typedef Pds::Acqiris::TdcDataV1Marker  MarkerType;
+typedef Pds::Acqiris::TdcDataV1Channel ChannelType;
 
 Entry&     TdcPlot::_operate(const Entry& e) const
 {
@@ -163,15 +163,19 @@ Entry&     TdcPlot::_operate(const Entry& e) const
   //
   unsigned mask(0);
   const AcqTdcDataType* p = reinterpret_cast<const AcqTdcDataType*>(input->data());
-  while(!(p->source() == AcqTdcDataType::AuxIO &&
-          static_cast<const MarkerType*>(p)->type() < MarkerType::AuxIOMarker)) {
-    if (p->source()>AcqTdcDataType::Comm && 
-        p->source()<AcqTdcDataType::AuxIO) {
-      const ChannelType& c = *static_cast<const ChannelType*>(p);
-      unsigned ch = p->source()-1;
+  ndarray<const Pds::Acqiris::TdcDataV1_Item,1> a = p->data();
+  for(unsigned j=0; j<a.shape()[0]; j++) {
+    if (a[j].source() == Pds::Acqiris::TdcDataV1_Item::AuxIO &&
+        static_cast<const MarkerType&>(a[j]).type() < MarkerType::AuxIOMarker) 
+      break;
+
+    if (a[j].source() > Pds::Acqiris::TdcDataV1_Item::Comm && 
+        a[j].source() < Pds::Acqiris::TdcDataV1_Item::AuxIO) {
+      const ChannelType& c = static_cast<const ChannelType&>(a[j]);
+      unsigned ch = a[j].source()-1;
       //  If the hit is valid and is one we're interested in
       if (!c.overflow() && (_mask&(1<<ch))) {
-        double t = c.ticks()*TC890_Period;
+        double t = c.time();
         _chan[ch]->set(t);
         //  If we've seen at least one of each hit we need
         if ((mask |= 1<<ch)==_mask) {
@@ -200,7 +204,6 @@ Entry&     TdcPlot::_operate(const Entry& e) const
         }
       }
     }
-    p++;
   }
 
   switch(_routput().type()) {

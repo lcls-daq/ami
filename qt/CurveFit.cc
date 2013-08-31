@@ -32,7 +32,6 @@
 #include <QtGui/QGroupBox>
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
-#include <QtGui/QButtonGroup>
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
 

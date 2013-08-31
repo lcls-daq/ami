@@ -4,9 +4,8 @@
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/fccd/FccdConfigV1.hh"
-#include "pdsdata/fccd/FccdConfigV2.hh"
-#include "pdsdata/camera/FrameV1.hh"
+#include "pdsdata/psddl/fccd.ddl.h"
+#include "pdsdata/psddl/camera.ddl.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -72,15 +71,15 @@ void FccdHandler::_configure(Pds::TypeId type, const void* payload, const Pds::C
 
 }
 
-void FccdHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
+void FccdHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t) {}
 
-void FccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void FccdHandler::_event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (!_entry) return;
 
   //  memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
-  const uint16_t* d  = reinterpret_cast<const uint16_t*>(f.data());
+  const uint16_t* d  = reinterpret_cast<const uint16_t*>(f.data16().data());
 
   static unsigned _options = -1;
   if (_entry->desc().options() != _options) {

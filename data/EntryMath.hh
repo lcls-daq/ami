@@ -11,6 +11,11 @@ namespace Ami {
   class Term;
   class FeatureCache;
 
+  /**
+   *   An operator to apply an algebraic expression between objects in the same
+   *   analysis thread.  The objects are identified by their index and are assumed
+   *   to be of the same shape/size.
+   */
   class EntryMath : public AbsOperator {
   public:
     EntryMath(const char* expr);

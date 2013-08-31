@@ -4,8 +4,6 @@
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/pnCCD/ConfigV1.hh"
-#include "pdsdata/pnCCD/FrameV1.hh"
 
 #include <string.h>
 #include <stdio.h>
@@ -60,6 +58,7 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
 			   const FeatureCache& cache) : 
   EventHandler(info, Pds::TypeId::Id_pnCCDframe, Pds::TypeId::Id_pnCCDconfig),
   _cache   (cache),
+  _config  (0,0),
   _collect (false),
   _ncollect(0),
   _entry   (0),
@@ -87,7 +86,7 @@ const Entry* PnccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
 void PnccdHandler::reset() { _entry = 0; }
 
-void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   _config = *reinterpret_cast<const Pds::PNCCD::ConfigV1*>(payload);
 
@@ -113,11 +112,10 @@ void PnccdHandler::_configure(const void* payload, const Pds::ClockTime& t)
   PnccdCalib::load_pedestals(_correct,_tform);
 }
 
-void PnccdHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void PnccdHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::PNCCD::FrameV1* f = reinterpret_cast<const Pds::PNCCD::FrameV1*>(payload);
   if (!_entry) return;
 
   if (_entry && _entry->desc().used()) {
@@ -133,14 +131,11 @@ void PnccdHandler::_event    (const void* payload, const Pds::ClockTime& t)
     }
   }
 
-  _fillQuadrant (f->data(), 0, 0);                      // upper left
-  f = f->next(_config);
-  _fillQuadrantR(f->data(), cols_segment-1, rows-1);    // lower left
-  f = f->next(_config);
-  _fillQuadrantR(f->data(), cols-1, rows-1);            // lower right
-  f = f->next(_config);
-  _fillQuadrant (f->data(), cols_segment, 0);           // upper right
-  f = f->next(_config);
+  const Pds::PNCCD::FramesV1& f = *reinterpret_cast<const Pds::PNCCD::FramesV1*>(payload);
+  _fillQuadrant (f.frame(_config,0).data(_config).data(), 0, 0);
+  _fillQuadrant (f.frame(_config,1).data(_config).data(), cols_segment-1, rows-1);
+  _fillQuadrant (f.frame(_config,2).data(_config).data(), cols-1, rows-1);
+  _fillQuadrant (f.frame(_config,3).data(_config).data(), cols_segment, 0);
 
   double n = double(PixelsPerBin*PixelsPerBin);
   _entry->info(double(Offset)*n,EntryImage::Pedestal);

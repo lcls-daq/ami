@@ -5,7 +5,7 @@
 #include "pdsdata/xtc/Xtc.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
-#include "pdsdata/epics/EpicsPvData.hh"
+#include "pdsdata/psddl/epics.ddl.h"
 
 #include <stdio.h>
 
@@ -16,96 +16,100 @@ namespace Ami {
   };
 };
 
-using namespace Ami;
+using namespace Pds::Epics;
 
-EpicsXtcReader::EpicsXtcReader(const Pds::Src& info, FeatureCache& f)  : 
-  EventHandler(info,
+Ami::EpicsXtcReader::EpicsXtcReader(const Pds::Src& info, Ami::FeatureCache& f)  : 
+  Ami::EventHandler(info,
                Pds::TypeId::Id_Epics,
                Pds::TypeId::Id_Epics),
   _cache(f)
 {
 }
 
-EpicsXtcReader::~EpicsXtcReader()
+Ami::EpicsXtcReader::~EpicsXtcReader()
 {
 }
 
-void   EpicsXtcReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   EpicsXtcReader::_configure(const void* payload, const Pds::ClockTime& t)
+void   Ami::EpicsXtcReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   Ami::EpicsXtcReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::EpicsPvHeader& pvData = *reinterpret_cast<const Pds::EpicsPvHeader*>(payload);
+  const EpicsPvHeader& pvData = 
+    *reinterpret_cast<const EpicsPvHeader*>(payload);
 
-  if (pvData.iDbrType >= DBR_CTRL_SHORT &&
-      pvData.iDbrType <= DBR_CTRL_DOUBLE) {
-    const Pds::EpicsPvCtrlHeader& ctrl = static_cast<const Pds::EpicsPvCtrlHeader&>(pvData);
+  if (pvData.dbrType() >= DBR_CTRL_SHORT &&
+      pvData.dbrType() <= DBR_CTRL_DOUBLE) {
+    const EpicsPvCtrlHeader& ctrl = static_cast<const EpicsPvCtrlHeader&>(pvData);
 
-    if (pvData.iPvId < 0) {
-      printf("EpicsXtcReader found pv %s id %d.  Ignoring.\n",ctrl.sPvName,pvData.iPvId);
+    if (pvData.pvId() < 0) {
+      printf("EpicsXtcReader found pv %s id %d.  Ignoring.\n",ctrl.pvName(),pvData.pvId());
       return;
     }
 
-    if (pvData.iPvId >= MaxPvs) {
-      printf("EpicsXtcReader found pv %s id %d > %d.  Ignoring.\n",ctrl.sPvName,pvData.iPvId,MaxPvs);
+    if (pvData.pvId() >= MaxPvs) {
+      printf("EpicsXtcReader found pv %s id %d > %d.  Ignoring.\n",ctrl.pvName(),pvData.pvId(),MaxPvs);
       return;
     }
 
     int index = -1;
-    if (ctrl.iNumElements>32) {
-      printf("PV array %s[%d] too large. Ignored.\n",ctrl.sPvName,ctrl.iNumElements);
+    if (ctrl.numElements()>32) {
+      printf("PV array %s[%d] too large. Ignored.\n",ctrl.pvName(),ctrl.numElements());
     }
-    else if (ctrl.iNumElements>1) {
+    else if (ctrl.numElements()>1) {
       char buffer[64];
-      strncpy(buffer,ctrl.sPvName,64);
+      strncpy(buffer,ctrl.pvName(),64);
       char* iptr = buffer+strlen(buffer);
-      for(unsigned i=0; i<unsigned(ctrl.iNumElements); i++) {
+      for(unsigned i=0; i<unsigned(ctrl.numElements()); i++) {
 	sprintf(iptr,"[%d]",i);
 	index = _cache.add(buffer);
       }
-      index -= ctrl.iNumElements-1;
+      index -= ctrl.numElements()-1;
     }
     else {
-      index = _cache.add(ctrl.sPvName);
+      index = _cache.add(ctrl.pvName());
     }
 
-    if (ctrl.iPvId < MaxPvs)
-      _index[ctrl.iPvId] = index;
+    if (ctrl.pvId() < MaxPvs) {
+      _index[ctrl.pvId()] = index;
+    }
     else
-      printf("PV %s truncated from list\n",ctrl.sPvName);
+      printf("PV %s truncated from list\n",ctrl.pvName());
+  }
+  else {
+    printf("EpicsXtcReader::_configure ignoring PV type %d\n",pvData.dbrType());
   }
 }
 
-#define CASETOVAL(timetype,valtype) case timetype: {			\
-    const EpicsPvTime<valtype>& p = static_cast<const EpicsPvTime<valtype>&>(pvData); \
-    const EpicsDbrTools::DbrTypeFromInt<valtype>::TDbr* v = &p.value;	\
-    for(int i=0; i<pvData.iNumElements; i++)				\
+#define CASETOVAL(timetype,pdstimetype,valtype) case timetype: {        \
+    const pdstimetype& p = static_cast<const pdstimetype&>(pvData);     \
+    const valtype* v = p.data().data();                                 \
+    for(int i=0; i<pvData.numElements(); i++)				\
       _cache.cache(index++, *v++);					\
     break; }
 
-void   EpicsXtcReader::_event    (const void* payload, const Pds::ClockTime& t)
+void   Ami::EpicsXtcReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const EpicsPvHeader& pvData = *reinterpret_cast<const EpicsPvHeader*>(payload);
 
-  if (pvData.iPvId <  0 || 
-      pvData.iPvId >= MaxPvs)
+  if (pvData.pvId() <  0 || 
+      pvData.pvId() >= MaxPvs)
     return;
 
-  if (pvData.iDbrType < DBR_CTRL_STRING) {
-    int index = _index[pvData.iPvId];
+  if (pvData.dbrType() < DBR_CTRL_STRING) {
+    int index = _index[pvData.pvId()];
     if (index<0)
       return;
-    switch(pvData.iDbrType) {
-    CASETOVAL(DBR_TIME_SHORT ,DBR_SHORT)
-    CASETOVAL(DBR_TIME_FLOAT ,DBR_FLOAT)
-    CASETOVAL(DBR_TIME_ENUM  ,DBR_ENUM)
-    CASETOVAL(DBR_TIME_LONG  ,DBR_LONG)
-    CASETOVAL(DBR_TIME_DOUBLE,DBR_DOUBLE)
-    default: 
+    switch(pvData.dbrType()) {
+      CASETOVAL(DBR_TIME_SHORT ,EpicsPvTimeShort , int16_t )
+      CASETOVAL(DBR_TIME_FLOAT ,EpicsPvTimeFloat , float   )
+      CASETOVAL(DBR_TIME_ENUM  ,EpicsPvTimeEnum  , uint16_t)
+      CASETOVAL(DBR_TIME_LONG  ,EpicsPvTimeLong  , int32_t )
+      CASETOVAL(DBR_TIME_DOUBLE,EpicsPvTimeDouble, double  )
       break;
     }
   }
 }
 
-void   EpicsXtcReader::_damaged  ()
+void   Ami::EpicsXtcReader::_damaged  ()
 {
   for(unsigned i=0; i<MaxPvs; i++)
     if (_index[i]>=0)
@@ -113,9 +117,9 @@ void   EpicsXtcReader::_damaged  ()
 }
 
 //  No Entry data
-unsigned     EpicsXtcReader::nentries() const { return 0; }
-const Entry* EpicsXtcReader::entry   (unsigned) const { return 0; }
-void         EpicsXtcReader::reset   () 
+unsigned          Ami::EpicsXtcReader::nentries() const { return 0; }
+const Ami::Entry* Ami::EpicsXtcReader::entry   (unsigned) const { return 0; }
+void              Ami::EpicsXtcReader::reset   () 
 {
   for(unsigned i=0; i<MaxPvs; i++)
     _index[i] = -1;

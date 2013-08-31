@@ -10,6 +10,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
 
+#include "pdsalg/pdsalg.h"
+
 #include <stdio.h>
 
 using namespace Ami;
@@ -76,9 +78,11 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
     _cache->info(0,EntryImage::Pedestal);
   }
 
-  if ((_fn = _lookup(e.info().phy())))
+  if ((_fn = _lookup(e.info().phy()))) {
     _fn->setup(_threshold_v0,
                _threshold_v1);
+    _threshold = ndarray<unsigned,2>();
+  }
 }
 
 PeakFinder::~PeakFinder()
@@ -109,12 +113,20 @@ Entry&     PeakFinder::_operate(const Entry& e) const
     return *_output_entry;
 
   const EntryImage& entry = static_cast<const EntryImage&>(e);
-  const DescImage& d = entry.desc();
-  const unsigned nx = d.nbinsx();
-  const unsigned ny = d.nbinsy();
-  const unsigned p  = unsigned(entry.info(EntryImage::Pedestal));
-  const unsigned dn = d.ppxbin()*d.ppybin();
-  const unsigned q  = 1 + p;
+  const DescImage& d  = entry.desc();
+  const unsigned nx  = d.nbinsx();
+  const unsigned ny  = d.nbinsy();
+  const unsigned p   = unsigned(entry.info(EntryImage::Pedestal));
+  double         dn  = d.ppxbin()*d.ppybin();
+  unsigned threshold = p + unsigned(double(dn)*_threshold_v0);
+
+  if (_fn && _threshold.empty()) {
+    unsigned shape[] = {ny,nx};
+    const_cast<PeakFinder*>(this)->_threshold = ndarray<unsigned,2>(shape);
+    for(unsigned j=0; j<ny; j++)
+      for(unsigned k=0; k<nx; k++)
+        _threshold[j][k] = p + unsigned(dn*_fn->value(k,j)+0.5);
+  }
 
   if (_accumulate<0) {
     _output_entry->reset();
@@ -122,53 +134,38 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   }
 
   // find the peak positions which are above the threshold
-  const unsigned* a = entry.contents();
+  unsigned shape[] = {ny,nx};
+  ndarray<const unsigned,2> ain (entry.contents(),shape);
+  ndarray<unsigned,2>       aout(_output_entry->contents(),shape);
+
   if (_center_only) {
-    for(unsigned j=0; j<nx; j++) {
-      _output_entry->addcontent(p,j,0   );
-      _output_entry->addcontent(p,j,ny-1);
-    }
-    for(unsigned k=1; k<ny-1; k++) {
-      _output_entry->addcontent(p,0   ,k);
-      _output_entry->addcontent(p,nx-1,k);
-    }
-    const unsigned* a = entry.contents();
-    for(unsigned k=1; k<ny-1; k++, a+=nx) {
-      const unsigned* b = a + nx;
-      const unsigned* c = b + nx;
-      for(unsigned j=1; j<nx-1; j++) {
-        const unsigned threshold = p + dn*(_fn ? _fn->value(j,k): unsigned(_threshold_v0));
-        unsigned v = b[j];
-        if (!(v > threshold &&
-              v > b[j-1] && 
-              v > b[j+1] &&
-              v > a[j-1] && 
-              v > a[j+0] &&
-              v > a[j+1] &&
-              v > c[j-1] && 
-              v > c[j+0] &&
-              v > c[j+1]))     v = p;
-        else if (_mode==Count) v = q;
-        _output_entry->addcontent(v,j,k);
-      }
-    }
+    if (_mode==Count)
+      if (_fn)
+        pdsalg::count_hits(ain, _threshold, aout);
+      else
+        pdsalg::count_hits(ain, threshold, aout);
+    else
+      if (_fn)
+        pdsalg::sum_hits(ain, _threshold, p, aout);
+      else 
+        pdsalg::sum_hits(ain, threshold, p, aout);
   }
   else {
-    for(unsigned k=0; k<ny; k++) {
-      for(unsigned j=0; j<nx; j++) {
-        const unsigned threshold = p + dn*(_fn ? _fn->value(j,k) : unsigned(_threshold_v0));
-        unsigned v = *a++;
-        if      (v < threshold)  v = p;
-        else if (_mode == Count) v = q;
-        _output_entry->addcontent(v,j,k);
-      }
-    }
+    if (_mode==Count)
+      if (_fn)
+        pdsalg::count_excess(ain, _threshold, aout);
+      else
+        pdsalg::count_excess(ain, threshold, aout);
+    else
+      if (_fn)
+        pdsalg::sum_excess(ain, _threshold, p, aout);
+      else
+        pdsalg::sum_excess(ain, threshold, p, aout);
   }
 
   Entry* output;
   _output_entry->valid(e.time());
   if (_accumulate >= 0) {
-    _output_entry->addinfo(p, EntryImage::Pedestal);
     if (_mode == Sum)
       _output_entry->addinfo(entry.info(EntryImage::Normalization), EntryImage::Normalization);
     if (_accumulate == 0) {
@@ -187,7 +184,6 @@ Entry&     PeakFinder::_operate(const Entry& e) const
     }
   }
   else {
-    _output_entry->info(p, EntryImage::Pedestal);
     _output_entry->info(1, EntryImage::Normalization);
     output =_output_entry;
   }

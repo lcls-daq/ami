@@ -31,6 +31,7 @@ namespace Ami {
     Cds& discovery();
     Cds& hidden   ();
     void discover (bool waitForConfigure);
+    void discover_wait();
     void configure(unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void remove   (unsigned);

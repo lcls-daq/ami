@@ -1,11 +1,23 @@
 #ifndef Ami_AbsFilter_hh
 #define Ami_AbsFilter_hh
 
+/**
+ *  The AbsFilter class is a base class for a decision upon whether to apply
+ *  an analysis (operators) to the input data.  The object is either a simple
+ *  pass through (Raw), a selection based upon a scalar variable falling within 
+ *  a defined range, or a logical combination of those.
+ *  
+ *  The objects are moved across the network, transmitted with the aid of the
+ *  serialize member function and received/reconstituted with the FilterFactory
+ *  class.
+ */
+
 #include <stdint.h>
 
 namespace Ami {
   class AbsFilter {
   public:
+    ///  Enumerated subclasses
     enum Type { Raw,      // simple filters
 		SingleShot,
 		FeatureRange,
@@ -16,9 +28,12 @@ namespace Ami {
   public:
     Type  type() const { return (Type)_type; }
   public:
+    ///  Returns decision of whether to process the event
     virtual bool  accept() const = 0;
+    ///  Clones filter object for application to another analysis thread
     virtual AbsFilter* clone() const = 0;
   public:
+    ///  Serializes object data for network transmission.
     void* serialize(void*) const;
   private:
     virtual void* _serialize(void* p) const = 0;

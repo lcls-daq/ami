@@ -113,7 +113,6 @@ void EnvOverlay::load(const char*& p) {}
 void EnvOverlay::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void EnvOverlay::setup_payload(Cds& cds)
 {

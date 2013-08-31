@@ -1,12 +1,15 @@
 #include "FIR.hh"
 
 #include "ami/data/DescEntry.hh"
-#include "ami/data/Entry.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 
+#include "pdsalg/pdsalg.h"
+
 #include <string.h>
 #include <stdio.h>
+
+#include <vector>
 
 using namespace Ami;
 
@@ -26,19 +29,23 @@ FIR::FIR(const char*& p, const DescEntry& e) :
 {
   _extract(p,_path, PATH_LEN);
 
-  _response = new std::vector<float>;
+  std::vector<double> response;
 
   FILE* f = fopen(_path,"r");
   if (f) {
     float v;
     while(!feof(f)) {
       if (fscanf(f,"%f",&v)==1)
-        _response->push_back(v);
+        response.push_back(v);
     }
   }
 
-  if (_response->size()==0)
-    _response->push_back(1.);
+  if (response.size()==0)
+    response.push_back(1.);
+
+  _response = make_ndarray<double>(response.size());
+  for(unsigned i=0; i<response.size(); i++)
+    _response[i] = response[i];
 
   if (e.type() != DescEntry::Waveform) {
     printf("FIR constructed for type %s\n",DescEntry::type_str(e.type()));
@@ -47,18 +54,19 @@ FIR::FIR(const char*& p, const DescEntry& e) :
   else {
     DescWaveform desc(static_cast<const DescWaveform&>(e));
     unsigned ni = desc.nbins();
-    unsigned no = _response->size()-1;
+    unsigned no = _response.shape()[0]-1;
     desc.params(ni-no, desc.xlow(),
                 (desc.xlow()*double(no)+desc.xup()*double(ni-no))/double(ni));
-    _output = EntryFactory::entry(desc);
-    _output->reset();
+    _output  = EntryFactory::entry(desc);
+    unsigned shape[] = {ni-no};
+    _outputa = ndarray<double,1>(static_cast<EntryWaveform*>(_output)->content(),
+                                 shape);
   }
 }
 
 FIR::~FIR()
 {
   if (_output) delete _output;
-  if (_response) delete _response;
 }
 
 DescEntry& FIR::_routput   () const { return _output->desc(); }
@@ -76,12 +84,11 @@ Entry&     FIR::_operate(const Entry& e) const
     { EntryWaveform& entry = *static_cast<EntryWaveform*>(_output);
       if (e.valid()) {
         const EntryWaveform& input = static_cast<const EntryWaveform&>(e);
-        for(unsigned i=0; i<entry.desc().nbins(); i++) {
-          double v=0;
-          for(unsigned j=0; j<_response->size(); j++)
-            v += (*_response)[j]*input.content(i+j);
-          entry.content(v,i);
-        }
+        unsigned shape[] = {input.desc().nbins()};
+        ndarray<const double,1> in(input.content(),shape);
+        pdsalg::finite_impulse_response(_response,
+                                        in,
+                                        const_cast<FIR*>(this)->_outputa);
         for(unsigned j=0; j<EntryWaveform::InfoSize; j++) {
           EntryWaveform::Info i = (EntryWaveform::Info)j;
           entry.info(input.info(i),i);

@@ -167,7 +167,6 @@ void EdgePlot::dump(FILE* f)          const { _plot[0]->dump(f); }
 void EdgePlot::dump(FILE* f, int idx) const { _plot[idx]->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 /*
  * This gives the color for the various plots.

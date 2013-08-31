@@ -3,15 +3,14 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/imp/ConfigV1.hh"
-#include "pdsdata/imp/ElementV1.hh"
+#include "pdsdata/psddl/imp.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
 
 using namespace Ami;
 
-static Pds::Imp::ConfigV1 _default( 0x1111, 0x5555, 0x98968200, 0x1999,
+static ImpConfigType _default( 0x1111, 0x5555, 0x98968200, 0x1999,
     0x2fb5, 0x3fff, 0x927c, 0x3ff, 0x100, 0x1f4);
 
 ImpWaveformHandler::ImpWaveformHandler(const Pds::DetInfo& info) : 
@@ -29,7 +28,7 @@ ImpWaveformHandler::ImpWaveformHandler(const Pds::DetInfo& info,
   _nentries(0)
 {
   Pds::ClockTime t;
-  _configure(&config, t);
+  _configure(_ImpConfigType, &config, t);
 }
 
 ImpWaveformHandler::~ImpWaveformHandler()
@@ -52,13 +51,13 @@ void ImpWaveformHandler::reset() {
   _ref = NULL;
 }
 
-void ImpWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void ImpWaveformHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void ImpWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void ImpWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   _nentries = NumberOfEntries;
   const Pds::Imp::ConfigV1& c = *reinterpret_cast<const Pds::Imp::ConfigV1*>(payload);
-  _numberOfSamples = c.get(Pds::Imp::ConfigV1::NumberOfSamples);
+  _numberOfSamples = _config.numberOfSamples();
   char s[128] = {""};
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   for(unsigned k=0; k<NumberOfEntries; k++) {
@@ -79,14 +78,14 @@ void ImpWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
 
 typedef Pds::Imp::ElementV1 ImpD;
 
-void ImpWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void ImpWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   ImpD* d = const_cast<ImpD*>(reinterpret_cast<const ImpD*>(payload));
 
   for (unsigned i=0;i<_nentries;i++) {
     EntryWaveform* entry = _entry[i];
     for (unsigned j=0;j<_numberOfSamples;j++) {
-       double val = d->getSample(j).channel(i);
+      double val = d->samples(_config)[j].channels()[i];
       entry->content(val,j);
     }
     entry->info(1,EntryWaveform::Normalization);

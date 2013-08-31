@@ -222,7 +222,6 @@ void TwoDPlot::update_configuration()
 }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void TwoDPlot::setup_payload(Cds& cds)
 {

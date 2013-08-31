@@ -229,7 +229,6 @@ void ProjectionPlot::update_configuration()
 }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void ProjectionPlot::setup_payload(Cds& cds)
 {

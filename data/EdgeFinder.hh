@@ -49,8 +49,6 @@ namespace Ami {
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
   private:
-    void _hist_edge(double peak, unsigned start, double& last, const EntryWaveform&) const;
-  private:
     double     _fraction;
     int        _alg;
     double     _deadtime;

@@ -1,6 +1,8 @@
 #ifndef Ami_ImageMask_hh
 #define Ami_ImageMask_hh
 
+#include "ndarray/ndarray.h"
+
 #include <stdint.h>
 
 namespace Ami {
@@ -27,6 +29,8 @@ namespace Ami {
     bool rowcol(unsigned i,unsigned j) const;
     ImageMask roi(unsigned row0, unsigned col0,
                   unsigned rows, unsigned cols) const;
+    ndarray<unsigned,1> row_mask() const;
+    ndarray<unsigned,2> all_mask() const;
   public:
     void clear ();
     void fill  ();
@@ -58,6 +62,19 @@ namespace Ami {
     unsigned k = i*_ncols+j;
     return _rowcol[k>>5] & (1<<(k&0x1f));
   }
+
+  inline ndarray<unsigned,1> ImageMask::row_mask() const 
+  {
+    unsigned shape[] = {_nrows};
+    return ndarray<unsigned,1>(_rows,shape);
+  }
+  
+  inline ndarray<unsigned,2> ImageMask::all_mask() const
+  {
+    unsigned shape[] = {_nrows,(_ncols+31)>>5};
+    return ndarray<unsigned,2>(_rowcol,shape);
+  }
+
 };
 
 #endif

@@ -31,6 +31,10 @@ namespace Ami {
     double nentries(unsigned bin) const;
     void nentries(double nent, unsigned bin);
 
+    const double* entries() const;
+    const double* ysum   () const;
+    const double* y2sum  () const;
+
     void addy(double y, unsigned bin);
     void addy(double y, double x);
 
@@ -118,6 +122,11 @@ namespace Ami {
   inline double EntryProf::info(Info i) const { return *(_nentries+_desc.nbins()+int(i)); }
   inline void   EntryProf::info(double y,Info i) { *(_nentries+_desc.nbins()+int(i)) = y; }
   inline void   EntryProf::addinfo(double y,Info i) { *(_nentries+_desc.nbins()+int(i)) += y; }
+
+  inline const double* EntryProf::entries() const { return _nentries; }
+  inline const double* EntryProf::ysum   () const { return _ysum; }
+  inline const double* EntryProf::y2sum  () const { return _y2sum; }
+
 };
 
 #endif

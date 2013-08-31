@@ -4,7 +4,7 @@
 #include "pdsdata/xtc/Level.hh"
 #include "pdsdata/xtc/Xtc.hh"
 #include "pdsdata/xtc/BldInfo.hh"
-#include "pdsdata/bld/bldData.hh"
+#include "pdsdata/psddl/bld.ddl.h"
 
 #include <stdio.h>
 
@@ -23,8 +23,8 @@ PhaseCavityReader::~PhaseCavityReader()
 {
 }
 
-void   PhaseCavityReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   PhaseCavityReader::_configure(const void* payload, const Pds::ClockTime& t) 
+void   PhaseCavityReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   PhaseCavityReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
   _index = _cache.add("BLD:PHASECAV:T1");
   _cache.add("BLD:PHASECAV:T2");
@@ -32,16 +32,16 @@ void   PhaseCavityReader::_configure(const void* payload, const Pds::ClockTime& 
   _cache.add("BLD:PHASECAV:Q2");
 }
 
-void   PhaseCavityReader::_event    (const void* payload, const Pds::ClockTime& t)
+void   PhaseCavityReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   if (_index>=0) {
-    const Pds::BldDataPhaseCavity& bld = 
-      *reinterpret_cast<const Pds::BldDataPhaseCavity*>(payload);
+    const Pds::Bld::BldDataPhaseCavity& bld = 
+      *reinterpret_cast<const Pds::Bld::BldDataPhaseCavity*>(payload);
     unsigned index = _index;
-    _cache.cache(index++,bld.fFitTime1);
-    _cache.cache(index++,bld.fFitTime2);
-    _cache.cache(index++,bld.fCharge1);
-    _cache.cache(index  ,bld.fCharge2);
+    _cache.cache(index++,bld.fitTime1());
+    _cache.cache(index++,bld.fitTime2());
+    _cache.cache(index++,bld.charge1());
+    _cache.cache(index  ,bld.charge2());
   }
 }
 

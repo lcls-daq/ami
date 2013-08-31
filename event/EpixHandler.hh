@@ -60,13 +60,10 @@ namespace Ami {
     EpixHandler(const Pds::Src&     info);
     virtual ~EpixHandler();
   public:
-    void   _configure(const void* payload, const Pds::ClockTime& t);
-    void   _calibrate(const void* payload, const Pds::ClockTime& t);
-    void   _event    (const void* payload, const Pds::ClockTime& t);
+    void   _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
+    void   _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
-  public:
-    void   _configure(Pds::TypeId, 
-		      const void* payload, const Pds::ClockTime& t);
   public:
     //  Number of existing entries to advertise
     unsigned     nentries() const;

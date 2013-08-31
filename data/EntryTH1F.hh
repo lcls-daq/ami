@@ -25,6 +25,9 @@ namespace Ami {
     void   content(double y, unsigned bin);
     void   addcontent(double y, double x);
 
+    double* content();
+    const double* content() const;
+
     enum Info { Underflow, Overflow, Normalization, InfoSize };
     double info(Info) const;
     void   info(double y, Info);
@@ -58,6 +61,9 @@ namespace Ami {
   inline double EntryTH1F::info   (Info i) const   {return *(_y+_desc.nbins()+int(i));}
   inline void   EntryTH1F::info   (double y, Info i) {*(_y+_desc.nbins()+int(i)) = y;}
   inline void   EntryTH1F::addinfo(double y, Info i) {*(_y+_desc.nbins()+int(i)) += y;}
+
+  inline double* EntryTH1F::content() { return _y; }
+  inline const double* EntryTH1F::content() const { return _y; }
 };
 
 #endif

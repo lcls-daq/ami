@@ -2,8 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/ipimb/DataV1.hh"
-#include "pdsdata/ipimb/DataV2.hh"
+#include "pdsdata/psddl/ipimb.ddl.h"
 #include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -24,7 +23,7 @@ IpimbHandler::~IpimbHandler()
 {
 }
 
-void   IpimbHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void   IpimbHandler::_calibrate(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) {}
 void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
@@ -71,8 +70,7 @@ void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::
   }
 }
 
-void   IpimbHandler::_event    (Pds::TypeId id,
-                                const void* payload, const Pds::ClockTime& t)
+void   IpimbHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   if (id.version()==1) {
     const Pds::Ipimb::DataV1& d = 

@@ -2,7 +2,7 @@
 
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
-#include "pdsdata/fccd/FccdConfigV2.hh"
+#include "pdsdata/psddl/fccd.ddl.h"
 
 #include <string.h>
 #include <stdio.h>

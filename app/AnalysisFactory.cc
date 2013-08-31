@@ -75,8 +75,13 @@ void AnalysisFactory::discover(bool waitForConfigure)
 
   _features[PostAnalysis]->update();  // clear the update flag
   _srv.discover(); 
+  pthread_mutex_unlock(&_mutex);
+}
 
-  if (waitForConfigure) {
+void AnalysisFactory::discover_wait()
+{
+  pthread_mutex_lock(&_mutex);
+  if (_waitingForConfigure) {
     printf("AnalysisFactory: waiting for configuration...\n");
     for (;;) {
       if (! _waitingForConfigure) {
@@ -86,7 +91,6 @@ void AnalysisFactory::discover(bool waitForConfigure)
     }
     printf("AnalysisFactory: done waiting for configuration.\n");
   }
-
   pthread_mutex_unlock(&_mutex);
 }
 

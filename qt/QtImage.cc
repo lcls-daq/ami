@@ -82,9 +82,10 @@ void           QtImage::dump  (FILE* f) const
 {
   const EntryImage& _entry = static_cast<const EntryImage&>(entry());
   fprintf(f,"%f %f\n", _entry.info(EntryImage::Normalization), _entry.info(EntryImage::Pedestal));
+  ndarray<const uint32_t,2> data(_entry.content());
   for(unsigned j=_y0; j<_y0+_ny; j++) {
     for(unsigned k=_x0; k<_x0+_nx; k++)
-      fprintf(f,"%d ", _entry.content(k,j));
+      fprintf(f,"%d ", data[j][k]);
     fprintf(f,"\n");
   }
 }
@@ -118,13 +119,13 @@ void           QtImage::canvas_size(const QSize& sz,
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
 
 #define COPYIMAGE(type,T,factor) {			      \
+    ndarray<const uint32_t,2> src(_entry.content());          \
     for(unsigned k=0; k<_ny; k++) {			      \
       type* dst = (type*)_qimage->scanLine(k);		      \
-      for(unsigned j=0; j<_nx; j++) {			      \
-        unsigned sh = static_cast<unsigned>(T(*src));	      \
+      for(unsigned j=_x0; j<_x0+_nx; j++) {                   \
+        unsigned sh = unsigned(T(src[_y0+k][j]));             \
 	*dst++ = factor*(sh >= 0xff ? 0xff : sh);	      \
-	src++; }					      \
-      src += d.nbinsx()-_nx;				      \
+      }                                                       \
     } }
 
 QImage&        QtImage::image(float p0, float s, bool linear)
@@ -142,7 +143,6 @@ QImage&        QtImage::image(float p0, float s, bool linear)
     n = (n ? n : 1)*d.ppxbin()*d.ppybin();
   p += float(n)*p0;
 
-  const unsigned* src = _entry.contents() + _y0*d.nbinsx() + _x0;
   if (linear) {
     n *= double(s);
     COPYIMAGE(uint8_t ,LINTRANS,0x01);
@@ -153,6 +153,7 @@ QImage&        QtImage::image(float p0, float s, bool linear)
     const double invlogs = 256./(log(s)+log(256));
     COPYIMAGE(uint8_t ,LOGTRANS,0x01);
   }
+
   return *_qimage;
 }
 

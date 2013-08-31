@@ -16,6 +16,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
 
+#include "pdsalg/pdsalg.h"
+
 #include <QtCore/QString>
 
 #include <stdio.h>
@@ -178,207 +180,82 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
   if (!e.valid())
     return *_entry;
 
-  EntryAccessor* acc;
+  ndarray<const double,1> input;
+  ndarray<const double,1> norm;
+  double dnorm;
+  double xscale;
+
   switch(e.desc().type()) {
-  case DescEntry::TH1F: acc = new TH1FAccessor(static_cast<const EntryTH1F&>(e)); break;
-  case DescEntry::Prof: acc = new ProfAccessor(static_cast<const EntryProf&>(e)); break;
+  case DescEntry::TH1F: 
+    { const EntryTH1F& entry = static_cast<const EntryTH1F&>(e);
+      input  = make_ndarray(entry.content(),entry.desc().nbins());
+      dnorm  = entry.info(EntryTH1F::Normalization);
+      xscale = (entry.desc().xup()-entry.desc().xlow())/double(entry.desc().nbins());
+    } break;
+  case DescEntry::Prof: 
+    { const EntryProf& entry = static_cast<const EntryProf&>(e);
+      input  = make_ndarray(entry.ysum()   ,entry.desc().nbins());
+      norm   = make_ndarray(entry.entries(),entry.desc().nbins());
+      xscale = (entry.desc().xup()-entry.desc().xlow())/double(entry.desc().nbins());
+    } break;
   default: 
     printf("PeakFit on type %d not implemented\n",e.desc().type());
     return *_entry;
   }
 
-  double aa, bb;
-#define BASELINE(bin) (aa + bb * (bin))
-  if (_nbins == 0) {
-      aa = _baseline;
-      bb = 0.0;
-  } else {
-      double x = 0, xy = 0, x2 = 0, y = 0;
-      bool lv;
-      int n = 0;
-      for (int i = 0; i < _nbins; i++) {
-          int j = _bins[i];
-          double yv = acc->bin_value(j, lv);
-          if (lv) {
-              x += double(j);
-              x2 += double(j*j);
-              y += yv;
-              xy += j*yv;
-              n++;
-          }
-      }
-      bb = (xy - x * y / n) / (x2 - x * x / n);
-      aa = y - bb * x / n;
-  }
-
-  double y=0;
-  const unsigned nbins = acc->nbins();
-  if (_prm==RMS) {
-    double x0=0, x1=0, x2=0;
-    for(unsigned i=0; i<nbins; i++) {
-      bool lv;
-      double v  = acc->bin_value(i,lv)-BASELINE(i);
-      if (v>0 && lv) {
-	double vi = v*double(i);
-	x0 += v;
-	x1 += vi;
-	x2 += vi*double(i);
-      }
-    }
-    if (x0>0) {
-      x1 /= x0;
-      x2 /= x0;
-      y = sqrt(x2-x1*x1)*(acc->xup()-acc->xlow())/double(nbins);
-    }
-    else
-      return *_entry;
+  ndarray<double,1> baseline;
+  if (_nbins==0) {
+    baseline = make_ndarray<double>(1);
+    baseline[0] = _baseline;
   }
   else {
-    //
-    //  Find the peak
-    //
-    bool valid = false;
-    unsigned v=0; y=acc->bin_value(0,valid) - BASELINE(0);
-    for(unsigned i=1; i<nbins; i++) {
-      bool lv;
-      double z = acc->bin_value(i,lv)-BASELINE(i);
-      if (lv) {
-	if (!valid) { y=z; v=i; valid=true; }
-	else if (z>y) { y=z; v=i; }
-      }
+    ndarray<double,1> linput = make_ndarray<double>(_nbins);
+    ndarray<unsigned,1> lpos = make_ndarray<unsigned>(_nbins);
+    for(int i=0; i<_nbins; i++) {
+      linput[i] = input[_bins[i]];
+      linput[i] = _bins[i];
     }
-    if (!valid)
+
+    if (norm.empty())
+      baseline = pdsalg::line_fit(linput, lpos, dnorm);
+    else {
+      ndarray<double,1> lnorm = make_ndarray<double>(_nbins);
+      for(int i=0; i<_nbins; i++)
+        lnorm[i] = norm[_bins[i]];
+      baseline = pdsalg::line_fit(linput, lpos, lnorm);
+    }
+  }
+
+  double y = 0;
+  if (_prm==RMS) {
+    y = norm.empty() ? 
+      pdsalg::dist_rms(input,dnorm,baseline) :
+      pdsalg::dist_rms(input,norm,baseline);
+    if (y==0)
       return *_entry;
+    y *= xscale;
+  }
 
-    if (_prm==FWHM) {  // Find closest edges that fall below half maximum
+  else if (_prm==FWHM) {
+    y = norm.empty() ?
+      pdsalg::dist_fwhm(input,dnorm,baseline) :
+      pdsalg::dist_fwhm(input,norm,baseline);
+    if (y==0)
+      return *_entry;
+    y *= xscale;
+  }
 
-      double y2 = 0.5*y;
-      if (y2 < 0)
-	return *_entry;
-
-      //
-      //  iterate left of the peak 
-      //    
-      double x0=0;      // location of half-maximum left of the peak
-      { double   x =y;  // value of last valid point
-	unsigned xi=v;  // index of last valid point
-	int       i=v-1;// test index
-	valid      =false;
-	while(i>0) {
-	  bool lv;
-	  double z = acc->bin_value(unsigned(i),lv)-BASELINE(i);
-	  if (lv) {
-	    if (z < y2) {  // found it. interpolate
-	      x0 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
-	      valid = true;
-	      break;
-	    }
-	    x  = z;
-	    xi = i;
-	  }
-	  i--;
-	}
-	if (!valid)
-	  return *_entry;
-      }
-
-      //
-      //  iterate right of the peak
-      //
-      double x1=nbins;  // location of half-maximum right of the peak
-      { double   x =y;         // value of last valid point
-	unsigned xi=v;         // index of last valid point 
-	unsigned i=v+1;        // test index
-	valid     =false;
-	while(i<nbins) {
-	  bool lv;
-	  double z = acc->bin_value(i,lv)-BASELINE(i);
-	  if (lv) {
-	    if (z < y2) {  // found it. interpolate
-	      x1 = (double(i)*(x-y2) + double(xi)*(y2-z)) / (x-z);
-	      valid = true;
-	      break;
-	    }
-	    x  = z;
-	    xi = i;
-	  }
-	  i++;
-	}
-	if (!valid)
-	  return *_entry;
-      }
-
-      //  scale the width from bins into physical units      
-      y = (x1-x0)*(acc->xup()-acc->xlow())/double(nbins);
-    }
-
-    else {  // quadratic fit
-
-      if (v == 0) {
-	if (_prm == Position)
-	  y = acc->xlow();
-	else
-	  return *_entry;
-      }
-      else if (v >= nbins-1) {
-	if (_prm == Position)
-	  y = acc->xup();
-	else
-	  return *_entry;
-      }
-      else {
-	//
-	//  Find the first valid points left and right of the peak
-	//
-	int il=v-1; // test index
-	double yl;
-	while(il>0) {
-	  bool lv;
-	  yl = acc->bin_value(unsigned(il),lv)-BASELINE(il);
-	  if (lv) 
-	    break;
-	  il--;
-	}
-	if (il <= 0)
-	  return *_entry;
-
-	unsigned ir=v+1; // test index
-	double yr;
-	while(ir<nbins) {
-	  bool lv;
-	  yr = acc->bin_value(ir,lv)-BASELINE(ir);
-	  if (lv) 
-	    break;
-	  ir++;
-	}
-	if (ir >= nbins)
-	  return *_entry;
-
-	double di  = double(ir-il);
-	double di2 = double(ir*ir-il*il);
-	double si  = double(v)  -0.5*double(ir+il);
-	double si2 = double(v*v)-0.5*double(ir*ir+il*il);
-	double dy  = yr   -yl;
-	double sy  = y  -0.5*(yr+yl);
-
-	double i0 = 0.5*(si2*dy - di2*sy) / (si*dy-di*sy);
-	if (_prm == Position) {
-	  y = acc->xlow() + i0*(acc->xup()-acc->xlow())/double(nbins);
-	} else {  // Height
-          /*
-           * OK, there is a strange corner case if i0 == v (the peak is
-           * symmetric).  In this case, if the left and right are both off
-           * by 1 from v, then di2 = (v+1)^2 - (v-1)^2 = 4v and di = 2, so
-           * the denominator of this expression is zero. So instead of just
-           * subtracting it, we calculate it first, and check if it is nan,
-           * and if not, *then* subtract it.  (In the symmetric case, of
-           * course, we don't actually want to subtract anything!)
-           */
-          double diff = dy*pow(double(v)-i0,2) / (di2 - 2*i0*di);
-          if (!isnan(diff))
-            y -= diff;
-	}
-      }
+  else { // quadratic interpolation
+    
+    ndarray<double,1> result = norm.empty() ?
+      pdsalg::parab_interp(input,dnorm,baseline) :
+      pdsalg::parab_interp(input,norm,baseline);
+    
+    if (result[0]==0 && _prm != Position)
+      return *_entry;
+    else {  
+      if (_prm == Position) y = result[1]*xscale;
+      else                  y = result[0];
     }
   }
 

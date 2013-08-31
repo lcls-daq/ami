@@ -8,7 +8,7 @@ libsrcs_server := $(filter-out servertest.cc serverapp.cc,$(wildcard *.cc))
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-# libincs_lib_a := prj_x/include/Linux
+libincs_server := pdsdata/include
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

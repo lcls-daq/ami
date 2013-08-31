@@ -15,7 +15,6 @@
 #include <math.h>
 #include <stdio.h>
 
-#include "Calculator.hh"
 
 namespace Ami {
   namespace Qt {

@@ -157,7 +157,6 @@ void EdgeOverlay::dump(FILE* f)          const { _plot[0]->dump(f); }
 void EdgeOverlay::dump(FILE* f, int idx) const { _plot[idx]->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void EdgeOverlay::setup_payload(Cds& cds)
 {

@@ -2,8 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/usdusb/ConfigV1.hh"
-#include "pdsdata/usdusb/DataV1.hh"
+#include "pdsdata/psddl/usdusb.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -60,9 +59,9 @@ void   UsdUsbHandler::_event    (Pds::TypeId id, const void* payload, const Pds:
     unsigned index = _index;
     _cache.cache(index++, d.timestamp());
     for(unsigned i=0; i<4; i++)
-      _cache.cache(index++, d.encoder_count(i));
+      _cache.cache(index++, d.encoder_count()[i]);
     for(unsigned i=0; i<4; i++)
-      _cache.cache(index++, d.analog_in(i));
+      _cache.cache(index++, d.analog_in()[i]);
     unsigned din = d.digital_in();
     for(unsigned i=0; i<8; i++)
       _cache.cache(index++, (din>>i)&1);

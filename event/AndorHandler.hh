@@ -17,9 +17,9 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
-  private:
+  public:
     virtual void _configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t);    
-    virtual void _calibrate(const void* payload, const Pds::ClockTime& t);
+    virtual void _calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _damaged  ();
   private:
@@ -28,12 +28,6 @@ namespace Ami {
     FeatureCache&       _cache;
     int                 _iCacheIndexTemperature;
     EntryImage*         _entry;
-
-    /*
-     * These functions will never be called. The above _configure() and _event() replace these two.
-     */    
-    virtual void _configure(const void* payload, const Pds::ClockTime& t);
-    virtual void _event    (const void* payload, const Pds::ClockTime& t);
   };
 };
 

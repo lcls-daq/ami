@@ -14,41 +14,86 @@ namespace Pds {
 namespace Ami {
   class Entry;
 
+  /**
+   *  A base class for generating plottable data (Entry objects) from received
+   *  XTC data.  Each EventHandler instanciation will associate itself with
+   *  a particular data source (detector).  The Entry object instanciations will
+   *  correspond to the data type {scalar, waveform, image} and size as
+   *  indicated in the detector configuration object.
+   *
+   *  Note that this object does not own the Entry objects it creates.  Ownership
+   *  is taken by another object.
+   */
   class EventHandler {
   public:
+    /**
+     *   Constructor for one configuration data type and one event-data type
+     *   param[in]  info           Data source 
+     *   param[in]  data_type      Event data type
+     *   param[in]  config_type    Configuration data type
+     */
     EventHandler(const Pds::Src&     info,
 		 Pds::TypeId::Type   data_type,
 		 Pds::TypeId::Type   config_type);
+    /**
+     *   Constructor for one configuration data type and a list of event-data types
+     *   param[in]  info           Data source 
+     *   param[in]  data_type      List of event data types
+     *   param[in]  config_type    Configuration data type
+     */
     EventHandler(const Pds::Src&     info,
 		 const std::list<Pds::TypeId::Type>& data_type,
 		 Pds::TypeId::Type   config_type);
+    /**
+     *   Constructor for a list of configuration data types and one event-data type
+     *   param[in]  info           Data source 
+     *   param[in]  data_type      Event data type
+     *   param[in]  config_type    List of configuration data types
+     */
     EventHandler(const Pds::Src&     info,
 		 Pds::TypeId::Type   data_type,
 		 const std::list<Pds::TypeId::Type>& config_type);
+    /**
+     *   Constructor for a list of configuration data types and event-data types
+     *   param[in]  info           Data source 
+     *   param[in]  data_type      List of event data types
+     *   param[in]  config_type    List of configuration data types
+     */
     EventHandler(const Pds::Src&     info,
 		 const std::list<Pds::TypeId::Type>& data_type,
 		 const std::list<Pds::TypeId::Type>& config_type);
     virtual ~EventHandler();
   public:
-    virtual void   _configure(const void* payload, const Pds::ClockTime& t) = 0;
-    virtual void   _calibrate(const void* payload, const Pds::ClockTime& t) = 0;
-    virtual void   _event    (const void* payload, const Pds::ClockTime& t) = 0;
+    /**
+     *   Handle configuration data.  This function should create/reset its Entry
+     *   objects here.
+     */
+    virtual void   _configure(Pds::TypeId, 
+			      const void* payload, const Pds::ClockTime& t) = 0;
+    /**
+     *   Handle configuration data on a BeginCalib transition.  The detector 
+     *   configuration may have changed.
+     */
+    virtual void   _calibrate(Pds::TypeId, 
+			      const void* payload, const Pds::ClockTime& t) = 0;
+    /**
+     *   Handle event data.  The Entry objects should be filled and their valid
+     *   time updated.
+     */
+    virtual void   _event    (Pds::TypeId,
+                              const void* payload, const Pds::ClockTime& t) = 0;
+    /**
+     *   The data was not valid for this event
+     */
     virtual void   _damaged  () = 0;
   public:
-    virtual void   _configure(Pds::TypeId, 
-			      const void* payload, const Pds::ClockTime& t);
-    virtual void   _calibrate(Pds::TypeId, 
-			      const void* payload, const Pds::ClockTime& t);
-    virtual void   _event    (Pds::TypeId,
-                              const void* payload, const Pds::ClockTime& t);
-  public:
-    //  Number of existing entries to advertise
+    ///  Number of existing Entry objects to advertise
     virtual unsigned     nentries() const = 0;
-    //  Advertised entries
+    ///  Accessor to an advertised Entry object
     virtual const Entry* entry            (unsigned) const = 0;
-    //  Additional set of entries to advertised (not implemented)
+    ///  Additional set of entries to advertised (not implemented)
     virtual const Entry* hidden_entry     (unsigned) const { return 0; }
-    //  Cleanup existing entries
+    ///  Stop referencing previously created Entry objects
     virtual void         reset   () = 0;
     //  Event data needs to be parsed
     virtual bool  used() const;

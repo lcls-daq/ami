@@ -45,6 +45,7 @@ namespace Ami {
       int  read_payload    (Socket&,int) ;
       bool svc             () const;
       void process         () ;
+      void disconnected    ();
     public:
       int                 get_setup(char*) const;
       void                set_setup(const char*,int);

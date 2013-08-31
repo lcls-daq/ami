@@ -3,8 +3,7 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/acqiris/ConfigV1.hh"
-#include "pdsdata/acqiris/DataDescV1.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
@@ -13,10 +12,10 @@ using namespace Ami;
 
 static Pds::Acqiris::VertV1 _default_vert[Pds::Acqiris::ConfigV1::MaxChan];
 
-static Pds::Acqiris::ConfigV1 _default(0,0,0,
-				       Pds::Acqiris::TrigV1(0,0,0,0),
-				       Pds::Acqiris::HorizV1(0,0,0,0),
-				       _default_vert);
+static AcqConfigType _default(0,0,0,
+                              Pds::Acqiris::TrigV1(0,0,0,0),
+                              Pds::Acqiris::HorizV1(0,0,0,0),
+                              _default_vert);
 
 AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_AcqWaveform, Pds::TypeId::Id_AcqConfig),
@@ -33,7 +32,7 @@ AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo&   info,
   _nentries(0)
 {
   Pds::ClockTime t;
-  _configure(&config, t);
+  _configure(_acqConfigType, &config, t);
 }
 
 AcqWaveformHandler::~AcqWaveformHandler()
@@ -55,9 +54,9 @@ void AcqWaveformHandler::reset() {
   _ref = NULL;
 }
 
-void AcqWaveformHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void AcqWaveformHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void AcqWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void AcqWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Acqiris::ConfigV1& c = *reinterpret_cast<const Pds::Acqiris::ConfigV1*>(payload);
   const Pds::Acqiris::HorizV1& h = c.horiz();
@@ -88,27 +87,25 @@ void AcqWaveformHandler::_configure(const void* payload, const Pds::ClockTime& t
 
 typedef Pds::Acqiris::DataDescV1 AcqDD;
 
-void AcqWaveformHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void AcqWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   AcqDD* d = const_cast<AcqDD*>(reinterpret_cast<const AcqDD*>(payload));
-  const Pds::Acqiris::HorizV1& h = _config.horiz();
 
   unsigned n = _nentries < _config.nbrChannels() ? _nentries : _config.nbrChannels();
+  ndarray<const Acqiris::VertV1,1> vert = _config.vert();
   for (unsigned i=0;i<n;i++) {
-    const int16_t* data = d->waveform(h);
-    data += d->indexFirstPoint();
-    float slope = _config.vert(i).slope();
-    float offset = _config.vert(i).offset();
+    ndarray<const int16_t,2> wfs = d->data(_config,i).waveforms(_config);
+    float slope  = vert[i].slope();
+    float offset = vert[i].offset();
     EntryWaveform* entry = _entry[i];
-    unsigned nbrSamples = h.nbrSamples();
-    for (unsigned j=0;j<nbrSamples;j++) {
-      int16_t swap = (data[j]&0xff<<8) | (data[j]&0xff00>>8);
-      double val = swap*slope-offset;
+    for (unsigned j=0;j<wfs.shape()[1];j++) {
+      int16_t data = wfs[i][j];
+      //        data = (data&0xff<<8) | (data&0xff00>>8);
+      double val = data*slope-offset;
       entry->content(val,j);
     }
     entry->info(1,EntryWaveform::Normalization);
     entry->valid(t);
-    d = d->nextChannel(h);
   }
 
   if (_ref)

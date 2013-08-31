@@ -3,7 +3,7 @@
 #include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/xtc/Level.hh"
 #include "pdsdata/xtc/Xtc.hh"
-#include "pdsdata/bld/bldData.hh"
+#include "pdsdata/psddl/bld.ddl.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -20,9 +20,8 @@ SharedIpimbReader::~SharedIpimbReader()
 {
 }
 
-void  SharedIpimbReader::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void  SharedIpimbReader::_configure(Pds::TypeId id,
-                                    const void* payload, const Pds::ClockTime& t) 
+void  SharedIpimbReader::_calibrate(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) {}
+void  SharedIpimbReader::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) 
 {
   char buffer[64];
   strncpy(buffer,Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info())),60);
@@ -54,31 +53,52 @@ void  SharedIpimbReader::_configure(Pds::TypeId id,
       _index[i++] = _index[0];
 }
 
-void SharedIpimbReader::_event (Pds::TypeId id,
-                                const void* payload, const Pds::ClockTime& t)
+void SharedIpimbReader::_event (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
-  const Pds::BldDataIpimb& bld = 
-      *reinterpret_cast<const Pds::BldDataIpimb*>(payload);
+  switch(id.version()) {
+  case 0:
+    { const Pds::Bld::BldDataIpimbV0& bld = 
+        *reinterpret_cast<const Pds::Bld::BldDataIpimbV0*>(payload);
 
-  _cache.cache(_index[0], bld.ipimbData.channel0Volts());
-  _cache.cache(_index[1], bld.ipimbData.channel1Volts());
-  _cache.cache(_index[2], bld.ipimbData.channel2Volts());
-  _cache.cache(_index[3], bld.ipimbData.channel3Volts());
+      _cache.cache(_index[0], bld.ipimbData().channel0Volts());
+      _cache.cache(_index[1], bld.ipimbData().channel1Volts());
+      _cache.cache(_index[2], bld.ipimbData().channel2Volts());
+      _cache.cache(_index[3], bld.ipimbData().channel3Volts());
+      
+      _cache.cache(_index[4], bld.ipmFexData().channel()[0]);
+      _cache.cache(_index[5], bld.ipmFexData().channel()[1]);
+      _cache.cache(_index[6], bld.ipmFexData().channel()[2]);
+      _cache.cache(_index[7], bld.ipmFexData().channel()[3]);
   
-  _cache.cache(_index[4], bld.ipmFexData.channel[0]);
-  _cache.cache(_index[5], bld.ipmFexData.channel[1]);
-  _cache.cache(_index[6], bld.ipmFexData.channel[2]);
-  _cache.cache(_index[7], bld.ipmFexData.channel[3]);
-  
-  _cache.cache(_index[8], bld.ipmFexData.sum);
-  _cache.cache(_index[9], bld.ipmFexData.xpos);
-  _cache.cache(_index[10],bld.ipmFexData.ypos);
+      _cache.cache(_index[8], bld.ipmFexData().sum ());
+      _cache.cache(_index[9], bld.ipmFexData().xpos());
+      _cache.cache(_index[10],bld.ipmFexData().ypos());
+    } break;
+  case 1:
+    { const Pds::Bld::BldDataIpimbV1& bld = 
+        *reinterpret_cast<const Pds::Bld::BldDataIpimbV1*>(payload);
 
-  if (id.version()==1) {
-    _cache.cache(_index[11], bld.ipimbData.channel0Volts());
-    _cache.cache(_index[12], bld.ipimbData.channel1Volts());
-    _cache.cache(_index[13], bld.ipimbData.channel2Volts());
-    _cache.cache(_index[14], bld.ipimbData.channel3Volts());
+      _cache.cache(_index[0], bld.ipimbData().channel0Volts());
+      _cache.cache(_index[1], bld.ipimbData().channel1Volts());
+      _cache.cache(_index[2], bld.ipimbData().channel2Volts());
+      _cache.cache(_index[3], bld.ipimbData().channel3Volts());
+      
+      _cache.cache(_index[4], bld.ipmFexData().channel()[0]);
+      _cache.cache(_index[5], bld.ipmFexData().channel()[1]);
+      _cache.cache(_index[6], bld.ipmFexData().channel()[2]);
+      _cache.cache(_index[7], bld.ipmFexData().channel()[3]);
+  
+      _cache.cache(_index[8], bld.ipmFexData().sum ());
+      _cache.cache(_index[9], bld.ipmFexData().xpos());
+      _cache.cache(_index[10],bld.ipmFexData().ypos());
+
+      _cache.cache(_index[11], bld.ipimbData().channel0psVolts());
+      _cache.cache(_index[12], bld.ipimbData().channel1psVolts());
+      _cache.cache(_index[13], bld.ipimbData().channel2psVolts());
+      _cache.cache(_index[14], bld.ipimbData().channel3psVolts());
+    } break;
+  default:
+    break;
   }  
 }
 

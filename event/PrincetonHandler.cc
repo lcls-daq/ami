@@ -2,22 +2,70 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/princeton/ConfigV1.hh"
-#include "pdsdata/princeton/ConfigV2.hh"
-#include "pdsdata/princeton/ConfigV3.hh"
+#include "pdsdata/psddl/princeton.ddl.h"
+#include "pdsdata/xtc/Xtc.hh"
 #include "pds/config/PrincetonDataType.hh"
 
 #include <string.h>
 #include <stdlib.h>
 
-static inline unsigned height(const PrincetonConfigType& c)
+static inline unsigned height(const Xtc* tc)
 {
-  return (c.height() + c.binY() - 1)/c.binY();
+#define CASE_VSN(v) case v:                                             \
+  { const Pds::Princeton::ConfigV##v& c =                               \
+      *reinterpret_cast<const Pds::Princeton::ConfigV##v*>(tc->payload()); \
+      return (c.height() + c.binY() - 1)/c.binY(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1)
+    CASE_VSN(2)
+    CASE_VSN(3)
+    CASE_VSN(4)
+    CASE_VSN(5)
+      default: break;
+  }
+#undef CASE_VSN
+  return 0;
 }
 
-static unsigned width(const PrincetonConfigType& c)
+static inline unsigned width(const Xtc* tc)
 {
-  return (c.width() + c.binX() - 1)/c.binX();
+#define CASE_VSN(v) case v:                                             \
+  { const Pds::Princeton::ConfigV##v& c =                               \
+      *reinterpret_cast<const Pds::Princeton::ConfigV##v*>(tc->payload()); \
+      return (c.width() + c.binX() - 1)/c.binX(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1)
+    CASE_VSN(2)
+    CASE_VSN(3)
+    CASE_VSN(4)
+    CASE_VSN(5)
+      default: break;
+  }
+#undef CASE_VSN
+  return 0;
+}
+
+template <class Frame>
+static inline ndarray<const uint16_t,2> array(const Xtc* tc,
+                                              const void* f)
+{
+#define CASE_VSN(v) case v:                                             \
+  { const Pds::Princeton::ConfigV##v& c =                               \
+      *reinterpret_cast<const Pds::Princeton::ConfigV##v*>(tc->payload()); \
+    return reinterpret_cast<const Frame*>(f)->data(c); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1)
+    CASE_VSN(2)
+    CASE_VSN(3)
+    CASE_VSN(4)
+    CASE_VSN(5)
+      default: break;
+  }
+#undef CASE_VSN
+  return ndarray<const uint16_t,2>();
 }
 
 using namespace Ami;
@@ -32,6 +80,7 @@ static std::list<Pds::TypeId::Type> data_type_list()
 
 PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   EventHandler(info, data_type_list(), Pds::TypeId::Id_PrincetonConfig),
+  _configtc(0),
   _cache(cache),
   _iCacheIndexTemperature(-1),
   _entry(0)
@@ -46,6 +95,7 @@ PrincetonHandler::PrincetonHandler(const Pds::DetInfo& info, FeatureCache& cache
 
 PrincetonHandler::~PrincetonHandler()
 {
+  if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
 }
 
 unsigned PrincetonHandler::nentries() const { return _entry ? 1 : 0; }
@@ -54,23 +104,18 @@ const Entry* PrincetonHandler::entry(unsigned i) const { return i==0 ? _entry : 
 
 void PrincetonHandler::reset() { _entry = 0; }
 
+void PrincetonHandler::_calibrate(Pds::TypeId type,const void* payload, const Pds::ClockTime& t) {}
+
 void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
-  if (type.version() == PrincetonConfigType::Version)
-    _config = *reinterpret_cast<const PrincetonConfigType*>(payload);
-  else if (type.version() == 4)
-    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV4*>(payload));
-  else if (type.version() == 3)
-    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV3*>(payload));
-  else if (type.version() == 2)
-    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV2*>(payload));
-  else if (type.version() == 1)
-    new (&_config) PrincetonConfigType(*reinterpret_cast<const Pds::Princeton::ConfigV1*>(payload));
-  else
-    printf("PrincetonHandler::_configure(): Unsupported Princeton Version %d\n", type.version());
+  if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
 
-  unsigned columns = width (_config);
-  unsigned rows    = height(_config);
+  { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
+    memcpy(_configtc, tc, tc->extent); }
+
+  unsigned columns = width (_configtc);
+  unsigned rows    = height(_configtc);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
   columns = (columns+ppb-1)/ppb;
@@ -88,42 +133,41 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   _iCacheIndexTemperature = _cache.add(sTemperatureVar);
 }
 
-/*
- * This function will never be called. The above _configure() replaces this one.
- */
-void PrincetonHandler::_configure(const void* payload, const Pds::ClockTime& t)
-{
-  abort();
-}
-
-void PrincetonHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-
 void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
   if (type.id() == Pds::TypeId::Id_PrincetonFrame)
   {
-    const PrincetonDataType& f = *reinterpret_cast<const PrincetonDataType*>(payload);
     if (!_entry) return;
+
+    ndarray<const uint16_t,2> a;
+    switch(type.version()) {
+    case 1: a = array<Pds::Princeton::FrameV1>(_configtc, payload); break;
+    case 2: a = array<Pds::Princeton::FrameV2>(_configtc, payload); break;
+    default: break;
+    }
 
     const DescImage& desc = _entry->desc();
     unsigned ppbx = desc.ppxbin();
     unsigned ppby = desc.ppybin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data());
-    for(unsigned j=0; j<height(_config); j++)
-      for(unsigned k=0; k<width(_config); k++, d++)
-        _entry->addcontent(*d, k/ppbx, j/ppby);
+    for(unsigned j=0; j<a.shape()[0]; j++)
+      for(unsigned k=0; k<a.shape()[1]; k++)
+        _entry->addcontent(a[j][k], k/ppbx, j/ppby);
 
     //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
     _entry->info(0,EntryImage::Pedestal);
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);
 
-    if (type.version() >= 2) // Princeton temperature is stored in frame data since version 2
-    {
-      if (_iCacheIndexTemperature != -1 && f.temperature() != PrincetonDataType::TemperatureNotDefined)
-        _cache.cache(_iCacheIndexTemperature, f.temperature());
+    switch(type.version()) {
+    case 1: break;
+    case 2:
+      _cache.cache(_iCacheIndexTemperature,
+                   reinterpret_cast<const Pds::Princeton::FrameV2*>(payload)->temperature()); 
+      break;
+    default: break;
     }
+
   }
   else if (type.id() == Pds::TypeId::Id_PrincetonInfo)
   {
@@ -131,14 +175,6 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     if (_iCacheIndexTemperature != -1)
       _cache.cache(_iCacheIndexTemperature, info1.temperature());
   }
-}
-
-/*
- * This function will never be called. The above _event() replaces this one.
- */
-void PrincetonHandler::_event(const void* payload, const Pds::ClockTime& t)
-{
-  abort();
 }
 
 void PrincetonHandler::_damaged() { _entry->invalid(); }

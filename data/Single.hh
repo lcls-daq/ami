@@ -10,6 +10,9 @@ namespace Ami {
   class FeatureCache;
   class Term;
 
+  /**
+   *   An operator to pass single event data with an optional renormalization.
+   */
   class Single : public AbsOperator {
   public:
     Single(const char* =0);

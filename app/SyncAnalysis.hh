@@ -7,22 +7,16 @@
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
-#include "pdsdata/acqiris/ConfigV1.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
-#include "pdsdata/acqiris/DataDescV1.hh"
-#include "pdsdata/pnCCD/ConfigV1.hh"
-#include "pdsdata/acqiris/DataDescV1.hh"
+#include "pdsdata/psddl/pnccd.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh" 
-#include "pdsdata/camera/FrameV1.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
-#include "pdsdata/opal1k/ConfigV1.hh"
-#include "pdsdata/fccd/FccdConfigV2.hh"
-#include "pdsdata/pnCCD/FrameV1.hh"
-#include "pdsdata/pnCCD/ConfigV1.hh"
-#include "pdsdata/ipimb/DataV2.hh"
-#include "pdsdata/ipimb/ConfigV2.hh"
+#include "pdsdata/psddl/camera.ddl.h"
+#include "pdsdata/psddl/opal1k.ddl.h"
+#include "pdsdata/psddl/fccd.ddl.h"
+#include "pdsdata/psddl/ipimb.ddl.h"
 #include "pdsdata/xtc/BldInfo.hh"
-#include "pdsdata/bld/bldData.hh"
+#include "pdsdata/psddl/bld.ddl.h"
 #include "pds/config/AcqConfigType.hh"
 #include "pds/config/IpimbConfigType.hh"
 #include "pds/config/Opal1kConfigType.hh"
@@ -36,9 +30,6 @@
 #include "pds/config/pnCCDConfigType.hh"
 #include "pds/config/FrameFccdConfigType.hh"
 #include "pds/config/IpimbDataType.hh"
-#include "pdsdata/ipimb/ConfigV2.hh"
-#include "pdsdata/xtc/TypeId.hh"
-#include "pdsdata/camera/FrameV1.hh"
 
 typedef Pds::Camera::FrameV1 FrameType;
 
@@ -144,10 +135,10 @@ namespace Ami {
   typedef Ami::DataSpace <FliConfigType,      FliDataType>               fliDataSpace;  
   typedef Ami::DataSpace <AndorConfigType,    AndorDataType>             andorDataSpace;
   typedef Ami::DataSpace <Pds::FCCD::FccdConfigV2, FrameType>            fccdDataSpace;
-  typedef Ami::DataSpace <Pds::BldDataEBeam,  Pds::BldDataEBeam>         eBeamDataSpace;
-  typedef Ami::DataSpace <Pds::BldDataPhaseCavity,     Pds::BldDataPhaseCavity>      phaseCavityDataSpace;
-  typedef Ami::DataSpace <Pds::BldDataFEEGasDetEnergy, Pds::BldDataFEEGasDetEnergy>  gasDetectorDataSpace;
-  typedef Ami::DataSpace <Pds::BldDataGMD,     Pds::BldDataGMD>          gmdDataSpace;
+  typedef Ami::DataSpace <Pds::Bld::BldDataEBeamV3,  Pds::Bld::BldDataEBeamV3>     eBeamDataSpace;
+  typedef Ami::DataSpace <Pds::Bld::BldDataPhaseCavity,     Pds::Bld::BldDataPhaseCavity>      phaseCavityDataSpace;
+  typedef Ami::DataSpace <Pds::Bld::BldDataFEEGasDetEnergy, Pds::Bld::BldDataFEEGasDetEnergy>  gasDetectorDataSpace;
+  typedef Ami::DataSpace <Pds::Bld::BldDataGMDV1,     Pds::Bld::BldDataGMDV1>          gmdDataSpace;
 
   template <class CONFIG, class DATA>
   class DataSpace : public SyncAnalysis {

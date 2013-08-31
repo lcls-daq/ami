@@ -6,7 +6,7 @@
 #include "DescEntry.hh"
 #include "ami/service/Semaphore.hh"
 
-//#define DBUG
+#define DBUG
 
 using namespace Ami;
 
@@ -100,7 +100,16 @@ void Cds::showentries() const
   printf("%s serving %d entries:\n", _desc.name(), totalentries());
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
     const Entry* en = *it;
+#ifdef DBUG
+    printf("  [%2d] %s  agg %c  norm %c  cnt %c\n", 
+           en->desc().signature(), 
+           en->desc().name(),
+           en->desc().aggregate   ()?'t':'f',
+           en->desc().isnormalized()?'t':'f',
+           en->desc().countmode   ()?'t':'f');
+#else    
     printf("  [%2d] %s\n", en->desc().signature(), en->desc().name());
+#endif
   }
 }
 

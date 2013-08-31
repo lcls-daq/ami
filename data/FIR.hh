@@ -3,14 +3,14 @@
 
 #include "ami/data/AbsOperator.hh"
 
-#include <vector>
-using std::vector;
+#include "ndarray/ndarray.h"
 
 namespace Ami {
 
   class Cds;
   class DescEntry;
   class Entry;
+  class EntryWaveform;
 
   class FIR : public AbsOperator {
   public:
@@ -25,8 +25,9 @@ namespace Ami {
   private:
     enum { PATH_LEN=256 };
     char           _path[PATH_LEN];
-    Entry*         _output;
-    vector<float>* _response;
+    Entry*            _output;
+    ndarray<double,1> _response;
+    ndarray<double,1> _outputa;
   };
 
 };

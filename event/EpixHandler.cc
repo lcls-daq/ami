@@ -150,14 +150,13 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   }
 }
 
-void EpixHandler::_configure(const void* payload, const Pds::ClockTime& t) {}
-void EpixHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void EpixHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
 #include "pdsdata/xtc/ClockTime.hh"
 
 bool EpixHandler::used() const { return (_entry && _entry->desc().used()); }
 
-void EpixHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   if (_entry && _entry->desc().used()) {
     unsigned o = _entry->desc().options();

@@ -105,7 +105,6 @@ void CursorPlot::load(const char*& p)
 void CursorPlot::dump(FILE* f) const { _plot->dump(f); }
 
 #include "ami/data/Entry.hh"
-#include "ami/data/DescEntry.hh"
 
 void CursorPlot::setup_payload(Cds& cds)
 {

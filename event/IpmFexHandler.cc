@@ -2,7 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/lusi/IpmFexV1.hh"
+#include "pdsdata/psddl/lusi.ddl.h"
 #include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -23,8 +23,8 @@ IpmFexHandler::~IpmFexHandler()
 {
 }
 
-void   IpmFexHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   IpmFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   IpmFexHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   IpmFexHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
   char* iptr;
@@ -60,18 +60,19 @@ void   IpmFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
   }
 }
 
-void   IpmFexHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void   IpmFexHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Lusi::IpmFexV1& d = *reinterpret_cast<const Pds::Lusi::IpmFexV1*>(payload);
 
   unsigned i=0;
-  _cache.cache(_index[i], d.channel[i]); i++;
-  _cache.cache(_index[i], d.channel[i]); i++;
-  _cache.cache(_index[i], d.channel[i]); i++;
-  _cache.cache(_index[i], d.channel[i]); i++;
-  _cache.cache(_index[i], d.sum       ); i++;
-  _cache.cache(_index[i], d.xpos      ); i++;
-  _cache.cache(_index[i], d.ypos      ); i++;
+  ndarray<const float,1> ch = d.channel();
+  _cache.cache(_index[i], ch[i]); i++;
+  _cache.cache(_index[i], ch[i]); i++;
+  _cache.cache(_index[i], ch[i]); i++;
+  _cache.cache(_index[i], ch[i]); i++;
+  _cache.cache(_index[i], d.sum() ); i++;
+  _cache.cache(_index[i], d.xpos()); i++;
+  _cache.cache(_index[i], d.ypos()); i++;
 }
 
 void   IpmFexHandler::_damaged  ()

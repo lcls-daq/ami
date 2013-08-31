@@ -3,7 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
-#include "pdsdata/fccd/FccdConfigV2.hh"
+#include "pdsdata/psddl/fccd.ddl.h"
 
 #include <string>
 
@@ -18,12 +18,10 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
-  protected:
-    void _calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t);
-    void _calibrate(const void* payload, const Pds::ClockTime& t) {}
+  public:
+    void _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
-    void _configure(const void* payload, const Pds::ClockTime& t) {}
-    void _event    (const void* payload, const Pds::ClockTime& t);
+    void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
     void _load_pedestals();

@@ -1,6 +1,7 @@
 #include "XtcClient.hh"
 
 #include "ami/app/EventFilter.hh"
+#include "ami/app/AnalysisFactory.hh"
 
 #include "ami/event/EventHandler.hh"
 #include "ami/event/EvrHandler.hh"
@@ -19,7 +20,7 @@
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/OrcaHandler.hh"
 #include "ami/event/QuartzHandler.hh"
-#include "ami/event/PhasicsHandler.hh"
+//#include "ami/event/PhasicsHandler.hh"
 #include "ami/event/TimepixHandler.hh"
 #include "ami/event/TM6740Handler.hh"
 #include "ami/event/FccdHandler.hh"
@@ -348,7 +349,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
       case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
       case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
-      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
+        //      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
       case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
@@ -416,3 +417,5 @@ int XtcClient::process(Pds::Xtc* xtc)
   }
   return 1;
 }
+
+void XtcClient::discover_wait() { reinterpret_cast<AnalysisFactory&>(_factory).discover_wait(); }

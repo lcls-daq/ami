@@ -2,7 +2,7 @@
 
 #include "ami/data/FeatureCache.hh"
 
-#include "pdsdata/lusi/DiodeFexV1.hh"
+#include "pdsdata/psddl/lusi.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -22,8 +22,8 @@ DiodeFexHandler::~DiodeFexHandler()
 {
 }
 
-void   DiodeFexHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void   DiodeFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void   DiodeFexHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
+void   DiodeFexHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   char buffer[64];
 
@@ -34,11 +34,11 @@ void   DiodeFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
   _index = _cache.add(buffer);
 }
 
-void   DiodeFexHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void   DiodeFexHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Lusi::DiodeFexV1& d = *reinterpret_cast<const Pds::Lusi::DiodeFexV1*>(payload);
 
-  _cache.cache(_index, d.value);
+  _cache.cache(_index, d.value());
 }
 
 void   DiodeFexHandler::_damaged  ()

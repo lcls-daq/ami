@@ -18,7 +18,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
 QuartzHandler::QuartzHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
-               QuartzConfigType::max_column_pixels(info),
-               QuartzConfigType::max_row_pixels(info)) 
+               Pds::Quartz::max_column_pixels(info),
+               Pds::Quartz::max_row_pixels(info)) 
 {
 }

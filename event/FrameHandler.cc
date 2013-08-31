@@ -2,9 +2,8 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/camera/FrameV1.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
-#include "pdsdata/opal1k/ConfigV1.hh"
+#include "pdsdata/psddl/camera.ddl.h"
+#include "pdsdata/psddl/opal1k.ddl.h"
 
 #include <string.h>
 
@@ -65,8 +64,8 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
       rows    = _defRows;
       break;
     case Pds::Camera::FrameFexConfigV1::RegionOfInterest:
-      columns = c.roiEnd().column-c.roiBegin().column;
-      rows    = c.roiEnd().row   -c.roiBegin().row   ;
+      columns = c.roiEnd().column()-c.roiBegin().column();
+      rows    = c.roiEnd().row   ()-c.roiBegin().row   ();
       break;
     case Pds::Camera::FrameFexConfigV1::NoFrame:
     default:
@@ -83,15 +82,14 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
   }
 }
 
-void FrameHandler::_configure(const void* payload, const Pds::ClockTime& t) {}
-void FrameHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void FrameHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
 template <class T>
 void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
 {
   const DescImage& desc = entry.desc();
 
-  const T* d = reinterpret_cast<const T*>(f.data());
+  const T* d = reinterpret_cast<const T*>(f.data8().data());
   for(unsigned j=0; j<f.height(); j++) {
     unsigned iy = j/desc.ppybin();
     switch(desc.ppxbin()) {
@@ -118,22 +116,16 @@ void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
   entry.info(1,EntryImage::Normalization);
 }
 
-void FrameHandler::_event    (Pds::TypeId id,
-                              const void* payload, const Pds::ClockTime& t)
+#include "pdsdata/xtc/ClockTime.hh"
+
+void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   if (!_entry || !_entry->desc().used()) return;
 
-  _event(payload, t);
-}
-
-#include "pdsdata/xtc/ClockTime.hh"
-
-void FrameHandler::_event    (const void* payload, const Pds::ClockTime& t)
-{
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
-  if (f.depth_bytes()==2)
+  if (f.depth()>8)
     _fill<uint16_t>(f,*_entry);
   else
     _fill<uint8_t >(f,*_entry);

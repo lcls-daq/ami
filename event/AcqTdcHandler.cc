@@ -23,7 +23,7 @@ AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo&     info,
   _entry(NULL)
 {
   Pds::ClockTime t;
-  _configure(&config, t);
+  _configure(_acqTdcConfigType, &config, t);
 }
 
 AcqTdcHandler::~AcqTdcHandler()
@@ -36,15 +36,15 @@ const Entry* AcqTdcHandler::entry(unsigned i) const { return (i == 0 ? _entry : 
 
 void AcqTdcHandler::reset() { _entry = NULL; }
 
-void AcqTdcHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void AcqTdcHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void AcqTdcHandler::_configure(const void* payload, const Pds::ClockTime& t)
+void AcqTdcHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   _entry = new EntryRef(DescRef(det,0,ChannelID::name(det,0)));
 }
 
-void AcqTdcHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void AcqTdcHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   _entry->set(payload);
   _entry->valid(t);

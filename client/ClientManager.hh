@@ -22,24 +22,49 @@ namespace Ami {
   class Routine;
   class Socket;
 
+  /**
+   *   A class for managing the client end of a connection with the set of
+   *   monitoring server processes.  This object listens 
+   */
   class ClientManager : public ConnectionHandler {
   public:
+    /**
+     *  Constructor which listens on a local interface for server processes
+     *  that belong to the indicated group.  Connections to those servers
+     *  are managed by a TCP connection manager.  The client object which
+     *  consumes the plottable data is also passed.
+     *
+     *  param[in]  interface          IP address of local interface
+     *  param[in]  serverGroup        IP multicast address of server group
+     *  param[in]  connect_mgr        TCP connection manager
+     *  param[in]  client             Data consumer
+     */
     ClientManager(unsigned   interface,
 		  unsigned   serverGroup,
 		  ConnectionManager& connect_mgr,
 		  AbsClient& client);
     ~ClientManager();
   public:
-    void connect   ();  // Connect to a server group
-    void disconnect();  // Disconnect from a server group
+    ///  Request connection to the servers in the group
+    void connect   ();
+    ///  Disconnect from all servers in the group
+    void disconnect();
+    ///  Request discovery of data sources in the stream
     void discover  ();
+    ///  Configure analyses to be performed by the servers
     void configure ();
+    ///  Request description of analyses output data shapes
     void request_description();
+    ///  Request update of output data payload
     void request_payload    ();
+    ///  Request update of a sparsified set of output data payload
     void request_payload    (const EntryList& request);
-  public:    // ConnectionHandler interface
+  public:
+    ///  Return id of connection assigned by ConnectionManager
     virtual unsigned connection_id() const;
-    virtual void     handle(int);
+    ///  Register a new server connection by its network socket
+    virtual void     handle(int socket);
+    ///  Return count of received data bytes since last call
     virtual unsigned receive_bytes();
   public:
     void add_client      (ClientSocket&);

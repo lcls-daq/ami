@@ -1,12 +1,6 @@
 #ifndef Ami_BinMath_hh
 #define Ami_BinMath_hh
 
-//
-//  class BinMath : an operator that performs algebra upon the bin values of an entry
-//    and generates a mean value (Scalar), a distribution (TH1F), or a profile (Prof)
-//    versus a BLD or PV quantity.
-//
-
 #include "ami/data/AbsOperator.hh"
 
 class QChar;
@@ -19,6 +13,11 @@ namespace Ami {
   class Term;
   class FeatureCache;
 
+  /**
+   *  class BinMath : an operator that performs algebra upon the bin values of an entry
+   *    and generates a mean value (Scalar), a distribution (TH1F), or a profile (Prof)
+   *    versus a BLD or PV quantity.
+   */
   class BinMath : public AbsOperator {
   public:
     //  Defined by the input entry's signature, the output entry's description,

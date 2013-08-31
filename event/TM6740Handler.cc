@@ -2,8 +2,7 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/camera/FrameV1.hh"
-#include "pdsdata/camera/FrameFexConfigV1.hh"
+#include "pdsdata/psddl/camera.ddl.h"
 #include "pds/config/TM6740ConfigType.hh"
 
 #include <string.h>
@@ -35,7 +34,7 @@ void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
   //
   //  Functional, but poor use of L1 cache
   //
-  const T* d = reinterpret_cast<const T*>(f.data());
+  const T* d = reinterpret_cast<const T*>(f.data8().data());
   for(unsigned j=0; j<f.height(); j++) {
 #ifdef CLKWISE
     unsigned ix = desc.nbinsx()-1 - (desc.ppxbin()==2 ? j>>1 : j);
@@ -102,13 +101,9 @@ TM6740Handler::TM6740Handler(const Pds::DetInfo& info) :
 {
 }
 
-void TM6740Handler::_configure(const void* payload, const Pds::ClockTime& t)
-{
-  printf("TM6740Handler::configure(const void*) called\n");
-}
+void TM6740Handler::_calibrate(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t) {}
 
-void TM6740Handler::_configure(Pds::TypeId tid,
-			       const void* payload, const Pds::ClockTime& t)
+void TM6740Handler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_FrameFexConfig) {
@@ -123,8 +118,8 @@ void TM6740Handler::_configure(Pds::TypeId tid,
       if (c.forwarding() == Pds::Camera::FrameFexConfigV1::NoFrame)
 	return;
       if (c.forwarding() != Pds::Camera::FrameFexConfigV1::FullFrame) {
-        columns = c.roiEnd().column-c.roiBegin().column;
-        rows    = c.roiEnd().row   -c.roiBegin().row   ;
+        columns = c.roiEnd().column()-c.roiBegin().column();
+        rows    = c.roiEnd().row   ()-c.roiBegin().row   ();
       }
     }
     unsigned pixels  = (columns > rows) ? columns : rows;
@@ -135,7 +130,7 @@ void TM6740Handler::_configure(Pds::TypeId tid,
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   //		 columns, rows, ppb, ppb);
 		   rows, columns, ppb, ppb); // rotated size
-    desc.set_scale(_scale.xscale,_scale.yscale);
+    desc.set_scale(_scale.xscale(),_scale.yscale());
 
     _entry = new EntryImage(desc);
     _entry->invalid();
@@ -145,7 +140,7 @@ void TM6740Handler::_configure(Pds::TypeId tid,
       const Pds::Lusi::PimImageConfigV1& c = 
         *reinterpret_cast<const Pds::Lusi::PimImageConfigV1*>(payload);
       if (_entry) {
-        _entry->desc().set_scale(c.xscale,c.yscale);
+        _entry->desc().set_scale(c.xscale(),c.yscale());
       }
       else {
         _scale = c;
@@ -154,13 +149,13 @@ void TM6740Handler::_configure(Pds::TypeId tid,
   }
 }
 
-void TM6740Handler::_event    (const void* payload, const Pds::ClockTime& t)
+void TM6740Handler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
-  if (f.depth_bytes()==2)
+  if (f.depth()>8)
     _rfill<uint16_t>(f,*_entry);
   else
     _rfill<uint8_t >(f,*_entry);

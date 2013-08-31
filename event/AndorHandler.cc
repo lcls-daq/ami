@@ -76,15 +76,7 @@ void AndorHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   _iCacheIndexTemperature = _cache.add(sTemperatureVar);
 }
 
-/*
- * This function will never be called. The above _configure() replaces this one.
- */
-void AndorHandler::_configure(const void* payload, const Pds::ClockTime& t)
-{
-  abort();
-}
-
-void AndorHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
+void AndorHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t) {}
 
 void AndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
@@ -97,7 +89,7 @@ void AndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cloc
     unsigned ppbx = desc.ppxbin();
     unsigned ppby = desc.ppybin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data());
+    const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data(_config).data());
     for(unsigned j=0; j<height(_config); j++)
       for(unsigned k=0; k<width(_config); k++, d++)
         _entry->addcontent(*d, k/ppbx, j/ppby);
@@ -110,14 +102,6 @@ void AndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cloc
     if (_iCacheIndexTemperature != -1)
       _cache.cache(_iCacheIndexTemperature, f.temperature());    
   }
-}
-
-/*
- * This function will never be called. The above _event() replaces this one.
- */
-void AndorHandler::_event(const void* payload, const Pds::ClockTime& t)
-{
-  abort();
 }
 
 void AndorHandler::_damaged() { _entry->invalid(); }

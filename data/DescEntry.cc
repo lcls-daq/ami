@@ -19,11 +19,7 @@ DescEntry::DescEntry(const char* name,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size),
-  _xwarn(0),
-  _xerr (0),
-  _ywarn(0),
-  _yerr (0)
+  _size(size)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);
@@ -51,11 +47,7 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size),
-  _xwarn(0),
-  _xerr (0),
-  _ywarn(0),
-  _yerr (0)
+  _size(size)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);
@@ -87,11 +79,7 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   _group(-1),
   _options(options<<User),
   _type(type),
-  _size(size),
-  _xwarn(0),
-  _xerr (0),
-  _ywarn(0),
-  _yerr (0)
+  _size(size)
 { 
   normalize(isnormalized);
   aggregate(doaggregate);
@@ -171,29 +159,6 @@ void DescEntry::options(unsigned o) {
   _options &= (1<<User)-1;
   _options |= o<<User;
 }
-
-void DescEntry::xwarnings(float warn, float err) 
-{
-  _options |= (1<<XWarnings);
-  _xwarn = warn;
-  _xerr = err;
-}
-
-void DescEntry::ywarnings(float warn, float err) 
-{
-  _options |= (1<<YWarnings);
-  _ywarn = warn;
-  _yerr = err;
-}
-
-bool DescEntry::xhaswarnings() const {return _options&(1<<XWarnings);}
-bool DescEntry::yhaswarnings() const {return _options&(1<<YWarnings);}
-
-float DescEntry::xwarn() const {return _xwarn;}
-float DescEntry::xerr() const {return _xerr;}
-
-float DescEntry::ywarn() const {return _ywarn;}
-float DescEntry::yerr() const {return _yerr;}
 
 static const char* _type_str[] = { "Scalar",
                                    "TH1F",

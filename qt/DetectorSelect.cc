@@ -615,3 +615,8 @@ void DetectorSelect::autoload()
   QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
   load_setup(qPrintable(fname));
 }
+
+void DetectorSelect::disconnected()
+{
+  abort();
+}

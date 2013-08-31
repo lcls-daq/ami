@@ -12,7 +12,7 @@
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/PeakFinderFn.hh"
 
-#include "pdsdata/cspad/MiniElementV1.hh"
+#include "pdsdata/psddl/cspad2x2.ddl.h"
 #include "pdsdata/xtc/Xtc.hh"
 
 #include <string.h>
@@ -31,10 +31,12 @@
 
 using Ami::CspadCalib;
 
-typedef Pds::CsPad::MiniElementV1 CspadElement;
+typedef Pds::CsPad2x2::ElementV1 MiniElement;
 
 static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
+static const unsigned Columns = CsPad2x2::ColumnsPerASIC;
+static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
 
@@ -49,9 +51,9 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
   }
 }
 
-static inline unsigned sum1(const uint16_t*& data,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+static inline unsigned sum1(const int16_t*& data,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const double fn,
                             const float*& gn)
 { 
@@ -70,8 +72,8 @@ static inline unsigned sum1(const uint16_t*& data,
 static const unsigned no_threshold = 0x00ffffff;
 
 static inline unsigned thr1(double v0, double v1,
-                            const uint16_t*& off,
-                            const uint16_t* const*& psp,
+                            const int16_t*& off,
+                            const int16_t* const*& psp,
                             const float*& rms)
 { 
   unsigned v;
@@ -83,12 +85,12 @@ static inline unsigned thr1(double v0, double v1,
 }
 
 
-static double frameNoise(const uint16_t*  data,
-                         const uint16_t*  off,
-                         const uint16_t* const* sta)
+static double frameNoise(const int16_t*  data,
+                         const int16_t*  off,
+                         const int16_t* const* sta)
 {
-  const unsigned ColBins = CsPad::ColumnsPerASIC;
-  const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;
+  const unsigned ColBins = Columns;
+  const unsigned RowBins = Rows<<1;
   const int fnPixelMin = -100 + Offset;
   const int fnPixelMax =  100 + Offset;
   const int fnPixelBins = fnPixelMax - fnPixelMin;
@@ -97,8 +99,8 @@ static double frameNoise(const uint16_t*  data,
   //  histogram the pixel values
   unsigned hist[fnPixelBins];
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
-    const uint16_t* d(data);
-    const uint16_t* o(off );
+    const int16_t* d(data);
+    const int16_t* o(off );
     for(unsigned i=0; i<ColBins; i++) {
       for(unsigned j=0; j<RowBins; j++, d+=2, o++) {
         if (*sta == o)
@@ -181,8 +183,8 @@ namespace CspadMiniGeometry {
   //    only partially fills a pixel (at the edges)
   //
 #define FRAME_BOUNDS 							\
-  const unsigned ColLen   =   CsPad::ColumnsPerASIC/ppb-1;              \
-    const unsigned RowLen = 2*CsPad::MaxRowsPerASIC/ppb-1;		\
+  const unsigned ColLen   = Columns/ppb-1;                              \
+    const unsigned RowLen = Rows/ppb-1;                                 \
     unsigned x0 = CALC_X(column,0,0);					\
     unsigned x1 = CALC_X(column,ColLen,RowLen);                         \
     unsigned y0 = CALC_Y(row,0,0);					\
@@ -192,8 +194,8 @@ namespace CspadMiniGeometry {
 
 
 #define BIN_ITER1(F1) {							\
-    const unsigned ColBins = CsPad::ColumnsPerASIC;			\
-    const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;			\
+    const unsigned ColBins = Columns;                                   \
+    const unsigned RowBins = Rows;                                      \
     /*  fill the target region  */					\
     for(unsigned i=0; i<ColBins; i++) {					\
       for(unsigned j=0; j<RowBins; j++, data+=2) {                      \
@@ -220,7 +222,7 @@ namespace CspadMiniGeometry {
     virtual void fill(Ami::EntryImage& image,
 		      double, double) const = 0;
     virtual void fill(Ami::EntryImage& image,
-		      const uint16_t*  data) const = 0;
+		      const int16_t*  data) const = 0;
     virtual void set_pedestals(FILE*) {}
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
@@ -228,7 +230,7 @@ namespace CspadMiniGeometry {
   protected:
     unsigned column, row;
     unsigned ppb;
-    uint16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    int16_t*  _sta[Columns*Rows];
   };
 
 #define AsicTemplate(classname,bi,ti,PPB)                               \
@@ -250,7 +252,7 @@ namespace CspadMiniGeometry {
       ti                                                                \
     }									\
     void fill(Ami::EntryImage& image,					\
-	      const uint16_t*  data) const { bi }                       \
+	      const int16_t*  data) const { bi }                        \
   }
 
 #define B1 { BIN_ITER1((*data)); }
@@ -292,25 +294,25 @@ namespace CspadMiniGeometry {
       char* pEnd;
 
       if (ped) {
-        uint16_t* off = _off;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+        int16_t* off = _off;
+        for(unsigned col=0; col<Columns; col++) {
           getline(&linep, &sz, ped);
-          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+          *off++ = Offset - int16_t(strtod(linep,&pEnd));
+          for (unsigned row=1; row < Rows; row++)
+            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
       else
         memset(_off,0,sizeof(_off));
 
       if (status) {
-        uint16_t*  off = _off;
-        uint16_t** sta = _sta;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+        int16_t*  off = _off;
+        int16_t** sta = _sta;
+        for(unsigned col=0; col<Columns; col++) {
           getline(&linep, &sz, status);
           if (strtoul(linep,&pEnd,0)) *sta++ = off;
           off++;
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++, off++)
+          for (unsigned row=1; row < Rows; row++, off++)
             if (strtoul(pEnd,&pEnd,0)) *sta++ = off;
         }
       }
@@ -319,17 +321,17 @@ namespace CspadMiniGeometry {
 
       if (gain) {
         float* gn = _gn;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+        for(unsigned col=0; col<Columns; col++) {
           getline(&linep, &sz, gain);
           *gn++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+          for (unsigned row=1; row<Rows; row++)
             *gn++ = strtod(pEnd,&pEnd);
         }
       }
       else {
         float* gn = _gn;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+        for(unsigned col=0; col<Columns; col++) {
+          for (unsigned row=0; row<Rows; row++)
             *gn++ = 1.;
         }
       }
@@ -337,17 +339,17 @@ namespace CspadMiniGeometry {
       if (sigma) {
         float* sg = _sg;
         float* gn = _gn;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+        for(unsigned col=0; col<Columns; col++) {
           getline(&linep, &sz, sigma);
           *sg++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+          for (unsigned row=1; row<Rows; row++)
             *sg++ = strtod(pEnd,&pEnd)*(*gn++);
         }
       }
       else {
         float* sg = _sg;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+        for(unsigned col=0; col<Columns; col++) {
+          for (unsigned row=0; row<Rows; row++)
             *sg++ = 0;
         }
       }
@@ -363,12 +365,12 @@ namespace CspadMiniGeometry {
       char* pEnd;
 
       if (ped) {
-        uint16_t* off = _off;
-        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+        int16_t* off = _off;
+        for(unsigned col=0; col<Columns; col++) {
           getline(&linep, &sz, ped);
-          *off++ = Offset - uint16_t(strtod(linep,&pEnd));
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = Offset - uint16_t(strtod(pEnd, &pEnd));
+          *off++ = Offset - int16_t(strtod(linep,&pEnd));
+          for (unsigned row=1; row<Rows; row++)
+            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
       else
@@ -378,12 +380,12 @@ namespace CspadMiniGeometry {
         free(linep);
     }
   protected:
-    uint16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
-    float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
-    float     _sg [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    int16_t  _off[Columns*Rows];
+    float     _gn [Columns*Rows];
+    float     _sg [Columns*Rows];
   };
 
-  static uint16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+  static int16_t  off_no_ped[Columns*Rows];
 
 #define AsicTemplate(classname,bi,ti,PPB)                               \
   class classname : public AsicP {					\
@@ -403,20 +405,20 @@ namespace CspadMiniGeometry {
               double v0, double v1) const {                             \
       unsigned data = 0;                                                \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
-      uint16_t* zero = 0;                                               \
-      const uint16_t* off = _off;                                       \
-      const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
+      int16_t* zero = 0;                                               \
+      const int16_t* off = _off;                                       \
+      const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* rms = _sg;                                           \
       ti;                                                               \
     }									\
     void fill(Ami::EntryImage& image,					\
-	      const uint16_t*  data) const {                            \
+	      const int16_t*  data) const {                            \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
-      uint16_t* zero = 0;                                               \
-      const uint16_t*  off = lnopedestal ? off_no_ped : _off;           \
-      const uint16_t* const * sta = lsuppress ? _sta : &zero;           \
+      int16_t* zero = 0;                                               \
+      const int16_t*  off = lnopedestal ? off_no_ped : _off;           \
+      const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = _gn;                                            \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
       bi;                                                               \
@@ -494,11 +496,11 @@ namespace CspadMiniGeometry {
       if (mask&1) asic[0]->fill(image,v0,v1);
       if (mask&2) asic[1]->fill(image,v0,v1);
     }
-    void fill(Ami::EntryImage&           image,
-	      const CspadElement&        element) const
+    void fill(Ami::EntryImage&                image,
+	      const ndarray<const int16_t,3>& element) const
     {
-      asic[0]->fill(image,&element.pair[0][0].s0);
-      asic[1]->fill(image,&element.pair[0][0].s1);
+      asic[0]->fill(image,&element[0][0][0]);
+      asic[1]->fill(image,&element[0][0][1]);
     }
     void set_pedestals(FILE* f)
     {
@@ -598,11 +600,11 @@ namespace CspadMiniGeometry {
     void fill(Ami::EntryImage& image,
 	      const Xtc&       xtc) const
     {
-      const CspadElement* elem = reinterpret_cast<const CspadElement*>(xtc.payload());
-      mini->fill(image,*elem);
+      const MiniElement* elem = reinterpret_cast<const MiniElement*>(xtc.payload());
+      mini->fill(image,elem->data());
       for(int a=0; a<4; a++)
         _cache->cache(_feature[a],
-                      CspadTemp::instance().getTemp(elem->sb_temp(a)));
+                      CspadTemp::instance().getTemp(elem->sb_temp()[a]));
 #ifdef POST_INTEGRAL
       if (image.desc().options()&CspadCalib::option_post_integral()) {
         double s = 0;
@@ -709,8 +711,8 @@ CspadMiniHandler::CspadMiniHandler(const Pds::DetInfo& info, FeatureCache& featu
   _max_pixels(max_pixels),
   _options   (0)
 {
-  unsigned s = sizeof(CspadMiniGeometry::off_no_ped)/sizeof(uint16_t);
-  for (unsigned i=0; i<s; i++) CspadMiniGeometry::off_no_ped[i] = (uint16_t)Offset;
+  unsigned s = sizeof(CspadMiniGeometry::off_no_ped)/sizeof(int16_t);
+  for (unsigned i=0; i<s; i++) CspadMiniGeometry::off_no_ped[i] = (int16_t)Offset;
 }
 
 CspadMiniHandler::~CspadMiniHandler()
@@ -812,10 +814,9 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   entry->invalid();
 }
 
-void CspadMiniHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
-void CspadMiniHandler::_calibrate(Pds::TypeId::Type, const void* payload, const Pds::ClockTime& t) {}
+void CspadMiniHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-void CspadMiniHandler::_event    (const void* payload, const Pds::ClockTime& t)
+void CspadMiniHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
   if (_entry && _entry->desc().used()) {
