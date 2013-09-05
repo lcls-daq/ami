@@ -38,10 +38,10 @@ namespace Ami {
     double            _threshold_v1;
     Mode              _mode;
     bool              _center_only;
-    int               _accumulate;
+    int               _accumulate;   /// single event (-1), running sum(0), fixed event sum(>0)
     mutable int       _current;
-    EntryImage*       _output_entry;
-    EntryImage*       _cache;
+    EntryImage*       _output_entry; /// Holds single event result and indefinite running sum
+    EntryImage*       _cache;        /// Holds fixed event number sum
     PeakFinderFn*     _fn;
     ndarray<unsigned,2> _threshold;
   };

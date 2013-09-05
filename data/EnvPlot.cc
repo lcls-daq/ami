@@ -145,7 +145,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
             EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
             en->addcontent(x,y);    
           }
-        }
+	}
         break;
       case DescEntry::TH1F: 
 	{ EntryTH1F* en = static_cast<EntryTH1F*>(_entry);

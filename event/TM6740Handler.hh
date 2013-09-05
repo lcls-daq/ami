@@ -2,7 +2,6 @@
 #define Ami_TM6740Handler_hh
 
 #include "ami/event/FrameHandler.hh"
-#include "pdsdata/psddl/pulnix.ddl.h"
 #include "pdsdata/psddl/lusi.ddl.h"
 
 namespace Ami {

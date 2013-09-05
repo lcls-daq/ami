@@ -31,6 +31,8 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      unsigned channel() const { return _channel; }
+    public:
       void configure(char*& p, unsigned input, unsigned& output,
                      const AxisInfo&, ConfigureRequest::Source);
       void configure(char*& p, unsigned input, unsigned& output,

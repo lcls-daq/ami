@@ -26,7 +26,9 @@ EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
     connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }
 
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
+  addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 EpixClient::~EpixClient() {}
@@ -35,6 +37,7 @@ void EpixClient::save(char*& p) const
 {
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
 }
 
 void EpixClient::load(const char*& p)
@@ -44,6 +47,8 @@ void EpixClient::load(const char*& p)
       ImageClient::load(p);
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_fnBox")
+      _fnBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(EpixClient,tag);
 }
 
@@ -56,6 +61,7 @@ void EpixClient::_configure(char*& p,
 {
   unsigned o = 0;
   if (_npBox->isChecked()) o |= FrameCalib::option_no_pedestal();
+  if (_fnBox->isChecked()) o |= FrameCalib::option_correct_common_mode();
   if (_reloadPedestals) {
     o |= FrameCalib::option_reload_pedestal();
     _reloadPedestals=false;

@@ -54,7 +54,7 @@ void AbsOperator::_extract(const char*& p, void* b, unsigned size)
   p += size;
 }
 
-static const char* _type_str[] =  { "Single", "Average", "Mean", "Integral", "Value",
+static const char* _type_str[] =  { "Single", "Average",
                                     "XYProjection", "RPhiProjection",
                                     "Reference", "EntryMath", "BinMath", "EdgeFinder", "PeakFinder",
                                     "EnvPlot", "PeakFitPlot", "FFT", "ContourProjection", "TdcPlot",

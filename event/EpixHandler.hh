@@ -80,6 +80,7 @@ namespace Ami {
     Epix::ConfigT _config;
     unsigned      _options;
     ndarray<unsigned,3> _pedestals;
+    ndarray<unsigned,3> _offset;
   };
 };
 

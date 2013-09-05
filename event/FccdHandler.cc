@@ -22,14 +22,16 @@ static unsigned _zero_pedestals[Rows*Cols];
 FccdHandler::FccdHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_FccdConfig),
   _entry(0),
-  _pedestals(new unsigned[Rows*Cols])
+  _pedestals(new unsigned[Rows*Cols]),
+  _options(-1)
 {
 }
 
 FccdHandler::FccdHandler(const Pds::DetInfo& info, const EntryImage* entry) : 
   EventHandler(info, Pds::TypeId::Id_Frame, Pds::TypeId::Id_FccdConfig),
   _entry(entry ? new EntryImage(entry->desc()) : 0),
-  _pedestals(new unsigned[Rows*Cols])
+  _pedestals(new unsigned[Rows*Cols]),
+  _options(-1)
 {
 }
 
@@ -81,7 +83,6 @@ void FccdHandler::_event    (Pds::TypeId type, const void* payload, const Pds::C
   //  memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
   const uint16_t* d  = reinterpret_cast<const uint16_t*>(f.data16().data());
 
-  static unsigned _options = -1;
   if (_entry->desc().options() != _options) {
     printf("FccdHandler options %x -> %x\n",_options,_entry->desc().options());
     _options = _entry->desc().options();

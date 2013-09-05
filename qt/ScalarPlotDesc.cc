@@ -7,6 +7,7 @@
 #include "ami/qt/DescScan.hh"
 //#include "ami/qt/DescText.hh"
 #include "ami/qt/QtPersistent.hh"
+#include "ami/qt/SMPRegistry.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescTH2F.hh"
@@ -28,7 +29,16 @@
 
 #include <stdio.h>
 
+#define ACCUM_STATS
+
 using namespace Ami::Qt;
+
+static inline int avgRound(int n, int d)
+{
+  return (n+d-1)/d;
+}
+
+enum { Average, Sum, RMS, NAggs };
 
 ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool lNormWeight) :
   QWidget(parent)
@@ -42,6 +52,24 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
   _vFeature = new DescProf("Mean v Var" , registry);
   _vScan    = new DescScan("Mean v Scan", registry);
   _hist2d = new DescTH2F  ("2dH", registry);
+
+#ifdef ACCUM_STATS
+  _agg_grp = new QButtonGroup;
+  QCheckBox* avgB = new QCheckBox("Avg");
+  QCheckBox* sumB = new QCheckBox("Sum");
+  QCheckBox* rmsB = new QCheckBox("RMS");
+  _agg_grp->addButton(avgB,Average);
+  _agg_grp->addButton(sumB,Sum);
+  _agg_grp->addButton(rmsB,RMS);
+  _agg_grp->setExclusive(false);
+  connect(_agg_grp, SIGNAL(buttonClicked(int)), this, SLOT(aggClicked(int)));
+
+  _interval  = new QLineEdit;
+  _interval->setMaximumWidth(40);
+  _intervalq = new QLabel;
+  new QIntValidator(_interval);
+  connect(_interval, SIGNAL(editingFinished()), this, SLOT(update_interval()));
+#endif
 
   _xnorm = new QCheckBox("X");
   _ynorm = new QCheckBox("Y");
@@ -72,28 +100,44 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
     _plot_grp = tab;
     box->setLayout(vl);
     layout1->addWidget(box); }
-  { QGroupBox* box = new QGroupBox;
-    QVBoxLayout* ll = new QVBoxLayout;
-    { QHBoxLayout* hl = new QHBoxLayout;
-      hl->addStretch();
-      hl->addWidget(new QLabel("Normalize"));
-      { QVBoxLayout* vl = new QVBoxLayout;
+  { QHBoxLayout* hbox = new QHBoxLayout;
+#ifdef ACCUM_STATS
+    //
+    //  Accumulate statistics before plotting
+    //
+    { QGroupBox* box = new QGroupBox;
+      QGridLayout* gl = new QGridLayout;
+      gl->addWidget(avgB,0,0,1,1);
+      gl->addWidget(sumB,1,0,1,1);
+      gl->addWidget(rmsB,2,0,1,1);
+      gl->addWidget(_interval ,0,1,3,1);
+      gl->addWidget(_intervalq,0,2,3,1);
+      box->setLayout(gl);
+      hbox->addWidget(box); }
+#endif
+    { QGroupBox* box = new QGroupBox;
+      QVBoxLayout* ll = new QVBoxLayout;
+      { QHBoxLayout* hl = new QHBoxLayout;
+	hl->addStretch();
+	hl->addWidget(new QLabel("Normalize"));
+	{ QVBoxLayout* vl = new QVBoxLayout;
 	vl->addWidget(_xnorm);
 	vl->addWidget(_ynorm);
 	hl->addLayout(vl); }
-      hl->addWidget(new QLabel("variable to"));
-      hl->addWidget(_vnorm);
-      ll->addLayout(hl); }
-    { QHBoxLayout* hl = new QHBoxLayout;
-      hl->addStretch();
-      hl->addWidget(_weightB);
-      hl->addWidget(new QLabel("Weight by"));
-      hl->addWidget(_vweight); 
-      hl->addStretch();
-      ll->addLayout(hl); }
-    box->setLayout(ll); 
-    if (!lNormWeight) box->hide();
-    layout1->addWidget(box); }
+	hl->addWidget(new QLabel("variable to"));
+	hl->addWidget(_vnorm);
+	ll->addLayout(hl); }
+      { QHBoxLayout* hl = new QHBoxLayout;
+	hl->addStretch();
+	hl->addWidget(_weightB);
+	hl->addWidget(new QLabel("Weight by"));
+	hl->addWidget(_vweight); 
+	hl->addStretch();
+	ll->addLayout(hl); }
+      box->setLayout(ll); 
+      if (!lNormWeight) box->hide();
+      hbox->addWidget(box); }
+    layout1->addLayout(hbox); }
   setLayout(layout1);
 }
 
@@ -109,10 +153,16 @@ void ScalarPlotDesc::save(char*& p) const
   XML_insert(p, "DescScan" , "_vScan"   , _vScan   ->save(p) );
   XML_insert(p, "DescTH2F" , "_hist2d"  , _hist2d  ->save(p) );
   XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->currentIndex ()) );
+#ifdef ACCUM_STATS
+  XML_insert(p, "QButtonGroup", "_agg_grp" , QtPersistent::insert(p,_agg_grp->checkedId ()) );
+  XML_insert(p, "QLineEdit"   , "_interval" , QtPersistent::insert(p,_interval->text()) );
+#endif
 }
 
 void ScalarPlotDesc::load(const char*& p)
 {
+  int id = -1;
+
   XML_iterate_open(p,tag)
    if (tag.name == "_hist")
       _hist    ->load(p);
@@ -126,7 +176,18 @@ void ScalarPlotDesc::load(const char*& p)
       _hist2d  ->load(p);
     else if (tag.name == "_plot_grp")
       _plot_grp->setCurrentIndex(QtPersistent::extract_i(p));
+    else if (tag.name == "_agg_grp")
+      id = QtPersistent::extract_i(p);
+#ifdef ACCUM_STATS
+    else if (tag.name == "_interval")
+      _interval->setText(QtPersistent::extract_s(p));
+#endif
   XML_iterate_close(ScalarPlotDesc,tag);
+
+#ifdef ACCUM_STATS
+  for(int i=0; i<NAggs; i++)
+    _agg_grp->button(i)->setChecked(i==id);
+#endif
 }
 
 Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
@@ -309,4 +370,27 @@ bool ScalarPlotDesc::postAnalysis() const
     break;
   }
   return post;
+}
+
+void ScalarPlotDesc::aggClicked(int b)
+{
+  //
+  // Only 0 or 1 buttons may be checked
+  //
+  if (_agg_grp->button(b)->isChecked()) {
+    for(int i=0; i<NAggs; i++)
+      if (i!=b)
+	_agg_grp->button(i)->setChecked(false);
+  }
+}
+
+void ScalarPlotDesc::update_interval()
+{
+  unsigned nproc = SMPRegistry::instance().nservers();
+  int n = _interval->text().toInt();
+  int m = nproc*avgRound(n,nproc);
+  if (n>1 && m!=n)
+    _intervalq->setText(QString("(%1)").arg(QString::number(m)));
+  else
+    _intervalq->clear();
 }

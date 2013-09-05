@@ -25,6 +25,7 @@ namespace Ami {
   class Semaphore;
 
   namespace Qt {
+    class AggChannels;
     class ChannelDefinition;
     class Control;
     class Display;
@@ -82,6 +83,7 @@ namespace Ami {
     protected:
       enum {NCHANNELS=4};
       ChannelDefinition* _channels[NCHANNELS];
+      AggChannels*       _agg;
       Display*           _frame;
       const DescEntry*   _input_entry;
       unsigned           _input;

@@ -42,6 +42,8 @@ namespace Ami {
       virtual void load(const char*& p);
       void save_plots(const QString&) const;
     public:
+      unsigned channel() const { return _input; }
+    public:
       void configure(char*& p, 
 		     unsigned input, 
 		     unsigned& output);

@@ -2,7 +2,6 @@
 
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pds/config/AcqDataType.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
@@ -18,12 +17,12 @@ AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo& info) :
 }
 
 AcqTdcHandler::AcqTdcHandler(const Pds::DetInfo&     info, 
-			     const AcqTdcConfigType& config) :
+			     const Pds::Acqiris::TdcConfigV1& config) :
   EventHandler(info, Pds::TypeId::Id_AcqTdcData, Pds::TypeId::Id_AcqTdcConfig),
   _entry(NULL)
 {
   Pds::ClockTime t;
-  _configure(_acqTdcConfigType, &config, t);
+  _configure(Pds::TypeId(Pds::TypeId::Id_AcqTdcConfig,1), &config, t);
 }
 
 AcqTdcHandler::~AcqTdcHandler()

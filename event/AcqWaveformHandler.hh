@@ -2,8 +2,7 @@
 #define Ami_AcqWaveformHandler_hh
 
 #include "ami/event/EventHandler.hh"
-
-#include "pds/config/AcqConfigType.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {

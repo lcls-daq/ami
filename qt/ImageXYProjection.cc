@@ -234,8 +234,10 @@ void ImageXYProjection::save_plots(const QString& p) const
 void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
 				  ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
-  for(std::vector<RectROI*>::iterator it=_rois.begin(); it!=_rois.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels);
+  for(std::vector<RectROI*>::iterator it=_rois.begin(); it!=_rois.end(); it++) {
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels);
+  }
     
   _histogram_plot->configure(p,_channelBox->currentIndex(),output,channels,signatures,nchannels);
 }
@@ -261,8 +263,10 @@ void ImageXYProjection::plot()
   switch(_plot_tab->currentIndex()) {
   case PlotHistogram:
   case PlotProjection:
-    { AbsOperator* op = _plot_tab->currentIndex()==PlotHistogram ?
-        static_cast<AbsOperator*>(_histogram_plot ->desc(qPrintable(_title->text()))) :
+    { // unsigned ppentry = _rectangle->nxbins()*_rectangle->nybins();
+      unsigned ppentry = 1;
+      AbsOperator* op = _plot_tab->currentIndex()==PlotHistogram ?
+        static_cast<AbsOperator*>(_histogram_plot ->desc(qPrintable(_title->text()),ppentry)) :
         static_cast<AbsOperator*>(_projection_plot->desc(qPrintable(_title->text())));
       _roi().add_projection(op);
       break;
@@ -279,7 +283,7 @@ void ImageXYProjection::plot()
       }
       else {
 	DescEntry*  desc = pplot->desc(qPrintable(_title->text()));
-        _roi().add_cursor_plot(new BinMath(*desc,_function_plot->expression()));
+	_roi().add_cursor_plot(new BinMath(*desc,_function_plot->expression()));
 	delete desc;
       }
     } 

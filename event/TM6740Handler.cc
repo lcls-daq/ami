@@ -3,7 +3,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/psddl/camera.ddl.h"
-#include "pds/config/TM6740ConfigType.hh"
+#include "pdsdata/psddl/pulnix.ddl.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -111,8 +111,8 @@ void TM6740Handler::_configure(Pds::TypeId tid, const void* payload, const Pds::
       delete _entry;
 
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-    unsigned columns = TM6740ConfigType::Column_Pixels;
-    unsigned rows    = TM6740ConfigType::Row_Pixels;
+    unsigned columns = Pds::Pulnix::TM6740ConfigV1::Column_Pixels;
+    unsigned rows    = Pds::Pulnix::TM6740ConfigV1::Row_Pixels;
     if (info().level()==Pds::Level::Source) {
       const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
       if (c.forwarding() == Pds::Camera::FrameFexConfigV1::NoFrame)

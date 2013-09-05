@@ -52,7 +52,8 @@ void XYHistogramPlotDesc::load(const char*& p)
   XML_iterate_close(XYHistogramPlotDesc,tag);
 }
 
-Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const
+Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title,
+					    unsigned ppentry) const
 {
   Ami::DescEntry* desc = 0;
 
@@ -61,19 +62,20 @@ Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title) const
     desc = new Ami::DescTH1F(title,
                              "pixel value", "pixels",
                              _desc->bins(), _desc->lo(), _desc->hi());
+    desc->aggregate(false);  // single event distribution
     break;
   case DescTH1F::Auto1:
     desc = new Ami::DescScalarRange(title,"events",
                                     DescScalarRange::MeanSigma,
                                     _desc->sigma(),
-                                    _desc->nsamples(),
+                                    _desc->nsamples()*ppentry,
                                     _desc->bins());
     break;
   case DescTH1F::Auto2:
     desc = new Ami::DescScalarRange(title,"events",
                                     DescScalarRange::MinMax,
                                     _desc->extent(),
-                                    _desc->nsamples(),
+                                    _desc->nsamples()*ppentry,
                                     _desc->bins());
     break;
   default:

@@ -2,9 +2,9 @@
 #define Ami_ImpWaveformHandler_hh
 
 #include "ami/event/EventHandler.hh"
-#include "pds/config/ImpConfigType.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/psddl/imp.ddl.h"
 
 namespace Ami {
   class EntryWaveform;
@@ -27,7 +27,7 @@ namespace Ami {
     ImpWaveformHandler(const Pds::DetInfo& info, 
 		       const Pds::Imp::ConfigV1& config);
   private:
-    ImpConfigType _config;
+    Pds::Imp::ConfigV1 _config;
     enum { NumberOfEntries=4 };
     unsigned       _nentries;    
     EntryWaveform* _entry[NumberOfEntries];

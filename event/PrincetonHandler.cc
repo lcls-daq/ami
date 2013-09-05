@@ -4,7 +4,6 @@
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/psddl/princeton.ddl.h"
 #include "pdsdata/xtc/Xtc.hh"
-#include "pds/config/PrincetonDataType.hh"
 
 #include <string.h>
 #include <stdlib.h>
@@ -114,12 +113,10 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
 
-  unsigned columns = width (_configtc);
-  unsigned rows    = height(_configtc);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
+  int columns = width (_configtc);
+  int rows    = height(_configtc);
+  int ppb = image_ppbin(columns,rows);
+
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
      columns, rows, ppb, ppb);
@@ -145,14 +142,7 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     case 2: a = array<Pds::Princeton::FrameV2>(_configtc, payload); break;
     default: break;
     }
-
-    const DescImage& desc = _entry->desc();
-    unsigned ppbx = desc.ppxbin();
-    unsigned ppby = desc.ppybin();
-    memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    for(unsigned j=0; j<a.shape()[0]; j++)
-      for(unsigned k=0; k<a.shape()[1]; k++)
-        _entry->addcontent(a[j][k], k/ppbx, j/ppby);
+    _entry->content(a);
 
     //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
     _entry->info(0,EntryImage::Pedestal);
@@ -171,9 +161,15 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
   }
   else if (type.id() == Pds::TypeId::Id_PrincetonInfo)
   {
-    const PrincetonInfoType& info1 = *reinterpret_cast<const PrincetonInfoType*>(payload);
-    if (_iCacheIndexTemperature != -1)
-      _cache.cache(_iCacheIndexTemperature, info1.temperature());
+    switch(type.version()) {
+    case 1:
+      { const Pds::Princeton::InfoV1& info1 = *reinterpret_cast<const Pds::Princeton::InfoV1*>(payload);
+	if (_iCacheIndexTemperature != -1)
+	  _cache.cache(_iCacheIndexTemperature, info1.temperature());
+      } break;
+    default: 
+      break;
+    }
   }
 }
 

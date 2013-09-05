@@ -32,6 +32,8 @@ namespace Ami {
       void dump(FILE*) const;
       const QtBase* base() const;
     public:
+      unsigned channel() const { return _channel; }
+    public:
       void configure(char*& p, unsigned input, unsigned& output,
                      ChannelDefinition* ch[], int* signatures, unsigned nchannels,
                      const AxisInfo&);

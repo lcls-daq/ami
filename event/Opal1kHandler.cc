@@ -1,7 +1,29 @@
 #include "ami/event/Opal1kHandler.hh"
-#include "pds/config/Opal1kConfigType.hh"
-#include "pds/config/FrameFexConfigType.hh"
-#include "pds/config/PimImageConfigType.hh"
+#include "pdsdata/xtc/DetInfo.hh"
+
+static unsigned max_row_pixels   (const DetInfo& info)
+{
+  switch(info.device()) {
+  case Pds::DetInfo::Opal1000: return 1024;
+  case Pds::DetInfo::Opal1600: return 1200;
+  case Pds::DetInfo::Opal2000: return 1080;
+  case Pds::DetInfo::Opal4000: return 1752;
+  case Pds::DetInfo::Opal8000: return 2472;
+  default:       return 0;
+  }
+}
+
+static unsigned max_column_pixels(const DetInfo& info)
+{
+  switch(info.device()) {
+  case Pds::DetInfo::Opal1000: return 1024;
+  case Pds::DetInfo::Opal1600: return 1600;
+  case Pds::DetInfo::Opal2000: return 1920;
+  case Pds::DetInfo::Opal4000: return 2336;
+  case Pds::DetInfo::Opal8000: return 3296;
+  default:       return 0;
+  }
+}
 
 using namespace Ami;
 
@@ -16,15 +38,13 @@ static std::list<Pds::TypeId::Type> config_type_list()
 
 static unsigned columns(const Pds::DetInfo& info) 
 {
-  unsigned n = Pds::Opal1k::max_column_pixels(info);
-  if (!n)  n = Opal1kConfigType::Column_Pixels;
+  unsigned n = max_column_pixels(info);
   return n;
 }
 
 static unsigned rows(const Pds::DetInfo& info) 
 {
-  unsigned n = Pds::Opal1k::max_row_pixels(info);
-  if (!n) n = Opal1kConfigType::Row_Pixels;
+  unsigned n = max_row_pixels(info);
   return n;
 }
 

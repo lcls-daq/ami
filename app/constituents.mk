@@ -35,7 +35,6 @@ tgtlibs_ami_collection += pdsalg/pdsalg
 tgtlibs_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_ami += pdsdata/compressdata
-tgtlibs_ami += pds/configdata
 tgtlibs_ami += ami/service ami/data ami/server ami/calib ami/event ami/client ami/app
 tgtincs_ami := $(qtincdir) pdsdata/include
 tgtlibs_ami += $(qtlibdir)

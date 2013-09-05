@@ -25,7 +25,7 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
-      Ami::XYHistogram* desc(const char*) const;
+      Ami::XYHistogram* desc(const char* title, unsigned ppentry) const;
     private:
       DescTH1F* _desc;
 

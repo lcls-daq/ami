@@ -145,8 +145,8 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
 
   //  Configure the ROI
   Ami::RectROI op(Ami::DescImage(qPrintable(_name),
-                                 _rect.x1-_rect.x0,
-                                 _rect.y1-_rect.y0,
+                                 _rect.x1-_rect.x0+1,
+                                 _rect.y1-_rect.y0+1,
                                  1, 1, 
                                  _rect.x0, _rect.y0));
   

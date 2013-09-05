@@ -3,7 +3,6 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/psddl/acqiris.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
@@ -12,10 +11,10 @@ using namespace Ami;
 
 static Pds::Acqiris::VertV1 _default_vert[Pds::Acqiris::ConfigV1::MaxChan];
 
-static AcqConfigType _default(0,0,0,
-                              Pds::Acqiris::TrigV1(0,0,0,0),
-                              Pds::Acqiris::HorizV1(0,0,0,0),
-                              _default_vert);
+static Pds::Acqiris::ConfigV1 _default(0,0,0,
+				       Pds::Acqiris::TrigV1(0,0,0,0),
+				       Pds::Acqiris::HorizV1(0,0,0,0),
+				       _default_vert);
 
 AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_AcqWaveform, Pds::TypeId::Id_AcqConfig),
@@ -32,7 +31,7 @@ AcqWaveformHandler::AcqWaveformHandler(const Pds::DetInfo&   info,
   _nentries(0)
 {
   Pds::ClockTime t;
-  _configure(_acqConfigType, &config, t);
+  _configure(Pds::TypeId(Pds::TypeId::Id_AcqConfig,1), &config, t);
 }
 
 AcqWaveformHandler::~AcqWaveformHandler()

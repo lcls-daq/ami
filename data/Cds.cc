@@ -95,6 +95,16 @@ Entry*         Cds::entry       (int signature)
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
 
+const DescEntry* Cds::entry       (const char* name) const
+{
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    const Entry* en = *it;
+    if (strcmp(en->desc().name(),name)==0)
+      return &en->desc();
+  }
+  return 0;
+}
+
 void Cds::showentries() const
 {
   printf("%s serving %d entries:\n", _desc.name(), totalentries());

@@ -2,17 +2,16 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pds/config/AndorDataType.hh"
 
 #include <string.h>
 #include <stdlib.h>
 
-static inline unsigned height(const AndorConfigType& c)
+static inline unsigned height(const Pds::Andor::ConfigV1& c)
 {
   return c.height()/c.binY();
 }
 
-static unsigned width(const AndorConfigType& c)
+static unsigned width(const Pds::Andor::ConfigV1& c)
 {
   return c.width()/c.binX();
 }
@@ -52,8 +51,8 @@ void AndorHandler::reset() { _entry = 0; }
 
 void AndorHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {  
-  if (type.version() == AndorConfigType::Version)
-    _config = *reinterpret_cast<const AndorConfigType*>(payload);
+  if (type.version() == Pds::Andor::ConfigV1::Version)
+    _config = *reinterpret_cast<const Pds::Andor::ConfigV1*>(payload);
   else
     printf("AndorHandler::_configure(): Unsupported Andor Version %d\n", type.version());    
   
@@ -82,7 +81,7 @@ void AndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cloc
 {
   if (type.id() == Pds::TypeId::Id_AndorFrame)
   {
-    const AndorDataType& f = *reinterpret_cast<const AndorDataType*>(payload);
+    const Pds::Andor::FrameV1& f = *reinterpret_cast<const Pds::Andor::FrameV1*>(payload);
     if (!_entry) return;
 
     const DescImage& desc = _entry->desc();

@@ -34,7 +34,6 @@ namespace Ami {
   inline double ScalarRange::rms    () const { return _y[0] ? sqrt((_y[2] - _y[1]*_y[1]/_y[0])/_y[0]) : 0; }
   inline double ScalarRange::min    () const { return _y[3]; }
   inline double ScalarRange::max    () const { return _y[4]; }
-  inline void   ScalarRange::addcontent(double y) { _y[0]++; _y[1]+=y; _y[2]+=y*y; if (y<_y[3]) _y[3]=y; if (y>_y[4]) _y[4]=y; }
 };
 
 #endif

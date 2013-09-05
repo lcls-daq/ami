@@ -29,6 +29,7 @@ namespace Ami {
     FccdHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
     unsigned*   _pedestals;
+    unsigned    _options;
   };
 };
 

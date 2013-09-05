@@ -139,3 +139,41 @@ const ndarray<const uint32_t,2> EntryImage::contents(unsigned fn) const
 
   return result;
 }
+
+template <class T>
+static void _fill_image(const ndarray<const T,2>& a,
+			EntryImage& entry)
+{
+  const DescImage& desc = entry.desc();
+  const T* d = a.data();
+  for(unsigned j=0; j<a.shape()[0]; j++) {
+    unsigned iy = j/desc.ppybin();
+    switch(desc.ppxbin()) {
+    case 1:
+      for(unsigned k=0; k<a.shape()[1]; k++)
+	entry.addcontent(*d++, k, iy);
+      break;
+    case 2:
+      for(unsigned k=0; k<a.shape()[1]; k++)
+	entry.addcontent(*d++, k>>1, iy);
+      break;
+    case 4:
+      for(unsigned k=0; k<a.shape()[1]; k++)
+	entry.addcontent(*d++, k>>2, iy);
+      break;
+    default:
+      for(unsigned k=0; k<a.shape()[1]; k++)
+	entry.addcontent(*d++, k/desc.ppxbin(), iy);
+      break;
+    }
+  }
+}
+
+void EntryImage::content(const ndarray<const uint16_t,2>& a)
+{ _fill_image<uint16_t>(a,*this); }
+
+void EntryImage::content(const ndarray<const int16_t,2>& a)
+{ _fill_image<int16_t>(a,*this); }
+
+void EntryImage::content(const ndarray<const uint8_t,2>& a)
+{ _fill_image<uint8_t>(a,*this); }

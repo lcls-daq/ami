@@ -3,8 +3,8 @@
 
 #include "ami/event/EventHandler.hh"
 #include "ami/data/FeatureCache.hh"
-#include "pds/config/AndorConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/psddl/andor.ddl.h"
 
 namespace Ami {
   class EntryImage;
@@ -24,7 +24,7 @@ namespace Ami {
     virtual void _damaged  ();
   private:
     //AndorHandler(const Pds::DetInfo& info, const EntryImage*);
-    AndorConfigType  _config;
+    Pds::Andor::ConfigV1  _config;
     FeatureCache&       _cache;
     int                 _iCacheIndexTemperature;
     EntryImage*         _entry;

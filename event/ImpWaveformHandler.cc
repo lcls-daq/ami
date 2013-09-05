@@ -3,15 +3,14 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
-#include "pdsdata/psddl/imp.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <stdio.h>
 
 using namespace Ami;
 
-static ImpConfigType _default( 0x1111, 0x5555, 0x98968200, 0x1999,
-    0x2fb5, 0x3fff, 0x927c, 0x3ff, 0x100, 0x1f4);
+static Pds::Imp::ConfigV1 _default( 0x1111, 0x5555, 0x98968200, 0x1999,
+				    0x2fb5, 0x3fff, 0x927c, 0x3ff, 0x100, 0x1f4);
 
 ImpWaveformHandler::ImpWaveformHandler(const Pds::DetInfo& info) : 
   EventHandler(info, Pds::TypeId::Id_ImpData, Pds::TypeId::Id_ImpConfig),
@@ -28,7 +27,7 @@ ImpWaveformHandler::ImpWaveformHandler(const Pds::DetInfo& info,
   _nentries(0)
 {
   Pds::ClockTime t;
-  _configure(_ImpConfigType, &config, t);
+  _configure(Pds::TypeId(Pds::TypeId::Id_ImpConfig,1), &config, t);
 }
 
 ImpWaveformHandler::~ImpWaveformHandler()

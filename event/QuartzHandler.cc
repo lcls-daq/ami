@@ -1,7 +1,5 @@
 #include "ami/event/QuartzHandler.hh"
-#include "pds/config/QuartzConfigType.hh"
-#include "pds/config/FrameFexConfigType.hh"
-#include "pds/config/PimImageConfigType.hh"
+#include "pdsdata/psddl/quartz.ddl.h"
 
 using namespace Ami;
 
@@ -18,7 +16,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
 QuartzHandler::QuartzHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
-               Pds::Quartz::max_column_pixels(info),
-               Pds::Quartz::max_row_pixels(info)) 
+               Pds::Quartz::ConfigV1::Column_Pixels,
+               Pds::Quartz::ConfigV1::Row_Pixels)
 {
 }

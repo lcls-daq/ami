@@ -6,6 +6,7 @@
 #include "ami/qt/Status.hh"
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/ChannelDefinition.hh"
+//#include "ami/qt/AggChannels.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/QtUtils.hh"
 
@@ -143,6 +144,8 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()),    this, SLOT(update_configuration()));
+
+  //  _aggchans = new AggChannels(_channels,NCHANNELS);
 }
 
 Ami::Qt::Client::~Client() 
@@ -453,6 +456,7 @@ void Ami::Qt::Client::request_payload()
     if ((_denials%20)==1) {
       printf("Client %s request_payload throttled %d/%d\n",
 	     qPrintable(_title),_denials,_attempts);
+      _manager->dump_throttle();
 #ifdef DBUG
       printf("..resetting throttle.\n");
       _status->set_state(Status::Processed);
@@ -514,3 +518,4 @@ void Ami::Qt::Client::paintEvent(QPaintEvent* e)
 }
 
 bool Ami::Qt::Client::svc() const { return false; }
+

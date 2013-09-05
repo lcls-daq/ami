@@ -6,6 +6,7 @@
 
 #include <QtGui/QWidget>
 
+class QLabel;
 class QLineEdit;
 class QPushButton;
 class QButtonGroup;
@@ -24,6 +25,7 @@ namespace Ami {
     //    class DescText;
 
     class ScalarPlotDesc : public QWidget {
+      Q_OBJECT
     public:
       enum Type { TH1F, vT, vF, vS, TH2F };
       ScalarPlotDesc(QWidget* parent, 
@@ -41,6 +43,9 @@ namespace Ami {
       DescEntry*  desc(const char*) const;
       const char* expr(const QString& e) const;
       bool        postAnalysis() const;
+    public slots:
+      void aggClicked(int);
+      void update_interval();
     protected:
       QLineEdit*   _title;
       QPushButton* _postB;
@@ -59,6 +64,10 @@ namespace Ami {
       DescScan*   _vScan;
       DescTH2F*   _hist2d;
       //      DescText*   _text;
+
+      QButtonGroup* _agg_grp;
+      QLineEdit*    _interval;
+      QLabel*       _intervalq;
     };
   };
 };

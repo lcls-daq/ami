@@ -203,7 +203,8 @@ void ImageContourProjection::configure(char*& p, unsigned input, unsigned& outpu
 				       ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels);
 }
 
 void ImageContourProjection::setup_payload(Cds& cds)

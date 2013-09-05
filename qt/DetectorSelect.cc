@@ -10,6 +10,7 @@
 #include "ami/qt/EnvClient.hh"
 #include "ami/qt/TdcClient.hh"
 #include "ami/qt/SummaryClient.hh"
+//#include "ami/qt/ScriptClient.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/DetectorListItem.hh"
@@ -44,8 +45,9 @@
 
 using namespace Ami::Qt;
 
-static const Pds::DetInfo envInfo(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
-static const Pds::DetInfo noInfo (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
+static const Pds::DetInfo envInfo   (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
+static const Pds::DetInfo noInfo    (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
+static const Pds::DetInfo scriptInfo(0,Pds::DetInfo::NoDetector,1,Pds::DetInfo::NoDevice,1);
 
 static const int MaxConfigSize = 0x100000;
 static const int BufferSize = 0x8000;
@@ -146,6 +148,7 @@ DetectorSelect::DetectorSelect(const QString& label,
 #endif
     //    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
+    //    *new DetectorListItem(_detList, "Script", scriptInfo , 0);
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
       this, SLOT(show_detector(QListWidgetItem*)));
 
@@ -352,7 +355,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
-    case Pds::DetInfo::NoDevice : client = new Ami::Qt::SummaryClient (this, info , channel, "Summary", ConfigureRequest::Summary); break;
+    case Pds::DetInfo::NoDevice : 
+      { switch(info.devId()) {
+	case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
+	  //	case 1: client = new Ami::Qt::ScriptClient (this, info , channel); break;
+	default: break; } } break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel); break;
     case Pds::DetInfo::OceanOptics : 
     case Pds::DetInfo::Imp      :
@@ -526,6 +533,7 @@ void DetectorSelect::change_detectors(const char* c)
     new DetectorListItem(_detList, "Env"    , envInfo, 1);
     //    new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    new DetectorListItem(_detList, "Summary", noInfo , 0);
+    //    new DetectorListItem(_detList, "Script", scriptInfo, 0);
 
     const Ami::DescEntry* n = 0;
     const Ami::DescEntry* rx_entries = rx.entries();

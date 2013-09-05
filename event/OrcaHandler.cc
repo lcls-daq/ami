@@ -1,6 +1,5 @@
 #include "ami/event/OrcaHandler.hh"
-#include "pds/config/OrcaConfigType.hh"
-#include "pds/config/FrameFexConfigType.hh"
+#include "pdsdata/psddl/orca.ddl.h"
 
 using namespace Ami;
 
@@ -16,8 +15,8 @@ static std::list<Pds::TypeId::Type> config_type_list()
 OrcaHandler::OrcaHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
-               OrcaConfigType::Row_Pixels,
-               OrcaConfigType::Column_Pixels) 
+               Pds::Orca::ConfigV1::Row_Pixels,
+               Pds::Orca::ConfigV1::Column_Pixels) 
 {
 }
 

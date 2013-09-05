@@ -102,7 +102,7 @@ void ImageFrame::replot()
 
     if (_qimage->scalexy())
       //      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
-      //							   ::Qt::KeepAspectRatio));
+      //      							   ::Qt::KeepAspectRatio));
       _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size()));
     else
       _canvas->setPixmap(QPixmap::fromImage(output));

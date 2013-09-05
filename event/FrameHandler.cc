@@ -84,38 +84,6 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
 
 void FrameHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 
-template <class T>
-void _fill(const Pds::Camera::FrameV1& f, EntryImage& entry)
-{
-  const DescImage& desc = entry.desc();
-
-  const T* d = reinterpret_cast<const T*>(f.data8().data());
-  for(unsigned j=0; j<f.height(); j++) {
-    unsigned iy = j/desc.ppybin();
-    switch(desc.ppxbin()) {
-    case 1:
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k, iy);
-      break;
-    case 2:
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k>>1, iy);
-      break;
-    case 4:
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k>>2, iy);
-      break;
-    default:
-      for(unsigned k=0; k<f.width(); k++, d++)
-	entry.addcontent(*d, k/desc.ppxbin(), iy);
-      break;
-    }
-  }
-
-  entry.info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
-  entry.info(1,EntryImage::Normalization);
-}
-
 #include "pdsdata/xtc/ClockTime.hh"
 
 void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
@@ -124,12 +92,16 @@ void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
 
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
+  const DescImage& desc = _entry->desc();
+
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
   if (f.depth()>8)
-    _fill<uint16_t>(f,*_entry);
+    _entry->content(f.data16());
   else
-    _fill<uint8_t >(f,*_entry);
+    _entry->content(f.data8());
 
+  _entry->info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
+  _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
 

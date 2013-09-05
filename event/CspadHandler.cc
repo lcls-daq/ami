@@ -12,7 +12,6 @@
 #include "ami/data/PeakFinderFn.hh"
 
 #include "pdsdata/psddl/cspad.ddl.h"
-#include "pds/config/CsPadConfigType.hh"
 #include "pdsdata/xtc/Xtc.hh"
 
 #include <string.h>
@@ -20,8 +19,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
-
-#define DBUG
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -249,7 +246,7 @@ static double frameNoise(const int16_t*  data,
     const int fnPixelRange = fnPixelBins-fnPeakBins-1;
     const unsigned fnPedestalThreshold = 100;
     
-    unsigned i=fnPeakBins;
+    unsigned i=fnPeakBins+1;
     while( int(i)<fnPixelRange ) {
       if (hist[i]>fnPedestalThreshold) break;
       i++;
@@ -279,7 +276,7 @@ static double frameNoise(const int16_t*  data,
       
       double binMean = double(s1)/double(s0);
       v =  binMean + fnPixelMin - Offset;
-      
+
       s0 = 0;
       unsigned s2 = 0;
       for(unsigned j=i-10; j<i+fnPeakBins; j++) {
@@ -795,6 +792,7 @@ namespace CspadGeometry {
     {
       for(unsigned id=0,j=0; mask!=0; id++)
         if (mask&(1<<id)) {
+	  mask ^= (1<<id);
           element[id>>1]->fill(image,&a[j][0][0],id);
           j++;
         }
@@ -843,13 +841,10 @@ namespace CspadGeometry {
         CASE_VSN(4)
         CASE_VSN(5)
       default:
-        { const CsPadConfigType& c = 
-            *reinterpret_cast<const CsPadConfigType*>(payload); 
-          size = sizeof(c);
-          _quadMask   = c.quadMask();
-          for(unsigned i=0; i<4; i++)
-            _roiMask[i] = c.roiMask(i);
-          break; }
+	printf("CspadHandler: unrecognized configuration version\n");
+	size = 0;
+	_quadMask = 0;
+	memset(_roiMask,0,4*sizeof(unsigned));
       }
       _payload = new char[size];
       memcpy(_payload,payload,size);
@@ -865,7 +860,7 @@ namespace CspadGeometry {
       case 3:  size = sizeof(Pds::CsPad::ConfigV3); break;
       case 4:  size = sizeof(Pds::CsPad::ConfigV4); break;
       case 5:  size = sizeof(Pds::CsPad::ConfigV5); break;
-      default: size = sizeof(CsPadConfigType); break;
+      default: size = 0; break;
       }
       _payload = new char[size];
       memcpy(_payload,c._payload,size);

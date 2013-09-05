@@ -21,9 +21,11 @@ namespace Ami {
     class ChannelDefinition;
     class ImageScale;
     class PeakPlot;
+    class ZoomPlot;
     class DescImage;
     class ImageFrame;
     class RectangleCursors;
+    class SMPWarning;
 
     class BlobFinder : public QtPWidget {
       Q_OBJECT
@@ -59,8 +61,10 @@ namespace Ami {
       ImageScale*       _threshold;
       QLineEdit*        _cluster_size;
       QCheckBox*        _accumulate;
+      SMPWarning*       _smp_warning;
 
       std::list<PeakPlot*> _plots;
+      std::list<ZoomPlot*> _zplots;
     };
   };
 };

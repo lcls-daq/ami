@@ -157,7 +157,7 @@ void PnccdCalib::load_pedestals(EntryImage* correct,
         unsigned v = 0;
         for(unsigned i=0; i<ppb; i++)
           for(unsigned j=0; j<ppb; j++)
-            v += pedestals[ix*ppb + j + cols*(iy*ppb + i)];
+            v += unsigned(pedestals[ix*ppb + j + cols*(iy*ppb + i)]);
         //
         //  Rotate the pedestal correction here rather 
         //  than in the PnncdHandler::event method

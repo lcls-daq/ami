@@ -23,7 +23,9 @@ namespace Ami {
     class ChannelDefinition;
     class ImageScale;
     class PeakPlot;
+    class ZoomPlot;
     class DescImage;
+    class SMPWarning;
 
     class PeakFinder : public QtPWidget {
       Q_OBJECT
@@ -59,8 +61,10 @@ namespace Ami {
       QCheckBox*     _accumulate;
       QLineEdit*     _interval;
       QLabel*        _intervalq;
+      SMPWarning*    _smp_warning;
 
       std::list<PeakPlot*> _plots;
+      std::list<ZoomPlot*> _zplots;
     };
   };
 };

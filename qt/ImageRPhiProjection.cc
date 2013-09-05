@@ -240,16 +240,20 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 {
   const unsigned maxint=0x40000000;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels);
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,
+		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,
+		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,
-		     AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,
+		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
 }
 
 void ImageRPhiProjection::setup_payload(Cds& cds)

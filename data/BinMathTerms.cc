@@ -167,8 +167,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
   case Mean         : v = m[1]/(m[0]*q); break;
   case Variance     : v = sqrt((m[2]/m[0] - pow(m[1]/m[0],2))/q); break;
   case Contrast     : v = sqrt(m[0]*m[2]/(m[1]*m[1]) - 1); break;
-  case XCenterOfMass: v = m[3]/m[1]*d.ppxbin(); break;
-  case YCenterOfMass: v = m[4]/m[1]*d.ppybin(); break;
+  case XCenterOfMass: v = m[3]/m[1]*d.ppxbin() + d.xlow(); break;
+  case YCenterOfMass: v = m[4]/m[1]*d.ppybin() + d.ylow(); break;
   default           : v = 0; break;
   }
   return v;
@@ -309,10 +309,10 @@ double BinMathC::EntryImageTermF::evaluate() const
     //    if ( n > 0) v/=sqrt(n);
     break;
   case XCenterOfMass:
-    v = xsum/sum*d.ppxbin();
+    v = xsum/sum*d.ppxbin() + d.xlow();
     break;
   case YCenterOfMass:
-    v = ysum/sum*d.ppybin();
+    v = ysum/sum*d.ppybin() + d.ylow();
     break;
   default:
     v = 0;

@@ -31,13 +31,16 @@ namespace Ami {
       PeakPlot(QWidget* parent,
 	       const QString&,
 	       unsigned input_channel,
-               AbsOperator* op);
+               AbsOperator* op,
+	       bool displayOnly=false);
       PeakPlot(QWidget*, const char*&);
       ~PeakPlot();
     public:
       void save(char*& p) const;
       void load(const char*& p);
       void save_plots(const QString&) const;
+    public:
+      unsigned channel() const { return _input; }
     public:
       void configure(char*& p, 
                      unsigned input, 
@@ -59,6 +62,7 @@ namespace Ami {
       unsigned         _input;
       AbsOperator*     _op;
       unsigned         _signature;
+      bool             _displayOnly;
 
       enum {NCHANNELS=4};
       ChannelDefinition* _channels[NCHANNELS];

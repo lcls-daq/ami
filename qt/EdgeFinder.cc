@@ -230,9 +230,11 @@ void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
   for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
 }
 
 void EdgeFinder::setup_payload(Cds& cds)

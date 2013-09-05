@@ -3,7 +3,6 @@
 
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
-#include "pds/config/CsPadConfigType.hh"
 
 #include <stdio.h>
 

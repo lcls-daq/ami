@@ -228,6 +228,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
     case DescEntry::Prof:  // normalized
       { const DescProf& d = static_cast<const DescProf&>(_routput());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
+	const double    q = double(inputd.ppxbin()*inputd.ppybin());
 	//  Loop over all pixels in the rectangular region within distance R
 	o->reset();
 	if (_axis == R) {
@@ -246,7 +247,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
                   double f   = atan2(dy,dx);
                   if ( (f>=lo && f<=hi) ||
                        (f+2*M_PI <= hi) )
-                    o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
+                    o->addy((_input->content(k,j)-p)/q,sqrt(dx2+dy2));
                 }
               }
             }
@@ -264,7 +265,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 		    double f   = atan2(dy,dx);
 		    if ( (f>=lo && f<=hi) ||
 			 (f+2*M_PI <= hi) )
-		      o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
+		      o->addy((_input->content(k,j)-p)/q,sqrt(dx2+dy2));
 		  }
 		}
 	      }
@@ -280,7 +281,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 		double f   = atan2(dy,dx);
 		if ( (f>=lo && f<=hi) ||
 		     (f+2*M_PI <= hi) )
-		  o->addy(_input->content(k,j)-p,sqrt(dx2+dy2));
+		  o->addy((_input->content(k,j)-p)/q,sqrt(dx2+dy2));
 	      }
 	    }
 	  }
@@ -303,7 +304,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
                   double rsq = dx2 + dy2;
                   if (rsq >= losq && rsq <= hisq) {
                     double f = atan2(dy,dx);
-                    double y = _input->content(k,j)-p;
+                    double y = (_input->content(k,j)-p)/q;
                     o->addy(y, f);
                     o->addy(y, f+2*M_PI);
                   }
@@ -326,7 +327,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 		    double rsq = dx2 + dy2;
 		    if (rsq >= losq && rsq <= hisq) {
 		      double f = atan2(dy,dx);
-		      double y = _input->content(k,j)-p;
+		      double y = (_input->content(k,j)-p)/q;
 		      o->addy(y, f);
 		      o->addy(y, f+2*M_PI);
 		    }
@@ -347,7 +348,7 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
 		double rsq = dx2 + dy2;
 		if (rsq >= losq && rsq <= hisq) {
 		  double f = atan2(dy,dx);
-		  double y = _input->content(k,j)-p;
+		  double y = (_input->content(k,j)-p)/q;
 		  o->addy(y, f);
 		  o->addy(y, f+2*M_PI);
 		}

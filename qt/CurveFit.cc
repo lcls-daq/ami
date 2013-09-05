@@ -203,11 +203,14 @@ void CurveFit::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
   for(std::list<CurveFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),ConfigureRequest::Analysis);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),ConfigureRequest::Analysis);
   for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
 }
 
 void CurveFit::setup_payload(Cds& cds)

@@ -11,6 +11,7 @@
 //=========================================================
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
 
@@ -18,12 +19,17 @@ class QPrinter;
 
 namespace Ami {
   class Cds;
+  class AbsOperator;
   namespace Qt {
     class ChannelDefinition;
     class ImageDisplay;
     class ZoomPlot : public QtPWidget {
       Q_OBJECT
     public:
+      ZoomPlot(QWidget*,
+	       const QString&,
+	       unsigned input_channel,
+	       Ami::AbsOperator* op);
       ZoomPlot(QWidget*,
 	       const QString&,
 	       unsigned input_channel,
@@ -56,6 +62,8 @@ namespace Ami {
       unsigned         _signature;
       unsigned         _x0, _y0, _x1, _y1;
       ImageDisplay*    _frame;
+      AbsOperator*     _op;
+      ConfigureRequestor _req;
     };
   };
 };

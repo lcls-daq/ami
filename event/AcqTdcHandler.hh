@@ -8,8 +8,8 @@
 
 #include "ami/event/EventHandler.hh"
 
-#include "pds/config/AcqConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
 
 namespace Ami {
   class EntryRef;
@@ -29,10 +29,10 @@ namespace Ami {
     void _damaged  ();
   private:
     AcqTdcHandler(const Pds::DetInfo& info, 
-		       const AcqTdcConfigType& config);
+		  const Pds::Acqiris::TdcConfigV1& config);
   private:
-    AcqTdcConfigType _config;
-    EntryRef*        _entry;
+    Pds::Acqiris::TdcConfigV1 _config;
+    EntryRef*                 _entry;
   };
 };
 

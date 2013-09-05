@@ -125,21 +125,22 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     const Ami::Epix::ConfigT& c = *reinterpret_cast<const Ami::Epix::ConfigT*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     const unsigned chip_margin=4;
-    unsigned columns = c.nchip_columns*c.ncolumns + (c.nchip_columns-1)*chip_margin;
-    unsigned rows    = c.nchip_rows   *c.nrows    + (c.nchip_rows   -1)*chip_margin;
-    unsigned pixels  = (columns > rows) ? columns : rows;
-    unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-    columns = (columns+ppb-1)/ppb;
-    rows    = (rows   +ppb-1)/ppb;
+    int columns = c.nchip_columns*c.ncolumns + (c.nchip_columns-1)*chip_margin;
+    int rows    = c.nchip_rows   *c.nrows    + (c.nchip_rows   -1)*chip_margin;
+    int ppb = image_ppbin(columns,rows);
 
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   columns, rows, ppb, ppb);
     for(unsigned i=0; i<c.nchip_rows; i++)
-      for(unsigned j=0; j<c.nchip_columns; j++)
-	desc.add_frame(j*(c.ncolumns+chip_margin)/ppb,
-		       i*(c.nrows   +chip_margin)/ppb,
-		       c.ncolumns/ppb,
-		       c.nrows   /ppb);
+      for(unsigned j=0; j<c.nchip_columns; j++) {
+	float x0 = j*(c.ncolumns+chip_margin);
+	float y0 = i*(c.nrows   +chip_margin);
+	float x1 = x0+c.ncolumns;
+	float y1 = y0+c.nrows;
+	desc.add_frame(desc.xbin(x0),desc.ybin(y0),
+		       desc.xbin(x1)-desc.xbin(x0),
+		       desc.ybin(y1)-desc.ybin(y0));
+      }
 
     _entry = new EntryImage(desc);
     _entry->invalid();
@@ -175,29 +176,20 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     _entry->reset();
     const DescImage& d = _entry->desc();
 
-    const uint16_t* p = reinterpret_cast<const uint16_t*>(&f+1);
+    const ndarray<const unsigned,3>& po =
+      d.options()&FrameCalib::option_no_pedestal() ?
+      _offset : _pedestals;
     
-    if (d.options()&FrameCalib::option_no_pedestal()) {
+    int ppbin = _entry->desc().ppxbin();
+    {
+      const uint16_t* p = reinterpret_cast<const uint16_t*>(&f+1);
       for(unsigned i=0; i<_config.nrows; i++)
 	for(unsigned j=0; j<_config.ncolumns; j++) {
 	  unsigned fn=0;
 	  for(unsigned k=0; k<_config.nchip_rows; k++)
 	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
 	      const SubFrame& f = _entry->desc().frame(fn);
-	      _entry->addcontent(p[fn]+offset, f.x+j/d.ppxbin(), f.y+i/d.ppybin());
-	    }
-	  p += ((fn+1)&~1)*_config.nsamples;
-	}
-    
-    }
-    else {
-      for(unsigned i=0; i<_config.nrows; i++)
-	for(unsigned j=0; j<_config.ncolumns; j++) {
-	  unsigned fn=0;
-	  for(unsigned k=0; k<_config.nchip_rows; k++)
-	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
-	      const SubFrame& f = _entry->desc().frame(fn);
-	      _entry->addcontent(p[fn]+offset-_pedestals[fn][k][m], f.x+j/d.ppxbin(), f.y+i/d.ppybin());
+	      _entry->addcontent(p[fn]+po[fn][i][j], f.x+j/ppbin, f.y+i/ppbin);
 	    }
 	  p += ((fn+1)&~1)*_config.nsamples;
 	}
@@ -206,7 +198,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     if (d.options()&FrameCalib::option_correct_common_mode()) {
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
 	ndarray<uint32_t,2> a = _entry->contents(k);
-	int fn = int(frameNoise(a,offset*d.ppxbin()*d.ppybin()));
+	int fn = int(frameNoise(a,offset*int(d.ppxbin()*d.ppybin()+0.5)));
 	for(uint32_t* it = a.begin(); it!=a.end(); it++)
 	  *it -= fn;
       }	
@@ -227,6 +219,11 @@ void EpixHandler::_load_pedestals(const DescImage& desc)
   unsigned nx = _config.ncolumns;
   unsigned ny = _config.nrows;
   _pedestals = make_ndarray<unsigned>(nf,ny,nx);
+  _offset    = make_ndarray<unsigned>(nf,ny,nx);
+  for(unsigned i=0; i<nf; i++)
+    for(unsigned j=0; j<ny; j++)
+      for(unsigned k=0; k<nx; k++)
+	_offset[i][j][k] = offset;
 
   //
   //  Load pedestals
@@ -251,9 +248,9 @@ void EpixHandler::_load_pedestals(const DescImage& desc)
 	for (unsigned row=0; row < ny; row++) {
 	  if (feof(f)) return;
 	  getline(&linep, &sz, f);
-	  _pedestals[s][row][0] = strtoul(linep,&pEnd,0);
+	  _pedestals[s][row][0] = offset-strtoul(linep,&pEnd,0);
 	  for(unsigned col=1; col<nx; col++) 
-	    _pedestals[s][row][col] = strtoul(pEnd, &pEnd,0);
+	    _pedestals[s][row][col] = offset-strtoul(pEnd, &pEnd,0);
 	}
       }    
     }
@@ -262,6 +259,9 @@ void EpixHandler::_load_pedestals(const DescImage& desc)
     fclose(f);
   }
   else {
-    memset(&_pedestals[0][0][0],0,nf*nx*ny*sizeof(unsigned));
+    for(unsigned i=0; i<nf; i++)
+      for(unsigned j=0; j<ny; j++)
+	for(unsigned k=0; k<nx; k++)
+	  _pedestals[i][j][k] = offset;
   }
 }

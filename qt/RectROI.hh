@@ -35,6 +35,7 @@ namespace Ami {
       ~RectROI();
     public:
       const Rect& rect() const { return _rect; }
+      unsigned channel() const { return _channel; }
     public:
       void save(char*& p) const;
       void load(const char*& p);

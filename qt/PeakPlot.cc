@@ -38,12 +38,14 @@ static QStringList names = QStringList() << QString("ChA") << QString("ChB") << 
 PeakPlot::PeakPlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         input_channel,
-                   AbsOperator*     op) :
+                   AbsOperator*     op,
+		   bool             displayOnly) :
   QtPWidget(0),
   _name    (name),
   _input   (input_channel),
   _op      (op),
   _signature(-1),
+  _displayOnly(displayOnly),
   _frame   (new ImageDisplay),
   _showMask(1)
 {
@@ -68,10 +70,11 @@ void PeakPlot::_layout()
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
 
+  QHBoxLayout* layout = new QHBoxLayout;
+
   QButtonGroup* showPlotBoxes = new QButtonGroup;
   showPlotBoxes->setExclusive( !_frame->canOverlay() );
 
-  QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
     { QGroupBox* chanBox = new QGroupBox("Channels");
       QVBoxLayout* layout1 = new QVBoxLayout;
@@ -103,21 +106,25 @@ void PeakPlot::_layout()
     { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
       layout3->addWidget(cylB);
       connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
-
+    
     { QPushButton* cntB = new QPushButton("Contour Projection");
       layout3->addWidget(cntB);
       connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(front())); }
-
+    
     layout3->addStretch();
-    layout->addLayout(_chrome_layout=layout3); }
-
+    layout->addLayout(_chrome_layout=layout3);
+  }    
+  
   layout->addWidget(_frame);
   setLayout(layout);
 
-  connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_rfproj , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_cntproj, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
+  
+  set_chrome_visible(true);
+
   show();
 }
 
@@ -167,6 +174,9 @@ void PeakPlot::save(char*& p) const
   XML_insert( p, "AbsOperator", "_op",
               QtPersistent::insert(p,buff,(char*)_op->serialize(buff)-buff) );
 
+  XML_insert( p, "bool", "_displayOnly",
+	      QtPersistent::insert(p,buff,_displayOnly));
+
   for(unsigned i=0; i<NCHANNELS; i++)
     XML_insert( p, "ChannelDefinition", "_channels",
                 _channels[i]->save(p) );
@@ -177,6 +187,8 @@ void PeakPlot::save(char*& p) const
 
   XML_insert( p, "ImageDisplay", "_frame",
               _frame->save(p) );
+
+  delete[] buff;
 }
 
 void PeakPlot::load(const char*& p)
@@ -201,6 +213,8 @@ void PeakPlot::load(const char*& p)
       default: _op=0; printf("Unable to operator type %d\n",type); break;
       }
     }
+    else if (tag.name == "_displayOnly")
+      _displayOnly = QtPersistent::extract_b(p);
     else if (tag.name == "_channels") {
       _channels[nchannels]->load(p);
       if (_channels[nchannels]->is_shown())
@@ -307,6 +321,7 @@ void PeakPlot::update()
 
 void PeakPlot::set_chrome_visible(bool v)
 {
+  v &= !_displayOnly;
   _chrome_changed = true;
   QtUtils::setChildrenVisible(_chrome_layout ,v);
   updateGeometry();

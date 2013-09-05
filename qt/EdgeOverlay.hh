@@ -33,6 +33,8 @@ namespace Ami {
       void load(const char*& p);
       const QtBase* base() const;
     public:
+      unsigned channel() const { return _channel; }
+    public:
       void addfinder(Ami::EdgeFinder *f);
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,

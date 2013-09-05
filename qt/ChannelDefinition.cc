@@ -12,6 +12,7 @@
 #include "ami/qt/MaskDisplay.hh"
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/SMPRegistry.hh"
+#include "ami/qt/SMPWarning.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -81,7 +82,9 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _scale           (new QLineEdit),
   _operator_is_ref (false),
   _configured_ref  (false),
-  _mask_display    (new MaskDisplay)
+  _mask_display    (new MaskDisplay),
+  _smp_warning     (new SMPWarning),
+  _smp_prohibit    (true)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -144,6 +147,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
       layout1->addWidget(new QLabel("Events"),0,1,2,1);
       layout1->addWidget(_interval ,0,2,2,1);
       layout1->addWidget(_intervalq,0,3,2,1);
+      layout1->addWidget(_smp_warning,0,4,2,1);
       layout->addLayout(layout1); }
     { QHBoxLayout* layout1 = new QHBoxLayout;
       layout1->addWidget(mathB);
@@ -205,11 +209,13 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(_interval, SIGNAL(editingFinished()), this, SLOT(update_interval()));
 
   connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
+  connect(_plot_grp, SIGNAL(buttonClicked(int)), this, SLOT(change_agg(int)));
 
   noneB  ->setChecked(!init);
   singleB->setChecked(init);
   apply();
   show_plot(init);
+  update_interval();
 }
 	  
 ChannelDefinition::~ChannelDefinition()
@@ -348,6 +354,8 @@ void ChannelDefinition::update_interval()
     _intervalq->setText(QString("(%1)").arg(QString::number(m)));
   else
     _intervalq->clear();
+
+  _update_agg();
 }
 
 void ChannelDefinition::show_plot(bool s) 
@@ -529,3 +537,23 @@ void ChannelDefinition::set_scale()
 }
 
 unsigned  ChannelDefinition::output_signature() const { return _output_signature; }
+
+bool      ChannelDefinition::smp_prohibit     () const { return _smp_prohibit; }
+
+void ChannelDefinition::change_agg(int id) { _update_agg(); }
+
+void ChannelDefinition::_update_agg()
+{
+  int id = _plot_grp->checkedId();
+  
+  bool ldist = (id == _Average ||
+		id == _Variance) &&
+    (SMPRegistry::instance().nservers())>1;
+
+  _smp_warning->setEnabled(ldist);
+
+  if (ldist != _smp_prohibit) {
+    _smp_prohibit = ldist;
+    emit agg_changed();
+  }
+}

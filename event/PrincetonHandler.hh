@@ -3,7 +3,6 @@
 
 #include "ami/event/EventHandler.hh"
 #include "ami/data/FeatureCache.hh"
-#include "pds/config/PrincetonConfigType.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 namespace Ami {

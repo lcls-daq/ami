@@ -73,10 +73,10 @@ std::string FrameCalib::save_pedestals(Entry* e,
 	for(unsigned s=0; s<nframes; s++) {
 	  const SubFrame& fr = desc.frame(s);
 	  unsigned* off = _off[s];
-	  for (unsigned row=0; row < fr.ny*desc.ppybin(); row++) {
+	  for (int row=0; row < fr.ny*desc.ppybin(); row++) {
 	    getline(&linep, &sz, f);
 	    *off++ = strtoul(linep,&pEnd,0);
-	    for(unsigned col=1; col<fr.nx*desc.ppxbin(); col++) 
+	    for(int col=1; col<fr.nx*desc.ppxbin(); col++) 
 	      *off++ = strtoul(pEnd, &pEnd,0);
 	  }
 	}    

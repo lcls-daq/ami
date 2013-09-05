@@ -11,7 +11,12 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
 
-#include "pds/config/AcqDataType.hh"
+#include "pdsdata/xtc/ClockTime.hh"
+#include "pdsdata/psddl/acqiris.ddl.h"
+
+typedef Pds::Acqiris::TdcDataV1 AcqTdcDataType;
+typedef Pds::Acqiris::TdcDataV1Marker  MarkerType;
+typedef Pds::Acqiris::TdcDataV1Channel ChannelType;
 
 #include <QtCore/QString>
 #include <QtCore/QRegExp>
@@ -139,11 +144,6 @@ void*      TdcPlot::_serialize(void* p) const
   _insert(p, _desc_buffer, DESC_LEN);
   return p;
 }
-
-#include "pdsdata/xtc/ClockTime.hh"
-
-typedef Pds::Acqiris::TdcDataV1Marker  MarkerType;
-typedef Pds::Acqiris::TdcDataV1Channel ChannelType;
 
 Entry&     TdcPlot::_operate(const Entry& e) const
 {

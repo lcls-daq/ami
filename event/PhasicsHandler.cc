@@ -1,6 +1,6 @@
 #include "ami/event/PhasicsHandler.hh"
-#include "pds/config/PhasicsConfigType.hh"
 #include "pdsdata/psddl/camera.ddl.h"
+#include "pdsdata/psddl/phasics.ddl.h"
 
 #include <stdio.h>
 
@@ -22,8 +22,8 @@ static Pds::Camera::FrameFexConfigV1 _dummy(Pds::Camera::FrameFexConfigV1::FullF
 PhasicsHandler::PhasicsHandler(const Pds::DetInfo& info) :
   FrameHandler(info, 
                config_type_list(),
-               PhasicsConfigType::Width,
-               PhasicsConfigType::Height)
+               Pds::Phasics::ConfigV1::Width,
+	       Pds::Phasics::ConfigV1::Height)
 {
 }
 

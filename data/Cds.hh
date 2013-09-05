@@ -10,6 +10,7 @@
 
 namespace Ami {
 
+  class DescEntry;
   class Entry;
   class Semaphore;
 
@@ -23,6 +24,7 @@ namespace Ami {
     void           remove      (Entry* entry);
     const Entry*   entry       (int signature) const;
     Entry*         entry       (int signature);
+    const DescEntry* entry     (const char*) const;
     unsigned short totalentries() const { return _entries.size(); }
     unsigned short totaldescs  () const { return _entries.size()+1; }
 

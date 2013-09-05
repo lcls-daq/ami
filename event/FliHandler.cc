@@ -2,17 +2,16 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
-#include "pds/config/FliDataType.hh"
 
 #include <string.h>
 #include <stdlib.h>
 
-static inline unsigned height(const FliConfigType& c)
+static inline unsigned height(const Pds::Fli::ConfigV1& c)
 {
   return c.height()/c.binY();
 }
 
-static unsigned width(const FliConfigType& c)
+static unsigned width(const Pds::Fli::ConfigV1& c)
 {
   return c.width()/c.binX();
 }
@@ -53,7 +52,7 @@ void FliHandler::reset() { _entry = 0; }
 void FliHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {  
   if (type.version() == 1)
-    _config = *reinterpret_cast<const FliConfigType*>(payload);
+    _config = *reinterpret_cast<const Pds::Fli::ConfigV1*>(payload);
   else
     printf("FliHandler::_configure(): Unsupported Fli Version %d\n", type.version());    
   
@@ -82,7 +81,7 @@ void FliHandler::_event    (Pds::TypeId type, const void* payload, const Pds::Cl
 {
   if (type.id() == Pds::TypeId::Id_FliFrame)
   {
-    const FliDataType& f = *reinterpret_cast<const FliDataType*>(payload);
+    const Pds::Fli::FrameV1& f = *reinterpret_cast<const Pds::Fli::FrameV1*>(payload);
     if (!_entry) return;
 
     const DescImage& desc = _entry->desc();

@@ -29,6 +29,8 @@
 
 #include <stdio.h>
 
+//#define DBUG
+
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
                           unsigned& hi,
@@ -169,7 +171,8 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 
   if (o.type() == DescEntry::Prof ||
       o.type() == DescEntry::Scan ||
-      o.type() == DescEntry::TH2F) {
+      o.type() == DescEntry::TH2F ||
+      o.type() == DescEntry::ScalarDRange) {
     QString expr(o.xtitle());
     FeatureExpression parser;
     _fterm = parser.evaluate(features,expr);
@@ -234,8 +237,9 @@ Entry&     BinMath::_operate(const Entry& e) const
 	en->addcontent(y);
 	break; }
     case DescEntry::ScalarDRange:  
-      if (!_fterm)
+      if (!_fterm) {
 	return *_entry;
+      }
       { bool damaged=false; double x=_fterm->evaluate();
 	if (!damaged) {
           EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);

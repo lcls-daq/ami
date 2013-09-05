@@ -119,6 +119,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
 	const unsigned up = unsigned(p);
         const ImageMask*   mask = inputd.mask();
 	if (_axis == X) {
+	  const double    q = double(inputd.ppybin());
           if (mask) {
             o->reset();
             SET_BOUNDS_X(unsigned) ;
@@ -130,7 +131,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
                   z += double(_input->content(i,j))-p;
               }
               unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
-              o->addcontent(z,k);
+              o->addcontent(z/q,k);
             }
           }
 	  else if (inputd.nframes()) {
@@ -143,7 +144,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		  for(int j=jlo; j<=jhi; j++)
 		    z += double(_input->content(i,j))-p;
 		  unsigned k = d.bin(inputd.xlow()+i*inputd.ppxbin());
-                  o->addcontent(z,k);
+                  o->addcontent(z/q,k);
 		}
 	    }
 	  }
@@ -154,11 +155,12 @@ Entry&     XYProjection::_operate(const Entry& e) const
               for(unsigned j=jlo; j<jhi; j++)
                 z += double(_input->content(i,j))-p;
               unsigned k=d.bin(inputd.xlow()+i*inputd.ppxbin());
-              o->content(z,k);
+              o->content(z/q,k);
             }
 	  }
 	}
 	else {  // _axis == Y
+	  const double    q = double(inputd.ppxbin());
           if (mask) {
             o->reset();
             SET_BOUNDS_Y(unsigned) ;
@@ -169,7 +171,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
                 if (mask->rowcol(i,j))
                   z += double(_input->content(j,i))-p;
               unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
-              o->addcontent(z,k);
+              o->addcontent(z/q,k);
             }
           }
 	  else if (inputd.nframes()) {
@@ -182,7 +184,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
 		  for(int j=jlo; j<=jhi; j++)
                     z += double(_input->content(j,i))-p;
 		  unsigned k = d.bin(inputd.ylow()+i*inputd.ppybin());
-                  o->addcontent(z,k);
+                  o->addcontent(z/q,k);
 		}
 	    }
 	  }
@@ -193,7 +195,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
               for(unsigned j=jlo; j<jhi; j++)
                 z += double(_input->content(j,i))-p;
               unsigned k=d.bin(inputd.ylow()+i*inputd.ppybin());
-              o->content(z,k);
+              o->content(z/q,k);
             }
 	  }
 	}

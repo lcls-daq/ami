@@ -105,6 +105,7 @@ namespace Ami {
     const std::list<Pds::TypeId::Type>& config_types() const { return _config_type; }
   public:
     static void enable_full_resolution(bool);
+    static int  image_ppbin(int& xpixels, int& ypixels);
   protected:
     bool _full_resolution() const;
   private:

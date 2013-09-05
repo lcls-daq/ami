@@ -166,9 +166,9 @@ float QtImage::value(unsigned x,unsigned y) const // units are bins
   const Ami::DescImage&  d = _entry.desc();
   float p = _entry.info(EntryImage::Pedestal);
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
-  n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  const unsigned* src = _entry.contents() + (_y0+y)*d.nbinsx() + (_x0+x);
-  return (float(*src)-p)/n;
+  if (!d.countmode())
+    n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+  return (float(_entry.content(_x0+x,_y0+y))-p)/n;
  }
 
 const AxisInfo* QtImage::xinfo() const { return _xinfo; }

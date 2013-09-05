@@ -125,6 +125,8 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	o->clear();
 	if (_axis == X) {
+	  const double q  = double(inputd.ppxbin());
+	  const double dl = _contour.discrimLevel()*double(inputd.ppybin());
           if (mask) {
             unsigned ixlo = inputd.xbin(_xlo);
             unsigned ixhi = inputd.xbin(_xhi);
@@ -136,8 +138,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
               for(unsigned i=ixlo; i<ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
                 double yp = inputd.binx(i) - double(*off);
-                if (yp >= d.xlow() && yp <= d.xup())
-                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+                if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>dl) o->addcontent(z,yp);
+		}
               }
             }
           }
@@ -150,13 +154,17 @@ Entry&     ContourProjection::_operate(const Entry& e) const
             for(unsigned j=iylo; j<=iyhi; j++,off++) {
               for(unsigned i=ixlo; i<ixhi; i++) {
                 double yp = inputd.binx(i) - double(*off);
-                if (yp >= d.xlow() && yp <= d.xup())
-                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+                if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>dl) o->addcontent(z,yp);
+		}
               }
             }
           }
 	}
 	else { // (_axis == Y)
+	  const double q  = double(inputd.ppybin());
+	  const double dl = _contour.discrimLevel()*double(inputd.ppxbin());
           if (mask) {
             unsigned ixlo = inputd.xbin(_xlo);
             unsigned ixhi = inputd.xbin(_xhi);
@@ -169,8 +177,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
               for(unsigned i=ixlo; i<ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
                 double yp = y - double(*off++);
-                if (yp >= d.xlow() && yp <= d.xup())
-                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+                if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>dl) o->addcontent(z,yp);
+		}
               }
             }
           }
@@ -184,8 +194,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
               double y = inputd.biny(j);
               for(unsigned i=ixlo; i<ixhi; i++) {
                 double yp = y - double(*off++);
-                if (yp >= d.xlow() && yp <= d.xup())
-                  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addcontent(_input->content(i,j),yp);
+                if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>dl) o->addcontent(z,yp);
+		}
               }
             }
           }
@@ -195,6 +207,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
     case DescEntry::Prof:  // normalized
       { const DescProf& d = static_cast<const DescProf&>(_routput());
 	EntryProf*      o = static_cast<EntryProf*>(_output);
+	const double    q = double(inputd.ppxbin()*inputd.ppybin());
 	o->reset();
 	if (_axis == X) {
           if (mask) {
@@ -208,8 +221,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	      for(unsigned i=ixlo; i<ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
 		double yp = inputd.binx(i) - double(*off);
-		if (yp >= d.xlow() && yp <= d.xup())
- 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+ 		  if (z>_contour.discrimLevel()) o->addy(z,yp);
+		}
 	      }
 	    }
           }
@@ -224,8 +239,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 		for(int j=iylo; j<iyhi; j++,off++) {
 		  for(int i=ixlo; i<ixhi; i++) {
 		    double yp = inputd.binx(i) - double(*off);
-		    if (yp >= d.xlow() && yp <= d.xup())
- 		      if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		    if (yp >= d.xlow() && yp <= d.xup()) {
+		      double z = (_input->content(i,j)-ped)/q;
+		      if (z>_contour.discrimLevel()) o->addy(z,yp);
+		    }
 		  }
 		}
 	    }
@@ -239,8 +256,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    for(unsigned j=iylo; j<=iyhi; j++,off++) {
 	      for(unsigned i=ixlo; i<ixhi; i++) {
 		double yp = inputd.binx(i) - double(*off);
-		if (yp >= d.xlow() && yp <= d.xup())
- 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>_contour.discrimLevel()) o->addy(z,yp);
+		}
 	      }
 	    }
 	  }
@@ -258,8 +277,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	      for(unsigned i=ixlo; i<ixhi; i++,off++) {
                 if (!mask->rowcol(j,i)) continue;
 		double yp = y - double(*off);
-		if (yp >= d.xlow() && yp <= d.xup())
- 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>_contour.discrimLevel()) o->addy(z,yp);
+		}
 	      }
 	    }
           }
@@ -275,8 +296,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 		  double y = inputd.biny(j);
 		  for(int i=ixlo; i<ixhi; i++) {
 		    double yp = y - double(*off++);
-		    if (yp >= d.xlow() && yp <= d.xup())
- 		      if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		    if (yp >= d.xlow() && yp <= d.xup()) {
+		      double z = (_input->content(i,j)-ped)/q;
+		      if (z>_contour.discrimLevel()) o->addy(z,yp);
+		    }
 		  }
 		}
 	    }
@@ -291,8 +314,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	      double y = inputd.biny(j);
 	      for(unsigned i=ixlo; i<ixhi; i++) {
 		double yp = y - double(*off++);
-		if (yp >= d.xlow() && yp <= d.xup())
- 		  if ((_input->content(i,j)-ped)>_contour.discrimLevel()) o->addy(_input->content(i,j),yp);
+		if (yp >= d.xlow() && yp <= d.xup()) {
+		  double z = (_input->content(i,j)-ped)/q;
+		  if (z>_contour.discrimLevel()) o->addy(z,yp);
+		}
 	      }
 	    }
 	  }

@@ -49,6 +49,10 @@ namespace Ami {
     void                            addcontent(unsigned y, unsigned binx, unsigned biny);
     void                            content   (unsigned y, unsigned binx, unsigned biny);
 
+    void content(const ndarray<const uint16_t,2>&);
+    void content(const ndarray<const int16_t,2>&);
+    void content(const ndarray<const uint8_t,2>&);
+
     enum Info { Pedestal, Normalization, InfoSize };
     double   info   (Info) const;
     void     info   (double y, Info);

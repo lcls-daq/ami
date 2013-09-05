@@ -453,8 +453,10 @@ BlobFinder::BlobFinder(const char*& p, const DescEntry& e) :
   int ppxbin = static_cast<const DescImage&>(e).ppxbin();
   int ppybin = static_cast<const DescImage&>(e).ppybin();
   DescImage desc(e.name(),nbinsx,nbinsy,ppxbin,ppybin);
+  desc.aggregate(_accumulate!=0);
+  desc.normalize(_accumulate==0);
+  desc.countmode(true);
   _output_entry = static_cast<EntryImage*>(EntryFactory::entry(desc));
-  _output_entry->info(0,EntryImage::Pedestal);
   int ppbin = ppxbin*ppybin;
   _threshold    *= ppbin;
   _cluster_size /= ppbin;
@@ -493,9 +495,10 @@ Entry&     BlobFinder::_operate(const Entry& e) const
     const DescImage& d = _output_entry->desc();
     const unsigned nx = d.nbinsx();
     const unsigned ny = d.nbinsy();
-    const unsigned q  = d.ppxbin()*d.ppybin();
+    //    const unsigned q  = d.ppxbin()*d.ppybin();
+    const unsigned q  = 1.;  // count as only one blob when binned
     if (!_accumulate)
-      memset(_output_entry->contents(), 0, sizeof(unsigned)*nx*ny);
+      _output_entry->reset();
 
     //  Find the blobs
 
@@ -522,6 +525,7 @@ Entry&     BlobFinder::_operate(const Entry& e) const
       Ami::BlobFinding::Position* p = bloblist->GetThing(i);
       _output_entry->addcontent(q,int(p->GetXPosition()+0.5),int(p->GetYPosition()+0.5));
     }
+    _output_entry->addinfo(1, EntryImage::Normalization);
 
     delete bloblist;
   }

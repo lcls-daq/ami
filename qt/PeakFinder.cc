@@ -2,9 +2,11 @@
 
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/PeakPlot.hh"
+#include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageScale.hh"
 #include "ami/qt/SMPRegistry.hh"
+#include "ami/qt/SMPWarning.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/PeakFinder.hh"
@@ -48,6 +50,8 @@ PeakFinder::PeakFinder(QWidget* parent,
   _interval  = new QLineEdit;
   _intervalq = new QLabel;
   new QIntValidator(_interval);
+  
+  _smp_warning = new SMPWarning;
 
   _center_only = new QCheckBox("local max only");
   _center_only->setChecked(true);
@@ -92,6 +96,7 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout1->addWidget(_accumulate);
     layout1->addWidget(_interval);
     layout1->addWidget(_intervalq);
+    layout1->addWidget(_smp_warning);
     layout->addLayout(layout1); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
@@ -106,7 +111,9 @@ PeakFinder::PeakFinder(QWidget* parent,
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(_interval , SIGNAL(editingFinished()), this, SLOT(update_interval()));
   connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
+  connect(_accumulate, SIGNAL(clicked()),     this, SLOT(update_interval()));
 
+  update_interval();
   _proc_grp->button(Ami::PeakFinder::Count)->setChecked(true);
 }
   
@@ -129,6 +136,9 @@ void PeakFinder::save(char*& p) const
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakPlot", "_plots", (*it)->save(p) );
   }
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
+    XML_insert(p, "ZoomPlot", "_zplots", (*it)->save(p) );
+  }
 }
 
 void PeakFinder::load(const char*& p)
@@ -138,6 +148,10 @@ void PeakFinder::load(const char*& p)
     disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   _plots.clear();
+
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  _zplots.clear();
 
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
@@ -162,6 +176,11 @@ void PeakFinder::load(const char*& p)
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
       connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
+    else if (tag.name == "_zplots") {
+      ZoomPlot* plot = new ZoomPlot(this, p);
+      _zplots.push_back(plot);
+      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    }
   XML_iterate_close(PeakFinder,tag);
 
   update_interval();
@@ -175,6 +194,9 @@ void PeakFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    //    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels);
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
 }
 
@@ -182,11 +204,15 @@ void PeakFinder::setup_payload(Cds& cds)
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+   (*it)->setup_payload(cds);
 }
 
 void PeakFinder::update()
 {
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->update();
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->update();
 }
 
@@ -209,27 +235,48 @@ void PeakFinder::plot()
 					    _center_only->isChecked(),
 					    _accumulate->isChecked() ? avgRound(_interval->text().toInt(),nproc) : -1);
 
-  PeakPlot* plot = new PeakPlot(this,
-				QString("%1 Peaks : %2,%3").arg(_channels[_channel]->name())
-                                .arg(_threshold->value(0))
-                                .arg(_threshold->value(1)),
-				_channel,
-				op);
-  _plots.push_back(plot);
-
-  connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+#if 1
+  if (nproc>1 && _accumulate->isChecked()) {
+    ZoomPlot* plot = new ZoomPlot(this,
+				  QString("%1 HitFinder : %2,%3").arg(_channels[_channel]->name())
+				  .arg(_threshold->value(0))
+				  .arg(_threshold->value(1)),
+				  _channel,
+				  op);
+    _zplots.push_back(plot);
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  }
+  else {
+    bool displayOnly=false;
+#else
+  {
+    bool displayOnly=nproc>1 && _accumulate->isChecked();
+#endif
+    PeakPlot* plot = new PeakPlot(this,
+				  QString("%1 HitFinder : %2,%3").arg(_channels[_channel]->name())
+				  .arg(_threshold->value(0))
+				  .arg(_threshold->value(1)),
+				  _channel,
+				  op,
+				  displayOnly);
+    _plots.push_back(plot);
+    
+    connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
+    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  }
 
   emit changed();
 }
 
 void PeakFinder::remove_plot(QObject* obj)
 {
-  PeakPlot* plot = static_cast<PeakPlot*>(obj);
-  _plots.remove(plot);
+  { PeakPlot* plot = static_cast<PeakPlot*>(obj);
+    _plots.remove(plot); }
 
-  disconnect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  { ZoomPlot* plot = static_cast<ZoomPlot*>(obj);
+    _zplots.remove(plot); }
+
+  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
   emit changed();
 }
@@ -243,5 +290,9 @@ void PeakFinder::update_interval()
     _intervalq->setText(QString("(%1)").arg(QString::number(m)));
   else
     _intervalq->clear();
+
+  bool checked = _accumulate->checkState()==::Qt::Checked;
+  _interval   ->setEnabled(checked);
+  _smp_warning->setEnabled(checked);
 }
 

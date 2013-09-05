@@ -24,20 +24,10 @@
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
 
-#if 0
-#include "ami/data/DescScalar.hh"
-#include "ami/data/DescScalarRange.hh"
-#include "ami/data/DescTH1F.hh"
-#include "ami/data/DescProf.hh"
-#include "ami/data/DescScan.hh"
-#else
-#endif
 #include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/PeakFitPlot.hh"
-
-#include "ami/data/Integral.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
@@ -339,11 +329,14 @@ void PeakFit::configure(char*& p, unsigned input, unsigned& output,
 			 ConfigureRequest::Source source)
 {
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
   for(std::list<PeakFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
   for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
 void PeakFit::setup_payload(Cds& cds)

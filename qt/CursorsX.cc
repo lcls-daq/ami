@@ -20,8 +20,6 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/Expression.hh"
 
-#include "ami/data/Integral.hh"
-
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -256,9 +254,11 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
 			 ConfigureRequest::Source source)
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
 void CursorsX::setup_payload(Cds& cds)

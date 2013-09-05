@@ -45,3 +45,15 @@ void ScalarRange::merge(char* p) const
     y[4] = _y[4];
 }
 
+void   ScalarRange::addcontent(double y) 
+{
+  if (isnan(y)) return;
+
+  _y[0]++; 
+  _y[1]+=y; 
+  _y[2]+=y*y; 
+  if (y<_y[3]) 
+    _y[3]=y;
+  if (y>_y[4])
+    _y[4]=y; 
+}
