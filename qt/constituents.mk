@@ -181,7 +181,6 @@ libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 libsrcs_amiqt += MaskFrame.cc MaskFrame_moc.cc
 libsrcs_amiqt += MaskDisplay.cc MaskDisplay_moc.cc
 
-libsrcs_amiblv := blv
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
