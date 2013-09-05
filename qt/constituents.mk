@@ -1,5 +1,5 @@
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami blviewer bldipimbclient qttest
+tgtnames := online_ami offline_ami blviewer qttest
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc QOnline.cc QOnline_moc.cc
@@ -7,8 +7,6 @@ tgtsrcs_online_ami += qtclient.cc QOnline.cc QOnline_moc.cc
 tgtsrcs_offline_ami := offline_ami.cc XtcFileClient.cc XtcFileClient_moc.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
-
-tgtsrcs_bldipimbclient := bldIpimbClient.cc bldIpimbClient_moc.cc
 
 tgtsrcs_qttest := qttest.cc
 
@@ -43,11 +41,6 @@ tgtlibs_blviewer += ami/service ami/data ami/server ami/client ami/calib ami/ami
 tgtlibs_blviewer += pdsalg/pdsalg
 tgtlibs_blviewer += $(qt_libs)
 
-tgtlibs_bldipimbclient := $(datalibs) pdsapp/configdb pdsapp/configdbg pds/configdata
-tgtlibs_bldipimbclient += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
-tgtlibs_bldipimbclient += pdsalg/pdsalg
-tgtlibs_bldipimbclient += $(qt_libs)
-
 tgtlibs_qttest := $(datalibs)
 tgtlibs_qttest += ami/service ami/data ami/server ami/client ami/calib ami/amiqt
 tgtlibs_qttest += pdsalg/pdsalg
@@ -61,7 +54,6 @@ qt_incs := $(qtincdir) $(qwtincs) qwt/include
 tgtincs_online_ami  := $(qt_incs) pdsdata/include
 tgtincs_offline_ami := $(qt_incs) pdsdata/include
 tgtincs_blviewer    := $(qt_incs) pdsdata/include
-tgtincs_bldipimbclient   := $(qt_incs) pdsdata/include
 tgtincs_qttest := $(qt_incs) pdsdata/include
 
 # List system include directories (if any) needed by exe_a as <incdir>.
