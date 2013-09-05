@@ -8,9 +8,11 @@ DescScalarRange::DescScalarRange(const char* name,
                                  double      extent,
                                  unsigned    nsamples,
                                  unsigned    nbins,
-                                 bool        lnormalize) :
+                                 bool        lnormalize,
+				 double      granul) :
   DescEntry(name, "", ytitle, ScalarRange, sizeof(DescScalarRange), lnormalize),
   _extent  (extent),
+  _granularity(granul),
   _nsamples(nsamples),
   _nbins   (nbins)
 {
@@ -20,6 +22,7 @@ DescScalarRange::DescScalarRange(const char* name,
 DescScalarRange::DescScalarRange(const DescScalarRange& o) :
   DescEntry(o),
   _extent  (o._extent),
+  _granularity(o._granularity),
   _nsamples(o._nsamples),
   _nbins   (o._nbins)
 {

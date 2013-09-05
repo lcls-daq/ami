@@ -69,14 +69,16 @@ Ami::XYHistogram* XYHistogramPlotDesc::desc(const char* title,
                                     DescScalarRange::MeanSigma,
                                     _desc->sigma(),
                                     _desc->nsamples()*ppentry,
-                                    _desc->bins());
+                                    _desc->bins(),
+				    true, 1.);
     break;
   case DescTH1F::Auto2:
     desc = new Ami::DescScalarRange(title,"events",
                                     DescScalarRange::MinMax,
                                     _desc->extent(),
                                     _desc->nsamples()*ppentry,
-                                    _desc->bins());
+                                    _desc->bins(),
+				    true, 1.);
     break;
   default:
     break;

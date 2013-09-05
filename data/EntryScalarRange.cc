@@ -21,24 +21,33 @@ DescScalarRange& EntryScalarRange::desc() {return _desc;}
 
 DescTH1F* EntryScalarRange::result(void* p) const
 {
-  float xlow, xhigh;
+  double m,r;
   if (_desc.stat() == DescScalarRange::MinMax) {
-    double r = (0.5+_desc.extent())*(_range->max()-_range->min());
+    r = (0.5+_desc.extent())*(_range->max()-_range->min());
     if (r<=0) r = 0.5;
-    double m = 0.5*(_range->min()+_range->max());
-    xlow  = m - r;
-    xhigh = m + r;
+    m = 0.5*(_range->min()+_range->max());
   }
   else {
-    double r = _desc.extent()*_range->rms();
+    r = _desc.extent()*_range->rms();
     if (r<=0) r = 0.5;
-    xlow  = _range->mean() - r;
-    xhigh = _range->mean() + r;
+    m = _range->mean();
   }
+
+  unsigned nbins = _desc.nbins();
+  if (_desc.granularity()) {
+    int dpb = int(2.*r/(_desc.granularity()*double(nbins))) + 1;
+    //  Decrease the number of bins or increase the range
+    r = 0.5*double(dpb*nbins)*_desc.granularity();
+  }
+
+  float xlow, xhigh;
+  xlow  = m - r;
+  xhigh = m + r;
+
   if (p)
     return new(p) DescTH1F(_desc.name(),"",_desc.ytitle(),
-                           _desc.nbins(),xlow,xhigh,_desc.isnormalized());
+                           nbins,xlow,xhigh,_desc.isnormalized());
   else
     return new DescTH1F(_desc.name(),"",_desc.ytitle(),
-                        _desc.nbins(),xlow,xhigh,_desc.isnormalized());
+                        nbins,xlow,xhigh,_desc.isnormalized());
 }

@@ -14,15 +14,18 @@ namespace Ami {
                     double      extent,
                     unsigned    nsamples,
                     unsigned    nbins,
-                    bool        lnormalize=true);
+                    bool        lnormalize=true,
+		    double      granularity=0.);
     DescScalarRange(const DescScalarRange&);
   public:
     inline Stat     stat    () const;
     inline double   extent  () const;
     inline unsigned nsamples() const;
     inline unsigned nbins   () const;
+    inline double   granularity() const;
   private:
     double   _extent;
+    double   _granularity;
     uint16_t _nsamples;
     uint16_t _nbins;
   };
@@ -34,6 +37,8 @@ Ami::DescScalarRange::Stat Ami::DescScalarRange::stat() const
 }
 
 double   Ami::DescScalarRange::extent() const { return _extent; }
+
+double   Ami::DescScalarRange::granularity() const { return _granularity; }
 
 unsigned Ami::DescScalarRange::nsamples () const { return _nsamples; }
 
