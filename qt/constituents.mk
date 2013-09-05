@@ -1,5 +1,6 @@
 # List targets (if any) for this package
-tgtnames := online_ami offline_ami blviewer qttest
+#tgtnames := online_ami offline_ami blviewer qttest
+tgtnames := online_ami offline_ami qttest
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc QOnline.cc QOnline_moc.cc

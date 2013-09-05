@@ -3,7 +3,7 @@
 #include "ami/service/TSocket.hh"
 #include "ami/service/Ins.hh"
 
-#include "pdsapp/monobs/MonShmComm.hh"
+#include "pdsdata/app/MonShmComm.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
