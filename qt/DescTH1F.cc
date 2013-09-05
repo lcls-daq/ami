@@ -4,8 +4,8 @@
 
 using namespace Ami::Qt;
 
-DescTH1F::DescTH1F(const char* name) :
-  DescBinning("bins"),
+DescTH1F::DescTH1F(const char* name, bool autoRange) :
+  DescBinning("bins", autoRange),
   _button(new QRadioButton(name))
 {
 }

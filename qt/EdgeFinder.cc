@@ -57,7 +57,7 @@ EdgeFinder::EdgeFinder(QWidget* parent,
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _hist   = new DescTH1F ("Sum (1dH)");
+  _hist   = new DescTH1F ("Sum (1dH)", false);
   _hist->button()->setChecked(true);
 
   QHBoxLayout* vsl = new QHBoxLayout;

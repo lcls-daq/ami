@@ -14,7 +14,7 @@
 
 using namespace Ami::Qt;
 
-DescBinning::DescBinning(const char* name) :
+DescBinning::DescBinning(const char* name, bool autoRange) :
   QWidget(0), 
   _bins(new QLineEdit("100")),
   _lo  (new QLineEdit("0")),
@@ -23,7 +23,7 @@ DescBinning::DescBinning(const char* name) :
   _xrange(new QLineEdit("0")),
   _nsigma(new QLineEdit("100")),
   _nrange(new QLineEdit("100")),
-  _method(new QComboBox)
+  _method(autoRange ? new QComboBox : 0)
 {
   _bins  ->setMaximumWidth(40);
   _lo    ->setMaximumWidth(40);
@@ -37,6 +37,10 @@ DescBinning::DescBinning(const char* name) :
   
   QWidget* fixed = new QWidget;
   { QHBoxLayout* l = new QHBoxLayout;
+    if (!_method) {
+      l->addStretch();
+      l->addWidget(_bins);
+    }
     l->addStretch();
     l->addWidget(new QLabel("lo"));
     l->addWidget(_lo);
@@ -45,7 +49,7 @@ DescBinning::DescBinning(const char* name) :
     l->addWidget(_hi);
     fixed->setLayout(l); }
   range->insertWidget(Fixed, fixed);
-  _method->insertItem(Fixed, "Fixed");
+  if (_method) _method->insertItem(Fixed, "Fixed");
 
   QWidget* auto1 = new QWidget;
   { QVBoxLayout* vl = new QVBoxLayout;
@@ -65,7 +69,7 @@ DescBinning::DescBinning(const char* name) :
       vl->addLayout(l); }
     auto1->setLayout(vl); }
   range->insertWidget(Auto1, auto1);
-  _method->insertItem(Auto1, "Auto1");
+  if (_method) _method->insertItem(Auto1, "Auto1");
 
   QWidget* auto2 = new QWidget;
   { QVBoxLayout* vl = new QVBoxLayout;
@@ -85,7 +89,7 @@ DescBinning::DescBinning(const char* name) :
       vl->addLayout(l); }
     auto2->setLayout(vl); }
   range->insertWidget(Auto2, auto2);
-  _method->insertItem(Auto2, "Auto2");
+  if (_method) _method->insertItem(Auto2, "Auto2");
 
   QStackedWidget* samples = new QStackedWidget;
   samples->insertWidget(Fixed, new QWidget);
@@ -101,23 +105,26 @@ DescBinning::DescBinning(const char* name) :
   new QIntValidator   (1,100000,_nrange);
 
   QVBoxLayout* vl = new QVBoxLayout;
-  { QHBoxLayout* layout = new QHBoxLayout;
+  if (_method) {
+    QHBoxLayout* layout = new QHBoxLayout;
     layout->addWidget(new QLabel(name));
     layout->addWidget(_bins);
     layout->addStretch();
     layout->addWidget(_method);
     layout->addStretch();
-    vl->addLayout(layout); }
+    vl->addLayout(layout); 
+  }
   vl->addWidget(range);
   setLayout(vl);
   validate();
 
   connect(_lo, SIGNAL(editingFinished()), this, SLOT(validate()));
   connect(_hi, SIGNAL(editingFinished()), this, SLOT(validate()));
-  connect(_method, SIGNAL(currentIndexChanged(int)), range, SLOT(setCurrentIndex(int)));
+  if (_method)
+    connect(_method, SIGNAL(currentIndexChanged(int)), range, SLOT(setCurrentIndex(int)));
 }
 
-DescBinning::Binning DescBinning::method() const { return Binning(_method->currentIndex()); }
+DescBinning::Binning DescBinning::method() const { return Binning(_method ? _method->currentIndex() : 0); }
 unsigned DescBinning::bins() const { return _bins->text().toInt(); }
 double   DescBinning::lo  () const { return _lo->text().toDouble(); }
 double   DescBinning::hi  () const { return _hi->text().toDouble(); }
@@ -125,7 +132,7 @@ double   DescBinning::sigma () const { return _xsigma->text().toDouble(); }
 double   DescBinning::extent() const { return _xrange->text().toDouble()*0.01; }
 unsigned DescBinning::nsamples() const { return (method()==Auto1 ? _nsigma : _nrange)->text().toInt(); }
 
-void DescBinning::method(Binning b) { _method->setCurrentIndex((int)b); }
+void DescBinning::method(Binning b) { if (_method) _method->setCurrentIndex((int)b); }
 void DescBinning::bins(unsigned b) { _bins->setText(QString::number(b)); }
 void DescBinning::lo  (double   v) { _lo  ->setText(QString::number(v)); }
 void DescBinning::hi  (double   v) { _hi  ->setText(QString::number(v)); }
@@ -161,7 +168,7 @@ void DescBinning::save(char*& p) const
   XML_insert( p, "QString", "_nrange",
               QtPersistent::insert(p,_nrange->text()) );
   XML_insert( p, "int", "_method",
-              QtPersistent::insert(p,_method->currentIndex()) );
+              QtPersistent::insert(p,_method ? _method->currentIndex() : -1) );
 }
 
 void DescBinning::load(const char*& p)
@@ -181,7 +188,7 @@ void DescBinning::load(const char*& p)
       _nsigma->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_nrange")
       _nrange->setText(QtPersistent::extract_s(p));
-    else if (tag.name == "_method")
+    else if (tag.name == "_method" && _method)
       _method->setCurrentIndex(QtPersistent::extract_i(p));
   XML_iterate_close(DescBinning,tag);
   validate();

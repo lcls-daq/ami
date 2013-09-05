@@ -9,7 +9,7 @@ namespace Ami {
   namespace Qt {
     class DescTH1F : public DescBinning {
     public:
-      DescTH1F(const char* name);
+      DescTH1F(const char* name, bool autoRange=true);
     public:
       QRadioButton* button();
     private:

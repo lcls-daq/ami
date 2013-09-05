@@ -12,7 +12,7 @@ namespace Ami {
     class DescBinning : public QWidget {
       Q_OBJECT
     public:
-      DescBinning(const char* name);
+      DescBinning(const char* name, bool autoRange=true);
     public:
       void save(char*&) const;
       void load(const char*&);
