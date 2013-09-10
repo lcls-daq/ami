@@ -27,7 +27,7 @@ void   EncoderHandler::rename(const char* s)
   char buffer[64];
   unsigned index(_index);
   for(unsigned i=0; i<3; i++,index++) {
-    sprintf(buffer,"%s:CH%d",i);
+    sprintf(buffer,"%s:CH%d",s,i);
     _cache.rename(index,buffer);
   }
 }

@@ -27,7 +27,7 @@ tgtlibs_online_ami += ami/service ami/data ami/server ami/client ami/calib ami/a
 tgtlibs_online_ami += $(qt_libs)
 tgtlibs_online_ami += pdsalg/pdsalg
 
-datalibs := pdsdata/xtcdata pdsdata/aliasdata pdsdata/psddl_pdsdata
+datalibs := pdsdata/xtcdata pdsdata/psddl_pdsdata
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules

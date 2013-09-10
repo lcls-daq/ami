@@ -32,7 +32,7 @@ tgtlibs_ami_collection += pdsalg/pdsalg
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
 #
-tgtlibs_ami := pdsdata/xtcdata pdsdata/aliasdata
+tgtlibs_ami := pdsdata/xtcdata
 tgtlibs_ami += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_ami += pdsdata/compressdata
 tgtlibs_ami += ami/service ami/data ami/server ami/calib ami/event ami/client ami/app

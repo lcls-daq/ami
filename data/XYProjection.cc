@@ -116,7 +116,6 @@ Entry&     XYProjection::_operate(const Entry& e) const
       { const DescTH1F& d = static_cast<const DescTH1F&>(_routput());
 	EntryTH1F*      o = static_cast<EntryTH1F*>(_output);
 	const double    p = _input->info(EntryImage::Pedestal);
-	const unsigned up = unsigned(p);
         const ImageMask*   mask = inputd.mask();
 	if (_axis == X) {
 	  const double    q = double(inputd.ppybin());
