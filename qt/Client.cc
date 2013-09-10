@@ -11,7 +11,7 @@
 #include "ami/qt/QtUtils.hh"
 
 #include "ami/client/ClientManager.hh"
-#include "ami/data/ChannelID.hh"
+#include "ami/data/Channel.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/DescEntry.hh"
@@ -46,13 +46,14 @@ static const bool oldLayout=false;
 Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
 			unsigned            channel,
+			const QString&      name,
 			Display*            frame,
 			double              request_rate) :
   Ami::Qt::AbsClient(parent,src,channel),
   _frame           (frame),
   _input_entry     (0),
   _input           (0),
-  _title           (ChannelID::name(src,channel)),
+  _title           (name),
   _output_signature(0), 
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
@@ -68,7 +69,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _denials         (0),
   _attempts        (0)
 {
-  setWindowTitle(QString("%1[*]").arg(ChannelID::name(src, channel)));
+  setWindowTitle(QString("%1[*]").arg(name));
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
@@ -234,7 +235,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 #endif
 
   char channel_name [128]; 
-  strcpy(channel_name ,ChannelID::name(info,channel));
+  strcpy(channel_name ,qPrintable(_title));
   if ((_input_entry = rx.entry(channel_name))) {
     _input = _input_entry->signature();
     //    setWindowModified(!_input_entry->recorded());

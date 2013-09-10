@@ -45,6 +45,11 @@ const Entry* ImpWaveformHandler::entry(unsigned i) const
     return _ref; 
 }
 
+void ImpWaveformHandler::rename(const char* s)
+{
+  if (_ref) _ref->desc().name(s);
+}
+
 void ImpWaveformHandler::reset() {
   _nentries = 0;
   _ref = NULL;

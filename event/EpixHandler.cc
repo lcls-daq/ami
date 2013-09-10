@@ -113,6 +113,11 @@ unsigned EpixHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* EpixHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
+void EpixHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void EpixHandler::reset() { _entry = 0; }
 
 void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)

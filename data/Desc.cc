@@ -29,3 +29,4 @@ void Desc::nentries(unsigned n) {_nentries = n;}
 void Desc::added() {_nentries++;}
 void Desc::reset() {_nentries=0;}
 void Desc::signature(int i) {_signature=i;}
+void Desc::name(const char* s) { strncpy(_name,s,NameSize); }

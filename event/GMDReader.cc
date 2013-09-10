@@ -65,3 +65,4 @@ void   GMDReader::_damaged  ()
 unsigned     GMDReader::nentries() const { return 0; }
 const Entry* GMDReader::entry   (unsigned) const { return 0; }
 void         GMDReader::reset   () { _index=-1; }
+void         GMDReader::rename  (const char* s) {}

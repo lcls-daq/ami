@@ -17,8 +17,8 @@
 
 using namespace Ami::Qt;
 
-EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
-  ImageClient(w, i, u),
+EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QString& n) :
+  ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
   { QPushButton* pedB = new QPushButton("Write Pedestals");

@@ -18,8 +18,8 @@ using namespace Ami::Qt;
 class ImageDisplay;
 class Control;
 
-Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :
-  Client  (parent,info,ch,new ImageDisplay,1.)
+Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch, const QString& name) :
+  Client  (parent,info,ch,name, new ImageDisplay,1.)
 {
   ImageDisplay& wd = (ImageDisplay&)(display());
   connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));

@@ -23,6 +23,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     void         reset   ();
+    void         rename  (const char*);
   private:
     FeatureCache&        _cache;
     enum { Integral, XMean, YMean, Major, Minor, Tilt, NChannels=6 };

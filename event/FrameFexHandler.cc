@@ -22,6 +22,20 @@ FrameFexHandler::~FrameFexHandler()
 {
 }
 
+void   FrameFexHandler::rename(const char* s)
+{
+  if (_index[0]<0) return;
+
+  unsigned i=0;
+  char buffer[64];
+  sprintf(buffer,"%s:INT",s); _cache.rename(_index[i++],buffer);
+  sprintf(buffer,"%s:X"  ,s); _cache.rename(_index[i++],buffer);
+  sprintf(buffer,"%s:Y"  ,s); _cache.rename(_index[i++],buffer);
+  sprintf(buffer,"%s:MAJ",s); _cache.rename(_index[i++],buffer);
+  sprintf(buffer,"%s:MIN",s); _cache.rename(_index[i++],buffer);
+  sprintf(buffer,"%s:PHI",s); _cache.rename(_index[i++],buffer);
+}
+
 void   FrameFexHandler::_calibrate(const void* payload, const Pds::ClockTime& t) {}
 void   FrameFexHandler::_configure(const void* payload, const Pds::ClockTime& t)
 {

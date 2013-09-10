@@ -73,6 +73,8 @@ namespace Ami {
     void         reset   ();
     //  event data needs to be parsed
     bool  used() const;
+  public:
+    void  rename(const char*);
   private:
     void _load_pedestals(const DescImage&);
 

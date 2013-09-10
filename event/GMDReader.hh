@@ -20,6 +20,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     void         reset   ();
+    void         rename  (const char*);
   private:
     FeatureCache& _cache;
     int           _index;

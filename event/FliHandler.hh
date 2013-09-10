@@ -17,6 +17,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();
+    void         rename(const char*);
   public:
     virtual void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);    
     virtual void _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

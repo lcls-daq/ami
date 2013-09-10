@@ -10,7 +10,7 @@ namespace Ami {
     class FccdClient : public ImageClient {
       Q_OBJECT
     public:
-      FccdClient(QWidget*,const Pds::DetInfo&, unsigned);
+      FccdClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~FccdClient();
     public:
       void save(char*& p) const;

@@ -13,7 +13,7 @@ namespace Ami {
 
     class ImageClient : public Client {
     public:
-      ImageClient(QWidget*,const Pds::DetInfo&, unsigned);
+      ImageClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~ImageClient();
     public:
       void save(char*& p) const;

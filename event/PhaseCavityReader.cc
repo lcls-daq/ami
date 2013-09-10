@@ -60,3 +60,4 @@ void   PhaseCavityReader::_damaged  ()
 unsigned     PhaseCavityReader::nentries() const { return 0; }
 const Entry* PhaseCavityReader::entry   (unsigned) const { return 0; }
 void         PhaseCavityReader::reset   () { _index=-1; }
+void         PhaseCavityReader::rename  (const char*) {}

@@ -61,6 +61,11 @@ int         FeatureCache::lookup(const char* name) const
   return -1;
 }
 
+void        FeatureCache::rename(unsigned index, const char* name)
+{
+  _names[index] = std::string(name);
+}
+
 unsigned    FeatureCache::entries() const { return _names.size(); }
 const std::vector<std::string>& FeatureCache::names  () const { return _names; }
 double      FeatureCache::cache  (int index, bool* damaged) const 

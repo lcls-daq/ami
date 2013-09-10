@@ -30,7 +30,7 @@ namespace Ami {
       Q_OBJECT
     public:
       enum { TH1F, TH2F, Image };
-      TdcClient(QWidget*, const Pds::DetInfo&, unsigned);
+      TdcClient(QWidget*, const Pds::DetInfo&, unsigned, const QString&);
       virtual ~TdcClient();
     public:
       const QString& title() const;

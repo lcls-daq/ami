@@ -60,3 +60,4 @@ void   FEEGasDetEnergyReader::_damaged  ()
 unsigned     FEEGasDetEnergyReader::nentries() const { return 0; }
 const Entry* FEEGasDetEnergyReader::entry   (unsigned) const { return 0; }
 void         FEEGasDetEnergyReader::reset   () { _index=-1; }
+void         FEEGasDetEnergyReader::rename  (const char* s) {}

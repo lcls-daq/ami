@@ -44,6 +44,11 @@ unsigned FccdHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* FccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
+void FccdHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void FccdHandler::reset() { _entry = 0; }
 
 void FccdHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)

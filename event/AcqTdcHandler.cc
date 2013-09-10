@@ -33,6 +33,11 @@ unsigned AcqTdcHandler::nentries() const { return (_entry != NULL); }
 
 const Entry* AcqTdcHandler::entry(unsigned i) const { return (i == 0 ? _entry : NULL); }
 
+void AcqTdcHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void AcqTdcHandler::reset() { _entry = NULL; }
 
 void AcqTdcHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}

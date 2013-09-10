@@ -18,6 +18,7 @@ namespace Ami {
     void added();
     void reset();
     void signature(int i);
+    void name(const char*);
 
   private:
     enum {NameSize=128};

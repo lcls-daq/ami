@@ -65,6 +65,11 @@ namespace Ami {
     virtual ~EventHandler();
   public:
     /**
+     *   Rename the device to the user preference
+     */
+    virtual void rename(const char*) = 0;
+  public:
+    /**
      *   Handle configuration data.  This function should create/reset its Entry
      *   objects here.
      */

@@ -22,6 +22,11 @@ DiodeFexHandler::~DiodeFexHandler()
 {
 }
 
+void   DiodeFexHandler::rename(const char* s)
+{
+  _cache.rename(_index,s);
+}
+
 void   DiodeFexHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   DiodeFexHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {

@@ -23,6 +23,7 @@ namespace Ami {
   class EventFilter;
   class Entry;
   class UserModule;
+  class NameService;
 
   class XtcClient : private XtcIterator {
   public:
@@ -60,6 +61,7 @@ namespace Ami {
     int       _runno_index;
     double    _runno_value;
     bool      _recorded;
+    NameService* _name_service;
   };
 }
 

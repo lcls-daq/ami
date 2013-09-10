@@ -84,6 +84,11 @@ unsigned PnccdHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* PnccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
+void PnccdHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void PnccdHandler::reset() { _entry = 0; }
 
 void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -173,7 +178,7 @@ void PnccdHandler::_end_calib()
     time_t t = time(NULL);
     char* dstr = nname+strlen(nname);
     strftime(dstr, nname+NameSize-1-dstr, "%Y%m%D_%H%M%S", localtime(&t));
-    rename(oname,nname);
+    ::rename(oname,nname);
 
     //  Store the new calibration file
     FILE* f = fopen(oname,"w");

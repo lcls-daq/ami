@@ -11,7 +11,7 @@ namespace Ami {
 
     class WaveformClient : public Client {
     public:
-      WaveformClient(QWidget*,const Pds::DetInfo&, unsigned);
+      WaveformClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~WaveformClient();
     public:
       void save(char*& p) const;

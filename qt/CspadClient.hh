@@ -10,7 +10,7 @@ namespace Ami {
     class CspadClient : public ImageClient {
       Q_OBJECT
     public:
-      CspadClient(QWidget*,const Pds::DetInfo&, unsigned);
+      CspadClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~CspadClient();
     public:
       void save(char*& p) const;

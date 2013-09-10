@@ -42,6 +42,12 @@ FrameHandler::~FrameHandler()
     delete _entry;
 }
 
+void FrameHandler::rename(const char* name)
+{
+  if (_entry)
+    _entry->desc().name(name);
+}
+
 unsigned FrameHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* FrameHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }

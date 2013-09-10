@@ -13,7 +13,6 @@
 
 #include "ami/client/ClientManager.hh"
 
-#include "ami/data/ChannelID.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/DescTH1F.hh"
@@ -43,9 +42,9 @@ using namespace Ami::Qt;
 
 static const int BufferSize = 0x8000;
 
-TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel) :
+TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel, const QString& name) :
   Ami::Qt::AbsClient(parent,info,channel),
-  _title           (ChannelID::name(info,channel)),
+  _title           (name),
   _input_signature (0),
   _output_signature(0),
   _request         (new char[BufferSize]),
@@ -57,7 +56,7 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false)
 {
-  setWindowTitle(QString("%1[*]").arg(ChannelID::name(info,channel)));
+  setWindowTitle(QString("%1[*]").arg(name));
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _control = new Control(*this,1.);
@@ -261,7 +260,7 @@ void TdcClient::discovered(const DiscoveryRx& rx)
 #endif
 
   char channel_name [128];
-  strcpy(channel_name ,ChannelID::name(info,channel));
+  strcpy(channel_name ,qPrintable(_title));
   const DescEntry* e = rx.entry(channel_name);
   if (e) {
     _input_signature = e->signature();

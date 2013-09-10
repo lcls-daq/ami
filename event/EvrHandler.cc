@@ -105,4 +105,6 @@ void   EvrHandler::_damaged  ()
 unsigned     EvrHandler::nentries() const { return 0; }
 const Entry* EvrHandler::entry   (unsigned) const { return 0; }
 void         EvrHandler::reset   () { memset(_index, -1, sizeof(_index)); }
-
+void         EvrHandler::rename  (const char* s)
+{
+}

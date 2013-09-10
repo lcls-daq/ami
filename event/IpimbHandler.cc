@@ -108,3 +108,40 @@ const Entry* IpimbHandler::entry   (unsigned) const { return 0; }
 void         IpimbHandler::reset   () 
 {
 }
+void         IpimbHandler::rename  (const char* s)
+{
+  char buffer[64];
+  char* iptr;
+
+  switch(info().level()) {
+  case Level::Reporter:
+    strncpy(buffer,s,60);
+    iptr = buffer+strlen(buffer);
+    for(unsigned i=0; i<NChannels; i++) {
+      sprintf(iptr,":DATA[%d]",i);
+      _cache.rename(_index[i],buffer);
+    }
+    if (_index[NChannels] != _index[0]) {
+      for(unsigned i=0; i<NChannels; i++) {
+        sprintf(iptr,":PS:DATA[%d]",i);
+	_cache.rename(_index[i+NChannels],buffer);
+      }
+    }
+    break;
+  case Level::Source:
+  default:
+    strncpy(buffer,s,60);
+    iptr = buffer+strlen(buffer);
+    for(unsigned i=0; i<NChannels; i++) {
+      sprintf(iptr,"-Ch%d",i);
+      _cache.rename(_index[i],buffer);
+    }
+    if (_index[NChannels] != _index[0]) {
+      for(unsigned i=0; i<NChannels; i++) {
+        sprintf(iptr,"-Ch%d:PS",i);
+	_cache.rename(_index[i+NChannels],buffer);
+      }
+    }
+    break;
+  }
+}

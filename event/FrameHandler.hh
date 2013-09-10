@@ -18,6 +18,8 @@ namespace Ami {
 		 unsigned defRows);
     ~FrameHandler();
   public:
+    void        rename(const char*);
+  public:
     unsigned     nentries() const;
     const Entry* entry(unsigned) const;
     void         reset();

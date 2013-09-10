@@ -10,7 +10,7 @@ namespace Ami {
     class EpixClient : public ImageClient {
       Q_OBJECT
     public:
-      EpixClient(QWidget*,const Pds::DetInfo&, unsigned);
+      EpixClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~EpixClient();
     public:
       void save(char*& p) const;

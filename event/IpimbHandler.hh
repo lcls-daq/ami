@@ -24,6 +24,7 @@ namespace Ami {
     const Entry* entry   (unsigned) const;
     void         reset   ();
     bool         used    () const { return true; }
+    void         rename  (const char*);
   private:
     FeatureCache&        _cache;
     enum { NChannels=4 };

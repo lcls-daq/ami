@@ -42,6 +42,11 @@ const Entry* OceanOpticsHandler::entry(unsigned i) const
     return NULL;
 }
 
+void OceanOpticsHandler::rename(const char* s)
+{
+  if (_entry[0]) _entry[0]->desc().name(s);
+}
+
 void OceanOpticsHandler::reset() {
   _nentries = 0;
 }

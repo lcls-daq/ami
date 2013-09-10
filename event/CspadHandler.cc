@@ -1139,7 +1139,7 @@ namespace CspadGeometry {
                          CspadTemp::instance().getTemp(temp[a]));
 
           //  Calculate integral
-          if (image.desc().options()&8) {
+          if (image.desc().options()&CspadCalib::option_post_integral()) {
           double s=0;
           double p   = double(image.info(Ami::EntryImage::Pedestal));
           for(unsigned fn=nframes[q]; fn<nframes[q+1]; fn++) {
@@ -1167,7 +1167,7 @@ namespace CspadGeometry {
                          CspadTemp::instance().getTemp(_config.sb_temp(q,a)));
 
           //  Calculate integral
-          if (image.desc().options()&8) {
+          if (image.desc().options()&CspadCalib::option_post_integral()) {
           double s=0;
           double p   = double(image.info(Ami::EntryImage::Pedestal));
           for(unsigned fn=nframes[q]; fn<nframes[q+1]; fn++) {
@@ -1186,7 +1186,7 @@ namespace CspadGeometry {
 
 #endif
 
-      if (image.desc().options()&8)
+      if (image.desc().options()&CspadCalib::option_post_integral())
         _cache->cache(_feature[16],sum);
 
       return true;
@@ -1201,6 +1201,21 @@ namespace CspadGeometry {
     {
       for(unsigned iq=0; iq<4; iq++)
         quad[iq]->set_pedestals(f);
+    }
+    void rename(const char* s)
+    {
+      char buff[64];
+      unsigned qmask = _config.quadMask();
+      for(unsigned i=0; i<4; i++)
+        if (qmask & (1<<i)) {
+          for(unsigned a=0; a<4; a++) {
+            sprintf(buff,"%s:Quad[%d]:Temp[%d]",s,i,a);
+            _cache->rename(_feature[4*i+a],buff);
+          }
+        }
+
+      sprintf(buff,"%s:Sum",s);
+      _cache->rename(_feature[16],buff);
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
@@ -1305,6 +1320,14 @@ unsigned CspadHandler::nentries() const { return _entry ? 1 : 0; }
 const Entry* CspadHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
 const Entry* CspadHandler::hidden_entry(unsigned i) const { return i==0 ? _unbinned_entry : 0; }
+
+void CspadHandler::rename(const char* s)
+{
+  if (_entry) {
+    _entry->desc().name(s);
+    _detector->rename(s);
+  }
+}
 
 void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
 

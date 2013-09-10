@@ -2,6 +2,7 @@
 
 #include "ami/app/EventFilter.hh"
 #include "ami/app/AnalysisFactory.hh"
+#include "ami/app/NameService.hh"
 
 #include "ami/event/EventHandler.hh"
 #include "ami/event/EvrHandler.hh"
@@ -74,7 +75,8 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _pltnc_index    (-1),
   _event_index    (-1),
   _evtim_index    (-1),
-  _runno_index    (-1)
+  _runno_index    (-1),
+  _name_service   (0)
 {
 }
 
@@ -179,6 +181,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _seq = &dg->seq;
     for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
       (*it)->clock(dg->seq.clock());
+
+    if (_name_service) {
+      delete _name_service;
+      _name_service = 0;
+    }
     
     // This adds entries back to the handlers via process()
     iterate(&dg->xtc); 
@@ -244,12 +251,19 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) {
   const char* infoName = Pds::DetInfo::name(info);
   const char* typeName = Pds::TypeId::name(xtc->contains.id());
 
+  if (_name_service) {
+    const char* name = _name_service->name(h->info());
+    if (name)
+      infoName = name;
+  }
+
   const ClockTime* ct = &_seq->clock();
   time_t t = ct->seconds();
   char* time = ctime(&t);
   time[strlen(time) - 1] = '\0';
 
   h->_configure(xtc->contains, xtc->payload(), _seq->clock());
+  h->rename(infoName);
 
   const int nentries = h->nentries();
   if (nentries == 0) {
@@ -377,6 +391,15 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
+      case Pds::TypeId::Id_AliasConfig: 
+	/*  Apply new name service to discovered data */
+	{ _name_service = new NameService(*xtc);
+	  for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+	    EventHandler* h = *it;
+	    const char* name = _name_service->name(h->info());
+	    if (name) h->rename(name);
+	  }
+	} break;
       default: break;
       }
       if (!h) {
@@ -389,11 +412,22 @@ int XtcClient::process(Pds::Xtc* xtc)
       else {
 	char buff[128];
 	const char* infoName = buff;
+
 	switch(xtc->src.level()) {
 	case Level::Source  : infoName = Pds::DetInfo::name(info); break;
 	case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
 	default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
 	}
+
+	if (_name_service) {
+	  const char* name = _name_service->name(h->info());
+	  if (name) {
+	    h->rename(name);
+	    strcpy(buff,name);
+	    infoName = buff;
+	  }
+	}
+
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
         printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);
 

@@ -44,8 +44,9 @@ using namespace Ami::Qt;
 
 static const int BufferSize = 0x8000;
 
-EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel) :
+EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel, const QString& name) :
   Ami::Qt::AbsClient(parent,info,channel),
+  _title           (name),
   _input           (0),
   _set             (Ami::ScalarSet(channel)),
   _output_signature(0),
@@ -58,15 +59,6 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false)
 {
-#if 0
-  switch(_set) {
-  case Ami::PreAnalysis : _title = QString("Env"); break;
-  case Ami::PostAnalysis: _title = QString("PostAnalysis"); break;
-  default:                _title = QString("Environment"); break;
-  }
-#else
-  _title = QString("Env");
-#endif
   setWindowTitle(QString("%1[*]").arg(_title));
   setAttribute(::Qt::WA_DeleteOnClose, false);
 

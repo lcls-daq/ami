@@ -13,8 +13,8 @@
 
 using namespace Ami::Qt;
 
-PnccdClient::PnccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u) :
-  ImageClient(w, i, u),
+PnccdClient::PnccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QString& n) :
+  ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
   { QPushButton* pedB = new QPushButton("Write Pedestals");

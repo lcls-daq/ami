@@ -18,6 +18,8 @@ namespace Ami {
     const Entry* entry(unsigned) const;
     void         reset();
   public:
+    void         rename(const char*);
+  public:
     virtual void _configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t);    
     virtual void _calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);

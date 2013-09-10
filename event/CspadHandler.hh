@@ -26,6 +26,8 @@ namespace Ami {
     const Entry* hidden_entry(unsigned) const;
     void         reset();
   public:
+    void         rename(const char*);
+  public:
     void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);

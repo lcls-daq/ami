@@ -54,3 +54,4 @@ void   SharedPimHandler::_damaged() {} // { _handler.entry(0)->invalid(); }
 unsigned     SharedPimHandler::nentries() const { return _handler.nentries(); }
 const Entry* SharedPimHandler::entry            (unsigned i) const { return _handler.entry(i); }
 void         SharedPimHandler::reset   () { _handler.reset(); }
+void         SharedPimHandler::rename  (const char* s) { _handler.rename(s); }

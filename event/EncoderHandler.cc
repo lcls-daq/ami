@@ -22,6 +22,16 @@ EncoderHandler::~EncoderHandler()
 {
 }
 
+void   EncoderHandler::rename(const char* s)
+{
+  char buffer[64];
+  unsigned index(_index);
+  for(unsigned i=0; i<3; i++,index++) {
+    sprintf(buffer,"%s:CH%d",i);
+    _cache.rename(index,buffer);
+  }
+}
+
 void   EncoderHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   EncoderHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {

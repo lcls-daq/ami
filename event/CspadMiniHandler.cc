@@ -90,7 +90,7 @@ static double frameNoise(const int16_t*  data,
                          const int16_t* const* sta)
 {
   const unsigned ColBins = Columns;
-  const unsigned RowBins = Rows<<1;
+  const unsigned RowBins = Rows;
   const int fnPixelMin = -100 + Offset;
   const int fnPixelMax =  100 + Offset;
   const int fnPixelBins = fnPixelMax - fnPixelMin;
@@ -632,6 +632,13 @@ namespace CspadMiniGeometry {
     {
       mini->set_pedestals(f);
     }
+    void rename(const char* s) {
+      char buff[64];
+      for(unsigned a=0; a<4; a++) {
+	sprintf(buff,"%s:Temp[%d]",s,a);
+	_cache->rename(_feature[a],buff);
+      }
+    }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
@@ -728,6 +735,14 @@ unsigned CspadMiniHandler::nentries() const { return _entry ? 1 : 0; }
 const Entry* CspadMiniHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
 const Entry* CspadMiniHandler::hidden_entry(unsigned i) const { return 0; }
+
+void CspadMiniHandler::rename(const char* s)
+{
+  if (_entry) {
+    _entry->desc().name(s);
+    _detector->rename(s);
+  }
+}
 
 void CspadMiniHandler::reset() { _entry = 0; }
 

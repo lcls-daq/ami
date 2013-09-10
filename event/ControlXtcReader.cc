@@ -92,3 +92,4 @@ void   ControlXtcReader::_damaged  () {}
 unsigned     ControlXtcReader::nentries() const { return 0; }
 const Entry* ControlXtcReader::entry   (unsigned) const { return 0; }
 void         ControlXtcReader::reset   () { _index=-1; }
+void         ControlXtcReader::rename  (const char*) {}

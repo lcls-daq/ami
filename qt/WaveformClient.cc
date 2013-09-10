@@ -11,8 +11,8 @@
 
 using namespace Ami::Qt;
 
-WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch) :
-  Client  (parent,info,ch, new WaveformDisplay),
+WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch, const QString& name) :
+  Client  (parent,info,ch,name, new WaveformDisplay),
   _initialized(false)
 {
   WaveformDisplay& wd = static_cast<WaveformDisplay&>(display());

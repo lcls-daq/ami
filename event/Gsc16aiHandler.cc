@@ -88,3 +88,15 @@ const Entry* Gsc16aiHandler::entry   (unsigned) const { return 0; }
 void         Gsc16aiHandler::reset   () 
 {
 }
+
+void   Gsc16aiHandler::rename(const char* s)
+{
+  char buffer[68];
+  strncpy(buffer,s,59);
+  char* cc = buffer+strlen(buffer);
+  unsigned index(_index);
+  for (int ii = _config.firstChan(); ii <= _config.lastChan(); ii++,index++) {
+    sprintf(cc, ":Ch%02d", ii);
+    _cache.rename(index,buffer);
+  }
+}

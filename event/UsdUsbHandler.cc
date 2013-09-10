@@ -83,3 +83,24 @@ const Entry* UsdUsbHandler::entry   (unsigned) const { return 0; }
 void         UsdUsbHandler::reset   () 
 {
 }
+void         UsdUsbHandler::rename  (const char* s)
+{
+  char buffer[64];
+  strncpy(buffer,s,59);
+  char* c = buffer+strlen(buffer);
+
+  unsigned index(_index);
+  sprintf(c,":TS"); _cache.rename(index,buffer); index++;
+  for(unsigned i=0; i<4; i++) {
+    sprintf(c,":CH%d",i);
+    _cache.rename(index,buffer); index++;
+  }
+  for(unsigned i=0; i<4; i++) {
+    sprintf(c,":AIN%d",i);
+    _cache.rename(index,buffer); index++;
+  }
+  for(unsigned i=0; i<8; i++) {
+    sprintf(c,":DIN%d",i);
+    _cache.rename(index,buffer); index++;
+  }
+}

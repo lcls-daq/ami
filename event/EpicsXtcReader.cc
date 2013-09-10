@@ -124,3 +124,4 @@ void              Ami::EpicsXtcReader::reset   ()
   for(unsigned i=0; i<MaxPvs; i++)
     _index[i] = -1;
 }
+void              Ami::EpicsXtcReader::rename(const char*) {}

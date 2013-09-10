@@ -101,6 +101,11 @@ unsigned PrincetonHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* PrincetonHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
+void PrincetonHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void PrincetonHandler::reset() { _entry = 0; }
 
 void PrincetonHandler::_calibrate(Pds::TypeId type,const void* payload, const Pds::ClockTime& t) {}

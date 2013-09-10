@@ -10,7 +10,7 @@ namespace Ami {
     class PnccdClient : public ImageClient {
       Q_OBJECT
     public:
-      PnccdClient(QWidget*,const Pds::DetInfo&, unsigned);
+      PnccdClient(QWidget*,const Pds::DetInfo&, unsigned, const QString&);
       ~PnccdClient();
     public:
       void save(char*& p) const;

@@ -87,3 +87,36 @@ const Entry* IpmFexHandler::entry   (unsigned) const { return 0; }
 void         IpmFexHandler::reset   () 
 {
 }
+
+void         IpmFexHandler::rename(const char* s)
+{
+  char buffer[64];
+  char* iptr;
+  unsigned i=0;
+
+  switch(info().level()) {
+  case Level::Reporter:
+    strncpy(buffer,s,60);
+    iptr = buffer+strlen(buffer);
+    sprintf(iptr,":FEX:CH0");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:CH1");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:CH2");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:CH3");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:SUM");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:XPOS"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:YPOS"); _cache.rename(_index[i],buffer); i++;
+    break;
+  case Level::Source:
+  default:
+    strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
+    iptr = buffer+strlen(buffer);
+    sprintf(iptr,":CH0"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":CH1"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":CH2"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":CH3"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":SUM"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":XPOS"); _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":YPOS"); _cache.rename(_index[i],buffer); i++;
+    break;
+  }
+}

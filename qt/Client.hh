@@ -34,7 +34,8 @@ namespace Ami {
     class Client : public Ami::Qt::AbsClient {
       Q_OBJECT
     public:
-      Client(QWidget*,const Pds::DetInfo&, unsigned, Display*, 
+      Client(QWidget*,const Pds::DetInfo&, unsigned, const QString&,
+	     Display*, 
 	     double request_rate=2.5);
       ~Client();
     public:

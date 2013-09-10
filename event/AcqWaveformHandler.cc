@@ -48,6 +48,18 @@ const Entry* AcqWaveformHandler::entry(unsigned i) const
     return _ref; 
 }
 
+void AcqWaveformHandler::rename(const char* s)
+{
+  char buff[64];
+  
+  for(unsigned i=0; i<_nentries; i++) {
+    sprintf(buff,"%s_%d",s,i+1);
+    _entry[i]->desc().name(buff);
+  }
+  if (_ref)
+    _entry[_nentries]->desc().name(s);
+}
+
 void AcqWaveformHandler::reset() {
   _nentries = 0;
   _ref = NULL;

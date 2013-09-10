@@ -47,6 +47,11 @@ unsigned AndorHandler::nentries() const { return _entry ? 1 : 0; }
 
 const Entry* AndorHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 
+void AndorHandler::rename(const char* s)
+{
+  if (_entry) _entry->desc().name(s);
+}
+
 void AndorHandler::reset() { _entry = 0; }
 
 void AndorHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)

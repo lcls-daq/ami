@@ -33,7 +33,7 @@ namespace Ami {
                       public PostAnalysis {
       Q_OBJECT
     public:
-      EnvClient(QWidget*, const Pds::DetInfo&, unsigned);
+      EnvClient(QWidget*, const Pds::DetInfo&, unsigned, const QString&);
       virtual ~EnvClient();
     public:
       const QString& title() const;

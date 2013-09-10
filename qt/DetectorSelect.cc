@@ -360,11 +360,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
 	case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
 	  //	case 1: client = new Ami::Qt::ScriptClient (this, info , channel); break;
 	default: break; } } break;
-    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel); break;
+    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel, name); break;
     case Pds::DetInfo::OceanOptics : 
     case Pds::DetInfo::Imp      :
-    case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel); break;
-    case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel); break;
+    case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
+    case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel, name); break;
     case Pds::DetInfo::Opal1000 : 
     case Pds::DetInfo::Opal2000 : 
     case Pds::DetInfo::Opal4000 : 
@@ -377,13 +377,13 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Fli      : 
     case Pds::DetInfo::Andor    : 
     case Pds::DetInfo::OrcaFl40 : 
-      client = new Ami::Qt::ImageClient   (this, info, channel);
+      client = new Ami::Qt::ImageClient   (this, info, channel, name);
       break;
-    case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel); break;
+    case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel, name); break;
     case Pds::DetInfo::Cspad    :
-    case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel); break;
-    case Pds::DetInfo::pnCCD    : client = new Ami::Qt::PnccdClient   (this, info, channel); break;
-    case Pds::DetInfo::NumDevice: client = new Ami::Qt::EpixClient    (this, info, channel); break;
+    case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel, name); break;
+    case Pds::DetInfo::pnCCD    : client = new Ami::Qt::PnccdClient   (this, info, channel, name); break;
+    case Pds::DetInfo::NumDevice: client = new Ami::Qt::EpixClient    (this, info, channel, name); break;
     default: printf("Device type %x not recognized\n", info.device()); break;
     }
   }
@@ -399,7 +399,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::BldInfo::CxiDg2Pim:
     case Pds::BldInfo::CxiDg3Spec:
     case Pds::BldInfo::CxiDg4Pim:
-      client = new Ami::Qt::ImageClient(this, info, channel); break;
+      client = new Ami::Qt::ImageClient(this, info, channel, name); break;
     default: 
       printf("Bld type %x not recognized\n", bld.type()); break;
     }

@@ -44,10 +44,12 @@ DescTH1F* EntryScalarRange::result(void* p) const
   xlow  = m - r;
   xhigh = m + r;
 
+  DescTH1F* d;
   if (p)
-    return new(p) DescTH1F(_desc.name(),"",_desc.ytitle(),
-                           nbins,xlow,xhigh,_desc.isnormalized());
+    d = new(p) DescTH1F(_desc.name(),"",_desc.ytitle(),
+			nbins,xlow,xhigh,_desc.isnormalized());
   else
-    return new DescTH1F(_desc.name(),"",_desc.ytitle(),
-                        nbins,xlow,xhigh,_desc.isnormalized());
+    d = new DescTH1F(_desc.name(),"",_desc.ytitle(),
+		     nbins,xlow,xhigh,_desc.isnormalized());
+  d->aggregate(false);
 }
