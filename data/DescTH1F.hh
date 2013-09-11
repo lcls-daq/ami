@@ -55,7 +55,7 @@ namespace Ami {
   inline unsigned DescTH1F::nbins() const {return _nbins;}
   inline float DescTH1F::xlow() const {return _xlow;}
   inline float DescTH1F::xup() const {return _xup;}
-  inline unsigned DescTH1F::bin(float x) const {return unsigned((x-_xlow)*_nbins/(_xup-_xlow));}
+  inline unsigned DescTH1F::bin(float x) const {return unsigned((x-_xlow)*float(_nbins)/(_xup-_xlow)+0.5);}
 };
 
 #endif

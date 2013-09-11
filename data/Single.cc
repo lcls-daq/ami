@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 

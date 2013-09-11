@@ -31,8 +31,8 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
   int col1 = int(o.xup ()/i.ppybin());
   int row0 = int(o.ylow()/i.ppybin());
   int row1 = int(o.yup ()/i.ppybin());
-  int nrows = row1-row0+1;
-  int ncols = col1-col0+1;
+  int nrows = row1-row0;
+  int ncols = col1-col0;
   DescImage desc(o.name(), ncols, nrows,
                  i.ppxbin(), i.ppybin(), 
                  unsigned(o.xlow()), unsigned(o.ylow()));

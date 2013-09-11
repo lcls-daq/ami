@@ -60,6 +60,7 @@ XYProjection::XYProjection(const char*& p, const DescEntry& input) :
   if (e) {
     e->aggregate(d.aggregate());
     _output = EntryFactory::entry(*e);
+    delete e;
   }
   else
     _output = 0;

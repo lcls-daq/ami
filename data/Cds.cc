@@ -6,7 +6,7 @@
 #include "DescEntry.hh"
 #include "ami/service/Semaphore.hh"
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 
