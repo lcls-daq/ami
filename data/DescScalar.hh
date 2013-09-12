@@ -27,8 +27,8 @@ namespace Ami {
     inline unsigned npoints () const;
     inline unsigned prescale() const;
   private:
-    uint16_t _npoints;
-    uint16_t _prescale;
+    uint32_t _npoints;
+    uint32_t _prescale;
   };
 };
 

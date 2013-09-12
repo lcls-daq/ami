@@ -350,7 +350,8 @@ void ProjectionPlot::update()
   if (_auto_range) {
     double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
     if (v >= 0) {
-      _auto_range->result(&_proj->output());
+      //  Want only single event distributions?
+      _auto_range->result(&_proj->output())->aggregate(false);
       _auto_range = 0;
       emit description_changed();
     }

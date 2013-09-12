@@ -1,9 +1,3 @@
-ifneq ($(findstring x86_64-linux,$(tgt_arch)),)
-qtincdir  := qt/include_64
-else
-qtincdir  := qt/include
-endif
-
 # List libraries (if any) for this package
 libnames := data
 

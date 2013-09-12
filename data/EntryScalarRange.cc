@@ -12,6 +12,9 @@ EntryScalarRange::EntryScalarRange(const DescScalarRange& desc) :
   _desc (desc)
 {
   _range = new(allocate(sizeof(ScalarRange))) ScalarRange;
+#ifdef DBUG
+  printf("ESR:ctor  nbins %u\n",_desc.nbins());
+#endif
 }
 
 double EntryScalarRange::entries() const { return _range->entries() - _desc.nsamples(); }
@@ -51,6 +54,5 @@ DescTH1F* EntryScalarRange::result(void* p) const
   else
     d = new DescTH1F(_desc.name(),"",_desc.ytitle(),
 		     nbins,xlow,xhigh,_desc.isnormalized());
-  d->aggregate(false);
   return d;
 }

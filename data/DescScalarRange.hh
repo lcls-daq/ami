@@ -26,8 +26,8 @@ namespace Ami {
   private:
     double   _extent;
     double   _granularity;
-    uint16_t _nsamples;
-    uint16_t _nbins;
+    uint32_t _nsamples;
+    uint32_t _nbins;
   };
 };
 

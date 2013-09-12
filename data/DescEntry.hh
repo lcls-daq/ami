@@ -145,6 +145,7 @@ namespace Ami {
   private:
     Pds::DetInfo _info;
     uint32_t     _channel;
+    uint32_t     _reserved;
     enum {TitleSize=64};
     char _xtitle[TitleSize];
     char _ytitle[TitleSize];

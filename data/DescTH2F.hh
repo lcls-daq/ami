@@ -30,8 +30,8 @@ namespace Ami {
 		unsigned nbinsy, float ylow, float yup);
 
   private:
-    uint16_t _nbinsx;
-    uint16_t _nbinsy;
+    uint32_t _nbinsx;
+    uint32_t _nbinsy;
     float _xlow;
     float _xup;
     float _ylow;

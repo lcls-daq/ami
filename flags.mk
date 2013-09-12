@@ -8,5 +8,3 @@ false :=
 true  := t
 #build_extra := $(true)
 build_extra := $(false)
-
-CPPFLAGS += -DPsddlPds=Pds

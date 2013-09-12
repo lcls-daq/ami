@@ -11,9 +11,10 @@ namespace Ami {
               const char* ytitle,
               ScalarSet   set);
   public:
-    ScalarSet set() const { return _set; }
+    ScalarSet set() const { return ScalarSet(_set); }
   private:
-    ScalarSet _set;
+    uint32_t _set;
+    uint32_t _reserved;
   };
 };
 

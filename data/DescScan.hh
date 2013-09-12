@@ -27,6 +27,7 @@ namespace Ami {
   private:
     uint16_t _nbins;
     uint16_t _details;
+    uint32_t _reserved;
   };
 
   inline unsigned    DescScan::nbins   () const { return _nbins; }

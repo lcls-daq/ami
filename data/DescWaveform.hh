@@ -24,6 +24,7 @@ namespace Ami {
 
   private:
     uint32_t _nbins;
+    uint32_t _reserved;
     float _xlow;
     float _xup;
   };

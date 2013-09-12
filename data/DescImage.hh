@@ -98,12 +98,16 @@ namespace Ami {
     int32_t  _yp0;
     float    _mmppx;
     float    _mmppy;
+    uint32_t _reserved;
     enum { MAX_SUBFRAMES=64 };
     uint32_t _nsubframes;
     SubFrame _subframes[MAX_SUBFRAMES];
     enum { PATHLEN=256 };
     char       _mask_path[PATHLEN];
-    ImageMask* _mask;
+    union {
+      ImageMask* _ptr;
+      uint64_t   _field;
+    } _mask;
   };
 
   inline unsigned DescImage::nbinsx() const {return _nbinsx;}
@@ -120,7 +124,7 @@ namespace Ami {
   inline float DescImage::biny(unsigned b) const {return _yp0+float(b)*_ppby;}
   inline unsigned DescImage::nframes() const { return _nsubframes; }
   inline const SubFrame& DescImage::frame(unsigned i) const { return _subframes[i]; }
-  inline const ImageMask* DescImage::mask() const { return _mask; }
+  inline const ImageMask* DescImage::mask() const { return _mask._ptr; }
 };
 
 #endif
