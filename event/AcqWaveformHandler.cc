@@ -57,7 +57,7 @@ void AcqWaveformHandler::rename(const char* s)
     _entry[i]->desc().name(buff);
   }
   if (_ref)
-    _entry[_nentries]->desc().name(s);
+    _ref->desc().name(s);
 }
 
 void AcqWaveformHandler::reset() {
