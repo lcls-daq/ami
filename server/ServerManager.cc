@@ -21,6 +21,8 @@
 #include <string.h>
 #include <unistd.h>
 
+//#define DBUG
+
 using namespace Ami;
 
 

@@ -32,6 +32,7 @@ Poll::Poll(int timeout, const char* s) :
   _ofd     (new    Fd*[Step]),
   _pfd     (new pollfd[Step]),
   _sem     (Semaphore::EMPTY),
+  _msem    (Semaphore::EMPTY),
   _buffer  (new char[BufferSize]),
   _shutdown(false)
 {
@@ -149,6 +150,7 @@ void Poll::manage_p(Fd& fd)
   iov[1].iov_base = &p        ; iov[1].iov_len = sizeof(p);
   _loopback->writev(iov,iovcnt);
   delete[] iov;
+  _msem.take();
 }
 
 //
@@ -241,6 +243,7 @@ int Poll::poll()
 	  else if (cmd==Manage) {
 	    Fd* fd = *reinterpret_cast<Fd**>(const_cast<char*>(payload));
 	    manage(*fd);
+            _msem.give();
 	    return result;  // not safe to loop over _ofd's below
 	  }
 	}

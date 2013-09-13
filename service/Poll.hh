@@ -27,8 +27,10 @@ namespace Ami {
   public:
     int  nfds() const;
     Fd&  fds(int) const;
+    //  Add a file descriptor to poll list (only safe when poll not running)
     void manage  (Fd&);
   public:
+    //  Add a file descriptor to poll list from another thread (blocks)
     void manage_p(Fd&);
     virtual void unmanage(Fd&);
     void bcast_in (const char*,int);
@@ -56,6 +58,7 @@ namespace Ami {
     Fd**       _ofd;
     pollfd*    _pfd;
     Semaphore  _sem;
+    Semaphore  _msem;
     char*      _buffer;
     bool       _shutdown;
   };
