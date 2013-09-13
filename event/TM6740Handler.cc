@@ -34,7 +34,7 @@ void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
   //
   //  Functional, but poor use of L1 cache
   //
-  const T* d = reinterpret_cast<const T*>(f.data8().data());
+  const T* d = reinterpret_cast<const T*>(&f+1);
   for(unsigned j=0; j<f.height(); j++) {
 #ifdef CLKWISE
     unsigned ix = desc.nbinsx()-1 - (desc.ppxbin()==2 ? j>>1 : j);
@@ -62,7 +62,7 @@ void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
   for(unsigned j=0; j<f.height(); j+=block_size) {
     for(unsigned k=0; k<f.width(); k+=block_size) {
       for(unsigned ij=j; ij<j+block_size; ij++) {
-	const T* d = reinterpret_cast<const T*>(f.data()) + ij*desc.nbinsy()*desc.ppybin() + k;
+	const T* d = reinterpret_cast<const T*>(&f+1) + ij*desc.nbinsy()*desc.ppybin() + k;
 #ifdef CLKWISE
 	unsigned ix = desc.nbinsx()-1 - (desc.ppxbin()==2 ? ij>>1 : ij);
 	if (desc.ppybin()==2)
