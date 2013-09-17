@@ -98,17 +98,45 @@ int Ami::EventFilter::process(Xtc* xtc)
     if (xtc->damage.value()==0)
       for(list<Ami::UserModule*>::iterator it=_filters.begin();
           it!=_filters.end(); it++)
-        (*it)-> event(xtc->src,
-                      xtc->contains,
-                      xtc->payload());
+        switch(xtc->src.level()) {
+        case Level::Source:
+          (*it)-> event(static_cast<const Pds::DetInfo&>(xtc->src),
+                        xtc->contains,
+                        xtc->payload());
+          break;
+        case Level::Reporter:
+          (*it)-> event(static_cast<const Pds::BldInfo&>(xtc->src),
+                        xtc->contains,
+                        xtc->payload());
+          break;
+        default:
+          (*it)-> event(static_cast<const Pds::ProcInfo&>(xtc->src),
+                        xtc->contains,
+                        xtc->payload());
+          break;
+        }
   }
   else if (_seq->service()==TransitionId::Configure) {
     for(list<Ami::UserModule*>::iterator it=_filters.begin();
         it!=_filters.end(); it++)
       if (xtc->damage.value()==0)
-        (*it)-> configure(xtc->src,
-                          xtc->contains,
-                          xtc->payload());
+        switch(xtc->src.level()) {
+        case Level::Source:
+          (*it)-> configure(static_cast<const Pds::DetInfo&>(xtc->src),
+                            xtc->contains,
+                            xtc->payload());
+          break;
+        case Level::Reporter:
+          (*it)-> configure(static_cast<const Pds::BldInfo&>(xtc->src),
+                            xtc->contains,
+                            xtc->payload());
+          break;
+        default:
+          (*it)-> configure(static_cast<const Pds::ProcInfo&>(xtc->src),
+                            xtc->contains,
+                            xtc->payload());
+          break;
+        }
   }
   else
     ;

@@ -166,16 +166,24 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	return -1;
       }
     }
-    { const char* kwlist[] = {"det_id","channel",NULL};
+    { const char* kwlist[] = {"det_id","channel","op",NULL};
+      const char* op_str = 0;
       t = PyTuple_GetSlice(args,index,index_n=2);
-      sts = MyArg_ParseTupleAndKeywords(t,kwds,"II",kwlist,
-					&phy, &channel);
+      sts = MyArg_ParseTupleAndKeywords(t,kwds,"II|s",kwlist,
+					&phy, &channel, &op_str);
       Py_DECREF(t);
       if (sts) {
         index = index_n;
 
 	info = Info_pyami(phy);
-	op   = new Ami::Average;
+        if (op_str==0 || strcasecmp(op_str,"average")==0) {
+          op   = new Ami::Average;
+          break;
+        }
+        else if (strcasecmp(op_str,"single")==0) {
+          op   = new Ami::Single;
+          break;
+        }          
 	break;
       }
     }
@@ -216,6 +224,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 	{ const Ami::EntryScalar* s = static_cast<const Ami::EntryScalar*>(entry);
 	  PyObject* o = PyDict_New();
 	  PyDict_SetItemString(o,"type"   ,PyString_FromString("Scalar"));
+          PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	  PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->entries()));
 	  PyDict_SetItemString(o,"mean"   ,PyFloat_FromDouble(s->mean()));
 	  PyDict_SetItemString(o,"rms"    ,PyFloat_FromDouble(s->rms()));
@@ -230,6 +239,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 
 	  PyObject* o = PyDict_New();
 	  PyDict_SetItemString(o,"type",   PyString_FromString("TH1F"));
+          PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	  PyDict_SetItemString(o,"uflow",  PyLong_FromDouble(s->info(Ami::EntryTH1F::Underflow)));
 	  PyDict_SetItemString(o,"oflow",  PyLong_FromDouble(s->info(Ami::EntryTH1F::Overflow)));
 	  PyDict_SetItemString(o,"data",   t);
@@ -246,6 +256,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 
 	  PyObject* o = PyDict_New();
 	  PyDict_SetItemString(o,"type",   PyString_FromString("Waveform"));
+          PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	  PyDict_SetItemString(o,"entries",PyLong_FromDouble(s->info(Ami::EntryWaveform::Normalization)));
 	  PyDict_SetItemString(o,"xlow",   PyFloat_FromDouble(s->desc().xlow()));
 	  PyDict_SetItemString(o,"xhigh",  PyFloat_FromDouble(s->desc().xup ()));
@@ -270,6 +281,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 	    }
 	    o = PyDict_New();
 	    PyDict_SetItemString(o,"type",   PyString_FromString("Image"));
+            PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	    PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->info(Ami::EntryImage::Normalization)));
 	    PyDict_SetItemString(o,"offset", PyFloat_FromDouble(s->info(Ami::EntryImage::Pedestal)));
 	    PyDict_SetItemString(o,"ppxbin", PyLong_FromLong(s->desc().ppxbin()));
@@ -291,6 +303,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 	    }
 	    o = PyDict_New();
 	    PyDict_SetItemString(o,"type",   PyString_FromString("ImageArray"));
+            PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	    PyDict_SetItemString(o,"entries",PyLong_FromDouble (s->info(Ami::EntryImage::Normalization)));
 	    PyDict_SetItemString(o,"offset", PyFloat_FromDouble(s->info(Ami::EntryImage::Pedestal)));
 	    PyDict_SetItemString(o,"ppxbin", PyLong_FromLong(s->desc().ppxbin()));
@@ -307,6 +320,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 
 	  PyObject* o = PyDict_New();
 	  PyDict_SetItemString(o,"type",   PyString_FromString("Scan"));
+          PyDict_SetItemString(o,"time",   PyFloat_FromDouble(s->last()));
 	  PyDict_SetItemString(o,"nbins",  PyLong_FromDouble(s->desc().nbins()));
 	  PyDict_SetItemString(o,"current",PyLong_FromDouble(s->info(Ami::EntryScan::Current)));
 	  { PyObject* t = PyList_New(s->desc().nbins());

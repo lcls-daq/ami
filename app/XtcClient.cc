@@ -60,13 +60,11 @@ static void Destroy(Xtc*) {}
 using namespace Ami;
 
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
-         Factory&      factory,
-         UList&        user_ana,
+                     Factory&      factory,
                      EventFilter&  filter,
-         bool          sync) :
+                     bool          sync) :
   _cache   (cache),
   _factory (factory),
-  _user_ana(user_ana),
   _filter  (filter),
   _sync    (sync),
   _ready   (false),
@@ -110,8 +108,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
       cache.cache(_evtim_index,_seq->clock().asDouble());
-      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-        (*it)->clock(dg->seq.clock());
       
       iterate(&dg->xtc); 
       for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
@@ -179,8 +175,6 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _filter.configure(dg);
 
     _seq = &dg->seq;
-    for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++)
-      (*it)->clock(dg->seq.clock());
 
     if (_name_service) {
       delete _name_service;
@@ -198,7 +192,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       _factory.discovery().add(e);
       _entry.push_back(e);
       int imod=0;
-      for(UList::iterator it=_user_ana.begin(); it!=_user_ana.end(); it++,imod++) {
+      for(std::list<UserModule*>::const_iterator it=_filter.modules().begin();
+          it != _filter.modules().end(); it++,imod++) {
         info = ProcInfo(Pds::Level::Event,0,imod);
         e = new EntryScalar(dinfo,0,(*it)->name(),"module");
         _factory.discovery().add(e);

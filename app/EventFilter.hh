@@ -25,6 +25,8 @@ namespace Ami {
     void configure   (Dgram*);
     bool accept      (Dgram*);
     bool accept      ();
+  public:
+    const std::list<UserModule*>& modules() const { return _filters; }
   private:
     int process(Xtc*);
   private:

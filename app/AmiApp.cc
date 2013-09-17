@@ -69,7 +69,7 @@ int AmiApp::run(char *partitionTag, unsigned serverGroup, std::vector<char *> mo
   EventFilter     filter(user_mod,*features[PostAnalysis]);
   AnalysisFactory factory(features, srv, user_mod, filter);
 
-  XtcClient myClient(features, factory, user_mod, filter, offline);
+  XtcClient myClient(features, factory, filter, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
   srv.manage(input);

@@ -2,7 +2,9 @@
 #define UserModule_hh
 
 #include "pdsdata/xtc/ClockTime.hh"
-#include "pdsdata/xtc/Src.hh"
+#include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/xtc/BldInfo.hh"
+#include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
 
 #include "ami/data/Cds.hh"
@@ -16,10 +18,22 @@ namespace Ami {
   public:  // Handler functions
     virtual void reset    (FeatureCache&) = 0;
     virtual void clock    (const Pds::ClockTime& clk) = 0;
-    virtual void configure(const Pds::Src&       src,
+    virtual void configure(const Pds::DetInfo&   src,
 			   const Pds::TypeId&    type,
 			   void*                 payload) = 0;
-    virtual void event    (const Pds::Src&       src,
+    virtual void configure(const Pds::BldInfo&   src,
+			   const Pds::TypeId&    type,
+			   void*                 payload) = 0;
+    virtual void configure(const Pds::ProcInfo&  src,
+			   const Pds::TypeId&    type,
+			   void*                 payload) = 0;
+    virtual void event    (const Pds::DetInfo&   src,
+			   const Pds::TypeId&    type,
+			   void*                 payload) = 0;
+    virtual void event    (const Pds::BldInfo&   src,
+			   const Pds::TypeId&    type,
+			   void*                 payload) = 0;
+    virtual void event    (const Pds::ProcInfo&  src,
 			   const Pds::TypeId&    type,
 			   void*                 payload) = 0;
   public:

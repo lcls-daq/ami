@@ -17,13 +17,13 @@ tgtslib_ami_collection := $(USRLIBDIR)/rt
 tgtslib_test := $(USRLIBDIR)/rt
 tgtslib_tcptest := $(USRLIBDIR)/rt
 
-tgtlibs_ami_proxy := ami/service ami/data ami/server ami/client
+tgtlibs_ami_proxy := ami/amisvc ami/amidata ami/server ami/client
 tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_proxy += $(qtlibdir)
 tgtslib_ami_proxy += $(qtslibdir)
 tgtlibs_ami_proxy += pdsalg/pdsalg
 
-tgtlibs_ami_collection := ami/service ami/data ami/server ami/client
+tgtlibs_ami_collection := ami/amisvc ami/amidata ami/server ami/client
 tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_collection += $(qtlibdir)
 tgtslib_ami_collection += $(qtslibdir)
@@ -35,13 +35,13 @@ tgtlibs_ami_collection += pdsalg/pdsalg
 tgtlibs_ami := pdsdata/xtcdata
 tgtlibs_ami += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_ami += pdsdata/compressdata
-tgtlibs_ami += ami/service ami/data ami/server ami/calib ami/event ami/client ami/app
+tgtlibs_ami += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
 tgtincs_ami := $(qtincdir) pdsdata/include
 tgtlibs_ami += $(qtlibdir)
 tgtslib_ami += $(qtslibdir)
 tgtlibs_ami += pdsalg/pdsalg
 
-tgtlibs_tcptest := ami/service pdsdata/xtcdata
+tgtlibs_tcptest := ami/amisvc pdsdata/xtcdata
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include

@@ -3,6 +3,12 @@
 
 #include <QtCore/QString>
 
+/**
+ **  Static functions and macro for inserting and extracting save data from
+ **  an XML file.
+ **
+ **/
+
 namespace Ami {
   namespace XML {
     class StartTag;
@@ -16,6 +22,9 @@ namespace Ami {
 //       virtual void save(char*& p) const = 0;
 //       virtual void load(const char*& p) = 0;
     public:
+      /** 
+       **  insert data of the named type into a char-stream
+       **/
       static void insert(char*&, const Ami::XML::StartTag&);
       static void insert(char*&, const Ami::XML::StopTag&);
       static void insert(char*&, const QString&);
@@ -24,6 +33,9 @@ namespace Ami {
       static void insert(char*&, double);
       static void insert(char*&, bool);
       static void insert(char*&, void*, int);
+      /**
+       **  extract data of the return type from the char-stream
+       **/
       static Ami::XML::StartTag extract_tag(const char*&);
       static int     extract_i(const char*&);
       static double  extract_d(const char*&);
@@ -36,6 +48,11 @@ namespace Ami {
 
 #include "ami/qt/XML.hh"
 
+/**
+ **  Helper macro for convenience.
+ **  Typical use:
+ **    XML_insert(stream,"data-type", "member-name", QtPersistent::insert());
+ **/
 #define XML_insert( p, element, name, routine ) {               \
     QtPersistent::insert(p, Ami::XML::StartTag(element,name));  \
     { routine; }                                                \

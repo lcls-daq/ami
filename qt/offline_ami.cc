@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
     //    bool sync = nclients == 0;
     //    bool sync = false;
     
-    clients.push_back(new XtcClient(features, factory, userModules, filter, sync));
+    clients.push_back(new XtcClient(features, factory, filter, sync));
   }
 
   // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.

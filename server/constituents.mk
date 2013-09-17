@@ -17,6 +17,6 @@ libincs_server := pdsdata/include
 
 tgtsrcs_servertest := servertest.cc
 tgtlibs_servertest := pdsdata/xtcdata pdsdata/camdata pdsdata/acqdata
-tgtlibs_servertest += ami/service ami/data ami/server
+tgtlibs_servertest += ami/amisvc ami/amidata ami/server
 tgtlibs_servertest += qt/QtCore
 tgtslib_servertest := $(USRLIBDIR)/rt

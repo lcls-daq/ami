@@ -1,11 +1,11 @@
 # List libraries (if any) for this package
-libnames := data
+libnames := amidata
 
 # List source files for each library
 unused_srcs  := Assembler.cc DescImageC.cc EntryImageC.cc Integral.cc 
-libsrcs_data := $(filter-out $(unused_srcs), $(wildcard *.cc))
+libsrcs_amidata := $(filter-out $(unused_srcs), $(wildcard *.cc))
 
-libincs_data := $(qtincdir) ndarray/include pdsalg/include boost/include pdsdata/include ndarray/include
+libincs_amidata := $(qtincdir) ndarray/include pdsalg/include boost/include pdsdata/include ndarray/include
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
