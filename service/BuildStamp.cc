@@ -2,10 +2,10 @@
 
 const char* Ami::BuildStamp::time()
 {
-  return "AMI_BUILD_TIME";
+  return AMI_BUILD_TIME;
 }
 
 const char* Ami::BuildStamp::tag ()
 {
-  return "AMI_BUILD_TAG";
+  return AMI_BUILD_TAG;
 }
