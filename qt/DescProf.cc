@@ -1,7 +1,7 @@
 #include "DescProf.hh"
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/FeatureCalculator.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>

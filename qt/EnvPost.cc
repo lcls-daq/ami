@@ -6,7 +6,7 @@
 #include "ami/data/AbsFilter.hh"
 #include "ami/data/FilterFactory.hh"
 #include "ami/data/DescCache.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <stdio.h>
 

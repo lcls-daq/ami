@@ -94,7 +94,7 @@ Ami::CurveFit *CurveFitOverlay::loadfit(const char*& p)
       else if (tag.name == "_norm")
           norm = QtPersistent::extract_s(p);
       else if (tag.name == "_op")
-          op = Ami::Qt::QtPersistent::extract_i(p);
+          op = QtPersistent::extract_i(p);
       else if (tag.name == "_output")
           desc = (DescEntry*)QtPersistent::extract_op(p);
   XML_iterate_close(CurveFit,tag);

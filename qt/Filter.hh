@@ -3,6 +3,8 @@
 
 #include "ami/qt/QtPWidget.hh"
 
+#include "ami/data/FeatureCache.hh"
+
 class QComboBox;
 class QButtonGroup;
 class QLineEdit;
@@ -17,7 +19,7 @@ namespace Ami {
     class Filter : public QtPWidget {
       Q_OBJECT
     public:
-      Filter(QWidget* parent,const QString&);
+      Filter(QWidget* parent,const QString&,Ami::ScalarSet =Ami::PreAnalysis);
       ~Filter();
     public:
       void save(char*& p) const;

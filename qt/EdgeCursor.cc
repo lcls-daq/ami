@@ -1,7 +1,7 @@
 #include "EdgeCursor.hh"
 
 #include "ami/qt/PlotFrame.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>

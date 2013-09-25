@@ -1,5 +1,5 @@
 #include "DescTH2T.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QRadioButton>
 #include <QtGui/QLineEdit>

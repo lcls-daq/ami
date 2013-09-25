@@ -1,5 +1,5 @@
 #include "ami/qt/QtPlotStyle.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QPainter>
 #include <QtGui/QLineEdit>

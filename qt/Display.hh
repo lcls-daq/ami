@@ -1,7 +1,7 @@
 #ifndef AmiQt_Display_hh
 #define AmiQt_Display_hh
 
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 class QWidget;
 

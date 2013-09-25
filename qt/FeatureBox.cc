@@ -1,7 +1,7 @@
 #include "FeatureBox.hh"
 
 #include "ami/qt/FeatureRegistry.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <stdio.h>
 

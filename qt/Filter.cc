@@ -5,6 +5,7 @@
 
 #include "ami/data/RawFilter.hh"
 #include "ami/data/FeatureRange.hh"
+#include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/FeatureTree.hh"
 #include "ami/qt/Calculator.hh"
 
@@ -26,12 +27,13 @@ using std::ofstream;
 
 using namespace Ami::Qt;
 
-Filter::Filter(QWidget* parent,const QString& title) :
+Filter::Filter(QWidget* parent,const QString& title,
+	       Ami::ScalarSet set) :
   QtPWidget (parent),
   _name     (title),
   _expr     (new QLineEdit),
   _cond_name(new QLineEdit("A")),
-  _features (new FeatureTree),
+  _features (new FeatureTree(&FeatureRegistry::instance(set))),
   _lo_rng   (new QLineEdit("0")),
   _hi_rng   (new QLineEdit("1")),
   _clayout  (new QVBoxLayout),

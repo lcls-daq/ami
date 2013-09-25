@@ -1,6 +1,6 @@
 #include "ami/qt/ImageFunctions.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include "ami/data/BinMath.hh"
 

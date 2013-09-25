@@ -1,7 +1,7 @@
 #ifndef AmiQt_ImageColorControl_hh
 #define AmiQt_ImageColorControl_hh
 
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QGroupBox>
 

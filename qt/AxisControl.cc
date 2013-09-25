@@ -1,7 +1,7 @@
 #include "AxisControl.hh"
 #include "AxisInfo.hh"
 
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QGroupBox>
 #include <QtGui/QLabel>

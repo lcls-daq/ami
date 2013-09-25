@@ -1,5 +1,5 @@
 #include "ami/qt/Rect.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <stdio.h>
 

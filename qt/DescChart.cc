@@ -1,5 +1,5 @@
 #include "DescChart.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QRadioButton>

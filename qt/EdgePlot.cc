@@ -15,6 +15,8 @@
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
 
+using Ami::XML::QtPersistent;
+
 namespace Ami {
   namespace Qt {
     class NullTransform : public Ami::AbsTransform {
@@ -113,20 +115,20 @@ Ami::EdgeFinder *EdgePlot::loadfinder(const char*& p)
 
   XML_iterate_open(p,tag)
     if (tag.name == "_threshold")
-      thresh = Ami::Qt::QtPersistent::extract_d(p);
+      thresh = QtPersistent::extract_d(p);
     else if (tag.name == "_baseline")
-      base = Ami::Qt::QtPersistent::extract_d(p);
+      base = QtPersistent::extract_d(p);
     else if (tag.name == "_algorithm")
-      alg = Ami::Qt::QtPersistent::extract_i(p);
+      alg = QtPersistent::extract_i(p);
     else if (tag.name == "_deadtime")
-      deadtime = Ami::Qt::QtPersistent::extract_d(p);
+      deadtime = QtPersistent::extract_d(p);
     else if (tag.name == "_fraction")
-      fraction = Ami::Qt::QtPersistent::extract_d(p);
+      fraction = QtPersistent::extract_d(p);
     else if (tag.name == "_output") {
       desc = (const Ami::DescEntry*)QtPersistent::extract_op(p);
     }
     else if (tag.name == "_parameter")
-      parm = Ami::EdgeFinder::Parameter(Ami::Qt::QtPersistent::extract_i(p));
+      parm = Ami::EdgeFinder::Parameter(QtPersistent::extract_i(p));
   XML_iterate_close(EdgeFinder,tag);
 
   if (desc)

@@ -12,6 +12,8 @@
 #include <QtGui/QListWidget>
 #include <QtGui/QPushButton>
 
+#define DBUG
+
 using namespace Ami::Qt;
 
 static const QString _expr("Expression");
@@ -29,13 +31,13 @@ FilterSetup::FilterSetup(ClientManager& manager) :
   connect(_list, SIGNAL(itemActivated(QListWidgetItem*)), 
 	  this , SLOT(activated(QListWidgetItem*)));
   { QHBoxLayout* l = new QHBoxLayout;
-    QPushButton* applyB = new QPushButton("Apply");
-    QPushButton* closeB = new QPushButton("Close");
+    QPushButton* applyB  = new QPushButton("Apply");
+    QPushButton* closeB  = new QPushButton("Close");
     l->addWidget(applyB);
     l->addWidget(closeB);
     layout->addLayout(l); 
-    connect(applyB, SIGNAL(clicked()), this, SLOT(apply()));
-    connect(closeB, SIGNAL(clicked()), this, SLOT(hide ()));
+    connect(applyB , SIGNAL(clicked()), this, SLOT(apply()));
+    connect(closeB , SIGNAL(clicked()), this, SLOT(hide ()));
   }
 
   (new QListWidgetItem(_expr,_list))->setCheckState(::Qt::Unchecked);
@@ -87,7 +89,8 @@ unsigned FilterSetup::selected() const
   for(int i=1; i<_list->count(); i++)
     if (_list->item(i)->checkState()==::Qt::Checked)
       result |= (1<<i);
-  return result>>1;
+  result >>= 1;
+  return result;
 }
 
 void FilterSetup::save(char*& p) const
@@ -120,6 +123,9 @@ void FilterSetup::apply()
 
 void FilterSetup::activated(QListWidgetItem* item)
 {
+#ifdef DBUG
+  printf("FS:activated %p %p\n",item,_list->item(0));
+#endif
   if (item == _list->item(0)) {
     _filter->front();
   }

@@ -2,7 +2,7 @@
 
 #include "ami/qt/Client.hh"
 #include "ami/qt/Defaults.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 #include "ami/service/Task.hh"
 
 #include <QtGui/QPushButton>

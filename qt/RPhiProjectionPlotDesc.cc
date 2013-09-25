@@ -1,8 +1,8 @@
 #include "ami/qt/RPhiProjectionPlotDesc.hh"
 
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/AnnulusCursors.hh"
 
+#include "ami/data/QtPersistent.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
 #include "ami/data/RPhiProjection.hh"

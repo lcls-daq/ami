@@ -1,8 +1,8 @@
 #include "ami/qt/XYHistogramPlotDesc.hh"
 
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/DescTH1F.hh"
 
+#include "ami/data/XML.hh"
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescScalarRange.hh"
 #include "ami/data/XYHistogram.hh"

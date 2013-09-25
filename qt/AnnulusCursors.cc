@@ -2,7 +2,7 @@
 
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/ImageFrame.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>

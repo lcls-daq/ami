@@ -1,6 +1,6 @@
 #include "TransformConstant.hh"
 
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QPushButton>

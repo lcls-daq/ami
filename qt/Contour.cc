@@ -1,6 +1,6 @@
 #include "ami/qt/Contour.hh"
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/RectangleCursors.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QImage>

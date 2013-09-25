@@ -23,6 +23,7 @@ namespace Ami {
   namespace Qt {
     class AbsClient;
     class QtTopWidget;
+    class Filter;
     class FilterSetup;
     class RateDisplay;
     class DetectorSelect : public QtPWidget,
@@ -63,6 +64,7 @@ namespace Ami {
       void autoload();
 
       void set_filters();
+      void l3t_export();
 
       void show_detector(QListWidgetItem*);
       void change_detectors (const char*);
@@ -92,7 +94,9 @@ namespace Ami {
       RateDisplay*   _rate_display;
       pthread_mutex_t _mutex;
       pthread_cond_t _condition;
-      bool _discovered;
+      bool           _discovered;
+      Filter*        _filter_export;
+      bool           _l3t_export;
     };
   };
 };

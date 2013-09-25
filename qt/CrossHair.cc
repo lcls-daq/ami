@@ -3,7 +3,7 @@
 #include "ami/qt/ImageGridScale.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/AxisInfo.hh"
-#include "ami/qt/QtPersistent.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include <QtGui/QCursor>
 #include <QtGui/QBitmap>

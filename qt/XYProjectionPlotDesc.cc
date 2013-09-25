@@ -1,7 +1,7 @@
 #include "ami/qt/XYProjectionPlotDesc.hh"
 
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/RectangleCursors.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"

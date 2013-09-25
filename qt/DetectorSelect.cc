@@ -15,6 +15,7 @@
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/DetectorListItem.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/Filter.hh"
 #include "ami/qt/FilterSetup.hh"
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/PWidgetManager.hh"
@@ -88,7 +89,10 @@ DetectorSelect::DetectorSelect(const QString& label,
   _request    (new char[BufferSize]),
   _rate_display(new RateDisplay(*_connect_mgr,
                                 _manager)),
-  _discovered(false)
+  _discovered(false),
+  _filter_export(new Filter((QtPWidget*)0,"L3T Export",
+			    Ami::PostAnalysis)),
+  _l3t_export(false)
 {
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
@@ -103,7 +107,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   }
 
   { QGroupBox* setup_box = new QGroupBox("Setup");
-    QVBoxLayout* layout = new QVBoxLayout;
+    QHBoxLayout* layout = new QHBoxLayout;
     QPushButton* saveB    = new QPushButton("Save");
     QPushButton* loadB    = new QPushButton("Load");
     QPushButton* defaultB = new QPushButton("Defaults");
@@ -121,19 +125,23 @@ DetectorSelect::DetectorSelect(const QString& label,
     setup_box->setLayout(layout);
     l->addWidget(setup_box); }
   { QGroupBox* data_box  = new QGroupBox("Data");
-    QVBoxLayout* layout = new QVBoxLayout;    
+    QGridLayout* layout = new QGridLayout;
 
     QPushButton* resetB  = new QPushButton("Reset Plots");
     QPushButton* saveB   = new QPushButton("Save Plots");
     QPushButton* filterB = new QPushButton("Event Filter"); 
-    layout->addWidget(resetB);
-    layout->addWidget(saveB);
-    layout->addWidget(filterB);
+    QPushButton* exportB = new QPushButton("L3T Export"); 
+    layout->addWidget(resetB ,0,0);
+    layout->addWidget(saveB  ,0,1);
+    layout->addWidget(filterB,1,0);
+    layout->addWidget(exportB,1,1);
     connect(resetB , SIGNAL(clicked()), this, SLOT(reset_plots()));
     connect(saveB  , SIGNAL(clicked()), this, SLOT(save_plots()));
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
+    connect(exportB, SIGNAL(clicked()), _filter_export, SLOT(front()));
+    connect(_filter_export, SIGNAL(changed()), this, SLOT(l3t_export()));
     
-    layout->addWidget(_detList = new QListWidget(this));
+    layout->addWidget(_detList = new QListWidget(this),2,0,1,2);
 #if 1
     //
     //  The EnvClient is needed at all times to request the PostAnalysis variable set and generate those plots
@@ -182,6 +190,7 @@ DetectorSelect::~DetectorSelect()
 
   delete _rate_display;
   delete _filters;
+  delete _filter_export;
   delete _manager;
   delete[] _request;
 }
@@ -317,6 +326,12 @@ void DetectorSelect::default_setup()
 void DetectorSelect::set_filters()
 {
   _filters->show();
+}
+
+void DetectorSelect::l3t_export()
+{
+  _l3t_export=true;
+  _manager->configure();
 }
 
 void DetectorSelect::reset_plots()
@@ -458,6 +473,15 @@ int  DetectorSelect::configure       (iovec* iov)
                                _filters->selected(),
 			       _filters->filter());
     p += r.size(); }
+
+  if (_l3t_export) {
+    _l3t_export=false;
+    ConfigureRequest& r = 
+      *new(p) ConfigureRequest(ConfigureRequest::Filter,
+                               (1<<31),
+			       *_filter_export->filter());
+    p += r.size();
+  }
 
   _rate_display->configure(p);
 

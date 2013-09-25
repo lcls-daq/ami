@@ -6,8 +6,8 @@
 #include "ami/qt/DescProf.hh"
 #include "ami/qt/DescScan.hh"
 //#include "ami/qt/DescText.hh"
-#include "ami/qt/QtPersistent.hh"
 #include "ami/qt/SMPRegistry.hh"
+#include "ami/data/QtPersistent.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescTH2F.hh"
