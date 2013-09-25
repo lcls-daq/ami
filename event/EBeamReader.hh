@@ -1,13 +1,13 @@
 #ifndef Ami_EBeamReader_hh
 #define Ami_EBeamReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include "ami/data/FeatureCache.hh"
 
 namespace Ami {
 
-  class EBeamReader : public EventHandler {
+  class EBeamReader : public EventHandlerF {
   public:
     EBeamReader(FeatureCache&);
     ~EBeamReader();
@@ -23,10 +23,8 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
   private:
-    FeatureCache& _cache;
     int           _index;
     int           _nvars;
   };

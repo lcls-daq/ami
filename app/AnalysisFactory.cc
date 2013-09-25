@@ -1,6 +1,8 @@
 #include "AnalysisFactory.hh"
 
 #include "ami/app/EventFilter.hh"
+#include "ami/app/XtcClient.hh"
+
 #include "ami/data/Analysis.hh"
 #include "ami/data/UserModule.hh"
 
@@ -159,7 +161,11 @@ void AnalysisFactory::configure(unsigned       id,
       }
     }
     else if (req.source() == ConfigureRequest::Filter) {
-      _filter.enable(req);
+      std::list<const Analysis*> a;
+      for(AnList::const_iterator it=_analyses.begin();
+	  it!=_analyses.end(); it++)
+	a.push_back(*it);
+      _filter.enable(req, a, XtcClient::instance()->handlers());
     }
     else {
       const Cds* pcds = 0;

@@ -19,10 +19,10 @@ namespace Ami {
 using namespace Pds::Epics;
 
 Ami::EpicsXtcReader::EpicsXtcReader(const Pds::Src& info, Ami::FeatureCache& f)  : 
-  Ami::EventHandler(info,
-               Pds::TypeId::Id_Epics,
-               Pds::TypeId::Id_Epics),
-  _cache(f)
+  Ami::EventHandlerF(info,
+		     Pds::TypeId::Id_Epics,
+		     Pds::TypeId::Id_Epics,
+		     f)
 {
 }
 
@@ -60,12 +60,12 @@ void   Ami::EpicsXtcReader::_configure(Pds::TypeId, const void* payload, const P
       char* iptr = buffer+strlen(buffer);
       for(unsigned i=0; i<unsigned(ctrl.numElements()); i++) {
 	sprintf(iptr,"[%d]",i);
-	index = _cache.add(buffer);
+	index = _add_to_cache(buffer);
       }
       index -= ctrl.numElements()-1;
     }
     else {
-      index = _cache.add(ctrl.pvName());
+      index = _add_to_cache(ctrl.pvName());
     }
 
     if (ctrl.pvId() < MaxPvs) {
@@ -121,6 +121,7 @@ unsigned          Ami::EpicsXtcReader::nentries() const { return 0; }
 const Ami::Entry* Ami::EpicsXtcReader::entry   (unsigned) const { return 0; }
 void              Ami::EpicsXtcReader::reset   () 
 {
+  EventHandlerF::reset();
   for(unsigned i=0; i<MaxPvs; i++)
     _index[i] = -1;
 }

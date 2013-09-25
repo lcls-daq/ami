@@ -1,7 +1,7 @@
 #ifndef Ami_EncoderReader_hh
 #define Ami_EncoderReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class EncoderHandler : public EventHandler {
+  class EncoderHandler : public EventHandlerF {
   public:
     EncoderHandler(const DetInfo&, FeatureCache&);
     ~EncoderHandler();
@@ -24,10 +24,8 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     bool         used    () const { return true; }
   private:
-    FeatureCache&          _cache;
     int                    _index;
   };
 

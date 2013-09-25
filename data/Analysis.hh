@@ -25,6 +25,7 @@ namespace Ami {
     DescEntry& output () const;
     bool       valid  () const;
     const Entry& input() const;
+    const AbsOperator& op() const { return *_op; }
   private:
     unsigned     _id;
     unsigned     _output;

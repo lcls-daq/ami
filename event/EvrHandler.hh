@@ -1,7 +1,7 @@
 #ifndef Ami_EvrReader_hh
 #define Ami_EvrReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class EvrHandler : public EventHandler {
+  class EvrHandler : public EventHandlerF {
   public:
     EvrHandler(const DetInfo&, FeatureCache&);
     ~EvrHandler();
@@ -31,7 +31,6 @@ namespace Ami {
   public:
     void         rename  (const char*);
   private:
-    FeatureCache&        _cache;
     int                  _index[256];
   };
 };

@@ -1,7 +1,7 @@
 #ifndef Ami_Gsc16aiHandler_hh
 #define Ami_Gsc16aiHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "pdsdata/psddl/gsc16ai.ddl.h"
 
 namespace Pds {
@@ -11,7 +11,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class Gsc16aiHandler : public EventHandler {
+  class Gsc16aiHandler : public EventHandlerF {
   public:
     Gsc16aiHandler(const DetInfo&, FeatureCache&);
     ~Gsc16aiHandler();
@@ -23,11 +23,9 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     bool         used    () const { return true; }
     void         rename  (const char*);
   private:
-    FeatureCache&          _cache;
     int                    _index;
     Pds::Gsc16ai::ConfigV1 _config;
     double                 _voltsMin;

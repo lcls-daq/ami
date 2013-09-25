@@ -1,4 +1,5 @@
 #include "ami/app/EventFilter.hh"
+#include "ami/app/FilterExport.hh"
 
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/FeatureCache.hh"
@@ -30,17 +31,24 @@ EventFilter::~EventFilter()
   delete _f;
 }
 
-void EventFilter::enable (const ConfigureRequest& req)
+void EventFilter::enable (const ConfigureRequest& req,
+			  const std::list<const Analysis*>& a,
+			  const std::list<const EventHandler*>& e)
 {
   const uint32_t* u = reinterpret_cast<const uint32_t*>(&req+1);
-  _enable = *u;
-
-  delete _f;
-
   const char* p = reinterpret_cast<const char*>(u+1);
   FilterFactory factory(_cache);
   AbsFilter* f = factory.deserialize(p);
-  _f = f ? f : new RawFilter;
+
+  if ((*u) & 0x80000000) {
+    FilterExport x(*f, e, a);
+    x.write("/tmp/filterexport.sav");
+  }
+  else {
+    _enable = (*u) & 0x7fffffff;
+    delete _f;
+    _f = f ? f : new RawFilter;
+  }
 }
 
 void EventFilter::reset  ()

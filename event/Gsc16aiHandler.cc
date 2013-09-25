@@ -11,10 +11,10 @@
 using namespace Ami;
 
 Gsc16aiHandler::Gsc16aiHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_Gsc16aiData,
-	       Pds::TypeId::Id_Gsc16aiConfig),
-  _cache(f)
+  EventHandlerF(info,
+		Pds::TypeId::Id_Gsc16aiData,
+		Pds::TypeId::Id_Gsc16aiConfig,
+		f)
 {
 }
 
@@ -54,9 +54,9 @@ void   Gsc16aiHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   for (ii = _config.firstChan(); ii <= _config.lastChan(); ii++) {
     sprintf(cc, ":Ch%02d", ii);
     if (ii == _config.firstChan()) {
-      _index = _cache.add(buffer);
+      _index = _add_to_cache(buffer);
     } else {
-      (void) _cache.add(buffer);
+      (void) _add_to_cache(buffer);
     }
   }
 }
@@ -85,9 +85,6 @@ void   Gsc16aiHandler::_damaged  ()
 //  No Entry data
 unsigned     Gsc16aiHandler::nentries() const { return 0; }
 const Entry* Gsc16aiHandler::entry   (unsigned) const { return 0; }
-void         Gsc16aiHandler::reset   () 
-{
-}
 
 void   Gsc16aiHandler::rename(const char* s)
 {
@@ -97,6 +94,6 @@ void   Gsc16aiHandler::rename(const char* s)
   unsigned index(_index);
   for (int ii = _config.firstChan(); ii <= _config.lastChan(); ii++,index++) {
     sprintf(cc, ":Ch%02d", ii);
-    _cache.rename(index,buffer);
+    _rename_cache(index,buffer);
   }
 }

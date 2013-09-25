@@ -11,10 +11,10 @@
 using namespace Ami;
 
 EBeamReader::EBeamReader(FeatureCache& f)  : 
-  EventHandler(Pds::BldInfo(0,Pds::BldInfo::EBeam),
-	       Pds::TypeId::Id_EBeam,
-	       Pds::TypeId::Id_EBeam),
-  _cache(f),
+  EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::EBeam),
+		Pds::TypeId::Id_EBeam,
+		Pds::TypeId::Id_EBeam,
+		f),
   _index(-1),
   _nvars(0)
 {
@@ -33,21 +33,21 @@ void   EBeamReader::_configure(Pds::TypeId id,
                                const void* payload, 
                                const Pds::ClockTime& t) 
 {
-  _index = _cache.add("BLD:EBEAM:Q");
-  _cache.add("BLD:EBEAM:L3E");
-  _cache.add("BLD:EBEAM:LTUX");
-  _cache.add("BLD:EBEAM:LTUY");
-  _cache.add("BLD:EBEAM:LTUXP");
-  int index = _cache.add("BLD:EBEAM:LTUYP");
+  _index = _add_to_cache("BLD:EBEAM:Q");
+  _add_to_cache("BLD:EBEAM:L3E");
+  _add_to_cache("BLD:EBEAM:LTUX");
+  _add_to_cache("BLD:EBEAM:LTUY");
+  _add_to_cache("BLD:EBEAM:LTUXP");
+  int index = _add_to_cache("BLD:EBEAM:LTUYP");
 
   if (id.version()>=1) {
-    index = _cache.add("BLD:EBEAM:PKCURRBC2");
+    index = _add_to_cache("BLD:EBEAM:PKCURRBC2");
     if (id.version()>=2) {
-      index = _cache.add("BLD:EBEAM:PKCURRBC2");
-      index = _cache.add("BLD:EBEAM:ENERGYBC2");
+      index = _add_to_cache("BLD:EBEAM:PKCURRBC2");
+      index = _add_to_cache("BLD:EBEAM:ENERGYBC2");
       if (id.version()>=3) {
-        index = _cache.add("BLD:EBEAM:PKCURRBC1");
-        index = _cache.add("BLD:EBEAM:ENERGYBC1");
+        index = _add_to_cache("BLD:EBEAM:PKCURRBC1");
+        index = _add_to_cache("BLD:EBEAM:ENERGYBC1");
       }
     }
   }
@@ -135,5 +135,4 @@ void   EBeamReader::_damaged  ()
 //  No Entry data
 unsigned     EBeamReader::nentries() const { return 0; }
 const Entry* EBeamReader::entry   (unsigned) const { return 0; }
-void         EBeamReader::reset   () { _index=-1; }
-void         EBeamReader::rename  (const char*) {}
+void         EBeamReader::rename(const char*) {}

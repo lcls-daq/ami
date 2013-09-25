@@ -11,10 +11,10 @@
 using namespace Ami;
 
 DiodeFexHandler::DiodeFexHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_DiodeFex,
-	       Pds::TypeId::Id_DiodeFexConfig),
-  _cache(f)
+  EventHandlerF(info,
+		Pds::TypeId::Id_DiodeFex,
+		Pds::TypeId::Id_DiodeFexConfig,
+		f)
 {
 }
 
@@ -24,7 +24,7 @@ DiodeFexHandler::~DiodeFexHandler()
 
 void   DiodeFexHandler::rename(const char* s)
 {
-  _cache.rename(_index,s);
+  _rename_cache(_index,s);
 }
 
 void   DiodeFexHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -36,7 +36,7 @@ void   DiodeFexHandler::_configure(Pds::TypeId, const void* payload, const Pds::
   char* iptr = buffer+strlen(buffer);
   
   sprintf(iptr,":CH0"); 
-  _index = _cache.add(buffer);
+  _index = _add_to_cache(buffer);
 }
 
 void   DiodeFexHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -54,6 +54,3 @@ void   DiodeFexHandler::_damaged  ()
 //  No Entry data
 unsigned     DiodeFexHandler::nentries() const { return 0; }
 const Entry* DiodeFexHandler::entry   (unsigned) const { return 0; }
-void         DiodeFexHandler::reset   () 
-{
-}

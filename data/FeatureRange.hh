@@ -14,6 +14,8 @@ namespace Ami {
   public:
     bool  accept() const;
     AbsFilter* clone() const;
+  public:
+    const char* feature() const { return _feature; }
   private:
     void* _serialize(void*) const;
   private:

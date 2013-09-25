@@ -1,13 +1,13 @@
 #ifndef Ami_PhaseCavityReader_hh
 #define Ami_PhaseCavityReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include "ami/data/FeatureCache.hh"
 
 namespace Ami {
 
-  class PhaseCavityReader : public EventHandler {
+  class PhaseCavityReader : public EventHandlerF {
   public:
     PhaseCavityReader(FeatureCache&);
     ~PhaseCavityReader();
@@ -19,10 +19,8 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
   private:
-    FeatureCache& _cache;
     int           _index;
   };
 

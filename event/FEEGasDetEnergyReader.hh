@@ -1,13 +1,13 @@
 #ifndef Ami_FEEGasDetEnergyReader_hh
 #define Ami_FEEGasDetEnergyReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include "ami/data/FeatureCache.hh"
 
 namespace Ami {
 
-  class FEEGasDetEnergyReader : public EventHandler {
+  class FEEGasDetEnergyReader : public EventHandlerF {
   public:
     FEEGasDetEnergyReader(FeatureCache&);
     ~FEEGasDetEnergyReader();
@@ -22,7 +22,6 @@ namespace Ami {
     void         reset   ();
     void         rename  (const char*);
   private:
-    FeatureCache& _cache;
     int           _index;
   };
 

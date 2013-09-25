@@ -1,7 +1,7 @@
 #ifndef Ami_IpmFexHandler_hh
 #define Ami_IpmFexHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class IpmFexHandler : public EventHandler {
+  class IpmFexHandler : public EventHandlerF {
   public:
     IpmFexHandler(const DetInfo&, FeatureCache&);
     ~IpmFexHandler();
@@ -22,11 +22,9 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     bool         used    () const { return true; }
     void         rename  (const char*);
   private:
-    FeatureCache&        _cache;
     enum { NChannels=7 };
     int                  _index[NChannels];
   };

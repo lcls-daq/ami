@@ -1,13 +1,13 @@
 #ifndef Ami_SharedIpimbReader_hh
 #define Ami_SharedIpimbReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "ami/data/FeatureCache.hh"
 #include "pdsdata/xtc/BldInfo.hh"
 
 namespace Ami {
 
-  class SharedIpimbReader : public EventHandler {
+  class SharedIpimbReader : public EventHandlerF {
   public:
     SharedIpimbReader(const Pds::BldInfo&, FeatureCache&);
     ~SharedIpimbReader();
@@ -19,10 +19,8 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
   private:
-    FeatureCache& _cache;
     enum { NChannels= 15 };
     int                     _index[NChannels];
   };

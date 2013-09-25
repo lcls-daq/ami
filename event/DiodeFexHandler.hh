@@ -1,7 +1,7 @@
 #ifndef Ami_DiodeFexHandler_hh
 #define Ami_DiodeFexHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class DiodeFexHandler : public EventHandler {
+  class DiodeFexHandler : public EventHandlerF {
   public:
     DiodeFexHandler(const DetInfo&, FeatureCache&);
     ~DiodeFexHandler();
@@ -22,12 +22,10 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     bool         used    () const { return true; }
   public:
     void         rename  (const char*);
   private:
-    FeatureCache&        _cache;
     int                  _index;
   };
 

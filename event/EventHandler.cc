@@ -105,3 +105,7 @@ bool   EventHandler::used() const
   return false;
 }
 
+std::list<std::string> EventHandler::features() const
+{
+  return std::list<std::string>();
+}

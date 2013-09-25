@@ -10,9 +10,8 @@
 
 using namespace Ami;
 
-  SharedIpimbReader::SharedIpimbReader(const Pds::BldInfo& bldInfo, FeatureCache& f)  : 
-    EventHandler(bldInfo, Pds::TypeId::Id_SharedIpimb, Pds::TypeId::Id_SharedIpimb),
-    _cache(f)
+SharedIpimbReader::SharedIpimbReader(const Pds::BldInfo& bldInfo, FeatureCache& f)  : 
+  EventHandlerF(bldInfo, Pds::TypeId::Id_SharedIpimb, Pds::TypeId::Id_SharedIpimb, f)
 {
 }
 
@@ -28,25 +27,25 @@ void  SharedIpimbReader::_configure(Pds::TypeId id, const void* payload, const P
   char* iptr = buffer+strlen(buffer);
   
   unsigned i=0;
-  sprintf(iptr,":DATA[0]");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":DATA[1]");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":DATA[2]");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":DATA[3]");  _index[i] = _cache.add(buffer);  i++;
+  sprintf(iptr,":DATA[0]");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":DATA[1]");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":DATA[2]");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":DATA[3]");  _index[i] = _add_to_cache(buffer);  i++;
 
-  sprintf(iptr,":FEX:CH0");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":FEX:CH1");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":FEX:CH2");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":FEX:CH3");  _index[i] = _cache.add(buffer);  i++;
+  sprintf(iptr,":FEX:CH0");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":FEX:CH1");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":FEX:CH2");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":FEX:CH3");  _index[i] = _add_to_cache(buffer);  i++;
   
-  sprintf(iptr,":FEX:SUM");  _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":FEX:XPOS"); _index[i] = _cache.add(buffer);  i++;
-  sprintf(iptr,":FEX:YPOS"); _index[i] = _cache.add(buffer);  i++;
+  sprintf(iptr,":FEX:SUM");  _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":FEX:XPOS"); _index[i] = _add_to_cache(buffer);  i++;
+  sprintf(iptr,":FEX:YPOS"); _index[i] = _add_to_cache(buffer);  i++;
 
   if (id.version()==1) {
-    sprintf(iptr,":PS:DATA[0]");  _index[i] = _cache.add(buffer);  i++;
-    sprintf(iptr,":PS:DATA[1]");  _index[i] = _cache.add(buffer);  i++;
-    sprintf(iptr,":PS:DATA[2]");  _index[i] = _cache.add(buffer);  i++;
-    sprintf(iptr,":PS:DATA[3]");  _index[i] = _cache.add(buffer);  i++;
+    sprintf(iptr,":PS:DATA[0]");  _index[i] = _add_to_cache(buffer);  i++;
+    sprintf(iptr,":PS:DATA[1]");  _index[i] = _add_to_cache(buffer);  i++;
+    sprintf(iptr,":PS:DATA[2]");  _index[i] = _add_to_cache(buffer);  i++;
+    sprintf(iptr,":PS:DATA[3]");  _index[i] = _add_to_cache(buffer);  i++;
   }
   else
     for(unsigned j=0; j<4; j++)
@@ -111,7 +110,6 @@ void SharedIpimbReader::_damaged  ()
 //  No Entry data
 unsigned     SharedIpimbReader::nentries() const { return 0; }
 const Entry* SharedIpimbReader::entry   (unsigned) const { return 0; }
-void         SharedIpimbReader::reset   () { }
 void         SharedIpimbReader::rename  (const char* s)
 {
   char buffer[64];
@@ -119,24 +117,24 @@ void         SharedIpimbReader::rename  (const char* s)
   char* iptr = buffer+strlen(buffer);
   
   unsigned i=0;
-  sprintf(iptr,":DATA[0]");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":DATA[1]");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":DATA[2]");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":DATA[3]");  _cache.rename(_index[i],buffer); i++;
+  sprintf(iptr,":DATA[0]");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":DATA[1]");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":DATA[2]");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":DATA[3]");  _rename_cache(_index[i],buffer); i++;
 
-  sprintf(iptr,":FEX:CH0");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":FEX:CH1");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":FEX:CH2");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":FEX:CH3");  _cache.rename(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:CH0");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:CH1");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:CH2");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:CH3");  _rename_cache(_index[i],buffer); i++;
   
-  sprintf(iptr,":FEX:SUM");  _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":FEX:XPOS"); _cache.rename(_index[i],buffer); i++;
-  sprintf(iptr,":FEX:YPOS"); _cache.rename(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:SUM");  _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:XPOS"); _rename_cache(_index[i],buffer); i++;
+  sprintf(iptr,":FEX:YPOS"); _rename_cache(_index[i],buffer); i++;
 
   if (_index[i] != _index[0]) {
-    sprintf(iptr,":PS:DATA[0]");  _cache.rename(_index[i],buffer); i++;
-    sprintf(iptr,":PS:DATA[1]");  _cache.rename(_index[i],buffer); i++;
-    sprintf(iptr,":PS:DATA[2]");  _cache.rename(_index[i],buffer); i++;
-    sprintf(iptr,":PS:DATA[3]");  _cache.rename(_index[i],buffer); i++;
+    sprintf(iptr,":PS:DATA[0]");  _rename_cache(_index[i],buffer); i++;
+    sprintf(iptr,":PS:DATA[1]");  _rename_cache(_index[i],buffer); i++;
+    sprintf(iptr,":PS:DATA[2]");  _rename_cache(_index[i],buffer); i++;
+    sprintf(iptr,":PS:DATA[3]");  _rename_cache(_index[i],buffer); i++;
   }
 }

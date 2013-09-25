@@ -11,10 +11,10 @@
 using namespace Ami;
 
 EncoderHandler::EncoderHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_EncoderData,
-	       Pds::TypeId::Id_EncoderConfig),
-  _cache(f)
+  EventHandlerF(info,
+		Pds::TypeId::Id_EncoderData,
+		Pds::TypeId::Id_EncoderConfig,
+		f)
 {
 }
 
@@ -28,7 +28,7 @@ void   EncoderHandler::rename(const char* s)
   unsigned index(_index);
   for(unsigned i=0; i<3; i++,index++) {
     sprintf(buffer,"%s:CH%d",s,i);
-    _cache.rename(index,buffer);
+    _rename_cache(index,buffer);
   }
 }
 
@@ -40,11 +40,11 @@ void   EncoderHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   char* c = buffer+strlen(buffer);
 
   sprintf(c,":CH0");
-  _index = _cache.add(buffer);
+  _index = _add_to_cache(buffer);
   sprintf(c,":CH1");
-  _cache.add(buffer);
+  _add_to_cache(buffer);
   sprintf(c,":CH2");
-  _cache.add(buffer);
+  _add_to_cache(buffer);
 }
 
 void   EncoderHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -63,6 +63,3 @@ void   EncoderHandler::_damaged  ()
 //  No Entry data
 unsigned     EncoderHandler::nentries() const { return 0; }
 const Entry* EncoderHandler::entry   (unsigned) const { return 0; }
-void         EncoderHandler::reset   () 
-{
-}

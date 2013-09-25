@@ -11,10 +11,10 @@
 using namespace Ami;
 
 FEEGasDetEnergyReader::FEEGasDetEnergyReader(FeatureCache& f)  : 
-  EventHandler(Pds::BldInfo(0,Pds::BldInfo::FEEGasDetEnergy),
-	       Pds::TypeId::Id_FEEGasDetEnergy,
-	       Pds::TypeId::Id_FEEGasDetEnergy),
-  _cache(f),
+  EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::FEEGasDetEnergy),
+		Pds::TypeId::Id_FEEGasDetEnergy,
+		Pds::TypeId::Id_FEEGasDetEnergy,
+		f),
   _index(-1)
 {
 }
@@ -26,10 +26,10 @@ FEEGasDetEnergyReader::~FEEGasDetEnergyReader()
 void   FEEGasDetEnergyReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   FEEGasDetEnergyReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
-  _index = _cache.add("BLD:FEE:GDET1:PMT1:ENRC");
-  _cache.add("BLD:FEE:GDET1:PMT2:ENRC");
-  _cache.add("BLD:FEE:GDET2:PMT1:ENRC");
-  _cache.add("BLD:FEE:GDET2:PMT2:ENRC");
+  _index = _add_to_cache("BLD:FEE:GDET1:PMT1:ENRC");
+  _add_to_cache("BLD:FEE:GDET1:PMT2:ENRC");
+  _add_to_cache("BLD:FEE:GDET2:PMT1:ENRC");
+  _add_to_cache("BLD:FEE:GDET2:PMT2:ENRC");
 }
 
 void   FEEGasDetEnergyReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -59,5 +59,9 @@ void   FEEGasDetEnergyReader::_damaged  ()
 //  No Entry data
 unsigned     FEEGasDetEnergyReader::nentries() const { return 0; }
 const Entry* FEEGasDetEnergyReader::entry   (unsigned) const { return 0; }
-void         FEEGasDetEnergyReader::reset   () { _index=-1; }
+void         FEEGasDetEnergyReader::reset   () 
+{
+  EventHandlerF::reset();
+  _index=-1; 
+}
 void         FEEGasDetEnergyReader::rename  (const char* s) {}

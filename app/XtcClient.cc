@@ -55,6 +55,8 @@
 
 static void Destroy(Xtc*) {}
 
+static Ami::XtcClient* _instance=0;
+
 //#define DBUG
 
 using namespace Ami;
@@ -62,7 +64,7 @@ using namespace Ami;
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
                      Factory&      factory,
                      EventFilter&  filter,
-                     bool          sync) :
+		     bool          sync) :
   _cache   (cache),
   _factory (factory),
   _filter  (filter),
@@ -76,6 +78,7 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _runno_index    (-1),
   _name_service   (0)
 {
+  _instance = this;
 }
 
 XtcClient::~XtcClient()
@@ -448,3 +451,14 @@ int XtcClient::process(Pds::Xtc* xtc)
 }
 
 void XtcClient::discover_wait() { reinterpret_cast<AnalysisFactory&>(_factory).discover_wait(); }
+
+XtcClient* XtcClient::instance() { return _instance; }
+
+std::list<const EventHandler*> XtcClient::handlers() const
+{
+  std::list<const EventHandler*> v;
+  for(std::list<EventHandler*>::const_iterator it=_handlers.begin();
+      it!=_handlers.end(); it++)
+    v.push_back(*it);
+  return v;
+}

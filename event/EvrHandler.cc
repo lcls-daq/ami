@@ -12,10 +12,10 @@
 using namespace Ami;
 
 EvrHandler::EvrHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_EvrData,
-	       Pds::TypeId::Id_EvrConfig),
-  _cache(f)
+  EventHandlerF(info,
+		Pds::TypeId::Id_EvrData,
+		Pds::TypeId::Id_EvrConfig,
+		f)
 {
   reset();
 }
@@ -30,7 +30,7 @@ void   EvrHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::
 #define REGISTER_CODE(evtcode) {		\
     unsigned code = evtcode;			\
     sprintf(iptr,"Evt%d",code);			\
-    int index = _cache.add(buffer);		\
+    int index = _add_to_cache(buffer);		\
     _cache.cache(index, 0);			\
     _index[code] = index;			\
   }
@@ -104,7 +104,11 @@ void   EvrHandler::_damaged  ()
 //  No Entry data
 unsigned     EvrHandler::nentries() const { return 0; }
 const Entry* EvrHandler::entry   (unsigned) const { return 0; }
-void         EvrHandler::reset   () { memset(_index, -1, sizeof(_index)); }
+void         EvrHandler::reset   () 
+{
+  EventHandlerF::reset();
+  memset(_index, -1, sizeof(_index)); 
+}
 void         EvrHandler::rename  (const char* s)
 {
 }

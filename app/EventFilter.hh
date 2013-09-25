@@ -14,6 +14,9 @@ namespace Ami {
   class ConfigureRequest;
   class FeatureCache;
 
+  class Analysis;
+  class EventHandler;
+
   class EventFilter : private Pds::XtcIterator {
   public:
     EventFilter(std::list<UserModule*>& filters,
@@ -21,7 +24,9 @@ namespace Ami {
     ~EventFilter();
   public:
     void reset       ();
-    void enable      (const ConfigureRequest&);
+    void enable      (const ConfigureRequest&,
+		      const std::list<const Analysis*>&,
+		      const std::list<const EventHandler*>&);
     void configure   (Dgram*);
     bool accept      (Dgram*);
     bool accept      ();

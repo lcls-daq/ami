@@ -1,7 +1,7 @@
 #ifndef Ami_IpimbReader_hh
 #define Ami_IpimbReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class IpimbHandler : public EventHandler {
+  class IpimbHandler : public EventHandlerF {
   public:
     IpimbHandler(const DetInfo&, FeatureCache&);
     ~IpimbHandler();
@@ -22,11 +22,9 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     bool         used    () const { return true; }
     void         rename  (const char*);
   private:
-    FeatureCache&        _cache;
     enum { NChannels=4 };
     int                  _index[NChannels*2];
   };

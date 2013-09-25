@@ -35,6 +35,9 @@ namespace Ami {
     void remove(EventHandler*);
     void processDgram(Pds::Dgram*);
     void discover_wait();
+  public:
+    static XtcClient* instance();
+    std::list<const EventHandler*> handlers() const;
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;

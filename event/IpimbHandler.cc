@@ -12,10 +12,10 @@
 using namespace Ami;
 
 IpimbHandler::IpimbHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_IpimbData,
-	       Pds::TypeId::Id_IpimbConfig),
-  _cache (f)
+  EventHandlerF(info,
+		Pds::TypeId::Id_IpimbData,
+		Pds::TypeId::Id_IpimbConfig,
+		f)
 {
 }
 
@@ -35,12 +35,12 @@ void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::
     iptr = buffer+strlen(buffer);
     for(unsigned i=0; i<NChannels; i++) {
       sprintf(iptr,":DATA[%d]",i);
-      _index[i] = _cache.add(buffer);
+      _index[i] = _add_to_cache(buffer);
     }
     if (id.version()>1) {
       for(unsigned i=0; i<NChannels; i++) {
         sprintf(iptr,":PS:DATA[%d]",i);
-        _index[i+NChannels] = _cache.add(buffer);
+        _index[i+NChannels] = _add_to_cache(buffer);
       }
     }
     else
@@ -54,12 +54,12 @@ void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::
     iptr = buffer+strlen(buffer);
     for(unsigned i=0; i<NChannels; i++) {
       sprintf(iptr,"-Ch%d",i);
-      _index[i] = _cache.add(buffer);
+      _index[i] = _add_to_cache(buffer);
     }
     if (id.version()>1) {
       for(unsigned i=0; i<NChannels; i++) {
         sprintf(iptr,"-Ch%d:PS",i);
-        _index[i+NChannels] = _cache.add(buffer);
+        _index[i+NChannels] = _add_to_cache(buffer);
       }
     }
     else
@@ -105,9 +105,6 @@ void   IpimbHandler::_damaged  ()
 //  No Entry data
 unsigned     IpimbHandler::nentries() const { return 0; }
 const Entry* IpimbHandler::entry   (unsigned) const { return 0; }
-void         IpimbHandler::reset   () 
-{
-}
 void         IpimbHandler::rename  (const char* s)
 {
   char buffer[64];
@@ -119,12 +116,12 @@ void         IpimbHandler::rename  (const char* s)
     iptr = buffer+strlen(buffer);
     for(unsigned i=0; i<NChannels; i++) {
       sprintf(iptr,":DATA[%d]",i);
-      _cache.rename(_index[i],buffer);
+      _rename_cache(_index[i],buffer);
     }
     if (_index[NChannels] != _index[0]) {
       for(unsigned i=0; i<NChannels; i++) {
         sprintf(iptr,":PS:DATA[%d]",i);
-	_cache.rename(_index[i+NChannels],buffer);
+	_rename_cache(_index[i+NChannels],buffer);
       }
     }
     break;
@@ -134,12 +131,12 @@ void         IpimbHandler::rename  (const char* s)
     iptr = buffer+strlen(buffer);
     for(unsigned i=0; i<NChannels; i++) {
       sprintf(iptr,"-Ch%d",i);
-      _cache.rename(_index[i],buffer);
+      _rename_cache(_index[i],buffer);
     }
     if (_index[NChannels] != _index[0]) {
       for(unsigned i=0; i<NChannels; i++) {
         sprintf(iptr,"-Ch%d:PS",i);
-	_cache.rename(_index[i+NChannels],buffer);
+	_rename_cache(_index[i+NChannels],buffer);
       }
     }
     break;

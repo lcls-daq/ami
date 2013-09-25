@@ -1,7 +1,7 @@
 #ifndef Ami_EpicsXtcReader_hh
 #define Ami_EpicsXtcReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include "ami/data/FeatureCache.hh"
 
@@ -11,7 +11,7 @@ namespace Pds {
 
 namespace Ami {
 
-  class EpicsXtcReader : public EventHandler {
+  class EpicsXtcReader : public EventHandlerF {
   public:
     EpicsXtcReader(const Pds::Src&, FeatureCache&);
     ~EpicsXtcReader();
@@ -27,7 +27,6 @@ namespace Ami {
     bool         used    () const { return true; }
     void         rename  (const char*);
   private:
-    FeatureCache& _cache;
     enum { MaxPvs=1024 };
     int           _index[MaxPvs];
   };
