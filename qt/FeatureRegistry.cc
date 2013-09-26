@@ -18,7 +18,7 @@ FeatureRegistry& FeatureRegistry::instance(Ami::ScalarSet t)
 
 void               FeatureRegistry::insert(const std::vector<std::string>& rx)
 {
-  printf("FeatureRegistry insert %d entries\n",rx.size());
+  printf("FeatureRegistry insert %zd entries\n",rx.size());
 
   _sem.take();
   _names.clear();

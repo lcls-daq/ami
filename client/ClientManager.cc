@@ -409,7 +409,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   Message reply(0,Message::NoOp);
   int size = socket.read(&reply,sizeof(reply));
   if (size!=sizeof(reply)) {
-    printf("CM::handle_client_io read %d/%d bytes\n",size,sizeof(reply));
+    printf("CM::handle_client_io read %d/%zd bytes\n",size,sizeof(reply));
     return 0;
   }
 

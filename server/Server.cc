@@ -66,7 +66,7 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
   if (nbytes < 0)
     printf("Error in Server::reply writev writing %d bytes : %s\n",_reply.payload(),strerror(errno));
   else if (unsigned(nbytes) != _reply.payload()+sizeof(_reply)) {
-    printf("Error in Server::reply write wrote %d/%d bytes\n",
+    printf("Error in Server::reply write wrote %d/%zd bytes\n",
            nbytes, _reply.payload()+sizeof(_reply));
   }
 }
