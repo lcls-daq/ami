@@ -15,6 +15,7 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 //#define DBUG
 
@@ -42,16 +43,28 @@ Client::Client(const std::vector<ClientArgs>& args) :
 {
   _output[args.size()-1] = 0;
   
+  _described = false;
   sem_init(&_initial_sem, 0, 0);
-  sem_init(&_payload_sem, 0, 0);
+  pthread_mutex_init(&_payload_mutex,NULL);
+  pthread_cond_init (&_payload_cond_avail  ,NULL);
+  pthread_cond_init (&_payload_cond_unavail,NULL);
+  _payload_avail = false;
 }
 
 Client::~Client() 
 {
-  sem_destroy(&_initial_sem);
-  sem_destroy(&_payload_sem);
+  pthread_mutex_lock  (&_payload_mutex);
+  _payload_avail=true;
+  pthread_cond_signal(&_payload_cond_avail);
+  pthread_mutex_unlock(&_payload_mutex);
+
+  pthread_mutex_lock  (&_payload_mutex);
+  _payload_avail=false;
+  pthread_cond_signal(&_payload_cond_unavail);
+  pthread_mutex_unlock(&_payload_mutex);
 
   if (_manager) delete _manager;
+
   delete[] _iovload;
   delete[] _description;
   delete[] _request;
@@ -60,6 +73,11 @@ Client::~Client()
     delete _args[i].filter;
     delete _args[i].op;
   }
+
+  sem_destroy(&_initial_sem);
+  pthread_mutex_destroy(&_payload_mutex);
+  pthread_cond_destroy (&_payload_cond_avail  );
+  pthread_cond_destroy (&_payload_cond_unavail);
 }
 
 void Client::connected()
@@ -71,14 +89,12 @@ void Client::connected()
 
 void Client::discovered(const DiscoveryRx& rx)
 {
+  _described = false;
+
   //
   //  Find the appropriate source entry
   //    and filter inputs
   //
-#ifdef DBUG
-  printf("Client Discovered cds(%d)\n", e->signature());
-#endif
-
   for(unsigned i=0; i<_args.size(); i++) {
     const Pds::DetInfo& _info    = _args[i].info;
     unsigned            _channel = _args[i].channel;
@@ -109,7 +125,7 @@ void Client::discovered(const DiscoveryRx& rx)
       }
     }
 #ifdef DBUG
-    printf("Client Discovered (%d)\n",_input[i]);
+    printf("[%p] Client Discovered (%d)\n",this,_input[i]);
 #endif
   }
   
@@ -130,7 +146,7 @@ int  Client::configure       (iovec* iov)
                                                     Ami::PostAnalysis);
     p += r.size();
 #ifdef DBUG
-    printf("output[%d] = %d\n",i,_output[i]);
+    printf("[%p] output[%d] = %d\n",this,i,_output[i]);
 #endif
   }
 
@@ -166,7 +182,7 @@ int  Client::read_description(Socket& socket,int len)
   }
 
 #ifdef DBUG
-  printf("read_description payload size %d\n",size);
+  printf("[%p] read_description payload size %d\n",this,size);
 #endif
 
   _cds.reset();
@@ -190,7 +206,7 @@ int  Client::read_description(Socket& socket,int len)
     payload += desc->size();
 
 #ifdef DBUG
-    printf("Received desc %s signature %d\n",desc->name(),desc->signature());
+    printf("[%p] Received desc %s signature %d\n",this,desc->name(),desc->signature());
 #endif
   }
 
@@ -202,11 +218,29 @@ int  Client::read_description(Socket& socket,int len)
 
   sem_post(&_initial_sem);
 
+  _described = true;
+#if 0
+  pthread_cond_signal(&_described_cond);
+#endif
+
   return size;
 }
 
 int  Client::read_payload     (Socket& socket,int)
 {
+  timespec tmo;
+  clock_gettime(CLOCK_REALTIME, &tmo);
+  tmo.tv_sec += 2;
+  int result=1;
+  pthread_mutex_lock(&_payload_mutex);
+  while(1) {
+    if (!_payload_avail) { result=0; break; }
+    if (ETIMEDOUT==pthread_cond_timedwait(&_payload_cond_unavail, &_payload_mutex, &tmo)) break;
+  }
+  pthread_mutex_unlock(&_payload_mutex);
+#ifdef DBUG
+  printf("Client::read_payload result %d\n",result);
+#endif
   return socket.readv(_iovload,_cds.totalentries());
 }
 
@@ -214,7 +248,10 @@ bool Client::svc             () const { return true; }
 
 void Client::process         () 
 {
-  sem_post(&_payload_sem);
+  pthread_mutex_lock  (&_payload_mutex);
+  _payload_avail=true;
+  pthread_cond_signal(&_payload_cond_avail);
+  pthread_mutex_unlock(&_payload_mutex);
 }
 
 void Client::managed(ClientManager& mgr)
@@ -259,22 +296,37 @@ int  Client::initialize(ClientManager& mgr)
 
 int Client::request_payload()
 {
+  _payload_avail=false;
   _manager->request_payload();
+  return pget();
+}
 
+int Client::pget()
+{
   timespec tmo;
   clock_gettime(CLOCK_REALTIME, &tmo);
-#ifdef DBUG
-  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
   tmo.tv_sec+=2;
-  int result = sem_timedwait(&_payload_sem, &tmo);
 
-  clock_gettime(CLOCK_REALTIME, &tmo);
-  printf("%d.%09d\n",tmo.tv_sec,tmo.tv_nsec);
-#else
-  tmo.tv_sec+=2;
-  int result = sem_timedwait(&_payload_sem, &tmo);
+  int result=1;
+  pthread_mutex_lock(&_payload_mutex);
+  while(1) {
+    if (_payload_avail) { result=0; break; }
+    if (ETIMEDOUT==pthread_cond_timedwait(&_payload_cond_avail, &_payload_mutex, &tmo)) break;
+  }
+  pthread_mutex_unlock(&_payload_mutex);
+
+#ifdef DBUG
+  printf("Client::pget result %d\n",result);
 #endif
   return result;
+}
+
+void Client::pnext()
+{
+  pthread_mutex_lock  (&_payload_mutex);
+  _payload_avail=false;
+  pthread_cond_signal(&_payload_cond_unavail);
+  pthread_mutex_unlock(&_payload_mutex);
 }
  
 std::vector<const Ami::Entry*> Client::payload() const 
@@ -287,6 +339,27 @@ std::vector<const Ami::Entry*> Client::payload() const
 
 void Client::reset()
 {
+  _described = false;
   if (_manager)
     _manager->configure();
+}
+
+void Client::pstart()
+{
+  pthread_mutex_lock  (&_payload_mutex);
+  _payload_avail=false;
+#if 0
+  while(1) {
+    if (_described) break;
+    if (pthread_cond_wait(&_described_cond,&_payload_mutex))
+      perror("pstart cond_wait");
+  }
+#endif
+  pthread_mutex_unlock(&_payload_mutex);
+  _manager->request_payload(true);
+}
+
+void Client::pstop()
+{
+  _manager->request_stop();
 }

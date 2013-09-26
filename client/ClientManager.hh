@@ -56,9 +56,12 @@ namespace Ami {
     ///  Request description of analyses output data shapes
     void request_description();
     ///  Request update of output data payload
-    void request_payload    ();
+    ///    Argument is true for "push-mode" / continuous updates
+    void request_payload    (bool=false);
     ///  Request update of a sparsified set of output data payload
     void request_payload    (const EntryList& request);
+    ///  Request termination of continuous updates
+    void request_stop       ();
   public:
     ///  Return id of connection assigned by ConnectionManager
     virtual unsigned connection_id() const;

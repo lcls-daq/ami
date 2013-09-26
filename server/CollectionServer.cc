@@ -63,6 +63,7 @@ int CollectionServer::processIo()
   case Message::DiscoverReq:
   case Message::DescriptionReq:
   case Message::PayloadReq:
+  case Message::NoOp:
     _client_manager->forward(request);
   default:
     break;

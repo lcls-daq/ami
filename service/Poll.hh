@@ -5,6 +5,7 @@
 #include "ami/service/Semaphore.hh"
 
 #include <poll.h>
+#include <pthread.h>
 #include <string>
 using std::string;
 
@@ -57,10 +58,12 @@ namespace Ami {
     int        _maxfds;
     Fd**       _ofd;
     pollfd*    _pfd;
-    Semaphore  _sem;
     Semaphore  _msem;
     char*      _buffer;
-    bool       _shutdown;
+    pthread_mutex_t _shutdown_mutex;
+    pthread_cond_t  _shutdown_cond;
+    bool            _shutdown_compl;
+    bool            _shutdown;
   };
 
 };

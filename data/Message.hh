@@ -24,6 +24,7 @@ namespace Ami {
 	      PayloadReq, 
 	      Payload,
 	      PayloadFragment};
+    enum { Push=0x40000000 };
 
     Message(unsigned id, Type type, unsigned payload=0, unsigned offset=0);
     Message(unsigned id, Type type, const EntryList&);

@@ -6,6 +6,7 @@
 #include "ami/service/Socket.hh"
 #include "ami/server/Factory.hh"
 #include "ami/data/Discovery.hh"
+#include "ami/service/EventFd.hh"
 
 #include <errno.h>
 #include <stdio.h>
@@ -26,16 +27,24 @@ static const char* _cds_name(Socket& s)
 }
 
 AnalysisServer::AnalysisServer(Socket*         socket,
-                               Factory&        factory) :
-  Server(socket),
-  _cds   (_cds_name(*socket)),
-  _factory(factory)
+                               Factory&        factory,
+                               EventFd*&       event) :
+  Server  (socket),
+  _cds    (_cds_name(*socket)),
+  _factory(factory),
+  _event   (event),
+  _repeat (0,Message::NoOp)
 {
+#ifdef DBUG
+  printf("AS ctor event %p\n",event);
+#endif
 }
 
 AnalysisServer::~AnalysisServer()
 {
   _factory.remove(fd());
+  if (_event)
+    _event->remove(*this);
 }
 
 int AnalysisServer::processIo()
@@ -47,6 +56,15 @@ int AnalysisServer::processIo()
     printf("S processIo read result %d (skt %d): %s\n",
 	   result,_socket->socket(),strerror(errno));
     return 0;
+  }
+  
+  _repeat = request;
+  if (_event) {
+    _event->remove(*this);
+    if (request.id()==Message::Push) {
+      _event->insert(*this);
+      return 1;
+    }
   }
 
 #ifdef DBUG
@@ -98,7 +116,8 @@ int AnalysisServer::processIo()
     { int n = _cds.description()+1;
       _adjust(n);
       _cds.description(_iov+1);
-      reply(request.id(), Message::Description, n); }
+      reply(request.id(), Message::Description, n); 
+    }
     break;
   case Message::PayloadReq:
     if (_described) {
@@ -144,3 +163,17 @@ int AnalysisServer::processIo(const char* msg,int size)
   return 1;
 }
 
+void AnalysisServer::routine()
+{
+#ifdef DBUG
+  printf("AS routine %d:%d %x\n", _repeat.id(), _repeat.type(), _repeat.payload());
+#endif
+
+  if (_repeat.id() == Message::Push) {
+    int n = _cds.payload()+1;
+    _adjust(n);
+    n = _cds.payload(_iov+1, _repeat.list())+1;
+    reply(_repeat.id(), Message::Payload, n); 
+    //      _cds.invalidate_payload();
+  }
+}

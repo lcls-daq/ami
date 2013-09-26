@@ -8,6 +8,7 @@
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <semaphore.h>
+#include <pthread.h>
 #include <vector>
 
 namespace Ami {
@@ -36,7 +37,12 @@ namespace Ami {
       int  request_payload ();
       std::vector<const Entry*> payload () const;
       void reset           ();
-    public: // AbsClient interface
+    public:      //  Push mode semantics
+      void pstart();
+      int  pget  ();
+      void pnext ();
+      void pstop ();
+    public:      // AbsClient interface
       void managed         (ClientManager&);
       void connected       ();
       int  configure       (iovec*);
@@ -59,8 +65,15 @@ namespace Ami {
       unsigned        _niovload;
       iovec*          _iovload;
 
+      bool            _described;
+      pthread_cond_t  _described_cond;
+
       sem_t           _initial_sem;
-      sem_t           _payload_sem;
+
+      pthread_mutex_t _payload_mutex;
+      pthread_cond_t  _payload_cond_avail;
+      pthread_cond_t  _payload_cond_unavail;
+      bool            _payload_avail;
     };
   };
 };

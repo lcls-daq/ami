@@ -206,9 +206,10 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
   return 0;
 }
 
-static PyObject* _getentrylist(Ami::Python::Client* client)
+static PyObject* _getentrylist(Ami::Python::Client* client, bool push)
 {
-  int sts = client->request_payload();
+  PyObject* result = NULL;
+  int sts = push ? client->pget() : client->request_payload();
   if (sts==0) {
     std::vector<const Ami::Entry*> entries = client->payload();
     PyObject* o_list = PyList_New(entries.size());
@@ -217,7 +218,8 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
       if (entry == 0) {
 	Py_DECREF(o_list);
 	PyErr_SetString(PyExc_RuntimeError,"Failed to retrieve data.  Is variable in DAQ readout?");
-	return NULL;
+        o_list = NULL;
+        break;
       }
       switch(entry->desc().type()) {
       case Ami::DescEntry::Scalar:
@@ -354,10 +356,14 @@ static PyObject* _getentrylist(Ami::Python::Client* client)
 	break;
       }
     }
-    return o_list;
+    result = o_list;
   }
-  PyErr_SetString(PyExc_RuntimeError,"get timedout");
-  return NULL;
+  else
+    PyErr_SetString(PyExc_RuntimeError,"get timedout");
+
+  if (push) client->pnext();
+
+  return result;
 }
 
 
@@ -417,7 +423,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
 static PyObject* amientry_get(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
-  PyObject* o = _getentrylist(e->client);
+  PyObject* o = _getentrylist(e->client,false);
   if (o && PyList_Check(o)) {
     PyObject* p = PyList_GetItem(o,0);
     Py_INCREF(p);
@@ -435,12 +441,45 @@ static PyObject* amientry_clear(PyObject* self, PyObject* args)
   return Py_None;
 }
 
+static PyObject* amientry_pget(PyObject* self, PyObject* args)
+{
+  amientry* e = reinterpret_cast<amientry*>(self);
+  PyObject* o = _getentrylist(e->client,true);
+  if (o && PyList_Check(o)) {
+    PyObject* p = PyList_GetItem(o,0);
+    Py_INCREF(p);
+    Py_DECREF(o);
+    return p;
+  }
+  return NULL;
+}
+
+static PyObject* amientry_pstart(PyObject* self, PyObject* args)
+{
+  amientry* e = reinterpret_cast<amientry*>(self);
+  e->client->pstart();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject* amientry_pstop(PyObject* self, PyObject* args)
+{
+  amientry* e = reinterpret_cast<amientry*>(self);
+  e->client->pstop();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+
 //
 //  Register amientry methods
 //
 static PyMethodDef amientry_methods[] = {
   {"get"   , amientry_get   , METH_VARARGS, "Return the accumulated data"},
   {"clear" , amientry_clear , METH_VARARGS, "Clear the accumulated data"},
+  {"pstart", amientry_pstart, METH_VARARGS, "Start continuous mode accumulation"},
+  {"pstop" , amientry_pstop , METH_VARARGS, "Stop continuous mode"},
+  {"pget"  , amientry_pget  , METH_VARARGS, "Return continuous mode data"},
   {NULL},
 };
 
@@ -563,7 +602,7 @@ static int amientrylist_init(amientrylist* self, PyObject* argstuple, PyObject* 
 static PyObject* amientrylist_get(PyObject* self, PyObject* args)
 {
   amientrylist* e = reinterpret_cast<amientrylist*>(self);
-  return _getentrylist(e->client);
+  return _getentrylist(e->client,false);
 }
 
 static PyObject* amientrylist_clear(PyObject* self, PyObject* args)

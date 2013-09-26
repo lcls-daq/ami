@@ -244,9 +244,23 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   }
 }
 
-void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) {
-  const DetInfo& info = reinterpret_cast<const DetInfo&>(xtc->src);
-  const char* infoName = Pds::DetInfo::name(info);
+void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) 
+{
+  const char* infoName;
+  switch(xtc->src.level()) {
+  case Pds::Level::Source:
+    infoName = Pds::DetInfo::name(static_cast<const DetInfo&>(xtc->src));
+    break;
+  case Pds::Level::Reporter:
+    infoName = Pds::DetInfo::name(static_cast<const DetInfo&>(xtc->src));
+    break;
+  default:
+    printf("Default name lookup failed for src %08x.%08x!\n", 
+           xtc->src.phy(), xtc->src.log());
+    infoName = 0;
+    break;
+  }
+
   const char* typeName = Pds::TypeId::name(xtc->contains.id());
 
   if (_name_service) {

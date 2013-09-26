@@ -11,6 +11,7 @@
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalarRange.hh"
 #include "ami/data/EntryScalarDRange.hh"
+#include "ami/data/Message.hh"
 #include "ami/service/BSocket.hh"
 
 #include <sys/types.h>
@@ -216,11 +217,13 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
   //  _checkState("payl");
   int nbytes = 0;
   if (_state != Described) {
-    //    printf("[%p] Agg read_payload state %s\n", this, State[_state]);
+#ifdef DBUG
+    printf("[%p] Agg read_payload state %s\n", this, State[_state]);
+#endif
     return nbytes;
   }
 
-  if ( _n == 1 ) { 
+  if ( _n == 1 || id == Message::Push) { 
     nbytes =_client.read_payload(s,sz);
     _remaining = 0;
   }

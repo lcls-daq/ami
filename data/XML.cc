@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+//#define DBUG
+
 using namespace Ami::XML;
 
 const int StringSize = 64;
@@ -18,7 +20,13 @@ static char buff[8*1024];
 TagIterator::TagIterator(const char*& p) :
   _p (p)
 {
+#ifdef DBUG
+  const char* s = p;
   _tag = QtPersistent::extract_tag(p);
+  printf("TagIterator %s [%p]\n",_tag.element.c_str(),s);
+#else
+  _tag = QtPersistent::extract_tag(p);
+#endif
 }
 
 bool  TagIterator::end() const
@@ -34,11 +42,32 @@ TagIterator::operator const StartTag*() const
 TagIterator& TagIterator::operator++(int)
 {
   if (!end()) {
-    std::string stop_tag = QtPersistent::extract_tag(_p).element.substr(1);
+    const char* s;
+    //  Find the stop tag
+    std::string stop_tag;
+    while(1) {
+      s = _p;
+      StartTag tag = QtPersistent::extract_tag(_p);
+      if (tag.element[0]=='/') {
+        stop_tag = tag.element.substr(1);
+        break;
+      }
+      //  Found a new start tag
+      //  Iterate through this level implicitly
+      for(TagIterator it(s); !it.end(); it++) ;
+      _p = s;
+    }
+#ifdef DBUG
+    printf("TagIterator++ [%p] %s:%s\n",
+           s,_tag.element.c_str(),stop_tag.c_str());
+#endif
     if (stop_tag != _tag.element)
       printf("Mismatch tags %s/%s\n",_tag.element.c_str(),stop_tag.c_str());
     const char* p = _p;
     _tag = QtPersistent::extract_tag(p);
+#ifdef DBUG
+    printf("TagIterator++ %s [%p]\n",_tag.element.c_str(),_p);
+#endif
     if (!end())
       _p = p;
   }

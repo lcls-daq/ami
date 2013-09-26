@@ -13,6 +13,9 @@ namespace Ami {
   class Server;
   class Semaphore;
   class Socket;
+  class Message;
+  class Routine;
+  class EventFd;
 
   class ServerManager : public Poll,
 			public Fd {
@@ -21,7 +24,7 @@ namespace Ami {
 		   unsigned serverGroup);
     virtual ~ServerManager();
   public:
-    virtual Server* new_server(Socket*, bool post_service) = 0;
+    virtual Server* new_server(Socket*, const Message&) = 0;
   public:
     void serve     (Semaphore* =0);
     void dont_serve();
@@ -32,6 +35,8 @@ namespace Ami {
     void register_key(unsigned, int);
     void discover_key(unsigned);
   public:
+    void manage    (EventFd&);
+    void manage    (Fd&);
     void unmanage  (Fd&);
   private:   // Poll interface
     virtual int processTmo();
@@ -50,6 +55,8 @@ namespace Ami {
     typedef std::list<Fd*> FdList;
     typedef std::vector< FdList > KeyList;
     KeyList            _key_servers;
+  protected:
+    EventFd*           _event;
   };
 };
 

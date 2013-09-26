@@ -5,6 +5,10 @@
 #include "ami/app/XtcClient.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
+#include "pdsdata/xtc/Dgram.hh"
+#include "pdsdata/xtc/TransitionId.hh"
+
+//#define DBUG
 
 namespace Ami {
   class ShmTask : public Routine {
@@ -46,7 +50,18 @@ int XtcShmClient::processIo()
   Dgram* dg;
   ::read(_pipefd[0],&dg,sizeof(dg));
   _client.processDgram(dg);
+#ifdef DBUG
+  printf("XSC: processIo %s %d.%09d\n",
+         TransitionId::name(dg->seq.service()),
+         dg->seq.clock().seconds(),
+         dg->seq.clock().nanoseconds());
+#endif
+  bool event = dg->seq.service()==TransitionId::L1Accept;
   _sem.give();
+  if (event)
+    for(std::list<Routine*>::iterator it=_list.begin(); it!=_list.end(); it++)
+      (*it)->routine();
+
   return 1;
 }
 

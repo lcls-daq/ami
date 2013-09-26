@@ -2,6 +2,7 @@
 
 #include "ami/server/CollectionServer.hh"
 #include "ami/service/ConnectionManager.hh"
+#include "ami/data/Message.hh"
 
 using namespace Ami;
 
@@ -22,11 +23,11 @@ CollectionServerManager::~CollectionServerManager()
   delete _connection_manager;
 }
 
-Server* CollectionServerManager::new_server(Socket* s, bool post_service)
+Server* CollectionServerManager::new_server(Socket* s, const Message& r)
 {
   return new CollectionServer(_server_interface,
                               _server_group,
                               *_connection_manager,
                               s,
-                              post_service);
+                              r.post_service());
 }

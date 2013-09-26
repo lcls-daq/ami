@@ -6,6 +6,13 @@ tgtsrcs_ami := ami.cc AmiApp.cc AmiApp.hh
 tgtsrcs_ami_proxy := ami_proxy.cc
 tgtsrcs_ami_collection := ami_collection.cc
 tgtsrcs_test := test.cc
+tgtlibs_test := pdsalg/pdsalg pdsdata/xtcdata
+tgtlibs_test += pdsdata/appdata pdsdata/psddl_pdsdata
+tgtlibs_test += pdsdata/compressdata
+tgtlibs_test += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
+tgtlibs_test += $(qtlibdir)
+tgtincs_test := $(qtincdir) pdsdata/include
+
 tgtsrcs_tcptest := tcptest.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 

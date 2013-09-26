@@ -8,67 +8,158 @@
 #include "ami/data/Analysis.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
+#include "ami/data/FilterFactory.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/service/BuildStamp.hh"
 
+#include <vector>
+#include <string>
+
 #define DBUG
+
+static const Pds::TypeId NoType(Pds::TypeId::Any,0);
+static const unsigned MaxConfigSize = 64*1024;
 
 using namespace Ami;
 using Ami::XML::QtPersistent;
 
-typedef std::list<const Analysis*>     AList;
-typedef std::list<const EventHandler*> HList;
+static void _insert_entry(char*& p, const Entry* e);
+static void _insert_handler(char*& p, const EventHandler* h);
+static void _insert_analysis(char*& p, const Analysis* a, bool discovery);
+static void _insert_filter(char*& p, const AbsFilter* f);
 
 
-static void _insert_entry(char*& p, const Entry* e)
+
+FilterImport::FilterImport(const std::string& stream) :
+  _stream (stream),
+  _filter (0)
 {
-  XML_insert(p, "int", "signature", QtPersistent::insert(p, e->desc().signature()));
-  XML_insert(p, "QString", "title", QtPersistent::insert(p, QString(e->desc().name())));
+  FilterFactory fact;
+  const char* p = _stream.c_str();
+  XML_iterate_open(p,tag)
+    if (tag.name == "L3TFilter") {
+      XML_iterate_open(p,rtag)
+        if      (rtag.name == "_filter") {
+          XML_iterate_open(p,stag)
+            if      (stag.name == "_filter") {
+              const char* o = (const char*)QtPersistent::extract_op(p);
+              _filter = fact.deserialize(o);
+            }
+          XML_iterate_close(AbsFilter,stag);
+        }
+        else if (rtag.name == "_handlers")
+          ;
+        else if (rtag.name == "_analyses")
+          ;
+        else if (rtag.name == "tag")
+          ;
+        else if (rtag.name == "time")
+          ;
+      XML_iterate_close(FilterExport,rtag);
+    }
+  XML_iterate_close(FilterExport,tag);
 }
 
-static void _insert_handler(char*& p, const EventHandler* h)
+void FilterImport::parse_handlers(FilterImportCb& cb)
 {
-  XML_insert(p, "unsigned", "_log", QtPersistent::insert(p, h->info().log()));
-  XML_insert(p, "unsigned", "_phy", QtPersistent::insert(p, h->info().phy()));
+  const char* p = _stream.c_str();
+  XML_iterate_open(p,tag)
+    if (tag.name == "L3TFilter") {
+      XML_iterate_open(p,rtag)
+        if      (rtag.name == "_handlers") {
+          unsigned log,phy;
+          std::list<Pds::TypeId::Type> types;
+          std::list<int> signatures;
+          
+          XML_iterate_open(p,stag)
+            if      (stag.name == "_log")
+              log      = QtPersistent::extract_i(p);
+            else if (stag.name == "_phy")
+              phy      = QtPersistent::extract_i(p);
+            else if (stag.name == "_types")
+              types.push_back(Pds::TypeId::Type(QtPersistent::extract_i(p)));
+            else if (stag.name == "_entries") {
+              XML_iterate_open(p,qtag)
+                if (qtag.name == "signature")
+                  signatures.push_back(QtPersistent::extract_i(p));
+                else if (qtag.name == "title")
+                  ;
+              XML_iterate_close(Entry,qtag)
+            }
+          XML_iterate_close(EventHandler,stag);
 
-  unsigned n = h->nentries();
-  XML_insert(p, "unsigned", "nentries", QtPersistent::insert(p, n));
-  for(unsigned i=0; i<n; i++) {
-    XML_insert(p, "Entry", "_entries", _insert_entry(p, h->entry(i)));
-  }
+          Src src;
+          { uint32_t* d = reinterpret_cast<uint32_t*>(&src);
+            d[0] = log;
+            d[1] = phy; }
+          cb.handler (src, 
+                      types,
+                      signatures);
+        }
+        else if (rtag.name == "_analyses")
+          ;
+        else if (rtag.name == "_filter")
+          ;
+        else if (rtag.name == "tag")
+          ;
+        else if (rtag.name == "time")
+          ;
+      XML_iterate_close(FilterExport,rtag);
+    }
+  XML_iterate_close(FilterExport,tag);
 }
 
-static void _insert_analysis(char*& p, const Analysis* a, bool discovery)
+void FilterImport::parse_analyses(FilterImportCb& cb)
 {
-  char* buff = new char[8*1024];
-  XML_insert(p, "unsigned", "id"       , QtPersistent::insert(p, a->id()));
-  XML_insert(p, "unsigned", "discovery", QtPersistent::insert(p, discovery));
-  XML_insert(p, "unsigned", "input"    , QtPersistent::insert(p, a->input().desc().signature()));
-  XML_insert(p, "unsigned", "output"   , QtPersistent::insert(p, a->output().signature()));
-  XML_insert(p, "binary"  , "operator" , QtPersistent::insert(p, buff, (char*)a->op().serialize(buff)-buff));
+  const char* p = _stream.c_str();
+  XML_iterate_open(p,tag)
+    if (tag.name == "L3TFilter") {
+      XML_iterate_open(p,rtag)
+        if      (rtag.name == "_analyses") {
+          unsigned id, input, output;
+          bool     discovery;
+          void*    op;
+          
+          XML_iterate_open(p,tag)
+            if      (tag.name == "id")
+              id       = QtPersistent::extract_i(p);
+            else if (tag.name == "input")
+              input    = QtPersistent::extract_i(p);
+            else if (tag.name == "output")
+              output   = QtPersistent::extract_i(p);
+            else if (tag.name == "discovery")
+              discovery = QtPersistent::extract_b(p);
+            else if (tag.name == "operator")
+              op     = QtPersistent::extract_op(p);
+          XML_iterate_close(EventHandler,tag);
+
+          cb.analysis(id,
+                      discovery ? 
+                      ConfigureRequest::Discovery :
+                      ConfigureRequest::Analysis,
+                      input,
+                      output,
+                      op);
+        }
+        else if (rtag.name == "_handlers")
+          ;
+        else if (rtag.name == "_filter")
+          ;
+        else if (rtag.name == "tag")
+          ;
+        else if (rtag.name == "time")
+          ;
+      XML_iterate_close(FilterExport,rtag);
+    }
+  XML_iterate_close(FilterExport,tag);
 }
 
-static void _insert_filter(char*& p, const AbsFilter* f)
+void FilterImport::parse_filter (FilterImportCb& cb)
 {
-  char* buffer = new char[8*1024];
-  XML_insert(p, "binary", "_filter", QtPersistent::insert(p, buffer, (char*)f->serialize(buffer)-buffer));
-  delete[] buffer;
+  cb.filter(*_filter);
 }
 
 
-
-FilterExport::FilterExport(const char* fname)
-{
-  FILE* f = fopen(fname,"r");
-  if (f) {
-    //  Fill _sources and _analyses from XML file
-    // ...
-    fclose(f);
-  }
-  else {
-    perror("FilterExport unable to open input");
-  }
-}
 
 FilterExport::FilterExport(const AbsFilter& filter,
 			   const HList& handlers,
@@ -102,9 +193,10 @@ void FilterExport::write(const char* fname) const
 {
   FILE* f = fopen(fname,"w");
   if (f) {
-    char* buffer  = new char[32*1024];
-    char* p = buffer;
 
+    char* buffer  = new char[MaxConfigSize];
+    char* p = buffer;
+  
     XML_insert(p, "FilterExport", "L3TFilter", _writex(p));
 
     fwrite(buffer, p-buffer, 1, f);
@@ -133,7 +225,7 @@ void FilterExport::_writex(char*& p) const
 	       _insert_analysis(p,*it,_from_discovery(*it)));
   }
   
-  XML_insert(p, "AbsFilter", "filter", _insert_filter(p, _filter));
+  XML_insert(p, "AbsFilter", "_filter", _insert_filter(p, _filter));
 }
 
 void FilterExport::_find_filter_sources(const AbsFilter& filter,
@@ -230,3 +322,45 @@ bool FilterExport::_from_discovery(const Analysis* a) const
   }
   return false;
 }
+
+
+void _insert_entry(char*& p, const Entry* e)
+{
+  XML_insert(p, "int", "signature", QtPersistent::insert(p, e->desc().signature()));
+  XML_insert(p, "QString", "title", QtPersistent::insert(p, QString(e->desc().name())));
+}
+
+void _insert_handler(char*& p, const EventHandler* h)
+{
+  XML_insert(p, "unsigned", "_log", QtPersistent::insert(p, h->info().log()));
+  XML_insert(p, "unsigned", "_phy", QtPersistent::insert(p, h->info().phy()));
+  
+  const std::list<Pds::TypeId::Type>& ctypes = h->config_types();
+  for(std::list<Pds::TypeId::Type>::const_iterator it=ctypes.begin();
+      it!=ctypes.end(); it++) {
+    XML_insert(p,"unsigned", "_types", QtPersistent::insert(p, unsigned(*it)));
+  }
+
+  unsigned n = h->nentries();
+  for(unsigned i=0; i<n; i++) {
+    XML_insert(p, "Entry", "_entries", _insert_entry(p, h->entry(i)));
+  }
+}
+
+void _insert_analysis(char*& p, const Analysis* a, bool discovery)
+{
+  char* buff = new char[8*1024];
+  XML_insert(p, "unsigned", "id"       , QtPersistent::insert(p, a->id()));
+  XML_insert(p, "unsigned", "discovery", QtPersistent::insert(p, discovery));
+  XML_insert(p, "unsigned", "input"    , QtPersistent::insert(p, a->input().desc().signature()));
+  XML_insert(p, "unsigned", "output"   , QtPersistent::insert(p, a->output().signature()));
+  XML_insert(p, "binary"  , "operator" , QtPersistent::insert(p, buff, (char*)a->op().serialize(buff)-buff));
+}
+
+void _insert_filter(char*& p, const AbsFilter* f)
+{
+  char* buffer = new char[8*1024];
+  XML_insert(p, "binary", "_filter", QtPersistent::insert(p, buffer, (char*)f->serialize(buffer)-buffer));
+  delete[] buffer;
+}
+

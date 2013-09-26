@@ -11,9 +11,9 @@ NameService::NameService(const Pds::Xtc& xtc)
     case 1:
       { const Pds::Alias::ConfigV1& c = *reinterpret_cast<const Pds::Alias::ConfigV1*>(xtc.payload());
 	_alias.clear();
-	ndarray<const Pds::SrcAlias,1> a = c.srcAlias();
-	for(const Pds::SrcAlias* p = a.begin(); p!=a.end(); p++) {
-	  _alias[*p] = std::string(p->aliasName());
+	ndarray<const Pds::Alias::SrcAlias,1> a = c.srcAlias();
+	for(const Pds::Alias::SrcAlias* p = a.begin(); p!=a.end(); p++) {
+	  _alias[p->src()] = std::string(p->aliasName());
 	}
       } break;
     default:

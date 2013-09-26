@@ -14,6 +14,7 @@
 #include "ami/service/TSocket.hh"
 #include "ami/service/Exception.hh"
 #include "ami/service/Port.hh"
+#include "ami/service/EventFd.hh"
 
 #include "ami/client/VClientSocket.hh"
 
@@ -32,7 +33,8 @@ ServerManager::ServerManager(unsigned interface,
   _interface  (interface),
   _serverGroup(serverGroup),
   _socket     (0),
-  _connect_sem(0)
+  _connect_sem(0),
+  _event      (0)
 {
 }
 
@@ -117,6 +119,17 @@ void ServerManager::discover_key(unsigned key)
   }
 }
 
+void ServerManager::manage(EventFd& fd)
+{
+  _event = &fd;
+  Poll::manage(fd);
+}
+
+void ServerManager::manage(Fd& fd)
+{
+  Poll::manage(fd);
+}
+
 void ServerManager::unmanage(Fd& fd)
 {
   Server* srv = reinterpret_cast<Server*>(&fd);
@@ -125,6 +138,9 @@ void ServerManager::unmanage(Fd& fd)
     _key_servers[key].remove(srv);
 
   _servers.remove(srv);
+
+  if (static_cast<EventFd*>(&fd) == _event)
+    _event = 0;
 
   Poll::unmanage(fd);
 }
@@ -157,7 +173,7 @@ int ServerManager::processIo()
       return 1;
     }
 
-    Server* srv = new_server(s, request.post_service());
+    Server* srv = new_server(s, request);
     if (request.post_service())
       _servers.push_back(srv);
 
@@ -195,7 +211,7 @@ int ServerManager::processIo()
 	     local .address(), local .portId(),
 	     remote.address(), remote.portId());
 
-      Server* srv = new_server(s,request.post_service());
+      Server* srv = new_server(s,request);
       if (request.post_service())
         _servers.push_back(srv);
 

@@ -1,50 +1,85 @@
+#include "ami/app/FilterExport.hh"
+#include "ami/data/AbsFilter.hh"
+#include "ami/data/AbsOperator.hh"
+#include "ami/data/ConfigureRequest.hh"
+#include "pdsdata/xtc/Src.hh"
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <sstream>
+#include <string>
+#include <fstream>
 
-int main()
-{
-  iovec _iov[3];
-  _iov[0].iov_base = (void*)0x8000000; _iov[0].iov_len = 0x10;
-  _iov[1].iov_base = (void*)0x9000000; _iov[1].iov_len = 0x18000;
-  _iov[2].iov_base = (void*)0xa000000; _iov[2].iov_len = 0x80;
-  unsigned cnt = 2;
-
-  unsigned payload = 0x10 + 0x18000 + 0x80;
-  const unsigned CHUNKSIZE=0x7F00;
-  if (payload>CHUNKSIZE) {
-
-    unsigned offset  = 0;
-    unsigned remaining = payload;
-    unsigned chunk     = CHUNKSIZE;
-    iovec* iov = _iov;
-    do {
-      for(unsigned i=0; i<=cnt; i++)
-        printf(".iov[%d] %p/%x\n",i,_iov[i].iov_base,(unsigned) _iov[i].iov_len);
-
-      int r = chunk;
-      iovec* iiov = iov;
-      unsigned s=0;
-      while( r>0 )
-        r -= (s=(++iiov)->iov_len);
-      iiov->iov_len += r;
-
-      iov->iov_base = (void*)0x1000000; iov->iov_len = 0x10;
-
-      for(int i=0; i<=iiov-iov; i++)
-        printf("iov[%d] %p/%x\n",i,iov[i].iov_base,(unsigned) iov[i].iov_len);
-
-      iov        = iiov-1;
-      iiov->iov_len   = -r;
-      iiov->iov_base = (char*)iiov->iov_base+s+r;
-      offset    += chunk;
-      remaining -= chunk;
-      if (remaining < chunk) chunk = remaining;
-
-      printf("iov %p  offset %x  remaining %x  chunk %x\n",
-	     iov,offset,remaining,chunk);
-
-    } while(remaining);
+class MyCallback : public Ami::FilterImportCb {
+public:
+  MyCallback() {}
+  void handler (const Pds::Src& src, 
+                const std::list<Pds::TypeId::Type>& types,
+                const std::list<int>& signatures)
+  {
+    printf("Handler: %08x.%08x\n",src.log(),src.phy());
+    for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+        it!=types.end(); it++)
+      printf("\t%s\n",Pds::TypeId::name(*it));
+    std::list<int>::const_iterator it=signatures.begin();
+    printf("\t[%d",*it);
+    while(++it!=signatures.end())
+      printf(",%d",*it);
+    printf("]\n");
   }
+  void analysis(unsigned id, 
+                Ami::ConfigureRequest::Source src,
+                unsigned input, 
+                unsigned output,
+                void*    op) {
+    printf("Analysis: %d %s[%d] %d %d\n",
+           id, src==Ami::ConfigureRequest::Discovery ? "Discovery" : "Analysis",
+           input, output, *reinterpret_cast<uint32_t*>(op));
+  }
+  void filter  (const Ami::AbsFilter& f) {
+    printf("Filter: %d\n",f.type());
+  }
+};
+
+static void usage(const char* p)
+{
+  printf("Usage: %s -f <filename> -h\n",p);
+}
+
+int main(int argc, char* argv[])
+{
+  const char* fname = "/tmp/filterexport.sav";
+
+  int c;
+  while ((c = getopt(argc, argv, "?hf:")) != -1) {
+    switch(c) {
+    case 'f':
+      fname = optarg;
+      break;
+    case 'h':
+    case '?':
+    default:
+      usage(argv[0]);
+      return 0;
+    }
+  }
+
+  //  Read the configuration file
+  std::stringstream o;
+  std::ifstream i(fname);
+  while(i.good())
+    o << char(i.get());
+
+  o << "</Document>" << std::endl;
+  
+
+  Ami::FilterImport e(o.str());
+
+  MyCallback cb;
+  e.parse_handlers(cb);
+  e.parse_analyses(cb);
+  e.parse_filter(cb);
+
   return 0;
 }

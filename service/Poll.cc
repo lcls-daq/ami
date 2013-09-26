@@ -31,11 +31,14 @@ Poll::Poll(int timeout, const char* s) :
   _maxfds  (Step),
   _ofd     (new    Fd*[Step]),
   _pfd     (new pollfd[Step]),
-  _sem     (Semaphore::EMPTY),
   _msem    (Semaphore::EMPTY),
   _buffer  (new char[BufferSize]),
   _shutdown(false)
 {
+  pthread_mutex_init(&_shutdown_mutex,NULL);
+  pthread_cond_init (&_shutdown_cond,NULL);
+  _shutdown_compl = false;
+
   _pfd[0].fd = _loopback->socket();
   _pfd[0].events = POLLIN | POLLERR;
   _pfd[0].revents = 0;
@@ -44,6 +47,10 @@ Poll::Poll(int timeout, const char* s) :
 
 Poll::~Poll()
 {
+#ifdef DBUG
+  printf("~Poll %p\n",this);
+#endif
+
   stop();
   // assumes we are stopped
   for (unsigned short n=1; n<_nfds; n++) {
@@ -58,10 +65,18 @@ Poll::~Poll()
   delete[] _pfd;
   delete[] _buffer;
   delete _loopback;
+
+  pthread_mutex_destroy(&_shutdown_mutex);
+  pthread_cond_destroy (&_shutdown_cond );
 }
 
 void Poll::start()
 {
+  pthread_mutex_lock(&_shutdown_mutex);
+  _shutdown=false;
+  _shutdown_compl=false;
+  pthread_mutex_unlock(&_shutdown_mutex);
+
   _task->call(this);
 }
 
@@ -70,12 +85,18 @@ void Poll::stop()
   int msg=Shutdown;
   _loopback->write(&msg,sizeof(int));
 
-  //  Why does this fail/deadlock?
-  //  _sem.take();
   int timeout = _timeout;
   _timeout = 10;
-  while (!_sem.take(1000))
-    _shutdown = true;
+
+  pthread_mutex_lock(&_shutdown_mutex);
+  _shutdown=true;
+  while(1) {
+    if (_shutdown_compl) break;
+    if (pthread_cond_wait(&_shutdown_cond,&_shutdown_mutex))
+      perror("Poll::stop cond_wait failed");
+  }
+  pthread_mutex_unlock(&_shutdown_mutex);
+
   _timeout = timeout;
 }
 
@@ -278,7 +299,11 @@ int Poll::processIn(const char*, int)
 void Poll::routine()
 {
   while(poll());
-  _sem.give();
+
+  pthread_mutex_lock(&_shutdown_mutex);
+  _shutdown_compl=true;
+  pthread_cond_signal(&_shutdown_cond);
+  pthread_mutex_unlock(&_shutdown_mutex);
 }
 
 int  Poll::nfds() const 

@@ -245,18 +245,26 @@ ClientManager::~ClientManager()
 {
   _connect_mgr.remove(*this);
   disconnect();
+  delete _poll;
   delete[] _iovs;
   delete[] _buffer;
   delete[] _discovery;
-  delete _poll;
   if (_reconn ) delete _reconn ;
   if (_connect) delete _connect;
   //  delete &_client;
 }
 
-void ClientManager::request_payload()
+void ClientManager::request_payload(bool push_mode)
 {
-  request_payload(EntryList(EntryList::Full));
+  if (push_mode) {
+    EntryList req(EntryList::Full);
+    _client.request_payload(req);
+    _request = Message(Message::Push,Message::PayloadReq,req);
+    _poll->bcast_out(reinterpret_cast<const char*>(&_request),
+                       sizeof(_request));
+  }
+  else
+    request_payload(EntryList(EntryList::Full));
 }
 
 void ClientManager::request_payload(const EntryList& req)
@@ -267,6 +275,13 @@ void ClientManager::request_payload(const EntryList& req)
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
   }
+}
+
+void ClientManager::request_stop()
+{
+  _request = Message(0,Message::NoOp);
+  _poll->bcast_out(reinterpret_cast<const char*>(&_request),
+                   sizeof(_request));
 }
 
 //
@@ -449,6 +464,10 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   }
 
   if (size < int(reply.payload())) {
+#ifdef DBUG
+    printf("CM handle_client_io flush %d:%d [%x/%x]\n",
+           reply.id(), reply.type(), size, reply.payload());
+#endif
     switch (reply.type()) {
     case Message::Discover: 
     case Message::Description: 
@@ -471,8 +490,8 @@ void ClientManager::forward(const Message& request)
   _poll->bcast_out(reinterpret_cast<const char*>(&request),
                    sizeof(request));
 #ifdef DBUG
-//   printf("Forward %d:%d %x to %d clients\n",
-//          request.id(), request.type(), 0,_poll->nfds());
+  printf("Forward %d:%d %x to %d clients\n",
+         request.id(), request.type(), 0,_poll->nfds());
 #endif
 }
 
@@ -497,9 +516,9 @@ void ClientManager::forward(const Message& request,
     printf("CM forward failed to read payload\n");
   }
 #ifdef DBUG
-//   printf("Forward %d:%d %x to %d clients\n",
-//          request.id(), request.type(),
-//          len,_poll->nfds());
+  printf("Forward %d:%d %x to %d clients\n",
+         request.id(), request.type(),
+         len,_poll->nfds());
 #endif
 
   delete[] p;

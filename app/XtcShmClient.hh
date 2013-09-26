@@ -1,7 +1,7 @@
 #ifndef Ami_XtcShmClient_hh
 #define Ami_XtcShmClient_hh
 
-#include "ami/service/Fd.hh"
+#include "ami/service/EventFd.hh"
 #include "pdsdata/app/XtcMonitorClient.hh"
 
 #include "ami/app/XtcClient.hh"
@@ -12,7 +12,7 @@ namespace Ami {
   class Task;
 
   class XtcShmClient : public XtcMonitorClient,
-		       public Fd {
+		       public EventFd {
   public:
     XtcShmClient(XtcClient& client, char* partitionTag, int index=0);
     ~XtcShmClient() {};
