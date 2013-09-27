@@ -252,7 +252,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
     infoName = Pds::DetInfo::name(static_cast<const DetInfo&>(xtc->src));
     break;
   case Pds::Level::Reporter:
-    infoName = Pds::DetInfo::name(static_cast<const DetInfo&>(xtc->src));
+    infoName = Pds::BldInfo::name(static_cast<const BldInfo&>(xtc->src));
     break;
   default:
     printf("Default name lookup failed for src %08x.%08x!\n", 
