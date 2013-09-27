@@ -58,6 +58,8 @@ namespace Ami {
     ///  Used for generating Filter module
     std::list<std::string> features() const;
     void reset();
+    ///  Event data needs to be parsed
+    virtual bool  used() const;
   protected:
     int  _add_to_cache(const char*);
     void _rename_cache(int index,const char*);

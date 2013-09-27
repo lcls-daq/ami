@@ -63,3 +63,4 @@ void EventHandlerF::reset()
   _features.clear();
 }
 
+bool EventHandlerF::used() const { return true; }

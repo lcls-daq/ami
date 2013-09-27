@@ -330,6 +330,10 @@ int XtcClient::process(Pds::Xtc* xtc)
           for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
               it != types.end(); it++) {
             if (*it == type) {
+#ifdef DBUG
+              printf("Src %08x.%08x  Type %08x handled by %p\n",
+                     xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
+#endif
               if (pxtc->damage.value())
                 h->_damaged();
               else
@@ -339,6 +343,10 @@ int XtcClient::process(Pds::Xtc* xtc)
               continue;
             return 1;
           }
+#ifdef DBUG
+          printf("Src %08x.%08x  Type %08x not handled\n",
+                 xtc->src.log(),xtc->src.phy(),xtc->contains.value());
+#endif
         }
         else {
           const std::list<Pds::TypeId::Type>& types = h->config_types();
