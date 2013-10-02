@@ -183,7 +183,7 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
   ndarray<const double,1> input;
   ndarray<const double,1> norm;
   double dnorm;
-  double xscale;
+  double xscale, xlow;
 
   switch(e.desc().type()) {
   case DescEntry::TH1F: 
@@ -191,12 +191,14 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
       input  = make_ndarray(entry.content(),entry.desc().nbins());
       dnorm  = entry.info(EntryTH1F::Normalization);
       xscale = (entry.desc().xup()-entry.desc().xlow())/double(entry.desc().nbins());
+      xlow   = entry.desc().xlow();
     } break;
   case DescEntry::Prof: 
     { const EntryProf& entry = static_cast<const EntryProf&>(e);
       input  = make_ndarray(entry.ysum()   ,entry.desc().nbins());
       norm   = make_ndarray(entry.entries(),entry.desc().nbins());
       xscale = (entry.desc().xup()-entry.desc().xlow())/double(entry.desc().nbins());
+      xlow   = entry.desc().xlow();
     } break;
   default: 
     printf("PeakFit on type %d not implemented\n",e.desc().type());
@@ -254,7 +256,7 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     if (result[0]==0 && _prm != Position)
       return *_entry;
     else {  
-      if (_prm == Position) y = result[1]*xscale;
+      if (_prm == Position) y = result[1]*xscale + xlow;
       else                  y = result[0];
     }
   }

@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 
-//#define DBUG
+#define DBUG
 
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
@@ -157,6 +157,11 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
       last = pos;
     }
     new_expr.append(expr.mid(last));
+
+#ifdef DBUG
+    printf("BM: parse %s => %s\n",
+           qPrintable(expr),qPrintable(new_expr));
+#endif
 
 //     std::list<Variable*> variables; // none
 //     Expression parser(variables);

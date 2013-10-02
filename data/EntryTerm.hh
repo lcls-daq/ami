@@ -31,7 +31,7 @@ namespace Ami {
 		  unsigned& index) : _entry(e), _index(index) {}
     ~EntryTH1FTerm() {}
   public:
-    double evaluate() const { return _entry.content(_index); }
+    double evaluate() const { return _entry.content(_index)/(_entry.info(EntryTH1F::Normalization)>0 ? _entry.info(EntryTH1F::Normalization):1); }
   private:
     const EntryTH1F& _entry;
     unsigned& _index;
