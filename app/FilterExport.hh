@@ -31,7 +31,9 @@ namespace Ami {
 
   class FilterImport {
   public:
-    FilterImport(const std::string&);
+    FilterImport(const char* fname);
+  public:
+    const std::string& stream() const { return _stream; }
   public:
     void parse_handlers(FilterImportCb&);
     void parse_analyses(FilterImportCb&);
