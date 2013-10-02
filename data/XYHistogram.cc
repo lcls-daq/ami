@@ -90,8 +90,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
             int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
             if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
-              for(int j=j0; j<=j1; j++) {
-                for(int i=i0; i<=i1; i++) {
+              for(int j=j0; j<j1; j++) {
+                for(int i=i0; i<i1; i++) {
                   o->addcontent(1.,(double(_input->content(i,j))-p)*n);
                 }
               }
@@ -119,8 +119,8 @@ Entry&     XYHistogram::_operate(const Entry& e) const
           for(int fn=0; fn<int(inputd.nframes()); fn++) {
             int i0(ilo),i1(ihi),j0(jlo),j1(jhi);
             if (inputd.xy_bounds(i0,i1,j0,j1,fn)) {
-              for(int j=j0; j<=j1; j++) {
-                for(int i=i0; i<=i1; i++) {
+              for(int j=j0; j<j1; j++) {
+                for(int i=i0; i<i1; i++) {
                   o->addcontent((double(_input->content(i,j))-p)*n);
                 }
               }

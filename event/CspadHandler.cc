@@ -54,19 +54,6 @@ static void _transform(double& x,double& y,double dx,double dy,Rotation r)
 //  factor the 90-degree rotations
 //
 
-static inline unsigned sum2(const int16_t*& data)
-{ unsigned v = *data++;
-  v += *data++; 
-  return v; }
-
-static inline unsigned sum4(const int16_t*& data)
-{ unsigned v = *data++;
-  v += *data++;
-  v += *data++;
-  v += *data++;
-  return v; }
-
-
 static inline unsigned sum1(const int16_t*& data,
                             const int16_t*& off,
                             const int16_t* const*& psp,
@@ -405,71 +392,6 @@ namespace CspadGeometry {
     int16_t*  _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
-#define AsicTemplate(classname,bi,ti,PPB)                               \
-  class classname : public Asic {                                       \
-  public:                                                               \
-    classname(double x, double y) : Asic(x,y,PPB) {}                    \
-    void boundary(unsigned& dx0, unsigned& dx1,                         \
-                  unsigned& dy0, unsigned& dy1) const {                 \
-      FRAME_BOUNDS;                                                     \
-      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }                                 \
-    void fill(Ami::DescImage& image) const {                            \
-      FRAME_BOUNDS;                                                     \
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);                           \
-    }                                                                   \
-    void fill(Ami::EntryImage& image,                                   \
-              const int16_t*  data) const { bi }                       \
-    void fill(Ami::EntryImage& image,                                   \
-              double v0, double v1) const {                             \
-      unsigned u0 = unsigned(v0);                                       \
-      ti                                                                \
-    }                                                                   \
-  }
-
-#define B1 { BIN_ITER1((*data++)) }
-#define B2 { BIN_ITER2(sum2(data)) }
-#define B4 { BIN_ITER4(sum4(data)) }
-#define T1 { BIN_ITER1(u0) }
-#define T2 { BIN_ITER2(2*u0) }
-#define T4 { BIN_ITER4(4*u0) }
-
-#define CALC_X(a,b,c) (a+b)         
-#define CALC_Y(a,b,c) (a-c)          
-  AsicTemplate(  AsicD0B1, B1, T1, 1);
-  AsicTemplate(  AsicD0B2, B2, T2, 2);
-  AsicTemplate(  AsicD0B4, B4, T4, 4);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a+c)         
-#define CALC_Y(a,b,c) (a+b)          
-  AsicTemplate( AsicD90B1, B1, T1, 1);
-  AsicTemplate( AsicD90B2, B2, T2, 2);
-  AsicTemplate( AsicD90B4, B4, T4, 4);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a-b)         
-#define CALC_Y(a,b,c) (a+c)          
-  AsicTemplate(AsicD180B1, B1, T1, 1);
-  AsicTemplate(AsicD180B2, B2, T2, 2);
-  AsicTemplate(AsicD180B4, B4, T4, 4);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a-c)         
-#define CALC_Y(a,b,c) (a-b)          
-  AsicTemplate(AsicD270B1, B1, T1, 1);
-  AsicTemplate(AsicD270B2, B2, T2, 2);
-  AsicTemplate(AsicD270B4, B4, T4, 4);
-#undef CALC_X
-#undef CALC_Y
-
-#undef B1
-#undef B2
-#undef B4
-#undef T1
-#undef T2
-#undef T4
-#undef AsicTemplate
-
   class AsicP : public Asic {
   public:
     AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain, FILE* rms) :
@@ -489,8 +411,12 @@ namespace CspadGeometry {
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
-      else
-        memset(_off,0,sizeof(_off));
+      else {
+        int16_t* off = _off;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++)
+          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *off++ = Offset;
+      }
 
       if (status) {
         int16_t*  off = _off;
@@ -562,8 +488,12 @@ namespace CspadGeometry {
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
-      else
-        memset(_off,0,sizeof(_off));
+      else {
+        int16_t* off = _off;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++)
+          for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+            *off++ = Offset;
+      }
 
       if (linep)
         free(linep);
@@ -667,67 +597,38 @@ namespace CspadGeometry {
              FILE* f, FILE* s, FILE* g, FILE* rms) 
     {
       for(unsigned i=0; i<2; i++) {
-  double tx(x), ty(y);
-  _transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
-        if (f) {
-          switch(r) {
-          case D0: 
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms); break;
-            case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g,rms); break;
-            default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g,rms); break;
-            } break;
-          case D90:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g,rms); break;
-            case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g,rms); break;
-            default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g,rms); break;
-            } break;
-          case D180:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
-            case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g,rms); break;
-            default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g,rms); break;
-            } break;
-          case D270:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
-            case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g,rms); break;
-            default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g,rms); break;
-            } break;
-          default:
-            break;
-          }
-        }
-        else {
-          switch(r) {
-          case D0: 
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD0B1(tx,ty); break;
-            case 2:       asic[i] = new  AsicD0B2(tx,ty); break;
-            default:      asic[i] = new  AsicD0B4(tx,ty); break;
-            } break;
-          case D90:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD90B1(tx,ty); break;
-            case 2:       asic[i] = new  AsicD90B2(tx,ty); break;
-            default:      asic[i] = new  AsicD90B4(tx,ty); break;
-            } break;
-          case D180:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD180B1(tx,ty); break;
-            case 2:       asic[i] = new  AsicD180B2(tx,ty); break;
-            default:      asic[i] = new  AsicD180B4(tx,ty); break;
-            } break;
-          case D270:
-            switch(ppb) {
-            case 1:       asic[i] = new  AsicD270B1(tx,ty); break;
-            case 2:       asic[i] = new  AsicD270B2(tx,ty); break;
-            default:      asic[i] = new  AsicD270B4(tx,ty); break;
-            } break;
-          default:
-            break;
-          }
+        double tx(x), ty(y);
+        _transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
+        //
+        //  We may acquire pedestals between configurations
+        //
+        switch(r) {
+        case D0: 
+          switch(ppb) {
+          case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms); break;
+          case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g,rms); break;
+          default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g,rms); break;
+          } break;
+        case D90:
+          switch(ppb) {
+          case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g,rms); break;
+          case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g,rms); break;
+          default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g,rms); break;
+          } break;
+        case D180:
+          switch(ppb) {
+          case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
+          case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g,rms); break;
+          default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g,rms); break;
+          } break;
+        case D270:
+          switch(ppb) {
+          case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
+          case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g,rms); break;
+          default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g,rms); break;
+          } break;
+        default:
+          break;
         }
       }
     }
@@ -1411,11 +1312,8 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
 
-  if (f)
-    entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
-  else
-    entry->info(0,EntryImage::Pedestal);
-    
+  entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
+
   entry->info(0,EntryImage::Normalization);
   entry->invalid();
 }

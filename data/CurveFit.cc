@@ -18,6 +18,8 @@
 
 #include <stdio.h>
 
+#define DBUG
+
 using namespace Ami;
 
 int CurveFit::calcnxt = 0;
@@ -75,7 +77,7 @@ CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& feature
             _refstart = t;
     }
     fclose(fp);
-#if 0
+#ifdef DBUG
     printf("Read text file %s with %d datapoints\n", _name, cnt);
 #endif
     if (cnt > 1)
@@ -177,7 +179,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
             x2 += x * x;
             xvar += x;
         }
-#if 0
+#ifdef DBUG
         printf("avg = %lg, variance = %lg, stddev = %lg\n", xvar/xs, 
                (x2 - xvar * xvar / xs)/(xs - 1),
                sqrt((x2 - xvar * xvar / xs)/(xs - 1)));
@@ -199,7 +201,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
                     xf += entry.content(i+j) * _refdata[j];
             double c = xf / f2;
             double L = x2 - 2 * c * xf + c * c * f2;
-#if 0
+#ifdef DBUG
             printf("%5d: c=%12.8lf, L=%12.8lf%s\n", i, c, L, L < Lmin ? " *" : "");
 #endif
             if (L < Lmin) {
@@ -209,7 +211,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
             }
         }
 
-#if 0
+#ifdef DBUG
         printf("omin = %d, cmin=%lg, Lmin=%lg, xvar=%lg, chi2=%lg\n", omin, cmin, Lmin, xvar, Lmin/xvar);
 #endif
         calc[slot].input = _input;
@@ -217,11 +219,11 @@ Entry&     CurveFit::_operate(const Entry& e) const
         calc[slot].vals[scale] = cmin;
         calc[slot].vals[shift] = omin * binw - _refstart;
         calc[slot].vals[chi2]  = Lmin / xvar;
-#if 0
+#ifdef DBUG
         printf("Wrote %d for %p:%d:%d op=%d\n", slot, _input, now.seconds(), now.nanoseconds(), _op);
 #endif
     } else {
-#if 0
+#ifdef DBUG
         printf("Hit %d for %p:%d:%d op=%d\n", slot, _input, now.seconds(), now.nanoseconds(), _op);
 #endif
     }

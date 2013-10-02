@@ -7,9 +7,6 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdio.h>
-#include <sstream>
-#include <string>
-#include <fstream>
 
 class MyCallback : public Ami::FilterImportCb {
 public:
@@ -65,16 +62,7 @@ int main(int argc, char* argv[])
     }
   }
 
-  //  Read the configuration file
-  std::stringstream o;
-  std::ifstream i(fname);
-  while(i.good())
-    o << char(i.get());
-
-  o << "</Document>" << std::endl;
-  
-
-  Ami::FilterImport e(o.str());
+  Ami::FilterImport e(fname);
 
   MyCallback cb;
   e.parse_handlers(cb);

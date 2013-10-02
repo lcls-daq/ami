@@ -11,6 +11,8 @@
 
 #include "pdsalg/pdsalg.h"
 
+#define DBUG
+
 using namespace Ami;
 
 BinMathC::EntryWaveformTerm::EntryWaveformTerm(const Entry*& e, unsigned lo, unsigned hi,
@@ -141,8 +143,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
     for(unsigned fn=0; fn<d.nframes(); fn++) {
       int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-
-        unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
+        unsigned bounds[][2] = { {ylo, yhi}, {xlo, xhi} };
         ndarray<double,1> fm = pdsalg::moments(a, p, bounds);
         for(unsigned j=0; j<5; j++)
           m[j] += fm[j];

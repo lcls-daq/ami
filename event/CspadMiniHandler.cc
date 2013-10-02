@@ -223,7 +223,7 @@ namespace CspadMiniGeometry {
 		      double, double) const = 0;
     virtual void fill(Ami::EntryImage& image,
 		      const int16_t*  data) const = 0;
-    virtual void set_pedestals(FILE*) {}
+    virtual void set_pedestals(FILE*) { printf("v set_pedestals\n"); }
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
 			  unsigned& y0, unsigned& y1) const = 0;
@@ -232,56 +232,6 @@ namespace CspadMiniGeometry {
     unsigned ppb;
     int16_t*  _sta[Columns*Rows];
   };
-
-#define AsicTemplate(classname,bi,ti,PPB)                               \
-  class classname : public Asic {					\
-  public:								\
-    classname(double x, double y) : Asic(x,y,PPB) {}                    \
-    void boundary(unsigned& dx0, unsigned& dx1,				\
-		  unsigned& dy0, unsigned& dy1) const {			\
-      FRAME_BOUNDS;							\
-      dx0=x0; dx1=x1; dy0=y0; dy1=y1; }					\
-    void fill(Ami::DescImage& image) const {				\
-      FRAME_BOUNDS;							\
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
-    }									\
-    void fill(Ami::EntryImage& image,                                   \
-              double v0, double v1) const {                             \
-      unsigned u0 = unsigned(v0);                                       \
-      unsigned data = 0;                                                \
-      ti                                                                \
-    }									\
-    void fill(Ami::EntryImage& image,					\
-	      const int16_t*  data) const { bi }                        \
-  }
-
-#define B1 { BIN_ITER1((*data)); }
-#define T1 { BIN_ITER1(u0); }
-
-#define CALC_X(a,b,c) (a+b)			    
-#define CALC_Y(a,b,c) (a-c)			     
-  AsicTemplate(  AsicD0B1, B1, T1, 1);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a+c)			    
-#define CALC_Y(a,b,c) (a+b)			     
-  AsicTemplate( AsicD90B1, B1, T1, 1);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a-b)			    
-#define CALC_Y(a,b,c) (a+c)			     
-  AsicTemplate(AsicD180B1, B1, T1, 1);
-#undef CALC_X
-#undef CALC_Y
-#define CALC_X(a,b,c) (a-c)			    
-#define CALC_Y(a,b,c) (a-b)			     
-  AsicTemplate(AsicD270B1, B1, T1, 1);
-#undef CALC_X
-#undef CALC_Y
-
-#undef B1
-#undef T1
-#undef AsicTemplate
 
   class AsicP : public Asic {
   public:
@@ -302,8 +252,12 @@ namespace CspadMiniGeometry {
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
-      else
-        memset(_off,0,sizeof(_off));
+      else {
+        int16_t* off = _off;
+        for(unsigned col=0; col<Columns; col++)
+          for (unsigned row=0; row < Rows; row++)
+            *off++ = Offset;
+      }
 
       if (status) {
         int16_t*  off = _off;
@@ -373,14 +327,18 @@ namespace CspadMiniGeometry {
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
         }
       }
-      else
-        memset(_off,0,sizeof(_off));
+      else {
+        int16_t* off = _off;
+        for(unsigned col=0; col<Columns; col++)
+          for (unsigned row=0; row<Rows; row++)
+            *off++ = Offset;
+      }
 
       if (linep)
         free(linep);
     }
   protected:
-    int16_t  _off[Columns*Rows];
+    int16_t  _off [Columns*Rows];
     float     _gn [Columns*Rows];
     float     _sg [Columns*Rows];
   };
@@ -462,23 +420,13 @@ namespace CspadMiniGeometry {
       for(unsigned i=0; i<2; i++) {
 	double tx(x), ty(y);
 	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
-        if (f) {
-          switch(r) {
-          case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms); break;
-          case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms); break;
-          case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
-          case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
-          default  : break;
-          }
-        }
-        else {
-          switch(r) {
-          case D0  : asic[i] = new  AsicD0B1  (tx,ty); break;
-          case D90 : asic[i] = new  AsicD90B1 (tx,ty); break;
-          case D180: asic[i] = new  AsicD180B1(tx,ty); break;
-          case D270: asic[i] = new  AsicD270B1(tx,ty); break;
-          default  : break;
-          }
+
+        switch(r) {
+        case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms); break;
+        case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms); break;
+        case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
+        case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
+        default  : break;
         }
       }
     }
@@ -820,10 +768,14 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
 
+#if 0
   if (f)
     entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
   else
     entry->info(0,EntryImage::Pedestal);
+#else
+  entry->info(Offset*ppb*ppb,EntryImage::Pedestal);
+#endif
     
   entry->info(0,EntryImage::Normalization);
   entry->invalid();

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 
+//#define DBUG
 
 using namespace Ami;
 
@@ -49,10 +50,9 @@ RectROI::RectROI(const char*& p, const DescEntry& input) :
         y0 = int(o.ylow())/i.ppybin(), 
         x1 = int(o.xup())/i.ppxbin(),
         y1 = int(o.yup())/i.ppybin();
-
       if (i.xy_bounds(x0,x1,y0,y1,j)) {
-        int nx = x1-x0+1;
-        int ny = y1-y0+1;
+        int nx = x1-x0;
+        int ny = y1-y0;
         x0 -= int(o.xlow())/i.ppxbin();
         y0 -= int(o.ylow())/i.ppybin();
         desc.add_frame(x0,y0,nx,ny);
@@ -123,11 +123,17 @@ Entry&     RectROI::_operate(const Entry& e) const
         jhi--;
         int iilo = int(d.xlow())/inputd.ppxbin();
         int jjlo = int(d.ylow())/inputd.ppybin();
-        if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn))  // inclusive
+        if (inputd.xy_bounds(ilo,ihi,jlo,jhi,fn)) { // inclusive
+#ifdef DBUG
+          printf("RectROI: fn %d: o_nx %d: o_ny %d: jlo %d: jhi %d: jjlo %d\n",
+                 fn, o->desc().nbinsx(), o->desc().nbinsy(),
+                 jlo, jhi, jjlo);
+#endif      
           for(int i=ilo,ii=ilo-iilo; i<=ihi; i++,ii++) {
             for(int j=jlo,jj=jlo-jjlo; j<=jhi; j++,jj++)
               o->content(_input->content(i,j),ii,jj);
           }
+        }
       }
     }
     else {
