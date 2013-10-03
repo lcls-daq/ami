@@ -11,7 +11,7 @@
 
 const int maxHz = 60;
 const int defaultHz = maxHz + 1;
-const double secBetweenPrintDgram = 0.1;
+const double secBetweenPrintDgram = 0.5;
 const bool testModeConfigOnly = false;
 const int maxTicks = 20;
 
