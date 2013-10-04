@@ -22,6 +22,7 @@
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
+#include "ami/data/valgnd.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QChar>
@@ -29,7 +30,7 @@
 
 #include <stdio.h>
 
-#define DBUG
+//#define DBUG
 
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
@@ -69,9 +70,8 @@ BinMath::BinMath(const DescEntry& output,
   _entry     (0),
   _v         (true)
 {
-  strncpy(_expression, expr, EXPRESSION_LEN);
-  memcpy (_desc_buffer, &output, output.size());
-  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  strncpy_val(_expression, expr, EXPRESSION_LEN);
+  memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
 #define CASETERM(type)							\
@@ -224,6 +224,9 @@ void*      BinMath::_serialize(void* p) const
 Entry&     BinMath::_operate(const Entry& e) const
 {
   if (!e.valid()) {
+#ifdef DBUG
+    printf("BinMath::_operate input invalid\n");
+#endif
     _entry->invalid();
     return *_entry;
   }
@@ -231,7 +234,9 @@ Entry&     BinMath::_operate(const Entry& e) const
   if (_term) {
     _input = &e;
     double y = _term->evaluate();
-
+#ifdef DBUG
+    printf("BinMath::_operate _term %f\n",y);
+#endif
     switch(_entry->desc().type()) {
     case DescEntry::Scalar:  
       { EntryScalar* en = static_cast<EntryScalar*>(_entry);

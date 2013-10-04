@@ -15,6 +15,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
 #include "ami/data/FeatureExpression.hh"
+#include "ami/data/valgnd.hh"
 
 #include <stdio.h>
 
@@ -34,9 +35,8 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
   _nterm(0),
   _v    (true)
 {
-  strncpy(_name, name, NAME_LEN);
-  memcpy (_desc_buffer, &output, output.size());
-  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  strncpy_val(_name, name, NAME_LEN);
+  memcpy_val (_desc_buffer, &output, output.size(), DESC_LEN);
 
   if (!norm)
       _norm[0] = 0;

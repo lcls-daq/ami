@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "ami/data/Desc.hh"
+#include "ami/data/valgnd.hh"
 
 using namespace Ami;
 
@@ -8,7 +9,7 @@ Desc::Desc(const char* name) :
   _signature(-1),
   _nentries(0)
 {
-  strncpy(_name, name, NameSize);
+  strncpy_val(_name, name, NameSize);
   _name[NameSize-1] = 0;
 }
 
@@ -16,7 +17,7 @@ Desc::Desc(const Desc& desc) :
   _signature(desc._signature),
   _nentries (0)
 {
-  strncpy(_name, desc._name, NameSize);
+  strncpy_val(_name, desc._name, NameSize);
 }
 
 Desc::~Desc() {}

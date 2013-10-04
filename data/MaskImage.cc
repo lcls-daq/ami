@@ -4,6 +4,7 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/valgnd.hh"
 
 #include <string.h>
 #include <stdio.h>
@@ -14,10 +15,7 @@ MaskImage::MaskImage(const char* path) :
   AbsOperator(AbsOperator::MaskImage),
   _output    (0)
 {
-  if (path)
-    strncpy(_path,path,PATH_LEN);
-  else
-    memset(_path,0,PATH_LEN);
+  strncpy_val(_path,path,PATH_LEN);
 }
 
 MaskImage::MaskImage(const char*& p, const DescEntry& e) :

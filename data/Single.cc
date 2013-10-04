@@ -9,6 +9,7 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/SelfExpression.hh"
+#include "ami/data/valgnd.hh"
 
 #include <stdio.h>
 
@@ -22,10 +23,7 @@ Single::Single(const char* scale) :
   _input     (0),
   _term      (0)
 {
-  if (scale)
-    strncpy(_scale_buffer,scale,SCALE_LEN);
-  else
-    memset(_scale_buffer,0,SCALE_LEN);
+  strncpy_val(_scale_buffer,scale,SCALE_LEN);
 }
 
 Single::Single(const char*& p, const DescEntry& e, FeatureCache& features) :

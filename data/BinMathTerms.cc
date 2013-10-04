@@ -140,6 +140,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
     m = pdsalg::moments(a, mask->row_mask(), mask->all_mask(), p, bounds);
   }
   else if (d.nframes()) {
+    for(unsigned j=0; j<5; j++)
+      m[j] = 0;
     for(unsigned fn=0; fn<d.nframes(); fn++) {
       int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {

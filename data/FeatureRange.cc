@@ -1,12 +1,13 @@
 #include "FeatureRange.hh"
 
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/valgnd.hh"
 
 #include <string.h>
 
 using namespace Ami;
 
-static const int NameSize = FeatureCache::FEATURE_NAMELEN;
+static const unsigned NameSize = FeatureCache::FEATURE_NAMELEN;
 
 FeatureRange::FeatureRange(const char* feature,
 			   double lo, double hi) :
@@ -15,7 +16,7 @@ FeatureRange::FeatureRange(const char* feature,
   _lo   (lo),
   _hi   (hi)
 {
-  strncpy(_feature, feature, NameSize);
+  strncpy_val(_feature, feature, NameSize);
 }
 
 FeatureRange::FeatureRange(const char*& p, FeatureCache* f) :
@@ -27,6 +28,8 @@ FeatureRange::FeatureRange(const char*& p, FeatureCache* f) :
   _cache = f;
   if (f)
     _index = f->lookup(_feature);
+  else
+    _index = -2;
 }
 
 FeatureRange::~FeatureRange()
@@ -36,16 +39,12 @@ FeatureRange::~FeatureRange()
 bool  FeatureRange::accept() const 
 {
   bool damaged;
-  double v;
+  double v = -999;
   if (_index>=0)
     v = _cache->cache(_index,&damaged);
   else
     damaged = true;
 
-#if 0
-  printf("FeatureRange::accept %f<%s[%f]<%f %c\n",
-         _lo,_feature,v,_hi,(v>=_lo && v<=_hi) ? 't':'f');
-#endif
   return !damaged && v>=_lo && v<=_hi;
 }
 

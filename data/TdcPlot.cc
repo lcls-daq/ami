@@ -10,6 +10,7 @@
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
+#include "ami/data/valgnd.hh"
 
 #include "pdsdata/xtc/ClockTime.hh"
 #include "pdsdata/psddl/acqiris.ddl.h"
@@ -48,9 +49,8 @@ TdcPlot::TdcPlot(const DescEntry& output, const char* expr) :
   _output    (0),
   _v         (true)
 {
-  strncpy(_expression , expr, EXPRESSION_LEN);
-  memcpy (_desc_buffer, &output, output.size());
-  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  strncpy_val(_expression , expr, EXPRESSION_LEN);
+  memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
 TdcPlot::TdcPlot(const char*& p, const DescEntry& input) :

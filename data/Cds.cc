@@ -111,14 +111,18 @@ void Cds::showentries() const
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
     const Entry* en = *it;
 #ifdef DBUG
-    printf("  [%2d] %s  agg %c  norm %c  cnt %c\n", 
+    printf("  [%2d] [%s] %s  agg %c  norm %c  cnt %c\n", 
            en->desc().signature(), 
+	   DescEntry::type_str(en->desc().type()), 
            en->desc().name(),
            en->desc().aggregate   ()?'t':'f',
            en->desc().isnormalized()?'t':'f',
            en->desc().countmode   ()?'t':'f');
 #else    
-    printf("  [%2d] %s\n", en->desc().signature(), en->desc().name());
+    printf("  [%2d] [%s] %s\n", 
+	   en->desc().signature(), 
+	   DescEntry::type_str(en->desc().type()), 
+	   en->desc().name());
 #endif
   }
 }

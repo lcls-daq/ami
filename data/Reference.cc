@@ -5,6 +5,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/valgnd.hh"
 
 #include <sys/uio.h>
 #include <stdio.h>
@@ -28,7 +29,7 @@ Reference::Reference(const char* path) :
   AbsOperator(AbsOperator::Reference),
   _entry     (0)
 {
-  strncpy(_path,path,PATHLEN);
+  strncpy_val(_path,path,PATHLEN);
 }
 
 Reference::Reference(const char*& p, const DescEntry& e) :

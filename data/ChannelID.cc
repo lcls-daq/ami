@@ -7,13 +7,14 @@
 
 using namespace Pds;
 
-static char _buffer[128];
+static const int BSIZ=128;
+static char _buffer[BSIZ];
 
-#define NoChannel(title) { strcpy(_buffer,title); }
+#define NoChannel(title) { strcpy(_buffer,title,BSIZ); }
 #define AcqChannel(title)                                       \
   if (info.device()==DetInfo::Acqiris) {                        \
     if (channel.is_mask())                                      \
-      strcpy(_buffer,title);                                    \
+      strcpy(_buffer,title);					\
     else                                                        \
       sprintf(_buffer,"%s_%d",title,channel+1);                 \
   }
@@ -22,7 +23,7 @@ static char _buffer[128];
       info.device()==DetInfo::Opal2000 ||               \
       info.device()==DetInfo::Opal4000) {               \
     if (info.devId()==0)                                \
-      strcpy(_buffer,title);                            \
+      strcpy(_buffer,title);				\
     else                                                \
       sprintf(_buffer,"%s_%d",title,info.devId()+1);    \
   }             

@@ -3,6 +3,7 @@
 #include "ami/data/DescEntry.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/valgnd.hh"
 
 #include "pdsalg/pdsalg.h"
 
@@ -18,10 +19,7 @@ FIR::FIR(const char* path) :
   _output    (0),
   _response  (0)
 {
-  if (path)
-    strncpy(_path,path,PATH_LEN);
-  else
-    memset(_path,0,PATH_LEN);
+  strncpy_val(_path,path,PATH_LEN);
 }
 
 FIR::FIR(const char*& p, const DescEntry& e) :

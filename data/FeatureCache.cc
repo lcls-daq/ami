@@ -1,4 +1,5 @@
 #include "FeatureCache.hh"
+#include "ami/data/valgnd.hh"
 
 #include <string.h>
 #include <stdio.h>
@@ -117,7 +118,7 @@ char*  FeatureCache::serialize(int& len) const
   char* result = new char[len];
   char* p = result;
   for(unsigned k=0; k<_names.size(); k++, p+=FEATURE_NAMELEN) {
-    strncpy(p, _names[k].c_str(), FEATURE_NAMELEN);
+    strncpy_val(p, _names[k].c_str(), FEATURE_NAMELEN);
   }
   return result;
 }

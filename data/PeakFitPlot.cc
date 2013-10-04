@@ -182,7 +182,7 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 
   ndarray<const double,1> input;
   ndarray<const double,1> norm;
-  double dnorm;
+  double dnorm=1;
   double xscale, xlow;
 
   switch(e.desc().type()) {

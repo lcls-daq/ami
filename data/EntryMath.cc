@@ -13,6 +13,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
 #include "ami/data/FeatureExpression.hh"
+#include "ami/data/valgnd.hh"
 
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -30,7 +31,7 @@ EntryMath::EntryMath(const char* expr) :
   _entry     (0),
   _v         (true)
 {
-  strncpy(_expression, expr, EXPRESSION_LEN);
+  strncpy_val(_expression, expr, EXPRESSION_LEN);
 }
 
 #define CASETERM(type) case DescEntry::type: \

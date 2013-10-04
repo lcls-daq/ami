@@ -2,6 +2,7 @@
 #define Pds_DescEntryW_hh
 
 #include "ami/data/DescEntry.hh"
+#include "ami/data/valgnd.hh"
 
 #include <string.h>
 
@@ -27,13 +28,13 @@ namespace Ami {
   inline     DescEntryW::DescEntryW(const char* name, const char* xtitle, const char* ytitle, const char* weight,
 				    Type type, unsigned short size, bool isnormalized, bool aggregate) :
     DescEntry(name, xtitle, ytitle, type, size, isnormalized, aggregate) 
-  { strncpy(_weight,weight,WeightSize); }
+  { strncpy_val(_weight,weight,WeightSize); }
 
   inline DescEntryW::DescEntryW(const Pds::DetInfo& info, unsigned channel,
 				const char* name, const char* xtitle, const char* ytitle, const char* weight,
 				Type type, unsigned short size, bool isnormalized, bool aggregate) :
     DescEntry(info, channel, name, xtitle, ytitle, type, size, isnormalized, aggregate) 
-  { strncpy(_weight,weight,WeightSize); }
+  { strncpy_val(_weight,weight,WeightSize); }
   
   inline bool        DescEntryW::weighted() const { return _weight[0]!=0; }
 

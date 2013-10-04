@@ -1,6 +1,7 @@
 #include "ami/data/DescImage.hh"
 
 #include "ami/data/ImageMask.hh"
+#include "ami/data/valgnd.hh"
 
 #include <string.h>
 #include <stdio.h>
@@ -97,7 +98,7 @@ DescImage::DescImage(const DescImage& d) :
     add_frame(f.x, f.y, f.nx, f.ny);
   }
 
-  strncpy(_mask_path, d._mask_path, PATHLEN);
+  strncpy_val(_mask_path, d._mask_path, PATHLEN);
 
   if (strlen(d._mask_path))
     _mask._ptr = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, d._mask_path);
@@ -124,7 +125,7 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
     add_frame(f.x, f.y, f.nx, f.ny);
   }
 
-  strncpy(_mask_path, mask_path, PATHLEN);
+  strncpy_val(_mask_path, mask_path, PATHLEN);
 
   if (strlen(mask_path))
     _mask._ptr = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, mask_path);

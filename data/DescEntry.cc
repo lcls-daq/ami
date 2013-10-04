@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "ami/data/DescEntry.hh"
+#include "ami/data/valgnd.hh"
 
 using namespace Ami;
 using Pds::DetInfo;
@@ -24,9 +25,9 @@ DescEntry::DescEntry(const char* name,
   normalize(isnormalized);
   aggregate(doaggregate);
 
-  strncpy(_xtitle, xtitle, TitleSize);
+  strncpy_val(_xtitle, xtitle, TitleSize);
   _xtitle[TitleSize-1] = 0;
-  strncpy(_ytitle, ytitle, TitleSize);
+  strncpy_val(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
   memset(_zunits, 0, TitleSize);
 }
@@ -52,9 +53,9 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   normalize(isnormalized);
   aggregate(doaggregate);
 
-  strncpy(_xtitle, xtitle, TitleSize);
+  strncpy_val(_xtitle, xtitle, TitleSize);
   _xtitle[TitleSize-1] = 0;
-  strncpy(_ytitle, ytitle, TitleSize);
+  strncpy_val(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
   memset(_zunits, 0, TitleSize);
 }
@@ -88,11 +89,11 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   if (hasGainCalib) _options |= 1<<CalibMom1;
   if (hasRmsCalib ) _options |= 1<<CalibMom2;
 
-  strncpy(_xtitle, xtitle, TitleSize);
+  strncpy_val(_xtitle, xtitle, TitleSize);
   _xtitle[TitleSize-1] = 0;
-  strncpy(_ytitle, ytitle, TitleSize);
+  strncpy_val(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
-  strncpy(_zunits, zunits, TitleSize);
+  strncpy_val(_zunits, zunits, TitleSize);
   _zunits[TitleSize-1] = 0;
 }
 
