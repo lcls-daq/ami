@@ -387,11 +387,17 @@ void L3TModule::analysis(unsigned id,
     pcds = _cds[id];
 
   const Entry* input_e = pcds->entry(input);
+  if (!input_e) {
+    printf("L3TModule::analysis failed to lookup input %s[%d]\n",
+	   src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input);
+    return;
+  }
+	 
 #ifdef DBUG
   printf("L3TModule::analysis creating from input %s/%d %p\n",
 	 src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input,input_e);
 #endif
-	 
+
   const char* p = (const char*)op;
   Ami::Analysis* a = new Ami::Analysis(id, *input_e, output, *_cds[id],
                                        *_features[PostAnalysis], p);
