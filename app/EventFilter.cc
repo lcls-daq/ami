@@ -42,7 +42,7 @@ void EventFilter::enable (const ConfigureRequest& req,
 
   if ((*u) & 0x80000000) {
     FilterExport x(*f, e, a);
-    x.write("/tmp/filterexport.sav");
+    x.write();
   }
   else {
     _enable = (*u) & 0x7fffffff;

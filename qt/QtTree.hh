@@ -33,7 +33,7 @@ namespace Ami {
       void show_tree();
     signals:
       void activated(const QString&);
-    private:
+    protected:
       virtual bool _valid_entry(const QString&) const;
     protected:
       QStandardItemModel _model;

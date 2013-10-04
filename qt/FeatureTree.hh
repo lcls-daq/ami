@@ -17,7 +17,7 @@ namespace Ami {
       ~FeatureTree();
     public slots:
       void change_features();
-    private:
+    protected:
       bool _valid_entry(const QString&) const;
     private:
       FeatureRegistry*   _registry;

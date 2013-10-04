@@ -31,7 +31,8 @@ namespace Ami {
 
   class FilterImport {
   public:
-    FilterImport(const char* fname);
+    FilterImport(const char* fname = 0);
+    ~FilterImport();
   public:
     const std::string& stream() const { return _stream; }
   public:
@@ -50,7 +51,7 @@ namespace Ami {
 		 const std::list<const Analysis*>&);
     ~FilterExport();
   public:
-    void write(const char*) const;
+    void write(const char* =0) const;
   private:
     void _find_filter_sources(const AbsFilter&, 
 			      const std::list<const EventHandler*>&,

@@ -1,5 +1,6 @@
 #include "L3TModule.hh"
 
+#include "ami/data/EntryFactory.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/service/BuildStamp.hh"
 
@@ -53,16 +54,16 @@
 #include <sstream>
 #include <fstream>
 #include <sstream>
+#include <string>
 
 //#define DBUG
 
-static const char* _fname = "l3t.ami";
 static void Destroy(void*) {}
 
 using namespace Ami::L3T;
 
 L3TModule::L3TModule() :
-  _import       (_fname),
+  _import       (0),
   _name_service (0),
   _discovery    ("Discovery"),
   _filter       (0)
@@ -70,7 +71,12 @@ L3TModule::L3TModule() :
   for(unsigned i=0; i<Ami::NumberOfSets; i++)
     _features.push_back(new FeatureCache);
 
-  _import.parse_handlers(*this);
+  EntryFactory::source(*_features[Ami::PostAnalysis]);
+}
+
+L3TModule::~L3TModule() 
+{
+  if (_import) delete _import;
 }
 
 std::string L3TModule::name() const
@@ -83,7 +89,7 @@ std::string L3TModule::name() const
 
 std::string L3TModule::configuration() const
 {
-  return _import.stream();
+  return _import->stream();
 }
 
 /**
@@ -93,6 +99,12 @@ std::string L3TModule::configuration() const
  **/
 void L3TModule::pre_configure()
 {
+  if (_import)
+    delete _import;
+
+  _import = new FilterImport;
+  _import->parse_handlers(*this);
+
   _features[ PreAnalysis]->clear();
   _features[PostAnalysis]->clear();
   _discovery.reset();
@@ -114,12 +126,20 @@ void L3TModule::post_configure()
 {
   for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
       it != _handlers.end(); it++) {
-    std::list<int>::iterator sit = _signatures[*it].begin();
+    std::list<int>::iterator sit = _signatures[(*it)->info().phy()].begin();
     for(unsigned k=0; k<(*it)->nentries(); k++,sit++) {                     
       const Entry* e = (*it)->entry(k);
       if (e) {
+	unsigned signature = (*sit)>>16;
+	unsigned options   = (*sit)&0xffff;
+#ifdef DBUG
+	printf("Assigning signature %d options %x to %s\n",
+	       signature, options, e->desc().name());
+#endif
         /// Assign the correct (fixed) signature
-        _discovery.add   (const_cast<Entry*>(e),*sit);
+        _discovery.add   (const_cast<Entry*>(e),signature);
+	/// Assign any special options that were in effect
+	_discovery.entry(signature)->desc().options(options);
       }
     }
   }
@@ -130,9 +150,22 @@ void L3TModule::post_configure()
     delete (*it);
   _analyses.clear();
 
-  _import.parse_analyses(*this);
+  for(std::map<int,Cds*>::iterator it=_cds.begin();
+      it!=_cds.end(); it++)
+    it->second->clear_used();
 
-  _import.parse_filter  (*this);
+  _import->parse_analyses(*this);
+
+  _import->parse_filter  (*this);
+
+#ifdef DBUG
+  for(std::map<int,Cds*>::iterator it=_cds.begin();
+      it!=_cds.end(); it++)
+    it->second->showentries();
+  const std::vector<std::string>& n = _features[PostAnalysis]->names();
+  for(unsigned i=0; i<n.size(); i++)
+    printf("\t%s\n",n[i].c_str());
+#endif
 }
 
 void L3TModule::configure(const Pds::DetInfo&   src,
@@ -226,9 +259,14 @@ void L3TModule::_event(const Pds::Src&     src,
     if (h->info().level() == src.level() &&
         (h->info().phy  () == (uint32_t)-1 ||
          h->info().phy  () == src.phy())) {
-      
+
+#ifdef DBUG
+      printf("Found handler [%p] for %08x.%08x used %c\n",
+	     h, src.log(), src.phy(), h->used() ? 't':'f');
+#endif
+
       if (!h->used()) return;
-      
+
       const std::list<Pds::TypeId::Type>& types = h->data_types();
 
       Xtc* xtc = reinterpret_cast<Xtc*>(payload)-1;  // argh!!
@@ -240,10 +278,6 @@ void L3TModule::_event(const Pds::Src&     src,
       for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
           it != types.end(); it++) {
         if (*it == type) {
-#ifdef DBUG
-          printf("Src %08x.%08x  Type %08x handled by %p\n",
-                 xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
-#endif
           if (pxtc->damage.value())
             h->_damaged();
           else
@@ -327,10 +361,10 @@ void L3TModule::handler (const Pds::Src& src,
 
   if (h) {
     _handlers.push_back(h);
-    _signatures[h] = signatures;
+    _signatures[h->info().phy()] = signatures;
   }
   else {
-    printf("Ami::L3T::XtcClient cannot handle type %s\n",Pds::TypeId::name(types.front()));
+    printf("Ami::L3T::XtcClient cannot handle type %s src %08x.%08x\n",Pds::TypeId::name(types.front()),src.log(),src.phy());
   }
 }
 
@@ -353,9 +387,15 @@ void L3TModule::analysis(unsigned id,
     pcds = _cds[id];
 
   const Entry* input_e = pcds->entry(input);
+#ifdef DBUG
+  printf("L3TModule::analysis creating from input %s/%d %p\n",
+	 src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input,input_e);
+#endif
+	 
   const char* p = (const char*)op;
   Ami::Analysis* a = new Ami::Analysis(id, *input_e, output, *_cds[id],
                                        *_features[PostAnalysis], p);
+  a->input().desc().used(true);
   _analyses.push_back(a);
 }
 

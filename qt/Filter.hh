@@ -20,6 +20,7 @@ namespace Ami {
       Q_OBJECT
     public:
       Filter(QWidget* parent,const QString&,Ami::ScalarSet =Ami::PreAnalysis);
+      Filter(QWidget* parent,const QString&,FeatureTree*);
       ~Filter();
     public:
       void save(char*& p) const;
@@ -35,6 +36,7 @@ namespace Ami {
     signals:
       void changed();
     private:
+      void _layout();
       void _apply();
     private:
       QString    _name;

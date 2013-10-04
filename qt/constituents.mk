@@ -74,6 +74,7 @@ libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
 libsrcs_amiqt += QtTree.cc QtTree_moc.cc
 libsrcs_amiqt += RunTree.cc RunTree_moc.cc
 libsrcs_amiqt += FeatureTree.cc FeatureTree_moc.cc
+libsrcs_amiqt += L3Features.cc
 libsrcs_amiqt += CExpression.cc
 libsrcs_amiqt += Calculator.cc Calculator_moc.cc
 libsrcs_amiqt += FeatureCalculator.cc

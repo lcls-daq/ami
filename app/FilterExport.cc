@@ -18,6 +18,8 @@
 #include <sstream>
 #include <fstream>
 
+#include <sys/stat.h>
+
 #define DBUG
 
 static const Pds::TypeId NoType(Pds::TypeId::Any,0);
@@ -26,25 +28,39 @@ static const unsigned MaxConfigSize = 64*1024;
 using namespace Ami;
 using Ami::XML::QtPersistent;
 
+static bool _lock  (std::string);
+static void _unlock(std::string);
 static void _insert_entry(char*& p, const Entry* e);
 static void _insert_handler(char*& p, const EventHandler* h);
 static void _insert_analysis(char*& p, const Analysis* a, bool discovery);
 static void _insert_filter(char*& p, const AbsFilter* f);
-
-
+static const char* _default_fname = "ami.l3t";
 
 FilterImport::FilterImport(const char* fname) :
   _filter (0)
 {
+  if (fname == 0)
+    fname = _default_fname;
+
   std::stringstream o;
-  std::ifstream i(fname);
+  char* home = getenv("HOME");
+  if (home)
+    o << home << '/';
+  o << fname;
+  
+  std::ifstream i(o.str().c_str());
   if (!i.good()) {
-    _stream = std::string("Ami::L3T::FilterImport failed to open ")
-      +std::string(fname);
+    o.str(std::string());
+    o << "<QString name=error>"
+      << "Ami::L3T::FilterImport failed to open "
+      << fname
+      << "</QString>\n</Document>\n";
+    _stream = o.str();
     perror(_stream.c_str());
     return;
   }
   
+  o.str(std::string());
   while(i.good())
     o << char(i.get());
   o << "</Document>" << std::endl;
@@ -77,6 +93,12 @@ FilterImport::FilterImport(const char* fname) :
   XML_iterate_close(FilterExport,tag);
 }
 
+FilterImport::~FilterImport()
+{
+  if (_filter)
+    delete _filter;
+}
+
 void FilterImport::parse_handlers(FilterImportCb& cb)
 {
   const char* p = _stream.c_str();
@@ -86,7 +108,7 @@ void FilterImport::parse_handlers(FilterImportCb& cb)
         if      (rtag.name == "_handlers") {
           unsigned log(-1U),phy(-1U);
           std::list<Pds::TypeId::Type> types;
-          std::list<int> signatures;
+          std::list<int> signatures, options;
           
           XML_iterate_open(p,stag)
             if      (stag.name == "_log")
@@ -96,12 +118,16 @@ void FilterImport::parse_handlers(FilterImportCb& cb)
             else if (stag.name == "_types")
               types.push_back(Pds::TypeId::Type(QtPersistent::extract_i(p)));
             else if (stag.name == "_entries") {
+	      unsigned signature, options=0;
               XML_iterate_open(p,qtag)
-                if (qtag.name == "signature")
-                  signatures.push_back(QtPersistent::extract_i(p));
+               if (qtag.name == "signature")
+                  signature = QtPersistent::extract_i(p);
                 else if (qtag.name == "title")
                   ;
+		else if (qtag.name == "options")
+		  options = QtPersistent::extract_i(p);
               XML_iterate_close(Entry,qtag)
+	      signatures.push_back((signature<<16)|(options&0xffff));
             }
           XML_iterate_close(EventHandler,stag);
 
@@ -208,22 +234,38 @@ FilterExport::~FilterExport() {}
 
 void FilterExport::write(const char* fname) const
 {
-  FILE* f = fopen(fname,"w");
-  if (f) {
+  if (fname==0)
+    fname = _default_fname;
 
-    char* buffer  = new char[MaxConfigSize];
-    char* p = buffer;
-  
-    XML_insert(p, "FilterExport", "L3TFilter", _writex(p));
+  //
+  //  Obtain a lock or silently fail
+  //
+  std::stringstream o;
+  char* home = getenv("HOME");
+  if (home)
+    o << home << '/';
+  o << fname;
 
-    fwrite(buffer, p-buffer, 1, f);
-
-    delete[] buffer;
-    fclose(f);
+  if (_lock(o.str())) {
+    FILE* f = fopen(o.str().c_str(),"w");
+    if (f) {
+      char* buffer  = new char[MaxConfigSize];
+      char* p = buffer;
+      
+      XML_insert(p, "FilterExport", "L3TFilter", _writex(p));
+      
+      fwrite(buffer, p-buffer, 1, f);
+      
+      delete[] buffer;
+      fclose(f);
+    }
+    else {
+      perror("FilterExport::write: Unable to open output file");
+    }
+    _unlock(o.str());
   }
-  else {
-    perror("FilterExport::write: Unable to open output file");
-  }
+  else 
+    ; // lock failed
 }
 
 void FilterExport::_writex(char*& p) const
@@ -345,6 +387,7 @@ void _insert_entry(char*& p, const Entry* e)
 {
   XML_insert(p, "int", "signature", QtPersistent::insert(p, e->desc().signature()));
   XML_insert(p, "QString", "title", QtPersistent::insert(p, QString(e->desc().name())));
+  XML_insert(p, "unsigned","options",QtPersistent::insert(p, e->desc().options()));
 }
 
 void _insert_handler(char*& p, const EventHandler* h)
@@ -382,3 +425,51 @@ void _insert_filter(char*& p, const AbsFilter* f)
   delete[] buffer;
 }
 
+bool _lock(std::string fname)
+{
+  bool result=false;
+  std::stringstream o;
+  o << fname.c_str() << ".lock";
+  std::string s_lock = o.str();
+
+  o << "." << getenv("HOSTNAME") << "." << getpid();
+  std::string s_unique = o.str();
+
+  FILE* funique = fopen(s_unique.c_str(),"w");
+  if (funique) {
+    if (link(s_unique.c_str(), s_lock.c_str())==0)
+      result = true;
+    else {
+      struct stat s;
+      if (stat(s_unique.c_str(),&s)==0) {
+	if (s.st_nlink==2)
+	  result=true;
+      }
+      else
+	perror("stat failed for unique file");
+    }
+    fclose(funique);
+    if (!result && unlink(s_unique.c_str()))
+      perror("unlink failed for unique");
+  }
+  else {
+    o.str(std::string());
+    o << "Failed to open funique " << s_unique.c_str();
+    perror(o.str().c_str());
+  }
+  return result;
+}
+
+void _unlock(std::string fname)
+{
+  std::stringstream o;
+  o << fname.c_str() << ".lock";
+  std::string s_lock = o.str();
+  if (unlink(s_lock.c_str()))
+    perror("_unlock failed for lock");
+
+  o << "." << getenv("HOSTNAME") << "." << getpid();
+  std::string s_unique = o.str();
+  if (unlink(s_unique.c_str()))
+    perror("_unlock failed for unique");
+}

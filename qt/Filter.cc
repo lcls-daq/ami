@@ -39,7 +39,27 @@ Filter::Filter(QWidget* parent,const QString& title,
   _clayout  (new QVBoxLayout),
   _filter   (new RawFilter)
 {
-  setWindowTitle(title);
+  _layout();
+}
+
+Filter::Filter(QWidget* parent,const QString& title,
+	       FeatureTree* features) :
+  QtPWidget (parent),
+  _name     (title),
+  _expr     (new QLineEdit),
+  _cond_name(new QLineEdit("A")),
+  _features (features),
+  _lo_rng   (new QLineEdit("0")),
+  _hi_rng   (new QLineEdit("1")),
+  _clayout  (new QVBoxLayout),
+  _filter   (new RawFilter)
+{
+  _layout();
+}
+
+void Filter::_layout()
+{
+  setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
   _cond_name->setMaximumWidth(60);

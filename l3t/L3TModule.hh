@@ -70,7 +70,7 @@ namespace Ami {
                     void*    op);
       void filter  (const AbsFilter&);
     private:
-      FilterImport               _import;
+      FilterImport*              _import;
       std::vector<FeatureCache*> _features;
       std::list  <EventHandler*> _handlers;
       NameService*               _name_service;
@@ -78,7 +78,7 @@ namespace Ami {
       std::list<Analysis*>       _analyses;
       Cds                        _discovery;
       std::map<int,Cds*>         _cds;
-      std::map<EventHandler*,std::list<int> > _signatures;
+      std::map<uint32_t,std::list<int> > _signatures;
 
       AbsFilter*                 _filter;
     };

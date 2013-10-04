@@ -17,6 +17,7 @@
 #include "ami/qt/Defaults.hh"
 #include "ami/qt/Filter.hh"
 #include "ami/qt/FilterSetup.hh"
+#include "ami/qt/L3Features.hh"
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/PWidgetManager.hh"
 #include "ami/qt/FeatureRegistry.hh"
@@ -90,8 +91,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   _rate_display(new RateDisplay(*_connect_mgr,
                                 _manager)),
   _discovered(false),
-  _filter_export(new Filter((QtPWidget*)0,"L3T Export",
-			    Ami::PostAnalysis)),
+  _filter_export(new Filter((QtPWidget*)0,"L3T Export", new L3Features)),
   _l3t_export(false)
 {
   pthread_mutex_init(&_mutex, NULL);
