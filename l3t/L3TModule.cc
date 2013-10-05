@@ -115,6 +115,8 @@ void L3TModule::pre_configure()
     delete _name_service;
     _name_service = 0;
   }
+
+  _config_complete=true;
 }
 
 /**
@@ -228,6 +230,13 @@ void L3TModule::_configure(const Pds::Src&       src,
   }
 }
 
+void L3TModule::pre_event() 
+{
+  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+      it != _handlers.end(); it++)
+    (*it)->_damaged();
+}
+
 void L3TModule::event(const Pds::DetInfo& src,
                       const Pds::TypeId&  type,
                       void*               payload)
@@ -289,10 +298,13 @@ void L3TModule::_event(const Pds::Src&     src,
   }
 }
 
+bool L3TModule::complete()
+{
+  return _filter && _filter->valid();
+}
+
 bool L3TModule::accept()
 {
-  if (!_filter) return true;
-
 #if 0
   for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
       it != _handlers.end(); it++) {
@@ -390,6 +402,7 @@ void L3TModule::analysis(unsigned id,
   if (!input_e) {
     printf("L3TModule::analysis failed to lookup input %s[%d]\n",
 	   src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input);
+    _config_complete=false;
     return;
   }
 	 

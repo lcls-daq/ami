@@ -36,6 +36,14 @@ FeatureRange::~FeatureRange()
 {
 }
 
+bool  FeatureRange::valid () const 
+{
+  bool damaged=true;
+  if (_index>=0)
+    _cache->cache(_index,&damaged);
+  return !damaged;
+}
+
 bool  FeatureRange::accept() const 
 {
   bool damaged;

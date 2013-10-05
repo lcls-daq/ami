@@ -12,6 +12,11 @@ SingleShot::~SingleShot()
 {
 }
 
+bool SingleShot::valid () const
+{
+  return true;
+}
+
 bool SingleShot::accept() const
 {
   bool result = !_fired;

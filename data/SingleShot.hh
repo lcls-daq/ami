@@ -15,6 +15,7 @@ namespace Ami {
     SingleShot();
     ~SingleShot();
   public:
+    bool  valid () const;
     bool  accept() const;
     AbsFilter* clone() const;
   private:

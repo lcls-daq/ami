@@ -9,6 +9,7 @@ namespace Ami {
     LogicOr(AbsFilter&,AbsFilter&);
     ~LogicOr();
   public:
+    bool  valid () const;
     bool  accept() const;
     AbsFilter* clone() const;
   };

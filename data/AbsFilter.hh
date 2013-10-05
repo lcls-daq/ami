@@ -28,6 +28,8 @@ namespace Ami {
   public:
     Type  type() const { return (Type)_type; }
   public:
+    ///  Returns status of whether inputs are complete
+    virtual bool  valid() const = 0;
     ///  Returns decision of whether to process the event
     virtual bool  accept() const = 0;
     ///  Clones filter object for application to another analysis thread

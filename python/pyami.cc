@@ -613,12 +613,37 @@ static PyObject* amientrylist_clear(PyObject* self, PyObject* args)
   return Py_None;
 }
 
+static PyObject* amientrylist_pget(PyObject* self, PyObject* args)
+{
+  amientrylist* e = reinterpret_cast<amientrylist*>(self);
+  return _getentrylist(e->client,true);
+}
+
+static PyObject* amientrylist_pstart(PyObject* self, PyObject* args)
+{
+  amientrylist* e = reinterpret_cast<amientrylist*>(self);
+  e->client->pstart();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject* amientrylist_pstop(PyObject* self, PyObject* args)
+{
+  amientrylist* e = reinterpret_cast<amientrylist*>(self);
+  e->client->pstop();
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 //
 //  Register amientrylist methods
 //
 static PyMethodDef amientrylist_methods[] = {
   {"get"   , amientrylist_get   , METH_VARARGS, "Return the accumulated data"},
   {"clear" , amientrylist_clear , METH_VARARGS, "Clear the accumulated data"},
+  {"pstart", amientrylist_pstart, METH_VARARGS, "Start continuous mode accumulation"},
+  {"pstop" , amientrylist_pstop , METH_VARARGS, "Stop continuous mode"},
+  {"pget"  , amientrylist_pget  , METH_VARARGS, "Return continuous mode data"},
   {NULL},
 };
 

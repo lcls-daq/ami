@@ -39,6 +39,8 @@ namespace Ami {
       void configure(const Pds::ProcInfo&  src,
                      const Pds::TypeId&    type,
                      void*                 payload);
+
+      void pre_event();
       void event    (const Pds::DetInfo&   src,
                      const Pds::TypeId&    type,
                      void*                 payload);
@@ -58,6 +60,7 @@ namespace Ami {
     public:
       std::string name() const;
       std::string configuration() const;
+      bool complete ();
       bool accept ();
     public:
       void handler (const Pds::Src&, 
@@ -81,6 +84,7 @@ namespace Ami {
       std::map<uint32_t,std::list<int> > _signatures;
 
       AbsFilter*                 _filter;
+      bool                       _config_complete;
     };
   };
 };

@@ -11,6 +11,7 @@ LogicAnd::~LogicAnd()
 {
 }
 
+bool  LogicAnd::valid () const { return _a.valid () && _b.valid (); }
 bool  LogicAnd::accept() const { return _a.accept() && _b.accept(); }
 
 AbsFilter* LogicAnd::clone() const 

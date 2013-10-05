@@ -12,6 +12,7 @@ namespace Ami {
     FeatureRange(const char*&, FeatureCache*);
     ~FeatureRange();
   public:
+    bool  valid () const;
     bool  accept() const;
     AbsFilter* clone() const;
   public:

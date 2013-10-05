@@ -11,6 +11,7 @@ LogicOr::~LogicOr()
 {
 }
 
+bool  LogicOr::valid () const { return _a.valid () || _b.valid (); }
 bool  LogicOr::accept() const { return _a.accept() || _b.accept(); }
 
 AbsFilter* LogicOr::clone() const

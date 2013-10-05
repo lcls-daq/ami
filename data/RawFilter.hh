@@ -9,6 +9,7 @@ namespace Ami {
     RawFilter();
     ~RawFilter();
   public:
+    bool valid () const;
     bool accept() const;
     AbsFilter* clone() const;
   private:
