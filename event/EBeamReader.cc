@@ -43,11 +43,17 @@ void   EBeamReader::_configure(Pds::TypeId id,
   if (id.version()>=1) {
     index = _add_to_cache("BLD:EBEAM:PKCURRBC2");
     if (id.version()>=2) {
-      index = _add_to_cache("BLD:EBEAM:PKCURRBC2");
+      _add_to_cache("BLD:EBEAM:PKCURRBC2");
       index = _add_to_cache("BLD:EBEAM:ENERGYBC2");
       if (id.version()>=3) {
-        index = _add_to_cache("BLD:EBEAM:PKCURRBC1");
+        _add_to_cache("BLD:EBEAM:PKCURRBC1");
         index = _add_to_cache("BLD:EBEAM:ENERGYBC1");
+        if (id.version()>=4) {
+          _add_to_cache("BLD:EBEAM:UNDX");
+          _add_to_cache("BLD:EBEAM:UNDY");
+          _add_to_cache("BLD:EBEAM:UNDXP");
+          index = _add_to_cache("BLD:EBEAM:UNDYP");
+        }
       }
     }
   }
