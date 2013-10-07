@@ -109,7 +109,6 @@ void   EBeamReader::_event    (Pds::TypeId id,
         break;
       }
     case 3:
-    default:
       {
         const Pds::Bld::BldDataEBeamV3& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV3*>(payload);
@@ -125,6 +124,28 @@ void   EBeamReader::_event    (Pds::TypeId id,
         _cache.cache(index++,bld.ebeamEnergyBC1());
         break;
       }
+    case 4:
+      {
+        const Pds::Bld::BldDataEBeamV4& bld = 
+          *reinterpret_cast<const Pds::Bld::BldDataEBeamV4*>(payload);
+        _cache.cache(index++,bld.ebeamCharge());
+        _cache.cache(index++,bld.ebeamL3Energy());
+        _cache.cache(index++,bld.ebeamLTUPosX());
+        _cache.cache(index++,bld.ebeamLTUPosY());
+        _cache.cache(index++,bld.ebeamLTUAngX());
+        _cache.cache(index++,bld.ebeamLTUAngY());
+        _cache.cache(index++,bld.ebeamPkCurrBC2());
+        _cache.cache(index++,bld.ebeamEnergyBC2());
+        _cache.cache(index++,bld.ebeamPkCurrBC1());
+        _cache.cache(index++,bld.ebeamEnergyBC1());
+        _cache.cache(index++,bld.ebeamUndPosX());
+        _cache.cache(index++,bld.ebeamUndPosY());
+        _cache.cache(index++,bld.ebeamUndAngX());
+        _cache.cache(index++,bld.ebeamUndAngY());
+        break;
+      }
+    default:
+      break;
     }
   }
 }
