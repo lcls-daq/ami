@@ -77,6 +77,28 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       _values.push_back(pv.value());
     }
   }
+  else if (id.version()==Pds::ControlData::ConfigV3::Version) {
+    const Pds::ControlData::ConfigV3& c =
+      *reinterpret_cast<const Pds::ControlData::ConfigV3*>(payload);
+
+    //  Add the PVControl variables
+    char nbuf[FeatureCache::FEATURE_NAMELEN];
+    for(unsigned k=0; k<c.npvControls(); k++) {
+      const Pds::ControlData::PVControl& pv = c.pvControls()[k];
+      int index;
+      if (pv.array()) {
+        snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
+        index = _cache.add(nbuf);
+      }
+      else {
+        snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
+        index = _cache.add(nbuf);
+      }
+      _cache.cache(index,pv.value());
+      if (_index<0) _index = index;
+      _values.push_back(pv.value());
+    }
+  }
 }
 
 //  no L1 data will appear from Control
