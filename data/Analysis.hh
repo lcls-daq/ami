@@ -16,7 +16,8 @@ namespace Ami {
 	     const Entry& input,    // input data to analysis
 	     unsigned     output,   // output signature
 	     Cds&         cds,      // repository
-	     FeatureCache&,         // scalar features
+	     FeatureCache& icache,  // scalar features
+	     FeatureCache& ocache,  // scalar features
 	     const char*& p);       // serial stream
     ~Analysis();
   public:

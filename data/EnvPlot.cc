@@ -38,9 +38,12 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
 }
 
-EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
+EnvPlot::EnvPlot(const char*&  p, 
+		 FeatureCache& input, 
+		 FeatureCache& output, 
+		 const Cds&    cds) :
   AbsOperator(AbsOperator::EnvPlot),
-  _cache     (&features),
+  _cache     (&input),
   _term      (0),
   _weight    (0),
   _v         (true)
@@ -49,7 +52,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
-  _entry = EntryFactory::entry(o);
+  _entry = EntryFactory::entry(o,&output);
 
 #ifdef DBUG
   printf("EnvPlot ctor %s : %s\n",
@@ -59,7 +62,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
 
   FeatureExpression parser;
   { QString expr(o.name());
-    _input = parser.evaluate(features,expr);
+    _input = parser.evaluate(input,expr);
     if (!_input) {
       printf("EnvPlot failed to parse input %s\n",qPrintable(expr));
       _v = false;
@@ -71,7 +74,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
       o.type()==DescEntry::TH2F ||
       o.type()==DescEntry::ScalarDRange) {
     QString expr(o.xtitle());
-    _term = parser.evaluate(features,expr);
+    _term = parser.evaluate(input,expr);
     if (!_term) {
       printf("EnvPlot failed to parse term %s\n",qPrintable(expr));
       _v = false;
@@ -83,7 +86,7 @@ EnvPlot::EnvPlot(const char*& p, FeatureCache& features, const Cds& cds) :
     if (w.weighted()) {
       QString expr(w.weight());
       printf("%s evaluates to\n",qPrintable(expr));
-      _weight = parser.evaluate(features,expr);
+      _weight = parser.evaluate(input,expr);
       if (!_weight) {
 	printf("EnvPlot failed to parse weight %s\n",qPrintable(expr));
         _v = false;
@@ -116,7 +119,6 @@ void*      EnvPlot::_serialize(void* p) const
 Entry&     EnvPlot::_operate(const Entry& e) const
 {
   if (_input != 0 && e.valid()) {
-    Feature::damage(false);
     double y = _input->evaluate();
     double w = _weight ? _weight->evaluate() : 1;
 
@@ -127,7 +129,7 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	   y, Feature::damage() ? 't':'f');
 #endif
 
-    if (!Feature::damage()) {
+    if (_input->valid()) {
       switch(_entry->desc().type()) {
       case DescEntry::Scalar: 
 	{ EntryScalar* en = static_cast<EntryScalar*>(_entry);
@@ -139,9 +141,8 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  break; }
       case DescEntry::ScalarDRange: 
 	if (_term) {
-	  Feature::damage(false);
 	  double x=_term->evaluate();
-	  if (!Feature::damage()) {
+	  if (_term->valid()) {
             EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
             en->addcontent(x,y);    
           }
@@ -154,9 +155,8 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	  break; }
       case DescEntry::Prof:    
 	if (_term) {
-	  Feature::damage(false);
 	  double x=_term->evaluate();
-	  if (!Feature::damage()) {
+	  if (_term->valid()) {
 	    EntryProf* en = static_cast<EntryProf*>(_entry);
 	    en->addy(y,x);
 	    en->addinfo(1.,EntryProf::Normalization);
@@ -165,9 +165,8 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	break;
       case DescEntry::Scan:    
 	if (_term) {
-	  Feature::damage(false);
 	  double x=_term->evaluate();
-	  if (!Feature::damage()) {
+	  if (_term->valid() && (!_weight || _weight->valid())) {
 	    EntryScan* en = static_cast<EntryScan*>(_entry);
 	    en->addy(y,x,w,e.last());
 	    en->addinfo(1.,EntryScan::Normalization);
@@ -180,9 +179,8 @@ Entry&     EnvPlot::_operate(const Entry& e) const
           break; }
       case DescEntry::TH2F:
 	if (_term) {
-	  Feature::damage(false);
 	  double x=_term->evaluate();
-	  if (!Feature::damage()) {
+	  if (_term->valid()) {
 	    EntryTH2F* en = static_cast<EntryTH2F*>(_entry);
 	    en->addcontent(1.,x,y);
 	    en->addinfo(1.,EntryTH2F::Normalization);
@@ -196,6 +194,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
 	break;
       }
       _entry->valid(e.time());
+    }
+    else {
+      printf("EnvPlot [%s] input not valid\n",_entry->desc().name());
     }
   }
   return *_entry;

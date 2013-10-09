@@ -1,7 +1,6 @@
 #include "ami/data/BinMathTerms.hh"
 
 #include "ami/data/DescWaveform.hh"
-#include "ami/data/Entry.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"

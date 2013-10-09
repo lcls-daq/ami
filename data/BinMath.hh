@@ -24,8 +24,8 @@ namespace Ami {
     //    the algebraic expression, and any BLD/PV dependence for profiles.
     BinMath(const DescEntry& output, const char* expr);
     //  Reconstituted from the input serial stream, the BldState and PvState
-    //    accessors, and the Cds input entry accessor.
-    BinMath(const char*&, const DescEntry& input, FeatureCache&);
+    //    accessors, and the FeatureCaches for input access and output storage.
+    BinMath(const char*&, const DescEntry& input, FeatureCache& icache, FeatureCache& ocache);
     BinMath(const char*&);
     ~BinMath();
   public:

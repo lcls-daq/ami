@@ -34,7 +34,6 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
 {
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
-  EntryFactory::source(*_features[PostAnalysis]);
 
   unsigned i=0;
   for(UList::iterator it=user.begin(); it!=user.end(); it++,i++) {
@@ -212,8 +211,10 @@ void AnalysisFactory::configure(unsigned       id,
         }
         if (!lFound) {
           const char*  p     = reinterpret_cast<const char*>(&req+1);
-          Analysis* a = new Analysis(id, *input, req.output(),
-                                     cds, *_features[req.scalars()], p);
+          Analysis* a = new Analysis(id, *input, req.output(), cds, 
+				     *_features[req.scalars()], 
+				     *_features[Ami::PostAnalysis],
+				     p);
           a->input().desc().used(true);
           _analyses.push_back(a);
 #ifdef DBUG

@@ -28,6 +28,7 @@
       ~classname() { delete &_a; delete &_b; }	   \
     public: \
       double evaluate() const { return o; } \
+      bool   valid   () const { return _a.valid() && _b.valid(); } \
     private: \
       Term& _a; \
       Term& _b; \

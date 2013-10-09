@@ -25,8 +25,6 @@ TimepixHandler::TimepixHandler(const Pds::DetInfo& info, const EntryImage* entry
 
 TimepixHandler::~TimepixHandler()
 {
-  if (_entry)
-    delete _entry;
 }
 
 unsigned TimepixHandler::nentries() const { return _entry ? 1 : 0; }
@@ -59,8 +57,6 @@ void TimepixHandler::_configure(Pds::TypeId type, const void* payload, const Pds
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		 columns, rows, ppb, ppb);
 
-  if (_entry) 
-    delete _entry;
   _entry = new EntryImage(desc);
 
   // add a SubFrame for each quadrant

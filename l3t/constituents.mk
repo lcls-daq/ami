@@ -8,5 +8,6 @@ liblibs_amil3t += pdsdata/xtcdata pdsdata/psddl_pdsdata pdsdata/appdata pdsdata/
 liblibs_amil3t += $(qtlibdir)
 liblibs_amil3t += $(qtslibdir)
 liblibs_amil3t += pdsalg/pdsalg
+libslib_amil3t := gomp
 
 libincs_amil3t := ndarray/include boost/include pdsdata/include 

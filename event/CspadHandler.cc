@@ -1006,7 +1006,6 @@ namespace CspadGeometry {
       }
 #endif
 
-#ifdef _OPENMP
       unsigned nframes[5];
       nframes[0] = 0;
       for(unsigned j=0; j<4; j++) {
@@ -1024,9 +1023,11 @@ namespace CspadGeometry {
       Quad* const* quad = this->quad;
       Ami::FeatureCache* cache = _cache;
       double sum = 0;
+#ifdef _OPENMP
 #pragma omp parallel shared(quad,cache) private(q) num_threads(4)
       {
 #pragma omp for schedule(dynamic,1)
+#endif
         for(q=0; q<4; q++) {
           unsigned mask;
           ndarray<const  int16_t,3> data;
@@ -1056,35 +1057,8 @@ namespace CspadGeometry {
           sum += s;
           }
         }
+#ifdef _OPENMP
       }
-#else
-      for(int q=0; q<4; q++)
-        if (_config.hasQuad(q)) {
-          unsigned mask;
-          ndarray<const int16_t,3> data = _config.data(q,mask);
-          quad[q]->fill(image,data,mask);
-          for(int a=0; a<4; a++)
-            cache->cache(_feature[4*q+a],
-                         CspadTemp::instance().getTemp(_config.sb_temp(q,a)));
-
-          //  Calculate integral
-          if (image.desc().options()&CspadCalib::option_post_integral()) {
-          double s=0;
-          double p   = double(image.info(Ami::EntryImage::Pedestal));
-          for(unsigned fn=nframes[q]; fn<nframes[q+1]; fn++) {
-            int xlo(0), xhi(3000), ylo(0), yhi(3000);
-            if (image.desc().xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-              for(int j=ylo; j<yhi; j++)
-                for(int i=xlo; i<xhi; i++) {
-                  double v = double(image.content(i,j))-p;
-                  s += v;
-                }
-            }
-          }
-          sum += s;
-          }
-        }
-
 #endif
 
       if (image.desc().options()&CspadCalib::option_post_integral())
@@ -1210,10 +1184,6 @@ CspadHandler::~CspadHandler()
     delete _detector;
   if (_unbinned_detector)
     delete _unbinned_detector;
-  if (_entry)
-    delete _entry;
-  if (_unbinned_entry)
-    delete _unbinned_entry;
 }
 
 unsigned CspadHandler::nentries() const { return _entry ? 1 : 0; }
@@ -1296,9 +1266,6 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
     delete detector;
 
   detector = new CspadGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution());
-
-  if (entry) 
-    delete entry;
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

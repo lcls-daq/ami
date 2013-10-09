@@ -674,8 +674,6 @@ CspadMiniHandler::~CspadMiniHandler()
 {
   if (_detector)
     delete _detector;
-  if (_entry)
-    delete _entry;
 }
 
 unsigned CspadMiniHandler::nentries() const { return _entry ? 1 : 0; }
@@ -751,9 +749,6 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
     delete detector;
 
   detector = new CspadMiniGeometry::Detector(info(),f,s,g,rms,gm,max_pixels);
-
-  if (entry) 
-    delete entry;
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

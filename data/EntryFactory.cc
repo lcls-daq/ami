@@ -16,11 +16,10 @@
 
 using namespace Ami;
 
-static FeatureCache* _cache  = 0;
-
 #define CASE_NEW(type) { case DescEntry::type: entry = new Entry##type((const Desc##type&)desc); break; }
 
-Entry* EntryFactory::entry(const DescEntry& desc)
+Entry* EntryFactory::entry(const DescEntry& desc,
+			   FeatureCache*    cache)
 {
   Entry* entry = 0;
   switch (desc.type()) {
@@ -35,11 +34,9 @@ Entry* EntryFactory::entry(const DescEntry& desc)
     CASE_NEW(ScalarRange);
     CASE_NEW(ScalarDRange);
   case DescEntry::Cache: 
-    { entry = new EntryCache((const DescCache&)desc, _cache); break; }
+    { entry = new EntryCache((const DescCache&)desc, cache); break; }
   default: printf("EntryFactory::entry unrecognized type %d\n",desc.type()); abort(); break;
   }
   if (entry) entry->reset();
   return entry;
 }
-
-void EntryFactory::source(FeatureCache& cache) { _cache = &cache; }

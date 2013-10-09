@@ -9,8 +9,8 @@ namespace Ami {
 
   class EntryFactory {
   public:
-    static Entry* entry (const DescEntry& desc);
-    static void   source(FeatureCache& cache);
+    static Entry* entry (const DescEntry& desc,
+			 FeatureCache*    cache=0);
   };
 };
 

@@ -41,6 +41,7 @@ namespace Ami {
     ~SumTerm() { delete _term; }
   public:
     double evaluate() const { return _term->evaluate(); }
+    bool   valid   () const { return _term->valid   (); }
   private:
     Term*  _term;
   };

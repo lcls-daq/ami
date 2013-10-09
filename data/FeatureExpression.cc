@@ -9,7 +9,8 @@ using namespace Ami;
 
 Feature::Feature(FeatureCache& f, unsigned index) :
   _features(f),
-  _index   (index)
+  _index   (index),
+  _damaged (false)
 {
 }
 
@@ -17,16 +18,15 @@ Feature::~Feature() {}
 
 double Feature::evaluate() const
 {
-  bool dmg(false);
-  double v = _features.cache(_index,&dmg);
-  if (dmg) damage(true);
+  _damaged = false;
+  double v = _features.cache(_index,&_damaged);
   return v;
 }
 
-static bool _dmg;
-void Feature::damage(bool l) { _dmg = l; }
-bool Feature::damage() { return _dmg; }
-
+bool   Feature::valid   () const
+{
+  return !_damaged;
+}
 
 FeatureExpression::FeatureExpression() : Expression(_variables) {}
 

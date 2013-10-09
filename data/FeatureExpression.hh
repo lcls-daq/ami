@@ -14,12 +14,11 @@ namespace Ami {
     ~Feature();
   public:
     double evaluate() const;
-  public:
-    static void damage(bool);
-    static bool damage();
+    bool   valid   () const;
   private:
     FeatureCache& _features;
     unsigned      _index;
+    mutable bool  _damaged;
   };
 
   class FeatureExpression : public Expression {

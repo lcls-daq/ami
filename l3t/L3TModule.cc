@@ -70,8 +70,6 @@ L3TModule::L3TModule() :
 {
   for(unsigned i=0; i<Ami::NumberOfSets; i++)
     _features.push_back(new FeatureCache);
-
-  EntryFactory::source(*_features[Ami::PostAnalysis]);
 }
 
 L3TModule::~L3TModule() 
@@ -101,6 +99,11 @@ void L3TModule::pre_configure()
 {
   if (_import)
     delete _import;
+
+  for(std::list<EventHandler*>::iterator hit = _handlers.begin(); 
+      hit != _handlers.end(); hit++)
+    delete *hit;
+  _handlers.clear();
 
   _import = new FilterImport;
   _import->parse_handlers(*this);
@@ -157,6 +160,11 @@ void L3TModule::post_configure()
     it->second->clear_used();
 
   _import->parse_analyses(*this);
+
+  if (_filter) {
+    delete _filter;
+    _filter = 0;
+  }
 
   _import->parse_filter  (*this);
 
@@ -235,6 +243,9 @@ void L3TModule::pre_event()
   for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
       it != _handlers.end(); it++)
     (*it)->_damaged();
+
+  for(unsigned i=0; i<NumberOfSets; i++)
+    _features[i]->start();
 }
 
 void L3TModule::event(const Pds::DetInfo& src,
@@ -287,6 +298,10 @@ void L3TModule::_event(const Pds::Src&     src,
       for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
           it != types.end(); it++) {
         if (*it == type) {
+#ifdef DBUG
+	  printf("Handling type %s with damage %x\n",
+		 Pds::TypeId::name(type), pxtc->damage.value());
+#endif
           if (pxtc->damage.value())
             h->_damaged();
           else
@@ -300,6 +315,16 @@ void L3TModule::_event(const Pds::Src&     src,
 
 bool L3TModule::complete()
 {
+  _features[PostAnalysis]->cache(*_features[PreAnalysis]);
+
+  for(std::list<Analysis*>::iterator it=_analyses.begin();
+      it!=_analyses.end(); it++)
+    (*it)->analyze();
+
+#ifdef DBUG
+  printf("L3TModule::complete _filter %p  valid %c\n",
+	 _filter, _filter->valid() ? 't':'f');
+#endif
   return _filter && _filter->valid();
 }
 
@@ -313,11 +338,9 @@ bool L3TModule::accept()
   }
 #endif
 
-  _features[PostAnalysis]->cache(*_features[PreAnalysis]);
-
-  for(std::list<Analysis*>::iterator it=_analyses.begin();
-      it!=_analyses.end(); it++)
-    (*it)->analyze();
+#ifdef DBUG
+  printf("L3TModule::accept %c\n", _filter->accept() ? 't':'f');
+#endif
 
   return _filter->accept();
 }
@@ -330,53 +353,57 @@ void L3TModule::handler (const Pds::Src& src,
   const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(src);
   FeatureCache& cache = *_features[PreAnalysis];
   EventHandler* h = 0;
-      
-  switch(types.front()) {
-  case Pds::TypeId::Any:                 h = new EpixHandler       (info); break;
-  case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
-  case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
-  case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
-  case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
-  case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
-  case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
-  case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
-    //      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
-  case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
-  case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
-  case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
-  case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
-  case Pds::TypeId::Id_CspadConfig:      
-    if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
-    else                                 h = new CspadMiniHandler  (info,cache);
-    break;
-  case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;
-  case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
-  case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
-  case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
-  case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
-  case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
-  case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
-  case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
-  case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
-  case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
-  case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
-  case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
-  case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
-  case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
-  case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
-  case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
-  case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
-  case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
-  case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
-  default: break;
-  }
 
-  if (h) {
-    _handlers.push_back(h);
-    _signatures[h->info().phy()] = signatures;
-  }
-  else {
-    printf("Ami::L3T::XtcClient cannot handle type %s src %08x.%08x\n",Pds::TypeId::name(types.front()),src.log(),src.phy());
+  for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+      it!=types.end(); it++) {
+    switch(*it) {
+    case Pds::TypeId::Any:                 h = new EpixHandler       (info); break;
+    case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
+    case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
+    case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
+    case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
+    case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
+    case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
+    case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
+      //      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
+    case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
+    case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
+    case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
+    case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
+    case Pds::TypeId::Id_CspadConfig:      
+      if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
+      else                                 h = new CspadMiniHandler  (info,cache);
+      break;
+    case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;
+    case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
+    case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
+    case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
+    case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
+    case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
+    case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
+    case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
+    case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
+    case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
+    case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
+    case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
+    case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
+    case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
+    case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
+    case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
+    case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
+    case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
+    case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
+    default: break;
+    }
+
+    if (h) {
+      _handlers.push_back(h);
+      _signatures[h->info().phy()] = signatures;
+      break;
+    }
+    else if (*it != Pds::TypeId::Id_FrameFexConfig) {
+      printf("Ami::L3T::handler cannot handle type %s src %08x.%08x\n",Pds::TypeId::name(types.front()),src.log(),src.phy());
+    }
   }
 }
 
@@ -413,16 +440,15 @@ void L3TModule::analysis(unsigned id,
 
   const char* p = (const char*)op;
   Ami::Analysis* a = new Ami::Analysis(id, *input_e, output, *_cds[id],
-                                       *_features[PostAnalysis], p);
+                                       *_features[PostAnalysis], 
+				       *_features[PostAnalysis],
+				       p);
   a->input().desc().used(true);
   _analyses.push_back(a);
 }
 
 void L3TModule::filter  (const AbsFilter& filter)
 {
-  if (_filter)
-    delete _filter;
-
   char* buffer = new char[4*1024];
   filter.serialize(buffer);
 

@@ -105,8 +105,6 @@ EpixHandler::EpixHandler(const Pds::Src& info) :
 
 EpixHandler::~EpixHandler()
 {
-  if (_entry)
-    delete _entry;
 }
 
 unsigned EpixHandler::nentries() const { return _entry ? 1 : 0; }
@@ -124,9 +122,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 {
   if (tid.id()      == (Pds::TypeId::Type)Ami::Epix::ConfigT::typeId && 
       tid.version() == Ami::Epix::ConfigT::version) {
-    if (_entry) 
-      delete _entry;
-
     const Ami::Epix::ConfigT& c = *reinterpret_cast<const Ami::Epix::ConfigT*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     const unsigned chip_margin=4;

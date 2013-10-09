@@ -20,6 +20,8 @@ namespace Ami {
   public:
     ///  Return the result of evaluating this term of the expression
     virtual double evaluate() const = 0;
+    ///  Return the validity of evaluating this term of the expression
+    virtual bool valid() const { return true; }
   };
 
   /**

@@ -20,6 +20,7 @@ namespace Ami {
     double evaluate() const { 
       double n = _entry.info(EntryWaveform::Normalization);
       return (n > 1) ? _entry.content(_index)/n : _entry.content(_index); }
+    bool   valid   () const { return _entry.valid(); }
   private:
     const EntryWaveform& _entry;
     unsigned& _index;
@@ -32,6 +33,7 @@ namespace Ami {
     ~EntryTH1FTerm() {}
   public:
     double evaluate() const { return _entry.content(_index)/(_entry.info(EntryTH1F::Normalization)>0 ? _entry.info(EntryTH1F::Normalization):1); }
+    bool   valid   () const { return _entry.valid(); }
   private:
     const EntryTH1F& _entry;
     unsigned& _index;
@@ -44,6 +46,7 @@ namespace Ami {
     ~EntryProfTerm() {}
   public:
     double evaluate() const { return _entry.ymean(_index); }
+    bool   valid   () const { return _entry.valid(); }
   private:
     const EntryProf& _entry;
     unsigned& _index;
@@ -61,6 +64,7 @@ namespace Ami {
 	double(_entry.info(EntryImage::Pedestal));
       return (n>1) ? v/n : v;
     }
+    bool   valid   () const { return _entry.valid(); }
   private:
     const EntryImage& _entry;
     unsigned& _index;

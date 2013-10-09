@@ -38,8 +38,6 @@ FrameHandler::FrameHandler(const Pds::DetInfo& info, const EntryImage* entry) :
 
 FrameHandler::~FrameHandler()
 {
-  if (_entry)
-    delete _entry;
 }
 
 void FrameHandler::rename(const char* name)
@@ -58,9 +56,6 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
 {
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_FrameFexConfig) {
-    if (_entry) 
-      delete _entry;
-
     const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     unsigned columns,rows;

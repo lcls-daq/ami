@@ -9,7 +9,7 @@ namespace Ami {
   class FeatureCache;
   class OperatorFactory {
   public:
-    OperatorFactory(FeatureCache& f);
+    OperatorFactory(FeatureCache& input, FeatureCache& output);
     ~OperatorFactory();
   public:
     AbsOperator* deserialize(const char*&, 
@@ -21,7 +21,8 @@ namespace Ami {
 			  const DescEntry& input,
 			  Cds&             output_cds) const;
     
-    FeatureCache& _f;
+    FeatureCache& _input;
+    FeatureCache& _output;
   };
 };
 

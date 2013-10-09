@@ -65,7 +65,7 @@ DescImage::DescImage(const Pds::DetInfo& info,
                      bool rmsCalib) :
   DescEntry(info, 0, name, "x", "y", zunits, 
             Image, sizeof(DescImage),
-            true, true, 
+            true, false, 
             pedCalib, gainCalib, rmsCalib),
   _nbinsx(nbinsx ? nbinsx : 1),
   _nbinsy(nbinsy ? nbinsy : 1),

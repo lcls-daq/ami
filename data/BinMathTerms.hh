@@ -2,6 +2,7 @@
 #define Ami_BinMathTerms_hh
 
 #include "ami/data/Expression.hh"
+#include "ami/data/Entry.hh"
 
 namespace Ami {
   enum Moment { None, Zero, First, Second, 
@@ -17,6 +18,7 @@ namespace Ami {
       ~EntryWaveformTerm() {}
     public:
       double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
     private:
       const Entry*& _entry;
       unsigned _lo, _hi;
@@ -30,6 +32,7 @@ namespace Ami {
       ~EntryTH1FTerm() {}
     public:
       double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
     private:
       const Entry*& _entry;
       unsigned _lo, _hi;
@@ -43,6 +46,7 @@ namespace Ami {
       ~EntryProfTerm() {}
     public:
       double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
     private:
       const Entry*& _entry;
       unsigned _lo, _hi;
@@ -58,6 +62,7 @@ namespace Ami {
       ~EntryImageTerm() {}
     public:
       double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
     private:
       const Entry*& _entry;
       unsigned _xlo, _xhi, _ylo, _yhi;
@@ -74,6 +79,7 @@ namespace Ami {
       ~EntryImageTermF() {}
     public:
       double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
     private:
       const Entry*& _entry;
       double _xc, _yc, _r0, _r1, _f0, _f1;

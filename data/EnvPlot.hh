@@ -24,7 +24,10 @@ namespace Ami {
     EnvPlot(const DescEntry& output);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
-    EnvPlot(const char*&, FeatureCache&, const Cds&);
+    EnvPlot(const char*&, 
+	    FeatureCache& input, 
+	    FeatureCache& output, 
+	    const Cds&);
     ~EnvPlot();
   private:
     DescEntry& _routput   () const;

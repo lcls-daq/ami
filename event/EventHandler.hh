@@ -23,7 +23,7 @@ namespace Ami {
    *  indicated in the detector configuration object.
    *
    *  Note that this object does not own the Entry objects it creates.  Ownership
-   *  is taken by another object.
+   *  is taken by another object (see class Cds).
    */
   class EventHandler {
   public:

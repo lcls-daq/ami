@@ -79,9 +79,9 @@ BinMath::BinMath(const DescEntry& output,
   { t = new Ami::BinMathC::Entry##type##Term(_input,lo,hi,mom);		\
     break; }
 
-BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features) :
+BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, FeatureCache& ocache) :
   AbsOperator(AbsOperator::BinMath),
-  _cache (&features),
+  _cache (&icache),
   _term  (0),
   _fterm (0),
   _v     (true)
@@ -91,7 +91,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
-  _entry = EntryFactory::entry(o);
+  _entry = EntryFactory::entry(o,&ocache);
  
   { QString expr(_expression);
     QString new_expr;
@@ -167,7 +167,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
 //     Expression parser(variables);
 //     _term = parser.evaluate(new_expr);
     FeatureExpression parser;
-    _term = parser.evaluate(features,new_expr);
+    _term = parser.evaluate(icache,new_expr);
     if (!_term) {
       printf("BinMath failed to parse %s (%s)\n",qPrintable(new_expr),_expression);
       _v = false; 
@@ -180,7 +180,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& features)
       o.type() == DescEntry::ScalarDRange) {
     QString expr(o.xtitle());
     FeatureExpression parser;
-    _fterm = parser.evaluate(features,expr);
+    _fterm = parser.evaluate(icache,expr);
     if (!_fterm) {
       printf("BinMath failed to parse f %s\n",qPrintable(expr));
       _v = false;

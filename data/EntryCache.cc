@@ -13,9 +13,12 @@ EntryCache::EntryCache(const DescCache& desc, FeatureCache* cache) :
   allocate(0);
   if (_cache)
     _index = cache->add(desc.ytitle());
-  else
+  else {
     printf("EntryCache ctor [%s] without cache reference\n",
 	   _desc.name());
+    //  This is allowed on the client-side
+    //    abort();
+  }
 }
 
 void EntryCache::set(double y, bool damaged)

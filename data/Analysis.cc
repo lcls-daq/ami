@@ -15,17 +15,18 @@ Analysis::Analysis(unsigned      id,
 		   const Entry&  input, 
 		   unsigned      output, 
 		   Cds&          cds, 
-		   FeatureCache& cache,
+		   FeatureCache& icache,
+		   FeatureCache& ocache,
 		   const char*&  p) :
   _id    (id),
   _output(output),
   _input (input),
   _cds   (cds)
 {
-  FilterFactory filters(cache);
+  FilterFactory filters(icache);
   _filter = filters.deserialize(p);
 
-  OperatorFactory operators(cache);
+  OperatorFactory operators(icache,ocache);
   _op = operators.deserialize(p, input, cds, output);
 
   bool lvalid = input.valid();
