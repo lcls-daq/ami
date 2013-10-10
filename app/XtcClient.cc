@@ -14,6 +14,7 @@
 #include "ami/event/SharedIpimbReader.hh"
 #include "ami/event/SharedPimHandler.hh"
 #include "ami/event/ControlXtcReader.hh"
+#include "ami/event/L3THandler.hh"
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/EncoderHandler.hh"
 #include "ami/event/UsdUsbHandler.hh"
@@ -397,6 +398,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
       case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
+      case Pds::TypeId::Id_L3TConfig:        h = new L3THandler        (cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
       case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;

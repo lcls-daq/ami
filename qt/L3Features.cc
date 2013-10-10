@@ -21,7 +21,8 @@ bool L3Features::_valid_entry(const QString& e) const
     << "ProcLatency"
     << "EventId"
     << "EventTime"
-    << "RunNumber";
+    << "RunNumber"
+    << "DAQ:L3Accept";
 
   if (v.contains(e))
     return false;
