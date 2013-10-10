@@ -27,6 +27,7 @@ namespace Ami {
     const Entry* entry   (unsigned) const;
     void         reset   ();
     void         rename  (const char*);
+    bool         used    () const { return true; }
   private:
     FeatureCache& _cache;
     int _index;

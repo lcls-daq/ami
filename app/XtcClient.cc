@@ -255,6 +255,8 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
   case Pds::Level::Reporter:
     infoName = Pds::BldInfo::name(static_cast<const BldInfo&>(xtc->src));
     break;
+  case Pds::Level::Event:
+    break;
   default:
     printf("Default name lookup failed for src %08x.%08x!\n", 
            xtc->src.phy(), xtc->src.log());
@@ -426,7 +428,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       }
       if (!h) {
         if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
-            xtc->contains.id()==Pds::TypeId::Id_EpicsConfig)
+            xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
+            xtc->contains.id()==Pds::TypeId::Id_AliasConfig)
           ;
         else
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());

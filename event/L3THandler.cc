@@ -13,9 +13,9 @@
 using namespace Ami;
 
 L3THandler::L3THandler(FeatureCache& f)  : 
-  EventHandler(Pds::ProcInfo(Pds::Level::Event,-1U,0),
-               Pds::TypeId::Id_L3TConfig,
-               Pds::TypeId::Id_L3TData),
+  EventHandler(Pds::ProcInfo(Pds::Level::Event,0,-1U),
+               Pds::TypeId::Id_L3TData,
+               Pds::TypeId::Id_L3TConfig),
   _cache(f),
   _index(-1)
 {
@@ -47,7 +47,7 @@ void   L3THandler::_event    (Pds::TypeId id,
       {
         const Pds::L3T::DataV1& l3t = 
           *reinterpret_cast<const Pds::L3T::DataV1*>(payload);
-        _cache.cache(_index, l3t.accept()!=0);
+        _cache.cache(_index, l3t.accept()==0 ? 0:1);
       } break;
     default:
       break;
