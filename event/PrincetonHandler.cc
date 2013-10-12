@@ -141,6 +141,8 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
   {
     if (!_entry) return;
 
+    memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
+
     ndarray<const uint16_t,2> a;
     switch(type.version()) {
     case 1: a = array<Pds::Princeton::FrameV1>(_configtc, payload); break;
