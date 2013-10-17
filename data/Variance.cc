@@ -169,8 +169,7 @@ Entry&     Variance::_operate(const Entry& e) const
         double ped = en.info(EntryImage::Pedestal);
         if (d.nframes()) {
           int k;
-          //#ifdef _OPENMP
-#if 0
+#ifdef _OPENMP
 #pragma omp parallel private(k) num_threads(4)
           {
 #pragma omp for schedule(dynamic,1) nowait
@@ -184,11 +183,8 @@ Entry&     Variance::_operate(const Entry& e) const
               else {
                 ndarray<unsigned,2>       out(ca.contents(k));
                 pdsalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
-                _cache->valid(e.time());
-                if (_n) {
-                  _i = 0;
+                if (_n)
                   _zero(_m1[k],_m2[k]);
-                }
               }
             }
           } // for schedule
@@ -200,12 +196,13 @@ Entry&     Variance::_operate(const Entry& e) const
           else {
             ndarray<unsigned,2>       out(ca.content());
             pdsalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
-            _cache->valid(e.time());
-            if (_n) {
-              _i = 0;
+            if (_n)
               _zero(_m1[0],_m2[0]);
-            }
           }
+        }
+        if (_i>=_n) {
+          if (_n) _i=0;
+          _cache->valid(e.time());
         }
       } break;
     default:
