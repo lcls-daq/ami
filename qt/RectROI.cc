@@ -140,15 +140,21 @@ void RectROI::save_plots(const QString& p) const
 void RectROI::configure(char*& p, unsigned input, unsigned& output,
                         ChannelDefinition* channels[], int* input_signatures, unsigned nchannels)
 {
+  bool smp_prohibit = channels[_channel]->smp_prohibit();
+
   if (!(_pplots.size() || _cplots.size() || _zplots.size() ||
         _posts.size() || _ovls.size())) return;
 
+  if (smp_prohibit && !_zplots.size()) return;
+
   //  Configure the ROI
-  Ami::RectROI op(Ami::DescImage(qPrintable(_name),
-                                 _rect.x1-_rect.x0+1,
-                                 _rect.y1-_rect.y0+1,
-                                 1, 1, 
-                                 _rect.x0, _rect.y0));
+  Ami::DescImage d(qPrintable(_name),
+		   _rect.x1-_rect.x0+1,
+		   _rect.y1-_rect.y0+1,
+		   1, 1, 
+		   _rect.x0, _rect.y0);
+  d.aggregate(smp_prohibit);
+  Ami::RectROI op(d);
   
   ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                     ConfigureRequest::Analysis,
@@ -161,20 +167,26 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
   input = _signature = req.output();
 
   //  Configure the derived plots
-  const unsigned maxpixels=1024;
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->configure(p,input,output);
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    (*it)->configure(p,input,output,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    (*it)->configure(p,input,output);
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-    (*it)->configure(p,input,output,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
-  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->configure(p,input,output,
-		     AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+  if (!smp_prohibit) {
+    const unsigned maxpixels=1024;
+    for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+      (*it)->configure(p,input,output);
+    for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+      (*it)->configure(p,input,output,
+		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+    for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+      (*it)->configure(p,input,output);
+    for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
+      (*it)->configure(p,input,output,
+		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+    for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+      (*it)->configure(p,input,output,
+		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+  }
+  else {
+    for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+      (*it)->configure(p,input,output);
+  }
 }
 
 void RectROI::setup_payload(Cds& cds)

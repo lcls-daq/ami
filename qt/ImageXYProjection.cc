@@ -235,8 +235,7 @@ void ImageXYProjection::configure(char*& p, unsigned input, unsigned& output,
 				  ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
   for(std::vector<RectROI*>::iterator it=_rois.begin(); it!=_rois.end(); it++) {
-    if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels);
+    (*it)->configure(p,input,output,channels,signatures,nchannels);
   }
     
   _histogram_plot->configure(p,_channelBox->currentIndex(),output,channels,signatures,nchannels);
