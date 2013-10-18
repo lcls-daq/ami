@@ -321,35 +321,32 @@ int XtcClient::process(Pds::Xtc* xtc)
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
 
-	  if (!h->used()) return 1;
+	  if (h->used()) {
 
-          const std::list<Pds::TypeId::Type>& types = h->data_types();
+	    const std::list<Pds::TypeId::Type>& types = h->data_types();
 
-          boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
-            Pds::CompressedXtc::uncompress(*xtc) :
-            boost::shared_ptr<Xtc>(xtc,Destroy);
-
-          Pds::TypeId::Type type = pxtc->contains.id();
-          for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-              it != types.end(); it++) {
-            if (*it == type) {
+	    boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
+	      Pds::CompressedXtc::uncompress(*xtc) :
+	      boost::shared_ptr<Xtc>(xtc,Destroy);
+	    
+	    Pds::TypeId::Type type = pxtc->contains.id();
+	    for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+		it != types.end(); it++) {
+	      if (*it == type) {
 #ifdef DBUG
-              printf("Src %08x.%08x  Type %08x handled by %p\n",
-                     xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
+		printf("Src %08x.%08x  Type %08x handled by %p\n",
+		       xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
-              if (pxtc->damage.value())
-                h->_damaged();
-              else
-                h->_event(pxtc->contains,pxtc->payload(),_seq->clock());
-            }
-            else
-              continue;
-            return 1;
+		if (pxtc->damage.value())
+		  h->_damaged();
+		else
+		  h->_event(pxtc->contains,pxtc->payload(),_seq->clock());
+		return 1;
+	      }
+	      else
+		continue;
+	    }
           }
-#ifdef DBUG
-          printf("Src %08x.%08x  Type %08x not handled\n",
-                 xtc->src.log(),xtc->src.phy(),xtc->contains.value());
-#endif
         }
         else {
           const std::list<Pds::TypeId::Type>& types = h->config_types();
