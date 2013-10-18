@@ -166,6 +166,7 @@ void StyleDialog::_update_lines()
   ADD_STYLE(DotLine);
   ADD_STYLE(DashDotLine);
   ADD_STYLE(DashDotDotLine);
+  ADD_STYLE(NoPen);
 #undef ADD_STYLE
 }
 
