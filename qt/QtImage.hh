@@ -43,6 +43,7 @@ namespace Ami {
       const AxisInfo* yinfo() const;
       float           value(unsigned,unsigned) const;
       bool            scalexy() const;
+      void            scalexy(bool);
     public:
       QImage&     image(float pedestal,float scale,bool linear=true);
       void        set_color_table(const QVector<QRgb>&);

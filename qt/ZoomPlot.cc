@@ -212,6 +212,7 @@ void ZoomPlot::setup_payload(Cds& cds)
   _frame->reset();
   const Entry* entry = cds.entry(_signature);
   if (entry) {
+    QtImage* qi = 0;
     if (_x1<_x0) {
       const DescImage& d = static_cast<const DescImage&>(entry->desc());
       unsigned x0 = unsigned(d.xlow());
@@ -219,22 +220,22 @@ void ZoomPlot::setup_payload(Cds& cds)
       unsigned x1 = unsigned(d.xup ());
       unsigned y1 = unsigned(d.yup ());
 #if 0
-      _frame->add( new QtImage(entry->desc().name(),
-                               *static_cast<const EntryImage*>(entry),
-                               x0,y0,x1,y1),
-                   true);
+      qi = new QtImage(entry->desc().name(),
+                       *static_cast<const EntryImage*>(entry),
+                       x0,y0,x1,y1);
 #else
-      _frame->add( new QtImage(entry->desc().name(),
-                               *static_cast<const EntryImage*>(entry),
-                               transform(), transform(), _color),
-                   true);
+      qi = new QtImage(entry->desc().name(),
+                       *static_cast<const EntryImage*>(entry),
+                       transform(), transform(), _color);
 #endif
     }
     else 
-      _frame->add( new QtImage(entry->desc().name(),
-                               *static_cast<const EntryImage*>(entry),
-                               _x0, _y0, _x1, _y1),
-                   true);
+      qi = new QtImage(entry->desc().name(),
+                       *static_cast<const EntryImage*>(entry),
+                       _x0, _y0, _x1, _y1);
+
+    qi->scalexy(true);
+    _frame->add( qi, true );
     _frame->grid_scale().setup_payload(cds);
   }
 }

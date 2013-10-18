@@ -906,6 +906,7 @@ namespace CspadGeometry {
 
         size_t sz=256;
         char* linep = (char *)malloc(sz);
+        //  Get optional global rotation
         while(1) {
           if (getline(&linep, &sz, gm)==-1) break;
           if (linep[0]=='#') continue;
@@ -913,6 +914,14 @@ namespace CspadGeometry {
           for(unsigned j=0; j<NPHI; j++)
             qrot[j] = Rotation((irot+j)%NPHI);
           break;
+        }
+        //  Get optional quad relocations
+        unsigned j=0;
+        while(j<NPHI) {
+          if (getline(&linep, &sz, gm)==-1) break;
+          if (linep[0]=='#') continue;
+          unsigned irot = strtoul(linep,0,0);
+          qrot[j++] = Rotation(irot%NPHI);
         }
         free(linep);
       }

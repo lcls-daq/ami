@@ -175,6 +175,7 @@ const AxisInfo* QtImage::xinfo() const { return _xinfo; }
 const AxisInfo* QtImage::yinfo() const { return _yinfo; }
 
 bool QtImage::scalexy() const { return _scalexy; }
+void QtImage::scalexy(bool v) { _scalexy = v; }
 
 void QtImage::set_color_table(const QVector<QRgb>& colors) { _qimage->setColorTable(colors); }
 

@@ -650,5 +650,5 @@ void DetectorSelect::autoload()
 
 void DetectorSelect::disconnected()
 {
-  abort();
+  //  abort();
 }
