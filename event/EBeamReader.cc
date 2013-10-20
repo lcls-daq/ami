@@ -65,6 +65,34 @@ void   EBeamReader::_event    (Pds::TypeId id,
                                const void* payload, 
                                const Pds::ClockTime& t)
 {
+}
+
+void   EBeamReader::_event    (Pds::TypeId id,
+                               const void* payload, 
+                               const Pds::ClockTime& t,
+                               Pds::Damage dmg)
+{
+#define TEST(val) {                                                  \
+    if (bld.damageMask()&bld.Ebeam##val##Damage)                     \
+      _cache.cache(index++,-1,true);                                 \
+    else                                                             \
+      _cache.cache(index++,bld.ebeam##val());                        \
+  }
+
+#if 0
+  if (dmg.value()) {
+    printf("EBeamReader damage 0x%x [%x] [%x]\n",
+           dmg.value(),
+           dmg.value()&~Pds::Damage::UserDefined,
+           *reinterpret_cast<const uint32_t*>(payload));
+  }
+#endif
+
+  if (dmg.value() & ~(1<<Pds::Damage::UserDefined)) {
+    _damaged();
+    return;
+  }
+
   if (_index>=0) {
     unsigned index = _index;
 
@@ -73,81 +101,83 @@ void   EBeamReader::_event    (Pds::TypeId id,
       {
         const Pds::Bld::BldDataEBeamV0& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV0*>(payload);
-        _cache.cache(index++,bld.ebeamCharge());
-        _cache.cache(index++,bld.ebeamL3Energy());
-        _cache.cache(index++,bld.ebeamLTUPosX());
-        _cache.cache(index++,bld.ebeamLTUPosY());
-        _cache.cache(index++,bld.ebeamLTUAngX());
-        _cache.cache(index++,bld.ebeamLTUAngY());
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
         break;
       }
     case 1:
       {
         const Pds::Bld::BldDataEBeamV1& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV1*>(payload);
-        _cache.cache(index++,bld.ebeamCharge());
-        _cache.cache(index++,bld.ebeamL3Energy());
-        _cache.cache(index++,bld.ebeamLTUPosX());
-        _cache.cache(index++,bld.ebeamLTUPosY());
-        _cache.cache(index++,bld.ebeamLTUAngX());
-        _cache.cache(index++,bld.ebeamLTUAngY());
-        _cache.cache(index++,bld.ebeamPkCurrBC2());
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
         break;
       }
     case 2:
       {
         const Pds::Bld::BldDataEBeamV2& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV2*>(payload);
-        _cache.cache(index++,bld.ebeamCharge());
-        _cache.cache(index++,bld.ebeamL3Energy());
-        _cache.cache(index++,bld.ebeamLTUPosX());
-        _cache.cache(index++,bld.ebeamLTUPosY());
-        _cache.cache(index++,bld.ebeamLTUAngX());
-        _cache.cache(index++,bld.ebeamLTUAngY());
-        _cache.cache(index++,bld.ebeamPkCurrBC2());
-        _cache.cache(index++,bld.ebeamEnergyBC2());
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
         break;
       }
     case 3:
       {
         const Pds::Bld::BldDataEBeamV3& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV3*>(payload);
-        _cache.cache(index++,bld.ebeamCharge());
-        _cache.cache(index++,bld.ebeamL3Energy());
-        _cache.cache(index++,bld.ebeamLTUPosX());
-        _cache.cache(index++,bld.ebeamLTUPosY());
-        _cache.cache(index++,bld.ebeamLTUAngX());
-        _cache.cache(index++,bld.ebeamLTUAngY());
-        _cache.cache(index++,bld.ebeamPkCurrBC2());
-        _cache.cache(index++,bld.ebeamEnergyBC2());
-        _cache.cache(index++,bld.ebeamPkCurrBC1());
-        _cache.cache(index++,bld.ebeamEnergyBC1());
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
+        TEST(PkCurrBC1);
+        TEST(EnergyBC1);
         break;
       }
     case 4:
       {
         const Pds::Bld::BldDataEBeamV4& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV4*>(payload);
-        _cache.cache(index++,bld.ebeamCharge());
-        _cache.cache(index++,bld.ebeamL3Energy());
-        _cache.cache(index++,bld.ebeamLTUPosX());
-        _cache.cache(index++,bld.ebeamLTUPosY());
-        _cache.cache(index++,bld.ebeamLTUAngX());
-        _cache.cache(index++,bld.ebeamLTUAngY());
-        _cache.cache(index++,bld.ebeamPkCurrBC2());
-        _cache.cache(index++,bld.ebeamEnergyBC2());
-        _cache.cache(index++,bld.ebeamPkCurrBC1());
-        _cache.cache(index++,bld.ebeamEnergyBC1());
-        _cache.cache(index++,bld.ebeamUndPosX());
-        _cache.cache(index++,bld.ebeamUndPosY());
-        _cache.cache(index++,bld.ebeamUndAngX());
-        _cache.cache(index++,bld.ebeamUndAngY());
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
+        TEST(PkCurrBC1);
+        TEST(EnergyBC1);
+        TEST(UndPosX);
+        TEST(UndPosY);
+        TEST(UndAngX);
+        TEST(UndAngY);
         break;
       }
     default:
       break;
     }
   }
+
+#undef TEST
 }
 
 void   EBeamReader::_damaged  ()

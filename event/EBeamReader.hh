@@ -16,6 +16,8 @@ namespace Ami {
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _damaged  ();
+    void   _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t,
+                      Pds::Damage);
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;

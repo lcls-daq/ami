@@ -57,6 +57,16 @@ EventHandler::~EventHandler()
 {
 }
 
+void   EventHandler::_event    (Pds::TypeId id,
+                                const void* payload, const Pds::ClockTime& t,
+                                Pds::Damage dmg)
+{
+  if (dmg.value()==0)
+    _event(id,payload,t);
+  else
+    _damaged();
+}
+
 /*
 void   EventHandler::_configure(Pds::TypeId type, 
 				const void* payload, const Pds::ClockTime& t)

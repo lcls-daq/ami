@@ -2,6 +2,7 @@
 #define Ami_EventHandler_hh
 
 #include "pdsdata/xtc/Src.hh"
+#include "pdsdata/xtc/Damage.hh"
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
@@ -88,6 +89,13 @@ namespace Ami {
      */
     virtual void   _event    (Pds::TypeId,
                               const void* payload, const Pds::ClockTime& t) = 0;
+    /**
+     *   Handle event data.  The Entry objects should be filled and their valid
+     *   time updated.
+     */
+    virtual void   _event    (Pds::TypeId,
+                              const void* payload, const Pds::ClockTime& t,
+                              Pds::Damage);
     /**
      *   The data was not valid for this event
      */

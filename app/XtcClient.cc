@@ -337,10 +337,7 @@ int XtcClient::process(Pds::Xtc* xtc)
 		printf("Src %08x.%08x  Type %08x handled by %p\n",
 		       xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
-		if (pxtc->damage.value())
-		  h->_damaged();
-		else
-		  h->_event(pxtc->contains,pxtc->payload(),_seq->clock());
+                h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
 		return 1;
 	      }
 	      else
