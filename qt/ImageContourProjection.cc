@@ -6,6 +6,7 @@
 #include "ami/qt/Display.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/Contour.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/data/DescTH1F.hh"
 #include "ami/data/DescProf.hh"
@@ -49,9 +50,9 @@ ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
   setWindowTitle("Contour Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  QComboBox* channelBox = new QComboBox;
+  _channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
-    channelBox->addItem(channels[i]->name());
+    _channelBox->addItem(channels[i]->name());
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* closeB = new QPushButton("Close");
@@ -76,7 +77,7 @@ ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
   { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Source Channel"));
-    layout1->addWidget(channelBox);
+    layout1->addWidget(_channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
@@ -118,11 +119,16 @@ ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
 
   setLayout(layout);
     
-  connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_rectangle, SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_rectangle, SIGNAL(done())   ,      this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
+
+  _plotB = plotB;
 }
   
 ImageContourProjection::~ImageContourProjection()
@@ -202,9 +208,23 @@ void ImageContourProjection::setVisible(bool v)
 void ImageContourProjection::configure(char*& p, unsigned input, unsigned& output,
 				       ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  unsigned mask=0;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
+    else
+      mask |= 1<<(*it)->channel();
+
+  if (mask) {
+    for(unsigned ich=0; ich<_nchannels; ich++) {
+      ControlLog& log = ControlLog::instance();
+      if (mask & (1<<ich)) {
+	QString s = QString("Contour plots/posts for %1 disabled [SMP]")
+	  .arg(channels[ich]->name());
+	log.appendText(s);
+      }
+    }
+  }
 }
 
 void ImageContourProjection::setup_payload(Cds& cds)
@@ -324,4 +344,11 @@ void ImageContourProjection::use_xaxis(bool v)
 {
   if (v) _contour->setup("Y","f(Y)",Ami::ContourProjection::X);
   else   _contour->setup("X","f(X)",Ami::ContourProjection::Y);
+}
+
+void ImageContourProjection::change_channel()
+{
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  _plotB->setEnabled(enable);
 }

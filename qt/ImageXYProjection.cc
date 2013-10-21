@@ -132,11 +132,15 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
 
   _function_plot->plot_desc().post(this, SLOT(add_function_post()));
 
   ovlyB->setEnabled(false);
   _ovlyB = ovlyB;
+  _plotB = plotB;
   connect(_plot_tab,  SIGNAL(currentChanged(int)), this, SLOT(plottab_changed(int)));
 }
   
@@ -318,7 +322,10 @@ void ImageXYProjection::update_range()
 
 void ImageXYProjection::plottab_changed(int index)
 {
-  _ovlyB->setEnabled(index==PlotFunction);
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  enable &= index==PlotFunction;
+  _ovlyB->setEnabled(enable);
 }
 
 void ImageXYProjection::overlay()
@@ -387,3 +394,12 @@ void ImageXYProjection::select_roi(int i)
 }
 
 RectROI& ImageXYProjection::_roi() { return *_rois[_roiBox->currentIndex()*_nchannels + _channelBox->currentIndex()]; }
+
+void ImageXYProjection::change_channel()
+{
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  _plotB->setEnabled(enable);
+
+  plottab_changed(_plot_tab->currentIndex());
+}

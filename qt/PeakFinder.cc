@@ -7,6 +7,7 @@
 #include "ami/qt/ImageScale.hh"
 #include "ami/qt/SMPRegistry.hh"
 #include "ami/qt/SMPWarning.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/PeakFinder.hh"
@@ -112,9 +113,15 @@ PeakFinder::PeakFinder(QWidget* parent,
   connect(_interval , SIGNAL(editingFinished()), this, SLOT(update_interval()));
   connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
   connect(_accumulate, SIGNAL(clicked()),     this, SLOT(update_interval()));
+  connect(channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
 
   update_interval();
   _proc_grp->button(Ami::PeakFinder::Count)->setChecked(true);
+
+  _channelBox = channelBox;
+  _plotB = plotB;
 }
   
 PeakFinder::~PeakFinder()
@@ -193,11 +200,25 @@ void PeakFinder::save_plots(const QString& p) const
 void PeakFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  unsigned mask=0;
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    //    if (!_channels[(*it)->channel()]->smp_prohibit())
+    if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
+    else
+      mask |= 1<<(*it)->channel();
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
+
+  if (mask) {
+    for(unsigned ich=0; ich<_nchannels; ich++) {
+      ControlLog& log = ControlLog::instance();
+      if (mask & (1<<ich)) {
+	QString s = QString("Hit Finder plots/posts for %1 disabled [SMP]")
+	  .arg(channels[ich]->name());
+	log.appendText(s);
+      }
+    }
+  }
 }
 
 void PeakFinder::setup_payload(Cds& cds)
@@ -296,3 +317,9 @@ void PeakFinder::update_interval()
   _smp_warning->setEnabled(checked);
 }
 
+void PeakFinder::change_channel()
+{
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  _plotB->setEnabled(enable);
+}

@@ -14,6 +14,7 @@
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescTH1F.hh"
@@ -59,9 +60,9 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   setWindowTitle("Image Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  QComboBox* channelBox = new QComboBox;
+  _channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
-    channelBox->addItem(channels[i]->name());
+    _channelBox->addItem(channels[i]->name());
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* ovlyB  = new QPushButton("Overlay");
@@ -79,7 +80,7 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(new QLabel("Source Channel"));
-    layout1->addWidget(channelBox);
+    layout1->addWidget(_channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
@@ -106,18 +107,22 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
     layout->addLayout(layout1); }
   setLayout(layout);
     
-  connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_annulus  , SIGNAL(changed()),      this, SLOT(update_range()));
   connect(_annulus  , SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
 
   _integral_plot->post(this, SLOT(add_integral_post()));
   _contrast_plot->post(this, SLOT(add_contrast_post()));
 
   ovlyB->setEnabled(false);
   _ovlyB = ovlyB;
+  _plotB = plotB;
   connect(_plot_tab,  SIGNAL(currentChanged(int)), this, SLOT(plottab_changed(int)));
 }
   
@@ -238,22 +243,42 @@ void ImageRPhiProjection::setVisible(bool v)
 void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 				ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  unsigned mask=0;
   const unsigned maxint=0x40000000;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
+    else
+      mask |= 1<<(*it)->channel();
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
 		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    else
+      mask |= 1<<(*it)->channel();
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
 		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    else
+      mask |= 1<<(*it)->channel();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
 		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+    else
+      mask |= 1<<(*it)->channel();
+
+  if (mask) {
+    for(unsigned ich=0; ich<_nchannels; ich++) {
+      ControlLog& log = ControlLog::instance();
+      if (mask & (1<<ich)) {
+	QString s = QString("%1/%2 plots/posts for %3 disabled [SMP]")
+	  .arg(QChar(0x03c1)).arg(QChar(0x03c6)).arg(channels[ich]->name());
+	log.appendText(s);
+      }
+    }
+  }
 }
 
 void ImageRPhiProjection::setup_payload(Cds& cds)
@@ -401,8 +426,11 @@ void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
 
 void ImageRPhiProjection::plottab_changed(int index)
 {
-  _ovlyB->setEnabled(index==PlotIntegral ||
-                     index==PlotContrast);
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  enable &= (index==PlotIntegral ||
+	     index==PlotContrast);
+  _ovlyB->setEnabled(enable);
 }
 
 void ImageRPhiProjection::overlay()
@@ -457,4 +485,13 @@ void ImageRPhiProjection::remove_overlay(QtOverlay* obj)
   _ovls.remove(ovl);
   
   //  emit changed();
+}
+
+void ImageRPhiProjection::change_channel()
+{
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  _plotB->setEnabled(enable);
+
+  plottab_changed(_plot_tab->currentIndex());
 }

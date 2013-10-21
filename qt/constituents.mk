@@ -179,6 +179,7 @@ libsrcs_amiqt += RecvCalculator.cc RecvCalculator_moc.cc
 libsrcs_amiqt += RateDisplay.cc RunMaster.cc
 libsrcs_amiqt += FilterSetup.cc FilterSetup_moc.cc
 libsrcs_amiqt += PWidgetManager.cc PWidgetManager_moc.cc
+libsrcs_amiqt += ControlLog.cc ControlLog_moc.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 libsrcs_amiqt += MaskFrame.cc MaskFrame_moc.cc
 libsrcs_amiqt += MaskDisplay.cc MaskDisplay_moc.cc

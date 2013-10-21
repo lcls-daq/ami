@@ -9,6 +9,7 @@
 #include "ami/qt/Rect.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/FeatureRegistry.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/data/RectROI.hh"
 #include "ami/data/RawFilter.hh"
@@ -144,6 +145,14 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
 
   if (!(_pplots.size() || _cplots.size() || _zplots.size() ||
         _posts.size() || _ovls.size())) return;
+
+  if (smp_prohibit && (_pplots.size() || _cplots.size() || _posts.size() ||
+		       _ovls.size())) {
+    QString s = QString("Plots/posts from %1/%2 disabled [SMP]")
+      .arg(channels[_channel]->name())
+      .arg(_name);
+    ControlLog::instance().appendText(s);
+  }
 
   if (smp_prohibit && !_zplots.size()) return;
 

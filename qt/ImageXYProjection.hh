@@ -60,6 +60,7 @@ namespace Ami {
       void plottab_changed(int);
       void new_roi     ();
       void select_roi  (int);
+      void change_channel();
     signals:
       void changed();
     protected:
@@ -76,6 +77,7 @@ namespace Ami {
       QLineEdit*    _title;
       QTabWidget*   _plot_tab;
       QPushButton*  _ovlyB;
+      QPushButton*  _plotB;
 
       XYHistogramPlotDesc*  _histogram_plot;
       XYProjectionPlotDesc* _projection_plot;

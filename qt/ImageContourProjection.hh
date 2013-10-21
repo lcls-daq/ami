@@ -8,6 +8,8 @@
 
 class QLineEdit;
 class QButtonGroup;
+class QComboBox;
+class QPushButton;
 
 #include <list>
 
@@ -46,6 +48,7 @@ namespace Ami {
       void configure_plot();
       void remove_plot (QObject*);
       virtual void setVisible(bool);
+      void change_channel();
     signals:
       void changed();
     private:
@@ -57,9 +60,11 @@ namespace Ami {
       RectangleCursors* _rectangle;
 
       QLineEdit*    _title;
+      QComboBox*    _channelBox;
       QButtonGroup* _axis;
       QButtonGroup* _norm;
       Contour*      _contour;
+      QPushButton*  _plotB;
 
       std::list<ProjectionPlot*> _pplots;
     };

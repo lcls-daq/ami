@@ -10,7 +10,7 @@
 
 class QLineEdit;
 class QPushButton;
-//class QCheckBox;
+class QComboBox;
 class QTabWidget;
 
 #include <list>
@@ -60,6 +60,7 @@ namespace Ami {
       void add_integral_post    ();
       void add_contrast_post    ();
       void plottab_changed(int);
+      void change_channel();
     signals:
       void changed();
     private:
@@ -74,8 +75,10 @@ namespace Ami {
 
       QLineEdit* _title;
 
+      QComboBox*    _channelBox;
       QTabWidget*   _plot_tab;
       QPushButton*  _ovlyB;
+      QPushButton*  _plotB;
 
       RPhiProjectionPlotDesc* _projection_plot;
       ImageIntegral*          _integral_plot;

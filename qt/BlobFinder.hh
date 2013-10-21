@@ -7,6 +7,8 @@
 
 class QLineEdit;
 class QCheckBox;
+class QComboBox;
+class QPushButton;
 
 #include <list>
 
@@ -49,6 +51,7 @@ namespace Ami {
       void update_range  ();
       void remove_plot   (QObject*);
       virtual void setVisible(bool);
+      void change_channel();
     signals:
       void changed();
     private:
@@ -58,10 +61,12 @@ namespace Ami {
 
       ImageFrame&       _frame;
       RectangleCursors* _rectangle;
+      QComboBox*        _channelBox;
       ImageScale*       _threshold;
       QLineEdit*        _cluster_size;
       QCheckBox*        _accumulate;
       SMPWarning*       _smp_warning;
+      QPushButton*   _plotB;
 
       std::list<PeakPlot*> _plots;
       std::list<ZoomPlot*> _zplots;

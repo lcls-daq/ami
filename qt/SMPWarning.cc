@@ -26,7 +26,7 @@ void SMPWarning::updateVisibility()
 void SMPWarning::showWarning() 
 {
   QString title("Distributed Processing Environment");
-  QString text ("These operations can only produce final displays.  No derived processing will be available, though the equivalent operation can be found elsewhere.");
+  QString text ("These operations can only produce final displays.  No derived processing will be available, though the equivalent operation can be found elsewhere.  (Do the averaging last.)");
   QMessageBox::information(this,title,text);
 }
 

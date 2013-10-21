@@ -198,7 +198,8 @@ void AnalysisFactory::configure(unsigned       id,
           Analysis* a = *it;
           if (a->output().signature()==req.output() && a->valid()) {
 #ifdef DBUG
-            printf("Preserving analysis for %s [%d]\n",
+            printf("Preserving analysis [%d] for %s [%d]\n",
+		   id,
                    a->output().name(),
                    a->output().signature());
 #endif
@@ -218,7 +219,8 @@ void AnalysisFactory::configure(unsigned       id,
           a->input().desc().used(true);
           _analyses.push_back(a);
 #ifdef DBUG
-          printf("Created analysis for %s [%d] features %d\n",
+          printf("Created analysis [%d] for %s [%d] features %d\n",
+		 id,
                  a->output().name(),
                  a->output().signature(),
 		 req.scalars());
@@ -240,7 +242,8 @@ void AnalysisFactory::configure(unsigned       id,
   for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
     Analysis* a = *it;
 #ifdef DBUG
-          printf("Removing analysis for %s [%d]\n",
+          printf("Removing analysis [%d] for %s [%d]\n",
+		 id,
                  a->output().name(),
                  a->output().signature());
 #endif

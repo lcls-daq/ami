@@ -22,6 +22,7 @@
 #include "ami/qt/PWidgetManager.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/SMPRegistry.hh"
+#include "ami/qt/ControlLog.hh"
 #include "ami/client/ClientManager.hh"
 #include "ami/service/ConnectionManager.hh"
 #include "ami/service/Task.hh"
@@ -162,6 +163,7 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     data_box->setLayout(layout);
     l->addWidget(data_box); }
+  l->addWidget(&ControlLog::instance(),1);
   _rate_display->addLayout(l);
 
   l->addWidget(new PWidgetManager);

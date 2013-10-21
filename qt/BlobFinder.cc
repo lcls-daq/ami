@@ -8,6 +8,7 @@
 #include "ami/qt/ImageScale.hh"
 #include "ami/qt/SMPRegistry.hh"
 #include "ami/qt/SMPWarning.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/BlobFinder.hh"
@@ -97,6 +98,12 @@ BlobFinder::BlobFinder(QtPWidget* parent,
   connect(_rectangle, SIGNAL(done()),         this, SLOT(front()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
+
+  _channelBox = channelBox;
+  _plotB = plotB;
 }
   
 BlobFinder::~BlobFinder()
@@ -183,11 +190,25 @@ void BlobFinder::setVisible(bool v)
 void BlobFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  unsigned mask=0;
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
+    else
+      mask |= 1<<(*it)->channel();
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
+
+  if (mask) {
+    for(unsigned ich=0; ich<_nchannels; ich++) {
+      ControlLog& log = ControlLog::instance();
+      if (mask & (1<<ich)) {
+	QString s = QString("Blob Finder plots/posts for %1 disabled [SMP]")
+	  .arg(channels[ich]->name());
+	log.appendText(s);
+      }
+    }
+  }
 }
 
 void BlobFinder::setup_payload(Cds& cds)
@@ -264,3 +285,9 @@ void BlobFinder::remove_plot(QObject* obj)
   disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
+void BlobFinder::change_channel()
+{
+  int ich = _channelBox->currentIndex();
+  bool enable = !_channels[ich]->smp_prohibit();
+  _plotB->setEnabled(enable);
+}

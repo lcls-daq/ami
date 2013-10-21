@@ -6,6 +6,8 @@
 #include <QtCore/QString>
 
 class QCheckBox;
+class QComboBox;
+class QPushButton;
 class QButtonGroup;
 class QLineEdit;
 class QLabel;
@@ -48,6 +50,7 @@ namespace Ami {
       void plot          ();   // configure the plot
       void remove_plot   (QObject*);
       void update_interval();
+      void change_channel();
     signals:
       void changed();
     private:
@@ -55,6 +58,7 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
 
+      QComboBox*     _channelBox;
       ImageScale*    _threshold;
       QButtonGroup*  _proc_grp;
       QCheckBox*     _center_only;
@@ -62,6 +66,7 @@ namespace Ami {
       QLineEdit*     _interval;
       QLabel*        _intervalq;
       SMPWarning*    _smp_warning;
+      QPushButton*   _plotB;
 
       std::list<PeakPlot*> _plots;
       std::list<ZoomPlot*> _zplots;
