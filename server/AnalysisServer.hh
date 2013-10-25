@@ -18,7 +18,8 @@ namespace Ami {
   public:
     AnalysisServer(Socket*,
                    Factory&,
-                   EventFd*&);
+                   EventFd*&,
+                   bool post_svc);
     ~AnalysisServer();
   public:
     int  processIo();
@@ -29,6 +30,7 @@ namespace Ami {
     Factory&        _factory;
     EventFd*&       _event;
     Message         _repeat;
+    bool            _post_service;
   };
 
 };

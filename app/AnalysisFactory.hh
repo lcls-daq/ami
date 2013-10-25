@@ -3,6 +3,7 @@
 
 #include "ami/server/Factory.hh"
 #include "ami/data/UserModuleDriver.hh"
+#include "ami/data/Analysis.hh"
 #include "ami/data/Cds.hh"
 
 #include <list>
@@ -10,7 +11,6 @@
 
 namespace Ami {
 
-  class Analysis;
   class FeatureCache;
   class Message;
   class Server;
@@ -32,7 +32,7 @@ namespace Ami {
     Cds& hidden   ();
     void discover (bool waitForConfigure);
     void discover_wait();
-    void configure(unsigned, const Message&, const char*, Cds&);
+    void configure(unsigned, const Message&, const char*, Cds&, bool post_svc);
     void analyze  ();
     void remove   (unsigned);
   public:
@@ -41,8 +41,8 @@ namespace Ami {
     ServerManager& _srv;
     Cds       _cds;
     Cds       _ocds;
-    typedef std::list<Analysis*>     AnList;
     AnList    _analyses;
+    AnList    _post_analyses;
     std::vector<FeatureCache*>& _features;
     typedef std::list<UserModule*> UList;
     UList&        _user;

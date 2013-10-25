@@ -3,7 +3,6 @@
 #include "ami/app/EventFilter.hh"
 #include "ami/app/XtcClient.hh"
 
-#include "ami/data/Analysis.hh"
 #include "ami/data/UserModule.hh"
 
 #include "ami/data/FeatureCache.hh"
@@ -54,18 +53,70 @@ std::vector<FeatureCache*>& AnalysisFactory::features() { return _features; }
 Cds& AnalysisFactory::discovery() { return _cds; }
 Cds& AnalysisFactory::hidden   () { return _ocds; }
 
+static void remove_from_list(AnList& alist, unsigned id)
+{
+  AnList newlist;
+  for(AnList::iterator it=alist.begin(); it!=alist.end(); it++) {
+    Analysis* a = *it;
+    if (a->id() == id) {
+      delete a;
+    }
+    else {
+      a->input().desc().used(true);
+      newlist.push_back(a);
+    }
+  }
+  alist = newlist;
+}
+
+static void delete_list(AnList& alist)
+{
+  for(AnList::iterator it=alist.begin(); it!=alist.end(); it++) {
+    Analysis* an = *it;
+    delete an;
+  }
+  alist.clear();
+}
+
+static void dump_list(AnList& alist)
+{
+  for(AnList::iterator it=alist.begin(); it!=alist.end(); it++) {
+    const DescEntry& desc = (*it)->output();
+    printf("Analysis %2d : [%2d][%s] %s\n", 
+           (*it)->id(), 
+           desc.signature(),
+	   DescEntry::type_str(desc.type()), 
+           desc.name());
+  }
+}
+
+static AnList extract_list(AnList& srcList,
+                           unsigned id)
+{
+  AnList newlist;
+  AnList oldlist;
+  for(AnList::iterator it=srcList.begin(); it!=srcList.end(); it++) {
+    Analysis* a = *it;
+    if (a->id() == id)
+      oldlist.push_back(a);
+    else {
+      a->input().desc().used(true);
+      newlist.push_back(a);
+    }
+  }
+  srcList = newlist;
+  return oldlist;
+}
+
 //
 //  The discovery cds has changed
 //
 void AnalysisFactory::discover(bool waitForConfigure) 
 {
   pthread_mutex_lock(&_mutex);
-  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
-    Analysis* an = *it;
-    delete an;
-  }
-  _analyses.clear();
-
+  delete_list(_analyses);
+  delete_list(_post_analyses);
+  
   if (waitForConfigure) {
     if (_waitingForConfigure) {
       printf("Already waiting for configure?\n");
@@ -98,7 +149,8 @@ void AnalysisFactory::discover_wait()
 void AnalysisFactory::configure(unsigned       id,
 				const Message& msg, 
 				const char*    payload, 
-				Cds&           cds)
+				Cds&           cds,
+                                bool           post_svc)
 {
   pthread_mutex_lock(&_mutex);
 
@@ -107,18 +159,10 @@ void AnalysisFactory::configure(unsigned       id,
   //
   //  Segregate the entries belonging to the configuring client
   //
-  AnList newlist;
-  AnList oldList;
-  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
-    Analysis* a = *it;
-    if (a->id() == id)
-      oldList.push_back(a);
-    else {
-      a->input().desc().used(true);
-      newlist.push_back(a);
-    }
-  }
-  _analyses = newlist;
+  AnList& srcList = post_svc ? _post_analyses : _analyses;
+  AnList& othList = post_svc ? _analyses : _post_analyses;
+  extract_list(othList, id); // update "used"
+  AnList oldList = extract_list(srcList, id);
 
   // create
   const char* const end = payload + msg.payload();
@@ -161,8 +205,8 @@ void AnalysisFactory::configure(unsigned       id,
     }
     else if (req.source() == ConfigureRequest::Filter) {
       std::list<const Analysis*> a;
-      for(AnList::const_iterator it=_analyses.begin();
-	  it!=_analyses.end(); it++)
+      for(AnList::const_iterator it=srcList.begin();
+	  it!=srcList.end(); it++)
 	a.push_back(*it);
       _filter.enable(req, a, XtcClient::instance()->handlers());
     }
@@ -198,13 +242,13 @@ void AnalysisFactory::configure(unsigned       id,
           Analysis* a = *it;
           if (a->output().signature()==req.output() && a->valid()) {
 #ifdef DBUG
-            printf("Preserving analysis [%d] for %s [%d]\n",
-		   id,
+            printf("Preserving analysis [%d%s] for %s [%d]\n",
+		   id, post_svc ? ":Post":"",
                    a->output().name(),
                    a->output().signature());
 #endif
             a->input().desc().used(true);
-            _analyses.push_back(a);
+            srcList.push_back(a);
             oldList.remove(a);
             lFound=true;
             break;
@@ -217,10 +261,10 @@ void AnalysisFactory::configure(unsigned       id,
 				     *_features[Ami::PostAnalysis],
 				     p);
           a->input().desc().used(true);
-          _analyses.push_back(a);
+          srcList.push_back(a);
 #ifdef DBUG
-          printf("Created analysis [%d] for %s [%d] features %d\n",
-		 id,
+          printf("Created analysis [%d%s] for %s [%d] features %d\n",
+		 id, post_svc ? ":Post":"",
                  a->output().name(),
                  a->output().signature(),
 		 req.scalars());
@@ -242,15 +286,22 @@ void AnalysisFactory::configure(unsigned       id,
   for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++) {
     Analysis* a = *it;
 #ifdef DBUG
-          printf("Removing analysis [%d] for %s [%d]\n",
-		 id,
+          printf("Removing analysis [%d%s] for %s [%d]\n",
+		 id, post_svc ? ":Post":"",
                  a->output().name(),
                  a->output().signature());
 #endif
     delete a;
   }
 
+#ifdef DBUG
   cds.showentries();
+#endif
+
+  printf("===\n");
+  dump_list(_analyses);
+  dump_list(_post_analyses);
+  printf("===\n");
 
   //
   //  Reconfigure Post Analyses whenever the PostAnalysis variable cache changes
@@ -280,27 +331,21 @@ void AnalysisFactory::analyze  ()
   //
   //  Post-analyses go here
   //
+  for(AnList::iterator it=_post_analyses.begin(); it!=_post_analyses.end(); it++) {
+    (*it)->analyze();
+  }
   pthread_mutex_unlock(&_mutex);
 }
+
 
 void AnalysisFactory::remove(unsigned id)
 {
   pthread_mutex_lock(&_mutex);
 
   _cds.clear_used();
+  remove_from_list(_analyses,id);
+  remove_from_list(_post_analyses,id);
 
-  AnList newlist;
-  for(AnList::iterator it=_analyses.begin(); it!=_analyses.end(); it++) {
-    Analysis* a = *it;
-    if (a->id() == id) {
-      delete a;
-    }
-    else {
-      a->input().desc().used(true);
-      newlist.push_back(a);
-    }
-  }
-  _analyses = newlist;
   pthread_mutex_unlock(&_mutex);
 }
 

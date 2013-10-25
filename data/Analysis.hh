@@ -1,6 +1,8 @@
 #ifndef Ami_Analysis_hh
 #define Ami_Analysis_hh
 
+#include <list>
+
 namespace Ami {
 
   class AbsFilter;
@@ -36,6 +38,7 @@ namespace Ami {
     Cds& _cds;
   };
 
+  typedef std::list<Analysis*> AnList;
 };
 
 #endif

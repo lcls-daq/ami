@@ -28,12 +28,14 @@ static const char* _cds_name(Socket& s)
 
 AnalysisServer::AnalysisServer(Socket*         socket,
                                Factory&        factory,
-                               EventFd*&       event) :
+                               EventFd*&       event,
+                               bool            post_svc) :
   Server  (socket),
   _cds    (_cds_name(*socket)),
   _factory(factory),
   _event   (event),
-  _repeat (0,Message::NoOp)
+  _repeat (0,Message::NoOp),
+  _post_service(post_svc)
 {
 #ifdef DBUG
   printf("AS ctor event %p\n",event);
@@ -110,7 +112,7 @@ int AnalysisServer::processIo()
     else {
       _socket->read(_buffer,request.payload());
     }
-    _factory.configure(fd(), request,_buffer,_cds);
+    _factory.configure(fd(), request,_buffer,_cds,_post_service);
     _described = true;
   case Message::DescriptionReq:
     { int n = _cds.description()+1;
