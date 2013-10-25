@@ -110,9 +110,9 @@ void AcqWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds:
     float offset = vert[i].offset();
     EntryWaveform* entry = _entry[i];
     for (unsigned j=0;j<wfs.shape()[1];j++) {
-      int16_t data = wfs[i][j];
+      int16_t data = wfs[0][j];
       //        data = (data&0xff<<8) | (data&0xff00>>8);
-      double val = data*slope-offset;
+      double val = double(data)*slope-offset;
       entry->content(val,j);
     }
     entry->info(1,EntryWaveform::Normalization);
