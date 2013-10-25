@@ -35,6 +35,8 @@ typedef Pds::CsPad::ElementV2 CspadElement;
 static const unsigned Offset = 0x4000;
 static const double  dOffset = double(Offset);
 static const double pixel_size = 110e-6;
+static const float HI_GAIN_F = 1.;
+static const float LO_GAIN_F = 7.;
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
 
@@ -394,7 +396,8 @@ namespace CspadGeometry {
 
   class AsicP : public Asic {
   public:
-    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain, FILE* rms) :
+    AsicP(double x, double y, unsigned ppbin, FILE* ped, FILE* status, FILE* gain, FILE* rms,
+          const ndarray<const uint16_t,2>& gmap, unsigned imap) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
@@ -449,7 +452,16 @@ namespace CspadGeometry {
             *gn++ = 1.;
         }
       }
-      
+
+      { float* gn = _gn;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ *= ((gmap[col][row]>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
+          for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ *= ((gmap[col][row]>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
+        }
+      }
+
       if (rms) {
         float* r = _rms;
         float* g = _gn;
@@ -512,8 +524,9 @@ namespace CspadGeometry {
   class classname : public AsicP {                                      \
   public:                                                               \
     classname(double x, double y,                                       \
-              FILE* p, FILE* s, FILE* g, FILE* rms)                     \
-      : AsicP(x,y,PPB,p,s,g,rms) {}                                     \
+              FILE* p, FILE* s, FILE* g, FILE* rms,                     \
+              const ndarray<const uint16_t,2>& gmap, unsigned imap)     \
+      : AsicP(x,y,PPB,p,s,g,rms,gmap,imap) {}                           \
     void boundary(unsigned& dx0, unsigned& dx1,                         \
                   unsigned& dy0, unsigned& dy1) const {                 \
       FRAME_BOUNDS;                                                     \
@@ -594,9 +607,10 @@ namespace CspadGeometry {
   public:
     TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
              const Ami::Cspad::TwoByTwoAlignment& a,
-             FILE* f, FILE* s, FILE* g, FILE* rms) 
+             FILE* f, FILE* s, FILE* g, FILE* rms,
+             const ndarray<const uint16_t,2>& gmap, unsigned imap) 
     {
-      for(unsigned i=0; i<2; i++) {
+      for(unsigned i=0; i<2; i++, imap+=2) {
         double tx(x), ty(y);
         _transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
         //
@@ -605,27 +619,27 @@ namespace CspadGeometry {
         switch(r) {
         case D0: 
           switch(ppb) {
-          case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms); break;
-          case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g,rms); break;
-          default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g,rms); break;
+          case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms,gmap,imap); break;
+          case 2:       asic[i] = new  AsicD0B2P(tx,ty,f,s,g,rms,gmap,imap); break;
+          default:      asic[i] = new  AsicD0B4P(tx,ty,f,s,g,rms,gmap,imap); break;
           } break;
         case D90:
           switch(ppb) {
-          case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g,rms); break;
-          case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g,rms); break;
-          default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g,rms); break;
+          case 1:       asic[i] = new  AsicD90B1P(tx,ty,f,s,g,rms,gmap,imap); break;
+          case 2:       asic[i] = new  AsicD90B2P(tx,ty,f,s,g,rms,gmap,imap); break;
+          default:      asic[i] = new  AsicD90B4P(tx,ty,f,s,g,rms,gmap,imap); break;
           } break;
         case D180:
           switch(ppb) {
-          case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
-          case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g,rms); break;
-          default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g,rms); break;
+          case 1:       asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms,gmap,imap); break;
+          case 2:       asic[i] = new  AsicD180B2P(tx,ty,f,s,g,rms,gmap,imap); break;
+          default:      asic[i] = new  AsicD180B4P(tx,ty,f,s,g,rms,gmap,imap); break;
           } break;
         case D270:
           switch(ppb) {
-          case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
-          case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g,rms); break;
-          default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g,rms); break;
+          case 1:       asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms,gmap,imap); break;
+          case 2:       asic[i] = new  AsicD270B2P(tx,ty,f,s,g,rms,gmap,imap); break;
+          default:      asic[i] = new  AsicD270B4P(tx,ty,f,s,g,rms,gmap,imap); break;
           } break;
         default:
           break;
@@ -646,10 +660,11 @@ namespace CspadGeometry {
       asic[sector_id&1]->fill(image,sector);
     }
     void fill(Ami::EntryImage& image,
+              unsigned mask,
               double v0, double v1) const
     {
-      for(unsigned ie=0; ie<2; ie++)
-        asic[ie]->fill(image,v0,v1);
+      if (mask&1) asic[0]->fill(image,v0,v1);
+      if (mask&2) asic[1]->fill(image,v0,v1);
     }
     void set_pedestals(FILE* f)
     {
@@ -664,6 +679,7 @@ namespace CspadGeometry {
   public:
     Quad(double x, double y, unsigned ppb, Rotation r, 
          const Ami::Cspad::QuadAlignment& align,
+         const ndarray<const uint16_t,2>& gmap,
          FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0, FILE* rmsFile=0)
     {
       static Rotation _tr[] = {  D0  , D90 , D180, D90 ,
@@ -675,7 +691,7 @@ namespace CspadGeometry {
         double tx(x), ty(y);
         _transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
         element[i] = new TwoByTwo( tx, ty, ppb, _tr[r*NPHI+i], ta, 
-                                   pedFile, staFile, gainFile, rmsFile );
+                                   pedFile, staFile, gainFile, rmsFile, gmap, i*4 );
       }
     }
     ~Quad() { for(unsigned i=0; i<4; i++) delete element[i]; }
@@ -699,10 +715,12 @@ namespace CspadGeometry {
         }
     }      
     void fill(Ami::EntryImage& image,
+              unsigned mask,
               double v0, double v1) const
     {
-      for(unsigned ie=0; ie<4; ie++)
-        element[ie]->fill(image,v0,v1);
+      for(unsigned ie=0; ie<4; ie++, mask>>=2)
+        if (mask&3)
+          element[ie]->fill(image,mask&3,v0,v1);
     }
     void set_pedestals(FILE* f)
     {
@@ -712,6 +730,28 @@ namespace CspadGeometry {
   public:
     TwoByTwo* element[4];
   };
+
+#if 0
+        for(unsigned i=0; i<4; i++) {                                   \
+          const ndarray<const uint16_t,2>& gm = c.quads(i).gm().gainMap(); \
+          for(unsigned j=0; j<CsPad::ColumnsPerASIC; j++) {             \
+            ndarray<uint16_t,2>& ogm = _gainMap[i];                     \
+            uint16_t* p = &ogm[j][0];                                   \
+            for(unsigned k=0; k<CsPad::MaxRowsPerASIC; k++)             \
+              *p++ = gm[j][k];                                          \
+          }                                                             \
+        }                                                               \
+
+          for(unsigned i=0; i<4; i++) {                                   
+            const ndarray<const uint16_t,2>& gm = c.quads(i).gm().gainMap(); 
+            for(unsigned j=0; j<CsPad::ColumnsPerASIC; j++) {             
+              uint16_t* v = &_gainMap[i][j][0];                              
+              for(unsigned k=0; k<CsPad::MaxRowsPerASIC; k++)             
+                *v++ = gm[j][k];                                       
+            }                                                             
+          }                                                               
+
+#endif
 
   class ConfigCache {
   public:
@@ -725,7 +765,13 @@ namespace CspadGeometry {
         _quadMask   = c.quadMask();                                     \
         for(unsigned i=0; i<4; i++)                                     \
           _roiMask[i] = c.roiMask(i);                                   \
+        for(unsigned i=0; i<4; i++)                                     \
+          _gainMap[i] = c.quads(i).gm().gainMap().copy();               \
         break; }
+
+      for(unsigned i=0; i<4; i++)
+        _gainMap[i] = make_ndarray<uint16_t>(CsPad::ColumnsPerASIC,
+                                             CsPad::MaxRowsPerASIC);
 
       unsigned size;
       switch(type.version()) {
@@ -736,6 +782,8 @@ namespace CspadGeometry {
           _quadMask   = c.quadMask();
           for(unsigned i=0; i<4; i++)
             _roiMask[i] = (_quadMask&(1<<i)) ? 0xff : 0;
+          for(unsigned i=0; i<4; i++)                                     
+            _gainMap[i] = c.quads(i).gm().gainMap().copy();               
           break; }
         CASE_VSN(2)
         CASE_VSN(3)
@@ -768,6 +816,8 @@ namespace CspadGeometry {
       _quadMask = c._quadMask;
       for(unsigned i=0; i<4; i++)
         _roiMask[i] = c._roiMask[i];
+      for(unsigned i=0; i<4; i++)
+        _gainMap[i] = c._gainMap[i];
     }
     ~ConfigCache() 
     { delete[] _payload; }
@@ -866,14 +916,17 @@ namespace CspadGeometry {
       ta = ndarray<const uint16_t,1>();
       return false;
     }
+
   public:
     unsigned quadMask()           const { return _quadMask; }
     unsigned roiMask (unsigned i) const { return _roiMask[i]; }
+    const ndarray<uint16_t,2>& gainMap(unsigned i) const { return _gainMap[i]; }
   private:
     Pds::TypeId _type;
     char*       _payload;
     unsigned    _quadMask;
     unsigned    _roiMask[4];
+    ndarray<uint16_t,2> _gainMap[4];
   };
 
   class Detector {
@@ -935,7 +988,7 @@ namespace CspadGeometry {
         y = -0.5*frame;
       }
       for(unsigned j=0; j<4; j++)
-        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j]);
+        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],_config.gainMap(j));
 
       //
       //  Test extremes and narrow the focus
@@ -972,7 +1025,7 @@ namespace CspadGeometry {
       _pixels = pixels*4 + 2*bin0*_ppb;
 
       for(unsigned j=0; j<4; j++)
-        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],f,s,g,rms);
+        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],_config.gainMap(j),f,s,g,rms);
 
       if (gm)
         delete[] qalign;
@@ -1079,7 +1132,8 @@ namespace CspadGeometry {
               double v0, double v1) const
     {
       for(unsigned iq=0; iq<4; iq++)
-        quad[iq]->fill(image,v0,v1);
+        if (_config.quadMask()&(1<<iq))
+          quad[iq]->fill(image,_config.roiMask(iq),v0,v1);
     }
     void set_pedestals(FILE* f)
     {
@@ -1173,14 +1227,13 @@ static std::list<Pds::TypeId::Type> data_type_list()
   return types;
 }
 
-CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features, unsigned max_pixels) :
+CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
   EventHandler(info, data_type_list(), Pds::TypeId::Id_CspadConfig),
   _entry(0),
   _unbinned_entry(0),
   _detector(0),
   _unbinned_detector(0),
   _cache(features),
-  _max_pixels(max_pixels),
   _options   (0)
 {
   unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(int16_t);
@@ -1243,7 +1296,7 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   CspadGeometry::ConfigCache cfg(type,payload);
 
   _create_entry( cfg,f,s,g,rms,gm, 
-                 _detector, _entry, _max_pixels);
+                 _detector, _entry, resolution());
 #ifndef UNBINNED
   _create_entry( cfg,f,s,g,rms,gm, 
                  _unbinned_detector, _unbinned_entry, 1<<12);

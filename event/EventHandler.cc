@@ -88,19 +88,24 @@ void   EventHandler::_event(Pds::TypeId type,
 */
 
 static bool _full_res = false;
+static unsigned _res_limit = 640;
 
 void   EventHandler::enable_full_resolution(bool v) { _full_res = v; }
 
 bool   EventHandler::_full_resolution() const { return _full_res; }
 
-int    EventHandler::image_ppbin(int& xpixels, int& ypixels)
+void   EventHandler::limit_resolution(unsigned p) { _res_limit=p; }
+
+unsigned EventHandler::resolution() { return _res_limit; }
+
+int    EventHandler::image_ppbin(unsigned& xpixels, unsigned& ypixels, unsigned margin)
 {
   int ppbin = 1;
   if (!_full_res) {
-    const unsigned DISPLAY_SIZE=640;
     unsigned pixels  = (xpixels > ypixels) ? xpixels : ypixels;
-    if (pixels>DISPLAY_SIZE/2) {
-      ppbin   = (pixels-1)/DISPLAY_SIZE + 1;
+    unsigned res_limit = _res_limit - 2*margin;
+    if (pixels>res_limit/2) {
+      ppbin   = (pixels-1)/res_limit + 1;
       xpixels = (xpixels+ppbin-1)/ppbin;
       ypixels = (ypixels+ppbin-1)/ppbin;
     }

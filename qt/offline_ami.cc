@@ -31,7 +31,8 @@ static void usage(char* progname) {
 	  "         [-o <filename for debugging messages>]\n"
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
-          "         [-R (full resolution)\n"
+          "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
+          "         [-r <pixels> (limit resolution)\n"
 	  "         [-l (live read mode)]\n"
           "         [-E (expert mode/movie option)]\n", 
           progname,
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:C:L:N:lERTW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lER::TW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -146,7 +147,10 @@ int main(int argc, char* argv[]) {
       liveReadMode = true;
       break;
     case 'R':
-      Ami::EventHandler::enable_full_resolution(true);
+      if (!optarg)
+        Ami::EventHandler::enable_full_resolution(true);
+      else
+        Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
       break;
     case 'T':
       testMode = true;

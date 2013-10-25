@@ -125,8 +125,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     const Ami::Epix::ConfigT& c = *reinterpret_cast<const Ami::Epix::ConfigT*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     const unsigned chip_margin=4;
-    int columns = c.nchip_columns*c.ncolumns + (c.nchip_columns-1)*chip_margin;
-    int rows    = c.nchip_rows   *c.nrows    + (c.nchip_rows   -1)*chip_margin;
+    unsigned columns = c.nchip_columns*c.ncolumns + (c.nchip_columns-1)*chip_margin;
+    unsigned rows    = c.nchip_rows   *c.nrows    + (c.nchip_rows   -1)*chip_margin;
     int ppb = image_ppbin(columns,rows);
 
     DescImage desc(det, (unsigned)0, ChannelID::name(det),

@@ -121,8 +121,10 @@ namespace Ami {
     const Pds::TypeId::Type&  config_type() const { return _config_type.front(); }
     const std::list<Pds::TypeId::Type>& config_types() const { return _config_type; }
   public:
+    static void limit_resolution(unsigned);
+    static unsigned resolution();
     static void enable_full_resolution(bool);
-    static int  image_ppbin(int& xpixels, int& ypixels);
+    static int  image_ppbin(unsigned& xpixels, unsigned& ypixels, unsigned margin=0);
   protected:
     bool _full_resolution() const;
   private:

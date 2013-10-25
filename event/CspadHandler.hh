@@ -17,8 +17,7 @@ namespace Ami {
 
   class CspadHandler : public EventHandler {
   public:
-    CspadHandler(const Pds::DetInfo& info, FeatureCache&, 
-                 unsigned max_pixels=600);
+    CspadHandler(const Pds::DetInfo& info, FeatureCache&);
     ~CspadHandler();
   public:
     unsigned     nentries() const;
@@ -46,7 +45,6 @@ namespace Ami {
     CspadGeometry::Detector* _detector;
     CspadGeometry::Detector* _unbinned_detector;
     FeatureCache&        _cache;
-    unsigned             _max_pixels;
     unsigned             _options;
   };
 };

@@ -118,8 +118,8 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
 
-  int columns = width (_configtc);
-  int rows    = height(_configtc);
+  unsigned columns = width (_configtc);
+  unsigned rows    = height(_configtc);
   int ppb = image_ppbin(columns,rows);
 
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
