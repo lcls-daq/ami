@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <netpacket/packet.h>
 
+#define DBG
 //#define DBUG
 
 namespace Ami {
@@ -421,6 +422,10 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   size = 0;
 
   if (reply.type() == Message::Discover) { // unsolicited message
+#ifdef DBG
+    printf("CM discover when expecting request %s %d\n",
+           _request.type_str(),_request.id());
+#endif
     if (_discovery_size < reply.payload()) {
       delete[] _discovery;
       _discovery = new char[_discovery_size=reply.payload()];

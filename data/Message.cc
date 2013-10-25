@@ -1,4 +1,5 @@
 #include <sys/uio.h>
+#include <string.h>
 
 #include "Message.hh"
 
@@ -53,3 +54,25 @@ void Message::payload(const iovec* iov, unsigned iovcnt)
 void Message::payload(unsigned size) { _payload = size; }
 
 void Message::offset (unsigned size) { _offset  = size; }
+
+static const char* sType[] = {
+  "NoOp",
+  "Hello",
+  "Connect",
+  "Reconnect",
+  "Disconnect",
+  "DiscoverReq",
+  "Discover",
+  "ConfigReq",
+  "DescriptionReq", 
+  "Description", 
+  "PayloadReq", 
+  "Payload",
+  "PayloadFragment",
+  NULL
+};
+
+const char* Message::type_str() const 
+{
+  return sType[_type];
+}

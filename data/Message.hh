@@ -35,6 +35,7 @@ namespace Ami {
     unsigned offset () const;
     unsigned payload() const;
     EntryList list  () const;
+    const char* type_str() const;
   public:
     void     id(unsigned);
     void     type(Type t);
