@@ -138,8 +138,8 @@ void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::Clock
 
   const Pds::PNCCD::FramesV1& f = *reinterpret_cast<const Pds::PNCCD::FramesV1*>(payload);
   _fillQuadrant (f.frame(_config,0).data(_config).data(), 0, 0);
-  _fillQuadrant (f.frame(_config,1).data(_config).data(), cols_segment-1, rows-1);
-  _fillQuadrant (f.frame(_config,2).data(_config).data(), cols-1, rows-1);
+  _fillQuadrantR(f.frame(_config,1).data(_config).data(), cols_segment-1, rows-1);
+  _fillQuadrantR(f.frame(_config,2).data(_config).data(), cols-1, rows-1);
   _fillQuadrant (f.frame(_config,3).data(_config).data(), cols_segment, 0);
 
   double n = double(PixelsPerBin*PixelsPerBin);
