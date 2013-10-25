@@ -25,10 +25,6 @@ namespace Ami {
 	      const AbsTransform& x, 
 	      const AbsTransform& y,
 	      const QColor& c);
-      QtImage(const QString&   title,
-	      const EntryImage&, 
-	      unsigned x0, unsigned y0,
-	      unsigned x1, unsigned y1);
       ~QtImage();
     public:
       void        dump  (FILE*) const;

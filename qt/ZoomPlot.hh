@@ -28,17 +28,12 @@ namespace Ami {
     public:
       ZoomPlot(QWidget*,
 	       const QString&,
-	       unsigned input_channel,
-	       Ami::AbsOperator* op);
+	       unsigned          input_channel,
+	       Ami::AbsOperator* op,
+               bool              scale_xy=false);
       ZoomPlot(QWidget*,
 	       const QString&,
-	       unsigned input_channel,
-	       unsigned x0, 
-	       unsigned y0,
-	       unsigned x1,
-	       unsigned y1);
-      ZoomPlot(QWidget*,
-	       const QString&);
+               bool              scale_xy=false);
       ZoomPlot(QWidget*,const char*& p);
       ~ZoomPlot();
     public:
@@ -59,8 +54,8 @@ namespace Ami {
     private:
       QString          _name;
       unsigned         _input;
+      bool             _scalexy;
       unsigned         _signature;
-      unsigned         _x0, _y0, _x1, _y1;
       ImageDisplay*    _frame;
       AbsOperator*     _op;
       ConfigureRequestor _req;

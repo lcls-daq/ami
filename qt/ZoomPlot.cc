@@ -45,15 +45,13 @@ static QColor _color(0,0,0);
 ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const QString&   name,
 		   unsigned         input_channel,
-		   Ami::AbsOperator* op) :
+		   Ami::AbsOperator* op,
+                   bool             scalexy) :
   QtPWidget(0),
   _name    (name),
   _input   (input_channel),
+  _scalexy (scalexy),
   _signature(-1),
-  _x0     (1),
-  _y0     (1),
-  _x1     (0),
-  _y1     (0),
   _frame  (new ImageDisplay(false)),
   _op     (op)
 {
@@ -71,44 +69,12 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 
 ZoomPlot::ZoomPlot(QWidget*         parent,
 		   const QString&   name,
-		   unsigned         input_channel,
-		   unsigned         x0, 
-		   unsigned         y0,
-		   unsigned         x1,
-		   unsigned         y1) :
-  QtPWidget(0),
-  _name    (name),
-  _input   (input_channel),
-  _signature(-1),
-  _x0     (x0),
-  _y0     (y0),
-  _x1     (x1),
-  _y1     (y1),
-  _frame  (new ImageDisplay(false)),
-  _op     (0)
-{
-  setWindowTitle(name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
-
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(_frame);
-  setLayout(layout);
-
-  show();
-
-  PWidgetManager::add(this, _name);
-}
-
-ZoomPlot::ZoomPlot(QWidget*         parent,
-		   const QString&   name) :
+                   bool             scalexy) :
   QtPWidget(0),
   _name    (name),
   _input   (0),
+  _scalexy(scalexy),
   _signature(-1),
-  _x0     (1),
-  _y0     (1),
-  _x1     (0),
-  _y1     (0),
   _frame  (new ImageDisplay(false)),
   _op     (0)
 {
@@ -158,15 +124,12 @@ void ZoomPlot::save(char*& p) const
 
   XML_insert(p, "QString", "_name", QtPersistent::insert(p,_name) );
   XML_insert(p, "unsigned", "_input", QtPersistent::insert(p,_input) );
-  XML_insert(p, "unsigned", "_x0", QtPersistent::insert(p,_x0) );
-  XML_insert(p, "unsigned", "_y0", QtPersistent::insert(p,_y0) );
-  XML_insert(p, "unsigned", "_x1", QtPersistent::insert(p,_x1) );
-  XML_insert(p, "unsigned", "_y1", QtPersistent::insert(p,_y1) );
   XML_insert(p, "ImageDisplay", "_frame", _frame->save(p) );
   if (_op) {
     XML_insert( p, "AbsOperator", "_op",
 		QtPersistent::insert(p,buff,(char*)_op->serialize(buff)-buff) );
   }
+  XML_insert(p, "bool", "_scalexy", QtPersistent::insert(p,_scalexy) );
   delete[] buff;
 }
 
@@ -184,14 +147,6 @@ void ZoomPlot::load(const char*& p)
       _name  = QtPersistent::extract_s(p);
     else if (tag.name == "_input")
       _input = QtPersistent::extract_i(p);
-    else if (tag.name == "_x0")
-      _x0 = QtPersistent::extract_i(p);
-    else if (tag.name == "_y0")
-      _y0 = QtPersistent::extract_i(p);
-    else if (tag.name == "_x1")
-      _x1 = QtPersistent::extract_i(p);
-    else if (tag.name == "_y1")
-      _y1 = QtPersistent::extract_i(p);
     else if (tag.name == "_frame")
       _frame->load(p);
     else if (tag.name == "_op") {
@@ -204,6 +159,8 @@ void ZoomPlot::load(const char*& p)
       default: _op=0; printf("Unable to operator type %d\n",type); break;
       }
     }
+    else if (tag.name == "_scalexy")
+      _scalexy = QtPersistent::extract_b(p);
   XML_iterate_close(ZoomPlot,tag);
 }
 
@@ -212,29 +169,10 @@ void ZoomPlot::setup_payload(Cds& cds)
   _frame->reset();
   const Entry* entry = cds.entry(_signature);
   if (entry) {
-    QtImage* qi = 0;
-    if (_x1<_x0) {
-      const DescImage& d = static_cast<const DescImage&>(entry->desc());
-      unsigned x0 = unsigned(d.xlow());
-      unsigned y0 = unsigned(d.ylow());
-      unsigned x1 = unsigned(d.xup ());
-      unsigned y1 = unsigned(d.yup ());
-#if 0
-      qi = new QtImage(entry->desc().name(),
-                       *static_cast<const EntryImage*>(entry),
-                       x0,y0,x1,y1);
-#else
-      qi = new QtImage(entry->desc().name(),
-                       *static_cast<const EntryImage*>(entry),
-                       transform(), transform(), _color);
-#endif
-    }
-    else 
-      qi = new QtImage(entry->desc().name(),
-                       *static_cast<const EntryImage*>(entry),
-                       _x0, _y0, _x1, _y1);
-
-    qi->scalexy(true);
+    QtImage* qi = new QtImage(entry->desc().name(),
+                              *static_cast<const EntryImage*>(entry),
+                              transform(), transform(), _color);
+    qi->scalexy(_scalexy);
     _frame->add( qi, true );
     _frame->grid_scale().setup_payload(cds);
   }

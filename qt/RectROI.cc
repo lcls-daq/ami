@@ -253,7 +253,8 @@ void RectROI::add_cursor_plot(BinMath* op)
 void RectROI::add_zoom_plot()
 {
   ZoomPlot* plot = new ZoomPlot(_parent,
-				_name);
+				_name,
+                                true);
   _zplots.push_back(plot);
 
   connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
