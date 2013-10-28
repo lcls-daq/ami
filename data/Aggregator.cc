@@ -268,14 +268,12 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       iovec* iovl = _iovload;
       iovec* iovd = _iovdesc+1;
       char* payload = _buffer->data();
-      if (niov) {
-	while(niov--) {
-	  DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-	  _cds.entry(desc->signature())->merge(payload);
-	  payload += iovl->iov_len;
-	  iovl++;
-	  iovd++;
-	}
+      while(niov--) {
+	DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+	_cds.entry(desc->signature())->merge(payload);
+	payload += iovl->iov_len;
+	iovl++;
+	iovd++;
       }
       if (--_remaining == 0) {
 	_client.read_payload(*_buffer,sz);

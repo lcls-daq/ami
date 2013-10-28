@@ -47,6 +47,7 @@ Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
   if (_n) {
     _cache = EntryFactory::entry(e);
     _cache->desc().aggregate(true);
+    _cache->invalid();
   }
   else {
     _cache = (Entry*)0;
@@ -101,8 +102,6 @@ Entry&     Average::_operate(const Entry& e) const
             _en.reset();
             _current=0;
           }
-          else
-            _cache->invalid();
         }
         break; }
     case DescEntry::Prof:
@@ -114,8 +113,6 @@ Entry&     Average::_operate(const Entry& e) const
             _en.reset();
             _current=0;
           }
-          else 
-            _cache->invalid();
         }
         break; }
     case DescEntry::Image:
@@ -172,8 +169,6 @@ Entry&     Average::_operate(const Entry& e) const
             _en.reset();
             _current=0;
           }
-          else
-            _cache->invalid();
         }
         break; }
     case DescEntry::Waveform:
@@ -196,8 +191,6 @@ Entry&     Average::_operate(const Entry& e) const
             _en.reset();
             _current=0;
           }
-          else
-            _cache->invalid();
         }
         break; }
     default:

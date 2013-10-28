@@ -57,6 +57,7 @@ Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
 
   _cache = EntryFactory::entry(e);
   _cache->reset();
+  _cache->invalid();
 
   switch(e.type()) {
   case DescEntry::TH1F:
