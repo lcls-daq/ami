@@ -34,7 +34,9 @@ namespace Ami {
     public:
       ChannelDefinition(QWidget* parent,
 			const QString& name, 
-			const QStringList& names,
+			ChannelDefinition**,
+			unsigned ich,
+			unsigned nch,
 			Display& frame, const QColor&, 
                         bool init,
                         QStringList ref = QStringList());

@@ -54,7 +54,8 @@ PeakPlot::PeakPlot(QWidget*         parent,
   //  when all of its child plots are closed.
   //
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], _channels, i, NCHANNELS,
+					 *_frame, color[i], i==0);
 
   _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*_frame->plot());
   _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*_frame->plot());
@@ -135,7 +136,8 @@ PeakPlot::PeakPlot(QWidget*         parent,
   _frame    (new ImageDisplay)
 {
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(static_cast<QWidget*>(parent), names[i], _channels, i, NCHANNELS,
+					 *_frame, color[i], i==0);
 
   _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*_frame->plot());
   _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*_frame->plot());

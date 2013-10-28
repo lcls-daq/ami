@@ -15,7 +15,9 @@ namespace Ami {
     class ChannelMath : public QWidget {
       Q_OBJECT
     public:
-      ChannelMath(const QStringList&);
+      ChannelMath(ChannelDefinition**,
+		  unsigned ich,
+		  unsigned nch);
       ~ChannelMath();
     public:
       QString          expr() const;
@@ -30,9 +32,11 @@ namespace Ami {
     public slots:
       void calc();
     private:
+      ChannelDefinition** _chs;
+      unsigned            _ich;
+      unsigned            _nch;
       QLineEdit*    _expr;
       bool          _changed;
-      QStringList   _names;
       Ami::AbsFilter*   _filter;
       Ami::AbsOperator* _operator;
       QStringList   _uses;

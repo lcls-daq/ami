@@ -57,7 +57,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   //  when all of its child plots are closed.
   //
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(this, names[i], _channels, i, NCHANNELS,
+					 *_frame, color[i], i==0);
 
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
@@ -76,7 +77,8 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
   _chrome_changed(false)
 {
   for(int i=0; i<NCHANNELS; i++)
-    _channels[i] = new ChannelDefinition(this, names[i], names, *_frame, color[i], i==0);
+    _channels[i] = new ChannelDefinition(this, names[i], _channels, i, NCHANNELS,
+					 *_frame, color[i], i==0);
 	
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);

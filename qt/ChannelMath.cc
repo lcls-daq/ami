@@ -18,11 +18,15 @@
 
 using namespace Ami::Qt;
 
-ChannelMath::ChannelMath(const QStringList& names) :
+ChannelMath::ChannelMath(ChannelDefinition** chs,
+			 unsigned ich,
+			 unsigned nch) :
   QWidget (0),
+  _chs    (chs),
+  _ich    (ich),
+  _nch    (nch),
   _expr   (new QLineEdit),
   _changed(false),
-  _names  (names),
   _filter (0),
   _operator(0)
 {
@@ -61,7 +65,11 @@ void ChannelMath::calc()
 
   QStringList vops;
 
-  QStringList names(_names);
+  QStringList names;
+  for(unsigned i=0; i<_nch; i++)
+    if (!(i==_ich || _chs[i]->smp_prohibit()))
+      names << _chs[i]->name();
+
   names << FeatureRegistry::instance().names();
 
   Calculator* c = new Calculator(this,
