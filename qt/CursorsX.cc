@@ -8,11 +8,13 @@
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/CursorPlot.hh"
 #include "ami/qt/CursorPost.hh"
+#include "ami/qt/CursorOverlay.hh"
 #include "ami/qt/WaveformDisplay.hh"
 #include "ami/qt/Calculator.hh"
 #include "ami/qt/PlotFrame.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/PostAnalysis.hh"
+#include "ami/qt/QtPlotSelector.hh"
 
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescCache.hh"
@@ -95,6 +97,7 @@ CursorsX::CursorsX(QWidget* parent,
 
   QPushButton* calcB  = new QPushButton("Enter");
   QPushButton* plotB  = new QPushButton("Plot");
+  QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
   QPushButton* grabB  = new QPushButton("Grab");
   
@@ -146,6 +149,7 @@ CursorsX::CursorsX(QWidget* parent,
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
+    layout1->addWidget(ovlyB);
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -155,6 +159,7 @@ CursorsX::CursorsX(QWidget* parent,
   connect(_new_value, SIGNAL(returnPressed()),this, SLOT(add_cursor()));
   connect(calcB     , SIGNAL(clicked()),      this, SLOT(calc()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(grabB     , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
@@ -189,6 +194,9 @@ void CursorsX::save(char*& p) const
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     XML_insert(p, "CursorPost", "_posts", (*it)->save(p) );
   }
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
+    XML_insert(p, "CursorOverlay", "_ovls", (*it)->save(p) );
+  }
 }
 
 void CursorsX::load(const char*& p)
@@ -209,6 +217,7 @@ void CursorsX::load(const char*& p)
     delete *it;
   }
   _posts.clear();
+  _ovls .clear();
 
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
@@ -233,7 +242,15 @@ void CursorsX::load(const char*& p)
       CursorPost* post = new CursorPost(p);
       _posts.push_back(post);
     }
+    else if (tag.name == "_ovls") {
+      CursorOverlay* ovl = new CursorOverlay(*this, p);
+      _ovls.push_back(ovl);
+    }
   XML_iterate_close(CursorsX,tag);
+
+  setVisible(false);
+
+  emit changed();
 }
 
 void CursorsX::save_plots(const QString& p) const
@@ -259,17 +276,24 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    if (!_channels[(*it)->channel()]->smp_prohibit())
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
 }
 
 void CursorsX::setup_payload(Cds& cds)
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+    (*it)->setup_payload(cds);
 }
 
 void CursorsX::update()
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->update();
+  for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
 }
 
@@ -385,6 +409,38 @@ void CursorsX::plot()
     connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
   }
   emit changed();
+}
+
+void CursorsX::overlay()
+{
+  if (_scalar_desc->postAnalysis()) {
+    QString     qtitle = _add_post();
+    DescEntry*  entry  = _scalar_desc->desc(qPrintable(qtitle));
+    new QtPlotSelector(*this, *PostAnalysis::instance(), entry, _posts.back());
+  }
+  else {
+    DescEntry* desc = _scalar_desc->desc(qPrintable(_expr_text()));
+    new QtPlotSelector(*this, *this, desc);
+  }
+}
+
+void CursorsX::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
+{
+  QString expr = _translate_expr();
+  CursorOverlay* ovl = new CursorOverlay(*this, 
+                                         *plot,
+                                         _channel, 
+                                         new BinMath(*desc,_scalar_desc->expr(expr)));
+  delete desc;
+  _ovls.push_back(ovl);
+
+  emit changed();
+}
+
+void CursorsX::remove_overlay(QtOverlay* obj)
+{
+  CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _ovls.remove(ovl);
 }
 
 void    CursorsX::add_post() 

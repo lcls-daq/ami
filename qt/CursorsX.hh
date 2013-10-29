@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CPostParent.hh"
+#include "ami/qt/OverlayParent.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -30,6 +31,7 @@ namespace Ami {
     class CursorDefinition;
     class CursorPlot;
     class CursorPost;
+    class CursorOverlay;
     class WaveformDisplay;
     class ScalarPlotDesc;
 
@@ -43,7 +45,8 @@ namespace Ami {
 
     class CursorsX : public QtPWidget,
 		     public Cursors,
-                     public CPostParent  {
+                     public CPostParent,
+                     public OverlayParent {
       Q_OBJECT
     public:
       CursorsX(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
@@ -72,6 +75,9 @@ namespace Ami {
       void remove_plot (QObject*);
       void grab_cursorx();
       void add_post    ();
+      void overlay     ();
+      void add_overlay(DescEntry*,QtPlot*,SharedData*);
+      void remove_overlay(QtOverlay*);
     signals:
       void changed();
       void grabbed();
@@ -110,6 +116,7 @@ namespace Ami {
       Ami::AbsOperator* _operator;
 
       std::list<CursorPlot*> _plots;
+      std::list<CursorOverlay*> _ovls;
 
     public:
       void remove_cursor_post(CursorPost*);
