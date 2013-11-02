@@ -519,6 +519,7 @@ namespace CspadGeometry {
   };
 
   static int16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+  static float    fgn_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
 #define AsicTemplate(classname,bi,ti,PPB)                               \
   class classname : public AsicP {                                      \
@@ -550,10 +551,10 @@ namespace CspadGeometry {
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
-      int16_t* zero = 0;                                               \
-      const int16_t* off = lnopedestal ? off_no_ped : _off;            \
-      const int16_t* const * sta = lsuppress ? _sta : &zero;           \
-      const float* gn = _gn;                                            \
+      int16_t* zero = 0;                                                \
+      const int16_t* off = lnopedestal ? off_no_ped : _off;             \
+      const int16_t* const * sta = lsuppress ? _sta : &zero;            \
+      const float* gn = lnopedestal ? fgn_no_ped :_gn;                  \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
       bi;                                                               \
     }                                                                   \
@@ -1237,7 +1238,10 @@ CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
   _options   (0)
 {
   unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(int16_t);
-  for (unsigned i=0; i<s; i++) CspadGeometry::off_no_ped[i] = (int16_t)Offset;
+  for (unsigned i=0; i<s; i++) {
+    CspadGeometry::off_no_ped[i] = (int16_t)Offset;
+    CspadGeometry::fgn_no_ped[i] = 1.;
+  }
 }
 
 CspadHandler::~CspadHandler()

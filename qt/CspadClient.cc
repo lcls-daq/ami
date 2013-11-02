@@ -162,7 +162,12 @@ void CspadClient::write_pedestals()
 
     _control->pause();
 
-    std::string smsg(CspadCalib::save_pedestals(_cds.entry(signature),!_npBox->isChecked(),lProd,lReqFull));
+    std::string smsg;
+    if (!_npBox->isChecked())
+      smsg = std::string("Retain Pedestal must be checked.\n");
+    else
+      smsg = CspadCalib::save_pedestals(_cds.entry(signature),lProd,lReqFull);
+
     if (smsg.empty()) {
       _reloadPedestals = true;
       emit changed();

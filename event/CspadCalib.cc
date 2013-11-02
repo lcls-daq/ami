@@ -28,7 +28,6 @@ unsigned CspadCalib::option_suppress_bad_pixels() { return _option_suppress_bad_
 unsigned CspadCalib::option_post_integral      () { return _option_post_integral; }
 
 std::string CspadCalib::save_pedestals(Entry* e,
-                                       bool   subtract,
                                        bool   prod,
                                        bool   reqfull)
 {
@@ -45,41 +44,6 @@ std::string CspadCalib::save_pedestals(Entry* e,
   for(unsigned s=0; s<nframes; s++) {
     _off[s] = new double[Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2];
     memset(_off[s],0,Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2*sizeof(double));
-  }
-
-  if (subtract) {
-
-    //
-    //  Load pedestals
-    //
-    const int NameSize=128;
-    char oname1[NameSize];
-    char oname2[NameSize];
-    
-    sprintf(oname1,"ped.%08x.dat",desc.info().phy());
-    sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",desc.info().phy());
-    FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-    
-    if (f) {
-
-      //  read pedestals
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      char* pEnd;
-      
-      for(unsigned s=0; s<nframes; s++) {
-        double* off = _off[s];
-        for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, f);
-          *off++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
-            *off++ = strtod(pEnd, &pEnd);
-        }
-      }    
-      
-      free(linep);
-      fclose(f);
-    }
   }
 
   char tbuf[32];

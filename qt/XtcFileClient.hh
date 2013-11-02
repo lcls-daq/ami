@@ -19,7 +19,7 @@
 #include "ami/qt/RunTree.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
-#include "pdsdata/ana/XtcRun.hh"
+#include "ami/qt/XtcRun.hh"
 #include "pdsdata/xtc/Dgram.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
 

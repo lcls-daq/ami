@@ -744,14 +744,7 @@ void XtcFileClient::do_configure(QString runName)
   setStatus("Fetched " + itoa(files.size()) + " paths for run " + runName);
 
   _run.live_read(_liveReadMode); // These files are already completely written
-  string file = qPrintable(files.first());
-  _run.reset(file);
-  files.pop_front();
-  while (! files.empty()) {
-    file = qPrintable(files.first());
-    _run.add_file(file);
-    files.pop_front();
-  }
+  _run.reset(files);
 
   setStatus("Initializing run " + runName + "...");
   _run.init();
@@ -774,9 +767,7 @@ void XtcFileClient::do_configure(QString runName)
   insertTransition(TransitionId::Map);
 
   Dgram* dg = NULL;
-  int slice = -1;
-  int64_t offset = -1;
-  Result result = _run.next(dg, &slice, &offset);
+  Result result = _run.next(dg);
   if (result != OK) {
     setStatus("Could not fetch Configuration datagram");
     return;
@@ -919,9 +910,7 @@ void XtcFileClient::run()
     }
 
     Dgram* dg = NULL;
-    int slice = -1;
-    int64_t offset = -1;
-    Result result = _run.next(dg, &slice, &offset);
+    Result result = _run.next(dg);
     if (result != OK) {
       break;
     }
