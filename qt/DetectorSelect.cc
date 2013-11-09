@@ -638,7 +638,8 @@ void DetectorSelect::autosave()
   else if (!warned) {
     warned = true;
     QString msg = QString("Error opening %1 : %2").arg(fname).arg(strerror(errno));
-    QMessageBox::critical(this,"Save Error",msg);
+    //    QMessageBox::critical(this,"Save Error",msg);
+    printf("Save Error: %s\n",qPrintable(msg));
   }
 
   delete[] buffer;
