@@ -62,7 +62,9 @@ namespace Ami {
     private:
       QString     _title;
       ConfigureRequest::Source _source;
+      unsigned    _request_size;
       char*       _request;
+      unsigned    _description_size;
       char*       _description;
 
       Cds             _cds;

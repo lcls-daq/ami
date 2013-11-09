@@ -164,8 +164,10 @@ SummaryClient::SummaryClient(QWidget* parent, const Pds::DetInfo& info, unsigned
   AbsClient        (parent, info, channel),
   _title           (title),
   _source          (source),
-  _request         (new char[BufferSize]),
-  _description     (new char[BufferSize]),
+  _request_size    (BufferSize),
+  _request         (new char[_request_size]),
+  _description_size(BufferSize),
+  _description     (new char[_description_size]),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -267,6 +269,11 @@ int  SummaryClient::configured      ()
 
 int  SummaryClient::read_description(Socket& socket,int len)
 {
+  if (unsigned(len) > _description_size) {
+    delete[] _description;
+    _description = new char[_description_size*=2];
+  }
+
   printf("%s Described so\n",qPrintable(_title));
   int size = socket.read(_description,len);
 
@@ -275,8 +282,9 @@ int  SummaryClient::read_description(Socket& socket,int len)
     return 0;
   }
 
-  if (size==BufferSize) {
-    printf("Buffer overflow in Ami::Qt::Client::read_description.  Dying...\n");
+  if (unsigned(size)>=_description_size) {
+    printf("Buffer overflow [%d/%d] in Ami::Qt::Client::read_description.  Dying...\n",
+	   size,_description_size);
     abort();
   }
 
