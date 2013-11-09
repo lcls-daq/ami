@@ -29,6 +29,7 @@
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QGroupBox>
+#include <QtGui/QScrollArea>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -42,6 +43,8 @@ typedef Pds::DetInfo DI;
 static const int BufferSize = 0x40000; // 256 kB
 
 static const bool oldLayout=false;
+
+static bool _use_scroll_area=false;
 
 Ami::Qt::Client::Client(QWidget*            parent,
 			const Pds::DetInfo& src,
@@ -140,9 +143,24 @@ Ami::Qt::Client::Client(QWidget*            parent,
       layout->addLayout(layout1,1); }
   }
   else {
-    layout->addWidget(_frame->widget(),1);
+    layout->addWidget(_frame->widget(),0);
   }
-  setLayout(layout);
+
+  if (_use_scroll_area) {
+    layout->addStretch(2);
+    QScrollArea* scroll = new QScrollArea;
+    { QWidget* w = new QWidget(0);
+      w->setLayout(layout);
+      scroll->setWidget(w); }
+
+    scroll->setWidgetResizable(true);
+    
+    layout = new QHBoxLayout;
+    layout->addWidget(scroll);
+    setLayout(layout);
+  }
+  else
+    setLayout(layout);
 
   connect(this, SIGNAL(description_changed(int)), this, SLOT(_read_description(int)));
   connect((AbsClient*)this, SIGNAL(changed()),    this, SLOT(update_configuration()));
@@ -521,3 +539,4 @@ void Ami::Qt::Client::paintEvent(QPaintEvent* e)
 
 bool Ami::Qt::Client::svc() const { return false; }
 
+void Ami::Qt::Client::use_scroll_area(bool v) { _use_scroll_area=v; }

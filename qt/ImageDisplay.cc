@@ -82,7 +82,7 @@ void Ami::Qt::ImageDisplay::_layout()
       layout1->addLayout(hl); }
     layout1->addWidget(_plot);
     _plotBox->setLayout(layout1);
-    mainLayout->addWidget(_plotBox); }
+    mainLayout->addWidget(_plotBox,1); }
   { QHBoxLayout* layout2 = new QHBoxLayout;
     layout2->addWidget(_units );
     layout2->addWidget(_zrange);

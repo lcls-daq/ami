@@ -4,6 +4,7 @@
 #include "ami/app/XtcClient.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/UserModule.hh"
+#include "ami/qt/Client.hh"
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageDisplay.hh"
@@ -32,7 +33,7 @@ static void usage(char* progname) {
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
-          "         [-r <pixels> (limit resolution)\n"
+          "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
           "         [-E (expert mode/movie option)]\n", 
           progname,
@@ -114,7 +115,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lER::TW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lER::STW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -151,6 +152,9 @@ int main(int argc, char* argv[]) {
         Ami::EventHandler::enable_full_resolution(true);
       else
         Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
+      break;
+    case 'S':
+      Ami::Qt::Client::use_scroll_area(true);
       break;
     case 'T':
       testMode = true;
