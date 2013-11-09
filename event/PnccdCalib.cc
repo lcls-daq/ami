@@ -144,9 +144,9 @@ void PnccdCalib::load_pedestals(EntryImage* correct,
     double* p = pedestals;
     for(unsigned i=0; i<rows; i++) {
       getline(&linep, &sz, f);
-      *p++ += strtod(linep,&pEnd);
+      *p++ = strtod(linep,&pEnd);
       for(unsigned j=1; j<cols; j++)
-        *p++ += strtod(pEnd,&pEnd);
+        *p++ = strtod(pEnd,&pEnd);
     }
     
     free(linep);
