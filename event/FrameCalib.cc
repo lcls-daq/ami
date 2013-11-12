@@ -181,3 +181,85 @@ std::string FrameCalib::save_pedestals(Entry* e,
 
   return msg;
 }
+
+int FrameCalib::median(ndarray<const uint16_t,1> data,
+			  int& iLo, int& iHi)
+{
+  unsigned* bins = 0;
+  unsigned nbins = 0;
+
+  while(1) {
+    if (bins) delete[] bins;
+
+    nbins = iHi-iLo+1;
+    bins  = new unsigned[nbins];
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    for(unsigned i=0; i<data.size(); i++) {
+      if (data[i] < iLo)
+	bins[0]++;
+      else if (data[i] >= iHi)
+	bins[nbins-1]++;
+      else
+	bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > data.size()/2)
+      iLo -= nbins/4;
+    else if (bins[nbins-1] > data.size()/2)
+      iHi += nbins/4;
+    else
+      break;
+  }
+    
+  unsigned i=1;
+  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  while( s>0 )
+    s -= bins[i++];
+
+  if (unsigned(-s) > bins[i-1]/2) i--;
+
+  delete[] bins;
+
+  return (iLo+i);
+}
+
+int FrameCalib::median(ndarray<const int32_t,1> data,
+		       int& iLo, int& iHi,
+		       unsigned*& bins)
+{
+  unsigned nbins = iHi-iLo+1;
+
+  while(1) {
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    for(unsigned i=0; i<data.size(); i++) {
+      if (data[i] < iLo)
+	bins[0]++;
+      else if (data[i] >= iHi)
+	bins[nbins-1]++;
+      else
+	bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > data.size()/2)
+      iLo -= nbins/4;
+    else if (bins[nbins-1] > data.size()/2)
+      iHi += nbins/4;
+    else
+      break;
+
+    delete[] bins;
+    nbins = iHi-iLo+1;
+    bins  = new unsigned[nbins];
+  }
+    
+  unsigned i=1;
+  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  while( s>0 )
+    s -= bins[i++];
+
+  if (unsigned(-s) > bins[i-1]/2) i--;
+
+  return (iLo+i);
+}

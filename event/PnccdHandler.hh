@@ -35,12 +35,16 @@ namespace Ami {
     const FeatureCache&  _cache;
     Pds::PNCCD::ConfigV1 _config;
     EntryImage*          _correct;
+    EntryImage*          _ncorrect;
     PixelCalibration*    _calib;
     bool                 _collect;
     unsigned             _ncollect;
     EntryImage*          _entry;
+    EntryImage*          _common;
     bool                 _tform;
     unsigned             _options;
+    int                  _common_lo;
+    int                  _common_hi;
   };
 };
 

@@ -1,6 +1,7 @@
 #include "PnccdHandler.hh"
 
 #include "ami/event/PnccdCalib.hh"
+#include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
@@ -9,6 +10,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <errno.h>
+
+#define DBUG
 
 static const unsigned rows = 1024;
 static const unsigned cols = 1024;
@@ -65,13 +68,18 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
   _tform   (true)
 {
   PixelsPerBin = _full_resolution() ? 1 : 2;
-  ArraySize    = rows*cols/(PixelsPerBin*PixelsPerBin);
+
+  const int ppb = PixelsPerBin;
+  ArraySize    = rows*cols/(ppb*ppb);
 
   _correct = new EntryImage(DescImage(info, (unsigned)0, "PNCCD",
-                                      cols / PixelsPerBin,
-                                      rows / PixelsPerBin,
-                                      PixelsPerBin, PixelsPerBin));
+                                      cols / ppb,
+                                      rows / ppb,
+                                      ppb, ppb));
   _calib   = new PixelCalibration[ArraySize];
+
+  _common_lo = (Offset-32)*ppb*ppb;
+  _common_hi = (Offset+32)*ppb*ppb-1;
 }
   
 PnccdHandler::~PnccdHandler()
@@ -80,16 +88,28 @@ PnccdHandler::~PnccdHandler()
   delete   _correct;
 }
 
+#ifdef DBUG
+unsigned PnccdHandler::nentries() const { return _entry ? 2 : 0; }
+#else
 unsigned PnccdHandler::nentries() const { return _entry ? 1 : 0; }
+#endif
 
-const Entry* PnccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
+//const Entry* PnccdHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
+const Entry* PnccdHandler::entry(unsigned i) const { 
+  switch(i) {
+  case 0: return _entry;
+  case 1: return _common;
+  default: break;
+  }
+  return 0;
+}
 
 void PnccdHandler::rename(const char* s)
 {
   if (_entry) _entry->desc().name(s);
 }
 
-void PnccdHandler::reset() { _entry = 0; }
+void PnccdHandler::reset() { _entry = 0; _common = 0; }
 
 void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
@@ -101,6 +121,13 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
 		 rows / PixelsPerBin,
 		 PixelsPerBin, PixelsPerBin);
   _entry = new EntryImage(desc);
+
+  DescImage cdsc(det, (unsigned)1, 
+		 (std::string(desc.name())+std::string("-cmn")).c_str(),
+		 cols / PixelsPerBin,
+		 rows / PixelsPerBin,
+		 PixelsPerBin, PixelsPerBin);
+  _common = new EntryImage(cdsc);
 
   char oname1[256];
   char oname2[256];
@@ -146,6 +173,11 @@ void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::Clock
   _entry->info(double(Offset)*n,EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
+#ifdef DBUG
+  _common->info(0,EntryImage::Pedestal);
+  _common->info(1,EntryImage::Normalization);
+  _common->valid(t);
+#endif
 
   _ncollect++;
 }
@@ -201,195 +233,146 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
   //
   //    determined for each column by summing pixel rows 2-33 (next to outer edge)
   //
-  int32_t common[cols_segment];
   const int ppb = PixelsPerBin;
 
   bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
   bool lcommon = _options & PnccdCalib::option_correct_common_mode();
-  if (lcommon) {
-    if (ppb==2) {
-      for(unsigned ix=0; ix<256; ) {
-        for(unsigned i=0; i<8; i++,ix++) {
-          const uint16_t* p  = 2*512 + (ix<<1) + d;
-          const uint16_t* p1 = 3*512 + (ix<<1) + d;
-          int32_t v = 0;
-          for(unsigned iy=y; iy<16+y; iy++, p+=2*512, p1+=2*512) {
-            v += 
-              (p [0]&0x3fff) +
-              (p [1]&0x3fff) +
-              (p1[0]&0x3fff) +
-              (p1[1]&0x3fff);
-            if (lped)
-              v -= _correct->content(ix+(x>>1),iy);
-          }
-          common[ix] = v/16;
-        }
-      }
-    }
-    else { // ppb = 1
-      for(unsigned ix=0; ix<cols_segment; ) {
-        for(unsigned i=0; i<8; i++,ix++) {
-          const uint16_t* p  = 2*cols_segment + ix + d;
-          int32_t v = 0;
-          for(unsigned iy=y; iy<32+y; iy++, p+=cols_segment) {
-            v += (*p & 0x3fff);
-            if (lped)
-              v -= _correct->content(ix+x,iy);
-          }
-          common[ix] = v/32;
-        }
-      }
-    }
-  }
-
   if (ppb==2) {
+    const int o = (Offset<<2);
     unsigned iy = y>>1;
     for(unsigned j=0; j<rows_segment; j+=2,iy++,d+=cols_segment) {
+      const uint16_t* d0 = d;
       const uint16_t* d1 = d+cols_segment;
-      unsigned ix = x>>1;
-      for(unsigned k=0; k<cols_segment; k+=2,ix++) {
-        unsigned v =
-          (d [0]&0x3fff) + 
-          (d [1]&0x3fff) + 
-          (d1[0]&0x3fff) +
-          (d1[1]&0x3fff);
-
-        //       if (_collect)
-        // 	_calib[iy*(cols>>1)+ix].add(v);
-
-        v += Offset<<2;
-        if (lped)
-          v -= _correct->content(ix, iy);
-        if (lcommon)
-          v -= common[ix-(x>>1)];
-        if (_tform)
-          _entry->content(v, iy, 511-ix);
-        else
-          _entry->content(v, ix, iy);
-
-        d  += 2;
-        d1 += 2;
+      ndarray<uint16_t,1> a = make_ndarray<uint16_t>(cols_segment/2);
+      if (lped) {
+	const uint32_t* p = _correct->contents() + iy*cols_segment + (x>>1);
+	for(unsigned k=0; k<cols_segment/2; k++) {
+	  a[k] =
+	    (d0[0]&0x3fff) + 
+	    (d0[1]&0x3fff) + 
+	    (d1[0]&0x3fff) +
+	    (d1[1]&0x3fff) + o - *p++;
+	  d0 += 2;
+	  d1 += 2;
+	}
       }
+      else
+	for(unsigned k=0; k<cols_segment/2; k++) {
+	  a[k] =
+	    (d0[0]&0x3fff) + 
+	    (d0[1]&0x3fff) + 
+	    (d1[0]&0x3fff) +
+	    (d1[1]&0x3fff) + o;
+	  d0 += 2;
+	  d1 += 2;
+	}
+      
+      int common = lcommon ? 
+	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
+
+      if (_tform)
+	for(unsigned k=0, ix=511-(x>>1); k<rows_segment/2; k++, ix--)
+	  _entry->content(a[k]-common,iy,ix);
+      else
+	for(unsigned k=0, ix=(x>>1); k<rows_segment/2; k++, ix++)
+	  _entry->content(a[k]-common,ix,iy);
     }
   }
   else {
+    const int o = (Offset);
     unsigned iy = y;
-    for(unsigned j=0; j<rows_segment; j++,iy++) {
-      unsigned ix = x;
-      for(unsigned k=0; k<cols_segment; k++,ix++,d++) {
-        unsigned v = *d & 0x3fff;
-
-        //       if (_collect)
-        // 	_calib[iy*(cols)+ix].add(v);
-
-        v += Offset;
-        if (lped)
-          v -= _correct->content(ix, iy);
-        if (lcommon)
-          v -= common[ix-x];
-        if (_tform)
-          _entry->content(v, iy, 1023-ix);
-        else
-          _entry->content(v, ix, iy);
+    for(unsigned j=0; j<rows_segment; j++,iy++,d+=cols_segment) {
+      ndarray<uint16_t,1> a = make_ndarray<uint16_t>(cols_segment);
+      if (lped) {
+	const uint32_t* p = _correct->contents() + iy*cols + x;
+	for(unsigned k=0; k<cols_segment; k++)
+	  a[k] = (d[k] & 0x3fff) + o - *p++;
       }
+      else
+	for(unsigned k=0; k<cols_segment; k++)
+	  a[k] = (d[k] & 0x3fff) + o;
+
+      int common = lcommon ? 
+	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
+
+      if (_tform)
+	for(unsigned k=0, ix=1023-x; k<cols_segment; k++, ix--)
+	  _entry->content(a[k]-common,iy,ix);
+      else
+	for(unsigned k=0,ix=x; k<cols_segment; k++, ix++)
+	  _entry->content(a[k]-common,ix,iy);
     }
   }
 }
 
 void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 {
-  //  Common mode
-  int32_t common[cols_segment];
   const int ppb = PixelsPerBin;
 
   bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
   bool lcommon = _options & PnccdCalib::option_correct_common_mode();
-  if (lcommon) {
-    if (ppb==2) {
-      for(unsigned ix=0; ix<256; ) {
-        for(unsigned i=0; i<8; i++,ix++) {
-          const uint16_t* p  = 2*512 + (ix<<1) + d;
-          const uint16_t* p1 = 3*512 + (ix<<1) + d;
-          int32_t v = 0;
-          for(unsigned iy=(y>>1)-1; iy>(y>>1)-17; iy--, p+=2*512, p1+=2*512) {
-            v += 
-              (p [0]&0x3fff) +
-              (p [1]&0x3fff) +
-              (p1[0]&0x3fff) +
-              (p1[1]&0x3fff);
-            if (lped)
-              v -= _correct->content((x>>1)-ix,iy);
-          }
-          common[ix] = v/16;
-        }
-      }
-    }
-    else {
-      for(unsigned ix=0; ix<512; ) {
-        for(unsigned i=0; i<8; i++,ix++) {
-          const uint16_t* p  = d + 2*512 + ix;
-          int32_t v = 0;
-          for(unsigned iy=y-1; iy>y-33; iy--, p+=512) {
-            v += (p[0]&0x3fff);
-            if (lped)
-              v -= _correct->content(x-ix,iy);
-          }
-          common[ix] = v/32;
-        }
-      }
-    }
-  }
-
-  //  PixelsPerBin = 2
   if (ppb==2) {
-    unsigned iy = y>>1;
-    for(unsigned j=0; j<rows_segment; j+=2,iy--,d+=cols_segment) {
+    const int o = (Offset<<2);
+    for(unsigned j=0; j<rows_segment/2; j++,d+=cols_segment) {
       const uint16_t* d1 = d+cols_segment;
-      unsigned ix = x>>1;
-      for(unsigned k=0; k<cols_segment; k+=2,ix--) {
-        unsigned v = 
-          (d [0]&0x3fff) + 
-          (d [1]&0x3fff) + 
-          (d1[0]&0x3fff) +
-          (d1[1]&0x3fff);
-
-        //       if (_collect)
-        // 	_calib[iy*(cols>>1)+ix].add(v);
-
-        v += Offset<<2;
-        if (lped)
-          v -= _correct->content(ix, iy);
-        if (lcommon)
-          v -= common[(x>>1)-ix];
-        if (_tform)
-          _entry->content(v, iy, 511-ix);
-        else
-          _entry->content(v, ix, iy);
-        d  += 2;
-        d1 += 2;
+      ndarray<uint16_t,1> a = make_ndarray<uint16_t>(cols_segment/2);
+      if (lped) {
+	const uint32_t* p = _correct->contents() + ((y>>1)-j)*cols_segment + (x>>1);
+	for(unsigned k=0; k<cols_segment/2; k++) {
+	  a[k] =
+	    (d [0]&0x3fff) + 
+	    (d [1]&0x3fff) + 
+	    (d1[0]&0x3fff) +
+	    (d1[1]&0x3fff) + o - *p--;
+	  d  += 2;
+	  d1 += 2;
+	}
       }
+      else
+	for(unsigned k=0; k<cols_segment/2; k++) {
+	  a[k] =
+	    (d [0]&0x3fff) + 
+	    (d [1]&0x3fff) + 
+	    (d1[0]&0x3fff) +
+	    (d1[1]&0x3fff) + o;
+	  d  += 2;
+	  d1 += 2;
+	}
+
+      int common = lcommon ? 
+	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
+
+      if (_tform)
+	for(unsigned k=0,ix=511-(x>>1); k<cols_segment/2; k++,ix--)
+	  _entry->content(a[k]-common,(y>>1)-j,ix);
+      else
+	for(unsigned k=0,ix=(x>>1); k<cols_segment/2; k++, ix--)
+	  _entry->content(a[k]-common,ix,(y>>1)-j);
     }
   }
   else {
     unsigned iy = y;
-    for(unsigned j=0; j<rows_segment; j++,iy--) {
-      unsigned ix = x;
-      for(unsigned k=0; k<cols_segment; k++,ix--,d++) {
-        unsigned v = (*d&0x3fff);
-
-        //       if (_collect)
-        // 	_calib[iy*cols+ix].add(v);
-
-        v += Offset;
-        if (lped)
-          v -= _correct->content(ix, iy);
-        if (lcommon)
-          v -= common[x-ix];
-        if (_tform)
-          _entry->content(v, iy, 1023-ix);
-        else
-          _entry->content(v, ix, iy);
+    const int o = Offset;
+    for(unsigned j=0; j<rows_segment; j++,iy--,d+=cols_segment) {
+      ndarray<uint16_t,1> a = make_ndarray<uint16_t>(cols_segment);
+      if (lped) {
+	const uint32_t* p = _correct->contents() + iy*cols + x;
+	for(unsigned k=0; k<cols_segment; k++)
+	  a[k] = (d[k] & 0x3fff) + o - *p--;
       }
+      else
+	for(unsigned k=0; k<cols_segment; k++)
+	  a[k] = (d[k] & 0x3fff) + o;
+
+      int common = lcommon ? 
+	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
+      
+      if (_tform)
+	for(unsigned k=0,ix=1023-x; k<cols_segment; k++, ix++)
+	  _entry->content(a[k]-common,iy,ix);
+      else
+	for(unsigned k=0,ix=x; k<cols_segment; k++, ix--)
+	  _entry->content(a[k]-common,ix,iy);
     }
   }
 }
