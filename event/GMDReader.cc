@@ -11,9 +11,10 @@
 using namespace Ami;
 
 GMDReader::GMDReader(FeatureCache& f)  : 
-  EventHandler(Pds::BldInfo(0,Pds::BldInfo::GMD),
-         Pds::TypeId::Id_GMD,
-         Pds::TypeId::Id_GMD),
+  EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::GMD),
+                Pds::TypeId::Id_GMD,
+                Pds::TypeId::Id_GMD,
+                f),
   _cache(f),
   _index(-1)
 {
@@ -64,5 +65,4 @@ void   GMDReader::_damaged  ()
 //  No Entry data
 unsigned     GMDReader::nentries() const { return 0; }
 const Entry* GMDReader::entry   (unsigned) const { return 0; }
-void         GMDReader::reset   () { _index=-1; }
 void         GMDReader::rename  (const char* s) {}
