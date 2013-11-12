@@ -81,8 +81,10 @@ namespace Ami {
     void _monitorcorr    (const TimeTool::RatioFit& f0,
                            const TimeTool::RatioFit& f1)
     {
+#if 0
       _p0corr->addy(f1.p0(),f0.p0());
       _p1corr->addy(f1.p1(),f0.p1());
+#endif
     }
   public:
     int cache(Ami::FeatureCache& cache) {
@@ -147,35 +149,43 @@ namespace Ami {
         _cds->remove(_sub_signal);
         _cds->remove(_sub_signal_u);
         _cds->remove(_flt_signal);
-        _cds->remove(_p0corr);
-        _cds->remove(_p1corr);
         delete _ref_signal;
         delete _raw_signal;
         delete _sub_signal;
         delete _sub_signal_u;
         delete _flt_signal;
+#if 0
+        _cds->remove(_p0corr);
+        _cds->remove(_p1corr);
         delete _p0corr;
         delete _p1corr;
+#endif
       }
       TimeTool::Fex::configure();
     }
-    void create(Cds& cds) {
-      _ref_signal  = one_evt(DescTH1F("Ref Signal#Signal#0#0#0"     ,"ADU","Bin",cols,0.,double(cols)));
-      _raw_signal  = one_evt(DescTH1F("Raw Signal#Signal#0#0#c0"    ,"ADU","Bin",cols,0.,double(cols)));
-      _sub_signal  = one_evt(DescTH1F("Sub Signal#Signal#1#0#c0"    ,"ADU","Bin",cols,0.,double(cols)));
-      _sub_signal_u  = one_evt(DescTH1F("Sub Signal U#Signal#1#0#c000"    ,"ADU","Bin",cols,0.,double(cols)));
-      _flt_signal  = one_evt(DescTH1F("Flt Signal#Signal#1#0#c00000","ADU","Bin",cols,0.,double(cols)));
-
-      _p0corr      = new EntryScan(DescScan("P0#Reference","Reference","Signal",100));
-      _p1corr      = new EntryScan(DescScan("P1#Reference","Reference","Signal",100));
-
+    void create(Cds& cds, unsigned column) {
+      char buff[128];
+      sprintf(buff,"Ref Signal#Signal#0#%d#0",column);
+      _ref_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      sprintf(buff,"Raw Signal#Signal#0#%d#c0",column);
+      _raw_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      sprintf(buff,"Sub Signal#Signal#1#%d#c0",column);
+      _sub_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      sprintf(buff,"Sub Signal U#Signal#1#%d#c000",column);
+      _sub_signal_u  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      sprintf(buff,"Flt Signal#Signal#1#%d#c00000",column);
+      _flt_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
       cds.add(_ref_signal);
       cds.add(_raw_signal);
       cds.add(_sub_signal);
       cds.add(_sub_signal_u);
       cds.add(_flt_signal);
+#if 0
+      _p0corr      = new EntryScan(DescScan("P0#Reference","Reference","Signal",100));
+      _p1corr      = new EntryScan(DescScan("P1#Reference","Reference","Signal",100));
       cds.add(_p0corr);
       cds.add(_p1corr);
+#endif
     }
     void analyze(const Pds::ClockTime& _clk) {
       if (_evrdata) {
@@ -239,9 +249,10 @@ namespace Ami {
           _sub_signal->valid(_clk);
           _sub_signal_u->valid(_clk);
           _flt_signal->valid(_clk);
+#if 0
           _p0corr    ->valid(_clk);
           _p1corr    ->valid(_clk);
-
+#endif
         }
       }
 
@@ -259,8 +270,10 @@ namespace Ami {
     EntryTH1F* _sub_signal;
     EntryTH1F* _sub_signal_u;
     EntryTH1F* _flt_signal;
+#if 0
     EntryScan* _p0corr;
     EntryScan* _p1corr;
+#endif
     int _id_sig;
     int _id_sb;
     int _id_ref;
@@ -371,7 +384,7 @@ void TimeToolM::create   (Cds& cds)
 {
   _cds = &cds; 
   for(unsigned i=0; i<_fex.size(); i++) {
-    _fex[i]->create(cds);
+    _fex[i]->create(cds,i);
     if (_cache)
       _fex[i]->cache(*_cache);
     _fex[i]->init_plots();
