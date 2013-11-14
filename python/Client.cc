@@ -36,6 +36,7 @@ Client::Client(const std::vector<ClientArgs>& args) :
   _output          (args.size()),
   _request         (new char[BufferSize]),
   _description     (new char[BufferSize]),
+  _description_size(BufferSize),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -169,6 +170,11 @@ int  Client::configured      ()
 
 int  Client::read_description(Socket& socket,int len)
 {
+  if (unsigned(len) > _description_size) {
+    delete[] _description;
+    _description = new char[_description_size = unsigned(len)+BufferSize];
+  }
+  
   int size = socket.read(_description,len);
 
   if (size<0) {
@@ -176,8 +182,9 @@ int  Client::read_description(Socket& socket,int len)
     return 0;
   }
 
-  if (size==BufferSize) {
-    printf("Buffer overflow in Ami::Python::Client::read_description.  Dying...\n");
+  if (unsigned(size)>=_description_size) {
+    printf("Buffer overflow [%d/%d] in Ami::Qt::Client::read_description.  Dying...\n",
+	   size,_description_size);
     abort();
   }
 

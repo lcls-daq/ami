@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <netpacket/packet.h>
 
-#define DBG
+//#define DBG
 //#define DBUG
 
 namespace Ami {

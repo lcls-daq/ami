@@ -271,7 +271,7 @@ int  SummaryClient::read_description(Socket& socket,int len)
 {
   if (unsigned(len) > _description_size) {
     delete[] _description;
-    _description = new char[_description_size*=2];
+    _description = new char[_description_size = unsigned(len)+BufferSize];
   }
 
   printf("%s Described so\n",qPrintable(_title));

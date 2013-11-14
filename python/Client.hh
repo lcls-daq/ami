@@ -59,6 +59,7 @@ namespace Ami {
 
       char*       _request;
       char*       _description;
+      unsigned    _description_size;
 
       Cds             _cds;
       ClientManager*  _manager;
