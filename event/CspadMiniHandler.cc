@@ -12,6 +12,7 @@
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/PeakFinderFn.hh"
 
+#include "pdsdata/psddl/cspad.ddl.h"
 #include "pdsdata/psddl/cspad2x2.ddl.h"
 #include "pdsdata/xtc/Xtc.hh"
 
@@ -37,6 +38,8 @@ static const unsigned Offset = 0x4000;
 static const double pixel_size = 110e-6;
 static const unsigned Columns = CsPad2x2::ColumnsPerASIC;
 static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
+static const float HI_GAIN_F = 1.;
+static const float LO_GAIN_F = 7.;
 
 enum Rotation { D0, D90, D180, D270, NPHI=4 };
 
@@ -236,7 +239,8 @@ namespace CspadMiniGeometry {
   class AsicP : public Asic {
   public:
     AsicP(double x, double y, unsigned ppbin, 
-          FILE* ped, FILE* status, FILE* gain, FILE* sigma) :
+          FILE* ped, FILE* status, FILE* gain, FILE* sigma,
+          const ndarray<const uint16_t,2>& gmap, unsigned imap) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
       size_t sz = 8 * 1024;
@@ -290,6 +294,15 @@ namespace CspadMiniGeometry {
         }
       }
       
+      { float* gn = _gn;
+        for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
+          for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ *= ((gmap[col][row]>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
+          for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
+            *gn++ *= ((gmap[col][row]>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
+        }
+      }
+
       if (sigma) {
         float* sg = _sg;
         float* gn = _gn;
@@ -349,8 +362,9 @@ namespace CspadMiniGeometry {
   class classname : public AsicP {					\
   public:								\
     classname(double x, double y,                                       \
-              FILE* p, FILE* s, FILE* g, FILE* r)                       \
-      : AsicP(x,y,PPB,p,s,g,r) {}                                       \
+              FILE* p, FILE* s, FILE* g, FILE* r,                       \
+              const ndarray<const uint16_t,2>& gmap, unsigned imap)     \
+      : AsicP(x,y,PPB,p,s,g,r,gmap,imap) {}                             \
     void boundary(unsigned& dx0, unsigned& dx1,				\
 		  unsigned& dy0, unsigned& dy1) const {			\
       FRAME_BOUNDS;							\
@@ -415,17 +429,18 @@ namespace CspadMiniGeometry {
   public:
     TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
+             const ndarray<const uint16_t,2>& gmap, 
              FILE* f=0, FILE* s=0, FILE* g=0, FILE* rms=0) 
     {
-      for(unsigned i=0; i<2; i++) {
+      for(unsigned i=0,imap=0; i<2; i++,imap+=2) {
 	double tx(x), ty(y);
 	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
 
         switch(r) {
-        case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms); break;
-        case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms); break;
-        case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms); break;
-        case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms); break;
+        case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms,gmap,imap); break;
+        case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms,gmap,imap); break;
+        case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms,gmap,imap); break;
+        case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms,gmap,imap); break;
         default  : break;
         }
       }
@@ -459,16 +474,177 @@ namespace CspadMiniGeometry {
     Asic* asic[2];
   };
 
+  class ConfigCache {
+  public:
+    ConfigCache(Pds::TypeId type, const void* payload) : 
+      _type(type)
+    {
+      _gainMap = make_ndarray<uint16_t>(CsPad::ColumnsPerASIC,
+                                        CsPad::MaxRowsPerASIC);
+
+      unsigned size;
+      switch(type.id()) {
+      case Pds::TypeId::Id_CspadConfig:
+        switch(type.version()) {
+#define CASE_VSN(v) case v:                                             \
+          { const Pds::CsPad::ConfigV##v& c =                           \
+              *reinterpret_cast<const Pds::CsPad::ConfigV##v*>(payload); \
+            size = sizeof(c);                                           \
+            _gainMap = c.quads(0).gm().gainMap().copy();                \
+            break; }
+          
+          CASE_VSN(2)
+          CASE_VSN(3)
+          CASE_VSN(4)
+          CASE_VSN(5)
+
+#undef CASE_VSN
+          default:
+          break;
+        } break;
+      case Pds::TypeId::Id_Cspad2x2Config:
+        switch(type.version()) {
+
+#define CASE_VSN(v) case v:                                             \
+          { const Pds::CsPad2x2::ConfigV##v& c =                        \
+              *reinterpret_cast<const Pds::CsPad2x2::ConfigV##v*>(payload); \
+            size = sizeof(c);                                           \
+            _gainMap = c.quad().gm().gainMap().copy();                  \
+            break; }
+
+          CASE_VSN(1)
+          CASE_VSN(2)
+
+#undef CASE_VSN
+          default:
+          break;
+        } break;
+      default:
+        break;
+      }
+
+      _payload = new char[size];
+      memcpy(_payload,payload,size);
+    }
+    ConfigCache(const ConfigCache& c) : _type(c._type)
+    { 
+      unsigned size;
+      switch(_type.id()) {
+      case Pds::TypeId::Id_CspadConfig:
+        switch(_type.version()) {
+        case 1:  size = sizeof(Pds::CsPad::ConfigV1); break;
+        case 2:  size = sizeof(Pds::CsPad::ConfigV2); break;
+        case 3:  size = sizeof(Pds::CsPad::ConfigV3); break;
+        case 4:  size = sizeof(Pds::CsPad::ConfigV4); break;
+        case 5:  size = sizeof(Pds::CsPad::ConfigV5); break;
+        default: size = 0; break;
+        } break;
+      case Pds::TypeId::Id_Cspad2x2Config:
+        switch(_type.version()) {
+        case 1:  size = sizeof(Pds::CsPad2x2::ConfigV1); break;
+        case 2:  size = sizeof(Pds::CsPad2x2::ConfigV2); break;
+        default: break;
+        }
+      default: break;
+      }
+      _payload = new char[size];
+      memcpy(_payload,c._payload,size);
+      _gainMap = c._gainMap;
+    }
+    ~ConfigCache() 
+    { delete[] _payload; }
+  public:
+    bool data(TypeId        contains,
+              const char*   payload,
+              ndarray<const  int16_t,3>& da,
+              ndarray<const uint16_t,1>& ta) const 
+    {
+      switch(_type.id()) {
+      case Pds::TypeId::Id_CspadConfig:
+        
+#define CASE_DVSN(v) case v:                                            \
+        { const Pds::CsPad::DataV##v& d =                               \
+            *reinterpret_cast<const Pds::CsPad::DataV##v*>(payload);    \
+          const Pds::CsPad::ElementV##v& e = d.quads(c,0);              \
+          da = e.data(c);                                               \
+          ta = e.sb_temp();                                             \
+          return true;                                                  \
+        } break;
+#define CASE_CVSN(v) case v:                                            \
+        { const Pds::CsPad::ConfigV##v& c =                             \
+            *reinterpret_cast<Pds::CsPad::ConfigV##v*>(_payload);       \
+          switch(contains.version()) {                                  \
+            CASE_DVSN(1)                                                \
+              CASE_DVSN(2)                                              \
+              default: break;                                           \
+          } } break;
+      
+      switch(_type.version()) {
+        CASE_CVSN(2)
+        CASE_CVSN(3)
+        CASE_CVSN(4)
+        CASE_CVSN(5)
+        default: break;
+      }
+#undef CASE_CVSN
+#undef CASE_DVSN
+      break;
+
+      case Pds::TypeId::Id_Cspad2x2Config:
+
+#define CASE_DVSN(v) case v:                                            \
+        { const Pds::CsPad2x2::ElementV##v& d =                         \
+            *reinterpret_cast<const Pds::CsPad2x2::ElementV##v*>(payload); \
+          da = d.data();                                                \
+          ta = d.sb_temp();                                             \
+          return true;                                                  \
+        } break;
+#define CASE_CVSN(v) case v:                                            \
+        switch(contains.version()) {                                    \
+          CASE_DVSN(1)                                                  \
+            default: break;                                             \
+          } break;
+      
+      switch(_type.version()) {
+        CASE_CVSN(1)
+        CASE_CVSN(2)
+
+#undef CASE_CVSN
+#undef CASE_DVSN
+
+        default:
+        break;
+      } break;
+      default: break;
+      }
+
+      printf("CspadMiniHandler::data cfgtype %08x datatype %08x\n",
+             _type.value(), contains.value());
+
+      da = ndarray<const  int16_t,3>();
+      ta = ndarray<const uint16_t,1>();
+      return false;
+    }
+  public:
+    const ndarray<uint16_t,2>& gainMap() const { return _gainMap; }
+  private:
+    Pds::TypeId _type;
+    char*       _payload;
+    ndarray<uint16_t,2> _gainMap;
+  };
+
   class Detector {
   public:
     Detector(const Src& src,
+             const ConfigCache& c,
              FILE* f,    // offsets
              FILE* s,    // status
              FILE* g,    // gain
              FILE* rms,  // noise
              FILE* gm,   // geometry
              unsigned max_pixels) :
-      _src   (src)
+      _src   (src),
+      _config(c)
     {
       //  Determine layout : binning, origin
       double x,y;
@@ -497,7 +673,7 @@ namespace CspadMiniGeometry {
 	x =  0.5*frame;
 	y = -0.5*frame;
       }
-      mini = new TwoByTwo(x,y,_ppb,qrot,qalign);
+      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap());
 
       //
       //  Test extremes and narrow the focus
@@ -525,7 +701,7 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,qrot,qalign, f,s,g,rms);
+      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap(),f,s,g,rms);
     }
     ~Detector() { delete mini; }
 
@@ -548,11 +724,17 @@ namespace CspadMiniGeometry {
     void fill(Ami::EntryImage& image,
 	      const Xtc&       xtc) const
     {
-      const MiniElement* elem = reinterpret_cast<const MiniElement*>(xtc.payload());
-      mini->fill(image,elem->data());
+      ndarray<const  int16_t,3> data;
+      ndarray<const uint16_t,1> temp;
+      if (!_config.data(xtc.contains,xtc.payload(),data,temp)) {
+        printf("CspadMiniHandler::error extracting data\n");
+        return;
+      }
+
+      mini->fill(image,data);
       for(int a=0; a<4; a++)
         _cache->cache(_feature[a],
-                      CspadTemp::instance().getTemp(elem->sb_temp()[a]));
+                      CspadTemp::instance().getTemp(temp[a]));
 #ifdef POST_INTEGRAL
       if (image.desc().options()&CspadCalib::option_post_integral()) {
         double s = 0;
@@ -593,6 +775,7 @@ namespace CspadMiniGeometry {
   private:
     TwoByTwo* mini;
     const Src&  _src;
+    ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
     mutable int _feature[5];
     unsigned _ppb;
@@ -721,7 +904,9 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
   FILE *gm = Calib::fopen_dual(oname1, oname2, "geometry");
 
-  _create_entry( f,s,g,rms,gm, 
+  CspadMiniGeometry::ConfigCache cfg(type,payload);
+
+  _create_entry( cfg,f,s,g,rms,gm, 
                  _detector, _entry, _max_pixels);
 
   Ami::PeakFinder::register_(info().phy(),   
@@ -734,7 +919,8 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   if (gm) fclose(gm);
 }
 
-void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
+void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
+                                     FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                                      CspadMiniGeometry::Detector*& detector,
                                      EntryImage*& entry, 
                                      unsigned max_pixels) 
@@ -748,7 +934,7 @@ void CspadMiniHandler::_create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE*
   if (detector)
     delete detector;
 
-  detector = new CspadMiniGeometry::Detector(info(),f,s,g,rms,gm,max_pixels);
+  detector = new CspadMiniGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels);
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

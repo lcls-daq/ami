@@ -343,7 +343,7 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
 	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
 
       if (_tform)
-	for(unsigned k=0,ix=511-(x>>1); k<cols_segment/2; k++,ix--)
+	for(unsigned k=0,ix=511-(x>>1); k<cols_segment/2; k++,ix++)
 	  _entry->content(a[k]-common,(y>>1)-j,ix);
       else
 	for(unsigned k=0,ix=(x>>1); k<cols_segment/2; k++, ix--)

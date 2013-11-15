@@ -19,12 +19,14 @@ static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
 static const unsigned _option_correct_common_mode = 0x04;
 static const unsigned _option_suppress_bad_pixels = 0x08;
-static const unsigned _option_post_integral       = 0x10;
+static const unsigned _option_correct_gain        = 0x10;
+static const unsigned _option_post_integral       = 0x20;
 
 unsigned CspadCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned CspadCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned CspadCalib::option_correct_common_mode() { return _option_correct_common_mode; }
 unsigned CspadCalib::option_suppress_bad_pixels() { return _option_suppress_bad_pixels; }
+unsigned CspadCalib::option_correct_gain       () { return _option_correct_gain; }
 unsigned CspadCalib::option_post_integral      () { return _option_post_integral; }
 
 std::string CspadCalib::save_pedestals(Entry* e,

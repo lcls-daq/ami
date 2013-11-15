@@ -41,6 +41,7 @@ namespace Ami {
       void invert_mask();
       void load_mask();
       void save_mask();
+      void save_gain_map();
       void load_bkg ();
       void undo();
       void redo();

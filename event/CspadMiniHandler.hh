@@ -7,6 +7,7 @@
 #include <stdio.h>
 
 namespace CspadMiniGeometry { 
+  class ConfigCache;
   class Detector; 
 };
 
@@ -32,7 +33,8 @@ namespace Ami {
     void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   public:
-    void _create_entry(FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
+    void _create_entry(const CspadMiniGeometry::ConfigCache& cfg,
+                       FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
                        CspadMiniGeometry::Detector*& detector,
                        EntryImage*& entry, 
                        unsigned max_pixels); 

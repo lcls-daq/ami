@@ -348,6 +348,7 @@ void MaskDisplay::_layout()
     QMenu* file_menu = new QMenu("File");
     file_menu->addAction("Load mask"      , this, SLOT(load_mask()));
     file_menu->addAction("Save mask"      , this, SLOT(save_mask()));
+    file_menu->addAction("Save gain map"  , this, SLOT(save_gain_map()));
     file_menu->addAction("Load backg"     , this, SLOT(load_bkg ()));
     file_menu->addSeparator();
     _menu_bar->addMenu(file_menu);
@@ -499,6 +500,63 @@ void MaskDisplay::save_mask()
           fprintf(f,"%f ",_mask->rowcol(j,i) ? 1.:0.);
         fprintf(f,"\n");
       }        
+      fclose(f);
+    }
+  }
+}
+
+void MaskDisplay::save_gain_map()
+{
+  QString def = QString("%1.gain").arg(_entry->desc().name());
+  QString fname =
+    QFileDialog::getSaveFileName(this,"Save File As (.gain)",
+                                 def,".gain");
+  if (!fname.isNull()) {
+    FILE* f = fopen(qPrintable(fname),"w");
+    if (!f)
+      QMessageBox::warning(this, "Save data",
+                           QString("Error opening %1 for writing").arg(fname));
+    else {
+      const DescImage& d = _entry->desc();
+      const unsigned ppb = d.ppxbin();
+      for(unsigned q=0; q<4; q++) {
+        for(unsigned s=0; s<8; s++) {
+          if (q*8+s >= d.nframes()) break;
+          const SubFrame& m = d.frame(q*8+s);
+          static const unsigned r0[] = { 0, 1, 2, 1};
+          unsigned r = (r0[s/2]+q)%4;
+          for(unsigned a=0; a<2; a++) {
+            for(unsigned x=0; x<185; x++) {
+              fprintf(f,"# Quad %d  ASIC %d  Column %d\n", q, s*2+a, x);
+              switch(r) {
+              case 0:  // lower to upper, left to right
+                for(unsigned y=0; y<194; y++)
+                  fprintf(f," %d", _mask->rowcol(m.y+(387-194*a-y)/ppb,
+                                                 m.x+x/ppb) ? 0:1);
+                break;
+              case 1:  // left to right, upper to lower
+                for(unsigned y=0; y<194; y++)
+                  fprintf(f," %d", _mask->rowcol(m.y+x/ppb,
+                                                 m.x+(194*a+y)/ppb) ? 0:1);
+                break;
+              case 2: // upper to lower, right to left
+                for(unsigned y=0; y<194; y++)
+                  fprintf(f," %d", _mask->rowcol(m.y+(194*a+y)/ppb,
+                                                 m.x+(184-x)/ppb) ? 0:1);
+                break;
+              case 3: // right to left, lower to upper
+                for(unsigned y=0; y<194; y++)
+                  fprintf(f," %d", _mask->rowcol(m.y+(184-x)/ppb,
+                                                 m.x+(194*(a+1)-y-1)/ppb) ? 0:1);
+                break;
+              default:
+                break;
+              }
+              fprintf(f,"\n");
+            }
+          }
+        }
+      }
       fclose(f);
     }
   }

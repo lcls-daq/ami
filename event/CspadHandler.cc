@@ -550,11 +550,12 @@ namespace CspadGeometry {
               const int16_t*  data) const {                             \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
+      bool lcorrectgn = image.desc().options()&CspadCalib::option_correct_gain(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
       int16_t* zero = 0;                                                \
       const int16_t* off = lnopedestal ? off_no_ped : _off;             \
       const int16_t* const * sta = lsuppress ? _sta : &zero;            \
-      const float* gn = lnopedestal ? fgn_no_ped :_gn;                  \
+      const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
       bi;                                                               \
     }                                                                   \

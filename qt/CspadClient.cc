@@ -27,12 +27,14 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
 
   addWidget(_spBox = new QCheckBox("Suppress\nBad Pixels"));
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
-  addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
-  addWidget(_piBox = new QCheckBox("Post\nIntegral"));
+  addWidget(_npBox = new QCheckBox("Retain Pedestal"));
+  addWidget(_gnBox = new QCheckBox("Correct Gain"));
+  addWidget(_piBox = new QCheckBox("Post Integral"));
 
   connect(_spBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_gnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_piBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
@@ -44,6 +46,7 @@ void CspadClient::save(char*& p) const
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_spBox", QtPersistent::insert(p,_spBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_gnBox", QtPersistent::insert(p,_gnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_piBox", QtPersistent::insert(p,_piBox->isChecked()) );
 }
 
@@ -58,6 +61,8 @@ void CspadClient::load(const char*& p)
       _spBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_gnBox")
+      _gnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_piBox")
       _piBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(CspadClient,tag);
@@ -74,6 +79,7 @@ void CspadClient::_configure(char*& p,
   if (_fnBox->isChecked()) o |= CspadCalib::option_correct_common_mode();
   if (_spBox->isChecked()) o |= CspadCalib::option_suppress_bad_pixels();
   if (_npBox->isChecked()) o |= CspadCalib::option_no_pedestal();
+  if (_gnBox->isChecked()) o |= CspadCalib::option_correct_gain();
   if (_piBox->isChecked()) o |= CspadCalib::option_post_integral();
   if (_reloadPedestals) {
     o |= CspadCalib::option_reload_pedestal();
@@ -87,31 +93,6 @@ void CspadClient::_configure(char*& p,
 
 void CspadClient::_setup_payload(Cds& cds)
 {
-#if 0
-  if (_input_entry) {
-    //  Multiple display clients compete for these options
-    for(unsigned i=0; i<NCHANNELS; i++) {
-      unsigned signature = _channels[i]->signature();
-      const Entry* e = cds.entry(signature);
-      if (e) {
-        unsigned o = e->desc().options();
-
-        unsigned oo(0);
-        if (_fnBox->isChecked()) oo |= CspadCalib::option_correct_common_mode();
-        if (_spBox->isChecked()) oo |= CspadCalib::option_suppress_bad_pixels();
-        if (_npBox->isChecked()) oo |= CspadCalib::option_no_pedestal();
-        if (_piBox->isChecked()) oo |= CspadCalib::option_post_integral();
-        if (o != oo) {
-          printf("CspadClient::setup_payload options %x -> %x\n",oo,o);
-        }
-
-        _fnBox->setChecked(o&CspadCalib::option_correct_common_mode());
-        _spBox->setChecked(o&CspadCalib::option_suppress_bad_pixels());
-        break;
-      }
-    }
-  }
-#endif
   ImageClient::_setup_payload(cds);
 }      
 
