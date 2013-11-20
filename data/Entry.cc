@@ -124,6 +124,10 @@ void Entry::merge(char* p) const
 	printf(" kept     : ts %016llx\n",*u);
     }
   }
-  else if (ldbug)
-    printf(" invalid\n");
+  else {
+    if (desc().aggregate())
+      *u |= VALID_BIT;
+    if (ldbug)
+      printf(" invalid\n");
+  }
 }

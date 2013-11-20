@@ -187,7 +187,7 @@ libsrcs_amiqt += MaskDisplay.cc MaskDisplay_moc.cc
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_amiqt := $(qt_incs) qwt/include boost/include ndarray/include pdsdata/include
+libincs_amiqt := $(qt_incs) qwt/include  ndarray/include boost/include pdsdata/include
 libsinc_amiqt := $(qwtsinc)
 
 # List system include directories (if any) needed by lib_a as <incdir>.

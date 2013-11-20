@@ -417,6 +417,10 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::BldInfo::CxiDg3Spec:
     case Pds::BldInfo::CxiDg4Pim:
       client = new Ami::Qt::ImageClient(this, info, channel, name); break;
+    case Pds::BldInfo::FeeSpec0:
+    case Pds::BldInfo::SxrSpec0:
+    case Pds::BldInfo::XppSpec0:
+      client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
     default: 
       printf("Bld type %x not recognized\n", bld.type()); break;
     }

@@ -64,7 +64,7 @@ libsrcs_app := $(filter-out SummaryAnalysis.cc SyncAnalysis.cc test.cc ami.cc am
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_app := $(qtincdir) ndarray/include boost/include pdsdata/include 
+libincs_app := $(qtincdir) ndarray/include boost/include  pdsdata/include 
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

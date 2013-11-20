@@ -39,6 +39,7 @@
 #include "ami/event/AndorHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
+#include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -400,6 +401,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
       case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
       case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
+      case Pds::TypeId::Id_Spectrometer:     h = new BldSpectrometerHandler(bldInfo); break;
       case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
       case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
