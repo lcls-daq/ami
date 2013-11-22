@@ -27,12 +27,14 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
 
   addWidget(_spBox = new QCheckBox("Suppress\nBad Pixels"));
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
+  addWidget(_unBox = new QCheckBox("Correct\nUnbonded"));
   addWidget(_npBox = new QCheckBox("Retain Pedestal"));
   addWidget(_gnBox = new QCheckBox("Correct Gain"));
   addWidget(_piBox = new QCheckBox("Post Integral"));
 
   connect(_spBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_unBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_gnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_piBox, SIGNAL(clicked()), this, SIGNAL(changed()));
@@ -44,6 +46,7 @@ void CspadClient::save(char*& p) const
 {
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_unBox", QtPersistent::insert(p,_unBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_spBox", QtPersistent::insert(p,_spBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_gnBox", QtPersistent::insert(p,_gnBox->isChecked()) );
@@ -57,6 +60,8 @@ void CspadClient::load(const char*& p)
       ImageClient::load(p);
     else if (tag.name == "_fnBox")
       _fnBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_unBox")
+      _unBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_spBox")
       _spBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_npBox")
@@ -77,6 +82,7 @@ void CspadClient::_configure(char*& p,
 {
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= CspadCalib::option_correct_common_mode();
+  if (_unBox->isChecked()) o |= CspadCalib::option_correct_unbonded();
   if (_spBox->isChecked()) o |= CspadCalib::option_suppress_bad_pixels();
   if (_npBox->isChecked()) o |= CspadCalib::option_no_pedestal();
   if (_gnBox->isChecked()) o |= CspadCalib::option_correct_gain();
