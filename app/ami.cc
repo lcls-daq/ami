@@ -14,6 +14,7 @@ static void usage(char* progname) {
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
 	  "          -L <user module plug-in path>\n"
+          "          [-D (post detector diagnostics)]\n"
           "          [-R <pixels>] (set resolution, no pixels arg is full resolution)\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
   bool offline=false;
   std::vector<char *> module_names;
 
-  while ((c = getopt(argc, argv, "?hfR::p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDR::p:n:i:s:L:")) != -1) {
     switch (c) {
       case 'f':
         offline=true;
@@ -52,6 +53,9 @@ int main(int argc, char* argv[]) {
           Ami::EventHandler::enable_full_resolution(true);
         else
           Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
+        break;
+      case 'D':
+        Ami::EventHandler::post_diagnostics(true);
         break;
       case '?':
       case 'h':

@@ -4,6 +4,7 @@
 
 #include "ami/event/CspadTemp.hh"
 #include "ami/event/CspadCalib.hh"
+#include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
@@ -282,6 +283,29 @@ static double frameNoise(const int16_t*  data,
 }
 #endif
 
+static double unbondedNoise(const int16_t*  data,
+                            const int16_t*  off)
+{
+#define CORR(i) (data[i]+off[i])
+  const unsigned ColBins = CsPad::ColumnsPerASIC;
+  const unsigned RowBins = CsPad::MaxRowsPerASIC;
+  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(42);
+  a[0] = CORR(RowBins-1);
+  a[1] = CORR(2*RowBins-1);
+  a[2] = CORR(2*RowBins*(ColBins-1));
+  a[3] = CORR(2*RowBins*(ColBins-1)+RowBins);
+  a[4] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
+  a[6] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
+  for(unsigned i=0,j=0; i<36; i+=2, j+=20*RowBins+10) {
+    a[i+7] = CORR(j);
+    a[i+8] = CORR(j+RowBins);
+  }
+  int lo = Offset-100;
+  int hi = Offset+100;
+  int v = Ami::FrameCalib::median(a,lo,hi);
+  return double(v)-dOffset;
+}
+
 namespace CspadGeometry {
 
   //
@@ -380,8 +404,10 @@ namespace CspadGeometry {
     virtual ~Asic() {}
   public:
     virtual void fill(Ami::DescImage& image) const = 0;
-    virtual void fill(Ami::EntryImage& image,
-          const int16_t*  data) const = 0;
+    virtual void fill(Ami::EntryImage&   image,
+                      const int16_t*     data,
+                      Ami::FeatureCache& cache,
+                      unsigned           index) const = 0;
     virtual void fill(Ami::EntryImage& image,
                       double v0, double v1) const = 0;
     virtual void set_pedestals(FILE*) {}
@@ -514,8 +540,8 @@ namespace CspadGeometry {
   protected:
     int16_t  _off[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
     int16_t* _sta[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2+1];
-    float     _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
-    float     _rms[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    float    _gn [CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
+    float    _rms[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   };
 
   static int16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
@@ -546,17 +572,23 @@ namespace CspadGeometry {
       const float* rms = _rms;                                          \
       ti;                                                               \
     }                                                                   \
-    void fill(Ami::EntryImage& image,                                   \
-              const int16_t*  data) const {                             \
+    void fill(Ami::EntryImage&   image,                                 \
+              const int16_t*     data,                                  \
+              Ami::FeatureCache& cache,                                 \
+              unsigned           ifn) const {                           \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
+      bool lcorrectun = image.desc().options()&CspadCalib::option_correct_unbonded(); \
       bool lcorrectgn = image.desc().options()&CspadCalib::option_correct_gain(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
       int16_t* zero = 0;                                                \
       const int16_t* off = lnopedestal ? off_no_ped : _off;             \
       const int16_t* const * sta = lsuppress ? _sta : &zero;            \
       const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
-      double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
+      double fn = 0;                                                    \
+      if (lcorrectfn)     fn = frameNoise(data,off,sta);                \
+      else if(lcorrectun) fn = unbondedNoise(data,off);                 \
+      if (Ami::EventHandler::post_diagnostics()) cache.cache(ifn,fn);   \
       bi;                                                               \
     }                                                                   \
   }
@@ -657,9 +689,11 @@ namespace CspadGeometry {
     }
     void fill(Ami::EntryImage&           image,
               const int16_t*             sector,
-              unsigned                   sector_id) const
+              unsigned                   sector_id,
+              Ami::FeatureCache&         cache,
+              unsigned                   index) const
     {
-      asic[sector_id&1]->fill(image,sector);
+      asic[sector_id&1]->fill(image,sector,cache,index);
     }
     void fill(Ami::EntryImage& image,
               unsigned mask,
@@ -707,12 +741,14 @@ namespace CspadGeometry {
     }
     void fill(Ami::EntryImage&                image,
               const ndarray<const int16_t,3>& a,
-              unsigned                        mask) const
+              unsigned                        mask,
+              Ami::FeatureCache&              cache,
+              unsigned                        index) const
     {
       for(unsigned id=0,j=0; mask!=0; id++)
         if (mask&(1<<id)) {
 	  mask ^= (1<<id);
-          element[id>>1]->fill(image,&a[j][0][0],id);
+          element[id>>1]->fill(image,&a[j][0][0],id,cache,index+id);
           j++;
         }
     }      
@@ -1049,12 +1085,18 @@ namespace CspadGeometry {
           quad[i]->fill(image, _config.roiMask(i));
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
-            _feature[4*i+a] = cache.add(buff);
+            _feature[12*i+a] = cache.add(buff);
+          }
+          if (Ami::EventHandler::post_diagnostics()) {
+            for(unsigned a=0; a<8; a++) {
+              sprintf(buff,"%s:Cspad:Quad[%d]:CommonMode[%d]",detname,i,a);
+              _feature[12*i+a+4] = cache.add(buff);
+            }
           }
         }
 
       sprintf(buff,"%s:Cspad:Sum",detname);
-      _feature[16] = cache.add(buff);
+      _feature[48] = cache.add(buff);
     }
     bool fill(Ami::EntryImage& image,
               TypeId           contains,
@@ -1098,10 +1140,10 @@ namespace CspadGeometry {
           ndarray<const uint16_t,1> temp;
           if (!_config.data(contains,payload,q,mask,data,temp)) continue;
 
-          quad[q]->fill(image,data,mask);
+          quad[q]->fill(image,data,mask,*_cache,_feature[12*q+4]);
 
           for(int a=0; a<4; a++)
-            cache->cache(_feature[4*q+a],
+            cache->cache(_feature[12*q+a],
                          CspadTemp::instance().getTemp(temp[a]));
 
           //  Calculate integral
@@ -1126,7 +1168,7 @@ namespace CspadGeometry {
 #endif
 
       if (image.desc().options()&CspadCalib::option_post_integral())
-        _cache->cache(_feature[16],sum);
+        _cache->cache(_feature[48],sum);
 
       return true;
     }
@@ -1150,12 +1192,17 @@ namespace CspadGeometry {
         if (qmask & (1<<i)) {
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Quad[%d]:Temp[%d]",s,i,a);
-            _cache->rename(_feature[4*i+a],buff);
+            _cache->rename(_feature[12*i+a],buff);
           }
+          if (Ami::EventHandler::post_diagnostics())
+            for(unsigned a=0; a<8; a++) {
+              sprintf(buff,"%s:Quad[%d]:CommonMode[%d]",s,i,a);
+              _cache->rename(_feature[12*i+a+4],buff);
+            }
         }
 
       sprintf(buff,"%s:Sum",s);
-      _cache->rename(_feature[16],buff);
+      _cache->rename(_feature[48],buff);
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
@@ -1165,7 +1212,7 @@ namespace CspadGeometry {
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    mutable int _feature[17];
+    mutable int _feature[49];
     unsigned _ppb;
     unsigned _pixels;
   };

@@ -89,6 +89,7 @@ void   EventHandler::_event(Pds::TypeId type,
 
 static bool _full_res = false;
 static unsigned _res_limit = 640;
+static bool _post_diagnostics = false;
 
 void   EventHandler::enable_full_resolution(bool v) { _full_res = v; }
 
@@ -113,6 +114,9 @@ int    EventHandler::image_ppbin(unsigned& xpixels, unsigned& ypixels, unsigned 
   return ppbin;
 }
 
+void   EventHandler::post_diagnostics(bool v) { _post_diagnostics=v; }
+
+bool   EventHandler::post_diagnostics() { return _post_diagnostics; }
 bool   EventHandler::used() const
 {
   for(unsigned i=0; i<nentries(); i++)

@@ -32,6 +32,7 @@ static void usage(char* progname) {
 	  "         [-o <filename for debugging messages>]\n"
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
+          "         [-D (post detector diagnostics)]\n"
           "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
           "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
@@ -115,7 +116,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lER::STW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::STW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -125,6 +126,9 @@ int main(int argc, char* argv[]) {
         usage(argv[0]);
         exit(0);
       }
+      break;
+    case 'D':
+      Ami::EventHandler::post_diagnostics(true);
       break;
     case 'E':
       Ami::Qt::ImageDisplay::enable_movie_option();

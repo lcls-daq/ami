@@ -10,6 +10,7 @@ namespace Ami {
     static unsigned    option_no_pedestal        ();
     static unsigned    option_reload_pedestal    ();
     static unsigned    option_correct_common_mode();
+    static unsigned    option_correct_unbonded   ();
     static unsigned    option_suppress_bad_pixels();
     static unsigned    option_correct_gain       ();
     static unsigned    option_post_integral      ();

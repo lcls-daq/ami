@@ -224,8 +224,10 @@ namespace CspadMiniGeometry {
     virtual void fill(Ami::DescImage& image) const = 0;
     virtual void fill(Ami::EntryImage& image,
 		      double, double) const = 0;
-    virtual void fill(Ami::EntryImage& image,
-		      const int16_t*  data) const = 0;
+    virtual void fill(Ami::EntryImage&   image,
+		      const int16_t*     data,
+                      Ami::FeatureCache& cache,
+                      unsigned           index) const = 0;
     virtual void set_pedestals(FILE*) { printf("v set_pedestals\n"); }
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
@@ -384,8 +386,10 @@ namespace CspadMiniGeometry {
       const float* rms = _sg;                                           \
       ti;                                                               \
     }									\
-    void fill(Ami::EntryImage& image,					\
-	      const int16_t*  data) const {                            \
+    void fill(Ami::EntryImage&   image,					\
+	      const int16_t*     data,                                  \
+              Ami::FeatureCache& cache,                                 \
+              unsigned           index) const {                         \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
       bool lcorrectgn = image.desc().options()&CspadCalib::option_correct_gain(); \
@@ -395,6 +399,7 @@ namespace CspadMiniGeometry {
       const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
       double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
+      if (Ami::EventHandler::post_diagnostics()) cache.cache(index,fn); \
       bi;                                                               \
     }                                                                   \
   }
@@ -462,10 +467,12 @@ namespace CspadMiniGeometry {
       if (mask&2) asic[1]->fill(image,v0,v1);
     }
     void fill(Ami::EntryImage&                image,
-	      const ndarray<const int16_t,3>& element) const
+	      const ndarray<const int16_t,3>& element,
+              Ami::FeatureCache&              cache,
+              unsigned                        index) const
     {
-      asic[0]->fill(image,&element[0][0][0]);
-      asic[1]->fill(image,&element[0][0][1]);
+      asic[0]->fill(image,&element[0][0][0],cache,index+0);
+      asic[1]->fill(image,&element[0][0][1],cache,index+1);
     }
     void set_pedestals(FILE* f)
     {
@@ -718,9 +725,14 @@ namespace CspadMiniGeometry {
         sprintf(buff,"%s:Temp[%d]",detname,a);
         _feature[a] = cache.add(buff);
       }
+      if (Ami::EventHandler::post_diagnostics())
+        for(unsigned a=0; a<2; a++) {
+          sprintf(buff,"%s:CommonMode[%d]",detname,a);
+          _feature[a+4] = cache.add(buff);
+        }
 #ifdef POST_INTEGRAL
       sprintf(buff,"%s:Cspad::Sum",detname);
-      _feature[4] = cache.add(buff);
+      _feature[6] = cache.add(buff);
 #endif
     }
     void fill(Ami::EntryImage& image,
@@ -733,10 +745,12 @@ namespace CspadMiniGeometry {
         return;
       }
 
-      mini->fill(image,data);
       for(int a=0; a<4; a++)
         _cache->cache(_feature[a],
                       CspadTemp::instance().getTemp(temp[a]));
+
+      mini->fill(image,data,*_cache,_feature[4]);
+
 #ifdef POST_INTEGRAL
       if (image.desc().options()&CspadCalib::option_post_integral()) {
         double s = 0;
@@ -751,7 +765,7 @@ namespace CspadMiniGeometry {
               }
           }
         }
-        _cache->cache(_feature[4],s);
+        _cache->cache(_feature[6],s);
       }
 #endif
     }
@@ -770,6 +784,15 @@ namespace CspadMiniGeometry {
 	sprintf(buff,"%s:Temp[%d]",s,a);
 	_cache->rename(_feature[a],buff);
       }
+      if (Ami::EventHandler::post_diagnostics())
+        for(unsigned a=0; a<2; a++) {
+          sprintf(buff,"%s:CommonMode[%d]",s,a);
+          _cache->rename(_feature[4+a],buff);
+        }
+#ifdef POST_INTEGRAL
+      sprintf(buff,"%s:Cspad:Sum",s);
+      _cache->rename(_feature[6],buff);
+#endif
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
@@ -779,7 +802,7 @@ namespace CspadMiniGeometry {
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    mutable int _feature[5];
+    mutable int _feature[7];
     unsigned _ppb;
     unsigned _pixels;
   };
