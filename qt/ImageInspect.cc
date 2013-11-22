@@ -30,6 +30,8 @@ ImageInspect::ImageInspect(ImageFrame&              f) :
   QGridLayout* layout = new QGridLayout;
   layout->addWidget(_canvas,0,0);
   setLayout(layout);
+
+  connect(this, SIGNAL(image_updated(QImage)), this, SLOT(update_image(QImage)));
 }
 
 ImageInspect::~ImageInspect()
@@ -43,11 +45,15 @@ void ImageInspect::toggle()
   raise();
 }
 
+void ImageInspect::update_image(QImage image)
+{
+  _canvas->setPixmap(QPixmap::fromImage(image.copy(_x0,_y0,_width,_height)).scaled(_canvas->size()));
+}
+
 void ImageInspect::draw(QImage& image)
 {
-  if (isVisible()) {
-    _canvas->setPixmap(QPixmap::fromImage(image.copy(_x0,_y0,_width,_height)).scaled(_canvas->size()));
-  }
+  if (isVisible())
+    emit image_updated(image);
 }
 
 void ImageInspect::mousePressEvent(double x,double y)

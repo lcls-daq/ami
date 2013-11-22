@@ -6,6 +6,7 @@
 #define AmiQt_ImageInspect_hh
 
 #include <QtGui/QWidget>
+#include <QtGui/QImage>
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/ImageMarker.hh"
 #include "ami/qt/QtPWidget.hh"
@@ -31,8 +32,10 @@ namespace Ami {
       void mouseReleaseEvent(double,double);
     public slots:
       void toggle();
+      void update_image (QImage);
     signals:
       void changed();
+      void image_updated(QImage);
     private:
       QLabel* _canvas;
       ImageFrame& _frame;

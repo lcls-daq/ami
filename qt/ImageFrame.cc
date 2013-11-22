@@ -8,14 +8,13 @@
 #include "ami/qt/ImageMarker.hh"
 #include "ami/qt/QtImage.hh"
 #include "ami/data/Entry.hh"
+#include "ami/service/Semaphore.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <QtGui/QMouseEvent>
 
 #include <QtGui/QBoxLayout>
 #include <QtGui/QLabel>
-#include <QtGui/QImage>
-#include <QtGui/QPixmap>
 
 using namespace Ami::Qt;
 
@@ -38,11 +37,10 @@ static const int CanvasSizeIncrease = 4;
 
 ImageFrame::ImageFrame(QWidget* parent,
 		       const ImageColorControl& control) : 
-  QWidget(parent), 
-  _control(control),
-  _canvas(new QLabel),
-  _qimage(0),
-  _c(0)
+  QWidget     (parent), 
+  _engine     (*this, control),
+  _canvas     (new QLabel),
+  _c          (0)
 {
   //  const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
   //  _canvas->setMinimumSize(sz,sz);
@@ -52,18 +50,18 @@ ImageFrame::ImageFrame(QWidget* parent,
   layout->addWidget(_canvas,0,0);
   setLayout(layout);
 
-  connect(&_control , SIGNAL(windowChanged()), this , SLOT(scale_changed()));
+  connect(&control, SIGNAL(windowChanged()), this , SLOT(scale_changed()));
 }
 
 ImageFrame::~ImageFrame() {}
 
 void ImageFrame::attach(QtImage* image) 
 {
-  _qimage = image; 
-  if (_qimage) {
-    _qimage->set_color_table(_control.color_table());
+  _engine.qimage(image);
+  if (image) {
+    image->set_color_table(_engine.control().color_table());
 
-    if (_qimage->scalexy()) {
+    if (image->scalexy()) {
       const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
       _canvas->setMinimumSize(sz,sz);
     }
@@ -72,18 +70,26 @@ void ImageFrame::attach(QtImage* image)
     sz.rwidth()  += CanvasSizeIncrease;
     sz.rheight() += CanvasSizeIncrease;
     QGridLayout* l = static_cast<QGridLayout*>(layout()); 
-    _qimage->canvas_size(sz,*l);
+    image->canvas_size(sz,*l);
   }
 }
 
 void ImageFrame::scale_changed()
 {
-  if (_qimage) _qimage->set_color_table(_control.color_table());
+  if (_engine.qimage()) _engine.qimage()->set_color_table(_engine.control().color_table());
   replot();
 }
 
-void ImageFrame::add_marker   (ImageMarker& m) { _markers.push_back(&m); }
-void ImageFrame::remove_marker(ImageMarker& m) { _markers.remove(&m); }
+void ImageFrame::add_marker   (ImageMarker& m) 
+{
+  _engine.render_sync();
+  _markers.push_back(&m); 
+}
+void ImageFrame::remove_marker(ImageMarker& m)
+{
+  _engine.render_sync();
+  _markers.remove(&m); 
+}
 
 ImageInspect* ImageFrame::inspector()
 {
@@ -95,18 +101,24 @@ ImageInspect* ImageFrame::inspector()
 
 void ImageFrame::replot()
 {
-  if (_qimage) {
-    QImage& output = _qimage->image(_control.pedestal(),_control.scale(),_control.linear());
-    for(std::list<ImageMarker*>::const_iterator it=_markers.begin(); it!=_markers.end(); it++) 
-      (*it)->draw(output);
+  if (!_canvas->isVisible())
+    return;
 
-    if (_qimage->scalexy())
-      //      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size(),
-      //      							   ::Qt::KeepAspectRatio));
-      _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size()));
-    else
-      _canvas->setPixmap(QPixmap::fromImage(output));
-  }
+  _engine.render();
+}
+
+void ImageFrame::render_image(QImage& output)
+{
+  for(std::list<ImageMarker*>::const_iterator it=_markers.begin(); it!=_markers.end(); it++) 
+    (*it)->draw(output);
+}
+
+void ImageFrame::render_pixmap(QImage& output)
+{
+  if (_engine.qimage()->scalexy())
+    _canvas->setPixmap(QPixmap::fromImage(output).scaled(_canvas->size()));
+  else
+    _canvas->setPixmap(QPixmap::fromImage(output));
 }
 
 void ImageFrame::mousePressEvent(QMouseEvent* e)
@@ -115,7 +127,7 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  if (_c && _qimage)
+  if (_c && _engine.qimage())
     _c->mousePressEvent(xinfo()->position(ix),
 			yinfo()->position(iy));
   QWidget::mousePressEvent(e);
@@ -163,24 +175,24 @@ void ImageFrame::track_cursor_input(Cursors* c)
 
 void ImageFrame::set_grid_scale(double scalex, double scaley)
 {                                               
-  if (_qimage) {
-    _qimage->set_grid_scale(scalex,scaley);
+  if (_engine.qimage()) {
+    _engine.qimage()->set_grid_scale(scalex,scaley);
   }
 }
 
 static AxisBins _defaultInfo(2,0,1);
 
 const AxisInfo* ImageFrame::xinfo() const { 
-  return _qimage ? _qimage->xinfo() : &_defaultInfo; 
+  return _engine.qimage() ? _engine.qimage()->xinfo() : &_defaultInfo; 
 }
 
 const AxisInfo* ImageFrame::yinfo() const { 
-  return _qimage ? _qimage->yinfo() : &_defaultInfo;
+  return _engine.qimage() ? _engine.qimage()->yinfo() : &_defaultInfo;
 }
 
 static Pds::ClockTime _defaultTime(0,0);
 
 const Pds::ClockTime& ImageFrame::time() const {
-  return _qimage ? _qimage->entry().time() : _defaultTime;
+  return _engine.qimage() ? _engine.qimage()->entry().time() : _defaultTime;
 }
 

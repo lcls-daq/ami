@@ -306,9 +306,11 @@ void Ami::Qt::ImageDisplay::reset()
 
   _sem.take();
   _curves.merge(_hidden);
-  for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
-    delete (*it);
-  _curves.clear();
+  while(!_curves.empty()) {
+    QtBase* c = _curves.front();
+    _curves.pop_front();
+    delete c;
+  }
   _sem.give();
 }
 

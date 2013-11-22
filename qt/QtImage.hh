@@ -41,14 +41,20 @@ namespace Ami {
       bool            scalexy() const;
       void            scalexy(bool);
     public:
-      QImage&     image(float pedestal,float scale,bool linear=true);
+      QImage*     image(float pedestal,float scale,bool linear=true);
+      bool        owns   (QImage*) const;
+      void        release(QImage*);
       void        set_color_table(const QVector<QRgb>&);
       void        set_grid_scale(double x,double y);
     private:
       unsigned _x0, _y0;
       unsigned _nx, _ny;
       unsigned _scale;
-      QImage*   _qimage;
+
+      enum { NBUFFERS=2 };
+      unsigned  _mimage;
+      QImage*   _qimage[NBUFFERS];
+
       AxisBins* _xinfo;
       AxisBins* _yinfo;
       bool       _scalexy;

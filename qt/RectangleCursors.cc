@@ -178,15 +178,18 @@ void RectangleCursors::draw(QImage& image)
         _ymax != ymax) {
       _xmax = xmax;
       _ymax = ymax;
-      update_edits();
+      emit edited();
     }
   }
 
   unsigned jlo = unsigned(xinfo.tick(xlo())), jhi = unsigned(xinfo.tick(xhi()));
   unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));
 
-//   if (jhi > _xmax) jhi=_xmax;
-//   if (khi > _ymax) khi=_ymax;
+  unsigned xmax = unsigned(xinfo.tick(_xmax));
+  unsigned ymax = unsigned(xinfo.tick(_xmax));
+
+  if (jhi > xmax) jhi=xmax;
+  if (khi > ymax) khi=ymax;
 
   { unsigned char* cc0 = image.scanLine(klo) + jlo;
     unsigned char* cc1 = image.scanLine(khi) + jlo;
@@ -196,9 +199,9 @@ void RectangleCursors::draw(QImage& image)
     }
   }
 
-  { for(unsigned k=klo; k<khi; k++) {
-      *(image.scanLine(k+1)+jlo) = c;
-      *(image.scanLine(k+1)+jhi) = c;
+  { for(unsigned k=klo+1; k<khi; k++) {
+      *(image.scanLine(k)+jlo) = c;
+      *(image.scanLine(k)+jhi) = c;
     }
   }
 }

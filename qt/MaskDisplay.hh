@@ -12,6 +12,7 @@
 
 class QImage;
 class QPolygon;
+class QLabel;
 
 namespace Ami {
   class EntryImage;
@@ -32,6 +33,7 @@ namespace Ami {
       ~MaskDisplay();
     public:
       void setup(QtBase*,const QString&);
+      void mouse_pos(int x, int y);
     public:
       void save(char*& p) const {}
       void load(const char*&) {}
@@ -60,6 +62,8 @@ namespace Ami {
       EntryImage*    _entry;
       EntryImage*    _empty;
       QString        _fname;
+      QLabel*        _mouse_x;
+      QLabel*        _mouse_y;
 
     public slots:
       void toggle_bkg();
@@ -78,17 +82,20 @@ namespace Ami {
       void toggle_ring();
       void toggle_poly();
       void toggle_pixl();
+      void apply_thrh();
     public:
       void push();
       void rect(int,int,int,int);
       void ring(int,int,int,int);
       void poly(const QPolygon&);
       void pixl(int,int,int,int);
+      void thrh(int);
     private:
       QAction*       _rect_action;
       QAction*       _ring_action;
       QAction*       _poly_action;
       QAction*       _pixl_action;
+      QAction*       _thrh_action;
       enum MaskAction { NoAction, RectAction, RingAction, PolyAction, PixlAction };
       MaskAction     _active_action;
       RectHandle*    _rect_handle;

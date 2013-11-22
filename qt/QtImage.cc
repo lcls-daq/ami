@@ -23,8 +23,11 @@ QtImage::QtImage(const QString&   title,
   const Ami::DescImage& d = entry.desc();
   _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy();
 
-  _qimage = new QImage(_nx, _ny, QImage::Format_Indexed8);
-  _qimage->fill(128);
+  for(unsigned i=0; i<NBUFFERS; i++) {
+    _qimage[i] = new QImage(_nx, _ny, QImage::Format_Indexed8);
+    _qimage[i]->fill(128);
+  }
+  _mimage = (1<<NBUFFERS)-1;
 
   _xinfo = new AxisBins(d.xlow(),d.xup(),d.nbinsx());
   _yinfo = new AxisBins(d.ylow(),d.yup(),d.nbinsy());
@@ -38,7 +41,8 @@ QtImage::QtImage(const QString&   title,
   
 QtImage::~QtImage()
 {
-  delete _qimage;
+  for(unsigned i=0; i<NBUFFERS; i++)
+    delete _qimage[i];
   delete _xinfo;
   delete _yinfo;
   delete _xgrid;
@@ -88,40 +92,64 @@ void           QtImage::canvas_size(const QSize& sz,
 #define COPYIMAGE(type,T,factor) {			      \
     ndarray<const uint32_t,2> src(_entry.content());          \
     for(unsigned k=0; k<_ny; k++) {			      \
-      type* dst = (type*)_qimage->scanLine(k);		      \
+      type* dst = (type*)qimage->scanLine(k);                 \
       for(unsigned j=_x0; j<_x0+_nx; j++) {                   \
         unsigned sh = unsigned(T(src[_y0+k][j]));             \
 	*dst++ = factor*(sh >= 0xff ? 0xff : sh);	      \
       }                                                       \
     } }
 
-QImage&        QtImage::image(float p0, float s, bool linear)
+QImage*  QtImage::image(float p0, float s, bool linear)
 {
-  const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
-  const Ami::DescImage&  d = _entry.desc();
+  QImage* qimage=0;
+  for(unsigned i=0; i<NBUFFERS; i++)
+    if (_mimage & (1<<i)) {
+      qimage = _qimage[i];
+      _mimage &= ~(1<<i);
+      break;
+    }
 
-//   unsigned n = _entry.info(EntryImage::Normalization);
-//   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-//   if (s>0)  n<<= s;
-//   else      n>>=-s;
-  float p = _entry.info(EntryImage::Pedestal);
-  float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
-  if (!d.countmode())
-    n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  p += float(n)*p0;
-
-  if (linear) {
-    n *= double(s);
-    COPYIMAGE(uint8_t ,LINTRANS,0x01);
+  if (qimage) {
+    const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
+    const Ami::DescImage&  d = _entry.desc();
+    
+    //   unsigned n = _entry.info(EntryImage::Normalization);
+    //   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+    //   if (s>0)  n<<= s;
+    //   else      n>>=-s;
+    float p = _entry.info(EntryImage::Pedestal);
+    float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
+    if (!d.countmode())
+      n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+    p += float(n)*p0;
+    
+    if (linear) {
+      n *= double(s);
+      COPYIMAGE(uint8_t ,LINTRANS,0x01);
+    }
+    else {
+      const float  ppn  = p+n;
+      const double logn = log(n);
+      const double invlogs = 256./(log(s)+log(256));
+      COPYIMAGE(uint8_t ,LOGTRANS,0x01);
+    }
   }
-  else {
-    const float  ppn  = p+n;
-    const double logn = log(n);
-    const double invlogs = 256./(log(s)+log(256));
-    COPYIMAGE(uint8_t ,LOGTRANS,0x01);
-  }
 
-  return *_qimage;
+  return qimage;
+}
+
+bool QtImage::owns   (QImage* q) const
+{
+  for(unsigned i=0; i<NBUFFERS; i++)
+    if (_qimage[i]==q) return true;
+  return false;
+}
+
+void QtImage::release(QImage* q) 
+{
+  for(unsigned i=0; i<NBUFFERS; i++)
+    if (_qimage[i]==q)
+      _mimage |= (1<<i);
 }
 
 void QtImage::xscale_update() {}
@@ -144,7 +172,11 @@ const AxisInfo* QtImage::yinfo() const { return _yinfo; }
 bool QtImage::scalexy() const { return _scalexy; }
 void QtImage::scalexy(bool v) { _scalexy = v; }
 
-void QtImage::set_color_table(const QVector<QRgb>& colors) { _qimage->setColorTable(colors); }
+void QtImage::set_color_table(const QVector<QRgb>& colors) 
+{
+  for(unsigned i=0; i<NBUFFERS; i++)
+    _qimage[i]->setColorTable(colors);
+}
 
 void QtImage::set_grid_scale(double scalex, double scaley)
 {

@@ -39,9 +39,11 @@ namespace Ami {
       static void layoutHeader(QGridLayout& layout);
     signals:
       void changed();
+      void value_updated(QString);
     public slots:
       void grab_cursor();
       void setVisible(bool);
+      void update_value(QString);
     private:
       ImageGridScale& _parent;
       ImageFrame&   _frame;

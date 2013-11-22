@@ -15,6 +15,7 @@ class QLabel;
 class QLineEdit;
 class QComboBox;
 class QCheckBox;
+class QPushButton;
 
 namespace Ami {
   class AbsOperator;
@@ -103,6 +104,7 @@ namespace Ami {
       bool          _configured_ref;
       ConfigureRequestor _req;
       QCheckBox*    _maskB;
+      QPushButton*  _meditB;
       QString       _mask_file;
       MaskDisplay*  _mask_display;
       SMPWarning*   _smp_warning;

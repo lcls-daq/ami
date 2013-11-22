@@ -2,8 +2,11 @@
 #define AmiQt_MaskFrame_hh
 
 #include "ami/qt/CursorTarget.hh"
+#include "ami/qt/ImageOffload.hh"
+#include "ami/qt/OffloadEngine.hh"
 
 #include <QtGui/QWidget>
+#include <QtGui/QImage>
 
 class QLabel;
 class QScrollArea;
@@ -18,12 +21,14 @@ namespace Ami {
     class ImageXYControl;
     class ImageColorControl;
     class ImageMarker;
+    class MaskDisplay;
     class QtImage;
     class MaskFrame : public QWidget,
-                      public CursorTarget {
+                      public CursorTarget,
+                      public ImageOffload {
       Q_OBJECT
     public:
-      MaskFrame(QWidget*, const ImageXYControl&, const ImageColorControl&);
+      MaskFrame(MaskDisplay*, const ImageXYControl&, const ImageColorControl&);
       ~MaskFrame();
     public:
       void attach_bkg   (QtImage&);
@@ -31,6 +36,9 @@ namespace Ami {
       void attach_marker(ImageMarker&);
       void setXYScale   (int);
       void setZScale    (int);
+    public:
+      void render_image (QImage&);
+      void render_pixmap(QImage&);
     public:
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
@@ -46,11 +54,11 @@ namespace Ami {
     signals:
       void changed();
     private:
+      MaskDisplay*  _parent;
+      OffloadEngine _engine;
       const ImageXYControl& _xycontrol;
-      const ImageColorControl& _control;
       QScrollArea* _scroll_area;
       QLabel*      _canvas;
-      QtImage*     _qimage;
       ImageMask*   _mask;
       std::list<ImageMarker*> _markers;
       Cursors*     _c;

@@ -76,7 +76,8 @@ namespace Ami {
         else if (x > _xmax) x = _xmax;
         if (y < 0) y = 0;
         else if (y > _ymax) y = _ymax;
-       _x0=x; _y0=y;
+        _x0=_x1=x; _y0=_y1=y;
+        _active = true;
       }
       void mouseMoveEvent   (double dx, double dy)
       {
@@ -86,7 +87,6 @@ namespace Ami {
         if (y < 0) y = 0;
         else if (y > _ymax) y = _ymax;
         _x1=x; _y1=y;
-        _active = true;
       }
       void mouseReleaseEvent(double x, double y)
       {
@@ -150,7 +150,8 @@ namespace Ami {
         else if (x > _xmax) x = _xmax;
         if (y < 0) y = 0;
         else if (y > _ymax) y = _ymax;
-       _x0=x; _y0=y;
+        _x0=_x1=x; _y0=_y1=y;
+        _active = true;
       }
       void mouseMoveEvent   (double dx, double dy)
       {
@@ -162,7 +163,6 @@ namespace Ami {
         else if (y > _ymax) y = _ymax;
         */
         _x1=x; _y1=y;
-        _active = true;
       }
       void mouseReleaseEvent(double x, double y)
       {
@@ -170,6 +170,7 @@ namespace Ami {
         _active = false;
         _parent.ring(_x0,_y0,_x1,_y1);
         _parent.push();
+        _active = false;
       }
     public:
       void draw(QImage& image)
@@ -338,7 +339,7 @@ MaskDisplay::MaskDisplay(bool grab) :
   _ring_handle = new RingHandle(*this);
   _poly_handle = new PolyHandle(*this);
   _pixl_handle = new PixlHandle(*this);
-
+  
   _layout();
 }
 
@@ -361,8 +362,8 @@ void MaskDisplay::_layout()
     _menu_bar->addMenu(edit_menu);
   }
   {
-    _bkg_action  = _menu_bar->addAction("Hide bkg", this, SLOT(toggle_bkg()));
-    _bkg_is_visible = true;
+    _bkg_action  = _menu_bar->addAction("Show bkg", this, SLOT(toggle_bkg()));
+    _bkg_is_visible = false;
     _undo_action = _menu_bar->addAction("Undo"    , this, SLOT(undo()));
     _redo_action = _menu_bar->addAction("Redo"    , this, SLOT(redo()));
   }
@@ -378,15 +379,21 @@ void MaskDisplay::_layout()
   (_ring_action = tools->addAction(QChar(0x25cb)     , this, SLOT(toggle_ring())))->setCheckable(true);
   (_poly_action = tools->addAction(QChar(0x2608)     , this, SLOT(toggle_poly())))->setCheckable(true);
   (_pixl_action = tools->addAction(QChar(0x271b)     , this, SLOT(toggle_pixl())))->setCheckable(true);
+  (_thrh_action = tools->addAction(QChar(0x003e)     , this, SLOT(apply_thrh())))->setCheckable(false);
   _active_action = NoAction;
     
 
   QVBoxLayout* mainLayout = new QVBoxLayout;
-  mainLayout->setSpacing(1);
+                                   mainLayout->setSpacing(1);
   {
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
       layout2->addWidget(_menu_bar);
+      layout2->addStretch();
+      layout2->addWidget(new QLabel("x:"));
+      layout2->addWidget(_mouse_x=new QLabel("0"));
+      layout2->addWidget(new QLabel(" y:"));
+      layout2->addWidget(_mouse_y=new QLabel("0"));
       layout2->addStretch();
       layout2->addWidget(tools);
       layout1->addLayout(layout2); }
@@ -547,7 +554,7 @@ void MaskDisplay::save_gain_map()
               case 3: // right to left, lower to upper
                 for(unsigned y=0; y<194; y++)
                   fprintf(f," %d", _mask->rowcol(m.y+(184-x)/ppb,
-                                                 m.x+(194*(a+1)-y-1)/ppb) ? 0:1);
+                                                 m.x+(397-194*a-y)/ppb) ? 0:1);
                 break;
               default:
                 break;
@@ -642,6 +649,23 @@ void MaskDisplay::toggle_pixl()
   _plot->set_cursor_input (_pixl_handle);
   _plot->attach_marker(*_pixl_handle);
   emit redraw();
+}
+
+void MaskDisplay::apply_thrh()
+{
+  _active_action = NoAction; 
+  _rect_action->setChecked(false);
+  _ring_action->setChecked(false);
+  _poly_action->setChecked(false);
+  _pixl_action->setChecked(false);
+  _plot->set_cursor_input (0);
+
+  bool ok=false;
+  int v = QInputDialog::getInteger(this,"Threshold Mask","Value",0,-1<<30,1<<30,1,&ok);
+  if (ok) {
+    push();
+    thrh(v);
+  }
 }
 
 void MaskDisplay::rect(int x0, int y0, int x1, int y1)
@@ -762,6 +786,31 @@ void MaskDisplay::pixl(int x0, int y0, int x1, int y1)
   emit redraw();
 }
 
+void MaskDisplay::thrh(int v)
+{
+  ImageMask m(_mask->rows(),_mask->cols());
+  m.clear();
+
+  const DescImage& d = _entry->desc();
+  v *= int(_entry->info(EntryImage::Normalization));
+  v *= d.ppxbin()*d.ppybin();
+  v += int(_entry->info(EntryImage::Pedestal));
+  printf("thrh value %d  v[40,40] %d\n",v,_entry->content()[40][40]);
+  for(unsigned iy=0; iy<d.nbinsy(); iy++) {
+    const uint32_t* p = &_entry->content()[iy][0];
+    for(unsigned ix=0; ix<d.nbinsx(); ix++)
+      if (p[ix]>unsigned(v))
+        m.fill(iy,ix);
+  }
+
+  if (_comb_is_plus)
+    *_mask |= m;
+  else
+    *_mask &= ~m;
+
+  emit redraw();
+}
+
 void MaskDisplay::push()
 {
   if (_queue_pos+1 < _queue.size())
@@ -803,3 +852,8 @@ void MaskDisplay::redo()
   }
 }
 
+void MaskDisplay::mouse_pos(int x, int y)
+{
+  _mouse_x->setText(QString::number(x));
+  _mouse_y->setText(QString::number(y));
+}

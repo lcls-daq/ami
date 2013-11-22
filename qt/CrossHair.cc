@@ -78,6 +78,7 @@ CrossHair::CrossHair(ImageGridScale& parent, QGridLayout& layout, unsigned row, 
 
   connect(_column_edit, SIGNAL(editingFinished()), this, SIGNAL(changed()));
   connect(_row_edit   , SIGNAL(editingFinished()), this, SIGNAL(changed()));
+  connect(this        , SIGNAL(value_updated(QString)), this, SLOT(update_value(QString)));
 }
 
 CrossHair::~CrossHair()
@@ -120,6 +121,8 @@ void CrossHair::mousePressEvent  (double x, double y)
   emit changed();
 }
 
+void CrossHair::update_value(QString v) { _value->setText(v); }
+
 void CrossHair::draw(QImage& img) 
 {
   double x = _column_edit->value()/_scalex;
@@ -130,7 +133,7 @@ void CrossHair::draw(QImage& img)
   
   unsigned jct = unsigned(xinfo.tick(x+0));
   unsigned kct = unsigned(yinfo.tick(y+0));
-  _value->setText(QString::number(_frame.value(jct,kct)));
+  emit value_updated(QString::number(_frame.value(jct,kct)));
 
   if (!_visible) return;
 

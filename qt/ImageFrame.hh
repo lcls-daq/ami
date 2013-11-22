@@ -2,9 +2,13 @@
 #define AmiQt_ImageFrame_hh
 
 #include "ami/qt/CursorTarget.hh"
+#include "ami/qt/ImageOffload.hh"
+#include "ami/qt/OffloadEngine.hh"
 #include "ami/qt/QtImage.hh"
 
 #include <QtGui/QWidget>
+#include <QtGui/QImage>
+#include <QtGui/QPixmap>
 
 class QLabel;
 
@@ -13,6 +17,8 @@ class QLabel;
 namespace Pds { class ClockTime; };
 
 namespace Ami {
+  class Task;
+
   namespace Qt {
     class AxisInfo;
     class Cursors;
@@ -21,7 +27,8 @@ namespace Ami {
     class ImageMarker;
     class QtImage;
     class ImageFrame : public QWidget,
-		       public CursorTarget {
+		       public CursorTarget,
+                       public ImageOffload {
       Q_OBJECT
     public:
       ImageFrame(QWidget*, const ImageColorControl&);
@@ -33,7 +40,7 @@ namespace Ami {
     public:
       const AxisInfo* xinfo() const;
       const AxisInfo* yinfo() const;
-      float           value(unsigned x,unsigned y) const { return _qimage->value(x,y); }
+      float           value(unsigned x,unsigned y) const { return _engine.qimage()->value(x,y); }
       const Pds::ClockTime& time() const;
     public:
       void add_marker   (ImageMarker&);
@@ -42,6 +49,9 @@ namespace Ami {
     public slots:
       void replot();
       void scale_changed();
+    public:
+      void render_image (QImage&);
+      void render_pixmap(QImage&);
     protected:
       void mouseReleaseEvent(QMouseEvent* e);
       void mouseMoveEvent   (QMouseEvent* e);
@@ -51,11 +61,10 @@ namespace Ami {
       void track_cursor_input(Cursors* c);
       void set_grid_scale(double,double);
     private:
-      const ImageColorControl& _control;
-      QLabel*   _canvas;
-      QtImage*  _qimage;
-      int       _zshift;
-      Cursors*  _c;
+      OffloadEngine _engine;
+      QLabel*       _canvas;
+      int           _zshift;
+      Cursors*      _c;
       std::list<ImageMarker*> _markers;
     };
   };
