@@ -9,6 +9,7 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/Xtc.hh"
+#include "pdsdata/compress/CompressedXtc.hh"
 #include "pdsdata/psddl/epics.ddl.h"
 
 #include "pdsdata/psddl/camera.ddl.h"
@@ -32,8 +33,6 @@ typedef Pds::EvrData::DataV3 EvrDataType;
 
 #include "timetool/service/Fex.hh"
 #include "timetool/service/RatioFit.hh"
-
-//#define DBUG
 
 static const int   cols  = Pds::Opal1k::ConfigV1::Column_Pixels;
 
@@ -122,7 +121,13 @@ namespace Ami {
                void*                 payload) {
       if (src.phy()==_phy) {
         if (type.id()==Pds::TypeId::Id_Frame)
-          _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
+          if (type.compressed()) {
+            const Pds::Xtc* xtc = reinterpret_cast<const Pds::Xtc*>(payload)-1;
+            _pXtc = Pds::CompressedXtc::uncompress(*xtc);
+            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(_pXtc->payload());
+          }
+          else
+            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
         else if (type.id()==Pds::TypeId::Id_Epics) {
           const Pds::Epics::EpicsPvTimeLong& pv = 
             *reinterpret_cast<const Pds::Epics::EpicsPvTimeLong*>(payload);
@@ -220,7 +225,7 @@ namespace Ami {
 
         if (lpass) {
 
-#ifdef DBUG
+#if 0
           printf("fex status %c  ampl %f  pos %f  ref_a %f  next_a %f\n",
                  fex.status() ? 't':'f',
                  fex.amplitude(),
@@ -285,6 +290,7 @@ namespace Ami {
     const uint32_t* _ref_wf;
     Ami::FeatureCache*   _cache;
     int                  _cache_index;
+    boost::shared_ptr<Pds::Xtc> _pXtc;
   };
 };
 
