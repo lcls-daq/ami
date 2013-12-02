@@ -74,6 +74,16 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
 #endif
   unsigned channelMask = (1<<c.numberOfChannels())-1;
   unsigned channelNumber = 0;
+
+  //  double sampleInterval = c.sampleInterval_sec();
+  double sampleInterval;
+  { // BCD format (kHz)
+    double v=0;
+    for (unsigned r=c.baseClockFrequency(); r!=0; r>>4)
+      v += 10*(r&0xf);
+    sampleInterval = double(c.adcClkHalfT())*2.e-3/v;
+  }
+      
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   for(unsigned k=0; channelMask!=0; k++) {
     if (channelMask&1) {
@@ -81,8 +91,7 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
 			ChannelID::name(det,channelNumber),
 			"Time [s]","[ADU]",
 			c.samplesPerChannel(), 0., 
-			double(c.samplesPerChannel()*c.adcClkHalfT()*2)/
-			double(c.baseClockFrequency()));
+			double(c.samplesPerChannel())*sampleInterval);
       _entry[_nentries++] = new EntryWaveform(desc);
       channelNumber++;
     }
