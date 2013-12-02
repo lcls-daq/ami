@@ -105,6 +105,7 @@ void*      EdgeFinder::_serialize(void* p) const
   return p;
 }
 
+#if 0
 Entry&     EdgeFinder::_operate(const Entry& e) const
 {
   if (!e.valid())
@@ -163,4 +164,110 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   _output_entry->valid(e.time());
   return *_output_entry;
 }
+#else
+Entry&     EdgeFinder::_operate(const Entry& e) const
+{
+  if (!e.valid())
+    return *_output_entry;
 
+  const EntryWaveform& entry = static_cast<const EntryWaveform&>(e);
+  const DescWaveform& d = entry.desc();
+  // find the boundaries where the pulse crosses the threshold
+  double sc = entry.info(EntryWaveform::Normalization);
+  if (sc==0) sc=1;
+  double threshold_value = _threshold_value*sc;
+
+  double   peak   = threshold_value;
+  unsigned start  = 0;
+  double   last   = -1.0;
+  bool     crossed=false;
+  bool     rising = _threshold_value > _baseline_value;
+  for(unsigned k=0; k<d.nbins(); k++) {
+    double y = entry.content(k);
+    bool over = 
+      ( rising && y>threshold_value) ||
+      (!rising && y<threshold_value);
+    if (!crossed && over) {
+      crossed = true;
+      start   = k;
+      peak    = y;
+    }
+    else if (crossed && !over) {
+      _hist_edge(peak, start, last, entry);
+      crossed = false;
+    }
+    else if (( rising && y>peak) ||
+	     (!rising && y<peak)) {
+      peak = y;
+      if (!IsLeading(_alg))  // For a trailing edge, start at the peak!
+        start = k;
+    }
+  }
+
+  //  The last edge may not have fallen back below threshold
+  if (crossed) {
+    _hist_edge(peak, start, last, entry);
+  }
+
+  switch(_output->type()) {
+  case DescEntry::TH1F:
+    static_cast<EntryTH1F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
+                                                    EntryTH1F::Normalization);
+    break;
+  case DescEntry::TH2F:
+    static_cast<EntryTH2F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
+                                                    EntryTH2F::Normalization);
+    break;
+  default:
+    break;
+  }
+  _output_entry->valid(e.time());
+  return *_output_entry;
+}
+
+
+void EdgeFinder::_hist_edge(double               peak, 
+			    unsigned             start, 
+			    double&              last,
+			    const EntryWaveform& entry) const
+{
+  const DescWaveform& d = entry.desc();
+  double sc = entry.info(EntryWaveform::Normalization);
+  if (sc==0) sc=1;
+  double baseline_value  = _baseline_value*sc;
+  bool     rising = _threshold_value > _baseline_value;
+
+  //  find the edge
+  double edge_v = _fraction*(peak+baseline_value);
+  unsigned i=start;
+  if (rising == IsLeading(_alg)) { // leading positive edge, or trailing negative edge
+    while(entry.content(i) < edge_v)
+      i++;
+  }
+  else {                           // trailing positive edge, or leading negative edge
+    while(entry.content(i) > edge_v)
+      i++;
+  }
+  double edge = i>0 ? 
+    (edge_v-entry.content(i))/(entry.content(i)-entry.content(i-1)) 
+    + double(i) : 0;
+  double thisx = edge*(d.xup()-d.xlow())/double(d.nbins())+d.xlow();
+  if (last < 0 || thisx > last + _deadtime) {
+    switch(_parameter) {
+    case Location:
+      static_cast<EntryTH1F*>(_output_entry)->addcontent(1.,thisx);
+      break;
+    case Amplitude:
+      static_cast<EntryTH1F*>(_output_entry)->addcontent(1.,peak);
+      break;
+    default:
+      if (_output->type()==DescEntry::TH2F)
+	static_cast<EntryTH2F*>(_output_entry)->addcontent(1.,thisx,peak);
+      else
+	;
+      break;
+    }
+    last = thisx;
+  }
+}
+#endif
