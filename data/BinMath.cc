@@ -35,7 +35,8 @@
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
                           unsigned& hi,
-                          Ami::Moment& mom);
+                          Ami::Moment& mom,
+                          bool lsort=true);
 
 static const unsigned MAX_INDEX = 999999;
 
@@ -135,7 +136,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, F
 	    zpos = match.indexIn(expr,zpos);
 	    mlen += match.matchedLength();
 	    QString zuse = expr.mid(zpos+1,match.matchedLength()-2);
-	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi,mom);
+	    unsigned zlo, zhi;  _parseIndices(zuse,zlo,zhi,mom,false);
 	    t = new Ami::BinMathC::EntryImageTermF(_input,
                                                    double( lo)/floatPrecision(),double( hi)/floatPrecision(),
                                                    double(ylo)/floatPrecision(),double(yhi)/floatPrecision(),
@@ -309,7 +310,8 @@ Entry&     BinMath::_operate(const Entry& e) const
 static bool _parseIndices(const QString& use, 
                           unsigned& lo, 
                           unsigned& hi,
-                          Moment&   mom)
+                          Moment&   mom,
+                          bool      lsort)
 {
   int index;
   if ((index=use.indexOf(_integrate)) == -1)
@@ -343,6 +345,12 @@ static bool _parseIndices(const QString& use,
 
   lo = use.mid(0,index).toInt();
   hi = use.mid(index+1,-1).toInt();
+
+  if (hi < lo && lsort) {
+    unsigned t = lo;
+    lo = hi;
+    hi = t;
+  }
 
   return true;
 }

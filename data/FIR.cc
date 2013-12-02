@@ -16,8 +16,7 @@ using namespace Ami;
 
 FIR::FIR(const char* path) :
   AbsOperator(AbsOperator::FIR),
-  _output    (0),
-  _response  (0)
+  _output    (0)
 {
   strncpy_val(_path,path,PATH_LEN);
 }
