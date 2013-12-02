@@ -62,7 +62,7 @@ static void remove_from_list(AnList& alist, unsigned id)
       delete a;
     }
     else {
-      a->input().desc().used(true);
+      a->use();
       newlist.push_back(a);
     }
   }
@@ -100,7 +100,7 @@ static AnList extract_list(AnList& srcList,
     if (a->id() == id)
       oldlist.push_back(a);
     else {
-      a->input().desc().used(true);
+      a->use();
       newlist.push_back(a);
     }
   }
@@ -155,6 +155,8 @@ void AnalysisFactory::configure(unsigned       id,
   pthread_mutex_lock(&_mutex);
 
   _cds.clear_used();
+  _features[PreAnalysis ]->clear_used();
+  _features[PostAnalysis]->clear_used();
 
   //
   //  Segregate the entries belonging to the configuring client
@@ -247,7 +249,7 @@ void AnalysisFactory::configure(unsigned       id,
                    a->output().name(),
                    a->output().signature());
 #endif
-            a->input().desc().used(true);
+	    a->use();
             srcList.push_back(a);
             oldList.remove(a);
             lFound=true;
@@ -260,7 +262,7 @@ void AnalysisFactory::configure(unsigned       id,
 				     *_features[req.scalars()], 
 				     *_features[Ami::PostAnalysis],
 				     p);
-          a->input().desc().used(true);
+	  a->use();
           srcList.push_back(a);
 #ifdef DBUG
           printf("Created analysis [%d%s] for %s [%d] features %d\n",
@@ -293,6 +295,8 @@ void AnalysisFactory::configure(unsigned       id,
 #endif
     delete a;
   }
+
+  _features[PreAnalysis ]->use(*_features[PostAnalysis]);
 
 #ifdef DBUG
   cds.showentries();
