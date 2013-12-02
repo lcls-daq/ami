@@ -76,7 +76,8 @@ void ImageFrame::attach(QtImage* image)
 
 void ImageFrame::scale_changed()
 {
-  if (_engine.qimage()) _engine.qimage()->set_color_table(_engine.control().color_table());
+  QtImage* img = _engine.qimage();
+  if (img) img->set_color_table(_engine.control().color_table());
   replot();
 }
 
