@@ -4,6 +4,7 @@
 
 #include "ami/event/CspadTemp.hh"
 #include "ami/event/CspadCalib.hh"
+#include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/DescImage.hh"
 #include "ami/data/EntryImage.hh"
@@ -177,6 +178,29 @@ static double frameNoise(const int16_t*  data,
   }
 
   return v;
+}
+
+static double unbondedNoise(const int16_t*  data,
+                            const int16_t*  off)
+{
+#define CORR(i) (data[i*2]+off[i])
+  const unsigned ColBins = CsPad::ColumnsPerASIC;
+  const unsigned RowBins = CsPad::MaxRowsPerASIC;
+  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(42);
+  a[0] = CORR(RowBins-1);
+  a[1] = CORR(2*RowBins-1);
+  a[2] = CORR(2*RowBins*(ColBins-1));
+  a[3] = CORR(2*RowBins*(ColBins-1)+RowBins);
+  a[4] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
+  a[6] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
+  for(unsigned i=0,j=0; i<36; i+=2, j+=20*RowBins+10) {
+    a[i+7] = CORR(j);
+    a[i+8] = CORR(j+RowBins);
+  }
+  int lo = Offset-100;
+  int hi = Offset+100;
+  int v = Ami::FrameCalib::median(a,lo,hi);
+  return double(v-Offset);
 }
 
 namespace CspadMiniGeometry {
@@ -392,13 +416,16 @@ namespace CspadMiniGeometry {
               unsigned           index) const {                         \
       bool lsuppress  = image.desc().options()&CspadCalib::option_suppress_bad_pixels(); \
       bool lcorrectfn = image.desc().options()&CspadCalib::option_correct_common_mode(); \
+      bool lcorrectun = image.desc().options()&CspadCalib::option_correct_unbonded(); \
       bool lcorrectgn = image.desc().options()&CspadCalib::option_correct_gain(); \
       bool lnopedestal= image.desc().options()&CspadCalib::option_no_pedestal(); \
       int16_t* zero = 0;                                               \
       const int16_t*  off = lnopedestal ? off_no_ped : _off;           \
       const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
-      double fn = lcorrectfn ? frameNoise(data,off,sta) : 0;            \
+      double fn = 0;							\
+      if (lcorrectfn)      fn = frameNoise   (data,off,sta);		\
+      else if (lcorrectun) fn = unbondedNoise(data,off);		\
       if (Ami::EventHandler::post_diagnostics()) cache.cache(index,fn); \
       bi;                                                               \
     }                                                                   \
@@ -491,7 +518,7 @@ namespace CspadMiniGeometry {
       _gainMap = make_ndarray<uint16_t>(CsPad::ColumnsPerASIC,
                                         CsPad::MaxRowsPerASIC);
 
-      unsigned size;
+      unsigned size=0;
       switch(type.id()) {
       case Pds::TypeId::Id_CspadConfig:
         switch(type.version()) {
@@ -537,7 +564,7 @@ namespace CspadMiniGeometry {
     }
     ConfigCache(const ConfigCache& c) : _type(c._type)
     { 
-      unsigned size;
+      unsigned size=0;
       switch(_type.id()) {
       case Pds::TypeId::Id_CspadConfig:
         switch(_type.version()) {
@@ -730,9 +757,14 @@ namespace CspadMiniGeometry {
           sprintf(buff,"%s:CommonMode[%d]",detname,a);
           _feature[a+4] = cache.add(buff);
         }
+      else 
+        for(unsigned a=0; a<2; a++)
+          _feature[a+4] = -1;
 #ifdef POST_INTEGRAL
       sprintf(buff,"%s:Cspad::Sum",detname);
       _feature[6] = cache.add(buff);
+#else
+      _feature[6] = -1;
 #endif
     }
     void fill(Ami::EntryImage& image,
@@ -797,12 +829,18 @@ namespace CspadMiniGeometry {
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
+    bool     used   () const {
+      for(unsigned i=0; i<NumFeatures; i++)
+	if (_cache->used(_feature[i])) return true;
+      return false;
+    }
   private:
     TwoByTwo* mini;
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    mutable int _feature[7];
+    enum { NumFeatures=7 };
+    mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;
   };
@@ -903,6 +941,12 @@ void CspadMiniHandler::rename(const char* s)
 
 void CspadMiniHandler::reset() { _entry = 0; }
 
+bool CspadMiniHandler::used() const
+{
+  return (_entry->desc().used() ||
+	  _detector->used());
+}
+
 void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   //
@@ -995,7 +1039,7 @@ void CspadMiniHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::C
 void CspadMiniHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
-  if (_entry && _entry->desc().used()) {
+  if (_entry) {
     unsigned o = _entry->desc().options();
     if (_options != o) {
       printf("CspadMiniHandler::event options %x -> %x\n", _options, o);

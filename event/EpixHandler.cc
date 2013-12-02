@@ -4,13 +4,40 @@
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
+#include "ami/data/FeatureCache.hh"
 #include "pdsdata/xtc/TypeId.hh"
+#include "pdsdata/psddl/epix.ddl.h"
+#include "pdsdata/xtc/ClockTime.hh"
+
 
 #include <string.h>
 
 using namespace Ami;
 
 static const unsigned offset=1<<16;
+
+static const Pds::TypeId Config_Type = Pds::TypeId(Pds::TypeId::Id_EpixConfig,1);
+static const Pds::TypeId Data_Type   = Pds::TypeId(Pds::TypeId::Id_EpixElement,1);
+
+namespace EpixAmi {
+  class MapElement {
+  public:
+    unsigned id;  // unique identifier / serial number
+    int      x;   // x-location of first pixel
+    int      y;   // y-location of first pixel
+    unsigned orientation; // orientation of pixels
+  };
+
+  class Geometry {
+  public:
+    Geometry() {}
+    Geometry(const Pds::DetInfo&,
+	     const Pds::Epix::ConfigV1&);
+  public:
+    unsigned columns() const;
+    unsigned rows   () const;
+  };
+};
 
 static double frameNoise(const ndarray<const uint32_t,2> data,
 			 unsigned off)
@@ -95,11 +122,13 @@ static double frameNoise(const ndarray<const uint32_t,2> data,
 }
 
 
-EpixHandler::EpixHandler(const Pds::Src& info) :
-  EventHandler(info, Pds::TypeId::Any, Pds::TypeId::Any),
-  _entry (0),
-  _config(0,0,0,0,0),
-  _pedestals(make_ndarray<unsigned>(1,1,1))
+EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
+  //  EventHandler(info, Pds::TypeId::Id_EpixElement, Pds::TypeId::Id_EpixConfig),
+  EventHandler  (info, Data_Type.id(), Config_Type.id()),
+  _cache        (cache),
+  _entry        (0),
+  _config_buffer(0),
+  _pedestals    (make_ndarray<unsigned>(1,1))
 {
 }
 
@@ -118,25 +147,34 @@ void EpixHandler::rename(const char* s)
 
 void EpixHandler::reset() { _entry = 0; }
 
+//
+//  Start simple, assume a single readout tile
+//
 void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
-  if (tid.id()      == (Pds::TypeId::Type)Ami::Epix::ConfigT::typeId && 
-      tid.version() == Ami::Epix::ConfigT::version) {
-    const Ami::Epix::ConfigT& c = *reinterpret_cast<const Ami::Epix::ConfigT*>(payload);
+  if (tid.value() == Config_Type.value()) {
+    const Pds::Epix::ConfigV1& c = *reinterpret_cast<const Pds::Epix::ConfigV1*>(payload);
+    if (_config_buffer) delete[] _config_buffer;
+    _config_buffer = new char[c._sizeof()];
+    memcpy(_config_buffer,&c,c._sizeof());
+
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+
     const unsigned chip_margin=4;
-    unsigned columns = c.nchip_columns*c.ncolumns + (c.nchip_columns-1)*chip_margin;
-    unsigned rows    = c.nchip_rows   *c.nrows    + (c.nchip_rows   -1)*chip_margin;
+    const unsigned nchip_columns=c.numberOfAsicsPerRow();
+    const unsigned nchip_rows   =c.numberOfAsicsPerColumn();
+    unsigned columns = nchip_columns*c.numberOfPixelsPerAsicRow() + (nchip_columns-1)*chip_margin;
+    unsigned rows    = nchip_rows   *c.numberOfRowsPerAsic()      + (nchip_rows   -1)*chip_margin;
     int ppb = image_ppbin(columns,rows);
 
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   columns, rows, ppb, ppb);
-    for(unsigned i=0; i<c.nchip_rows; i++)
-      for(unsigned j=0; j<c.nchip_columns; j++) {
-	float x0 = j*(c.ncolumns+chip_margin);
-	float y0 = i*(c.nrows   +chip_margin);
-	float x1 = x0+c.ncolumns;
-	float y1 = y0+c.nrows;
+    for(unsigned i=0; i<nchip_rows; i++)
+      for(unsigned j=0; j<nchip_columns; j++) {
+	float x0 = j*(c.numberOfPixelsPerAsicRow()+chip_margin);
+	float y0 = i*(c.numberOfRowsPerAsic()     +chip_margin);
+	float x1 = x0+c.numberOfPixelsPerAsicRow();
+	float y1 = y0+c.numberOfRowsPerAsic();
 	desc.add_frame(desc.xbin(x0),desc.ybin(y0),
 		       desc.xbin(x1)-desc.xbin(x0),
 		       desc.ybin(y1)-desc.ybin(y0));
@@ -145,15 +183,11 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     _entry = new EntryImage(desc);
     _entry->invalid();
 
-    _config = c;
-
-    _load_pedestals(desc);
+    _load_pedestals();
   }
 }
 
 void EpixHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
-
-#include "pdsdata/xtc/ClockTime.hh"
 
 bool EpixHandler::used() const { return (_entry && _entry->desc().used()); }
 
@@ -167,31 +201,34 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     }
 
     if (_entry->desc().options() & FrameCalib::option_reload_pedestal()) {
-      _load_pedestals(_entry->desc());
+      _load_pedestals();
       _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
     }
 
-    const Ami::Epix::DataT& f = *reinterpret_cast<const Ami::Epix::DataT*>(payload);
+    const Pds::Epix::ElementV1& f = *reinterpret_cast<const Pds::Epix::ElementV1*>(payload);
+    const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
 
     _entry->reset();
     const DescImage& d = _entry->desc();
 
-    const ndarray<const unsigned,3>& po =
+    const ndarray<const unsigned,2>& pa =
       d.options()&FrameCalib::option_no_pedestal() ?
       _offset : _pedestals;
-    
+
+    ndarray<const uint16_t,2> a = f.frame(_config);
+
     int ppbin = _entry->desc().ppxbin();
     {
-      const uint16_t* p = reinterpret_cast<const uint16_t*>(&f+1);
-      for(unsigned i=0; i<_config.nrows; i++)
-	for(unsigned j=0; j<_config.ncolumns; j++) {
-	  unsigned fn=0;
-	  for(unsigned k=0; k<_config.nchip_rows; k++)
-	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
-	      const SubFrame& f = _entry->desc().frame(fn);
-	      _entry->addcontent(p[fn]+po[fn][i][j], f.x+j/ppbin, f.y+i/ppbin);
-	    }
-	  p += ((fn+1)&~1)*_config.nsamples;
+      for(unsigned i=0; i<_config.numberOfAsicsPerColumn(); i++)
+	for(unsigned j=0; j<_config.numberOfRowsPerAsic(); j++) {
+	  unsigned r = i*_config.numberOfRowsPerAsic()+j;
+	  const uint16_t* d = & a[r][0];
+	  const unsigned* p = &pa[r][0];
+	  for(unsigned m=0; m<_config.numberOfAsicsPerRow(); m++) {
+	    const SubFrame& fr = _entry->desc().frame(i*_config.numberOfAsicsPerRow()+m);
+	    for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++)
+	      _entry->addcontent(unsigned(*d++) + *p++, fr.x+k/ppbin, fr.y+j/ppbin);
+	  }
 	}
     }
 
@@ -212,56 +249,27 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
 void EpixHandler::_damaged() { _entry->invalid(); }
 
-void EpixHandler::_load_pedestals(const DescImage& desc)
+void EpixHandler::_load_pedestals()
 {
-  unsigned nf = desc.nframes();
-  if (nf==0) nf=1;
-  unsigned nx = _config.ncolumns;
-  unsigned ny = _config.nrows;
-  _pedestals = make_ndarray<unsigned>(nf,ny,nx);
-  _offset    = make_ndarray<unsigned>(nf,ny,nx);
-  for(unsigned i=0; i<nf; i++)
-    for(unsigned j=0; j<ny; j++)
-      for(unsigned k=0; k<nx; k++)
-	_offset[i][j][k] = offset;
+  const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
+  _pedestals = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
+  _offset    = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
+  for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
-  //
-  //  Load pedestals
-  //
-  const int NameSize=128;
-  char oname1[NameSize];
-  char oname2[NameSize];
-    
-  sprintf(oname1,"ped.%08x.dat",desc.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/ped.%08x.dat",desc.info().phy());
-  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+  const unsigned ny = _config.numberOfRowsPerAsic();
+  const unsigned nx = _config.numberOfPixelsPerAsicRow();
 
-  if (f) {
-
-    //  read pedestals
-    size_t sz = 8 * 1024;
-    char* linep = (char *)malloc(sz);
-    char* pEnd;
-
-    if (nf) {
-      for(unsigned s=0; s<nf; s++) {
-	for (unsigned row=0; row < ny; row++) {
-	  if (feof(f)) return;
-	  getline(&linep, &sz, f);
-	  _pedestals[s][row][0] = offset-strtoul(linep,&pEnd,0);
-	  for(unsigned col=1; col<nx; col++) 
-	    _pedestals[s][row][col] = offset-strtoul(pEnd, &pEnd,0);
-	}
-      }    
-    }
-      
-    free(linep);
-    fclose(f);
+  const DescImage& d = _entry->desc();
+  EntryImage* p = new EntryImage(d);
+  if (FrameCalib::load_pedestals(p,offset)) {
+    for(unsigned i=0; i<_config.numberOfAsicsPerColumn(); i++)
+      for(unsigned j=0; j<_config.numberOfAsicsPerRow(); j++) {
+	ndarray<uint32_t,2> ap = p->contents(i*_config.numberOfAsicsPerRow()+j);
+	for(unsigned k=0; k<ny; k++)
+	  for(unsigned m=0; m<nx; m++)
+	    _pedestals[i*ny+k][j*nx+m] = ap[k][m];
+      }
   }
-  else {
-    for(unsigned i=0; i<nf; i++)
-      for(unsigned j=0; j<ny; j++)
-	for(unsigned k=0; k<nx; k++)
-	  _pedestals[i][j][k] = offset;
-  }
+  else
+    for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
 }

@@ -1080,7 +1080,7 @@ namespace CspadGeometry {
       _cache = &cache;
       unsigned qmask = _config.quadMask();
       const char* detname = DetInfo::name(static_cast<const DetInfo&>(_src).detector());
-      for(unsigned i=0; i<4; i++)
+      for(unsigned i=0; i<4; i++) {
         if (qmask & (1<<i)) {
           quad[i]->fill(image, _config.roiMask(i));
           for(unsigned a=0; a<4; a++) {
@@ -1093,7 +1093,14 @@ namespace CspadGeometry {
               _feature[12*i+a+4] = cache.add(buff);
             }
           }
+	  else 
+            for(unsigned a=0; a<8; a++)
+	      _feature[12*i+a+4] = -1;
         }
+	else 
+	  for(unsigned a=0; a<12; a++)
+	    _feature[12*i+a] = -1;
+      }      
 
       sprintf(buff,"%s:Cspad:Sum",detname);
       _feature[48] = cache.add(buff);
@@ -1207,12 +1214,18 @@ namespace CspadGeometry {
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
+    bool     used() const {
+      for(unsigned i=0; i<NumFeatures; i++)
+	if (_cache->used(_feature[i])) return true;
+      return false;
+    }
   private:
     Quad* quad[4];
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    mutable int _feature[49];
+    enum { NumFeatures=49 };
+    mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;
   };
@@ -1316,6 +1329,12 @@ void CspadHandler::rename(const char* s)
 
 void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
 
+bool CspadHandler::used() const
+{
+  return (_entry->desc().used() ||
+	  _detector->used());
+}
+
 void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   //
@@ -1404,9 +1423,6 @@ void CspadHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::Clock
 
 void CspadHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
-  if (!(_entry && _entry->desc().used()) &&
-      !(_unbinned_entry && _unbinned_entry->desc().used())) return;
-
   const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
 
   _event(xtc->contains, xtc->payload(), xtc->sizeofPayload(), t);
@@ -1414,7 +1430,7 @@ void CspadHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
 
 void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeofPayload, const Pds::ClockTime& t)
 {
-  if (_entry && _entry->desc().used()) {
+  if (_entry) {
     unsigned o = _entry->desc().options();
     if (_options != o) {
       printf("CspadHandler::event options %x -> %x\n", _options, o);

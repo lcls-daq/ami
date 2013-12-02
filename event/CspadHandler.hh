@@ -24,6 +24,7 @@ namespace Ami {
     const Entry* entry(unsigned) const;
     const Entry* hidden_entry(unsigned) const;
     void         reset();
+    bool         used() const;
   public:
     void         rename(const char*);
   public:

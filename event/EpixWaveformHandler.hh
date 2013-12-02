@@ -1,18 +1,19 @@
-#ifndef Ami_EpixHandler_hh
-#define Ami_EpixHandler_hh
+#ifndef Ami_EpixWaveformHandler_hh
+#define Ami_EpixWaveformHandler_hh
 
 #include "ami/event/EventHandler.hh"
 
 #include "ndarray/ndarray.h"
 
 namespace Ami {
-  class EntryImage;
+  class EntryWaveform;
+  class EntryRef;
   class FeatureCache;
-  class EpixHandler : public EventHandler {
+  class EpixWaveformHandler : public EventHandler {
   public:
-    EpixHandler(const Pds::Src&     info, 
-		FeatureCache&       cache);
-    virtual ~EpixHandler();
+    EpixWaveformHandler(const Pds::Src&     info, 
+			FeatureCache&       cache);
+    virtual ~EpixWaveformHandler();
   public:
     void   _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
@@ -25,19 +26,18 @@ namespace Ami {
     const Entry* entry            (unsigned) const;
     //  Cleanup existing entries
     void         reset   ();
-    //  event data needs to be parsed
-    bool  used() const;
+    bool         used    () const;
   public:
     void  rename(const char*);
   private:
-    void _load_pedestals();
-
     FeatureCache&       _cache;
-    EntryImage*         _entry;
     char*               _config_buffer;
-    unsigned            _options;
-    ndarray<unsigned,2> _pedestals;
-    ndarray<unsigned,2> _offset;
+    enum { EntriesPerRef=4, MaxEntries=16 };
+    unsigned            _nentries;
+    unsigned            _nref;
+    EntryWaveform*      _entry[MaxEntries];
+    EntryRef*           _ref[MaxEntries/EntriesPerRef];
+    int                 _features[MaxEntries];
   };
 };
 

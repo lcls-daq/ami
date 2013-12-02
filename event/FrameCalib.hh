@@ -14,6 +14,7 @@ namespace Ami {
     static unsigned    option_reload_pedestal    ();
     static unsigned    option_correct_common_mode();
     static std::string save_pedestals(Entry*,bool corrected,bool prod);
+    static bool        load_pedestals(EntryImage*,unsigned);
 
     static int median(ndarray<const uint16_t,1> data,
 		      int& iLo, int& iHi);

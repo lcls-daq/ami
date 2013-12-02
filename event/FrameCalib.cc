@@ -31,9 +31,6 @@ std::string FrameCalib::save_pedestals(Entry* e,
   const Ami::DescImage& desc = entry.desc();
   const unsigned nframes = entry.desc().nframes();
 
-  //
-  //  Load pedestals
-  //
   unsigned* _off[nframes ? nframes : 1];
   if (nframes) {
     for(unsigned s=0; s<nframes; s++) {
@@ -180,6 +177,73 @@ std::string FrameCalib::save_pedestals(Entry* e,
     delete _off[s];
 
   return msg;
+}
+
+bool FrameCalib::load_pedestals(EntryImage* c,
+				unsigned    offset)
+{
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+  const DescImage& d = c->desc();
+  sprintf(oname1,"ped.%08x.dat",d.info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  if (f) {
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    const unsigned ppb  = d.ppxbin();
+
+    c->reset();
+
+    if (d.nframes()) {
+      for(unsigned i=0; i<d.nframes(); i++) {
+	const SubFrame& frame = d.frame(i);
+	
+	unsigned x = frame.x;
+	unsigned y = frame.y;
+	for(unsigned row=0; row < frame.ny*ppb; row++) {
+	  getline(&linep, &sz, f);
+	  char* p = linep;
+	  unsigned col=0;
+	  while(1) {
+	    unsigned v = strtoul(p,&pEnd,0);
+	    if (pEnd == p) break;
+	    c->addcontent(offset-v,x+col/ppb,y+row/ppb);
+	    col++;
+	    p = pEnd+1;
+	  }
+	}
+      }
+    }
+    else {
+      for(unsigned row=0; row < d.nbinsy()*ppb; row++) {
+	getline(&linep, &sz, f);
+	char* p = linep;
+	unsigned col=0;
+	while(1) {
+	  unsigned v = strtoul(p,&pEnd,0);
+	  if (pEnd == p) break;
+	  c->addcontent(offset-v,col/ppb,row/ppb);
+	  col++;
+	  p = pEnd+1;
+	}
+      }
+    }
+    
+    free(linep);
+    fclose(f);
+    return true;
+  }
+
+  return false;
 }
 
 int FrameCalib::median(ndarray<const uint16_t,1> data,
