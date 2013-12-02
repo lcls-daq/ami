@@ -2,7 +2,7 @@
 libnames := event calib
 
 # List source files for each library
-libsrcs_extra := PhasicsHandler.cc
+libsrcs_extra := PhasicsHandler.cc EpixHandler.cc
 libsrcs_calib := Calib.cc FrameCalib.cc FccdCalib.cc CspadCalib.cc PnccdCalib.cc
 
 ifeq ($(build_extra),$(true))
