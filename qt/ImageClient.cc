@@ -9,6 +9,7 @@
 #include "ami/qt/ImageContourProjection.hh"
 #include "ami/qt/PeakFinder.hh"
 #include "ami/qt/BlobFinder.hh"
+#include "ami/qt/Droplet.hh"
 
 #include <QtGui/QPushButton>
 #include <QtGui/QHBoxLayout>
@@ -49,11 +50,17 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
     _blob = new BlobFinder(this,_channels,NCHANNELS,*wd.plot());
     connect(blobB, SIGNAL(clicked()), _blob, SLOT(front()));}
 
+  { QPushButton* dropB = new QPushButton("Droplet");
+    addWidget(dropB);
+    _droplet = new Droplet(this,_channels,NCHANNELS);
+    connect(dropB, SIGNAL(clicked()), _droplet, SLOT(front()));}
+
   connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed()));
   connect(_blob   , SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(_droplet, SIGNAL(changed()), this, SIGNAL(changed()));
 }
 
 Ami::Qt::ImageClient::~ImageClient() {}
@@ -67,6 +74,7 @@ void Ami::Qt::ImageClient::save(char*& p) const
   XML_insert(p, "ImageContourProjection", "_cntproj", _cntproj->save(p) );
   XML_insert(p, "PeakFinder", "_hit", _hit    ->save(p) );
   XML_insert(p, "BlobFinder", "_blob", _blob  ->save(p) );
+  XML_insert(p, "Droplet"   , "_droplet", _droplet->save(p) );
 }
 
 void Ami::Qt::ImageClient::load(const char*& p)
@@ -84,6 +92,8 @@ void Ami::Qt::ImageClient::load(const char*& p)
       _hit    ->load(p);
     else if (tag.name == "_blob")
       _blob   ->load(p);
+    else if (tag.name == "_droplet")
+      _droplet->load(p);
   XML_iterate_close(ImageClient,tag);
 
   update_configuration();
@@ -112,6 +122,7 @@ void Ami::Qt::ImageClient::_configure(char*& p,
    _cntproj->configure(p, input, output, ch, signatures, nchannels);
    _hit    ->configure(p, input, output, ch, signatures, nchannels);
    _blob   ->configure(p, input, output, ch, signatures, nchannels);
+   _droplet->configure(p, input, output, ch, signatures, nchannels);
 }
 
 void Ami::Qt::ImageClient::_setup_payload(Cds& cds)
@@ -121,6 +132,7 @@ void Ami::Qt::ImageClient::_setup_payload(Cds& cds)
   _cntproj->setup_payload(cds);
   _hit    ->setup_payload(cds);
   _blob   ->setup_payload(cds);
+  _droplet->setup_payload(cds);
   static_cast<ImageDisplay&>(display()).grid_scale().setup_payload(cds);
 }
 
@@ -131,9 +143,11 @@ void Ami::Qt::ImageClient::_update()
   _cntproj->update();
   _hit    ->update();
   _blob   ->update();
+  _droplet->update();
 }
 
 void Ami::Qt::ImageClient::_prototype(const DescEntry& e)
 {
   _hit    ->prototype(e);
+  _droplet->prototype(e);
 }

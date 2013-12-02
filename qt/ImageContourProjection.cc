@@ -182,9 +182,8 @@ void ImageContourProjection::load(const char*& p)
 
 void ImageContourProjection::save_plots(const QString& p) const
 {
-  int i=1;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
+    (*it)->save_plots(QString("%1_%2").arg(p).arg((*it)->_name));
 }
 
 void ImageContourProjection::update_range()

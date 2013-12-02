@@ -30,10 +30,10 @@ namespace Ami {
       void               force   ();
     signals:
       void changed();  // discovered a change
-    private:
+    public:
       FeatureRegistry();
       ~FeatureRegistry();
-    private:
+    protected:
       QStringList _names;
       QStringList _help;
       mutable Ami::Semaphore _sem;

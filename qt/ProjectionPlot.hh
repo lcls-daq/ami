@@ -62,8 +62,9 @@ namespace Ami {
       void description_changed();
     private:
       void _layout();
-    private:
+    public:
       QString           _name;
+    private:
       unsigned          _input;
       unsigned          _output;
       Ami::AbsOperator* _proj;

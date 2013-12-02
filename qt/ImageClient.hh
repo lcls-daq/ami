@@ -10,6 +10,7 @@ namespace Ami {
     class ImageContourProjection;
     class PeakFinder;
     class BlobFinder;
+    class Droplet;
 
     class ImageClient : public Client {
     public:
@@ -36,6 +37,7 @@ namespace Ami {
       ImageContourProjection* _cntproj;
       PeakFinder*             _hit;
       BlobFinder*             _blob;
+      Droplet*                _droplet;
     };
   };
 };

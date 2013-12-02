@@ -121,7 +121,11 @@ void EpixClient::write_pedestals()
 
     _control->pause();
 
-    std::string smsg(FrameCalib::save_pedestals(_cds.entry(signature),!_npBox->isChecked(),lProd));
+    std::string smsg;
+    if (!_npBox->isChecked())
+      smsg = std::string("Retain Pedestal must be checked.\n");
+    else
+      smsg = std::string(FrameCalib::save_pedestals(_cds.entry(signature),!_npBox->isChecked(),lProd));
     if (smsg.empty()) {
       _reloadPedestals = true;
       emit changed();

@@ -17,6 +17,7 @@
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/BlobFinder.hh"
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/RawFilter.hh"
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
@@ -270,11 +271,17 @@ void PeakPlot::setup_payload(Cds& cds)
 void PeakPlot::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
+  configure(p, input_signatures[_input], output);
+}
+
+void PeakPlot::configure(char*& p, unsigned input, unsigned& output)
+{
+  Ami::RawFilter f;
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
 						  ConfigureRequest::Analysis,
-						  input_signatures[_input],
+						  input,
 						  -1,
-						  *input_channels[_input]->filter().filter(),
+						  f,
 						  *_op);
   p += r.size();
   _req.request(r, output);

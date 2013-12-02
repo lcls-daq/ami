@@ -313,9 +313,8 @@ void PeakFit::load(const char*& p)
 
 void PeakFit::save_plots(const QString& p) const
 {
-  int i=1;
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    QString s = QString("%1_%2.dat").arg(p).arg((*it)->_name);
     FILE* f = fopen(qPrintable(s),"w");
     if (f) {
       (*it)->dump(f);

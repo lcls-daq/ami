@@ -125,11 +125,10 @@ void RectROI::load(const char*& p)
 
 void RectROI::save_plots(const QString& p) const
 {
-  int i=1;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->save_plots(QString("%1_%2").arg(p).arg(i++));
+    (*it)->save_plots(QString("%1_%2").arg(p).arg((*it)->_name));
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    QString s = QString("%1_%2.dat").arg(p).arg((*it)->_name);
     FILE* f = fopen(qPrintable(s),"w");
     if (f) {
       (*it)->dump(f);

@@ -67,6 +67,7 @@ libnames := amiqt
 libsrcs_amiqt := Status.cc Status_moc.cc
 libsrcs_amiqt += Path.cc
 libsrcs_amiqt += FeatureRegistry.cc FeatureRegistry_moc.cc
+libsrcs_amiqt += AmendedRegistry.cc AmendedRegistry_moc.cc
 libsrcs_amiqt += SMPRegistry.cc SMPRegistry_moc.cc
 libsrcs_amiqt += SMPWarning.cc SMPWarning_moc.cc
 libsrcs_amiqt += QHComboBox.cc QHComboBox_moc.cc
@@ -184,6 +185,7 @@ libsrcs_amiqt += ControlLog.cc ControlLog_moc.cc
 libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 libsrcs_amiqt += MaskFrame.cc MaskFrame_moc.cc
 libsrcs_amiqt += MaskDisplay.cc MaskDisplay_moc.cc
+libsrcs_amiqt += Droplet.cc Droplet_moc.cc
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

@@ -44,6 +44,9 @@ namespace Ami {
     public:
       void configure(char*& p, 
                      unsigned input, 
+                     unsigned& output);
+      void configure(char*& p, 
+                     unsigned input, 
                      unsigned& output,
                      ChannelDefinition* ch[], 
                      int* signatures, 

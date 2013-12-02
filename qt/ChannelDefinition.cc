@@ -128,7 +128,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   { if (!refnames.empty()) {
       _refBox = new QComboBox;
       _refBox->addItems(refnames);
-      _refBox->setCurrentIndex(0);
+      _refBox->setCurrentIndex(ich);
       l->addWidget(_refBox);
     }
     else {

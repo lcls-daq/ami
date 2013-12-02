@@ -107,9 +107,10 @@ Ami::Qt::Client::Client(QWidget*            parent,
       QPushButton* chanB[NCHANNELS];
       QColor color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
       for(int i=0; i<NCHANNELS; i++) {
+	bool init = i==0 || i<refnames.size();
 	QString title = names[i];
 	_channels[i] = new ChannelDefinition(this,title, _channels, i, NCHANNELS,
-					     *_frame, color[i], i==0, refnames);
+					     *_frame, color[i], init, refnames);
 	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ _layout4 = new QHBoxLayout;
@@ -117,7 +118,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
 	  connect(_channels[i], SIGNAL(show_plot_changed(bool)), box, SLOT(setChecked(bool)));
-	  box->setChecked( i==0 );
+	  box->setChecked( init );
 	  _layout4->addWidget(box);
 	  _layout4->addWidget(chanB[i]);
 	  layout1->addLayout(_layout4);

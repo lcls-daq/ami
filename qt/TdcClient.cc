@@ -218,11 +218,11 @@ void TdcClient::save_plots(const QString& p) const
     }
   }
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    QString s = QString("%1_%2.dat").arg(p).arg((*it)->_name);
     (*it)->save_plots(s);
   }
   for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg(i++);
+    QString s = QString("%1_%2.dat").arg(p).arg((*it)->_name);
     (*it)->save_plots(s);
   }
 }
