@@ -15,6 +15,7 @@ namespace Ami {
   public:
     double evaluate() const;
     bool   valid   () const;
+    void   use     ();
   private:
     FeatureCache& _features;
     unsigned      _index;

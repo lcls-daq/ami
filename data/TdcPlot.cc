@@ -133,6 +133,12 @@ TdcPlot::~TdcPlot()
   }
 }
 
+void TdcPlot::use()
+{
+  if (_xterm) _xterm->use();
+  if (_yterm) _yterm->use();
+}
+
 DescEntry& TdcPlot::_routput   () const 
 { 
   return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 

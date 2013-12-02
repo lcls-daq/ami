@@ -59,7 +59,7 @@ static const char* _type_str[] =  { "Single", "Average",
                                     "Reference", "EntryMath", "BinMath", "EdgeFinder", "PeakFinder",
                                     "EnvPlot", "PeakFitPlot", "FFT", "ContourProjection", "TdcPlot",
                                     "XYHistogram", "Zoom", "EntryRefOp", "Variance", "CurveFit", "MaskImage",
-                                    "BlobFinder", "RectROI", "FIR", NULL };
+                                    "BlobFinder", "RectROI", "FIR", "Droplet", NULL };
 
 
 const char* AbsOperator::type_str(Type t) { return _type_str[t]; }

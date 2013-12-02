@@ -58,6 +58,8 @@ Single::~Single()
   if (_term ) delete _term;
 }
 
+void Single::use() { if (_term) _term->use(); }
+
 DescEntry& Single::_routput   () const { return _entry->desc(); }
 
 void*      Single::_serialize(void* p) const

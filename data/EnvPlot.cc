@@ -103,6 +103,13 @@ EnvPlot::~EnvPlot()
   if (_entry ) delete _entry;
 }
 
+void EnvPlot::use() 
+{
+  if (_term  ) _term  ->use();
+  if (_weight) _weight->use();
+  if (_input ) _input ->use();
+}
+
 DescEntry& EnvPlot::_routput   () const 
 { 
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 

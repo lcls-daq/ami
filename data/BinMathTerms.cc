@@ -5,8 +5,10 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryRef.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/ImageMask.hh"
+#include "ami/data/VectorArray.hh"
 
 #include "pdsalg/pdsalg.h"
 
@@ -100,7 +102,26 @@ double BinMathC::EntryProfTerm::evaluate() const
 
   return sum; 
 }
-    
+
+BinMathC::VASizeTerm::VASizeTerm(const Entry*& e) : _entry(e) {}
+
+double BinMathC::VASizeTerm::evaluate() const
+{
+  const EntryRef* e = static_cast<const EntryRef*>(_entry);
+  return reinterpret_cast<const VectorArray*>(e->data())->nentries();
+}
+
+
+BinMathC::VAElementTerm::VAElementTerm(const Entry*& e, const unsigned& i, unsigned element) :
+  _entry(e), _index(i), _element(element) {}
+
+double BinMathC::VAElementTerm::evaluate() const
+{
+  const EntryRef* e = static_cast<const EntryRef*>(_entry);
+  return reinterpret_cast<const VectorArray*>(e->data())->element(_element)[_index];
+}
+
+
 BinMathC::EntryImageTerm::EntryImageTerm(const Entry*& e, 
                                          unsigned xlo, unsigned xhi, 
                                          unsigned ylo, unsigned yhi,

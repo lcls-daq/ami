@@ -30,7 +30,7 @@ namespace Ami {
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
 		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
                 XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage,
-                BlobFinder, RectROI, FIR };
+                BlobFinder, RectROI, FIR, Droplet, VAPlot };
     ///  Title of subclass operations
     static const char* type_str(Type);
 
@@ -55,6 +55,8 @@ namespace Ami {
     void         next(AbsOperator* o);
     ///  Operator was constructed without error
     bool         valid() const;
+    ///  Mark the inputs used by this operation
+    virtual void use() {}
   protected:
     ///  Subclass-specific operation on input/intermediate data
     virtual Entry& _operate  (const Entry&) const = 0;

@@ -29,6 +29,7 @@
     public: \
       double evaluate() const { return o; } \
       bool   valid   () const { return _a.valid() && _b.valid(); } \
+      void   use     () { _a.use(); _b.use(); }			   \
     private: \
       Term& _a; \
       Term& _b; \

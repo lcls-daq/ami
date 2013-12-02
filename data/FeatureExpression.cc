@@ -28,6 +28,11 @@ bool   Feature::valid   () const
   return !_damaged;
 }
 
+void   Feature::use     ()
+{
+  _features.use(_index);
+}
+
 FeatureExpression::FeatureExpression() : Expression(_variables) {}
 
 FeatureExpression::~FeatureExpression() {}

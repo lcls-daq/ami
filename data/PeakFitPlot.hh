@@ -39,6 +39,7 @@ namespace Ami {
     unsigned   input    () const;
     Parameter  prm      () const;
     const char* feature() const;
+    void       use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;

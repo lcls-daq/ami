@@ -23,6 +23,8 @@ namespace Ami {
     TdcPlot(const char*&, const DescEntry&);
     TdcPlot(const char*&);
     ~TdcPlot();
+  public:
+    void use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;

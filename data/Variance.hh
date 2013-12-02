@@ -26,6 +26,8 @@ namespace Ami {
     Variance(unsigned n=0, const char* p=0);
     Variance(const char*&, const DescEntry&, FeatureCache&);
     ~Variance();
+  public:
+    void use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;

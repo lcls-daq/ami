@@ -97,6 +97,8 @@ EntryMath::~EntryMath()
   if (_entry) delete _entry;
 }
 
+void EntryMath::use() { if (_term) _term->use(); }
+
 DescEntry& EntryMath::_routput   () const { return _entry->desc(); }
 
 void*      EntryMath::_serialize(void* p) const

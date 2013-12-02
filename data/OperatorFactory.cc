@@ -24,6 +24,8 @@
 #include "ami/data/BlobFinder.hh"
 #include "ami/data/RectROI.hh"
 #include "ami/data/FIR.hh"
+#include "ami/data/Droplet.hh"
+#include "ami/data/VAPlot.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -73,6 +75,8 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::BlobFinder: o = new BlobFinder(p,input); break;
   case AbsOperator::RectROI   : o = new RectROI   (p,input); break;
   case AbsOperator::FIR       : o = new FIR       (p,input); break;
+  case AbsOperator::Droplet   : o = new Droplet   (p, _output); break;
+  case AbsOperator::VAPlot    : o = new VAPlot    (p,input); break;
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
   if (next)

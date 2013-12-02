@@ -22,6 +22,8 @@ namespace Ami {
     virtual double evaluate() const = 0;
     ///  Return the validity of evaluating this term of the expression
     virtual bool valid() const { return true; }
+    ///  Mark the term as needed by analysis
+    virtual void use() {}
   };
 
   /**

@@ -21,6 +21,8 @@ namespace Ami {
     EntryMath(const char* expr);
     EntryMath(const char*&, const DescEntry&, const Cds&, FeatureCache&);
     ~EntryMath();
+  public:
+    void use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;

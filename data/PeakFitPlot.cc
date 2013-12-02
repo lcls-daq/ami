@@ -154,6 +154,8 @@ PeakFitPlot::~PeakFitPlot()
   if (_entry) delete _entry;
 }
 
+void PeakFitPlot::use() { if (_term) _term->use(); }
+
 PeakFitPlot::Parameter  PeakFitPlot::prm      () const { return _prm; }
 
 DescEntry& PeakFitPlot::_routput   () const 

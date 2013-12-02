@@ -42,6 +42,7 @@ unsigned FeatureCache::add(const char* name)
   _cache  .resize(len);
   _damaged.resize((len+0x1f)>>5);
   _damaged[index>>5] |= 1<<(index&0x1f);
+  _used.resize((len+0x1f)>>5);
   return index;
 }
 
@@ -110,6 +111,37 @@ void        FeatureCache::cache  (const FeatureCache& c)
       ++k;
     }
   }
+}
+
+void   FeatureCache::clear_used()
+{
+  for(unsigned k=0; k<_used.size(); k++)
+    _used[k] = 0;
+#ifdef DBUG
+  printf("FeatureCache[%p]::clear_used()\n",this);
+#endif
+}
+
+void   FeatureCache::use(int index)
+{
+  _used[index>>5] |= 1<<(index&0x1f);
+#ifdef DBUG
+  printf("FeatureCache[%p]::use [%d] : %08x\n",this,index,_used[index>>5]);
+#endif
+}
+
+void   FeatureCache::use (const FeatureCache& c)
+{
+  for(unsigned i=0; i<c._used.size(); i++)
+    _used[i] |= c._used[i];
+}
+
+bool   FeatureCache::used(int index) const
+{
+#ifdef DBUG
+  printf("FeatureCache[%p]::used[%d] : %08x\n",this,index,_used[index>>5]);
+#endif
+  return index>=0 && (_used[index>>5] & (1<<(index&0x1f)));
 }
 
 char*  FeatureCache::serialize(int& len) const

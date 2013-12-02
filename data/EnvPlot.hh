@@ -29,6 +29,8 @@ namespace Ami {
 	    FeatureCache& output, 
 	    const Cds&);
     ~EnvPlot();
+  public:
+    void use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;

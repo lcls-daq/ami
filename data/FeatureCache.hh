@@ -31,11 +31,17 @@ namespace Ami {
     void        cache  (const FeatureCache&);
     void        dump   () const;
   public:
+    void        clear_used();
+    void        use    (int index);
+    void        use    (const FeatureCache&);
+    bool        used   (int index) const;
+  public:
     char*  serialize(int& len) const;
   private:
     std::vector<std::string> _names;
     std::vector<double>      _cache;
     std::vector<uint32_t>    _damaged;
+    std::vector<uint32_t>    _used;
     bool                     _update;
   };
 };

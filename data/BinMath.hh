@@ -2,6 +2,9 @@
 #define Ami_BinMath_hh
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/DescEntry.hh"
+
+#include <QtCore/QString>
 
 class QChar;
 
@@ -29,6 +32,8 @@ namespace Ami {
     BinMath(const char*&);
     ~BinMath();
   public:
+    void use();
+  public:
     const char*        expression() const;
   public:
     static const QChar& integrate();
@@ -46,6 +51,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
+    QString    _process_expr(QString,DescEntry::Type);
   private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];
@@ -58,6 +64,9 @@ namespace Ami {
     mutable const Entry*  _input;
     Entry*        _entry;
     bool          _v;
+    mutable unsigned _index;
+    bool          _loop;
+    bool          _fterm_uses;
   };
 
 };

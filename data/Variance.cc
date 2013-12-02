@@ -110,6 +110,8 @@ Variance::~Variance()
   if (_term ) delete _term ;
 }
 
+void Variance::use() { if (_term) _term->use(); }
+
 DescEntry& Variance::_routput   () const { return _cache->desc(); }
 
 void*      Variance::_serialize(void* p) const

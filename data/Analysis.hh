@@ -24,6 +24,7 @@ namespace Ami {
     ~Analysis();
   public:
     unsigned   id     () const;
+    void       use    ();
     void       analyze();
     DescEntry& output () const;
     bool       valid  () const;

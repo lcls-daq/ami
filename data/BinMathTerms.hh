@@ -53,6 +53,30 @@ namespace Ami {
       Moment _mom;
     };
     
+    class VASizeTerm  : public Term {
+    public:
+      VASizeTerm(const Entry*& e);
+      ~VASizeTerm() {}
+    public:
+      double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
+    private:
+      const Entry*& _entry;
+    };
+    
+    class VAElementTerm  : public Term {
+    public:
+      VAElementTerm(const Entry*& e, const unsigned& i, unsigned element);
+      ~VAElementTerm() {}
+    public:
+      double evaluate() const;
+      bool   valid   () const { return _entry->valid(); }
+    private:
+      const Entry*&   _entry;
+      const unsigned& _index;
+      unsigned        _element;
+    };
+    
     class EntryImageTerm : public Term {
     public:
       EntryImageTerm(const Entry*& e, 

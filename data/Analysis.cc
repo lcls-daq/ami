@@ -52,6 +52,12 @@ Analysis::~Analysis()
 
 unsigned   Analysis::id() const { return _id; }
 
+void   Analysis::use()
+{
+  _input.desc().used(true);
+  _op->use();
+}
+
 void   Analysis::analyze()
 {
   if (_input.valid() && _filter->accept())

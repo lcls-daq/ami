@@ -119,6 +119,12 @@ CurveFit::~CurveFit()
    }
 }
 
+void CurveFit::use() 
+{ 
+  if (_fterm) _fterm->use();
+  if (_nterm) _nterm->use();
+}
+
 DescEntry& CurveFit::_routput   () const 
 {
   return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
