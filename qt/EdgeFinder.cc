@@ -276,7 +276,9 @@ void EdgeFinder::plot()
     return;
 
   Ami::DescEntry* desc = 0;
-  QString name = QString("%1 [%2]").arg(_title->text()).arg(_leading->isChecked() ? "Rise":"Fall");
+  QString name = QString("%1 [%3]")
+    .arg(_title->text())
+    .arg(_channels[_channel]->name());
 
   switch(_vtbutton->checkedId()) {
   case Ami::EdgeFinder::Location:
@@ -312,7 +314,9 @@ void EdgeFinder::plot()
 
   if (_leading->isChecked() && _trailing->isChecked()) {
       // Add trailing plot to EdgePlot!
-    QString tname = QString("%1 [%2]").arg(_title->text()).arg("Fall");
+    QString tname = QString("%1_F [%3]")
+      .arg(_title->text())
+      .arg(_channels[_channel]->name());
     strcpy(const_cast<char*>(desc->name()), qPrintable(tname));
     plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
                                         Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
