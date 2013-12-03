@@ -390,6 +390,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Quartz4A150 : 
     case Pds::DetInfo::Phasics  :
     case Pds::DetInfo::Timepix  :
+    case Pds::DetInfo::Rayonix  :
     case Pds::DetInfo::TM6740   : 
     case Pds::DetInfo::Princeton: 
     case Pds::DetInfo::Fli      : 
