@@ -87,6 +87,6 @@ void OceanOpticsHandler::_damaged()
 {
   for (unsigned i=0;i<_nentries;i++) {
     EntryWaveform* entry = _entry[i];
-    entry->invalid();
+    if (entry) entry->invalid();
   }
 }

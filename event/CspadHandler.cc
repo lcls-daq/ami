@@ -1331,8 +1331,8 @@ void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
 
 bool CspadHandler::used() const
 {
-  return (_entry->desc().used() ||
-	  _detector->used());
+  return ((_entry && _entry->desc().used()) ||
+	  (_detector && _detector->used()));
 }
 
 void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)

@@ -90,8 +90,10 @@ Entry&     Single::_operate(const Entry& e) const
     default:
       break;
     }
+    _entry->valid(e.time());
   }
-  _entry->valid(e.time());
+  else
+    //    _entry->invalid();
 
   return *_entry;
 }

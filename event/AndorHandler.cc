@@ -108,4 +108,4 @@ void AndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cloc
   }
 }
 
-void AndorHandler::_damaged() { _entry->invalid(); }
+void AndorHandler::_damaged() { if (_entry) _entry->invalid(); }

@@ -103,4 +103,4 @@ void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
   _entry->valid(t);
 }
 
-void FrameHandler::_damaged() { _entry->invalid(); }
+void FrameHandler::_damaged() { if (_entry) _entry->invalid(); }

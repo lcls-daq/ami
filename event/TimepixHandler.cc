@@ -140,4 +140,4 @@ void TimepixHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cl
   _entry->valid(t);
 }
 
-void TimepixHandler::_damaged() { _entry->invalid(); }
+void TimepixHandler::_damaged() { if (_entry) _entry->invalid(); }

@@ -182,7 +182,7 @@ void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::Clock
   _ncollect++;
 }
 
-void PnccdHandler::_damaged() { _entry->invalid(); }
+void PnccdHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void PnccdHandler::_begin_calib() 
 {

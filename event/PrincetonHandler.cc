@@ -180,4 +180,4 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
   }
 }
 
-void PrincetonHandler::_damaged() { _entry->invalid(); }
+void PrincetonHandler::_damaged() { if (_entry) _entry->invalid(); }

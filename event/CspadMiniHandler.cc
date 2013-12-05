@@ -943,8 +943,8 @@ void CspadMiniHandler::reset() { _entry = 0; }
 
 bool CspadMiniHandler::used() const
 {
-  return (_entry->desc().used() ||
-	  _detector->used());
+  return ((_entry && _entry->desc().used()) ||
+	  (_detector && _detector->used()));
 }
 
 void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)

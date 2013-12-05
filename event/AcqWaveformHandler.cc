@@ -128,7 +128,8 @@ void AcqWaveformHandler::_damaged()
   unsigned n = _nentries < _config.nbrChannels() ? _nentries : _config.nbrChannels();
   for (unsigned i=0;i<n;i++) {
     EntryWaveform* entry = _entry[i];
-    entry->invalid();
+    if (entry)
+      entry->invalid();
   }
 
   if (_ref)

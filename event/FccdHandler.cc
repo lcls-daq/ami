@@ -156,7 +156,7 @@ void FccdHandler::_event    (Pds::TypeId type, const void* payload, const Pds::C
   _entry->valid(t);
 }
 
-void FccdHandler::_damaged() { _entry->invalid(); }
+void FccdHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void FccdHandler::_load_pedestals() 
 {

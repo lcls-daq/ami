@@ -210,7 +210,7 @@ void EpixHandlerT::_event    (Pds::TypeId, const void* payload, const Pds::Clock
   }
 }
 
-void EpixHandlerT::_damaged() { _entry->invalid(); }
+void EpixHandlerT::_damaged() { if (_entry) _entry->invalid(); }
 
 void EpixHandlerT::_load_pedestals(const DescImage& desc)
 {

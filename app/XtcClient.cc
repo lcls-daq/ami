@@ -117,11 +117,17 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       cache.cache(_event_index,_seq->stamp().vector());
       cache.cache(_evtim_index,_seq->clock().asDouble());
       
-      iterate(&dg->xtc); 
       for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
         if ((*it)->data_type() == Pds::TypeId::NumberOf)
           (*it)->_event(dg->xtc.contains, dg->xtc.payload(), _seq->clock());
+        else {
+          //  Readout groups are problematic because they result in detectors that
+          //  don't contribute to every event.  How to flag this? (equivalent to damage)
+          (*it)->_damaged();
+        }
       }
+
+      iterate(&dg->xtc); 
 
       _cache[PostAnalysis]->cache(cache);
 

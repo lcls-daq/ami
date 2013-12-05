@@ -158,10 +158,10 @@ void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds
 void EpixWaveformHandler::_damaged() 
 {
   for(unsigned i=0; i<_nentries; i++)
-    _entry[i]->invalid();
+    if (_entry[i]) _entry[i]->invalid();
 
   for(unsigned i=0; i<_nref; i++)
-    _ref[i]->invalid();
+    if (_ref[i]) _ref[i]->invalid();
 }
 
 bool EpixWaveformHandler::used() const

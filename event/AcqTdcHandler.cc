@@ -56,5 +56,6 @@ void AcqTdcHandler::_event    (Pds::TypeId, const void* payload, const Pds::Cloc
 
 void AcqTdcHandler::_damaged() 
 {
-  _entry->invalid();
+  if (_entry)
+    _entry->invalid();
 }

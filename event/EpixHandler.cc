@@ -247,7 +247,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
   }
 }
 
-void EpixHandler::_damaged() { _entry->invalid(); }
+void EpixHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void EpixHandler::_load_pedestals()
 {

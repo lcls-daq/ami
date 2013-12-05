@@ -108,4 +108,4 @@ void FliHandler::_event    (Pds::TypeId type, const void* payload, const Pds::Cl
   }
 }
 
-void FliHandler::_damaged() { _entry->invalid(); }
+void FliHandler::_damaged() { if (_entry) _entry->invalid(); }

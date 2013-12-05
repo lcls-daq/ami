@@ -24,6 +24,7 @@ Ami::EpicsXtcReader::EpicsXtcReader(const Pds::Src& info, Ami::FeatureCache& f) 
 		     Pds::TypeId::Id_Epics,
 		     f)
 {
+  reset();
 }
 
 Ami::EpicsXtcReader::~EpicsXtcReader()
