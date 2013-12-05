@@ -93,7 +93,7 @@ Entry&     Single::_operate(const Entry& e) const
     _entry->valid(e.time());
   }
   else
-    //    _entry->invalid();
+    _entry->invalid();
 
   return *_entry;
 }
