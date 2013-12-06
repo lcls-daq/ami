@@ -159,3 +159,4 @@ Entry&     VAPlot::_operate(const Entry& e) const
   return *output;
 }
 
+void VAPlot::_invalid() { _output_entry->invalid(); }

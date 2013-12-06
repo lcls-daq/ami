@@ -38,6 +38,10 @@ namespace Ami {
     EntryWaveform*      _entry[MaxEntries];
     EntryRef*           _ref[MaxEntries/EntriesPerRef];
     int                 _features[MaxEntries];
+    ndarray<double,1>   _filter;
+    ndarray<double,1>   _gain;
+    unsigned            _first_sample;
+    unsigned            _last_sample;
   };
 };
 

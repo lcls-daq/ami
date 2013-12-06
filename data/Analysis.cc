@@ -62,6 +62,8 @@ void   Analysis::analyze()
 {
   if (_input.valid() && _filter->accept())
     (*_op)(_input);
+  else
+    _op->invalid(); 
 }
 
 DescEntry& Analysis::output () const

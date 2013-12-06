@@ -70,3 +70,5 @@ Entry&     Zoom::_operate(const Entry& e) const
   _entry->valid(e.time());
   return *_entry;
 }
+
+void Zoom::_invalid() { _entry->invalid(); }

@@ -139,3 +139,5 @@ Entry&     XYHistogram::_operate(const Entry& e) const
   _output->valid(e.time());
   return *_output;
 }
+
+void XYHistogram::_invalid() { _output->invalid(); }

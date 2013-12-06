@@ -335,3 +335,5 @@ const char* PeakFitPlot::name(Parameter p)
   static const char* names[] = {"Position", "Height", "FWHM", "RMS", NULL };
   return names[p];
 }
+
+void PeakFitPlot::_invalid() {}

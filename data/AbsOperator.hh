@@ -57,6 +57,8 @@ namespace Ami {
     bool         valid() const;
     ///  Mark the inputs used by this operation
     virtual void use() {}
+    ///  Operator was not applied due to error
+    void         invalid();
   protected:
     ///  Subclass-specific operation on input/intermediate data
     virtual Entry& _operate  (const Entry&) const = 0;
@@ -66,6 +68,8 @@ namespace Ami {
     virtual void*  _serialize(void* p     ) const = 0;
     ///  Subclass-specific determination of valid construction
     virtual bool   _valid     ()            const = 0;
+    ///  Subclass-specific determination of accumulated data validity
+    virtual void   _invalid   () = 0;
   protected:
     /// helper function for serialization
     void _insert (void*& p, const void* b, unsigned size) const;

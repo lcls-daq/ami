@@ -77,25 +77,26 @@ void*      Single::_serialize(void* p) const
 
 Entry&     Single::_operate(const Entry& e) const
 {
-  if (e.valid()) {
-    _input = &e;
-    double v = _term ? _term->evaluate() : 1;
+  if (!e.valid())
+    return *_entry;
 
-    switch(e.desc().type()) {
-      SET_CASE(TH1F);
-      SET_CASE(TH2F);
-      SET_CASE(Prof);
-      SET_CASE(Image);
-      SET_CASE(Waveform);
-    default:
-      break;
-    }
-    _entry->valid(e.time());
+  _input = &e;
+  double v = _term ? _term->evaluate() : 1;
+
+  switch(e.desc().type()) {
+    SET_CASE(TH1F);
+    SET_CASE(TH2F);
+    SET_CASE(Prof);
+    SET_CASE(Image);
+    SET_CASE(Waveform);
+  default:
+    break;
   }
-  else
-    _entry->invalid();
+  _entry->valid(e.time());
 
   return *_entry;
 }
 
 #undef SET_CASE
+
+void Single::_invalid() { _entry->invalid(); }

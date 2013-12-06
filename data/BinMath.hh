@@ -51,6 +51,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
+    void       _invalid  ();
     QString    _process_expr(QString,DescEntry::Type);
   private:
     enum { EXPRESSION_LEN = 256 };

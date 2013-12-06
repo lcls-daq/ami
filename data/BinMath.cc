@@ -171,13 +171,8 @@ void*      BinMath::_serialize(void* p) const
 
 Entry&     BinMath::_operate(const Entry& e) const
 {
-  if (!e.valid()) {
-#ifdef DBUG
-    printf("BinMath::_operate input invalid\n");
-#endif
-    _entry->invalid();
+  if (!e.valid())
     return *_entry;
-  }
 
   if (_term) {
 
@@ -383,3 +378,5 @@ QString BinMath::_process_expr(QString expr,
   new_expr.append(expr.mid(last));
   return new_expr;
 }
+
+void BinMath::_invalid() {}

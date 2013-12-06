@@ -76,6 +76,9 @@ void*      FIR::_serialize(void* p) const
 
 Entry&     FIR::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_output;
+
   switch(e.desc().type()) {
   case DescEntry::Waveform:
     { EntryWaveform& entry = *static_cast<EntryWaveform*>(_output);
@@ -102,3 +105,4 @@ Entry&     FIR::_operate(const Entry& e) const
   return *_output;
 }
 
+void FIR::_invalid() { _output->invalid(); }

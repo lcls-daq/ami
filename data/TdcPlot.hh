@@ -30,6 +30,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
+    void       _invalid  ();
   private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];

@@ -335,11 +335,11 @@ bool DropletBuilder::process(const unsigned* seed)
     memset(_map,0,msize*sizeof(unsigned));
   else {
     int y0 = _y>mlen/2 ? _y-mlen/2 : 0;
-    int y1 = _y+mlen<_data.shape()[0] ? mlen : _data.shape()[0]-_y;
+    int y1 = _y+mlen<int(_data.shape()[0]) ? mlen : _data.shape()[0]-_y;
     int iy = mlen/2+y0-_y;
     unsigned b = _x>>5;
     for(int y=y0; y<y1; y++,iy++)
-      if (_x+32 > _data.shape()[1])
+      if (_x+32 > int(_data.shape()[1]))
 	_map[iy] = ~((_mask[y][b]>>(_x&0x1f)));
       else
 	_map[iy] = ~((_mask[y][b]>>(_x&0x1f)) | 
@@ -497,3 +497,5 @@ void DropletConfig::save(char*& p) const
   XML_insert(p, "unsigned", "npix_min", QtPersistent::insert(p,npix_min));
   XML_insert(p, "unsigned", "npix_max", QtPersistent::insert(p,npix_max));
 }
+
+void Droplet::_invalid() { _entry->invalid(); }

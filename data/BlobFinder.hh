@@ -30,6 +30,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
+    void       _invalid  ();
   private:
     uint16_t          _roi_top;
     uint16_t          _roi_bottom;

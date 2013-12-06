@@ -100,7 +100,10 @@ void Entry::merge(char* p) const
     // if the existing data is invalid, replace it, unless 
     //   aggregate is requested (all required)
     if (*u & VALID_BIT) {
-      if (!desc().aggregate()) {
+      //  can't require all because readout groups may prevent
+      //  all processes from seeing a detector
+      //      if (!desc().aggregate()) {
+      if (1) {
 	if (ldbug)
 	  printf(" invalid->valid\n");
 	memcpy(p,_payload,_payloadsize);
@@ -125,8 +128,10 @@ void Entry::merge(char* p) const
     }
   }
   else {
-    if (desc().aggregate())
-      *u |= VALID_BIT;
+    //  can't require all because readout groups may prevent
+    //  all processes from seeing a detector
+    //     if (desc().aggregate())
+    //       *u |= VALID_BIT;
     if (ldbug)
       printf(" invalid\n");
   }

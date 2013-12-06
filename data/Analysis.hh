@@ -33,6 +33,7 @@ namespace Ami {
   private:
     unsigned     _id;
     unsigned     _output;
+    Entry*       _oentry;
     AbsFilter*   _filter;
     AbsOperator* _op;
     const Entry& _input;

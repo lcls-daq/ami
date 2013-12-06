@@ -68,6 +68,9 @@ void*      FFT::_serialize(void* p) const
 
 Entry&     FFT::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_output;
+
   switch(output().type()) {
   case DescEntry::TH1F:  // unnormalized
   case DescEntry::Prof:  // normalized
@@ -76,3 +79,5 @@ Entry&     FFT::_operate(const Entry& e) const
   }
   return *_output;
 }
+
+void FFT::_invalid() { _output->invalid(); }

@@ -1,5 +1,5 @@
 #include "EpixWaveformHandler.hh"
-
+#include "ami/event/Calib.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/ChannelID.hh"
@@ -72,6 +72,10 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
   printf("EpixWaveformHandler::configure  nchannels %d  samples %d  clkHalfT %d\n",
 	 c.numberOfChannels(), c.samplesPerChannel(), c.adcClkHalfT());
 #endif
+
+  if (_config_buffer) delete[] _config_buffer;
+  memcpy(_config_buffer = new char[c._sizeof()], &c, c._sizeof());
+
   unsigned channelMask = (1<<c.numberOfChannels())-1;
   unsigned channelNumber = 0;
 
@@ -86,15 +90,43 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
     sampleInterval = double(c.adcClkHalfT())*2.e-3/v;
   }
 #endif
-      
+
+  Ami::Calib::load_array(_gain  ,info().phy(),"gain","channel gains");
+  Ami::Calib::load_array(_filter,info().phy(),"fir","filter weights");
+
+  ndarray<double,1> roi;
+  Ami::Calib::load_array(roi    ,info().phy(),"roi","waveform roi");
+
+  _first_sample =  0;
+  _last_sample  =  c.samplesPerChannel()-1;
+  if (roi.size()) {
+    _first_sample = unsigned(roi[0]/sampleInterval);
+    _last_sample  = unsigned(roi[1]/sampleInterval);
+  }
+
+  if (_first_sample > _last_sample) {
+    unsigned s = _first_sample;
+    _first_sample = _last_sample;
+    _last_sample  = s;
+  }
+
+  { 
+    unsigned nweights = _filter.shape()[0];
+    if (nweights==0) nweights=1;
+    if (_last_sample+nweights > c.samplesPerChannel())
+      _last_sample = c.samplesPerChannel()-nweights;
+  }
+
+  unsigned nsamples = 1+_last_sample-_first_sample;
+
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   for(unsigned k=0; channelMask!=0; k++) {
     if (channelMask&1) {
       DescWaveform desc(det, channelNumber,
 			ChannelID::name(det,channelNumber),
 			"Time [s]","[ADU]",
-			c.samplesPerChannel(), 0., 
-			double(c.samplesPerChannel())*sampleInterval);
+			nsamples, double(_first_sample)*sampleInterval,
+			double(_last_sample+1)*sampleInterval);
       _entry[_nentries++] = new EntryWaveform(desc);
       channelNumber++;
     }
@@ -118,9 +150,6 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
     sprintf(buff,"%s:Temp_Ch[%d]",DetInfo::name(det),i);
     _features[i] = _cache.add(buff);
   }
-
-  if (_config_buffer) delete[] _config_buffer;
-  memcpy(_config_buffer = new char[c._sizeof()], &c, c._sizeof());
 }
 
 void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -129,7 +158,7 @@ void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds
   const Pds::EpixSampler::ConfigV1& _config = *new(_config_buffer) Pds::EpixSampler::ConfigV1;
 
   const unsigned n = _nentries;
-  const unsigned ns = _config.samplesPerChannel();
+  const unsigned ns = _last_sample-_first_sample+1;
 
 #ifdef DBUG
   printf("EpixWaveformHandler::event  nentries %d  samples %d\n", n, ns);
@@ -138,9 +167,20 @@ void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds
   ndarray<const uint16_t,2> wfs = d.frame(_config);
   for (unsigned i=0;i<n;i++) {
     EntryWaveform* entry = _entry[i];
-    const uint16_t* data = &wfs[i][0];
-    for (unsigned j=0;j<ns; j++) 
-      entry->content(float(*data++),j);
+    const uint16_t* data = &wfs[i][_first_sample];
+    double g = i<_gain.shape()[0] ? _gain[i] : 1;
+    if (_filter.shape()[0]) {
+      for (unsigned j=0;j<ns; j++, data++) {
+        double v=0;
+        for (unsigned k=0; k<_filter.shape()[0]; k++)
+          v += float(data[k])*_filter[k];
+        entry->content(v*g,j);
+      }
+    }
+    else {
+      for (unsigned j=0;j<ns; j++) 
+        entry->content(float(*data++)*g,j);
+    }
 
     entry->info(1,EntryWaveform::Normalization);
     entry->valid(t);
@@ -180,3 +220,4 @@ double getTemp(unsigned v)
   double dv = double(v)/double(0x2000)-1;
   return -0.4329*dv*1e3 + 243.4;
 }
+

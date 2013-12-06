@@ -95,7 +95,7 @@ Entry&     XYProjection::_operate(const Entry& e) const
 {
   if (!e.valid())
     return *_output;
-  
+
 #define SET_BOUNDS_X(T)                         \
   T ilo = 0;                                    \
   T ihi = inputd.nbinsx();                      \
@@ -284,3 +284,5 @@ Entry&     XYProjection::_operate(const Entry& e) const
   _output->valid(e.time());
   return *_output;
 }
+
+void XYProjection::_invalid() { _output->invalid(); }

@@ -286,3 +286,5 @@ Entry&     CurveFit::_operate(const Entry& e) const
     _entry->valid(now);
     return *_entry;
 }
+
+void CurveFit::_invalid() { _entry->invalid(); }

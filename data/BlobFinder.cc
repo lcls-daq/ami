@@ -489,48 +489,46 @@ void*      BlobFinder::_serialize(void* p) const
 
 Entry&     BlobFinder::_operate(const Entry& e) const
 {
-  if (e.valid()) {
+  if (!e.valid())
+    return *_output_entry;
 
-    const EntryImage& entry = static_cast<const EntryImage&>(e);
-    const DescImage& d = _output_entry->desc();
-    const unsigned nx = d.nbinsx();
-    const unsigned ny = d.nbinsy();
-    //    const unsigned q  = d.ppxbin()*d.ppybin();
-    const unsigned q  = 1.;  // count as only one blob when binned
-    if (!_accumulate)
-      _output_entry->reset();
+  const EntryImage& entry = static_cast<const EntryImage&>(e);
+  //    const unsigned q  = d.ppxbin()*d.ppybin();
+  const unsigned q = 1;  // count as only one blob when binned
+  if (!_accumulate)
+    _output_entry->reset();
 
-    //  Find the blobs
+  //  Find the blobs
 
-    //  collapse into a 1d array
-    unsigned p = unsigned(entry.info(EntryImage::Pedestal));
-    int k=0;
-    for(int i=_roi_top; i<= _roi_bottom; i++)
-      for(int j=_roi_left; j<= _roi_right; j++) {
-        if (entry.content(j,i) > p)
-          _spectrum[k++] = entry.content(j,i) - p;
-        else
-          _spectrum[k++] = 0;
-      }
-
-    Ami::BlobFinding::BlobFindingMain finder(_spectrum,
-                                             _roi_right-_roi_left+1,
-                                             _roi_bottom-_roi_top+1,
-                                             _threshold,
-                                             _cluster_size);
-
-    Ami::BlobFinding::LinkedList<Position> * bloblist = new Ami::BlobFinding::LinkedList<Position>;
-    int numberofblobs = finder.GetBlobPositions(bloblist);
-    for(int i=0; i<numberofblobs; i++) {
-      Ami::BlobFinding::Position* p = bloblist->GetThing(i);
-      _output_entry->addcontent(q,int(p->GetXPosition()+0.5),int(p->GetYPosition()+0.5));
+  //  collapse into a 1d array
+  unsigned p = unsigned(entry.info(EntryImage::Pedestal));
+  int k=0;
+  for(int i=_roi_top; i<= _roi_bottom; i++)
+    for(int j=_roi_left; j<= _roi_right; j++) {
+      if (entry.content(j,i) > p)
+        _spectrum[k++] = entry.content(j,i) - p;
+      else
+        _spectrum[k++] = 0;
     }
-    _output_entry->addinfo(1, EntryImage::Normalization);
 
-    delete bloblist;
+  Ami::BlobFinding::BlobFindingMain finder(_spectrum,
+                                           _roi_right-_roi_left+1,
+                                           _roi_bottom-_roi_top+1,
+                                           _threshold,
+                                           _cluster_size);
+
+  Ami::BlobFinding::LinkedList<Position> * bloblist = new Ami::BlobFinding::LinkedList<Position>;
+  int numberofblobs = finder.GetBlobPositions(bloblist);
+  for(int i=0; i<numberofblobs; i++) {
+    Ami::BlobFinding::Position* p = bloblist->GetThing(i);
+    _output_entry->addcontent(q,int(p->GetXPosition()+0.5),int(p->GetYPosition()+0.5));
   }
+  _output_entry->addinfo(1, EntryImage::Normalization);
+
+  delete bloblist;
 
   _output_entry->valid(e.time());
   return *_output_entry;
 }
 
+void BlobFinder::_invalid() { _output_entry->invalid(); }

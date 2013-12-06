@@ -226,3 +226,5 @@ Entry&     TdcPlot::_operate(const Entry& e) const
   _output->valid(e.time());
   return *_output;
 }
+
+void TdcPlot::_invalid() { _output->invalid(); }

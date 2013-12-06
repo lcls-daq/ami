@@ -123,96 +123,97 @@ void*      Variance::_serialize(void* p) const
 
 Entry&     Variance::_operate(const Entry& e) const
 {
-  if (e.valid()) {
+  if (!e.valid())
+    return *_cache;
 
-    _input = &e;
-    const double vn = _term ? _term->evaluate() : 1;
-    std::vector<ndarray<const double,2> > in;
-    ++_i;
+  _input = &e;
+  const double vn = _term ? _term->evaluate() : 1;
+  std::vector<ndarray<const double,2> > in;
+  ++_i;
 
-    switch(e.desc().type()) {
-    case DescEntry::TH1F    : 
-      { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
-        unsigned shape[] = {1,en.desc().nbins()};
-        ndarray<const double,2> in (en.content(),shape);
-        if (_i<_n)
-          pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
-        else {
-          EntryTH1F& ca = static_cast<EntryTH1F&>(*_cache);
-          ndarray<double,2> out(ca.content(),shape);
-          pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
-          _cache->valid(e.time());
-          if (_n) {
-            _i = 0;
-            _zero(_m1[0],_m2[0]);
-          }
+  switch(e.desc().type()) {
+  case DescEntry::TH1F    : 
+    { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
+      unsigned shape[] = {1,en.desc().nbins()};
+      ndarray<const double,2> in (en.content(),shape);
+      if (_i<_n)
+        pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
+      else {
+        EntryTH1F& ca = static_cast<EntryTH1F&>(*_cache);
+        ndarray<double,2> out(ca.content(),shape);
+        pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        _cache->valid(e.time());
+        if (_n) {
+          _i = 0;
+          _zero(_m1[0],_m2[0]);
         }
-      } break;
-    case DescEntry::Waveform: 
-      { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
-        unsigned shape[] = {1,en.desc().nbins()};
-        ndarray<const double,2> in (en.content(),shape);
-        if (_i<_n)
-          pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
-        else {
-          EntryWaveform& ca = static_cast<EntryWaveform&>(*_cache);
-          ndarray<double,2> out(ca.content(),shape);
-          pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
-          _cache->valid(e.time());
-          if (_n) {
-            _i = 0;
-            _zero(_m1[0],_m2[0]);
-          }
+      }
+    } break;
+  case DescEntry::Waveform: 
+    { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
+      unsigned shape[] = {1,en.desc().nbins()};
+      ndarray<const double,2> in (en.content(),shape);
+      if (_i<_n)
+        pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
+      else {
+        EntryWaveform& ca = static_cast<EntryWaveform&>(*_cache);
+        ndarray<double,2> out(ca.content(),shape);
+        pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        _cache->valid(e.time());
+        if (_n) {
+          _i = 0;
+          _zero(_m1[0],_m2[0]);
         }
-      } break;
-    case DescEntry::Image:
-      { const EntryImage& en = static_cast<const EntryImage&>(e);
-        EntryImage& ca = static_cast<EntryImage&>(*_cache);
-        const DescImage& d = en.desc();
-        double ped = en.info(EntryImage::Pedestal);
-        if (d.nframes()) {
-          int k;
+      }
+    } break;
+  case DescEntry::Image:
+    { const EntryImage& en = static_cast<const EntryImage&>(e);
+      EntryImage& ca = static_cast<EntryImage&>(*_cache);
+      const DescImage& d = en.desc();
+      double ped = en.info(EntryImage::Pedestal);
+      if (d.nframes()) {
+        int k;
 #ifdef _OPENMP
 #pragma omp parallel private(k) num_threads(4)
-          {
+        {
 #pragma omp for schedule(dynamic,1) nowait
 #else
-          {
+        {
 #endif
-            for(k=0; k<int(d.nframes()); k++) {
-              ndarray<const unsigned,2> in (en.contents(k));
-              if (_i<_n)
-                pdsalg::variance_accumulate(1./vn,ped,in,_m1[k],_m2[k]);
-              else {
-                ndarray<unsigned,2>       out(ca.contents(k));
-                pdsalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
-                if (_n)
-                  _zero(_m1[k],_m2[k]);
-              }
+          for(k=0; k<int(d.nframes()); k++) {
+            ndarray<const unsigned,2> in (en.contents(k));
+            if (_i<_n)
+              pdsalg::variance_accumulate(1./vn,ped,in,_m1[k],_m2[k]);
+            else {
+              ndarray<unsigned,2>       out(ca.contents(k));
+              pdsalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
+              if (_n)
+                _zero(_m1[k],_m2[k]);
             }
-          } // for schedule
-        }
-        else {
-          ndarray<const unsigned,2> in (en.content());
-          if (_i<_n)
-            pdsalg::variance_accumulate(1./vn,ped,in,_m1[0],_m2[0]);
-          else {
-            ndarray<unsigned,2>       out(ca.content());
-            pdsalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
-            if (_n)
-              _zero(_m1[0],_m2[0]);
           }
+        } // for schedule
+      }
+      else {
+        ndarray<const unsigned,2> in (en.content());
+        if (_i<_n)
+          pdsalg::variance_accumulate(1./vn,ped,in,_m1[0],_m2[0]);
+        else {
+          ndarray<unsigned,2>       out(ca.content());
+          pdsalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
+          if (_n)
+            _zero(_m1[0],_m2[0]);
         }
-        if (_i>=_n) {
-          if (_n) _i=0;
-          _cache->valid(e.time());
-        }
-      } break;
-    default:
-      break;
-    }
+      }
+      if (_i>=_n) {
+        if (_n) _i=0;
+        _cache->valid(e.time());
+      }
+    } break;
+  default:
+    break;
   }
 
   return *_cache;
 }
 
+void Variance::_invalid() {}

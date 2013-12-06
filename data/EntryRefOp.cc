@@ -53,3 +53,5 @@ Entry&     EntryRefOp::_operate(const Entry& e) const
   Entry** p = reinterpret_cast<Entry**>(const_cast<void*>(ref.data()));
   return *(p[_index]);
 }
+
+void EntryRefOp::_invalid() {}

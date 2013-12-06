@@ -271,3 +271,5 @@ void EdgeFinder::_hist_edge(double               peak,
   }
 }
 #endif
+
+void EdgeFinder::_invalid() { _output_entry->invalid(); }

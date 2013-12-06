@@ -125,6 +125,9 @@ void*      EnvPlot::_serialize(void* p) const
 
 Entry&     EnvPlot::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_entry;
+
   if (_input != 0 && e.valid()) {
     double y = _input->evaluate();
     double w = _weight ? _weight->evaluate() : 1;
@@ -208,3 +211,6 @@ Entry&     EnvPlot::_operate(const Entry& e) const
   }
   return *_entry;
 }
+
+// represents data accumulate over several events
+void EnvPlot::_invalid() {}

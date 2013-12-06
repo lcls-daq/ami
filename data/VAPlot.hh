@@ -27,6 +27,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
+    void       _invalid  ();
   private:
     int               _ix;
     int               _iy;

@@ -36,6 +36,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
+    void       _invalid  ();
   private:
     enum { DESC_LEN = 1024 };
     char             _desc_buffer[DESC_LEN];

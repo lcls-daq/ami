@@ -208,3 +208,5 @@ PeakFinderFn* _lookup(unsigned phy)
   std::map<unsigned,PeakFinderFn*>::iterator it = _fn_map.find(phy);
   return (it == _fn_map.end()) ? 0 : _fn_map[phy]->clone();
 }
+
+void PeakFinder::_invalid() { if (_accumulate<0) _output_entry->invalid(); }

@@ -130,9 +130,10 @@ void*      EntryMath::_serialize(void* p) const
 
 Entry&     EntryMath::_operate(const Entry& e) const
 {
-  _entry->valid(e.time());
   if (!e.valid())
     return *_entry;
+
+  _entry->valid(e.time());
 
   switch(e.desc().type()) {
     CASE_1D(TH1F    ,content);
@@ -145,3 +146,5 @@ Entry&     EntryMath::_operate(const Entry& e) const
   }
   return *_entry;
 }
+
+void EntryMath::_invalid() { _entry->invalid(); }

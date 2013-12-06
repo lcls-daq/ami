@@ -94,6 +94,9 @@ void*      ContourProjection::_serialize(void* p) const
 
 Entry&     ContourProjection::_operate(const Entry& e) const
 {
+  if (!e.valid())
+    return *_output;
+
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
   double ped = (double)(_input->info(EntryImage::Pedestal));
   const DescImage& inputd  = _input->desc();
@@ -331,3 +334,5 @@ Entry&     ContourProjection::_operate(const Entry& e) const
   }
   return *_output;
 }
+
+void ContourProjection::_invalid() { _output->invalid(); }

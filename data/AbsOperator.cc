@@ -32,6 +32,13 @@ bool                   AbsOperator::valid() const
   return _next ? _next->_valid() : true;
 }
 
+void                   AbsOperator::invalid()
+{
+  _invalid();
+  if (_next)
+    _next->invalid();
+}
+
 void*                  AbsOperator::serialize(void* p) const 
 { 
   static const uint32_t zero(0), one(1);

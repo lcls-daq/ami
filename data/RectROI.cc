@@ -155,3 +155,5 @@ Entry&     RectROI::_operate(const Entry& e) const
   _output->valid(e.time());
   return *_output;
 }
+
+void RectROI::_invalid() { _output->invalid(); }

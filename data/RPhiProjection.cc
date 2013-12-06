@@ -366,3 +366,4 @@ Entry&     RPhiProjection::_operate(const Entry& e) const
   return *_output;
 }
 
+void RPhiProjection::_invalid() { _output->invalid(); }

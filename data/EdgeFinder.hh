@@ -48,6 +48,7 @@ namespace Ami {
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
+    void       _invalid  ();
     void _hist_edge(double               peak, 
 		    unsigned             start, 
 		    double&              last,
