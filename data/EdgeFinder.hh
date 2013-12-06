@@ -2,47 +2,47 @@
 #define Ami_EdgeFinder_hh
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/VectorArray.hh"
 
 namespace Ami {
 
-  class DescEntry;
-  class Entry;
+  class EntryRef;
   class EntryWaveform;
+  class FeatureCache;
+
+  class EdgeFinderConfig {
+  public:
+    void load(const char*&);
+    void save(char*&) const;
+  public:
+    double     _fraction;
+    bool       _leading_edge;
+    double     _deadtime;
+    double     _threshold_value;
+    double     _baseline_value;
+  };
+
+  class Edges : public VectorArray {
+  public:
+    enum Parameter { Ampl, Time, NumberOf };
+    static const char* name(Parameter);
+  public:
+    Edges() : VectorArray(NumberOf) {}
+    ~Edges() {}
+  };
 
   //
   //  Edge finder
   //
   class EdgeFinder : public AbsOperator {
   public:
-    enum Algorithm {
-                     halfbase2peak = 0,
-                   };
-    enum Parameter { Location, Amplitude, AmplvLoc };
-
-    inline static int  EdgeAlgorithm(Algorithm a, bool leading)
-      { return 2 * a + (leading ? 0 : 1); };
-    inline static bool IsLeading(int a)
-      { return (a & 1) ? false : true; };
-
-    EdgeFinder(double     fraction,
-	       double     threshold_value,
-	       double     baseline_value,
-               int        alg,
-               double     deadtime,
-	       const      DescEntry& output,
-               Parameter  parm = Location);
-    EdgeFinder(const char*&);
-    EdgeFinder(double fraction, int alg, double deadtime, const char*&);
+    EdgeFinder(const char*,
+	       const EdgeFinderConfig&);
+    EdgeFinder(const char*&,
+	       FeatureCache&);
     ~EdgeFinder();
   public:
-    inline double threshold() { return _threshold_value; }
-    inline double baseline()  { return _baseline_value; }
-    inline int    algorithm() { return _alg; }
-    inline double deadtime()  { return _deadtime; }
-    inline double fraction()  { return _fraction; }
-    inline Parameter parameter() { return _parameter; }
-    void*      desc   () const;
-    int        desc_size () const;
+    void use();
   private:
     DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
@@ -54,14 +54,15 @@ namespace Ami {
 		    double&              last,
 		    const EntryWaveform& entry) const;
   private:
-    double     _fraction;
-    int        _alg;
-    double     _deadtime;
-    double     _threshold_value;
-    double     _baseline_value;
-    DescEntry* _output;
-    Entry*     _output_entry;
-    Parameter  _parameter;
+    enum { NAME_LEN = 32 };
+    char             _name[NAME_LEN];
+
+    EdgeFinderConfig _config;
+    Edges            _output;
+    EntryRef*        _entry;
+    bool             _v;
+    FeatureCache*    _cache;
+    int              _index;
   };
 
 };

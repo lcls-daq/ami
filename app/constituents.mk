@@ -11,6 +11,7 @@ tgtlibs_test += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_test += pdsdata/compressdata
 tgtlibs_test += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
 tgtlibs_test += $(qtlibdir)
+tgtlibs_test += gsl/gsl gsl/gslcblas
 tgtincs_test := $(qtincdir) pdsdata/include
 
 tgtsrcs_tcptest := tcptest.cc
@@ -29,12 +30,14 @@ tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_proxy += $(qtlibdir)
 tgtslib_ami_proxy += $(qtslibdir)
 tgtlibs_ami_proxy += pdsalg/pdsalg
+tgtlibs_ami_proxy += gsl/gsl gsl/gslcblas
 
 tgtlibs_ami_collection := ami/amisvc ami/amidata ami/server ami/client
 tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_collection += $(qtlibdir)
 tgtslib_ami_collection += $(qtslibdir)
 tgtlibs_ami_collection += pdsalg/pdsalg
+tgtlibs_ami_collection += gsl/gsl gsl/gslcblas
 
 #
 # Need all pdsdata libraries to support dynamic linking of plug-in modules
@@ -47,6 +50,7 @@ tgtincs_ami := $(qtincdir) pdsdata/include
 tgtlibs_ami += $(qtlibdir)
 tgtslib_ami += $(qtslibdir)
 tgtlibs_ami += pdsalg/pdsalg
+tgtlibs_ami += gsl/gsl gsl/gslcblas
 
 tgtlibs_tcptest := ami/amisvc pdsdata/xtcdata
 

@@ -11,10 +11,18 @@
 
 using namespace Ami;
 
+static std::list<Pds::TypeId::Type> config_type_list()
+{
+  std::list<Pds::TypeId::Type> types;
+  types.push_back(Pds::TypeId::Id_EvrConfig);
+  types.push_back(Pds::TypeId::Id_EvsConfig);
+  return types;
+}
+
 EvrHandler::EvrHandler(const Pds::DetInfo& info, FeatureCache& f) :
   EventHandlerF(info,
 		Pds::TypeId::Id_EvrData,
-		Pds::TypeId::Id_EvrConfig,
+		config_type_list(),
 		f)
 {
   reset();
@@ -41,39 +49,59 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
   sprintf(buffer,"DAQ:EVR%d:",static_cast<const Pds::DetInfo&>(info()).devId());
   char* iptr = buffer+strlen(buffer);
 
-  switch(type.version()) {
-  case 5:
-    { const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
-      sprintf(buffer,"DAQ:EVR:");
-      iptr = buffer+strlen(buffer);
-      for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcodes()[i].code());
-      }
-      break; }
-  case 6:
-    { const Pds::EvrData::ConfigV6& c = *reinterpret_cast<const Pds::EvrData::ConfigV6*>(payload);
-      sprintf(buffer,"DAQ:EVR:");
-      iptr = buffer+strlen(buffer);
-      for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcodes()[i].code());
-      }
-      break; }
-  case 7:
-    { const Pds::EvrData::ConfigV7& c = *reinterpret_cast<const Pds::EvrData::ConfigV7*>(payload);
-      sprintf(buffer,"DAQ:EVR:");
-      iptr = buffer+strlen(buffer);
-      for(unsigned i=0; i<c.neventcodes(); i++) {
-        REGISTER_CODE(c.eventcodes()[i].code());
-      }
-      break; }
+  switch(type.id()) {
+  case Pds::TypeId::Id_EvrConfig:
+    switch(type.version()) {
+    case 5:
+      { const Pds::EvrData::ConfigV5& c = *reinterpret_cast<const Pds::EvrData::ConfigV5*>(payload);
+	sprintf(buffer,"DAQ:EVR:");
+	iptr = buffer+strlen(buffer);
+	for(unsigned i=0; i<c.neventcodes(); i++) {
+	  REGISTER_CODE(c.eventcodes()[i].code());
+	}
+	break; }
+    case 6:
+      { const Pds::EvrData::ConfigV6& c = *reinterpret_cast<const Pds::EvrData::ConfigV6*>(payload);
+	sprintf(buffer,"DAQ:EVR:");
+	iptr = buffer+strlen(buffer);
+	for(unsigned i=0; i<c.neventcodes(); i++) {
+	  REGISTER_CODE(c.eventcodes()[i].code());
+	}
+	break; }
+    case 7:
+      { const Pds::EvrData::ConfigV7& c = *reinterpret_cast<const Pds::EvrData::ConfigV7*>(payload);
+	sprintf(buffer,"DAQ:EVR:");
+	iptr = buffer+strlen(buffer);
+	for(unsigned i=0; i<c.neventcodes(); i++) {
+	  REGISTER_CODE(c.eventcodes()[i].code());
+	}
+	break; }
+    default:
+      printf("type.version()=%d is not supported\n", type.version());
+      return;
+    }
+    REGISTER_CODE(140);
+    REGISTER_CODE(162);
+    REGISTER_CODE(163);
+    break;
+  case Pds::TypeId::Id_EvsConfig:
+    switch(type.version()) {
+    case 1:
+      { const Pds::EvrData::SrcConfigV1& c = *reinterpret_cast<const Pds::EvrData::SrcConfigV1*>(payload);
+	sprintf(buffer,"DAQ:EVR:");
+	iptr = buffer+strlen(buffer);
+	for(unsigned i=0; i<c.neventcodes(); i++) {
+	  REGISTER_CODE(c.eventcodes()[i].code());
+	}
+	break; }
+    default:
+      printf("type.version()=%d is not supported\n", type.version());
+      return;
+    }
+    break;
   default:
-    printf("type.version()=%d is not supported\n", type.version());
-    return;
+    break;
   }
-
-  REGISTER_CODE(140);
-  REGISTER_CODE(162);
-  REGISTER_CODE(163);
 }
 
 #undef REGISTER_CODE

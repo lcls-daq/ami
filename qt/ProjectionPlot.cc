@@ -19,6 +19,7 @@
 #include "ami/data/ContourProjection.hh"
 #include "ami/data/XYHistogram.hh"
 #include "ami/data/TdcPlot.hh"
+#include "ami/data/FFT.hh"
 #include "ami/data/RawFilter.hh"
 #include "ami/data/EntryScalarRange.hh"
 
@@ -206,6 +207,7 @@ void ProjectionPlot::load(const char*& p)
       case AbsOperator::ContourProjection: _proj = new ContourProjection(v); break;
       case AbsOperator::XYHistogram      : _proj = new XYHistogram      (v); break;
       case AbsOperator::TdcPlot          : _proj = new TdcPlot          (v); break;
+      case AbsOperator::FFT              : _proj = new FFT              (v); break;
       default: _proj=0; printf("Unable to parse projection type %d\n",type); break;
       }
     }

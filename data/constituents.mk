@@ -5,7 +5,7 @@ libnames := amidata
 unused_srcs  := Assembler.cc DescImageC.cc EntryImageC.cc Integral.cc 
 libsrcs_amidata := $(filter-out $(unused_srcs), $(wildcard *.cc))
 
-libincs_amidata := $(qtincdir) ndarray/include boost/include pdsalg/include  pdsdata/include ndarray/include boost/include
+libincs_amidata := $(qtincdir) ndarray/include boost/include pdsalg/include  pdsdata/include ndarray/include boost/include gsl/include
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

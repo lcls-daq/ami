@@ -1,27 +1,24 @@
-#include "ami/qt/EdgeFinder.hh"
+#include "EdgeFinder.hh"
 
-#include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescTH2T.hh"
 #include "ami/qt/ChannelDefinition.hh"
-#include "ami/qt/CursorDefinition.hh"
-#include "ami/qt/EdgeCursor.hh"
-#include "ami/qt/EdgePlot.hh"
-#include "ami/qt/EdgeOverlay.hh"
-#include "ami/qt/WaveformDisplay.hh"
-#include "ami/qt/PlotFrame.hh"
+#include "ami/qt/SMPRegistry.hh"
+#include "ami/qt/SMPWarning.hh"
+#include "ami/qt/ControlLog.hh"
+#include "ami/qt/VectorArrayDesc.hh"
+
 #include "ami/qt/QtPlotSelector.hh"
 
-#include "ami/data/DescTH1F.hh"
-#include "ami/data/DescTH2F.hh"
 #include "ami/data/DescWaveform.hh"
-#include "ami/data/Entry.hh"
 #include "ami/data/EdgeFinder.hh"
+#include "ami/data/BinMath.hh"
+#include "ami/data/RawFilter.hh"
+#include "ami/data/Entry.hh"
+#include "ami/data/Cds.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QPushButton>
-#include <QtGui/QCheckBox>
 #include <QtGui/QRadioButton>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QLabel>
@@ -30,108 +27,83 @@
 #include <QtGui/QDoubleValidator>
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
+#include <QtGui/QCheckBox>
 
 #include <sys/socket.h>
 #include <stdio.h>
 
+//#define DBUG
+
+static inline int avgRound(int n, int d)
+{
+  return (n+d-1)/d;
+}
+
 using namespace Ami::Qt;
 
 EdgeFinder::EdgeFinder(QWidget* parent,
-		       ChannelDefinition* channels[], unsigned nchannels, 
-                       WaveformDisplay& frame, QtPWidget* frameParent) :
+		       ChannelDefinition* channels[], unsigned nchannels) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
-  _channel  (0),
-  _frame    (frame),
-  _title    (new QLineEdit("Edge plot")),
-  _dead     (new QLineEdit("0"))
+  _channel  (0)
 {
-  _baseline  = new EdgeCursor("baseline" ,*_frame.plot(), frameParent);
-  _threshold = new EdgeCursor("threshold",*_frame.plot(), frameParent);
+  _config = new EdgeFinderConfig(this);
 
-  setWindowTitle("EdgeFinder Plot");
+  setWindowTitle("Edge Finder");
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  QComboBox* channelBox = new QComboBox;
+  _channelBox = new QComboBox;
   for(unsigned i=0; i<nchannels; i++)
-    channelBox->addItem(channels[i]->name());
+    _channelBox->addItem(channels[i]->name());
 
-  _hist   = new DescTH1F ("Sum (1dH)", false);
-  _hist->button()->setChecked(true);
-
-  QHBoxLayout* vsl = new QHBoxLayout;
-  _hist2d = new DescTH2T (vsl);
-  _hist2d->td_button()->setEnabled(true);
-  _hist2d->im_button()->setEnabled(false);
-  _hist2d->td_button()->setChecked(true);
-
-  _vtbutton = new QButtonGroup;
-  QRadioButton* plotTimeB = new QRadioButton("Time");
-  QRadioButton* plotAmplB = new QRadioButton("Amplitude");
-  QRadioButton* plotAmplvTimeB = new QRadioButton("Ampl v Time");
-  _vtbutton->addButton(plotTimeB,(int)Ami::EdgeFinder::Location);
-  _vtbutton->addButton(plotAmplB,(int)Ami::EdgeFinder::Amplitude);
-  _vtbutton->addButton(plotAmplvTimeB,(int)Ami::EdgeFinder::AmplvLoc);
-  plotTimeB->setChecked(true);
+  _setButton = new QPushButton("New");
+  _setBox    = new QComboBox;
+  new_set();
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
-  
+
+  { QStringList parms;
+    parms << Ami::Edges::name(Ami::Edges::Parameter(Ami::Edges::NumberOf));
+    for(unsigned i=0; i<Ami::Edges::NumberOf; i++)
+      parms << Ami::Edges::name(Ami::Edges::Parameter(i));
+    _analysis_plot = new VectorArrayDesc(0,parms); }
+  _title         = new QLineEdit("Edges");
+
   QVBoxLayout* layout = new QVBoxLayout;
-  { QLabel* desc = new QLabel;
-    desc->setWordWrap(true);
-    desc->setAlignment(::Qt::AlignHCenter);
-    desc->setText("Locates leading edge of each pulse above 'threshold' at a constract fraction of peak height from 'baseline'.");
-    layout->addWidget(desc); }
-  { QGroupBox* channel_box = new QGroupBox("Source Channel");
+  { QGroupBox* channel_box = new QGroupBox;
     QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addWidget(new QLabel("Channel"));
-    layout1->addWidget(channelBox);
+    layout1->addWidget(new QLabel("Source Channel"));
+    layout1->addWidget(_channelBox);
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
-  { QGroupBox* locations_box = new QGroupBox("Define EdgeFinder");
-    locations_box->setToolTip("Define baseline and threshold values.");
+  { QGroupBox* selection_box = new QGroupBox("Edge Selection");
+    selection_box->setToolTip("Define edge selection criteria.");
     QVBoxLayout* layout2 = new QVBoxLayout;
-    layout2->addWidget(_baseline);
-    layout2->addWidget(_threshold);
-    { QHBoxLayout *layout3 = new QHBoxLayout;
-      layout3->addWidget(new QLabel("edge to find: "));
-      _leading = new QCheckBox("Leading");
-      _leading->setChecked(true);
-      layout3->addWidget(_leading);
-      _trailing = new QCheckBox("Trailing");
-      layout3->addWidget(_trailing);
-      layout3->addStretch();
-      layout2->addLayout(layout3); }
-    { QHBoxLayout *layout3 = new QHBoxLayout;
-      layout3->addWidget(new QLabel("dead time: "));
-      layout3->addWidget(_dead);
-      layout3->addStretch();
-      layout2->addLayout(layout3); }
-    locations_box->setLayout(layout2);
-    layout->addWidget(locations_box); }
-  { QGroupBox* plot_box = new QGroupBox("Plot");
+    { QHBoxLayout* layout1 = new QHBoxLayout;
+      layout1->addStretch();
+      layout1->addWidget(new QLabel("Select"));
+      layout1->addWidget(_setBox);
+      layout1->addWidget(_setButton);
+      layout1->addStretch();
+      layout2->addLayout(layout1); }
+    layout2->addWidget(_config);
+    selection_box->setLayout(layout2);
+    layout->addWidget(selection_box); }
+
+  { QGroupBox* plot_box = new QGroupBox;
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(new QLabel("Title"));
+      layout2->addWidget(new QLabel("Plot Title"));
       layout2->addWidget(_title);
       layout1->addLayout(layout2); }
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      { QVBoxLayout* layout3 = new QVBoxLayout;
-        layout3->addWidget(plotTimeB);
-        layout3->addWidget(plotAmplB);
-        layout2->addLayout(layout3); }
-      layout2->addWidget(_hist );
-      layout1->addLayout(layout2); }
-    { QHBoxLayout* layout2 = new QHBoxLayout;
-      layout2->addWidget(plotAmplvTimeB);
-      layout2->addWidget(_hist2d);
-      layout1->addLayout(layout2); }
-    plot_box->setLayout(layout1); 
+    layout1->addWidget(_analysis_plot);
+    plot_box->setLayout(layout1);
     layout->addWidget(plot_box); }
+
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(plotB);
@@ -139,14 +111,18 @@ EdgeFinder::EdgeFinder(QWidget* parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+
   setLayout(layout);
-    
-  connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
-  connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
-  connect(_threshold, SIGNAL(changed()),      this, SLOT(front()));
-  connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
-  connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
-  connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+
+  connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
+  connect(_setButton , SIGNAL(clicked()),      this, SLOT(new_set()));
+  connect(plotB      , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB      , SIGNAL(clicked()),      this, SLOT(overlay()));
+  connect(closeB     , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
+  for(unsigned i=0; i<_nchannels; i++)
+    connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
+  connect(_config    , SIGNAL(changed()),      this, SLOT(update_config()));
 }
   
 EdgeFinder::~EdgeFinder()
@@ -156,113 +132,82 @@ EdgeFinder::~EdgeFinder()
 void EdgeFinder::save(char*& p) const
 {
   XML_insert(p, "QtPWidget", "self", QtPWidget::save(p) );
+  XML_insert(p, "int", "_channel", QtPersistent::insert(p,_channel) );
+  XML_insert(p, "EdgeFinderConfig", "_config", _config->save(p) );
 
-  XML_insert(p, "EdgeCursor", "_baseline", _baseline ->save(p) );
-  XML_insert(p, "EdgeCursor", "_threshold",_threshold->save(p) );
-
-  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
-  XML_insert(p, "QButtonGroup", "_vtbutton", QtPersistent::insert(p,_vtbutton->checkedId()) );
-  XML_insert(p, "DescTH1F", "_hist"  , _hist  ->save(p) );
-  XML_insert(p, "DescTH2T", "_hist2d", _hist2d->save(p) );
-
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    XML_insert(p, "EdgePlot", "_plots", (*it)->save(p) );
+  for(unsigned i=0; i<_configs.size(); i++) {
+    XML_insert(p, "EdgeFinderConfig", "_configs", _configs[i]->save(p));
   }
-  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
-    XML_insert(p, "EdgeOverlay", "_ovls", (*it)->save(p) );
+
+  for(unsigned i=0; i<_apps.size(); i++) {
+    XML_insert(p, "VAConfigApp", "_apps", _apps[i]->save(p));
   }
 }
 
 void EdgeFinder::load(const char*& p)
 {
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  _plots.clear();
-  _ovls .clear();
+  for(unsigned i=0; i<_configs.size(); i++)
+    delete _configs[i];
+  _configs.clear();
+
+  for(unsigned i=0; i<_apps.size(); i++)
+    delete _apps[i];
+  _apps.clear();
+
+  _setBox->clear();
+
 
   XML_iterate_open(p,tag)
-
-    if (tag.element == "QtPWidget")
+    if      (tag.element == "QtPWidget")
       QtPWidget::load(p);
-    else if (tag.name == "_baseline")
-      _baseline ->load(p);
-    else if (tag.name == "_threshold")
-      _threshold->load(p);
-    else if (tag.name == "_title")
-      _title->setText(QtPersistent::extract_s(p));
-    else if (tag.name == "_vtbutton")
-      _vtbutton->button(QtPersistent::extract_i(p))->setChecked(true);
-    else if (tag.name == "_hist")
-      _hist->load(p);
-    else if (tag.name == "_hist2d")
-      _hist2d->load(p);
-    else if (tag.name == "_plots") {
-      EdgePlot* plot = new EdgePlot(this, p);
-      _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    else if (tag.name == "_channel")
+      _channel = QtPersistent::extract_i(p);
+    else if (tag.name == "_config")
+      _config->load(p);
+    else if (tag.name == "_configs") {
+      Ami::EdgeFinderConfig* c = new Ami::EdgeFinderConfig;
+      c->load(p); 
+      _configs.push_back(c);
     }
-    else if (tag.name == "_ovls") {
-      EdgeOverlay* ovl = new EdgeOverlay(*this, p);
-      _ovls.push_back(ovl);
+    else if (tag.name == "_apps") {
+      int set = _apps.size()/_nchannels;
+      QString name = QString("Set%1").arg(set);
+      unsigned channel = _apps.size()%_nchannels;
+      if (channel==0)
+        _setBox->addItem(name);
+      EdgeFinderConfigApp* app = new EdgeFinderConfigApp(this, name, channel, *_configs[set]);
+      app->load(p);
+      _apps.push_back(app);
+      connect(app, SIGNAL(changed()), this, SIGNAL(changed()));
     }
-
-  XML_iterate_close(EdgeFinder,tag);
-
-  setVisible(false);  // hack to force this hidden
-
-  emit changed();
+  XML_iterate_close(Droplet,tag);
 }
 
 void EdgeFinder::save_plots(const QString& p) const
 {
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    QString s = QString("%1_%2.dat").arg(p).arg((*it)->_name);
-    FILE* f = fopen(qPrintable(s),"w");
-    if (f) {
-      (*it)->dump(f);
-      fclose(f);
-    }
+  for(unsigned i=0; i<_apps.size(); i++) {
+    QString q = QString("%1_Set%2_%3").arg(p).arg(i/4).arg(i%4);
+    _apps[i]->save_plots(q);
   }
 }
 
 void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
-  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+  for(unsigned i=0; i<_apps.size(); i++)
+    _apps[i]->configure(p,input,output,channels,signatures,nchannels);
 }
 
 void EdgeFinder::setup_payload(Cds& cds)
 {
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->setup_payload(cds);
-  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->setup_payload(cds);
+  for(unsigned i=0; i<_apps.size(); i++)
+    _apps[i]->setup_payload(cds);
 }
 
 void EdgeFinder::update()
 {
-  for(std::list<EdgePlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->update();
-  for(std::list<EdgeOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-    (*it)->update();
-}
-
-void EdgeFinder::initialize(const Ami::DescEntry& e)
-{
-  switch(e.type()) {
-  case DescEntry::Waveform:
-    { const DescWaveform& wf = reinterpret_cast<const DescWaveform&>(e);
-      _hist->lo(wf.xlow());
-      _hist->hi(wf.xup()); }
-    break;
-  default:
-    break;
-  }
+  for(unsigned i=0; i<_apps.size(); i++)
+    _apps[i]->update();
 }
 
 void EdgeFinder::set_channel(int c) 
@@ -270,147 +215,183 @@ void EdgeFinder::set_channel(int c)
   _channel=c; 
 }
 
-void EdgeFinder::plot()
+void EdgeFinder::update_config()
 {
-  if (!_leading->isChecked() && !_trailing->isChecked())
-    return;
-
-  Ami::DescEntry* desc = 0;
-  QString name = QString("%1 [%3]")
-    .arg(_title->text())
-    .arg(_channels[_channel]->name());
-
-  switch(_vtbutton->checkedId()) {
-  case Ami::EdgeFinder::Location:
-    desc = new Ami::DescTH1F(qPrintable(name),
-                             "edge location", "pulses",
-                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
-    break;
-  case Ami::EdgeFinder::Amplitude:
-    desc = new Ami::DescTH1F(qPrintable(name),
-                             "amplitude", "pulses",
-                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
-    break;
-  case Ami::EdgeFinder::AmplvLoc:
-    desc = new Ami::DescTH2F(qPrintable(name),
-                             "location", "amplitude", 
-                             _hist2d->xbins(),_hist2d->xlo(),_hist2d->xhi(),
-                             _hist2d->ybins(),_hist2d->ylo(),_hist2d->yhi(),
-                             false);  
-    break;
-  default:
-    printf("EdgeFinder unknown plot type %d\n",_vtbutton->checkedId());
-    return;
-  }
-
-  double deadtime = _dead->text().toDouble();
-  EdgePlot* plot =
-      new EdgePlot(this, _title->text(),_channel,
-                   new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
-                                       Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                      _leading->isChecked()),
-                                       deadtime, *desc,
-                                       Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
-
-  if (_leading->isChecked() && _trailing->isChecked()) {
-      // Add trailing plot to EdgePlot!
-    QString tname = QString("%1_F [%3]")
-      .arg(_title->text())
-      .arg(_channels[_channel]->name());
-    strcpy(const_cast<char*>(desc->name()), qPrintable(tname));
-    plot->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
-                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                       false),
-                                        deadtime, *desc,
-                                        Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
-  }
-  
-  _plots.push_back(plot);
-
-  delete desc;
-
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
-
+  *_configs[_setBox->currentIndex()] = _config->value();
   emit changed();
 }
 
-void EdgeFinder::remove_plot(QObject* obj)
+void EdgeFinder::plot()
 {
-  EdgePlot* plot = static_cast<EdgePlot*>(obj);
-  _plots.remove(plot);
-
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  if (_analysis_plot->postAnalysis()) {
+#if 0
+    SharedData* post;
+    QString qtitle = _app().add_post(pplot->qtitle(),
+				     _analysis_plot->expression(),
+				     post);
+    DescEntry*  entry  = pplot->desc(qPrintable(qtitle));
+    PostAnalysis::instance()->plot(qtitle,entry,post);
+#endif
+  }
+  else {
+    QString title = QString("%1 [%2]").arg(_channels[_channel]->name()).arg(_analysis_plot->title());
+    DescEntry*  desc = _analysis_plot->desc(qPrintable(title));
+    _app().add_cursor_plot(new BinMath(*desc,
+				       _analysis_plot->expression()));
+    delete desc;
+  }
 }
 
 void EdgeFinder::overlay()
 {
-  if (!_leading->isChecked() && !_trailing->isChecked())
-    return;
-
-  QString name = QString("%1 [%2]").arg(_title->text()).arg(_leading->isChecked() ? "Rise":"Fall");
-  Ami::DescEntry* desc = 0;
-  switch(_vtbutton->checkedId()) {
-  case Ami::EdgeFinder::Location:
-    desc = new Ami::DescTH1F(qPrintable(name),
-                             "edge location", "pulses",
-                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
-    break;
-  case Ami::EdgeFinder::Amplitude:
-    desc = new Ami::DescTH1F(qPrintable(name),
-                             "amplitude", "pulses",
-                             _hist->bins(),_hist->lo(),_hist->hi(),false);  
-    break;
-  case Ami::EdgeFinder::AmplvLoc:
-    desc = new Ami::DescTH2F(qPrintable(name),
-                             "location", "amplitude", 
-                             _hist2d->xbins(),_hist2d->xlo(),_hist2d->xhi(),
-                             _hist2d->ybins(),_hist2d->ylo(),_hist2d->yhi(),
-                             false);  
-    break;
-  default:
-    printf("EdgeFinder unknown plot type %d\n",_vtbutton->checkedId());
-    return;
+  if (_analysis_plot->postAnalysis()) {
+#if 0
+    SharedData* post;
+    QString qtitle = _app().add_post(pplot->qtitle(),
+				     _analysis_plot->expression(),
+				     post);
+    DescEntry*  entry  = pplot->desc(qPrintable(qtitle));
+    PostAnalysis::instance()->plot(qtitle,entry,post);
+#endif
   }
-
-  new QtPlotSelector(*this, *this, desc);
+  else {
+    QString title = QString("%1 [%2]").arg(_channels[_channel]->name()).arg(_analysis_plot->title());
+    DescEntry*  desc = _analysis_plot->desc(qPrintable(title));
+    new QtPlotSelector(*this, *this, desc);
+  }
 }
 
-void EdgeFinder::add_overlay(DescEntry* desc,
-                             QtPlot*    plot,
-                             SharedData*)
+void EdgeFinder::add_overlay   (DescEntry* desc, QtPlot* plot, SharedData*) 
 {
-  double deadtime = _dead->text().toDouble();
-  EdgeOverlay* ovl =
-    new EdgeOverlay(*this, *plot,
-                    _channel,
-                    new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
-                                        Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                       _leading->isChecked()),
-                                        deadtime, *desc,
-                                        Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
-  
-  if (_leading->isChecked() && _trailing->isChecked()) {
-      // Add trailing plot to EdgePlot!
-    QString tname = QString("%1 [%2]").arg(_title->text()).arg("Fall");
-    strcpy(const_cast<char*>(desc->name()), qPrintable(tname));
-    ovl->addfinder(new Ami::EdgeFinder(0.5, _threshold->value(), _baseline ->value(),
-                                       Ami::EdgeFinder::EdgeAlgorithm(Ami::EdgeFinder::halfbase2peak,
-                                                                      false),
-                                       deadtime, *desc,
-                                       Ami::EdgeFinder::Parameter(_vtbutton->checkedId())));
-  }
-
+  _app().add_overlay(*plot, new BinMath(*desc,
+					_analysis_plot->expression()));
   delete desc;
-
-  _ovls.push_back(ovl);
-
-  emit changed();
 }
 
-void EdgeFinder::remove_overlay(QtOverlay* obj)
+void EdgeFinder::remove_overlay(QtOverlay*) {}
+void EdgeFinder::update_interval() {}
+void EdgeFinder::change_channel() 
 {
-  EdgeOverlay* ovl = static_cast<EdgeOverlay*>(obj);
-  _ovls.remove(ovl);
-  
-  //  emit changed();
+  int ich = _channelBox->currentIndex();
+  _channel=ich; 
+}
+
+void EdgeFinder::prototype(const DescEntry& i)
+{
+}
+
+void EdgeFinder::new_set()
+{
+  int i=_apps.size()/_nchannels;
+  _configs.push_back(new Ami::EdgeFinderConfig);
+  QString name = QString("Set%1").arg(i);
+  _setBox->addItem(name);
+  for(unsigned j=0; j<_nchannels; j++) {
+    EdgeFinderConfigApp* set = new EdgeFinderConfigApp(this, name,j,*_configs[i]);
+    _apps.push_back(set);
+    connect(set, SIGNAL(changed()), this, SIGNAL(changed()));
+  }
+  _setBox->setCurrentIndex(i);
+}
+
+void EdgeFinder::select_set(int i)
+{
+  if (i>=0)
+    _config->load(*_configs[i]);
+}
+
+EdgeFinderConfigApp& EdgeFinder::_app() { return *_apps[_setBox->currentIndex()*_nchannels + _channelBox->currentIndex()]; }
+
+
+EdgeFinderConfigApp::EdgeFinderConfigApp(QWidget* parent, 
+					 const QString& name, 
+					 unsigned i, 
+					 const Ami::EdgeFinderConfig& c) :
+  VAConfigApp(parent,name,i),
+  _config    (c)
+{
+}
+
+EdgeFinderConfigApp::~EdgeFinderConfigApp() 
+{
+}
+
+Ami::AbsOperator* EdgeFinderConfigApp::_op(const char* name)
+{
+  return new Ami::EdgeFinder(name,_config);
+}
+
+
+EdgeFinderConfig::EdgeFinderConfig(QWidget* parent) : QWidget(parent)
+{ QGridLayout* l = new QGridLayout;
+  unsigned row=0;
+  l->addWidget(new QLabel("Fraction"),row,0,::Qt::AlignRight);
+  l->addWidget(_fraction = new QLineEdit("0.5")    ,row,1,::Qt::AlignLeft);
+  new QDoubleValidator(_fraction); row++;
+  connect(_fraction, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+
+  l->addWidget(_leading_edge = new QCheckBox("Leading Edges"),row,0,1,2,::Qt::AlignCenter);
+  _leading_edge->setChecked(true);
+  row++;
+  connect(_leading_edge, SIGNAL(toggled()), this, SIGNAL(changed()));
+	
+  l->addWidget(new QLabel("Deadtime [sec]"),row,0,::Qt::AlignRight);
+  l->addWidget(_deadtime = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
+  new QDoubleValidator(_deadtime); row++;
+  connect(_deadtime, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+	
+  l->addWidget(new QLabel("Threshold"),row,0,::Qt::AlignRight);
+  l->addWidget(_threshold_value = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
+  new QDoubleValidator(_threshold_value); row++;
+  connect(_threshold_value, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+	
+  l->addWidget(new QLabel("Baseline")  ,row,0,::Qt::AlignRight);
+  l->addWidget(_baseline_value = new QLineEdit("0"),row,1,::Qt::AlignLeft);
+  new QDoubleValidator(_baseline_value); row++;
+  connect(_baseline_value, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+
+  setLayout(l);
+}
+
+EdgeFinderConfig::~EdgeFinderConfig() {}
+
+Ami::EdgeFinderConfig EdgeFinderConfig::value() const {
+  Ami::EdgeFinderConfig v;
+  v._fraction        = _fraction->text().toDouble();
+  v._leading_edge    = _leading_edge->isChecked();
+  v._deadtime        = _deadtime->text().toDouble();
+  v._threshold_value = _threshold_value->text().toDouble();
+  v._baseline_value  = _baseline_value ->text().toDouble();
+  return v;
+}
+
+void EdgeFinderConfig::load(const Ami::EdgeFinderConfig& v) {
+  _fraction       ->setText(QString::number(v._fraction));
+  _leading_edge   ->setChecked(v._leading_edge);
+  _deadtime       ->setText(QString::number(v._deadtime));
+  _threshold_value->setText(QString::number(v._threshold_value));
+  _baseline_value ->setText(QString::number(v._baseline_value));
+}
+
+void EdgeFinderConfig::load(const char*& p) {
+  XML_iterate_open(p,tag)
+    if (tag.name == "_fraction")
+      _fraction->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_leading_edge")
+      _leading_edge->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_deadtime")
+      _deadtime->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_threshold_value")
+      _threshold_value->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_baseline_value")
+      _baseline_value->setText(QtPersistent::extract_s(p));
+  XML_iterate_close(EdgeFinderConfig,tag);
+}
+
+void EdgeFinderConfig::save(char*& p) const {
+  XML_insert(p, "QLineEdit", "_fraction"      , QtPersistent::insert(p,_fraction->text()) );
+  XML_insert(p, "QCheckBox", "_leading_edge"  , QtPersistent::insert(p,_leading_edge->isChecked()) );
+  XML_insert(p, "QLineEdit", "_deadtime"      , QtPersistent::insert(p,_deadtime->text()) );
+  XML_insert(p, "QLineEdit", "_threshold_value", QtPersistent::insert(p,_threshold_value->text()) );
+  XML_insert(p, "QLineEdit", "_baseline_value", QtPersistent::insert(p,_baseline_value->text()) );
 }

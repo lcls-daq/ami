@@ -26,6 +26,7 @@ tgtlibs_online_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_online_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
 tgtlibs_online_ami += pdsalg/pdsalg
+tgtlibs_online_ami += gsl/gsl gsl/gslcblas
 
 datalibs := pdsdata/xtcdata pdsdata/psddl_pdsdata
 
@@ -36,16 +37,19 @@ tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/index
 tgtlibs_offline_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
 tgtlibs_offline_ami += pdsalg/pdsalg
+tgtlibs_offline_ami += gsl/gsl gsl/gslcblas
 
 tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg pds/configdata
 tgtlibs_blviewer += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
 tgtlibs_blviewer += pdsalg/pdsalg
 tgtlibs_blviewer += $(qt_libs)
+tgtlibs_blviewer += gsl/gsl gsl/gslcblas
 
 tgtlibs_qttest := $(datalibs)
 tgtlibs_qttest += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
 tgtlibs_qttest += pdsalg/pdsalg
 tgtlibs_qttest += $(qt_libs)
+tgtlibs_qttest += gsl/gsl gsl/gslcblas
 
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
@@ -87,6 +91,7 @@ libsrcs_amiqt += DescProf.cc DescProf_moc.cc
 libsrcs_amiqt += DescScan.cc DescScan_moc.cc
 libsrcs_amiqt += DescChart.cc DescChart_moc.cc
 libsrcs_amiqt += ScalarPlotDesc.cc ScalarPlotDesc_moc.cc
+libsrcs_amiqt += VectorArrayDesc.cc
 libsrcs_amiqt += XYHistogramPlotDesc.cc
 libsrcs_amiqt += XYProjectionPlotDesc.cc
 libsrcs_amiqt += RPhiProjectionPlotDesc.cc
@@ -118,8 +123,9 @@ libsrcs_amiqt += QtOverlay.cc QtOverlay_moc.cc
 libsrcs_amiqt += CursorPlot.cc CursorPlot_moc.cc
 libsrcs_amiqt += CursorPost.cc CursorOverlay.cc
 libsrcs_amiqt += CursorsX.cc CursorsX_moc.cc
-libsrcs_amiqt += EdgePlot.cc EdgePlot_moc.cc
-libsrcs_amiqt += EdgeOverlay.cc
+libsrcs_amiqt += FFT.cc FFT_moc.cc
+#libsrcs_amiqt += EdgePlot.cc EdgePlot_moc.cc
+#libsrcs_amiqt += EdgeOverlay.cc
 libsrcs_amiqt += EdgeCursor.cc EdgeCursor_moc.cc
 libsrcs_amiqt += EdgeFinder.cc EdgeFinder_moc.cc
 libsrcs_amiqt += CurveFitPost.cc CurveFitOverlay.cc
@@ -186,6 +192,7 @@ libsrcs_amiqt += DetectorSelect.cc DetectorSelect_moc.cc
 libsrcs_amiqt += MaskFrame.cc MaskFrame_moc.cc
 libsrcs_amiqt += MaskDisplay.cc MaskDisplay_moc.cc
 libsrcs_amiqt += Droplet.cc Droplet_moc.cc
+libsrcs_amiqt += VAConfigApp.cc VAConfigApp_moc.cc
 
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is

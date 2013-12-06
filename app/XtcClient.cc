@@ -426,6 +426,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
       case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
       case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
+      case Pds::TypeId::Id_EvsConfig:
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
       case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;

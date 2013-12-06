@@ -12,6 +12,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/qt/VAConfigApp.hh"
 #include "ami/data/ConfigureRequestor.hh"
 #include "ami/data/DescImage.hh"
 
@@ -32,15 +33,14 @@ namespace Ami {
   class Entry;
   class DescEntry;
   class DropletConfig;
-  class BinMath;
   class VAPlot;
 
   namespace Qt {
     class ChannelDefinition;
     class MapPlotDesc;
-    class AnalysisDesc;
+    class VectorArrayDesc;
     class DropletConfig;
-    class ConfigApp;
+    class DropletConfigApp;
     class PeakPlot;
     class CursorPlot;
     class ZoomPlot;
@@ -68,10 +68,11 @@ namespace Ami {
       void update();
       void prototype(const DescEntry&);
     private:
-      ConfigApp& _app();
+      DropletConfigApp& _app();
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
+      void overlay       ();   // configure the plot
       void update_interval();
       void new_set       ();
       void select_set    (int);
@@ -92,54 +93,27 @@ namespace Ami {
       QTabWidget*                      _plot_tab;
 
       MapPlotDesc*                     _map_plot;
-      AnalysisDesc*                    _analysis_plot;
+      VectorArrayDesc*                 _analysis_plot;
 
       std::vector<Ami::DropletConfig*> _configs;
-      std::vector<ConfigApp*>          _apps;
+      std::vector<DropletConfigApp*>   _apps;
 
       QComboBox*                       _setBox;
       QPushButton*                     _setButton;
 
     };
 
-    class ConfigApp : public QObject,
-		      public OverlayParent {
-      Q_OBJECT
+    class DropletConfigApp : public VAConfigApp {
     public:
-      ConfigApp(QWidget* parent, 
-		const QString&, 
-		unsigned i, 
-		const Ami::DropletConfig& c);
-      virtual ~ConfigApp();
-    public:
-      void add_map        (AbsOperator*);
-      void add_cursor_plot(BinMath*);   
-      void add_overlay    (DescEntry*,QtPlot*,SharedData*);
-      void remove_overlay (QtOverlay*);
-    public:
-      void configure(char*& p, unsigned input, unsigned& output,
-		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
-      void setup_payload(Cds&);
-      void update();
-      void load(const char*&);
-      void save(char*&) const;
-      void save_plots(const QString&) const;
-    public slots:
-      void remove_plot(QObject*);
-    signals:
-      void changed();
+      DropletConfigApp(QWidget* parent, 
+		       const QString&, 
+		       unsigned i, 
+		       const Ami::DropletConfig& c);
+      virtual ~DropletConfigApp();
+    protected:
+      Ami::AbsOperator* _op(const char*);
     private:
-      QWidget*                   _parent;
-      QString                    _name;
-      unsigned                   _channel;
-      unsigned                   _signature;
       const Ami::DropletConfig&  _config;
-      ConfigureRequestor         _req;
-      std::list<PeakPlot*>       _pplots;
-      std::list<CursorPlot*>     _cplots;
-      std::list<ZoomPlot*>       _zplots;
-      std::list<CursorPost*>     _posts;
-      std::list<CursorOverlay*>  _ovls;
     };
 
     class DropletConfig : public QWidget {

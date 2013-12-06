@@ -8,6 +8,7 @@ namespace Ami {
     class CursorsX;
     class EdgeFinder;
     class CurveFit;
+    class FFT;
 
     class WaveformClient : public Client {
     public:
@@ -31,7 +32,8 @@ namespace Ami {
     private:
       EdgeFinder*        _edges;
       CursorsX*          _cursors;
-      CurveFit*          _fits;
+      CurveFit*          _fits;      
+      FFT*               _fft;
       bool               _initialized;
     };
   };
