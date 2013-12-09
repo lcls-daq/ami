@@ -1,6 +1,7 @@
 #include "QtTH2F.hh"
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/ImageColorControl.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryTH2F.hh"
@@ -114,18 +115,21 @@ QtTH2F::~QtTH2F()
 
 void           QtTH2F::dump  (FILE* f) const
 {
+  int prec = Defaults::instance()->save_precision();
   const DescTH2F&  _desc  = static_cast<const DescTH2F& >(entry().desc());
   
-  fprintf(f,"%g %g %g %g\n",
-          _desc.xlow(),_desc.xup(),
-          _desc.ylow(),_desc.yup());
+  fprintf(f,"%.*g %.*g %.*g %.*g\n",
+          prec,_desc.xlow(),
+          prec,_desc.xup(),
+          prec,_desc.ylow(),
+          prec,_desc.yup());
   double dx = (_desc.xup()-_desc.xlow())/double(_desc.nbinsx());
   double dy = (_desc.yup()-_desc.ylow())/double(_desc.nbinsy());
   double y = _desc.ylow()+0.5*dy;
   for(unsigned iy=0; iy<_desc.nbinsy(); iy++, y+=dy) {
     double x = _desc.xlow()+0.5*dx;
     for(unsigned ix=0; ix<_desc.nbinsx(); ix++, x+=dx)
-      fprintf(f,"%g ",_z->value(x,y));
+      fprintf(f,"%.*g ",prec,_z->value(x,y));
     fprintf(f,"\n");
   }
 }

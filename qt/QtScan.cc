@@ -1,5 +1,6 @@
 #include "QtScan.hh"
 #include "ami/qt/AxisArray.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryScan.hh"
@@ -67,10 +68,13 @@ QtScan::~QtScan()
 
 void           QtScan::dump  (FILE* f) const
 {
+  int prec = Defaults::instance()->save_precision();
   for(unsigned b=0; b<_curve.data().size(); b++) {
     double x = _x[b];
     double y = _y[b];
-    fprintf(f,"%g %g\n",x,y);
+    fprintf(f,"%.*g %.*g\n",
+            prec,x,
+            prec,y);
   }
 }
 

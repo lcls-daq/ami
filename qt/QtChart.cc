@@ -1,5 +1,6 @@
 #include "QtChart.hh"
 #include "ami/qt/AxisArray.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/data/EntryScalar.hh"
 #include "pdsdata/xtc/ClockTime.hh"
@@ -78,8 +79,11 @@ QtChart::~QtChart()
 
 void           QtChart::dump  (FILE* f) const
 {
+  int prec = Defaults::instance()->save_precision();
   for(unsigned b=_current; b<_current+_n; b++) {
-    fprintf(f,"%.2f %g\n",_x[b],_y[b]);
+    fprintf(f,"%.*g %.*g\n",
+            prec,_x[b],
+            prec,_y[b]);
   }
 }
 

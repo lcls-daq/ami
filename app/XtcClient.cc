@@ -64,6 +64,13 @@ static Ami::XtcClient* _instance=0;
 
 //#define DBUG
 
+static double clockTimeDiff(const Pds::ClockTime& a,
+                            const Pds::ClockTime& b)
+{
+  return double(a.seconds()-b.seconds()) + 
+    1.e-9*(double(a.nanoseconds())-double(b.nanoseconds()));
+}
+
 using namespace Ami;
 
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
@@ -80,7 +87,9 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _pltnc_index    (-1),
   _event_index    (-1),
   _evtim_index    (-1),
+  _evrtm_index    (-1),
   _runno_index    (-1),
+  _runtim         (0,0),
   _name_service   (0)
 {
   _instance = this;
@@ -116,6 +125,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
       cache.cache(_evtim_index,_seq->clock().asDouble());
+      cache.cache(_evrtm_index,clockTimeDiff(_seq->clock(),_runtim));
       
       for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
         if ((*it)->data_type() == Pds::TypeId::NumberOf)
@@ -161,6 +171,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   }
   else if (dg->seq.service() == Pds::TransitionId::BeginRun) {
     _runno_value = dg->env.value();
+    _runtim      = dg->seq.clock();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 
@@ -236,6 +247,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _pltnc_index     = cache.add("ProcLatency");
     _event_index     = cache.add("EventId");
     _evtim_index     = cache.add("EventTime");
+    _evrtm_index     = cache.add("EventTimeR");
     _runno_index     = cache.add("RunNumber");
 
     _cache[PostAnalysis]->add(cache);

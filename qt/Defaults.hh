@@ -14,6 +14,7 @@ namespace Ami {
       bool show_grid      () const;
       bool show_minor_grid() const;
       QString movie_format() const;
+      int  save_precision () const;
     public:
       static Defaults* instance();
     private:
@@ -27,6 +28,7 @@ namespace Ami {
       QCheckBox* _grid;
       QCheckBox* _minor_grid;
       QComboBox* _movie_format_box;
+      QComboBox* _save_precision;
     };
   };
 };

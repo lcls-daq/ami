@@ -57,8 +57,10 @@ namespace Ami {
     int       _pltnc_index;
     int       _event_index;
     int       _evtim_index;
+    int       _evrtm_index;
     int       _runno_index;
     double    _runno_value;
+    Pds::ClockTime _runtim;
     bool      _recorded;
     NameService* _name_service;
   };

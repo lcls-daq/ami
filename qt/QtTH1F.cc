@@ -1,5 +1,6 @@
 #include "QtTH1F.hh"
 #include "ami/qt/AxisArray.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryTH1F.hh"
@@ -54,11 +55,14 @@ QtTH1F::~QtTH1F()
 
 void           QtTH1F::dump  (FILE* f) const
 {
+  int prec = Defaults::instance()->save_precision();
   const EntryTH1F& _entry = static_cast<const EntryTH1F&>(entry());
   for(unsigned b=0; b<= _entry.desc().nbins(); b++) {
     double x = _xscale(0.5*(_x[b]+_x[b+1]));
     double y = _yscale(_y[b]);
-    fprintf(f,"%g %g\n",x,y);
+    fprintf(f,"%.*g %.*g\n",
+            prec,x,
+            prec,y);
   }
 }
 
