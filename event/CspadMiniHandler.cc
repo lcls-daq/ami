@@ -36,6 +36,7 @@ using Ami::CspadCalib;
 typedef Pds::CsPad2x2::ElementV1 MiniElement;
 
 static const unsigned Offset = 0x4000;
+static const double  dOffset = double(Offset);
 static const double pixel_size = 110e-6;
 static const unsigned Columns = CsPad2x2::ColumnsPerASIC;
 static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
@@ -192,15 +193,15 @@ static double unbondedNoise(const int16_t*  data,
   a[2] = CORR(2*RowBins*(ColBins-1));
   a[3] = CORR(2*RowBins*(ColBins-1)+RowBins);
   a[4] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
-  a[6] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
+  a[5] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
   for(unsigned i=0,j=0; i<36; i+=2, j+=20*RowBins+10) {
-    a[i+7] = CORR(j);
-    a[i+8] = CORR(j+RowBins);
+    a[i+6] = CORR(j);
+    a[i+7] = CORR(j+RowBins);
   }
   int lo = Offset-100;
   int hi = Offset+100;
   int v = Ami::FrameCalib::median(a,lo,hi);
-  return double(v-Offset);
+  return double(v)-dOffset;
 }
 
 namespace CspadMiniGeometry {
