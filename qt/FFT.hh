@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/service/Semaphore.hh"
 
 class QComboBox;
 
@@ -41,6 +42,7 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
       QComboBox* _parameter;
+      Semaphore                  _list_sem;
       std::list<ProjectionPlot*> _plots;
     };
   };

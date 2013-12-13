@@ -69,10 +69,11 @@ CursorsX::CursorsX(QWidget* parent,
   _frameParent(frameParent),
   _clayout  (new QVBoxLayout),
 #if 0
-  _expr     (new QLineEdit("1"))
+  _expr     (new QLineEdit("1")),
 #else
-  _expr     (new QComboBox)
+  _expr     (new QComboBox),
 #endif
+  _list_sem (Semaphore::FULL)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
@@ -170,10 +171,12 @@ CursorsX::CursorsX(QWidget* parent,
   
 CursorsX::~CursorsX()
 {
+  _list_sem.take();
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
   _posts.clear();
+  _list_sem.give();
 }
 
 void CursorsX::save(char*& p) const
@@ -201,6 +204,8 @@ void CursorsX::save(char*& p) const
 
 void CursorsX::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
     delete *it;
@@ -208,7 +213,7 @@ void CursorsX::load(const char*& p)
   _cursors.clear();
 
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
   }
   _plots.clear();
@@ -236,7 +241,7 @@ void CursorsX::load(const char*& p)
     else if (tag.name == "_plots") {
       CursorPlot* plot = new CursorPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       CursorPost* post = new CursorPost(p);
@@ -247,6 +252,8 @@ void CursorsX::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(CursorsX,tag);
+
+  _list_sem.give();
 
   setVisible(false);
 
@@ -269,6 +276,7 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)
 {
+  _list_sem.take();
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
@@ -278,22 +286,27 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  _list_sem.give();
 }
 
 void CursorsX::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void CursorsX::update()
 {
+  _list_sem.take();
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void CursorsX::initialize(const DescEntry& e)
@@ -402,9 +415,11 @@ void CursorsX::plot()
                                       new BinMath(*desc,_scalar_desc->expr(expr)));
     delete desc;
 
+    _list_sem.take();
     _plots.push_back(plot);
+    _list_sem.give();
 
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
   }
   emit changed();
@@ -431,7 +446,9 @@ void CursorsX::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
                                          _channel, 
                                          new BinMath(*desc,_scalar_desc->expr(expr)));
   delete desc;
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
 
   emit changed();
 }
@@ -439,7 +456,9 @@ void CursorsX::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
 void CursorsX::remove_overlay(QtOverlay* obj)
 {
   CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.give();
 }
 
 void    CursorsX::add_post() 
@@ -461,7 +480,9 @@ QString CursorsX::_add_post()
   CursorPost* post = new CursorPost(_channel,
 				    new BinMath(*desc,_scalar_desc->expr(expr)),
                                     this);
+  _list_sem.take();
   _posts.push_back(post);
+  _list_sem.give();
 
   delete desc;
 
@@ -477,9 +498,12 @@ void CursorsX::hide_cursors()
 void CursorsX::remove_plot(QObject* obj)
 {
   CursorPlot* plot = static_cast<CursorPlot*>(obj);
+  _list_sem.take();
   _plots.remove(plot);
+  _list_sem.give();
 
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
 }
 
 void CursorsX::grab_cursorx() 
@@ -557,6 +581,10 @@ void CursorsX::_expr_setText(const QString& t)
 
 void CursorsX::remove_cursor_post(CursorPost* post)
 {
+  _list_sem.take();
   _posts.remove(post);
+  _list_sem.give();
+
+  delete post;
   emit changed();
 }

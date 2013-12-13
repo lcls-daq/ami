@@ -28,7 +28,8 @@ FFT::FFT(QWidget* parent,
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
-  _channel  (0)
+  _channel  (0),
+  _list_sem (Semaphore::FULL)
 {
   setWindowTitle("FFT Plot");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -87,8 +88,9 @@ void FFT::save(char*& p) const
 
 void FFT::load(const char*& p)
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
   }
   _plots.clear();
@@ -99,9 +101,10 @@ void FFT::load(const char*& p)
     else if (tag.name == "_plots") {
       ProjectionPlot* plot = new ProjectionPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
   XML_iterate_close(FFT,tag);
+  _list_sem.give();
 
   setVisible(false);
 
@@ -120,21 +123,27 @@ void FFT::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
+  _list_sem.give();
 }
 
 void FFT::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void FFT::update()
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void FFT::initialize(const DescEntry& e)
@@ -156,9 +165,11 @@ void FFT::plot()
 					    _channel,
 					    new Ami::FFT(Ami::FFT::Parameter(_parameter->currentIndex())));
 
+  _list_sem.take();
   _plots.push_back(plot);
+  _list_sem.give();
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
 
   emit changed();
@@ -167,8 +178,11 @@ void FFT::plot()
 void FFT::remove_plot(QObject* obj)
 {
   ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
+  _list_sem.take();
   _plots.remove(plot);
+  _list_sem.give();
 
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
 }
 

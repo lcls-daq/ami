@@ -37,7 +37,8 @@ BlobFinder::BlobFinder(QtPWidget* parent,
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
-  _frame    (frame)
+  _frame    (frame),
+  _list_sem (Semaphore::FULL)
 {
   _rectangle = new RectangleCursors(_frame, parent);
   _threshold = new ImageScale("threshold");
@@ -131,14 +132,16 @@ void BlobFinder::save(char*& p) const
 
 void BlobFinder::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     disconnect(*it, SIGNAL(description_changed()), this, SIGNAL(changed()));
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   _plots.clear();
 
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   _zplots.clear();
 
@@ -161,14 +164,16 @@ void BlobFinder::load(const char*& p)
       PeakPlot* plot = new PeakPlot(this, p);
       _plots.push_back(plot);
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_zplots") {
       ZoomPlot* plot = new ZoomPlot(this, p);
       _zplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
   XML_iterate_close(BlobFinder,tag);
+
+  _list_sem.give();
 }
 
 void BlobFinder::save_plots(const QString& p) const
@@ -190,6 +195,8 @@ void BlobFinder::setVisible(bool v)
 void BlobFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  _list_sem.take();
+
   unsigned mask=0;
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
@@ -198,6 +205,8 @@ void BlobFinder::configure(char*& p, unsigned input, unsigned& output,
       mask |= 1<<(*it)->channel();
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->configure(p,input,output,channels,signatures,nchannels);
+
+  _list_sem.give();
 
   if (mask) {
     for(unsigned ich=0; ich<_nchannels; ich++) {
@@ -213,18 +222,26 @@ void BlobFinder::configure(char*& p, unsigned input, unsigned& output,
 
 void BlobFinder::setup_payload(Cds& cds)
 {
+  _list_sem.take();
+
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->setup_payload(cds);
+
+  _list_sem.give();
 }
 
 void BlobFinder::update()
 {
+  _list_sem.take();
+
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
     (*it)->update();
+
+  _list_sem.give();
 }
 
 void BlobFinder::prototype(const DescEntry& e)
@@ -255,8 +272,10 @@ void BlobFinder::plot()
 				  .arg(_threshold->value(1)),
 				  _channel,
 				  op);
+    _list_sem.take();
     _zplots.push_back(plot);
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    _list_sem.give();
+    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   else {
     PeakPlot* plot = new PeakPlot(this,
@@ -265,10 +284,12 @@ void BlobFinder::plot()
 				  .arg(_threshold->value(1)),
 				  _channel,
 				  op);
+    _list_sem.take();
     _plots.push_back(plot);
+    _list_sem.give();
 
     connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
 
   emit changed();
@@ -276,13 +297,16 @@ void BlobFinder::plot()
 
 void BlobFinder::remove_plot(QObject* obj)
 {
+  _list_sem.take();
   { PeakPlot* plot = static_cast<PeakPlot*>(obj);
     _plots.remove(plot); }
 
   { ZoomPlot* plot = static_cast<ZoomPlot*>(obj);
     _zplots.remove(plot); }
 
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
+  _list_sem.give();
 }
 
 void BlobFinder::change_channel()

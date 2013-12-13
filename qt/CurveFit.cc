@@ -53,7 +53,8 @@ CurveFit::CurveFit(QWidget* parent,
   _channel  (0),
   _frame    (frame),
   _file     (new QLabel("No reference")),
-  _outBox   (new QComboBox)
+  _outBox   (new QComboBox),
+  _list_sem (Semaphore::FULL)
 {
   _fname.clear();
 
@@ -121,10 +122,12 @@ CurveFit::CurveFit(QWidget* parent,
   
 CurveFit::~CurveFit()
 {
+  _list_sem.take();
   for(std::list<CurveFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
   _posts.clear();
+  _list_sem.give();
 }
 
 void CurveFit::save(char*& p) const
@@ -146,8 +149,10 @@ void CurveFit::save(char*& p) const
 
 void CurveFit::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
 
   for(std::list<CurveFitPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
@@ -171,7 +176,7 @@ void CurveFit::load(const char*& p)
     } else if (tag.name == "_plots") {
       CurveFitPlot* plot = new CurveFitPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       CurveFitPost* post = new CurveFitPost(p);
@@ -182,6 +187,8 @@ void CurveFit::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(CurveFit,tag);
+
+  _list_sem.give();
 
   emit changed();
 }
@@ -201,6 +208,7 @@ void CurveFit::save_plots(const QString& p) const
 void CurveFit::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  _list_sem.take();
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
@@ -210,22 +218,27 @@ void CurveFit::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo());
+  _list_sem.give();
 }
 
 void CurveFit::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void CurveFit::update()
 {
+  _list_sem.take();
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   for(std::list<CurveFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void CurveFit::initialize(const Ami::DescEntry& e)
@@ -272,9 +285,11 @@ void CurveFit::plot()
                                           new Ami::CurveFit(qPrintable(_fname),
                                                             op, *desc, qPrintable(norm)));
 
+    _list_sem.take();
     _plots.push_back(plot);
+    _list_sem.give();
 
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   emit changed();
 }
@@ -282,9 +297,12 @@ void CurveFit::plot()
 void CurveFit::remove_plot(QObject* obj)
 {
   CurveFitPlot* plot = static_cast<CurveFitPlot*>(obj);
+  _list_sem.take();
   _plots.remove(plot);
+  _list_sem.give();
 
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete plot;
 }
 
 void CurveFit::add_post()
@@ -306,7 +324,9 @@ QString CurveFit::_add_post()
     Ami::CurveFit* fit = new Ami::CurveFit(qPrintable(_fname),
                                            _outBox->currentIndex(), *desc);
     CurveFitPost* post = new CurveFitPost(_channel, fit, this);
+    _list_sem.take();
     _posts.push_back(post);
+    _list_sem.give();
 
     delete desc;
 
@@ -317,7 +337,11 @@ QString CurveFit::_add_post()
 
 void CurveFit::remove_curvefit_post(CurveFitPost* post)
 {
+  _list_sem.take();
   _posts.remove(post);
+  _list_sem.give();
+
+  delete post;
   emit changed();
 }
 
@@ -355,7 +379,9 @@ void CurveFit::add_overlay(DescEntry* desc,
                                              new Ami::CurveFit(qPrintable(_fname),
                                                                op, *desc, qPrintable(norm)));
 
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
 
   emit changed();
 }
@@ -363,7 +389,9 @@ void CurveFit::add_overlay(DescEntry* desc,
 void CurveFit::remove_overlay(QtOverlay* obj)
 {
   CurveFitOverlay* ovl = static_cast<CurveFitOverlay*>(obj);
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.give();
   
   //  emit changed();
 }

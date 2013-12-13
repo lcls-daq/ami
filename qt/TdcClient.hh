@@ -4,6 +4,7 @@
 #include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <list>
 
@@ -15,7 +16,6 @@ class QLineEdit;
 namespace Ami {
   class ClientManager;
   class DescEntry;
-  class Semaphore;
 
   namespace Qt {
     class Control;
@@ -85,6 +85,7 @@ namespace Ami {
       iovec*          _iovload;
 
       Semaphore*  _sem;
+      Semaphore   _list_sem;
 
       bool _throttled;
 

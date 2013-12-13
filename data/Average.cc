@@ -88,7 +88,7 @@ void*      Average::_serialize(void* p) const
 Entry&     Average::_operate(const Entry& e) const
 {
   if (!e.valid())
-    return *_entry;
+    return _n ? *_cache : *_entry;
 
   _input = &e;
   const double v = _term ? _term->evaluate() : 1;

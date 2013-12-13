@@ -158,6 +158,11 @@ void           QtTH2F::attach(QwtPlot* p)
 
 void           QtTH2F::update()
 {
+  if (!entry().valid()) {
+    printf("QtTH2F::update invalid\n");
+    return;
+  }
+
   _z->update();
   _colorBar->setColorMap(_z->range(),_curve.colorMap());
   _plot->setAxisScale(QwtPlot::yRight, _z->range().minValue(), _z->range().maxValue());

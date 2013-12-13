@@ -70,7 +70,7 @@ PeakPlot::PeakPlot(QWidget*         parent,
 void PeakPlot::_layout()
 {
   setWindowTitle(_name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
 
   QHBoxLayout* layout = new QHBoxLayout;
 

@@ -2,6 +2,7 @@
 #define AmiQt_ImageContourProjection_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -66,6 +67,7 @@ namespace Ami {
       Contour*      _contour;
       QPushButton*  _plotB;
 
+      Semaphore                  _list_sem;
       std::list<ProjectionPlot*> _pplots;
     };
   };

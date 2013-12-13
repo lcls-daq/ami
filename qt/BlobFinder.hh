@@ -2,6 +2,7 @@
 #define AmiQt_BlobFinder_hh
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 
@@ -68,6 +69,7 @@ namespace Ami {
       SMPWarning*       _smp_warning;
       QPushButton*   _plotB;
 
+      Semaphore            _list_sem;
       std::list<PeakPlot*> _plots;
       std::list<ZoomPlot*> _zplots;
     };

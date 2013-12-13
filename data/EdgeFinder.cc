@@ -113,7 +113,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
     for(unsigned i=0; i<n; i++,it++)
       output.append(it->data());
   }
-  _entry->valid(e.last());
+  _entry->valid(e.time());
   return *_entry;
 }
 

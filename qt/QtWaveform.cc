@@ -65,7 +65,10 @@ void           QtWaveform::attach(QwtPlot* p)
 
 void           QtWaveform::update()
 {
-  yscale_update();
+  if (entry().valid())
+    yscale_update();
+  else
+    printf("QtWaveform::update invalid\n");
 }
 
 void QtWaveform::xscale_update()

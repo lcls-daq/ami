@@ -4,6 +4,7 @@
 #include "ami/qt/OverlayParent.hh"
 
 #include "ami/data/ConfigureRequestor.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QObject>
 #include <QtCore/QString>
@@ -57,6 +58,7 @@ namespace Ami {
       unsigned                   _channel;
       unsigned                   _signature;
       ConfigureRequestor         _req;
+      Semaphore                  _list_sem;
       std::list<ZoomPlot*>       _zplots;
       std::list<PeakPlot*>       _pplots;
       std::list<CursorPlot*>     _cplots;

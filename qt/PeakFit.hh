@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/PFPostParent.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -108,6 +109,7 @@ namespace Ami {
       ScalarPlotDesc* _scalar_desc;
 #endif
 
+      Semaphore               _list_sem;
       std::list<PeakFitPlot*> _plots;
     public:
       void remove_peakfit_post(PeakFitPost*);

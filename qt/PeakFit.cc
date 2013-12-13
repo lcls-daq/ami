@@ -67,6 +67,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   _channel  (0),
   _frame    (frame),
   _frameParent(frameParent),
+  _list_sem (Semaphore::FULL),
   _clayout  (new QVBoxLayout)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
@@ -245,6 +246,7 @@ void PeakFit::load(const char*& p)
 {
   disconnect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
 
+  _list_sem.take();
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
     _names.push_back((*it)->name());
     delete *it;
@@ -252,7 +254,7 @@ void PeakFit::load(const char*& p)
   _cursors.clear();
 
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
   }
   _plots.clear();
@@ -296,7 +298,7 @@ void PeakFit::load(const char*& p)
     else if (tag.name == "_plots") {
       PeakFitPlot* plot = new PeakFitPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       PeakFitPost* post = new PeakFitPost(p);
@@ -307,6 +309,7 @@ void PeakFit::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(PeakFit,tag);
+  _list_sem.give();
 
   connect(_baseline , SIGNAL(changed()),      this, SLOT(front()));
 }
@@ -327,6 +330,7 @@ void PeakFit::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)
 {
+  _list_sem.take();
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
@@ -336,22 +340,27 @@ void PeakFit::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+  _list_sem.give();
 }
 
 void PeakFit::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void PeakFit::update()
 {
+  _list_sem.take();
   for(std::list<PeakFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   for(std::list<PeakFitOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void PeakFit::set_channel(int c) 
@@ -396,10 +405,12 @@ void PeakFit::plot()
                                         _channel,
                                         plotter);
     
+    _list_sem.take();
     _plots.push_back(plot);
+    _list_sem.give();
 
     connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
-    connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   }
   emit changed();
 }
@@ -407,9 +418,12 @@ void PeakFit::plot()
 void PeakFit::remove_plot(QObject* obj)
 {
   PeakFitPlot* plot = static_cast<PeakFitPlot*>(obj);
+  _list_sem.take();
   _plots.remove(plot);
+  _list_sem.give();
 
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
+  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
 void PeakFit::add_post()
@@ -450,7 +464,9 @@ QString PeakFit::_add_post()
   }
   PeakFitPost* post = new PeakFitPost(_channel, plotter, this);
 							   
+  _list_sem.take();
   _posts.push_back(post);
+  _list_sem.give();
 
   emit changed();
 
@@ -500,7 +516,11 @@ void PeakFit::mouseReleaseEvent(double,double) {}
 
 void PeakFit::remove_peakfit_post(PeakFitPost* post)
 {
+  _list_sem.take();
   _posts.remove(post);
+  _list_sem.give();
+
+  delete post;
   emit changed();
 }
 
@@ -544,7 +564,9 @@ void PeakFit::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
                                            _channel,
                                            plotter);
     
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
 
   emit changed();
 }
@@ -553,7 +575,9 @@ void PeakFit::remove_overlay(QtOverlay* o)
 {
   PeakFitOverlay* ovl = static_cast<PeakFitOverlay*>(o);
 
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.give();
 
   //  emit changed();
 }

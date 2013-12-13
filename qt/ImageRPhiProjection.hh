@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CPostParent.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -84,6 +85,7 @@ namespace Ami {
       ImageIntegral*          _integral_plot;
       ImageContrast*          _contrast_plot;
 
+      Semaphore                  _list_sem;
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
 

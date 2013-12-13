@@ -1,6 +1,7 @@
 #include "QtPWidget.hh"
 
 #include <QtCore/QPoint>
+#include <QtGui/QCloseEvent>
 
 #include <stdio.h>
 
@@ -83,4 +84,10 @@ void QtPWidget::front()
     raise();
     activateWindow();
   }
+}
+
+void QtPWidget::closeEvent(QCloseEvent* event)
+{
+  event->accept();
+  emit closed(this);
 }

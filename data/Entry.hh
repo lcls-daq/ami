@@ -50,7 +50,6 @@ namespace Ami {
 
     ///  Modifiers for setting time of most recent valid data
     void                  valid  (const Pds::ClockTime& t);
-    void                  valid  (double);
     void                  invalid();
 
     ///  Zeroes payload contents and time of last update

@@ -41,7 +41,8 @@ ImageContourProjection::ImageContourProjection(QtPWidget*         parent,
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
-  _title    (new QLineEdit("Projection"))
+  _title    (new QLineEdit("Projection")),
+  _list_sem (Semaphore::FULL)
 {
   _rectangle = new RectangleCursors(_frame,parent);
   //  _contour   = new Contour("X","f(X)",frame,Ami::ContourProjection::Y,*_rectangle);
@@ -153,8 +154,10 @@ void ImageContourProjection::save(char*& p) const
 
 void ImageContourProjection::load(const char*& p) 
 {
+  _list_sem.take();
+
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
 
   XML_iterate_open(p,tag)
@@ -175,9 +178,11 @@ void ImageContourProjection::load(const char*& p)
     else if (tag.name == "_pplots") {
       ProjectionPlot* plot = new ProjectionPlot(this, p);
       _pplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
   XML_iterate_close(ImageContourProjection,tag);
+
+  _list_sem.give();
 }
 
 void ImageContourProjection::save_plots(const QString& p) const
@@ -207,12 +212,14 @@ void ImageContourProjection::setVisible(bool v)
 void ImageContourProjection::configure(char*& p, unsigned input, unsigned& output,
 				       ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  _list_sem.take();
   unsigned mask=0;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
     else
       mask |= 1<<(*it)->channel();
+  _list_sem.give();
 
   if (mask) {
     for(unsigned ich=0; ich<_nchannels; ich++) {
@@ -228,14 +235,18 @@ void ImageContourProjection::configure(char*& p, unsigned input, unsigned& outpu
 
 void ImageContourProjection::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
    (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void ImageContourProjection::update()
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void ImageContourProjection::set_channel(int c) 
@@ -318,10 +329,12 @@ void ImageContourProjection::plot()
   
   ProjectionPlot* plot = new ProjectionPlot(this,_title->text(), _channel, proj);
 
+  _list_sem.take();
   _pplots.push_back(plot);
+  _list_sem.give();
 
   connect(plot, SIGNAL(description_changed()), this, SLOT(configure_plot()));
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
   emit changed();
 }
@@ -329,9 +342,13 @@ void ImageContourProjection::plot()
 void ImageContourProjection::remove_plot(QObject* obj)
 {
   { ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
-    _pplots.remove(plot); }
+    _list_sem.take();
+    _pplots.remove(plot); 
+    _list_sem.give();
+  }
 
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
 void ImageContourProjection::configure_plot()

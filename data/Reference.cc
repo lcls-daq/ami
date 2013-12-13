@@ -6,6 +6,7 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/valgnd.hh"
+#include "pdsdata/xtc/ClockTime.hh"
 
 #include <sys/uio.h>
 #include <stdio.h>
@@ -75,7 +76,7 @@ Reference::Reference(const char*& p, const DescEntry& e) :
       while (--i >= 0) {
           ((EntryWaveform *)_entry)->content(_data[i], i);
       }
-      _entry->valid(1.0); // Mark it valid with a bogus time!
+      _entry->valid(Pds::ClockTime(0,0)); // Mark it valid with a bogus time!
       return;
   }
   READ_SIZE(_buffer,sizeof(DescEntry),f);

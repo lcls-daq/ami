@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CFPostParent.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -66,6 +67,8 @@ namespace Ami {
       QLabel* _file;
       QComboBox* _outBox;
       ScalarPlotDesc* _scalar_desc;
+      
+      Semaphore                _list_sem;
       std::list<CurveFitPlot*> _plots;
 
     public:

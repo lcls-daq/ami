@@ -87,7 +87,7 @@ TwoDPlot::~TwoDPlot()
 void TwoDPlot::_layout()
 {
   setWindowTitle(_name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
 
   QButtonGroup* showPlotBoxes = new QButtonGroup;
   showPlotBoxes->setExclusive( !_frame->canOverlay() );
@@ -287,3 +287,4 @@ void TwoDPlot::update()
   _rfproj ->update();
   _cntproj->update();
 }
+

@@ -101,6 +101,11 @@ void           QtImage::canvas_size(const QSize& sz,
 
 QImage*  QtImage::image(float p0, float s, bool linear)
 {
+  if (!entry().valid()) {
+    printf("QtImage::image invalid\n");
+    return 0;
+  }
+
   QImage* qimage=0;
   for(unsigned i=0; i<NBUFFERS; i++)
     if (_mimage & (1<<i)) {

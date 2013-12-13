@@ -7,7 +7,7 @@ libsrcs_timetool := TimeToolM.cc
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_timetool := pdsdata/include ndarray/include boost/include pdsalg/include
+libincs_timetool := pdsdata/include ndarray/include boost/include pdsalg/include timetool/include
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

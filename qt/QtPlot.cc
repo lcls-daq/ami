@@ -150,7 +150,7 @@ QtPlot::~QtPlot()
 
 void QtPlot::_layout()
 {
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
   setWindowTitle(_name);
   
   QVBoxLayout* layout = new QVBoxLayout;

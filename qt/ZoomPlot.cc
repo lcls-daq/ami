@@ -56,7 +56,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _op     (op)
 {
   setWindowTitle(name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
 
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(_frame);
@@ -79,7 +79,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   _op     (0)
 {
   setWindowTitle(name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
 
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(_frame);
@@ -100,7 +100,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
   load(p);
 
   setWindowTitle(_name);
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
 
   QHBoxLayout* layout = new QHBoxLayout;
   layout->addWidget(_frame);
@@ -212,3 +212,4 @@ void ZoomPlot::update()
 {
   _frame  ->update();
 }
+

@@ -101,7 +101,7 @@ static QtTableDisplay* _instance = 0;
 QtTableDisplay::QtTableDisplay() :
   QWidget(0)
 {
-  setAttribute(::Qt::WA_DeleteOnClose, true);
+  //  setAttribute(::Qt::WA_DeleteOnClose, true);
   QVBoxLayout* l = new QVBoxLayout;
   l->setSpacing(0);
   setLayout(l);

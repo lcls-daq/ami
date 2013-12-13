@@ -18,6 +18,10 @@ namespace Ami {
       virtual void load(const char*& p);
     public slots:
       void front();
+    protected:
+      void closeEvent(QCloseEvent*);
+    signals:
+      void closed(QObject*);
     private:
       QWidget* _parent;
     protected:

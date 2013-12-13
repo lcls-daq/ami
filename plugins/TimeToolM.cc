@@ -195,13 +195,13 @@ namespace Ami {
     void analyze(const Pds::ClockTime& _clk) {
       if (_evrdata) {
 
-        bool bykik = false;
+        bool bykik    = false;
         bool no_laser = false;
         unsigned laser_code = abs(_event_code_no_laser);
+        unsigned bykik_code = abs(_event_code_bykik);
         for(unsigned i=0; i<_evrdata->numFifoEvents(); i++) {
           const Pds::EvrData::FIFOEvent& fe = _evrdata->fifoEvents()[i];
-          if (fe.eventCode() == _event_code_bykik ||
-              fe.eventCode() == _event_code_alkik)
+          if (fe.eventCode() == bykik_code)
             bykik = true;
           if (fe.eventCode() == laser_code)
             no_laser = true;
@@ -209,6 +209,8 @@ namespace Ami {
 
         if (int(_event_code_no_laser) < 0)
           no_laser = !no_laser;
+        if (int(_event_code_bykik   ) < 0)
+          bykik = !bykik;
 
         if (_ipmdata) {
           if (_ipmdata->sum() < _ipm_no_beam_threshold)

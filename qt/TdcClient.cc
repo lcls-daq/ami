@@ -54,6 +54,7 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY)),
+  _list_sem        (Semaphore::FULL),
   _throttled       (false)
 {
   setWindowTitle(QString("%1[*]").arg(name));
@@ -161,14 +162,16 @@ void TdcClient::save(char*& p) const
 
 void TdcClient::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _plots.clear();
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
   for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _tplots.clear();
 
   
@@ -185,23 +188,26 @@ void TdcClient::load(const char*& p)
     else if (tag.name == "_plots") {
       TdcPlot* plot = new TdcPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_pplots") {
       ProjectionPlot* plot = new ProjectionPlot(this, p);
       _pplots.push_back(plot);
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_tplots") {
       TwoDPlot* plot = new TwoDPlot(this, p);
       _tplots.push_back(plot);
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      //      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_control")
       _control->load(p);
   XML_iterate_close(TdcClient,tag);
+
+  _list_sem.give();
 
   update_configuration();
 }
@@ -281,6 +287,8 @@ int  TdcClient::configure       (iovec* iov)
 
   char* p = _request;
 
+  _list_sem.take();
+
   for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,_input_signature,_output_signature);
 
@@ -289,6 +297,8 @@ int  TdcClient::configure       (iovec* iov)
 
   for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
     (*it)->configure(p,_input_signature,_output_signature);
+
+  _list_sem.give();
 
   if (p > _request+BufferSize) {
     printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
@@ -399,6 +409,8 @@ void TdcClient::process         ()
   //
   //  Perform client-side processing
   //
+  _list_sem.take();
+
   for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   
@@ -407,6 +419,8 @@ void TdcClient::process         ()
   
   for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
     (*it)->update();
+
+  _list_sem.give();
   
   _status->set_state(Status::Processed);
 }
@@ -466,10 +480,12 @@ void TdcClient::plot()
                                                 ptitle,
                                                 0,
                                                 op);
+      _list_sem.take();
       _pplots.push_back(plot);
+      _list_sem.give();
       
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
       break; }
   case TdcClient::TH2F:
@@ -494,9 +510,11 @@ void TdcClient::plot()
                                   *_filter->filter(),
                                   desc,
                                   expr);
+      _list_sem.take();
       _plots.push_back(plot);
+      _list_sem.give();
 
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
       break; }
   case TdcClient::Image:
@@ -520,10 +538,13 @@ void TdcClient::plot()
                                     expr,
                                     op);
 
+      _list_sem.take();
       _tplots.push_back(plot);
+      _list_sem.give();
 
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      //      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 
       break; }
   default:
@@ -535,11 +556,15 @@ void TdcClient::plot()
 
 void TdcClient::remove_plot(QObject* obj)
 {
+  _list_sem.take();
   _plots .remove(static_cast<TdcPlot*>(obj));
   _pplots.remove(static_cast<ProjectionPlot*>(obj));
   _tplots.remove(static_cast<TwoDPlot*>(obj));
+  _list_sem.give();
 
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+
+  delete obj;
 }
 
 void TdcClient::select_source () { _select_source(_source_edit); }

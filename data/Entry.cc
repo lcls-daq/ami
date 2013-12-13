@@ -68,12 +68,6 @@ void Entry::valid(const Pds::ClockTime& t)
   *_payload = *(reinterpret_cast<const unsigned long long*>(&t)) & ~VALID_MASK;
 }
 
-void Entry::valid(double v)
-{
-  new ((char*)_payload) Pds::ClockTime(unsigned(v),unsigned(drem(v,1)*1.e9));
-  *_payload &= ~VALID_MASK;
-}
-
 void Entry::invalid() 
 { 
   *_payload |= VALID_MASK;

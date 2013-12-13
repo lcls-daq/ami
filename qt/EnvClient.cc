@@ -57,7 +57,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _niovload        (5),
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY)),
-  _throttled       (false)
+  _throttled       (false),
+  _list_sem        (Semaphore::FULL)
 {
   setWindowTitle(QString("%1[*]").arg(_title));
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -123,10 +124,12 @@ EnvClient::~EnvClient()
 {
   printf("====== destroying EnvClient ========\n");
 
+  _list_sem.take();
   for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
   _posts.clear();
+  _list_sem.give();
 
   if (_manager) delete _manager;
   delete[] _iovload;
@@ -171,8 +174,9 @@ void EnvClient::save(char*& p) const
 
 void EnvClient::load(const char*& p)
 {
+  _list_sem.take();
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     delete *it;
   }
   _plots.clear();
@@ -183,7 +187,7 @@ void EnvClient::load(const char*& p)
   // mem leak?
   _ovls.clear();
   for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++) {
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_table(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
     delete *it;
   }
   _tabls.clear();
@@ -200,7 +204,7 @@ void EnvClient::load(const char*& p)
     else if (tag.element == "EnvPlot") {
       EnvPlot* plot = new EnvPlot(this, p);
       _plots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       EnvPost* post = new EnvPost(p);
@@ -213,11 +217,13 @@ void EnvClient::load(const char*& p)
     else if (tag.name == "_tabls") {
       EnvTable* tabl = new EnvTable(this, p);
       _tabls.push_back(tabl);
-      connect(tabl, SIGNAL(destroyed(QObject*)), this, SLOT(remove_table(QObject*)));
+      connect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
     }
     else if (tag.element == "Control")
       _control->load(p);
   XML_iterate_close(EnvClient,tag);
+
+  _list_sem.give();
 
   update_configuration();
 }
@@ -277,6 +283,7 @@ int  EnvClient::configure       (iovec* iov)
 
   char* p = _request;
 
+  _list_sem.take();
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->configure(p,_input,_output_signature);
   for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
@@ -285,6 +292,7 @@ int  EnvClient::configure       (iovec* iov)
     (*it)->configure(p,_input,_output_signature);
   for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
     (*it)->configure(p,_input,_output_signature);
+  _list_sem.give();
 
   if (p > _request+BufferSize) {
     printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
@@ -354,12 +362,14 @@ void EnvClient::_read_description(int size)
   }
   _cds.payload(_iovload);
 
+  _list_sem.take();
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->setup_payload(_cds);
   for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(_cds);
   for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
     (*it)->setup_payload(_cds);
+  _list_sem.give();
 
   _status->set_state(Status::Described);
 
@@ -390,12 +400,14 @@ void EnvClient::process         ()
   //
   //  Perform client-side processing
   //
+  _list_sem.take();
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     (*it)->update();
   for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
   for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
     (*it)->update();
+  _list_sem.give();
   
   _status->set_state(Status::Processed);
 }
@@ -444,9 +456,11 @@ void EnvClient::plot()
 			      desc,
                               _set);
 
+  _list_sem.take();
   _plots.push_back(plot);
+  _list_sem.give();
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   connect(plot, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
 
   emit changed();
@@ -470,8 +484,11 @@ void EnvClient::table()
                                 *_filter->filter(),
                                 desc,
                                 _set);
+  _list_sem.take();
   _tabls.push_back(tabl);
-  connect(tabl, SIGNAL(destroyed(QObject*)), this, SLOT(remove_table(QObject*)));
+  _list_sem.give();
+
+  connect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
   emit changed();
 }
 
@@ -485,7 +502,9 @@ void EnvClient::add_post()
                               desc,
                               _set);
 
+  _list_sem.take();
   _posts.push_back(post);
+  _list_sem.give();
 
   emit changed();
 }
@@ -493,18 +512,25 @@ void EnvClient::add_post()
 void EnvClient::remove_plot(QObject* obj)
 {
   EnvPlot* plot = static_cast<EnvPlot*>(obj);
+  _list_sem.take();
   _plots.remove(plot);
+  _list_sem.give();
 
-  disconnect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete plot;
+
   emit changed();
 }
 
 void EnvClient::remove_table(QObject* obj)
 {
   EnvTable* tabl = static_cast<EnvTable*>(obj);
+  _list_sem.take();
   _tabls.remove(tabl);
+  _list_sem.give();
 
-  disconnect(tabl, SIGNAL(destroyed(QObject*)), this, SLOT(remove_table(QObject*)));
+  disconnect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
+  delete tabl;
   emit changed();
 }
 
@@ -534,9 +560,11 @@ void EnvClient::plot(const QString& name,
                               _set,
                               shared);
 
+  _list_sem.take();
   _plots.push_back(plot);
+  _list_sem.give();
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   connect(plot, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
 
   emit changed();
@@ -553,7 +581,9 @@ void EnvClient::add_overlay(DescEntry*  desc,
                                    _set,
                                    shared);
                                      
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
   connect(ovl, SIGNAL(changed()), (AbsClient*)this, SIGNAL(changed()));
   
   emit changed();
@@ -562,7 +592,9 @@ void EnvClient::add_overlay(DescEntry*  desc,
 void EnvClient::remove_overlay(QtOverlay* obj)
 {
   EnvOverlay* ovl = static_cast<EnvOverlay*>(obj);
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.give();
 
   //  emit changed();
 }

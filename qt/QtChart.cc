@@ -108,8 +108,10 @@ void           QtChart::update()
   const EntryScalar& entry = static_cast<const EntryScalar&>(QtBase::entry());
   _skip = entry.desc().prescale()-1;
 
-  if (!entry.valid())
+  if (!entry.valid()) {
+    printf("QtChart::update invalid\n");
     return;
+  }
 
   double n = entry.entries() - _cache.entries();
   if (n>0) {

@@ -90,6 +90,11 @@ void           QtScan::attach(QwtPlot* p)
 
 void           QtScan::update()
 {
+  if (!entry().valid()) {
+    printf("QtScan::update invalid\n");
+    return;
+  }
+
   const EntryScan& _entry = static_cast<const EntryScan&>(entry());
   unsigned nb = _entry.desc().nbins();
   unsigned i=0;

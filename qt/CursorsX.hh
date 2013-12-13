@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/CPostParent.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtCore/QString>
 #include <QtCore/QStringList>
@@ -115,6 +116,7 @@ namespace Ami {
       std::list<CursorDefinition*> _cursors;
       Ami::AbsOperator* _operator;
 
+      Semaphore              _list_sem;
       std::list<CursorPlot*> _plots;
       std::list<CursorOverlay*> _ovls;
 

@@ -21,7 +21,8 @@ VAConfigApp::VAConfigApp(QWidget* parent,
   _parent   (parent),
   _name     (name),
   _channel  (i),
-  _signature(-1)
+  _signature(-1),
+  _list_sem (Semaphore::FULL)
 {
 }
 
@@ -31,16 +32,18 @@ VAConfigApp::~VAConfigApp()
 
 void VAConfigApp::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<PeakPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
 
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _cplots.clear();
 
   for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _zplots.clear();
 
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
@@ -55,18 +58,18 @@ void VAConfigApp::load(const char*& p)
       PeakPlot* plot = new PeakPlot(_parent, p);
       _pplots.push_back(plot);
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*))  , this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_cplots") {
       CursorPlot* plot = new CursorPlot(_parent, p);
       _cplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*))  , this, SLOT(remove_plot(QObject*)));
       connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
     }
     else if (tag.name == "_zplots") {
       ZoomPlot* plot = new ZoomPlot(_parent, p);
       _zplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       CursorPost* post = new CursorPost(p);
@@ -79,6 +82,8 @@ void VAConfigApp::load(const char*& p)
     else if (tag.name == "nil")
       ;
   XML_iterate_close(RectROI,tag);
+
+  _list_sem.give();
 }
 
 void VAConfigApp::save(char*& p) const
@@ -162,6 +167,8 @@ void VAConfigApp::configure(char*& p, unsigned input, unsigned& output,
   printf("VAConfigApp::configure plots input %d\n", input);
 #endif
 
+  _list_sem.take();
+
   //  Configure the derived plots
   if (!smp_prohibit) {
     const unsigned maxpixels=1024;
@@ -183,6 +190,9 @@ void VAConfigApp::configure(char*& p, unsigned input, unsigned& output,
     for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
       (*it)->configure(p,input,output);
   }
+
+  _list_sem.give();
+
 #ifdef DBUG
   printf("VAConfigApp::configure output %d\n", output);
 #endif
@@ -191,6 +201,7 @@ void VAConfigApp::configure(char*& p, unsigned input, unsigned& output,
 
 void VAConfigApp::setup_payload(Cds& cds) 
 {
+  _list_sem.take();
   for(std::list<PeakPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
@@ -199,6 +210,7 @@ void VAConfigApp::setup_payload(Cds& cds)
     (*it)->setup_payload(cds);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(cds);
+  _list_sem.give();
 
   Entry* entry = cds.entry(_signature);
   if (entry && entry->desc().type() != DescEntry::ScalarRange && _zplots.empty())
@@ -207,6 +219,7 @@ void VAConfigApp::setup_payload(Cds& cds)
 
 void VAConfigApp::update() 
 {
+  _list_sem.take();
   for(std::list<PeakPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->update();
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
@@ -215,6 +228,7 @@ void VAConfigApp::update()
     (*it)->update();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void VAConfigApp::add_map(Ami::AbsOperator* op)
@@ -224,9 +238,11 @@ void VAConfigApp::add_map(Ami::AbsOperator* op)
 				_name,
 				_channel, op,
 				false);
+  _list_sem.take();
   _pplots.push_back(plot);
+  _list_sem.give();
 
-  connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 #endif
   emit changed();
 }
@@ -236,14 +252,18 @@ void VAConfigApp::add_cursor_plot(BinMath* op)
   CursorPlot* cplot =
     new CursorPlot(_parent, op->output().name(), _channel, op);
 
+  _list_sem.take();
   _cplots.push_back(cplot);
+  _list_sem.give();
+
   connect(cplot, SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(cplot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  connect(cplot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   emit changed();
 }
 
 void VAConfigApp::remove_plot(QObject* obj)
 {
+  _list_sem.take();
   { PeakPlot* plot = static_cast<PeakPlot*>(obj);
     _pplots.remove(plot); }
 
@@ -252,8 +272,10 @@ void VAConfigApp::remove_plot(QObject* obj)
 
   { ZoomPlot* plot = static_cast<ZoomPlot*>(obj);
     _zplots.remove(plot); }
+  _list_sem.give();
 
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
 
   emit changed();
 }
@@ -264,7 +286,9 @@ void VAConfigApp::add_overlay(QtPlot& plot, BinMath* op)
                                          plot,
                                          _channel, 
                                          op);
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
 
   emit changed();
 }
@@ -276,6 +300,8 @@ void VAConfigApp::add_overlay(DescEntry*,QtPlot*,SharedData*)
 void VAConfigApp::remove_overlay(QtOverlay* obj)
 {
   CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.give();
 }
 

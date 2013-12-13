@@ -5,6 +5,7 @@
 #include "ami/qt/OverlayParent.hh"
 
 #include "ami/data/ConfigureRequestor.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <list>
 
@@ -68,6 +69,7 @@ namespace Ami {
       unsigned           _signature;
       const Rect&        _rect;
       ConfigureRequestor _req;
+      Semaphore          _list_sem;
       std::list<ProjectionPlot*> _pplots;
       std::list<CursorPlot*>     _cplots;
       std::list<ZoomPlot*>       _zplots;

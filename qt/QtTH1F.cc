@@ -78,7 +78,10 @@ void           QtTH1F::attach(QwtPlot* p)
 
 void           QtTH1F::update()
 {
-  yscale_update();
+  if (entry().valid())
+    yscale_update();
+  else
+    printf("QtTH1F::update invalid\n");
 }
 
 void QtTH1F::xscale_update()

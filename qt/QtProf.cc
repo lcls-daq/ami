@@ -83,6 +83,11 @@ void           QtProf::attach(QwtPlot* p)
 
 void           QtProf::update()
 {
+  if (!entry().valid()) {
+    printf("QtProf::update invalid\n");
+    return;
+  }
+
   const EntryProf& _entry = static_cast<const EntryProf&>(entry());
   unsigned nb = _entry.desc().nbins();
   double xlow = _entry.desc().xlow();

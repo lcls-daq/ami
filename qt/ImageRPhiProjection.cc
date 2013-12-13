@@ -55,7 +55,8 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   _channel  (0),
   _frame    (frame),
   _annulus  (new AnnulusCursors(frame, parent)),
-  _title    (new QLineEdit("Projection"))
+  _title    (new QLineEdit("Projection")),
+  _list_sem (Semaphore::FULL)
 {
   setWindowTitle("Image Projection");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -128,10 +129,12 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   
 ImageRPhiProjection::~ImageRPhiProjection()
 {
+  _list_sem.take();
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
   _posts.clear();
+  _list_sem.give();
 }
 
 void ImageRPhiProjection::save(char*& p) const
@@ -166,12 +169,14 @@ void ImageRPhiProjection::save(char*& p) const
 
 void ImageRPhiProjection::load(const char*& p)
 {
+  _list_sem.take();
+
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _pplots.clear();
 
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    disconnect(*it, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   _cplots.clear();
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
@@ -199,12 +204,12 @@ void ImageRPhiProjection::load(const char*& p)
     else if (tag.name == "_pplots") {
       ProjectionPlot* plot = new ProjectionPlot(this, p);
       _pplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_cplots") {
       CursorPlot* plot = new CursorPlot(this, p);
       _cplots.push_back(plot);
-      connect(plot, SIGNAL(destroyed(QObject*))  , this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*))  , this, SLOT(remove_plot(QObject*)));
     }
     else if (tag.name == "_posts") {
       CursorPost* post = new CursorPost(p);
@@ -215,6 +220,8 @@ void ImageRPhiProjection::load(const char*& p)
       _ovls.push_back(ovl);
     }
   XML_iterate_close(ImageRPhiProjection,tag);
+
+  _list_sem.give();
 }
 
 void ImageRPhiProjection::save_plots(const QString& p) const
@@ -242,6 +249,7 @@ void ImageRPhiProjection::setVisible(bool v)
 void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 				ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
+  _list_sem.take();
   unsigned mask=0;
   const unsigned maxint=0x40000000;
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
@@ -267,6 +275,7 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
     else
       mask |= 1<<(*it)->channel();
+  _list_sem.give();
 
   if (mask) {
     for(unsigned ich=0; ich<_nchannels; ich++) {
@@ -282,22 +291,26 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
 
 void ImageRPhiProjection::setup_payload(Cds& cds)
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
    (*it)->setup_payload(cds);
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     (*it)->setup_payload(cds);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
    (*it)->setup_payload(cds);
+  _list_sem.give();
 }
 
 void ImageRPhiProjection::update()
 {
+  _list_sem.take();
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     (*it)->update();
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     (*it)->update();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->update();
+  _list_sem.give();
 }
 
 void ImageRPhiProjection::set_channel(int c) 
@@ -319,9 +332,11 @@ void ImageRPhiProjection::plot()
         new CursorPlot(this, _title->text(), _channel,                  \
                        new BinMath(*desc,pplot->expression()));         \
       delete desc;                                                      \
+      _list_sem.take();                                                 \
       _cplots.push_back(plot);                                          \
+      _list_sem.give();                                                 \
       connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));        \
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*))); \
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*))); \
     }                                                                   \
     emit changed();                                                     \
   }
@@ -336,10 +351,12 @@ void ImageRPhiProjection::plot()
 	new ProjectionPlot(this,_title->text(), _channel, 
 			   _projection_plot->desc(qPrintable(_title->text())));
 
+      _list_sem.take();
       _pplots.push_back(plot);
+      _list_sem.give();
 
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
-      connect(plot, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+      connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
       emit changed();
 
       break;
@@ -379,7 +396,9 @@ QString ImageRPhiProjection::_add_post(const QString& title, const char* expr)
   CursorPost* post = new CursorPost(_channel,
 				    new BinMath(*desc,expr),
                                     this);
+  _list_sem.take();
   _posts.push_back(post);
+  _list_sem.give();
 
   delete desc;
 
@@ -390,13 +409,16 @@ QString ImageRPhiProjection::_add_post(const QString& title, const char* expr)
 
 void ImageRPhiProjection::remove_plot(QObject* obj)
 {
+  _list_sem.take();
   { ProjectionPlot* plot = static_cast<ProjectionPlot*>(obj);
     _pplots.remove(plot); }
 
   { CursorPlot* plot = static_cast<CursorPlot*>(obj);
     _cplots.remove(plot); }
 
-  disconnect(obj, SIGNAL(destroyed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  delete obj;
+  _list_sem.give();
 }
 
 void ImageRPhiProjection::update_range()
@@ -419,7 +441,10 @@ void ImageRPhiProjection::update_range()
 
 void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
 {
+  _list_sem.take();
   _posts.remove(post);
+  delete post;
+  _list_sem.give();
   emit changed();
 }
 
@@ -473,7 +498,9 @@ void ImageRPhiProjection::add_overlay(DescEntry* desc,
                                      
   delete desc;
 
+  _list_sem.take();
   _ovls.push_back(ovl);
+  _list_sem.give();
   
   emit changed();
 }
@@ -481,7 +508,9 @@ void ImageRPhiProjection::add_overlay(DescEntry* desc,
 void ImageRPhiProjection::remove_overlay(QtOverlay* obj)
 {
   CursorOverlay* ovl = static_cast<CursorOverlay*>(obj);
+  _list_sem.take();
   _ovls.remove(ovl);
+  _list_sem.take();
   
   //  emit changed();
 }
