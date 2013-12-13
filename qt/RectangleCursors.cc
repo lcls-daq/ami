@@ -188,7 +188,7 @@ void RectangleCursors::draw(QImage& image)
   unsigned klo = unsigned(yinfo.tick(ylo())), khi = unsigned(yinfo.tick(yhi()));
 
   unsigned xmax = unsigned(xinfo.tick(_xmax));
-  unsigned ymax = unsigned(xinfo.tick(_ymax));
+  unsigned ymax = unsigned(yinfo.tick(_ymax));
 
 #ifdef DBUG
   printf("RC::draw jlo,klo %d,%d jhi,khi %d,%d xmax,ymax %d,%d\n",
