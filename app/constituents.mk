@@ -6,7 +6,7 @@ tgtsrcs_ami := ami.cc AmiApp.cc AmiApp.hh
 tgtsrcs_ami_proxy := ami_proxy.cc
 tgtsrcs_ami_collection := ami_collection.cc
 tgtsrcs_test := test.cc
-tgtlibs_test := pdsalg/pdsalg pdsdata/xtcdata
+tgtlibs_test := psalg/psalg pdsdata/xtcdata
 tgtlibs_test += pdsdata/appdata pdsdata/psddl_pdsdata
 tgtlibs_test += pdsdata/compressdata
 tgtlibs_test += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
@@ -29,14 +29,14 @@ tgtlibs_ami_proxy := ami/amisvc ami/amidata ami/server ami/client ami/calib
 tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_proxy += $(qtlibdir)
 tgtslib_ami_proxy += $(qtslibdir)
-tgtlibs_ami_proxy += pdsalg/pdsalg
+tgtlibs_ami_proxy += psalg/psalg
 tgtlibs_ami_proxy += gsl/gsl gsl/gslcblas
 
 tgtlibs_ami_collection := ami/amisvc ami/amidata ami/server ami/client ami/calib
 tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_collection += $(qtlibdir)
 tgtslib_ami_collection += $(qtslibdir)
-tgtlibs_ami_collection += pdsalg/pdsalg
+tgtlibs_ami_collection += psalg/psalg
 tgtlibs_ami_collection += gsl/gsl gsl/gslcblas
 
 #
@@ -49,7 +49,7 @@ tgtlibs_ami += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client 
 tgtincs_ami := $(qtincdir) pdsdata/include
 tgtlibs_ami += $(qtlibdir)
 tgtslib_ami += $(qtslibdir)
-tgtlibs_ami += pdsalg/pdsalg
+tgtlibs_ami += psalg/psalg
 tgtlibs_ami += gsl/gsl gsl/gslcblas
 
 tgtlibs_tcptest := ami/amisvc pdsdata/xtcdata

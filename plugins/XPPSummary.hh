@@ -58,13 +58,19 @@ namespace Ami {
                    void*                 payload) { _configure(src,type,payload); }
     void event    (const Pds::DetInfo&   src,      // event data callback
                    const Pds::TypeId&    type,
-                   void*                 payload) { _event(src,type,payload); }
+                   const Pds::Damage&    damage,
+                   void*                 payload) 
+    { if (!damage.value()) _event(src,type,payload); }
     void event    (const Pds::BldInfo&   src,      // event data callback
                    const Pds::TypeId&    type,
-                   void*                 payload) { _event(src,type,payload); }
+                   const Pds::Damage&    damage,
+                   void*                 payload) 
+    { if (!damage.value()) _event(src,type,payload); }
     void event    (const Pds::ProcInfo&  src,      // event data callback
                    const Pds::TypeId&    type,
-                   void*                 payload) { _event(src,type,payload); }
+                   const Pds::Damage&    damage,
+                   void*                 payload) 
+    { if (!damage.value()) _event(src,type,payload); }
   private:
     void _configure(const Pds::Src&       src,      // configuration data callback const Pds::TypeId&    type,
                     const Pds::TypeId&    type,

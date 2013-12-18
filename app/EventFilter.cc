@@ -103,26 +103,28 @@ int Ami::EventFilter::process(Xtc* xtc)
   if (xtc->contains.id()==TypeId::Id_Xtc)
     iterate(xtc);
   else if (_seq->service()==TransitionId::L1Accept) {
-    if (xtc->damage.value()==0)
-      for(list<Ami::UserModule*>::iterator it=_filters.begin();
-          it!=_filters.end(); it++)
-        switch(xtc->src.level()) {
-        case Level::Source:
-          (*it)-> event(static_cast<const Pds::DetInfo&>(xtc->src),
-                        xtc->contains,
-                        xtc->payload());
-          break;
-        case Level::Reporter:
-          (*it)-> event(static_cast<const Pds::BldInfo&>(xtc->src),
-                        xtc->contains,
-                        xtc->payload());
-          break;
-        default:
-          (*it)-> event(static_cast<const Pds::ProcInfo&>(xtc->src),
-                        xtc->contains,
-                        xtc->payload());
-          break;
-        }
+    for(list<Ami::UserModule*>::iterator it=_filters.begin();
+        it!=_filters.end(); it++)
+      switch(xtc->src.level()) {
+      case Level::Source:
+        (*it)-> event(static_cast<const Pds::DetInfo&>(xtc->src),
+                      xtc->contains,
+                      xtc->damage,
+                      xtc->payload());
+        break;
+      case Level::Reporter:
+        (*it)-> event(static_cast<const Pds::BldInfo&>(xtc->src),
+                      xtc->contains,
+                      xtc->damage,
+                      xtc->payload());
+        break;
+      default:
+        (*it)-> event(static_cast<const Pds::ProcInfo&>(xtc->src),
+                      xtc->contains,
+                      xtc->damage,
+                      xtc->payload());
+        break;
+      }
   }
   else if (_seq->service()==TransitionId::Configure) {
     for(list<Ami::UserModule*>::iterator it=_filters.begin();

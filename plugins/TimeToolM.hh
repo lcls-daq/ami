@@ -33,6 +33,7 @@ namespace Ami {
 		   void*                 payload);
     void event    (const Pds::DetInfo&   src,      // event data callback
 		   const Pds::TypeId&    type,
+                   const Pds::Damage&    damage,
 		   void*                 payload);
   public:  // Analysis functions
     void clear    ();         // remove Entry's
@@ -58,9 +59,11 @@ namespace Ami {
 		   void*                 payload) {}
     void event    (const Pds::BldInfo&   src,      // event data callback
 		   const Pds::TypeId&    type,
+                   const Pds::Damage&    damage,
 		   void*                 payload) {}
     void event    (const Pds::ProcInfo&  src,      // event data callback
 		   const Pds::TypeId&    type,
+                   const Pds::Damage&    damage,
 		   void*                 payload) {}
 
   };

@@ -151,9 +151,12 @@ void Ami::PnccdModule::configure(const Pds::DetInfo&   src,      // configuratio
 
 void Ami::PnccdModule::event    (const Pds::DetInfo&   src,      // event data callback
 				 const Pds::TypeId&    type,
+                                 const Pds::Damage&    damage,
 				 void*                 payload)
 {
   if (!_cds) return;
+
+  if (damage.value()) return;
 
   if (type.id() == Pds::TypeId::Id_pnCCDframe) {
     for(std::list<ModulePlots*>::iterator it=_plots.begin();

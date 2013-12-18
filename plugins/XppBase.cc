@@ -199,8 +199,11 @@ void XppBase::configure(const Pds::ProcInfo&  src,
 //
 void XppBase::event(const Pds::DetInfo&   src,
                     const Pds::TypeId&    type,
+                    const Pds::Damage&    damage,
                     void*                 payload)
 {
+  if (damage.value()) return;
+
   // DAQ IPMs
   if (type.id()==Pds::TypeId::Id_IpmFex) {
     //if(matches(src,_ipm4))
@@ -253,8 +256,11 @@ void XppBase::event(const Pds::DetInfo&   src,
 
 void XppBase::event(const Pds::BldInfo&   src,
                     const Pds::TypeId&    type,
+                    const Pds::Damage&    damage,
                     void*                 payload)
 {
+  if (damage.value()) return;
+
   // Shared IPMs
   if (type.id()==Pds::TypeId::Id_IpmFex) {
     if (_ipm1 == src) 
@@ -287,6 +293,7 @@ void XppBase::event(const Pds::BldInfo&   src,
 
 void XppBase::event(const Pds::ProcInfo&  src,
                     const Pds::TypeId&    type,
+                    const Pds::Damage&    damage,
                     void*                 payload)
 {
   // Nothing to do

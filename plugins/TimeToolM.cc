@@ -369,8 +369,11 @@ void TimeToolM::configure(const Pds::DetInfo&   src,
 //
 void TimeToolM::event    (const Pds::DetInfo&   src,
 			  const Pds::TypeId&    type,
+                          const Pds::Damage&    damage,
 			  void*                 payload) 
 {
+  if (damage.value()) return;
+
   for(unsigned i=0; i<_fex.size(); i++)
     _fex[i]->event(src,type,payload);
 }
