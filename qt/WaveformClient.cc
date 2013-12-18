@@ -21,7 +21,7 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
 
   { QPushButton* edgesB = new QPushButton("Edges");
     addWidget(edgesB);
-    _edges = new EdgeFinder(this,_channels,NCHANNELS);
+    _edges = new EdgeFinder(this,_channels,NCHANNELS,wd,this);
     connect(edgesB, SIGNAL(clicked()), _edges, SLOT(front())); }
   { QPushButton* cursorsB = new QPushButton("Cursors");
     addWidget(cursorsB);

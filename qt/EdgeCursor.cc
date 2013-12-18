@@ -32,6 +32,7 @@ EdgeCursor::EdgeCursor(const QString& name,
   _showB->setCheckable(true);
 
   QHBoxLayout* layout = new QHBoxLayout;
+  layout->addStretch();
   if (qPrintable(name)[0])
       layout->addWidget(new QLabel(name));
   layout->addWidget(_input);

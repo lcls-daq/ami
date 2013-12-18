@@ -40,13 +40,16 @@ namespace Ami {
     class CursorPlot;
     class CursorPost;
     class CursorOverlay;
+    class EdgeCursor;
+    class WaveformDisplay;
 
     class EdgeFinder : public QtPWidget,
 		       public OverlayParent {
       Q_OBJECT
     public:
       EdgeFinder(QWidget* parent,
-		 ChannelDefinition* channels[], unsigned nchannels);
+		 ChannelDefinition* channels[], unsigned nchannels,
+                 WaveformDisplay&, QtPWidget*);
       ~EdgeFinder();
     public:
       void save(char*& p) const;
@@ -109,7 +112,9 @@ namespace Ami {
     class EdgeFinderConfig : public QWidget {
       Q_OBJECT
     public:
-      EdgeFinderConfig(QWidget* parent);
+      EdgeFinderConfig(QWidget* parent,
+                       WaveformDisplay&,
+                       QtPWidget*);
       virtual ~EdgeFinderConfig();
     public:
       Ami::EdgeFinderConfig value() const;
@@ -122,8 +127,8 @@ namespace Ami {
       QLineEdit* _fraction;
       QCheckBox* _leading_edge;
       QLineEdit* _deadtime;
-      QLineEdit* _threshold_value;
-      QLineEdit* _baseline_value;
+      EdgeCursor* _threshold_value;
+      EdgeCursor* _baseline_value;
     };
   };
 };

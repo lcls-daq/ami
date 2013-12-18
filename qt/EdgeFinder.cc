@@ -8,6 +8,9 @@
 
 #include "ami/qt/QtPlotSelector.hh"
 
+#include "ami/qt/EdgeCursor.hh"
+#include "ami/qt/WaveformDisplay.hh"
+
 #include "ami/data/DescWaveform.hh"
 #include "ami/data/EdgeFinder.hh"
 #include "ami/data/BinMath.hh"
@@ -42,13 +45,15 @@ static inline int avgRound(int n, int d)
 using namespace Ami::Qt;
 
 EdgeFinder::EdgeFinder(QWidget* parent,
-		       ChannelDefinition* channels[], unsigned nchannels) :
+		       ChannelDefinition* channels[], unsigned nchannels,
+                       WaveformDisplay& frame,
+                       QtPWidget*       pFrame) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0)
 {
-  _config = new EdgeFinderConfig(this);
+  _config = new EdgeFinderConfig(this,frame,pFrame);
 
   setWindowTitle("Edge Finder");
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -217,8 +222,11 @@ void EdgeFinder::set_channel(int c)
 
 void EdgeFinder::update_config()
 {
-  *_configs[_setBox->currentIndex()] = _config->value();
-  emit changed();
+  int index = _setBox->currentIndex();
+  if (index>=0) {
+    *_configs[index] = _config->value();
+    emit changed();
+  }
 }
 
 void EdgeFinder::plot()
@@ -322,7 +330,9 @@ Ami::AbsOperator* EdgeFinderConfigApp::_op(const char* name)
 }
 
 
-EdgeFinderConfig::EdgeFinderConfig(QWidget* parent) : QWidget(parent)
+EdgeFinderConfig::EdgeFinderConfig(QWidget* parent,
+                                   WaveformDisplay& wd,
+                                   QtPWidget* pFrame) : QWidget(parent)
 { QGridLayout* l = new QGridLayout;
   unsigned row=0;
   l->addWidget(new QLabel("Fraction"),row,0,::Qt::AlignRight);
@@ -340,15 +350,13 @@ EdgeFinderConfig::EdgeFinderConfig(QWidget* parent) : QWidget(parent)
   new QDoubleValidator(_deadtime); row++;
   connect(_deadtime, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
-  l->addWidget(new QLabel("Threshold"),row,0,::Qt::AlignRight);
-  l->addWidget(_threshold_value = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
-  new QDoubleValidator(_threshold_value); row++;
-  connect(_threshold_value, SIGNAL(editingFinished()), this, SIGNAL(changed()));
-	
-  l->addWidget(new QLabel("Baseline")  ,row,0,::Qt::AlignRight);
-  l->addWidget(_baseline_value = new QLineEdit("0"),row,1,::Qt::AlignLeft);
-  new QDoubleValidator(_baseline_value); row++;
-  connect(_baseline_value, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+  _threshold_value = new EdgeCursor("threshold",*wd.plot(), pFrame);
+  l->addWidget(_threshold_value,row,0,1,2); row++;
+  connect(_threshold_value, SIGNAL(changed()), this, SIGNAL(changed()));
+
+  _baseline_value  = new EdgeCursor("baseline" ,*wd.plot(), pFrame);
+  l->addWidget(_baseline_value ,row,0,1,2); row++;
+  connect(_baseline_value, SIGNAL(changed()), this, SIGNAL(changed()));
 
   setLayout(l);
 }
@@ -360,8 +368,8 @@ Ami::EdgeFinderConfig EdgeFinderConfig::value() const {
   v._fraction        = _fraction->text().toDouble();
   v._leading_edge    = _leading_edge->isChecked();
   v._deadtime        = _deadtime->text().toDouble();
-  v._threshold_value = _threshold_value->text().toDouble();
-  v._baseline_value  = _baseline_value ->text().toDouble();
+  v._threshold_value = _threshold_value->value();
+  v._baseline_value  = _baseline_value ->value();
   return v;
 }
 
@@ -369,8 +377,8 @@ void EdgeFinderConfig::load(const Ami::EdgeFinderConfig& v) {
   _fraction       ->setText(QString::number(v._fraction));
   _leading_edge   ->setChecked(v._leading_edge);
   _deadtime       ->setText(QString::number(v._deadtime));
-  _threshold_value->setText(QString::number(v._threshold_value));
-  _baseline_value ->setText(QString::number(v._baseline_value));
+  _threshold_value->value(v._threshold_value);
+  _baseline_value ->value(v._baseline_value);
 }
 
 void EdgeFinderConfig::load(const char*& p) {
@@ -382,9 +390,9 @@ void EdgeFinderConfig::load(const char*& p) {
     else if (tag.name == "_deadtime")
       _deadtime->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_threshold_value")
-      _threshold_value->setText(QtPersistent::extract_s(p));
+      _threshold_value->load(p);
     else if (tag.name == "_baseline_value")
-      _baseline_value->setText(QtPersistent::extract_s(p));
+      _baseline_value->load(p);
   XML_iterate_close(EdgeFinderConfig,tag);
 }
 
@@ -392,6 +400,6 @@ void EdgeFinderConfig::save(char*& p) const {
   XML_insert(p, "QLineEdit", "_fraction"      , QtPersistent::insert(p,_fraction->text()) );
   XML_insert(p, "QCheckBox", "_leading_edge"  , QtPersistent::insert(p,_leading_edge->isChecked()) );
   XML_insert(p, "QLineEdit", "_deadtime"      , QtPersistent::insert(p,_deadtime->text()) );
-  XML_insert(p, "QLineEdit", "_threshold_value", QtPersistent::insert(p,_threshold_value->text()) );
-  XML_insert(p, "QLineEdit", "_baseline_value", QtPersistent::insert(p,_baseline_value->text()) );
+  XML_insert(p, "QLineEdit", "_threshold_value", _threshold_value->save(p));
+  XML_insert(p, "QLineEdit", "_baseline_value" , _baseline_value ->save(p));
 }

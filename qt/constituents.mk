@@ -25,7 +25,7 @@ qt_libs += qwt/qwt
 tgtlibs_online_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_online_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
 tgtlibs_online_ami += $(qt_libs)
-tgtlibs_online_ami += pdsalg/pdsalg
+tgtlibs_online_ami += psalg/psalg
 tgtlibs_online_ami += gsl/gsl gsl/gslcblas
 
 datalibs := pdsdata/xtcdata pdsdata/psddl_pdsdata
@@ -36,18 +36,18 @@ datalibs := pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_offline_ami := $(datalibs) pdsdata/appdata pdsdata/anadata pdsdata/indexdata pdsdata/compressdata
 tgtlibs_offline_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/event ami/app ami/amiqt
 tgtlibs_offline_ami += $(qt_libs)
-tgtlibs_offline_ami += pdsalg/pdsalg
+tgtlibs_offline_ami += psalg/psalg
 tgtlibs_offline_ami += gsl/gsl gsl/gslcblas
 
 tgtlibs_blviewer := $(datalibs) pdsapp/configdb pdsapp/configdbg pds/configdata
 tgtlibs_blviewer += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
-tgtlibs_blviewer += pdsalg/pdsalg
+tgtlibs_blviewer += psalg/psalg
 tgtlibs_blviewer += $(qt_libs)
 tgtlibs_blviewer += gsl/gsl gsl/gslcblas
 
 tgtlibs_qttest := $(datalibs)
 tgtlibs_qttest += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
-tgtlibs_qttest += pdsalg/pdsalg
+tgtlibs_qttest += psalg/psalg
 tgtlibs_qttest += $(qt_libs)
 tgtlibs_qttest += gsl/gsl gsl/gslcblas
 
