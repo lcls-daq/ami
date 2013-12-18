@@ -43,8 +43,8 @@ namespace Ami {
     EntryImage*          _common;
     bool                 _tform;
     unsigned             _options;
-    int                  _common_lo;
-    int                  _common_hi;
+    unsigned             _common_lo;
+    unsigned             _common_hi;
   };
 };
 

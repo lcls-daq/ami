@@ -192,7 +192,9 @@ Droplet::Droplet(QWidget* parent,
 
   connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_setButton , SIGNAL(clicked()),      this, SLOT(new_set()));
+  connect(_setBox    , SIGNAL(currentIndexChanged(int)), this, SLOT(select_set(int)));
   connect(plotB      , SIGNAL(clicked()),      this, SLOT(plot()));
+  connect(ovlyB      , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB     , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
   for(unsigned i=0; i<_nchannels; i++)

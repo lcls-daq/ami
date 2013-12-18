@@ -109,7 +109,9 @@ void           QtChart::update()
   _skip = entry.desc().prescale()-1;
 
   if (!entry.valid()) {
+#ifdef DBUG
     printf("QtChart::update invalid\n");
+#endif
     return;
   }
 

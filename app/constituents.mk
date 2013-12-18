@@ -25,14 +25,14 @@ tgtslib_ami_collection := $(USRLIBDIR)/rt
 tgtslib_test := $(USRLIBDIR)/rt
 tgtslib_tcptest := $(USRLIBDIR)/rt
 
-tgtlibs_ami_proxy := ami/amisvc ami/amidata ami/server ami/client
+tgtlibs_ami_proxy := ami/amisvc ami/amidata ami/server ami/client ami/calib
 tgtlibs_ami_proxy += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_proxy += $(qtlibdir)
 tgtslib_ami_proxy += $(qtslibdir)
 tgtlibs_ami_proxy += pdsalg/pdsalg
 tgtlibs_ami_proxy += gsl/gsl gsl/gslcblas
 
-tgtlibs_ami_collection := ami/amisvc ami/amidata ami/server ami/client
+tgtlibs_ami_collection := ami/amisvc ami/amidata ami/server ami/client ami/calib
 tgtlibs_ami_collection += pdsdata/xtcdata pdsdata/psddl_pdsdata
 tgtlibs_ami_collection += $(qtlibdir)
 tgtslib_ami_collection += $(qtslibdir)

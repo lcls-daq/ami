@@ -10,6 +10,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/XML.hh"
 
+#include "ami/event/Calib.hh"
+
 #include "ndarray/ndarray.h"
 #include "pdsalg/pdsalg.h"
 
@@ -26,14 +28,19 @@ static const unsigned STEP_SIZE = 50;
 static PLIST find_droplets(const ndarray<const unsigned,2>&,
 			   unsigned offset,
 			   const Ami::DropletConfig&,
-			   Ami::FeatureCache&, unsigned index);
+			   Ami::FeatureCache&, unsigned index,
+			   const ndarray<const double,1> xcal,
+			   const ndarray<const double,1> ycal);
 
 static PLIST find_droplets(const ndarray<const unsigned,2>&,
 			   const ndarray<const unsigned,1>& row_mask,
 			   const ndarray<const unsigned,2>& mask,
 			   unsigned offset,
 			   const Ami::DropletConfig&,
-			   Ami::FeatureCache&, unsigned index);
+			   Ami::FeatureCache&, unsigned index,
+			   const ndarray<const double,1> xcal,
+			   const ndarray<const double,1> ycal);
+
 
 enum { Stage1, Stage2, Stage3, Stage4, Stage5, NumberOfCuts };
 static const char* stage_name[] = { "DuplSeed",
@@ -68,6 +75,7 @@ Droplet::Droplet(const char* name,
 }
 
 Droplet::Droplet(const char*& p,
+		 const DescEntry& input,
 		 FeatureCache& cache) :
   AbsOperator       (AbsOperator::Droplet),
   _v                (true),
@@ -98,6 +106,12 @@ Droplet::Droplet(const char*& p,
     else
       cache.add(buff);
   }
+
+  //
+  //  Load x,y sub-pixel position calibration
+  //
+  Calib::load_integral_symm(_xcal, input.info().phy(), "xmom", "X-moment calibration");
+  Calib::load_integral_symm(_ycal, input.info().phy(), "ymom", "Y-moment calibration");
 }
 
 Droplet::~Droplet()
@@ -137,7 +151,7 @@ Entry&     Droplet::_operate(const Entry& e) const
   PLIST photons;
   if (mask)
     photons = find_droplets(entry.content(), mask->row_mask(), mask->all_mask(), p,
-			    _config, *_cache, _index);
+			    _config, *_cache, _index, _xcal, _ycal);
 				 
 #if 0
   else if (d.nframes())
@@ -147,7 +161,7 @@ Entry&     Droplet::_operate(const Entry& e) const
 #endif
   else
     photons = find_droplets(entry.content(), p, 
-			    _config, *_cache, _index);
+			    _config, *_cache, _index, _xcal, _ycal);
 
   const unsigned n = photons.size();
 #ifdef DBUG
@@ -168,7 +182,9 @@ public:
   DropletBuilder(const ndarray<const unsigned,2> data,
 		 const ndarray<const unsigned,2> mask,
 		 unsigned                        offset,
-		 const DropletConfig&            cfg);
+		 const DropletConfig&            cfg,
+		 const ndarray<const double,1>   xcal,
+		 const ndarray<const double,1>   ycal);
 public:
   bool              process(const unsigned*);
   ndarray<double,1> result () const;
@@ -191,13 +207,17 @@ private:
   int                             _y;
   bool                            _valid;
   unsigned                        _ncut[NumberOfCuts];
+  const ndarray<const double,1>   _xcal;
+  const ndarray<const double,1>   _ycal;
 };
 
 PLIST find_droplets(const ndarray<const unsigned,2>& v,
 		    unsigned offset,
 		    const DropletConfig& c,
 		    FeatureCache& cache,
-		    unsigned index)
+		    unsigned index,
+		    const ndarray<const double,1> xcal,
+		    const ndarray<const double,1> ycal)
 {
   PLIST result;
 
@@ -208,7 +228,7 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
   unsigned shape[] = {0,0};
   ndarray<unsigned,2> no_mask(shape);
 
-  DropletBuilder builder(v, no_mask, offset, cfg);
+  DropletBuilder builder(v, no_mask, offset, cfg, xcal, ycal);
 
   for(unsigned iy=1; iy<v.shape()[0]-1; iy++) {
     const unsigned* uv = &v[iy-1][1];
@@ -246,7 +266,9 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
 		    unsigned offset,
 		    const DropletConfig& c,
 		    FeatureCache& cache,
-		    unsigned index)
+		    unsigned index,
+		    const ndarray<const double,1> xcal,
+		    const ndarray<const double,1> ycal)
 {
   PLIST result;
 
@@ -254,7 +276,13 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
   cfg.seed_threshold += offset;
   cfg.nbor_threshold += offset;
 
-  DropletBuilder builder(v, mask, offset, cfg);
+  //
+  //  try removing the mask from the Droplet Builder
+  //
+  unsigned shape[] = {0,0};
+  ndarray<unsigned,2> no_mask(shape);
+
+  DropletBuilder builder(v, no_mask, offset, cfg, xcal, ycal);
 
   for(unsigned iy=1; iy<v.shape()[0]-1; iy++) {
 
@@ -298,12 +326,16 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
 DropletBuilder::DropletBuilder(const ndarray<const unsigned,2> data,
 			       const ndarray<const unsigned,2> mask,
 			       unsigned                        offset,
-			       const DropletConfig&            cfg) :
+			       const DropletConfig&            cfg,
+			       const ndarray<const double,1>   xcal,
+			       const ndarray<const double,1>   ycal) :
   _seed   (0),
   _data   (data),
   _mask   (mask),
   _offset (offset),
-  _cfg    (cfg)
+  _cfg    (cfg),
+  _xcal   (xcal),
+  _ycal   (ycal)
 {
   _map_scale = 32;
   unsigned mlen  = _map_scale;
@@ -376,6 +408,22 @@ bool DropletBuilder::process(const unsigned* seed)
   _results[Droplets::X   ] = double(_x);
   _results[Droplets::Y   ] = double(_y);
 
+  if (_xcal.size()) {
+    double xm = _results[Droplets::Xmom];
+    int ib = int((xm+0.5)*double(_xcal.size()));
+    if (ib<0) ib=0;
+    else if (ib>=int(_xcal.size())) ib=_xcal.size()-1;
+    _results[Droplets::X] += _xcal[ib]-0.5;
+  }
+
+  if (_ycal.size()) {
+    double ym = _results[Droplets::Ymom];
+    int ib = int((ym+0.5)*double(_ycal.size()));
+    if (ib<0) ib=0;
+    else if (ib>=int(_ycal.size())) ib=_ycal.size()-1;
+    _results[Droplets::Y] += _ycal[ib]-0.5;
+  }
+
   return true;
 }
 
@@ -434,8 +482,16 @@ bool DropletBuilder::_test_pixel(const unsigned* p)
 
   if (v > _cfg.seed_threshold &&
       p < _seed) {
-    _ncut[Stage1]++;
-    return false;
+    const unsigned z = *p;
+    const unsigned* cv = p;
+    const unsigned* uv = p - _data.shape()[1];
+    const unsigned* dv = p + _data.shape()[1];
+    if (z >  cv[-1] && z >= cv[+1] &&
+	z >  uv[0]  && z >  uv[-1] && z >  uv[+1] &&
+	z >= dv[0]  && z >= dv[-1] && z >= dv[+1]) {
+      _ncut[Stage1]++;
+      return false;
+    }
   }
   
   if (_contains(p)) return true;

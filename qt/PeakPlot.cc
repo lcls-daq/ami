@@ -16,6 +16,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/PeakFinder.hh"
 #include "ami/data/BlobFinder.hh"
+#include "ami/data/VAPlot.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/RawFilter.hh"
 
@@ -213,6 +214,7 @@ void PeakPlot::load(const char*& p)
       switch(type) {
       case AbsOperator::PeakFinder       : _op = new PeakFinder       (v); break;
       case AbsOperator::BlobFinder       : _op = new BlobFinder       (v); break;
+      case AbsOperator::VAPlot           : _op = new VAPlot           (v); break;
       default: _op=0; printf("Unable to operator type %d\n",type); break;
       }
     }

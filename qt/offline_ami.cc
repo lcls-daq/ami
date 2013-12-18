@@ -11,6 +11,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/event/EventHandler.hh"
+#include "ami/event/Calib.hh"
 #include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Semaphore.hh"
@@ -36,6 +37,8 @@ static void usage(char* progname) {
           "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
           "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
+	  "         [-t (calib test mode)]\n"
+	  "         [-T (test mode)]\n"
           "         [-E (expert mode/movie option)]\n", 
           progname,
           Ami::Qt::ImageColorControl::palette_set().c_str());
@@ -116,7 +119,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::STW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTW?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -129,6 +132,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'D':
       Ami::EventHandler::post_diagnostics(true);
+      break;
+    case 't':
+      Ami::Calib::use_test(true);
       break;
     case 'E':
       Ami::Qt::ImageDisplay::enable_movie_option();

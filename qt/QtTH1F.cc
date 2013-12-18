@@ -80,8 +80,10 @@ void           QtTH1F::update()
 {
   if (entry().valid())
     yscale_update();
+#ifdef DBUG
   else
     printf("QtTH1F::update invalid\n");
+#endif
 }
 
 void QtTH1F::xscale_update()

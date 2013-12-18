@@ -12,6 +12,8 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/VectorArray.hh"
 
+#include <ndarray/ndarray.h>
+
 namespace Ami {
 
   class EntryRef;
@@ -50,6 +52,7 @@ namespace Ami {
     Droplet(const char*,
 	    const DropletConfig&);
     Droplet(const char*&,
+	    const DescEntry&,
 	    FeatureCache&);
     ~Droplet();
   public:
@@ -71,6 +74,8 @@ namespace Ami {
     bool             _v;
     FeatureCache*    _cache;
     int              _index;
+    ndarray<double,1> _xcal;
+    ndarray<double,1> _ycal;
   };
 };
 

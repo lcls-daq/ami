@@ -40,7 +40,7 @@
 #include "ami/event/AndorHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
 #include "ami/event/EpixWaveformHandler.hh"
-//#include "ami/event/EpixHandler.hh"
+#include "ami/event/EpixHandler.hh"
 #include "ami/event/EpixHandlerT.hh"
 #include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/data/FeatureCache.hh"
@@ -442,7 +442,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
       case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
-	//      case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
+      case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
       case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;

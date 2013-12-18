@@ -516,7 +516,6 @@ void EnvClient::remove_plot(QObject* obj)
   _plots.remove(plot);
   _list_sem.give();
 
-  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
   delete plot;
 
   emit changed();

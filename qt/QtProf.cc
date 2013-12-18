@@ -84,7 +84,9 @@ void           QtProf::attach(QwtPlot* p)
 void           QtProf::update()
 {
   if (!entry().valid()) {
+#ifdef DBUG
     printf("QtProf::update invalid\n");
+#endif
     return;
   }
 

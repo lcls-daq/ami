@@ -159,7 +159,9 @@ void           QtTH2F::attach(QwtPlot* p)
 void           QtTH2F::update()
 {
   if (!entry().valid()) {
+#ifdef DBUG
     printf("QtTH2F::update invalid\n");
+#endif
     return;
   }
 

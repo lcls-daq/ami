@@ -16,10 +16,12 @@ using namespace Ami;
 static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
 static const unsigned _option_correct_common_mode = 0x04;
+static const unsigned _option_correct_common_mode2= 0x08;
 
 unsigned FrameCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned FrameCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned FrameCalib::option_correct_common_mode() { return _option_correct_common_mode; }
+unsigned FrameCalib::option_correct_common_mode2() { return _option_correct_common_mode2; }
 
 std::string FrameCalib::save_pedestals(Entry* e,
                                        bool   subtract,
@@ -247,7 +249,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
 }
 
 int FrameCalib::median(ndarray<const uint16_t,1> data,
-			  int& iLo, int& iHi)
+		       unsigned& iLo, unsigned& iHi)
 {
   unsigned* bins = 0;
   unsigned nbins = 0;
@@ -269,7 +271,55 @@ int FrameCalib::median(ndarray<const uint16_t,1> data,
     }
     
     if (bins[0] > data.size()/2)
-      iLo -= nbins/4;
+      if (iLo > nbins/4)
+	iLo -= nbins/4;
+      else 
+	iLo = 0;
+    else if (bins[nbins-1] > data.size()/2)
+      iHi += nbins/4;
+    else
+      break;
+  }
+    
+  unsigned i=1;
+  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  while( s>0 )
+    s -= bins[i++];
+
+  if (unsigned(-s) > bins[i-1]/2) i--;
+
+  delete[] bins;
+
+  return (iLo+i);
+}
+
+int FrameCalib::median(ndarray<const uint32_t,1> data,
+		       unsigned& iLo, unsigned& iHi)
+{
+  unsigned* bins = 0;
+  unsigned nbins = 0;
+
+  while(1) {
+    if (bins) delete[] bins;
+
+    nbins = iHi-iLo+1;
+    bins  = new unsigned[nbins];
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    for(unsigned i=0; i<data.size(); i++) {
+      if (data[i] < iLo)
+	bins[0]++;
+      else if (data[i] >= iHi)
+	bins[nbins-1]++;
+      else
+	bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > data.size()/2)
+      if (iLo > nbins/4)
+	iLo -= nbins/4;
+      else
+	iLo = 0;
     else if (bins[nbins-1] > data.size()/2)
       iHi += nbins/4;
     else

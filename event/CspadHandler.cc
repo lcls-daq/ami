@@ -300,8 +300,8 @@ static double unbondedNoise(const int16_t*  data,
     a[i+6] = CORR(j);
     a[i+7] = CORR(j+RowBins);
   }
-  int lo = Offset-100;
-  int hi = Offset+100;
+  unsigned lo = Offset-100;
+  unsigned hi = Offset+100;
   int v = Ami::FrameCalib::median(a,lo,hi);
   return double(v)-dOffset;
 }

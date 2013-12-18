@@ -670,6 +670,18 @@ void MaskDisplay::apply_thrh()
 
 void MaskDisplay::rect(int x0, int y0, int x1, int y1)
 {
+  if (x0 > x1) {
+    int t = x0;
+    x0 = x1; 
+    x1 = t;
+  }
+
+  if (y0 > y1) {
+    int t = y0;
+    y0 = y1;
+    y1 = t;
+  }
+
   ImageMask m(_mask->rows(),_mask->cols());
   
   m.clear();

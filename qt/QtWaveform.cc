@@ -67,8 +67,10 @@ void           QtWaveform::update()
 {
   if (entry().valid())
     yscale_update();
+#ifdef DBUG
   else
     printf("QtWaveform::update invalid\n");
+#endif
 }
 
 void QtWaveform::xscale_update()

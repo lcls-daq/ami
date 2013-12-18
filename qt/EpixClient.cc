@@ -2,6 +2,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
 #include "ami/event/FrameCalib.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
@@ -26,9 +27,11 @@ EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QStri
     connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }
 
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
-  addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
-  connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
-  connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode [Ch]"));
+  addWidget(_fnBox2= new QCheckBox("Correct\nCommon Mode [Row]"));
+  connect(_npBox , SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_fnBox , SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_fnBox2, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 EpixClient::~EpixClient() {}
@@ -38,6 +41,7 @@ void EpixClient::save(char*& p) const
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_fnBox2", QtPersistent::insert(p,_fnBox2->isChecked()) );
 }
 
 void EpixClient::load(const char*& p)
@@ -49,6 +53,8 @@ void EpixClient::load(const char*& p)
       _npBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_fnBox")
       _fnBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_fnBox2")
+      _fnBox2->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(EpixClient,tag);
 }
 
@@ -62,6 +68,7 @@ void EpixClient::_configure(char*& p,
   unsigned o = 0;
   if (_npBox->isChecked()) o |= FrameCalib::option_no_pedestal();
   if (_fnBox->isChecked()) o |= FrameCalib::option_correct_common_mode();
+  if (_fnBox2->isChecked()) o |= FrameCalib::option_correct_common_mode2();
   if (_reloadPedestals) {
     o |= FrameCalib::option_reload_pedestal();
     _reloadPedestals=false;
@@ -112,6 +119,8 @@ void EpixClient::write_pedestals()
       }
     }
   }
+
+  if (Ami::Calib::use_test()) lProd=false;
 
   box.addButton(writeB,QMessageBox::AcceptRole);
 

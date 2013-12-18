@@ -12,6 +12,11 @@ namespace Ami {
     static void load_array      (ndarray<double,1>& a, 
                                  unsigned phy,
                                  const char* pfx, const char* dsc);
+    static void load_integral_symm(ndarray<double,1>& a, 
+				   unsigned phy,
+				   const char* pfx, const char* dsc);
+    static void use_test(bool);
+    static bool use_test();
   };
 };
 

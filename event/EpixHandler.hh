@@ -34,10 +34,13 @@ namespace Ami {
 
     FeatureCache&       _cache;
     EntryImage*         _entry;
+    EntryImage*         _pentry;
     char*               _config_buffer;
     unsigned            _options;
     ndarray<unsigned,2> _pedestals;
     ndarray<unsigned,2> _offset;
+
+    ndarray<int,1>      _feature;
   };
 };
 
