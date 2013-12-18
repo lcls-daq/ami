@@ -423,7 +423,6 @@ void PeakFit::remove_plot(QObject* obj)
   _list_sem.give();
 
   delete obj;
-  disconnect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
 void PeakFit::add_post()
