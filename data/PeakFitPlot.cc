@@ -16,7 +16,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureExpression.hh"
 
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <QtCore/QString>
 
@@ -221,20 +221,20 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     }
 
     if (norm.empty())
-      baseline = pdsalg::line_fit(linput, lpos, dnorm);
+      baseline = psalg::line_fit(linput, lpos, dnorm);
     else {
       ndarray<double,1> lnorm = make_ndarray<double>(_nbins);
       for(int i=0; i<_nbins; i++)
         lnorm[i] = norm[_bins[i]];
-      baseline = pdsalg::line_fit(linput, lpos, lnorm);
+      baseline = psalg::line_fit(linput, lpos, lnorm);
     }
   }
 
   double y = 0;
   if (_prm==RMS) {
     y = norm.empty() ? 
-      pdsalg::dist_rms(input,dnorm,baseline) :
-      pdsalg::dist_rms(input,norm,baseline);
+      psalg::dist_rms(input,dnorm,baseline) :
+      psalg::dist_rms(input,norm,baseline);
     if (y==0)
       return *_entry;
     y *= xscale;
@@ -242,8 +242,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
 
   else if (_prm==FWHM) {
     y = norm.empty() ?
-      pdsalg::dist_fwhm(input,dnorm,baseline) :
-      pdsalg::dist_fwhm(input,norm,baseline);
+      psalg::dist_fwhm(input,dnorm,baseline) :
+      psalg::dist_fwhm(input,norm,baseline);
     if (y==0)
       return *_entry;
     y *= xscale;
@@ -252,8 +252,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
   else { // quadratic interpolation
     
     ndarray<double,1> result = norm.empty() ?
-      pdsalg::parab_interp(input,dnorm,baseline) :
-      pdsalg::parab_interp(input,norm,baseline);
+      psalg::parab_interp(input,dnorm,baseline) :
+      psalg::parab_interp(input,norm,baseline);
     
     if (result[0]==0 && _prm != Position)
       return *_entry;

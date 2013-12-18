@@ -13,7 +13,7 @@
 #include "ami/event/Calib.hh"
 
 #include "ndarray/ndarray.h"
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <QtCore/QString>
 

@@ -1,6 +1,5 @@
 #include "EdgeFinder.hh"
 
-#include "ami/data/FeatureCache.hh"
 #include "ami/data/DescRef.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/EntryWaveform.hh"
@@ -11,7 +10,7 @@
 #include "ami/data/XML.hh"
 
 #include "ndarray/ndarray.h"
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <QtCore/QString>
 
@@ -23,7 +22,7 @@ static const unsigned STEP_SIZE = 50;
 
 static PLIST find_edges(const Ami::EntryWaveform& e,
 			const Ami::EdgeFinderConfig&,
-			Ami::FeatureCache&, unsigned index);
+			unsigned index);
 
 static void _add_edge(const double*,
 		      double                  sc,
@@ -56,11 +55,9 @@ EdgeFinder::EdgeFinder(const char* name,
 #define CASETERM(type) case DescEntry::type: \
   t = new Entry##type##Term(static_cast<const Entry##type&>(*entry),_index); break;
 
-EdgeFinder::EdgeFinder(const char*& p,
-		       FeatureCache& cache) :
+EdgeFinder::EdgeFinder(const char*& p) :
   AbsOperator     (AbsOperator::EdgeFinder),
-  _v              (true),
-  _cache          (&cache)
+  _v              (true)
 {
   _extract(p, _name   , NAME_LEN);
   _extract(p, &_config, sizeof(_config));
@@ -100,9 +97,10 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   Edges& output = const_cast<EdgeFinder*>(this)->_output;
   output.reset();
 
+#if 0
   PLIST edges;
-  edges = find_edges(entry, _config, *_cache, _index);
-  
+  edges = find_edges(entry, _config, _index);
+
   const unsigned n = edges.size();
 #ifdef DBUG
   printf("EdgeFinder::edges %d\n",n);
@@ -113,13 +111,35 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
     for(unsigned i=0; i<n; i++,it++)
       output.append(it->data());
   }
+#else
+  const DescWaveform& d = entry.desc();
+  double sc=entry.info(EntryWaveform::Normalization);
+  if (sc==0) sc=1;
+  double xsc = (d.xup()-d.xlow())/double(d.nbins());
+  ndarray<double,2> edges = psalg::find_edges(make_ndarray(entry.content(),d.nbins()),
+                                              _config._baseline_value*sc,
+                                              _config._threshold_value*sc,
+                                              _config._fraction,
+                                              _config._deadtime/xsc,
+                                              _config._leading_edge);
+  const unsigned n = edges.shape()[0];
+  if (n) {
+    output.resize(n);
+    for(unsigned i=0; i<n; i++) {
+      double edge[Edges::NumberOf];
+      edge[0] = edges[i][0]/sc;
+      edge[1] = edges[i][1]*xsc + d.xlow();
+      output.append(edge);
+    }
+  }
+#endif
+
   _entry->valid(e.time());
   return *_entry;
 }
 
 PLIST find_edges(const EntryWaveform& e,
 		 const EdgeFinderConfig& c,
-		 FeatureCache& cache,
 		 unsigned index)
 {
   PLIST result;
@@ -200,173 +220,6 @@ void _add_edge(const double*           v,
     last = thisx;
   }
 }
-
-#if 0
-Entry&     EdgeFinder::_operate(const Entry& e) const
-{
-  if (!e.valid())
-    return *_output_entry;
-
-  const EntryWaveform& entry = static_cast<const EntryWaveform&>(e);
-  const DescWaveform& d = entry.desc();
-  double sc = entry.info(EntryWaveform::Normalization);
-  if (sc==0) sc=1;
-  double threshold_value = _threshold_value*sc;
-
-  double xscale = (d.xup()-d.xlow())/double(d.nbins());
-
-  ndarray<const double,1> wf = make_ndarray(entry.content(),d.nbins());
-  ndarray<double,2> edges = pdsalg::find_edges(wf,
-                                               _baseline_value,
-                                               threshold_value,
-                                               _fraction,
-                                               _deadtime/xscale,
-                                               IsLeading(_alg));
-
-  switch(_parameter) {
-  case Location:
-    { EntryTH1F& e = *static_cast<EntryTH1F*>(_output_entry);
-      for(unsigned k=0; k<edges.shape()[0]; k++)
-        e.addcontent(1.,xscale*edges[k][0]+d.xlow());
-    } break;
-  case Amplitude:
-    { EntryTH1F& e = *static_cast<EntryTH1F*>(_output_entry);
-      for(unsigned k=0; k<edges.shape()[0]; k++)
-        e.addcontent(1.,edges[k][1]);
-    } break;
-  default:
-    if (_output->type()==DescEntry::TH2F) {
-      EntryTH2F& e = *static_cast<EntryTH2F*>(_output_entry);
-      for(unsigned k=0; k<edges.shape()[0]; k++)
-        e.addcontent(1.,xscale*edges[k][0]+d.xlow(),edges[k][1]);
-    }
-    else
-      ;
-    break;
-  }
-  
-  switch(_output->type()) {
-  case DescEntry::TH1F:
-    static_cast<EntryTH1F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
-                                                    EntryTH1F::Normalization);
-    break;
-  case DescEntry::TH2F:
-    static_cast<EntryTH2F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
-                                                    EntryTH2F::Normalization);
-    break;
-  default:
-    break;
-  }
-  _output_entry->valid(e.time());
-  return *_output_entry;
-}
-
-Entry&     EdgeFinder::_operate(const Entry& e) const
-{
-  if (!e.valid())
-    return *_output_entry;
-
-  const EntryWaveform& entry = static_cast<const EntryWaveform&>(e);
-  const DescWaveform& d = entry.desc();
-  // find the boundaries where the pulse crosses the threshold
-  double sc = entry.info(EntryWaveform::Normalization);
-  if (sc==0) sc=1;
-  double threshold_value = _threshold_value*sc;
-
-  double   peak   = threshold_value;
-  unsigned start  = 0;
-  double   last   = -1.0;
-  bool     crossed=false;
-  bool     rising = _threshold_value > _baseline_value;
-  for(unsigned k=0; k<d.nbins(); k++) {
-    double y = entry.content(k);
-    bool over = 
-      ( rising && y>threshold_value) ||
-      (!rising && y<threshold_value);
-    if (!crossed && over) {
-      crossed = true;
-      start   = k;
-      peak    = y;
-    }
-    else if (crossed && !over) {
-      _hist_edge(peak, start, last, entry);
-      crossed = false;
-    }
-    else if (( rising && y>peak) ||
-	     (!rising && y<peak)) {
-      peak = y;
-      if (!IsLeading(_alg))  // For a trailing edge, start at the peak!
-        start = k;
-    }
-  }
-
-  //  The last edge may not have fallen back below threshold
-  if (crossed) {
-    _hist_edge(peak, start, last, entry);
-  }
-
-  switch(_output->type()) {
-  case DescEntry::TH1F:
-    static_cast<EntryTH1F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
-                                                    EntryTH1F::Normalization);
-    break;
-  case DescEntry::TH2F:
-    static_cast<EntryTH2F*>(_output_entry)->addinfo(entry.info(EntryWaveform::Normalization),
-                                                    EntryTH2F::Normalization);
-    break;
-  default:
-    break;
-  }
-  _output_entry->valid(e.time());
-  return *_output_entry;
-}
-
-
-void EdgeFinder::_hist_edge(double               peak, 
-			    unsigned             start, 
-			    double&              last,
-			    const EntryWaveform& entry) const
-{
-  const DescWaveform& d = entry.desc();
-  double sc = entry.info(EntryWaveform::Normalization);
-  if (sc==0) sc=1;
-  double baseline_value  = _baseline_value*sc;
-  bool     rising = _threshold_value > _baseline_value;
-
-  //  find the edge
-  double edge_v = _fraction*(peak+baseline_value);
-  unsigned i=start;
-  if (rising == IsLeading(_alg)) { // leading positive edge, or trailing negative edge
-    while(entry.content(i) < edge_v)
-      i++;
-  }
-  else {                           // trailing positive edge, or leading negative edge
-    while(entry.content(i) > edge_v)
-      i++;
-  }
-  double edge = i>0 ? 
-    (edge_v-entry.content(i))/(entry.content(i)-entry.content(i-1)) 
-    + double(i) : 0;
-  double thisx = edge*(d.xup()-d.xlow())/double(d.nbins())+d.xlow();
-  if (last < 0 || thisx > last + _deadtime) {
-    switch(_parameter) {
-    case Location:
-      static_cast<EntryTH1F*>(_output_entry)->addcontent(1.,thisx);
-      break;
-    case Amplitude:
-      static_cast<EntryTH1F*>(_output_entry)->addcontent(1.,peak);
-      break;
-    default:
-      if (_output->type()==DescEntry::TH2F)
-	static_cast<EntryTH2F*>(_output_entry)->addcontent(1.,thisx,peak);
-      else
-	;
-      break;
-    }
-    last = thisx;
-  }
-}
-#endif
 
 void EdgeFinder::_invalid() {}
 

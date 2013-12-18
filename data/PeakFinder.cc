@@ -10,7 +10,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Expression.hh"
 
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <stdio.h>
 
@@ -142,26 +142,26 @@ Entry&     PeakFinder::_operate(const Entry& e) const
   if (_center_only) {
     if (_mode==Count)
       if (_fn)
-        pdsalg::count_hits(ain, _threshold, aout);
+        psalg::count_hits(ain, _threshold, aout);
       else
-        pdsalg::count_hits(ain, threshold, aout);
+        psalg::count_hits(ain, threshold, aout);
     else
       if (_fn)
-        pdsalg::sum_hits(ain, _threshold, p, aout);
+        psalg::sum_hits(ain, _threshold, p, aout);
       else 
-        pdsalg::sum_hits(ain, threshold, p, aout);
+        psalg::sum_hits(ain, threshold, p, aout);
   }
   else {
     if (_mode==Count)
       if (_fn)
-        pdsalg::count_excess(ain, _threshold, aout);
+        psalg::count_excess(ain, _threshold, aout);
       else
-        pdsalg::count_excess(ain, threshold, aout);
+        psalg::count_excess(ain, threshold, aout);
     else
       if (_fn)
-        pdsalg::sum_excess(ain, _threshold, p, aout);
+        psalg::sum_excess(ain, _threshold, p, aout);
       else
-        pdsalg::sum_excess(ain, threshold, p, aout);
+        psalg::sum_excess(ain, threshold, p, aout);
   }
 
   Entry* output;

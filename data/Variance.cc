@@ -10,7 +10,7 @@
 #include "ami/data/SelfExpression.hh"
 #include "ami/data/valgnd.hh"
 
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <QtCore/QString>
 
@@ -137,11 +137,11 @@ Entry&     Variance::_operate(const Entry& e) const
       unsigned shape[] = {1,en.desc().nbins()};
       ndarray<const double,2> in (en.content(),shape);
       if (_i<_n)
-        pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
+        psalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
       else {
         EntryTH1F& ca = static_cast<EntryTH1F&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
-        pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
         _cache->valid(e.time());
         if (_n) {
           _i = 0;
@@ -154,11 +154,11 @@ Entry&     Variance::_operate(const Entry& e) const
       unsigned shape[] = {1,en.desc().nbins()};
       ndarray<const double,2> in (en.content(),shape);
       if (_i<_n)
-        pdsalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
+        psalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
       else {
         EntryWaveform& ca = static_cast<EntryWaveform&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
-        pdsalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
         _cache->valid(e.time());
         if (_n) {
           _i = 0;
@@ -183,10 +183,10 @@ Entry&     Variance::_operate(const Entry& e) const
           for(k=0; k<int(d.nframes()); k++) {
             ndarray<const unsigned,2> in (en.contents(k));
             if (_i<_n)
-              pdsalg::variance_accumulate(1./vn,ped,in,_m1[k],_m2[k]);
+              psalg::variance_accumulate(1./vn,ped,in,_m1[k],_m2[k]);
             else {
               ndarray<unsigned,2>       out(ca.contents(k));
-              pdsalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
+              psalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
               if (_n)
                 _zero(_m1[k],_m2[k]);
             }
@@ -196,10 +196,10 @@ Entry&     Variance::_operate(const Entry& e) const
       else {
         ndarray<const unsigned,2> in (en.content());
         if (_i<_n)
-          pdsalg::variance_accumulate(1./vn,ped,in,_m1[0],_m2[0]);
+          psalg::variance_accumulate(1./vn,ped,in,_m1[0],_m2[0]);
         else {
           ndarray<unsigned,2>       out(ca.content());
-          pdsalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
+          psalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
           if (_n)
             _zero(_m1[0],_m2[0]);
         }

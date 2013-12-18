@@ -8,7 +8,6 @@ namespace Ami {
 
   class EntryRef;
   class EntryWaveform;
-  class FeatureCache;
 
   class EdgeFinderConfig {
   public:
@@ -38,8 +37,7 @@ namespace Ami {
   public:
     EdgeFinder(const char*,
 	       const EdgeFinderConfig&);
-    EdgeFinder(const char*&,
-	       FeatureCache&);
+    EdgeFinder(const char*&);
     ~EdgeFinder();
   public:
     void use();
@@ -61,7 +59,6 @@ namespace Ami {
     Edges            _output;
     EntryRef*        _entry;
     bool             _v;
-    FeatureCache*    _cache;
     int              _index;
   };
 

@@ -6,6 +6,7 @@
 #include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/xtc/ProcInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
+#include "pdsdata/xtc/Damage.hh"
 
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureCache.hh"
@@ -29,12 +30,15 @@ namespace Ami {
 			   void*                 payload) = 0;
     virtual void event    (const Pds::DetInfo&   src,
 			   const Pds::TypeId&    type,
+			   const Pds::Damage&    damage,
 			   void*                 payload) = 0;
     virtual void event    (const Pds::BldInfo&   src,
 			   const Pds::TypeId&    type,
+			   const Pds::Damage&    damage,
 			   void*                 payload) = 0;
     virtual void event    (const Pds::ProcInfo&  src,
 			   const Pds::TypeId&    type,
+			   const Pds::Damage&    damage,
 			   void*                 payload) = 0;
   public:
     virtual const char* name() const = 0;

@@ -5,7 +5,7 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/valgnd.hh"
 
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -86,7 +86,7 @@ Entry&     FIR::_operate(const Entry& e) const
         const EntryWaveform& input = static_cast<const EntryWaveform&>(e);
         unsigned shape[] = {input.desc().nbins()};
         ndarray<const double,1> in(input.content(),shape);
-        pdsalg::finite_impulse_response(_response,
+        psalg::finite_impulse_response(_response,
                                         in,
                                         const_cast<FIR*>(this)->_outputa);
         for(unsigned j=0; j<EntryWaveform::InfoSize; j++) {

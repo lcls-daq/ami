@@ -10,7 +10,7 @@
 #include "ami/data/ImageMask.hh"
 #include "ami/data/VectorArray.hh"
 
-#include "pdsalg/pdsalg.h"
+#include "psalg/psalg.h"
 
 #define DBUG
 
@@ -41,7 +41,7 @@ double BinMathC::EntryWaveformTerm::evaluate() const
   double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
   double x0 = desc.xlow()+(double(lo)+0.5)*dx;
   ndarray<const double,1> a = make_ndarray(e->content()+lo,hi-lo+1);
-  ndarray<double,1> m = pdsalg::moments(a, x0, dx);
+  ndarray<double,1> m = psalg::moments(a, x0, dx);
 
   switch(_mom) {
   case First : sum = m[1]; break;
@@ -66,7 +66,7 @@ double BinMathC::EntryTH1FTerm::evaluate() const
   double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
   double x0 = desc.xlow()+(double(lo)+0.5)*dx;
   ndarray<const double,1> a = make_ndarray(e->content()+lo,hi-lo+1);
-  ndarray<double,1> m = pdsalg::moments(a, x0, dx);
+  ndarray<double,1> m = psalg::moments(a, x0, dx);
 
   switch(_mom) {
   case First : sum = m[1]; break;
@@ -92,7 +92,7 @@ double BinMathC::EntryProfTerm::evaluate() const
   double x0 = desc.xlow()+(double(lo)+0.5)*dx;
   ndarray<const double,1> a = make_ndarray(e->ysum   ()+lo,hi-lo+1);
   ndarray<const double,1> b = make_ndarray(e->entries()+lo,hi-lo+1);
-  ndarray<double,1> m = pdsalg::moments(a, b, x0, dx);
+  ndarray<double,1> m = psalg::moments(a, b, x0, dx);
 
   switch(_mom) {
   case First : sum = m[1]; break;
@@ -157,7 +157,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
     if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
 
     unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
-    m = pdsalg::moments(a, mask->row_mask(), mask->all_mask(), p, bounds);
+    m = psalg::moments(a, mask->row_mask(), mask->all_mask(), p, bounds);
   }
   else if (d.nframes()) {
     for(unsigned j=0; j<5; j++)
@@ -166,7 +166,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
       int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
         unsigned bounds[][2] = { {ylo, yhi}, {xlo, xhi} };
-        ndarray<double,1> fm = pdsalg::moments(a, p, bounds);
+        ndarray<double,1> fm = psalg::moments(a, p, bounds);
         for(unsigned j=0; j<5; j++)
           m[j] += fm[j];
       }
@@ -178,7 +178,7 @@ double BinMathC::EntryImageTerm::evaluate() const {
     if (yhi >= d.nbinsy()) yhi = d.nbinsy()-1;
 
     unsigned bounds[][2] = { {ylo, yhi+1}, {xlo, xhi+1} };
-    m = pdsalg::moments(a, p, bounds);
+    m = psalg::moments(a, p, bounds);
   }
 
   double n = double(e.info(EntryImage::Normalization));
