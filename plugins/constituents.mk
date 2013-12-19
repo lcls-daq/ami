@@ -45,7 +45,7 @@ liblibs_XPPIpmSB1 := ami/xppbase
 
 libnames += XPPSummary
 libsrcs_XPPSummary := XPPSummary.cc
-libincs_XPPSummary := pdsdata/include ndarray/include
+libincs_XPPSummary := pdsdata/include ndarray/include boost/include
 
 libnames += PnccdModule
 libsrcs_PnccdModule := PnccdModule.cc
