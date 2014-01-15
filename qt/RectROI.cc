@@ -76,19 +76,19 @@ void RectROI::load(const char*& p)
 {
   _list_sem.take();
 
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  for(std::list<ProjectionPlot*>::iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    delete *it;
   _pplots.clear();
 
-  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
-    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  for(std::list<CursorPlot*>::iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    delete *it;
   _cplots.clear();
 
-  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
-    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
+  for(std::list<ZoomPlot*>::iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+    delete *it;
   _zplots.clear();
 
-  for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
+  for(std::list<CursorPost*>::iterator it=_posts.begin(); it!=_posts.end(); it++) {
     delete *it;
   }
   _posts.clear();

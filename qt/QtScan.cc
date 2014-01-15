@@ -91,7 +91,9 @@ void           QtScan::attach(QwtPlot* p)
 void           QtScan::update()
 {
   if (!entry().valid()) {
+#ifdef DBUG
     printf("QtScan::update invalid\n");
+#endif
     return;
   }
 

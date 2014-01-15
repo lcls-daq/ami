@@ -89,20 +89,12 @@ void           QtImage::canvas_size(const QSize& sz,
 #define LINTRANS(x) (x > p   ? (x-p)/n : 0)
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
 
-#define COPYIMAGE(type,T,factor) {			      \
-    ndarray<const uint32_t,2> src(_entry.content());          \
-    for(unsigned k=0; k<_ny; k++) {			      \
-      type* dst = (type*)qimage->scanLine(k);                 \
-      for(unsigned j=_x0; j<_x0+_nx; j++) {                   \
-        unsigned sh = unsigned(T(src[_y0+k][j]));             \
-	*dst++ = factor*(sh >= 0xff ? 0xff : sh);	      \
-      }                                                       \
-    } }
-
 QImage*  QtImage::image(float p0, float s, bool linear)
 {
   if (!entry().valid()) {
+#ifdef DBUG
     printf("QtImage::image invalid\n");
+#endif
     return 0;
   }
 
@@ -130,13 +122,29 @@ QImage*  QtImage::image(float p0, float s, bool linear)
     
     if (linear) {
       n *= double(s);
-      COPYIMAGE(uint8_t ,LINTRANS,0x01);
+
+      ndarray<const uint32_t,2> src(_entry.content());	      
+      for(unsigned k=0; k<_ny; k++) {			      
+	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	for(unsigned j=_x0; j<_x0+_nx; j++) {		      
+	  unsigned sh = unsigned(LINTRANS(src[_y0+k][j]));	      
+	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	}						      
+      }
     }
     else {
       const float  ppn  = p+n;
       const double logn = log(n);
       const double invlogs = 256./(log(s)+log(256));
-      COPYIMAGE(uint8_t ,LOGTRANS,0x01);
+
+      ndarray<const uint32_t,2> src(_entry.content());	      
+      for(unsigned k=0; k<_ny; k++) {			      
+	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	for(unsigned j=_x0; j<_x0+_nx; j++) {		      
+	  unsigned sh = unsigned(LOGTRANS(src[_y0+k][j]));	      
+	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	}						      
+      }
     }
   }
 

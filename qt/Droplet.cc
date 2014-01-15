@@ -393,7 +393,11 @@ void Droplet::change_channel()
 void Droplet::new_set()
 {
   int i=_apps.size()/_nchannels;
-  _configs.push_back(new Ami::DropletConfig);
+  if (_configs.size())
+    _configs.push_back(new Ami::DropletConfig(*_configs.back()));
+  else
+    _configs.push_back(new Ami::DropletConfig);
+
   QString name = QString("Set%1").arg(i);
   _setBox->addItem(name);
   for(unsigned j=0; j<_nchannels; j++) {

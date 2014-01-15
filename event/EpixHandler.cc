@@ -381,6 +381,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
+	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
+	  continue;
 	ndarray<uint32_t,2> a = _entry->contents(k);
 	unsigned shape[2];
 	shape[0] = a.shape()[0];
@@ -401,6 +403,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     else if (d.options()&FrameCalib::option_correct_common_mode()) {
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
+	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
+	  continue;
 	ndarray<uint32_t,2> a = _entry->contents(k);
 	unsigned shape[2];
 	shape[0] = a.shape()[0];

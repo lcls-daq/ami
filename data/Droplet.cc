@@ -474,19 +474,26 @@ bool DropletBuilder::_add_neighbors(const unsigned*  lseed)
 //
 bool DropletBuilder::_test_pixel(const unsigned* p)
 {
+  const unsigned nx = _data.shape()[1];
+
   if (p <  _data.data() ||
       p >= _data.end ()) return true;
 
   unsigned v = *p;
   if (v < _cfg.nbor_threshold) return true;
 
+  //
+  //  Has this pixel already been used in another droplet
+  //
   if (v > _cfg.seed_threshold &&
       p < _seed) {
     const unsigned z = *p;
     const unsigned* cv = p;
-    const unsigned* uv = p - _data.shape()[1];
-    const unsigned* dv = p + _data.shape()[1];
-    if (z >  cv[-1] && z >= cv[+1] &&
+    const unsigned* uv = p - nx;
+    const unsigned* dv = p + nx;
+    if ((uv-1) >= _data.data() &&
+	(dv+1) <  _data.end () &&
+	z >  cv[-1] && z >= cv[+1] &&
 	z >  uv[0]  && z >  uv[-1] && z >  uv[+1] &&
 	z >= dv[0]  && z >= dv[-1] && z >= dv[+1]) {
       _ncut[Stage1]++;
@@ -509,7 +516,6 @@ bool DropletBuilder::_test_pixel(const unsigned* p)
     return false;
   }
   
-  const unsigned nx = _data.shape()[1];
   unsigned i = p-_data.data();
   int dX = (i%nx)-_x;
   _results[Droplets::Xmom] += dE*double(dX);

@@ -273,8 +273,12 @@ int FrameCalib::median(ndarray<const uint16_t,1> data,
     if (bins[0] > data.size()/2)
       if (iLo > nbins/4)
 	iLo -= nbins/4;
-      else 
+      else if (iLo > 0)
 	iLo = 0;
+      else {
+	delete[] bins;
+	return iLo;
+      }
     else if (bins[nbins-1] > data.size()/2)
       iHi += nbins/4;
     else
@@ -318,8 +322,12 @@ int FrameCalib::median(ndarray<const uint32_t,1> data,
     if (bins[0] > data.size()/2)
       if (iLo > nbins/4)
 	iLo -= nbins/4;
-      else
+      else if (iLo > 0)
 	iLo = 0;
+      else {
+	delete[] bins;
+	return iLo;
+      }
     else if (bins[nbins-1] > data.size()/2)
       iHi += nbins/4;
     else
