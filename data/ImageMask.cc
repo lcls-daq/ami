@@ -12,8 +12,8 @@ ImageMask::ImageMask(unsigned rows, unsigned cols) :
   _ncols(cols)
 {
   unsigned rsz = (rows+31)>>5;
-  unsigned csz = (cols+31)>>5;
-  unsigned sz  = (rows*cols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = rows*csz;
 
   _rows    = new uint32_t[rsz];
   _cols    = new uint32_t[csz];
@@ -27,8 +27,8 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
   _ncols(cols)
 {
   unsigned rsz = (rows+31)>>5;
-  unsigned csz = (cols+31)>>5;
-  unsigned sz  = (rows*cols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = rows*csz;
   uint32_t* p  = new uint32_t[sz];
 
   //
@@ -38,7 +38,7 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
     memset(p, 0, sz<<2);
     for(unsigned i=0; i<nframes; i++)
       for(unsigned j=0; j<frames[i].ny; j++) {
-        uint32_t m = (frames[i].y+j)*cols + frames[i].x;
+        uint32_t m = (frames[i].y+j)*(csz<<5) + frames[i].x;
         uint32_t q = m + frames[i].nx;
         unsigned im = m>>5;
         unsigned iq = q>>5;
@@ -69,36 +69,32 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
     //
     //  AND with the mask read from the file
     //
-    float v;
-    for(unsigned i=0,k=0; i<rows; i++) {
-      unsigned rb = 1<<(i&0x1f);
-      for(unsigned j=0; j<cols; j++,k++) {
-        fscanf(f, "%f", &v);
-        unsigned ib = 1<<(k&0x1f);
-        if (v && (p[k>>5]&ib)) {
-          _rowcol[k>>5] |= ib;
-          _rows  [i>>5] |= rb;
-          _cols  [j>>5] |= 1<<(j&0x1f);
-        }
-        else
-          _rowcol[k>>5] &= ~ib;
+    for(unsigned i=0; i<rows; i++) {
+      unsigned k  = i*csz;
+      for(unsigned j=0; j<csz; j++,k++) {
+	unsigned v;
+        fscanf(f, "%08x", &v);
+	v &= p[k];
+	if (v) {
+	  _rowcol[k   ]  = v;
+	  _rows  [i>>5] |= 1<<(i&0x1f);
+	  _cols  [j>>5] |= 1<<(j&0x1f);
+	}
       }
     }
 
     fclose(f);
   }
   else {
-    for(unsigned i=0,k=0; i<rows; i++) {
-      unsigned rb = 1<<(i&0x1f);
-      for(unsigned j=0; j<cols; j++,k++) {
-        unsigned ib = 1<<(k&0x1f);
-        if (p[k>>5]&ib) {
-          _rowcol[k>>5] |= ib;
-          _rows  [i>>5] |= rb;
-          _cols  [j>>5] |= 1<<(j&0x1f);
-        }
-        else
-          _rowcol[k>>5] &= ~ib;
+    for(unsigned i=0; i<rows; i++) {
+      unsigned k  = i*csz;
+      for(unsigned j=0; j<csz; j++,k++) {
+	unsigned v = p[k];
+	if (v) {
+	  _rowcol[k   ]  = v;
+	  _rows  [i>>5] |= 1<<(i&0x1f);
+	  _cols  [j>>5] |= 1<<(j&0x1f);
+	}
       }
     }
   }
@@ -111,8 +107,8 @@ ImageMask::ImageMask(const ImageMask& m) :
   _ncols(m._ncols)
 {
   unsigned rsz = (_nrows+31)>>5;
-  unsigned csz = (_ncols+31)>>5;
-  unsigned sz  = (_nrows*_ncols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = _nrows*csz;
 
   _rows    = new uint32_t[rsz];
   _cols    = new uint32_t[csz];
@@ -133,8 +129,8 @@ ImageMask::~ImageMask()
 void ImageMask::clear()
 {
   unsigned rsz = (_nrows+31)>>5;
-  unsigned csz = (_ncols+31)>>5;
-  unsigned sz  = (_nrows*_ncols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = _nrows*csz;
 
   memset(_rows, 0, rsz<<2);
   memset(_cols, 0, csz<<2);
@@ -144,8 +140,8 @@ void ImageMask::clear()
 void ImageMask::fill()
 {
   unsigned rsz = (_nrows+31)>>5;
-  unsigned csz = (_ncols+31)>>5;
-  unsigned sz  = (_nrows*_ncols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = _nrows*csz;
 
   memset(_rows, 0xff, rsz<<2);
   memset(_cols, 0xff, csz<<2);
@@ -154,21 +150,19 @@ void ImageMask::fill()
 
 void ImageMask::clear(unsigned row, unsigned col)
 {
-  unsigned k = row*_ncols+col;
-  _rowcol[k>>5] &= ~(1<<(k&0x1f));
+  _rowcol[row*_rowsz()+(col>>5)] &= ~(1<<(col&0x1f));
 }
 
 void ImageMask::fill(unsigned row, unsigned col)
 {
-  unsigned k = row*_ncols+col;
-  _rowcol[k>>5] |= (1<<(k&0x1f));
+  _rowcol[row*_rowsz()+(col>>5)] |= (1<<(col&0x1f));
 }
 
 void ImageMask::invert()
 {
   unsigned rsz = (_nrows+31)>>5;
-  unsigned csz = (_ncols+31)>>5;
-  unsigned sz  = (_nrows*_ncols+31)>>5;
+  unsigned csz = _rowsz();
+  unsigned sz  = _nrows*csz;
 
   memset(_rows, 0, rsz<<2);
   memset(_cols, 0, csz<<2);
@@ -176,13 +170,14 @@ void ImageMask::invert()
   for(unsigned i=0; i<sz; i++)
     _rowcol[i] = ~_rowcol[i];
 
-  for(unsigned i=0,k=0; i<_nrows; i++) {
+  for(unsigned i=0; i<_nrows; i++) {
+    unsigned k  = i*_rowsz();
     unsigned rb = 1<<(i&0x1f);
-    for(unsigned j=0; j<_ncols; j++,k++) {
-      unsigned ib = 1<<(k&0x1f);
-      if (_rowcol[k>>5]&ib) {
+    for(unsigned j=0; j<_ncols; j++) {
+      unsigned cb = 1<<(j&0x1f);
+      if (_rowcol[k+(j>>5)]&cb) {
         _rows  [i>>5] |= rb;
-        _cols  [j>>5] |= 1<<(j&0x1f);
+        _cols  [j>>5] |= cb;
       }
     }
   }
@@ -193,12 +188,12 @@ void ImageMask::update()
   memset(_rows, 0, ((_nrows+31)>>5)<<2); 
   memset(_cols, 0, ((_ncols+31)>>5)<<2); 
 
-  for(unsigned j=0,k=0; j<_nrows; j++) { 
+  for(unsigned j=0; j<_nrows; j++) { 
+    unsigned k = j*_rowsz();
     unsigned jb = 1<<(j&0x1f); 
-    for(unsigned i=0; i<_ncols; i++,k++) { 
+    for(unsigned i=0; i<_ncols; i++) { 
       unsigned ib = 1<<(i&0x1f);
-      unsigned kb = 1<<(k&0x1f);
-      if (_rowcol[k>>5]&kb) {
+      if (_rowcol[k+(i>>5)]&ib) {
         _rows[j>>5] |= jb;
         _cols[i>>5] |= ib;
       }
@@ -266,7 +261,7 @@ void ImageMask::dump() const
         m.cols()!=_ncols)                                       \
       return *this;                                             \
                                                                 \
-    unsigned sz = (_nrows*_ncols+31)>>5;                        \
+    unsigned sz = _nrows*_rowsz();				\
     for(unsigned k=0; k<sz; k++)                                \
       _rowcol[k] o m._rowcol[k];                                \
                                                                 \

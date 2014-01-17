@@ -43,6 +43,7 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QCheckBox>
 
+#include <sys/stat.h>
 
 #define bold(t) #t
 
@@ -84,6 +85,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _scale           (new QLineEdit),
   _operator_is_ref (false),
   _configured_ref  (false),
+  _mask_file_mtime (0),
   _mask_display    (new MaskDisplay),
   _smp_warning     (new SMPWarning),
   _smp_prohibit    (true)
@@ -323,10 +325,8 @@ void ChannelDefinition::load_mask()
                                               "Mask File",
                                               ref_dir, "*.msk;;*.dat");
   
-  if (file.isNull())
-    ;
-  else
-    _mask_file = file;
+  _mask_file = file;
+  _maskB->setChecked(true);
 }
 
 void ChannelDefinition::edit_mask()
@@ -486,8 +486,18 @@ int ChannelDefinition::configure(char*& p, unsigned input, unsigned& output,
   }
 
   if (r) {
+    bool force=false;
+    struct ::stat64 s;
+    if (!_mask_file.isNull() &&
+	::stat64(qPrintable(_mask_file),&s)==0 &&
+	s.st_mtime != _mask_file_mtime) {
+      force=true;
+      printf("CD::configure mask modified at %s [%s]\n",
+	     ctime(&s.st_mtime), ctime(&_mask_file_mtime));
+      _mask_file_mtime = s.st_mtime;
+    }
     p += r->size();
-    _req.request(*r, output);
+    _req.request(*r, output, force);
     return _output_signature = r->output();
   }
   else

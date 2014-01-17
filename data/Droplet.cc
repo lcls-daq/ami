@@ -9,6 +9,7 @@
 
 #include "ami/data/Cds.hh"
 #include "ami/data/XML.hh"
+#include "ami/data/valgnd.hh"
 
 #include "ami/event/Calib.hh"
 
@@ -20,6 +21,7 @@
 #include <stdio.h>
 
 //#define DBUG
+//#define DBUGM
 
 typedef std::list<ndarray<double,1> > PLIST;
 
@@ -71,7 +73,7 @@ Droplet::Droplet(const char* name,
   _config           (config),
   _entry            (0)
 {
-  memcpy (_name, name, NAME_LEN);
+  strncpy_val(_name, name, NAME_LEN);
 }
 
 Droplet::Droplet(const char*& p,
@@ -284,10 +286,18 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
 
   DropletBuilder builder(v, no_mask, offset, cfg, xcal, ycal);
 
+#ifdef DBUGM
+  printf("Mask shape [%d,%d]\n", mask.shape()[0], mask.shape()[1]);
+#endif
+
   for(unsigned iy=1; iy<v.shape()[0]-1; iy++) {
 
     if (0==(row_mask[iy>>5]&(1<<(iy&0x1f))))
       continue;
+
+#ifdef DBUGM
+    printf("Row %d masked\n",iy);
+#endif
 
     const unsigned* uv = &v[iy-1][1];
     const unsigned* cv = &v[iy+0][1];
@@ -297,6 +307,10 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
 
       if (0 == (m[ix>>5] & (1<<(ix&0x1f))))
 	continue;
+
+#ifdef DBUGM
+      printf("[%d,%d] masked\n",ix,iy);
+#endif
 
       unsigned z = cv[0];
 

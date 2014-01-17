@@ -9,7 +9,8 @@
 #ifndef Ami_valgnd_hh
 #define Ami_valgnd_hh
 
-#ifdef VALGND
+//#ifdef VALGND
+#if 1
 #define strncpy_val(dst,src,sz) {		\
     if (src) {					\
       strncpy(dst,src,sz);			\

@@ -106,6 +106,7 @@ namespace Ami {
       QCheckBox*    _maskB;
       QPushButton*  _meditB;
       QString       _mask_file;
+      time_t        _mask_file_mtime;
       MaskDisplay*  _mask_display;
       SMPWarning*   _smp_warning;
       QCheckBox*    _firB;

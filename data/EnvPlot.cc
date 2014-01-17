@@ -206,7 +206,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
       _entry->valid(e.time());
     }
     else {
+#ifdef DBUG
       printf("EnvPlot [%s] input not valid\n",_entry->desc().name());
+#endif
     }
   }
   return *_entry;

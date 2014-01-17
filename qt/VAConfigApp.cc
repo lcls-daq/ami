@@ -154,7 +154,7 @@ void VAConfigApp::configure(char*& p, unsigned input, unsigned& output,
   ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                     ConfigureRequest::Analysis,
                                                     signatures[_channel],
-                                                    -1,
+                                                    _signature,
                                                     RawFilter(),
                                                     *o);
   delete o;

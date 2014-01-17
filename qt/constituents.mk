@@ -154,6 +154,7 @@ libsrcs_amiqt += ColorMaps.cc
 libsrcs_amiqt += ImageScale.cc ImageScale_moc.cc
 libsrcs_amiqt += ImageDisplay.cc ImageDisplay_moc.cc
 libsrcs_amiqt += Rect.cc RectROI.cc RectROI_moc.cc
+libsrcs_amiqt += RectROIDesc.cc RectROIDesc_moc.cc
 libsrcs_amiqt += RectangleCursors.cc RectangleCursors_moc.cc
 libsrcs_amiqt += AnnulusCursors.cc AnnulusCursors_moc.cc
 libsrcs_amiqt += ImageIntegral.cc ImageContrast.cc

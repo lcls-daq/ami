@@ -40,12 +40,19 @@ namespace Ami {
     void update();
     void dump() const;
   private:
+    unsigned _rowsz() const;
+  private:
     unsigned _nrows;
     unsigned _ncols;
     uint32_t* _rows;
     uint32_t* _cols;
     uint32_t* _rowcol;
   };
+
+  inline unsigned ImageMask::_rowsz() const
+  {
+    return (_ncols+31)>>5;
+  }
 
   inline bool ImageMask::row(unsigned i) const
   {
@@ -59,8 +66,7 @@ namespace Ami {
 
   inline bool ImageMask::rowcol(unsigned i, unsigned j) const 
   {
-    unsigned k = i*_ncols+j;
-    return _rowcol[k>>5] & (1<<(k&0x1f));
+    return _rowcol[i*_rowsz()+(j>>5)] & (1<<(j&0x1f));
   }
 
   inline ndarray<unsigned,1> ImageMask::row_mask() const 
@@ -71,7 +77,7 @@ namespace Ami {
   
   inline ndarray<unsigned,2> ImageMask::all_mask() const
   {
-    unsigned shape[] = {_nrows,(_ncols+31)>>5};
+    unsigned shape[] = {_nrows,_rowsz()};
     return ndarray<unsigned,2>(_rowcol,shape);
   }
 
