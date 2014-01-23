@@ -60,12 +60,13 @@ namespace Ami {
     void reset();
     ///  Event data needs to be parsed
     virtual bool  used() const;
-  protected:
+  public:
     int  _add_to_cache(const char*);
     void _rename_cache(int index,const char*);
   protected:
-    FeatureCache& _cache;
+    FeatureCache&          _cache;
     std::list<std::string> _features;
+    std::list<int>         _indices;
   };
 };
 

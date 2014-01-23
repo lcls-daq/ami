@@ -172,8 +172,7 @@ Entry&     TdcPlot::_operate(const Entry& e) const
   //
   //  ndarray interface doesn't know the size of the data
   //
-  //  ndarray<const Pds::Acqiris::TdcDataV1_Item,1> a = p->data(0);
-  ndarray<const Pds::Acqiris::TdcDataV1_Item,1> a = p->data();
+  ndarray<const Pds::Acqiris::TdcDataV1_Item,1> a = p->data(0);
   for(unsigned j=0; true; j++) {
     if (a[j].source() == Pds::Acqiris::TdcDataV1_Item::AuxIO &&
         static_cast<const MarkerType&>(a[j]).type() < MarkerType::AuxIOMarker) 

@@ -1,7 +1,7 @@
 #ifndef Ami_CspadHandler_hh
 #define Ami_CspadHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -15,7 +15,7 @@ namespace Ami {
   class EntryImage;
   class FeatureCache;
 
-  class CspadHandler : public EventHandler {
+  class CspadHandler : public EventHandlerF {
   public:
     CspadHandler(const Pds::DetInfo& info, FeatureCache&);
     ~CspadHandler();
@@ -45,7 +45,6 @@ namespace Ami {
     EntryImage* _unbinned_entry;
     CspadGeometry::Detector* _detector;
     CspadGeometry::Detector* _unbinned_detector;
-    FeatureCache&        _cache;
     unsigned             _options;
   };
 };

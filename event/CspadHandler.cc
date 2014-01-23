@@ -969,7 +969,8 @@ namespace CspadGeometry {
 
   class Detector {
   public:
-    Detector(const Src& src,
+    Detector(Ami::EventHandlerF& hdl,
+             const Src& src,
              const ConfigCache& c,
              FILE* f,    // offsets
              FILE* s,    // status
@@ -978,6 +979,7 @@ namespace CspadGeometry {
              FILE* gm,   // geometry
              unsigned max_pixels,
              bool     full_resolution) :
+      _hdl   (hdl),
       _src   (src),
       _config(c)
     {
@@ -1070,14 +1072,13 @@ namespace CspadGeometry {
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
 
-    void fill(Ami::DescImage&    image,
-              Ami::FeatureCache& cache) const
+    void fill(Ami::DescImage&    image) const
     {
       //
       //  The configuration should tell us how many elements to view
       //
+      _hdl.reset();
       char buff[64];
-      _cache = &cache;
       unsigned qmask = _config.quadMask();
       const char* detname = DetInfo::name(static_cast<const DetInfo&>(_src).detector());
       for(unsigned i=0; i<4; i++) {
@@ -1085,12 +1086,12 @@ namespace CspadGeometry {
           quad[i]->fill(image, _config.roiMask(i));
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
-            _feature[12*i+a] = cache.add(buff);
+            _feature[12*i+a] = _hdl._add_to_cache(buff);
           }
           if (Ami::EventHandler::post_diagnostics()) {
             for(unsigned a=0; a<8; a++) {
               sprintf(buff,"%s:Cspad:Quad[%d]:CommonMode[%d]",detname,i,a);
-              _feature[12*i+a+4] = cache.add(buff);
+              _feature[12*i+a+4] = _hdl._add_to_cache(buff);
             }
           }
 	  else 
@@ -1103,9 +1104,10 @@ namespace CspadGeometry {
       }      
 
       sprintf(buff,"%s:Cspad:Sum",detname);
-      _feature[48] = cache.add(buff);
+      _feature[48] = _hdl._add_to_cache(buff);
     }
     bool fill(Ami::EntryImage& image,
+              Ami::FeatureCache& cache,
               TypeId           contains,
               const char*      payload,
               size_t           sizeofPayload) const
@@ -1134,10 +1136,10 @@ namespace CspadGeometry {
 
       int q;
       Quad* const* quad = this->quad;
-      Ami::FeatureCache* cache = _cache;
       double sum = 0;
+      Ami::FeatureCache* pcache = &cache;
 #ifdef _OPENMP
-#pragma omp parallel shared(quad,cache) private(q) num_threads(4)
+#pragma omp parallel shared(quad,pcache) private(q) num_threads(4)
       {
 #pragma omp for schedule(dynamic,1)
 #endif
@@ -1147,11 +1149,11 @@ namespace CspadGeometry {
           ndarray<const uint16_t,1> temp;
           if (!_config.data(contains,payload,q,mask,data,temp)) continue;
 
-          quad[q]->fill(image,data,mask,*_cache,_feature[12*q+4]);
+          quad[q]->fill(image,data,mask,*pcache,_feature[12*q+4]);
 
           for(int a=0; a<4; a++)
-            cache->cache(_feature[12*q+a],
-                         CspadTemp::instance().getTemp(temp[a]));
+            cache.cache(_feature[12*q+a],
+                        CspadTemp::instance().getTemp(temp[a]));
 
           //  Calculate integral
           if (image.desc().options()&CspadCalib::option_post_integral()) {
@@ -1175,7 +1177,7 @@ namespace CspadGeometry {
 #endif
 
       if (image.desc().options()&CspadCalib::option_post_integral())
-        _cache->cache(_feature[48],sum);
+        cache.cache(_feature[48],sum);
 
       return true;
     }
@@ -1199,31 +1201,26 @@ namespace CspadGeometry {
         if (qmask & (1<<i)) {
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Quad[%d]:Temp[%d]",s,i,a);
-            _cache->rename(_feature[12*i+a],buff);
+            _hdl._rename_cache(_feature[12*i+a],buff);
           }
           if (Ami::EventHandler::post_diagnostics())
             for(unsigned a=0; a<8; a++) {
               sprintf(buff,"%s:Quad[%d]:CommonMode[%d]",s,i,a);
-              _cache->rename(_feature[12*i+a+4],buff);
+              _hdl._rename_cache(_feature[12*i+a+4],buff);
             }
         }
 
       sprintf(buff,"%s:Sum",s);
-      _cache->rename(_feature[48],buff);
+      _hdl._rename_cache(_feature[48],buff);
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
     unsigned ypixels() { return _pixels; }
-    bool     used() const {
-      for(unsigned i=0; i<NumFeatures; i++)
-	if (_cache->used(_feature[i])) return true;
-      return false;
-    }
   private:
+    Ami::EventHandlerF& _hdl;
     Quad* quad[4];
     const Src&  _src;
     ConfigCache _config;
-    mutable Ami::FeatureCache* _cache;
     enum { NumFeatures=49 };
     mutable int _feature[NumFeatures];
     unsigned _ppb;
@@ -1290,12 +1287,11 @@ static std::list<Pds::TypeId::Type> data_type_list()
 }
 
 CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
-  EventHandler(info, data_type_list(), Pds::TypeId::Id_CspadConfig),
+  EventHandlerF(info, data_type_list(), Pds::TypeId::Id_CspadConfig, features),
   _entry(0),
   _unbinned_entry(0),
   _detector(0),
   _unbinned_detector(0),
-  _cache(features),
   _options   (0)
 {
   unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(int16_t);
@@ -1327,12 +1323,12 @@ void CspadHandler::rename(const char* s)
   }
 }
 
-void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; }
+void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; EventHandlerF::reset(); }
 
 bool CspadHandler::used() const
 {
   return ((_entry && _entry->desc().used()) ||
-	  (_detector && _detector->used()));
+	  EventHandler::used());
 }
 
 void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
@@ -1398,7 +1394,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution());
+  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution());
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());
@@ -1407,7 +1403,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
                  ppb, ppb);
   desc.set_scale(pixel_size*1e3,pixel_size*1e3);
     
-  detector->fill(desc,_cache);
+  detector->fill(desc);
 
   entry = new EntryImage(desc);
   memset(entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
@@ -1457,7 +1453,7 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
       }
     }
     
-    if (_detector->fill(*_entry,contains,payload,sizeofPayload)) {
+    if (_detector->fill(*_entry,_cache,contains,payload,sizeofPayload)) {
       _entry->info(1,EntryImage::Normalization);
       _entry->valid(t);
     }
@@ -1466,7 +1462,7 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
     }
   }
   if (_unbinned_entry && _unbinned_entry->desc().used()) {
-    _unbinned_detector->fill(*_unbinned_entry,contains,payload,sizeofPayload);
+    _unbinned_detector->fill(*_unbinned_entry,_cache,contains,payload,sizeofPayload);
     _unbinned_entry->info(1,EntryImage::Normalization);
     _unbinned_entry->valid(t);
   }

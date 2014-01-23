@@ -42,8 +42,10 @@ std::list<std::string> EventHandlerF::features() const { return _features; }
 
 int EventHandlerF::_add_to_cache(const char* name)
 {
+  int i = _cache.add(name);
+  _indices .push_back(i);
   _features.push_back(std::string(name));
-  return _cache.add(name);
+  return i;
 }
 
 void EventHandlerF::_rename_cache(int index, const char* name)
@@ -61,6 +63,14 @@ void EventHandlerF::_rename_cache(int index, const char* name)
 void EventHandlerF::reset()
 {
   _features.clear();
+  _indices .clear();
 }
 
-bool EventHandlerF::used() const { return true; }
+bool EventHandlerF::used() const 
+{ 
+  if (EventHandler::used()) return true;
+  for(std::list<int>::const_iterator it=_indices.begin();
+      it!=_indices.end(); it++)
+    if (_cache.used(*it)) return true;
+  return false;
+}

@@ -306,8 +306,8 @@ void FilterExport::_find_filter_sources(const AbsFilter& filter,
 	if ((*it)->output().type()==DescEntry::Cache &&
 	    strcmp(feature, (*it)->output().name())==0) {
 #ifdef DBUG
-	  printf("Feature %s output from analysis %d:%d\n",
-		 feature,(*it)->id(),(*it)->output().signature());
+	  printf("Feature %s output from analysis %d:%d [%s]\n",
+		 feature,(*it)->id(),(*it)->output().signature(),(*it)->output().name());
 #endif
 	  //  Dont allow duplicates
 	  _analyses.remove    (*it);
@@ -328,6 +328,9 @@ void FilterExport::_find_filter_sources(const AbsFilter& filter,
 	    return;
 	  }
       }
+#ifdef DBUG
+      printf("Feature %s not traced\n",feature);
+#endif
     } break;
   default:
     break;

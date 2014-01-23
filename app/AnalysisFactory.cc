@@ -210,6 +210,9 @@ void AnalysisFactory::configure(unsigned       id,
       for(AnList::const_iterator it=srcList.begin();
 	  it!=srcList.end(); it++)
 	a.push_back(*it);
+      for(AnList::const_iterator it=othList.begin();
+	  it!=othList.end(); it++)
+	a.push_back(*it);
       _filter.enable(req, a, XtcClient::instance()->handlers());
     }
     else {
