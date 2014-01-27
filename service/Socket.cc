@@ -69,7 +69,10 @@ int Socket::writev(const iovec* iov, int iovcnt)
 #endif
   _hdr.msg_iov          = const_cast<iovec*>(iov);
   _hdr.msg_iovlen       = iovcnt;
-  return ::sendmsg(_socket, &_hdr, 0);
+  int rval = ::sendmsg(_socket, &_hdr, MSG_NOSIGNAL);
+  if (rval == -1)
+    perror("Socket::writev sendmsg");
+  return rval;
 }
 
 int Socket::setsndbuf(unsigned size) 

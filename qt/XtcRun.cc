@@ -1,12 +1,109 @@
 #include "ami/qt/XtcRun.hh"
 
 #include "pdsdata/xtc/Dgram.hh"
+#include "pdsdata/xtc/DetInfo.hh"
+#include "pdsdata/xtc/XtcIterator.hh"
+#include "pdsdata/psddl/alias.ddl.h"
 
 #include <QtCore/QStringList>
 
+#include <sstream>
+#include <fstream>
 #include <string>
 
 //#define DBUG
+
+namespace Pds {
+  namespace Ioc {
+    class Src : public Pds::XtcIterator {
+    public:
+      Src(const Pds::Dgram* dg) : _src(Pds::Level::Control) 
+      { iterate(const_cast<Xtc*>(&dg->xtc)); }
+      virtual ~Src() {}
+    public:
+      const Pds::Src& src() const { return _src; }
+      int process(Xtc* xtc) {
+        if (xtc->contains.id()==TypeId::Id_Xtc)
+          iterate(xtc);
+        if (xtc->contains.id()==TypeId::Id_AliasConfig) {
+          switch(xtc->contains.version()) {
+          case 1:
+            { const Pds::Alias::ConfigV1* c = reinterpret_cast<const Pds::Alias::ConfigV1*>(xtc->payload());
+              memcpy(&_src,&c->srcAlias()[0].src(),sizeof(Pds::Src));
+#ifdef DBUG
+              printf("Ioc::Src found alias %s : %s \n",
+                     c->srcAlias()[0].aliasName(),
+                     Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(c->srcAlias()[0].src())));
+#endif
+              break; }
+          default:
+            break;
+          }
+        }
+        return 1;
+      }
+    private:
+      Pds::Src _src;
+    };
+
+    class XtcSlice : public Ana::XtcSlice {
+    public:
+      XtcSlice(std::string file)
+        : Ana::XtcSlice(file), _shift(0)
+      {
+        Ana::XtcSlice s(file);
+        s.init();
+        Pds::Dgram* dg;
+        if (s.next(dg)==Pds::Ana::OK) {
+          Src src(dg);
+          if (src.src().level()==Pds::Level::Source) {
+            const Pds::DetInfo& info = static_cast<const Pds::DetInfo&>(src.src());
+            if (!_lookup("fiducial_shift.dat",info))
+              _lookup("/reg/g/pcds/pds/calib/fiducial_shift.dat",info);
+          }
+        }
+      }
+      ~XtcSlice() {}
+    public:
+      unsigned fiducials() const { 
+        int fid = int(hdr().seq.stamp().fiducials())-_shift;
+        if (fid < 0) 
+          fid += Pds::TimeStamp::MaxFiducials;
+        else if (fid > Pds::TimeStamp::MaxFiducials)
+          fid -= Pds::TimeStamp::MaxFiducials;
+        return unsigned(fid);
+      }
+    private:
+      bool _lookup(const char* fname, const Pds::DetInfo& info) {
+#ifdef DBUG
+        printf("Ioc::XtcSlice lookup %s for %s\n",fname,info.name(info));
+#endif
+        std::ifstream* in = new std::ifstream(fname);
+        std::string line;
+        if (in) {
+          while(getline(*in, line)) {
+            std::istringstream ss(line);
+            std::istream_iterator<std::string> begin(ss), end;
+            std::vector<std::string> arrayTokens(begin, end);
+            if (arrayTokens.size()<2) continue;
+            if (strncmp(arrayTokens[0].c_str(),info.name(info),31)==0) {
+              _shift = strtol(arrayTokens[1].c_str(),NULL,0);
+#ifdef DBUG
+              printf("Found shift %d for %s\n",_shift,info.name(info));
+#endif
+              delete in;
+              return true;
+            }
+          }
+          delete in;
+        }
+        return false;
+      }
+    private:
+      int _shift;
+    };
+  };
+}
 
 using namespace Pds;
 
@@ -22,7 +119,7 @@ static void* _alloc(Dgram& dg, unsigned size) {
   return dg.xtc.alloc(size);
 }
 
-static void _dump(const Sequence& seq, const char* title)
+static void _dump(const char* title, const Sequence& seq)
 {
   printf("%s %08x.%08x:%05x [%s]\n",
          title,
@@ -39,13 +136,18 @@ Ami::Qt::XtcRun::XtcRun() :
 Ami::Qt::XtcRun::~XtcRun()
 {
   delete[] _buffer;
-  for(std::list<Ana::XtcSlice*>::iterator it=_ioc.begin();
+  for(std::list<Ioc::XtcSlice*>::iterator it=_ioc.begin();
       it!=_ioc.end(); it++) 
     delete (*it);
 }
 
 void Ami::Qt::XtcRun::reset   (QStringList& files)
 {
+  for(std::list<Ioc::XtcSlice*>::iterator it=_ioc.begin();
+      it!=_ioc.end(); it++)
+    delete *it;
+  _ioc.clear();
+
   _daqInit=false;
   while (! files.empty()) {
     std::string file = qPrintable(files.first());
@@ -63,14 +165,14 @@ void Ami::Qt::XtcRun::reset   (QStringList& files)
     }
     else {
       bool iocUsed=false;
-      for(std::list<Ana::XtcSlice*>::iterator it=_ioc.begin();
+      for(std::list<Ioc::XtcSlice*>::iterator it=_ioc.begin();
 	  it!=_ioc.end(); it++)
 	if ((*it)->add_file(file)) {
 	  iocUsed=true;
 	  break;
 	}
       if (!iocUsed)
-	_ioc.push_back(new Ana::XtcSlice(file));
+	_ioc.push_back(new Ioc::XtcSlice(file));
 #ifdef DBUG
       printf("%s [IOC]\n",file.c_str());
 #endif
@@ -87,14 +189,15 @@ void Ami::Qt::XtcRun::reset   (QStringList& files)
 void   Ami::Qt::XtcRun::init()
 {
   _daq.init();
-  for(std::list<Ana::XtcSlice*>::iterator it=_ioc.begin();
+  for(std::list<Ioc::XtcSlice*>::iterator it=_ioc.begin();
       it!=_ioc.end(); it++)
     (*it)->init();
 }
 
 Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
 {
-  const unsigned FID_RANGE=720;  // 2 seconds
+  const unsigned SEC_RANGE= 30;
+  const unsigned FID_RANGE=720*SEC_RANGE;
   const unsigned FID_APPROACH=Pds::TimeStamp::MaxFiducials-FID_RANGE;
 
   Ana::Result result = Ana::OK;
@@ -130,9 +233,9 @@ Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
     //
     ClockTime tmin(-1,-1);
     unsigned       fmin(-1);
-    std::list<Ana::XtcSlice*>::iterator n;
+    std::list<Ioc::XtcSlice*>::iterator n;
 
-    for(std::list<Ana::XtcSlice*>::iterator it = _ioc.begin();
+    for(std::list<Ioc::XtcSlice*>::iterator it = _ioc.begin();
 	it != _ioc.end(); it++) {
 #ifdef DBUG
       printf("Consider [IOC %08x.%08x] %08x.%08x:%05x [%s]\n",
@@ -140,19 +243,21 @@ Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
              (*it)->hdr().xtc.src.phy(),
              (*it)->hdr().seq.clock().seconds(),
              (*it)->hdr().seq.clock().nanoseconds(),
-             (*it)->hdr().seq.stamp().fiducials(),
+             //(*it)->hdr().seq.stamp().fiducials(),
+             (*it)->fiducials(),
              TransitionId::name((*it)->hdr().seq.service()));
 #endif
       const ClockTime& clk = (*it)->hdr().seq.clock();
-      unsigned              fid = (*it)->hdr().seq.stamp().fiducials();
+      //unsigned              fid = (*it)->hdr().seq.stamp().fiducials();
+      unsigned              fid = (*it)->fiducials();
       if ((*it)->hdr().seq.service()==TransitionId::L1Accept) {
 	if (fmin == -1U) {
 	  n = it;
 	  tmin = clk;
 	  fmin = fid;
 	}      
-	else if (clk .seconds() <= tmin.seconds()+1 &&
-		 tmin.seconds() <= clk .seconds()+1 &&
+	else if (clk .seconds() <= tmin.seconds()+SEC_RANGE &&
+		 tmin.seconds() <= clk .seconds()+SEC_RANGE &&
                  ((fmin  < FID_RANGE && fid > FID_APPROACH) ||
                   (fid   < fmin))) {
           n = it;
@@ -167,10 +272,11 @@ Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
       }
     }
     if (fmin == -1U) { // non-L1A transition
-      std::list<Ana::XtcSlice*>::iterator it = _ioc.begin();
+      std::list<Ioc::XtcSlice*>::iterator it = _ioc.begin();
       n = it;
       tmin = (*it)->hdr().seq.clock();
-      fmin = (*it)->hdr().seq.stamp().fiducials();
+      //fmin = (*it)->hdr().seq.stamp().fiducials();
+      fmin = (*it)->fiducials();
     }
 
     dg = new(_buffer) Dgram;
@@ -187,15 +293,16 @@ Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
   unsigned dgs = dg->seq.clock().seconds();
   unsigned dgf = dg->seq.stamp().fiducials();
 
-  for(std::list<Ana::XtcSlice*>::iterator it=_ioc.begin();
+  for(std::list<Ioc::XtcSlice*>::iterator it=_ioc.begin();
       it!=_ioc.end(); ) {
-    std::list<Ana::XtcSlice*>::iterator n = it++;
+    std::list<Ioc::XtcSlice*>::iterator n = it++;
     unsigned iocs = (*n)->hdr().seq.clock().seconds();
-    unsigned iocf = (*n)->hdr().seq.stamp().fiducials();
+    //unsigned iocf = (*n)->hdr().seq.stamp().fiducials();
+    unsigned iocf = (*n)->fiducials();
     if (dg->seq.isEvent()) {  // skip over earlier events
       while( (*n)->hdr().seq.isEvent() &&
-             (iocs+1 < dgs ||
-              (iocs  < dgs+2 &&
+             (iocs+SEC_RANGE < dgs ||
+              (iocs  < dgs+SEC_RANGE &&
                ((dgf  < FID_RANGE && iocf > FID_APPROACH) ||
                 (iocf < dgf)))) ) {
 #ifdef DBUG
@@ -203,17 +310,20 @@ Ana::Result Ami::Qt::XtcRun::next(Dgram*& dg)
 #endif
         if ((*n)->next(tdg)==Pds::Ana::End) break;
         iocs = (*n)->hdr().seq.clock().seconds();
-        iocf = (*n)->hdr().seq.stamp().fiducials();
+        //iocf = (*n)->hdr().seq.stamp().fiducials();
+        iocf = (*n)->fiducials();
       }
     }
     else { // skip events until matching transition
-      while( (*n)->hdr().seq.service() != dg->seq.service() ) {
+      while( (*n)->hdr().seq.service() != dg->seq.service() &&
+             (*n)->hdr().seq.clock().seconds() < dg->seq.clock().seconds()+SEC_RANGE ) {
 #ifdef DBUG
         _dump("skip IOC entry", (*n)->hdr().seq);
 #endif
         if ((*n)->next(tdg)==Pds::Ana::End) break;
         iocs = (*n)->hdr().seq.clock().seconds();
-        iocf = (*n)->hdr().seq.stamp().fiducials();
+        //iocf = (*n)->hdr().seq.stamp().fiducials();
+        iocf = (*n)->fiducials();
       }
     }
       

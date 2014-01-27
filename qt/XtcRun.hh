@@ -5,6 +5,8 @@
 
 class QStringList;
 
+namespace Pds { namespace Ioc { class XtcSlice; } }
+
 namespace Ami {
   namespace Qt {
     class XtcRun {
@@ -36,7 +38,8 @@ namespace Ami {
     private:
       bool                           _daqInit;
       Pds::Ana::XtcRun               _daq;
-      std::list<Pds::Ana::XtcSlice*> _ioc;
+      //std::list<Pds::Ana::XtcSlice*> _ioc;
+      std::list<Pds::Ioc::XtcSlice*> _ioc;
       char*                          _buffer;
     };
   };

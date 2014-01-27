@@ -4,7 +4,9 @@
 
 using namespace Ami;
 
-NameService::NameService(const Pds::Xtc& xtc)
+NameService::NameService() {}
+
+void NameService::append(const Pds::Xtc& xtc)
 {
   if (xtc.contains.id()==Pds::TypeId::Id_AliasConfig) {
     switch(xtc.contains.version()) {

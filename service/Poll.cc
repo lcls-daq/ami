@@ -242,7 +242,8 @@ int Poll::poll()
             for (unsigned short n=1; n<_nfds; n++) {
               if (_ofd[n]) {
                 if (cmd==BroadcastOut) {
-                  ::write(_ofd[n]->fd(), payload, size);
+                  if (::write(_ofd[n]->fd(), payload, size)==-1)
+                    perror("Ami::Poll::poll BroadcastOut");
 #ifdef DBUG
                   const uint32_t* d = reinterpret_cast<const uint32_t*>(payload);
                   printf("Poll:Bcast_Out skt %d %08x:%08x:%08x:%08x sz %d\n",
@@ -298,7 +299,14 @@ int Poll::processIn(const char*, int)
 
 void Poll::routine()
 {
+  // pthread_sigmask // block SIGPIPE
+  sigset_t sigs;
+  sigaddset(&sigs, SIGPIPE);
+  pthread_sigmask(SIG_BLOCK, &sigs, NULL);
+
   while(poll());
+
+  // pthread_sigmask // unblock SIGPIPE
 
   pthread_mutex_lock(&_shutdown_mutex);
   _shutdown_compl=true;

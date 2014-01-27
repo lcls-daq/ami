@@ -8,9 +8,10 @@
 namespace Ami {
   class NameService {
   public:
-    NameService(const Pds::Xtc&);
+    NameService();
   public:
-    const char* name(const Pds::Src&);
+    void        append(const Pds::Xtc&);
+    const char* name  (const Pds::Src&);
   private:
     std::map<Pds::Src,std::string> _alias;
   };

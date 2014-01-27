@@ -448,13 +448,15 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
       case Pds::TypeId::Id_AliasConfig: 
 	/*  Apply new name service to discovered data */
-	{ _name_service = new NameService(*xtc);
-	  for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-	    EventHandler* h = *it;
-	    const char* name = _name_service->name(h->info());
-	    if (name) h->rename(name);
-	  }
-	} break;
+        if (!_name_service)
+          _name_service = new NameService;
+        _name_service->append(*xtc);
+        for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+          EventHandler* h = *it;
+          const char* name = _name_service->name(h->info());
+          if (name) h->rename(name);
+	}
+        break;
       default: break;
       }
       if (!h) {

@@ -1,5 +1,7 @@
 #include "ami/qt/XtcFileClient.hh"
 
+#include "ami/event/Calib.hh"
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
@@ -501,6 +503,8 @@ void XtcFileClient::setDir(QString dir)
   _curdir.append(dir);
   emit _updateDirLabel();
 
+  Ami::Calib::use_offline   (true);
+  Ami::Calib::set_experiment(basename(std::string(qPrintable(_curdir)).c_str()));
 
   // Collect all the runs in this dir.
   _runList.clear();
@@ -748,6 +752,8 @@ void XtcFileClient::do_configure(QString runName)
 
   setStatus("Initializing run " + runName + "...");
   _run.init();
+
+  Ami::Calib::set_run(runName.toInt());
 
   ClockTime clockStart;
   ClockTime clockEnd;

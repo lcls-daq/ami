@@ -201,7 +201,9 @@ void L3TModule::configure(const Pds::ProcInfo&  src,
 {
   if (type.id()== Pds::TypeId::Id_AliasConfig) {
     const Xtc* xtc = reinterpret_cast<const Xtc*>(payload)-1;
-    _name_service = new NameService(*xtc);
+    if (!_name_service)
+      _name_service = new NameService;
+    _name_service->append(*xtc);
     for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
         it != _handlers.end(); it++) {
       EventHandler* h = *it;
