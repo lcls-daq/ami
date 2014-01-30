@@ -19,6 +19,13 @@ SharedIpimbReader::~SharedIpimbReader()
 {
 }
 
+void  SharedIpimbReader::reset()
+{
+  EventHandlerF::reset();
+  for(unsigned i=0; i<NChannels; i++)
+    _index[i]=-1;
+}
+
 void  SharedIpimbReader::_calibrate(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) {}
 void  SharedIpimbReader::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) 
 {

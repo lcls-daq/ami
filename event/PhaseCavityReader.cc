@@ -23,6 +23,12 @@ PhaseCavityReader::~PhaseCavityReader()
 {
 }
 
+void   PhaseCavityReader::reset()
+{
+  EventHandlerF::reset();
+  _index=-1;
+}
+
 void   PhaseCavityReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   PhaseCavityReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {

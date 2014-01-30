@@ -22,6 +22,12 @@ Gsc16aiHandler::~Gsc16aiHandler()
 {
 }
 
+void   Gsc16aiHandler::reset     ()
+{
+  EventHandlerF::reset();
+  _index=-1;
+}
+
 void   Gsc16aiHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   Gsc16aiHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {

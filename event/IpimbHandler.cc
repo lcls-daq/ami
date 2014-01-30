@@ -23,6 +23,13 @@ IpimbHandler::~IpimbHandler()
 {
 }
 
+void   IpimbHandler::reset()
+{
+  EventHandlerF::reset();
+  for(unsigned i=0; i<NChannels*2; i++)
+    _index[i]=-1;
+}
+
 void   IpimbHandler::_calibrate(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) {}
 void   IpimbHandler::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {

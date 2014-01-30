@@ -75,6 +75,13 @@ void   IpmFexHandler::_event    (Pds::TypeId, const void* payload, const Pds::Cl
   _cache.cache(_index[i], d.ypos()); i++;
 }
 
+void   IpmFexHandler::reset()
+{
+  EventHandlerF::reset();
+  for(unsigned i=0; i<NChannels; i++)
+    _index[i] = -1;
+}
+
 void   IpmFexHandler::_damaged  ()
 {
   for(unsigned i=0; i<NChannels; i++)

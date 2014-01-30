@@ -33,7 +33,10 @@ Defaults::Defaults()
   layout->addWidget( _run );
   layout->addWidget( _grid       );
   layout->addWidget( _minor_grid );
-  layout->addWidget( _save_precision );
+  { QHBoxLayout* hl = new QHBoxLayout;
+    hl->addWidget(new QLabel("Save data precision"));
+    hl->addWidget(_save_precision);
+    layout->addLayout(hl); }
   { QHBoxLayout* hl = new QHBoxLayout;
     hl->addWidget(new QLabel("Movie format"));
     hl->addWidget(_movie_format_box);

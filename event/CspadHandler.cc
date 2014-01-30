@@ -1340,13 +1340,9 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   char oname1[NameSize];
   char oname2[NameSize];
 
-  sprintf(oname1,"ped.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
-  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-
-  sprintf(oname1,"sta.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/sta.%08x.dat",info().phy());
-  FILE *s = Calib::fopen_dual(oname1, oname2, "status map");
+  const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
+  FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
+  FILE *s = Calib::fopen(dInfo, "sta", "pixel_status");
 
   sprintf(oname1,"gain.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());

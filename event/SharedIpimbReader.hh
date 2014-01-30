@@ -20,6 +20,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     void         rename  (const char*);
+    void         reset   ();
   private:
     enum { NChannels= 15 };
     int                     _index[NChannels];

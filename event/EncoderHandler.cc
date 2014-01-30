@@ -22,6 +22,12 @@ EncoderHandler::~EncoderHandler()
 {
 }
 
+void   EncoderHandler::reset () 
+{
+  EventHandlerF::reset();
+  _index=-1; 
+}
+
 void   EncoderHandler::rename(const char* s)
 {
   char buffer[64];

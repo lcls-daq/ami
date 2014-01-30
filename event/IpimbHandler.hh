@@ -24,6 +24,7 @@ namespace Ami {
     const Entry* entry   (unsigned) const;
     bool         used    () const { return true; }
     void         rename  (const char*);
+    void         reset   ();
   private:
     enum { NChannels=4 };
     int                  _index[NChannels*2];

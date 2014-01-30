@@ -25,6 +25,7 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     bool         used    () const { return true; }
+    void         reset   ();
   private:
     int                    _index;
   };

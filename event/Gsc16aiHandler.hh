@@ -25,6 +25,7 @@ namespace Ami {
     const Entry* entry   (unsigned) const;
     bool         used    () const { return true; }
     void         rename  (const char*);
+    void         reset   ();
   private:
     int                    _index;
     Pds::Gsc16ai::ConfigV1 _config;

@@ -24,6 +24,12 @@ GMDReader::~GMDReader()
 {
 }
 
+void   GMDReader::reset()
+{
+  EventHandlerF::reset();
+  _index=-1;
+}
+
 void   GMDReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   GMDReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
