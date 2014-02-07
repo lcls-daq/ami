@@ -187,16 +187,12 @@ static double unbondedNoise(const int16_t*  data,
 #define CORR(i) (data[i*2]+off[i])
   const unsigned ColBins = CsPad::ColumnsPerASIC;
   const unsigned RowBins = CsPad::MaxRowsPerASIC;
-  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(42);
+  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(21);
   a[0] = CORR(RowBins-1);
-  a[1] = CORR(2*RowBins-1);
-  a[2] = CORR(2*RowBins*(ColBins-1));
-  a[3] = CORR(2*RowBins*(ColBins-1)+RowBins);
-  a[4] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
-  a[5] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
-  for(unsigned i=0,j=0; i<36; i+=2, j+=20*RowBins+10) {
-    a[i+6] = CORR(j);
-    a[i+7] = CORR(j+RowBins);
+  a[1] = CORR(2*RowBins*(ColBins-1));
+  a[2] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
+  for(unsigned i=0,j=0; i<18; i++, j+=20*RowBins+10) {
+    a[i+3] = CORR(j);
   }
   unsigned lo = Offset-100;
   unsigned hi = Offset+100;
@@ -223,13 +219,24 @@ namespace CspadMiniGeometry {
 
 #define BIN_ITER1(F1) {							\
     const unsigned ColBins = Columns;                                   \
-    const unsigned RowBins = Rows;                                      \
+    const unsigned RowBins = Rows>>1;                                   \
     /*  fill the target region  */					\
     for(unsigned i=0; i<ColBins; i++) {					\
-      for(unsigned j=0; j<RowBins; j++, data+=2) {                      \
+      unsigned j=0; double fn=fn1;                                      \
+      while(j < RowBins) {                                              \
 	const unsigned x = CALC_X(column,i,j);				\
 	const unsigned y = CALC_Y(row   ,i,j);				\
 	image.content(F1,x,y);                                          \
+        j++;                                                            \
+        data+=2;                                                        \
+      }									\
+      fn = fn2;                                                         \
+      while(j < RowBins*2) {                                            \
+	const unsigned x = CALC_X(column,i,j);				\
+	const unsigned y = CALC_Y(row   ,i,j);				\
+	image.content(F1,x,y);                                          \
+        j++;                                                            \
+        data+=2;                                                        \
       }									\
     }									\
   }
@@ -409,6 +416,7 @@ namespace CspadMiniGeometry {
       const int16_t* off = _off;                                       \
       const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* rms = _sg;                                           \
+      double fn1=0,fn2=0;                                               \
       ti;                                                               \
     }									\
     void fill(Ami::EntryImage&   image,					\
@@ -424,10 +432,17 @@ namespace CspadMiniGeometry {
       const int16_t*  off = lnopedestal ? off_no_ped : _off;           \
       const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
-      double fn = 0;							\
-      if (lcorrectfn)      fn = frameNoise   (data,off,sta);		\
-      else if (lcorrectun) fn = unbondedNoise(data,off);		\
-      if (Ami::EventHandler::post_diagnostics()) cache.cache(index,fn); \
+      double fn1=0,fn2=0;                                               \
+      if (lcorrectfn) { fn1 = fn2 = frameNoise(data,off,sta); }         \
+      else if (lcorrectun) {                                            \
+        fn1 = unbondedNoise(data,off);                                  \
+        fn2 = unbondedNoise(data+CsPad::MaxRowsPerASIC*2,               \
+                            off +CsPad::MaxRowsPerASIC);                \
+      }                                                                 \
+      if (Ami::EventHandler::post_diagnostics()) {                      \
+        cache.cache(index,fn1);                                         \
+        cache.cache(index+1,fn2);                                       \
+      }                                                                 \
       bi;                                                               \
     }                                                                   \
   }
@@ -500,7 +515,7 @@ namespace CspadMiniGeometry {
               unsigned                        index) const
     {
       asic[0]->fill(image,&element[0][0][0],cache,index+0);
-      asic[1]->fill(image,&element[0][0][1],cache,index+1);
+      asic[1]->fill(image,&element[0][0][1],cache,index+2);
     }
     void set_pedestals(FILE* f)
     {
@@ -754,18 +769,18 @@ namespace CspadMiniGeometry {
         _feature[a] = cache.add(buff);
       }
       if (Ami::EventHandler::post_diagnostics())
-        for(unsigned a=0; a<2; a++) {
+        for(unsigned a=0; a<4; a++) {
           sprintf(buff,"%s:CommonMode[%d]",detname,a);
           _feature[a+4] = cache.add(buff);
         }
       else 
-        for(unsigned a=0; a<2; a++)
+        for(unsigned a=0; a<4; a++)
           _feature[a+4] = -1;
 #ifdef POST_INTEGRAL
       sprintf(buff,"%s:Cspad::Sum",detname);
-      _feature[6] = cache.add(buff);
+      _feature[8] = cache.add(buff);
 #else
-      _feature[6] = -1;
+      _feature[8] = -1;
 #endif
     }
     void fill(Ami::EntryImage& image,
@@ -798,7 +813,7 @@ namespace CspadMiniGeometry {
               }
           }
         }
-        _cache->cache(_feature[6],s);
+        _cache->cache(_feature[8],s);
       }
 #endif
     }
@@ -818,13 +833,13 @@ namespace CspadMiniGeometry {
 	_cache->rename(_feature[a],buff);
       }
       if (Ami::EventHandler::post_diagnostics())
-        for(unsigned a=0; a<2; a++) {
+        for(unsigned a=0; a<4; a++) {
           sprintf(buff,"%s:CommonMode[%d]",s,a);
           _cache->rename(_feature[4+a],buff);
         }
 #ifdef POST_INTEGRAL
       sprintf(buff,"%s:Cspad:Sum",s);
-      _cache->rename(_feature[6],buff);
+      _cache->rename(_feature[8],buff);
 #endif
     }
     unsigned ppb() const { return _ppb; }
@@ -840,7 +855,7 @@ namespace CspadMiniGeometry {
     const Src&  _src;
     ConfigCache _config;
     mutable Ami::FeatureCache* _cache;
-    enum { NumFeatures=7 };
+    enum { NumFeatures=9 };
     mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;

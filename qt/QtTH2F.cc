@@ -105,6 +105,8 @@ QtTH2F::QtTH2F(const QString&   title,
   map.addColorStop(1.,QColor(255,255,255));
 #endif
   _curve.setColorMap(map);
+
+  connect(this, SIGNAL(color_changed()), this, SLOT(change_color()));
 }
   
   
@@ -165,6 +167,11 @@ void           QtTH2F::update()
     return;
   }
 
+  emit color_changed();
+}
+
+void           QtTH2F::change_color()
+{
   _z->update();
   _colorBar->setColorMap(_z->range(),_curve.colorMap());
   _plot->setAxisScale(QwtPlot::yRight, _z->range().minValue(), _z->range().maxValue());

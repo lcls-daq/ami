@@ -3,6 +3,8 @@
 
 #include "ami/qt/QtBase.hh"
 
+#include <QtCore/QObject>
+
 #include "qwt_plot_spectrogram.h"
 class QwtPlot;
 class QColor;
@@ -12,7 +14,8 @@ namespace Ami {
   class EntryTH2F;
   class AbsTransform;
   namespace Qt {
-    class QtTH2F : public QtBase {
+    class QtTH2F : public QObject, public QtBase {
+      Q_OBJECT
     public:
       QtTH2F(const QString&   title,
 	     const Ami::EntryTH2F&,
@@ -28,6 +31,10 @@ namespace Ami {
       void        yscale_update() ;
       const AxisInfo* xinfo() const;
       double      normalization() const;
+    public slots:
+      void        change_color();
+    signals:
+      void        color_changed();
     private:
       QwtPlotSpectrogram _curve;
       class DataCache;

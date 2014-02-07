@@ -289,16 +289,12 @@ static double unbondedNoise(const int16_t*  data,
 #define CORR(i) (data[i]+off[i])
   const unsigned ColBins = CsPad::ColumnsPerASIC;
   const unsigned RowBins = CsPad::MaxRowsPerASIC;
-  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(42);
+  ndarray<uint16_t,1> a = make_ndarray<uint16_t>(21);
   a[0] = CORR(RowBins-1);
-  a[1] = CORR(2*RowBins-1);
-  a[2] = CORR(2*RowBins*(ColBins-1));
-  a[3] = CORR(2*RowBins*(ColBins-1)+RowBins);
-  a[4] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
-  a[5] = CORR(2*RowBins*(ColBins-1)+RowBins-1+RowBins);
-  for(unsigned i=0,j=0; i<36; i+=2, j+=20*RowBins+10) {
-    a[i+6] = CORR(j);
-    a[i+7] = CORR(j+RowBins);
+  a[1] = CORR(2*RowBins*(ColBins-1));
+  a[2] = CORR(2*RowBins*(ColBins-1)+RowBins-1);
+  for(unsigned i=0,j=0; i<18; i++, j+=20*RowBins+10) {
+    a[i+3] = CORR(j);
   }
   unsigned lo = Offset-100;
   unsigned hi = Offset+100;
@@ -337,17 +333,35 @@ namespace CspadGeometry {
     /*  fill the target region  */                              \
     for(unsigned i=0; i<ColBins; i++) {                         \
       for(unsigned k=0; k<4; k++) {                             \
-        for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
+        unsigned j=0; double fn=fn1;                            \
+        while(j < RowBins>>1) {                                 \
           const unsigned x = CALC_X(column,i,j);                \
           const unsigned y = CALC_Y(row   ,i,j);                \
           image.addcontent(F4,x,y);                             \
+          j++;                                                  \
+        }                                                       \
+        fn=fn2;                                                 \
+        while(j < RowBins) {                                    \
+          const unsigned x = CALC_X(column,i,j);                \
+          const unsigned y = CALC_Y(row   ,i,j);                \
+          image.addcontent(F4,x,y);                             \
+          j++;                                                  \
         }                                                       \
       }                                                         \
     }                                                           \
-    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */     \
+    unsigned j=0; double fn=fn1;                                \
+    while(j < RowBins>>1) {                                     \
       const unsigned x = CALC_X(column,ColBins,j);              \
       const unsigned y = CALC_Y(row   ,ColBins,j);              \
       image.addcontent(4*F4,x,y);                               \
+      j++;                                                      \
+    }                                                           \
+    fn=fn2;                                                     \
+    while(j < RowBins) {                                        \
+      const unsigned x = CALC_X(column,ColBins,j);              \
+      const unsigned y = CALC_Y(row   ,ColBins,j);              \
+      image.addcontent(4*F4,x,y);                               \
+      j++;                                                      \
     }                                                           \
   }
 
@@ -365,29 +379,56 @@ namespace CspadGeometry {
     /*  fill the target region  */                              \
     for(unsigned i=0; i<ColBins; i++) {                         \
       for(unsigned k=0; k<2; k++) {                             \
-        for(unsigned j=0; j<RowBins; j++) { /* unroll ppb */    \
+        unsigned j=0; double fn=fn1;                            \
+        while(j < RowBins>>1) {                                 \
           const unsigned x = CALC_X(column,i,j);                \
           const unsigned y = CALC_Y(row   ,i,j);                \
           image.addcontent(F2,x,y);                             \
+          j++;                                                  \
+        }                                                       \
+        fn=fn2;                                                 \
+        while(j < RowBins) {                                    \
+          const unsigned x = CALC_X(column,i,j);                \
+          const unsigned y = CALC_Y(row   ,i,j);                \
+          image.addcontent(F2,x,y);                             \
+          j++;                                                  \
         }                                                       \
       }                                                         \
     }                                                           \
-    for(unsigned j=0; j<RowBins; j++) { /* unroll ppb(y) */     \
+    unsigned j=0; double fn=fn1;                                \
+    while(j < RowBins>>1) {                                     \
       const unsigned x = CALC_X(column,ColBins,j);              \
       const unsigned y = CALC_Y(row   ,ColBins,j);              \
       image.addcontent(2*F2,x,y);                               \
+      j++;                                                      \
+    }                                                           \
+    fn=fn2;                                                     \
+    while(j < RowBins) {                                        \
+      const unsigned x = CALC_X(column,ColBins,j);              \
+      const unsigned y = CALC_Y(row   ,ColBins,j);              \
+      image.addcontent(2*F2,x,y);                               \
+      j++;                                                      \
     }                                                           \
   }
 
 #define BIN_ITER1(F1) {                                 \
     const unsigned ColBins = CsPad::ColumnsPerASIC;     \
-    const unsigned RowBins = CsPad::MaxRowsPerASIC<<1;  \
+    const unsigned RowBins = CsPad::MaxRowsPerASIC;     \
     /*  fill the target region  */                      \
     for(unsigned i=0; i<ColBins; i++) {                 \
-      for(unsigned j=0; j<RowBins; j++) {               \
+      unsigned j=0; double fn=fn1;                      \
+      while(j < RowBins) {                              \
         const unsigned x = CALC_X(column,i,j);          \
         const unsigned y = CALC_Y(row   ,i,j);          \
         image.content(F1,x,y);                          \
+        j++;                                            \
+      }                                                 \
+      fn=fn2;                                           \
+      while(j < RowBins*2) {                            \
+        const unsigned x = CALC_X(column,i,j);          \
+        const unsigned y = CALC_Y(row   ,i,j);          \
+        image.content(F1,x,y);                          \
+        j++;                                            \
       }                                                 \
     }                                                   \
   }
@@ -570,6 +611,7 @@ namespace CspadGeometry {
       const int16_t* off = _off;                                       \
       const int16_t* const * sta = lsuppress ? _sta : &zero;           \
       const float* rms = _rms;                                          \
+      double fn1=0,fn2=0;                                               \
       ti;                                                               \
     }                                                                   \
     void fill(Ami::EntryImage&   image,                                 \
@@ -585,10 +627,17 @@ namespace CspadGeometry {
       const int16_t* off = lnopedestal ? off_no_ped : _off;             \
       const int16_t* const * sta = lsuppress ? _sta : &zero;            \
       const float* gn = (lnopedestal || !lcorrectgn) ? fgn_no_ped :_gn; \
-      double fn = 0;                                                    \
-      if (lcorrectfn)     fn = frameNoise(data,off,sta);                \
-      else if(lcorrectun) fn = unbondedNoise(data,off);                 \
-      if (Ami::EventHandler::post_diagnostics()) cache.cache(ifn,fn);   \
+      double fn1=0,fn2=0;                                               \
+      if (lcorrectfn) { fn1 = fn2 = frameNoise(data,off,sta); }         \
+      else if(lcorrectun) {                                             \
+        fn1 = unbondedNoise(data,off);                                  \
+        fn2 = unbondedNoise(data+CsPad::MaxRowsPerASIC,                 \
+                            off +CsPad::MaxRowsPerASIC);                \
+      }                                                                 \
+      if (Ami::EventHandler::post_diagnostics()) {                      \
+        cache.cache(ifn,fn1);                                           \
+        cache.cache(ifn+1,fn2);                                         \
+      }                                                                 \
       bi;                                                               \
     }                                                                   \
   }
@@ -748,7 +797,7 @@ namespace CspadGeometry {
       for(unsigned id=0,j=0; mask!=0; id++)
         if (mask&(1<<id)) {
 	  mask ^= (1<<id);
-          element[id>>1]->fill(image,&a[j][0][0],id,cache,index+id);
+          element[id>>1]->fill(image,&a[j][0][0],id,cache,index+id*2);
           j++;
         }
     }      
@@ -1086,21 +1135,21 @@ namespace CspadGeometry {
           quad[i]->fill(image, _config.roiMask(i));
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Cspad:Quad[%d]:Temp[%d]",detname,i,a);
-            _feature[12*i+a] = _hdl._add_to_cache(buff);
+            _feature[20*i+a] = _hdl._add_to_cache(buff);
           }
           if (Ami::EventHandler::post_diagnostics()) {
-            for(unsigned a=0; a<8; a++) {
+            for(unsigned a=0; a<16; a++) {
               sprintf(buff,"%s:Cspad:Quad[%d]:CommonMode[%d]",detname,i,a);
-              _feature[12*i+a+4] = _hdl._add_to_cache(buff);
+              _feature[20*i+a+4] = _hdl._add_to_cache(buff);
             }
           }
 	  else 
-            for(unsigned a=0; a<8; a++)
-	      _feature[12*i+a+4] = -1;
+            for(unsigned a=0; a<16; a++)
+	      _feature[20*i+a+4] = -1;
         }
 	else 
-	  for(unsigned a=0; a<12; a++)
-	    _feature[12*i+a] = -1;
+	  for(unsigned a=0; a<20; a++)
+	    _feature[20*i+a] = -1;
       }      
 
       sprintf(buff,"%s:Cspad:Sum",detname);
@@ -1149,10 +1198,10 @@ namespace CspadGeometry {
           ndarray<const uint16_t,1> temp;
           if (!_config.data(contains,payload,q,mask,data,temp)) continue;
 
-          quad[q]->fill(image,data,mask,*pcache,_feature[12*q+4]);
+          quad[q]->fill(image,data,mask,*pcache,_feature[20*q+4]);
 
           for(int a=0; a<4; a++)
-            cache.cache(_feature[12*q+a],
+            cache.cache(_feature[20*q+a],
                         CspadTemp::instance().getTemp(temp[a]));
 
           //  Calculate integral
@@ -1177,7 +1226,7 @@ namespace CspadGeometry {
 #endif
 
       if (image.desc().options()&CspadCalib::option_post_integral())
-        cache.cache(_feature[48],sum);
+        cache.cache(_feature[80],sum);
 
       return true;
     }
@@ -1201,17 +1250,17 @@ namespace CspadGeometry {
         if (qmask & (1<<i)) {
           for(unsigned a=0; a<4; a++) {
             sprintf(buff,"%s:Quad[%d]:Temp[%d]",s,i,a);
-            _hdl._rename_cache(_feature[12*i+a],buff);
+            _hdl._rename_cache(_feature[20*i+a],buff);
           }
           if (Ami::EventHandler::post_diagnostics())
-            for(unsigned a=0; a<8; a++) {
+            for(unsigned a=0; a<16; a++) {
               sprintf(buff,"%s:Quad[%d]:CommonMode[%d]",s,i,a);
-              _hdl._rename_cache(_feature[12*i+a+4],buff);
+              _hdl._rename_cache(_feature[20*i+a+4],buff);
             }
         }
 
       sprintf(buff,"%s:Sum",s);
-      _hdl._rename_cache(_feature[48],buff);
+      _hdl._rename_cache(_feature[80],buff);
     }
     unsigned ppb() const { return _ppb; }
     unsigned xpixels() { return _pixels; }
@@ -1221,7 +1270,7 @@ namespace CspadGeometry {
     Quad* quad[4];
     const Src&  _src;
     ConfigCache _config;
-    enum { NumFeatures=49 };
+    enum { NumFeatures=81 };
     mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;
