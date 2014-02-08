@@ -273,7 +273,7 @@ void ImageContourProjection::plot()
     double yhi = (_rectangle->yhi());
 
     const AxisInfo& xinfo = *_frame.xinfo();
-    int nbx = xinfo.tick(x1-x0)+1;
+    int nbx = xinfo.tick(x1-x0);
 
     if (_norm->checkedId()==0) {
       Ami::DescTH1F desc(qPrintable(_title->text()),
@@ -307,7 +307,7 @@ void ImageContourProjection::plot()
     double yhi = (_rectangle->yhi());
 
     const AxisInfo& yinfo = *_frame.yinfo();
-    int nby = yinfo.tick(y1-y0)+1;
+    int nby = yinfo.tick(y1-y0);
 
     if (_norm->checkedId()==0) {
       Ami::DescTH1F desc(qPrintable(_title->text()),
@@ -348,7 +348,6 @@ void ImageContourProjection::remove_plot(QObject* obj)
   }
 
   delete obj;
-  disconnect(obj, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 }
 
 void ImageContourProjection::configure_plot()

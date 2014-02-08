@@ -95,7 +95,9 @@ QImage*  QtImage::image(float p0, float s, bool linear)
 #ifdef DBUG
     printf("QtImage::image invalid\n");
 #endif
-    return 0;
+    //    return 0;
+    //  If I return here, then images that don't contribute to every event
+    //  may not display.
   }
 
   QImage* qimage=0;

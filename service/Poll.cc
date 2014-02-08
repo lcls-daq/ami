@@ -301,6 +301,7 @@ void Poll::routine()
 {
   // pthread_sigmask // block SIGPIPE
   sigset_t sigs;
+  sigemptyset(&sigs);
   sigaddset(&sigs, SIGPIPE);
   pthread_sigmask(SIG_BLOCK, &sigs, NULL);
 

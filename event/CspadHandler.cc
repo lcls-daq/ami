@@ -1153,7 +1153,7 @@ namespace CspadGeometry {
       }      
 
       sprintf(buff,"%s:Cspad:Sum",detname);
-      _feature[48] = _hdl._add_to_cache(buff);
+      _feature[80] = _hdl._add_to_cache(buff);
     }
     bool fill(Ami::EntryImage& image,
               Ami::FeatureCache& cache,

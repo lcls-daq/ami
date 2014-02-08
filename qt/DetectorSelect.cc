@@ -6,6 +6,7 @@
 #include "ami/qt/CspadClient.hh"
 #include "ami/qt/EpixClient.hh"
 #include "ami/qt/FccdClient.hh"
+#include "ami/qt/FrameClient.hh"
 #include "ami/qt/PnccdClient.hh"
 #include "ami/qt/EnvClient.hh"
 #include "ami/qt/TdcClient.hh"
@@ -394,9 +395,11 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::TM6740   : 
     case Pds::DetInfo::Princeton: 
     case Pds::DetInfo::Fli      : 
-    case Pds::DetInfo::Andor    : 
     case Pds::DetInfo::OrcaFl40 : 
       client = new Ami::Qt::ImageClient   (this, info, channel, name);
+      break;
+    case Pds::DetInfo::Andor    : 
+      client = new Ami::Qt::FrameClient   (this, info, channel, name);
       break;
     case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel, name); break;
     case Pds::DetInfo::Cspad    :

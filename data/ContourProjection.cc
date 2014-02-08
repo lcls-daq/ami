@@ -138,7 +138,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
             const int16_t* off = _offset;
             for(unsigned j=iylo; j<=iyhi; j++,off++) {
               if (!mask->row(j)) continue;
-              for(unsigned i=ixlo; i<ixhi; i++) {
+              for(unsigned i=ixlo; i<=ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
                 double yp = inputd.binx(i) - double(*off);
                 if (yp >= d.xlow() && yp <= d.xup()) {
@@ -153,9 +153,10 @@ Entry&     ContourProjection::_operate(const Entry& e) const
             unsigned ixhi = inputd.xbin(_xhi);
             unsigned iylo = inputd.ybin(_ylo);
             unsigned iyhi = inputd.ybin(_yhi);
+
             const int16_t* off = _offset;
             for(unsigned j=iylo; j<=iyhi; j++,off++) {
-              for(unsigned i=ixlo; i<ixhi; i++) {
+              for(unsigned i=ixlo; i<=ixhi; i++) {
                 double yp = inputd.binx(i) - double(*off);
                 if (yp >= d.xlow() && yp <= d.xup()) {
 		  double z = (_input->content(i,j)-ped)/q;
@@ -177,7 +178,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
               if (!mask->row(j)) continue;
               const int16_t* off = _offset;
               double y = inputd.biny(j);
-              for(unsigned i=ixlo; i<ixhi; i++) {
+              for(unsigned i=ixlo; i<=ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
                 double yp = y - double(*off++);
                 if (yp >= d.xlow() && yp <= d.xup()) {
@@ -195,7 +196,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
             for(unsigned j=iylo; j<=iyhi; j++) {
               const int16_t* off = _offset;
               double y = inputd.biny(j);
-              for(unsigned i=ixlo; i<ixhi; i++) {
+              for(unsigned i=ixlo; i<=ixhi; i++) {
                 double yp = y - double(*off++);
                 if (yp >= d.xlow() && yp <= d.xup()) {
 		  double z = (_input->content(i,j)-ped)/q;
@@ -221,7 +222,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    const int16_t* off = _offset;
 	    for(unsigned j=iylo; j<=iyhi; j++,off++) {
               if (!mask->row(j)) continue;
-	      for(unsigned i=ixlo; i<ixhi; i++) {
+	      for(unsigned i=ixlo; i<=ixhi; i++) {
                 if (!mask->rowcol(j,i)) continue;
 		double yp = inputd.binx(i) - double(*off);
 		if (yp >= d.xlow() && yp <= d.xup()) {
@@ -257,7 +258,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    unsigned iyhi = inputd.ybin(_yhi);
 	    const int16_t* off = _offset;
 	    for(unsigned j=iylo; j<=iyhi; j++,off++) {
-	      for(unsigned i=ixlo; i<ixhi; i++) {
+	      for(unsigned i=ixlo; i<=ixhi; i++) {
 		double yp = inputd.binx(i) - double(*off);
 		if (yp >= d.xlow() && yp <= d.xup()) {
 		  double z = (_input->content(i,j)-ped)/q;
@@ -277,7 +278,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
               if (!mask->row(j)) continue;
 	      const int16_t* off = _offset;
 	      double y = inputd.biny(j);
-	      for(unsigned i=ixlo; i<ixhi; i++,off++) {
+	      for(unsigned i=ixlo; i<=ixhi; i++,off++) {
                 if (!mask->rowcol(j,i)) continue;
 		double yp = y - double(*off);
 		if (yp >= d.xlow() && yp <= d.xup()) {
@@ -315,7 +316,7 @@ Entry&     ContourProjection::_operate(const Entry& e) const
 	    for(unsigned j=iylo; j<=iyhi; j++) {
 	      const int16_t* off = _offset;
 	      double y = inputd.biny(j);
-	      for(unsigned i=ixlo; i<ixhi; i++) {
+	      for(unsigned i=ixlo; i<=ixhi; i++) {
 		double yp = y - double(*off++);
 		if (yp >= d.xlow() && yp <= d.xup()) {
 		  double z = (_input->content(i,j)-ped)/q;

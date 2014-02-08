@@ -151,6 +151,7 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   _entry        (0),
   _pentry       (0),
   _config_buffer(0),
+  _options      (0),
   _pedestals    (make_ndarray<unsigned>(1,1))
 {
 }

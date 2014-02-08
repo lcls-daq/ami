@@ -25,11 +25,16 @@ namespace Ami {
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _damaged  ();
   private:
+    void _load_pedestals();
+  private:
     //AndorHandler(const Pds::DetInfo& info, const EntryImage*);
     Pds::Andor::ConfigV1  _config;
     FeatureCache&       _cache;
     int                 _iCacheIndexTemperature;
     EntryImage*         _entry;
+    EntryImage*         _pentry;
+    ndarray<unsigned,2> _offset;
+    unsigned            _options;
   };
 };
 
