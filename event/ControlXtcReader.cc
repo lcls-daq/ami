@@ -99,6 +99,17 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       _values.push_back(pv.value());
     }
   }
+
+  //
+  //  Add an alias for each variable
+  //
+  unsigned nv=_values.size();
+  char nbuf[FeatureCache::FEATURE_NAMELEN];
+  for(unsigned i=0; i<nv; i++) {
+    snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "XSCAN[%d]", i);
+    _cache.add(nbuf);
+    _values.push_back(_values[i]);
+  }
 }
 
 //  no L1 data will appear from Control

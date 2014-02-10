@@ -232,6 +232,20 @@ FilterExport::FilterExport(const AbsFilter& filter,
 
 FilterExport::~FilterExport() {}
 
+void FilterExport::clear(const char* fname) 
+{
+  if (fname==0)
+    fname = _default_fname;
+
+  std::stringstream o;
+  char* home = getenv("HOME");
+  if (home)
+    o << home << '/';
+  o << fname;
+
+  unlink(o.str().c_str());
+}
+
 void FilterExport::write(const char* fname) const
 {
   if (fname==0)

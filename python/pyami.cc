@@ -4,8 +4,11 @@
 #define MyArg_ParseTupleAndKeywords(args,kwds,fmt,kwlist,...) PyArg_ParseTupleAndKeywords(args,kwds,fmt,const_cast<char**>(kwlist),__VA_ARGS__)
 
 #include "ami/python/Client.hh"
+#include "ami/python/L3TClient.hh"
 #include "ami/python/Discovery.hh"
 #include "ami/python/pyami.hh"
+
+#include "ami/app/FilterExport.hh"
 
 #include "ami/data/RawFilter.hh"
 #include "ami/data/FeatureRange.hh"
@@ -939,9 +942,48 @@ pyami_map_image(PyObject *self, PyObject *args)
   return result;
 }
 
+static PyObject*
+pyami_set_l3t(PyObject *self, PyObject *args)
+{
+  if (_discovery) {
+
+    const char* filter_str = 0;
+
+    if (!PyArg_ParseTuple(args,"s",&filter_str))
+      return NULL;
+
+    Ami::AbsFilter* filter = parse_filter(filter_str);
+
+    Ami::Python::L3TClient* cl = new Ami::Python::L3TClient(filter);
+
+    int result = cl->initialize(*_discovery->allocate(*cl));
+
+    if (result == Ami::Python::L3TClient::Success) {
+      return Py_None;
+    }
+    else if (result == Ami::Python::L3TClient::TimedOut) {
+      PyErr_SetString(PyExc_RuntimeError,"Ami configure timeout");
+    }
+  }
+  else {
+    PyErr_SetString(PyExc_RuntimeError,"Must connect before calling set_l3t.");
+  }
+
+  return NULL;
+}
+
+static PyObject*
+pyami_clear_l3t(PyObject *self, PyObject *args)
+{
+  Ami::FilterExport::clear();
+  return Py_None;
+}
+
 static PyMethodDef PyamiMethods[] = {
     {"connect"  , pyami_connect  , METH_VARARGS, "Connect to servers."},
     {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
+    {"set_l3t"  , pyami_set_l3t  , METH_VARARGS, "Set L3 trigger expression."},
+    {"clear_l3t", pyami_clear_l3t, METH_VARARGS, "Clear L3 trigger expression."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

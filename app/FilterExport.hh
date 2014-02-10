@@ -51,6 +51,7 @@ namespace Ami {
 		 const std::list<const Analysis*>&);
     ~FilterExport();
   public:
+    static void clear(const char* =0);
     void write(const char* =0) const;
   private:
     void _find_filter_sources(const AbsFilter&, 
