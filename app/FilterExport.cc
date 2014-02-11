@@ -232,20 +232,6 @@ FilterExport::FilterExport(const AbsFilter& filter,
 
 FilterExport::~FilterExport() {}
 
-void FilterExport::clear(const char* fname) 
-{
-  if (fname==0)
-    fname = _default_fname;
-
-  std::stringstream o;
-  char* home = getenv("HOME");
-  if (home)
-    o << home << '/';
-  o << fname;
-
-  unlink(o.str().c_str());
-}
-
 void FilterExport::write(const char* fname) const
 {
   if (fname==0)
@@ -273,13 +259,13 @@ void FilterExport::write(const char* fname) const
       delete[] buffer;
       fclose(f);
     }
-    else {
-      perror("FilterExport::write: Unable to open output file");
-    }
+    else
+      ;
     _unlock(o.str());
   }
-  else 
-    ; // lock failed
+  else {
+    printf("Lock failed [%s]\n",o.str().c_str());
+  }
 }
 
 void FilterExport::_writex(char*& p) const

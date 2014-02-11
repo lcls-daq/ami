@@ -63,6 +63,12 @@ static Ami::AbsFilter* parse_filter(std::string str)
   if (str[0]!='(') {
     int m1 = str.find_first_of('<');
     int m2 = str.find_last_of ('<');
+
+    printf("parse_filter %f < %s < %f\n",
+	   strtod(str.substr(0,m1).c_str(),0),
+	   str.substr(m1+1,m2-m1-1).c_str(),
+	   strtod(str.substr(m2+1).c_str(),0));
+
     return new Ami::FeatureRange(str.substr(m1+1,m2-m1-1).c_str(),
 				 strtod(str.substr(0,m1).c_str(),0),
 				 strtod(str.substr(m2+1).c_str(),0));
@@ -952,11 +958,8 @@ pyami_set_l3t(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"s",&filter_str))
       return NULL;
 
-    Ami::AbsFilter* filter = parse_filter(filter_str);
-
-    Ami::Python::L3TClient* cl = new Ami::Python::L3TClient(filter);
-
-    int result = cl->initialize(*_discovery->allocate(*cl));
+    Ami::Python::L3TClient cl(parse_filter(filter_str));
+    int result = cl.initialize(*_discovery->allocate(cl));
 
     if (result == Ami::Python::L3TClient::Success) {
       return Py_None;
@@ -975,8 +978,24 @@ pyami_set_l3t(PyObject *self, PyObject *args)
 static PyObject*
 pyami_clear_l3t(PyObject *self, PyObject *args)
 {
-  Ami::FilterExport::clear();
-  return Py_None;
+  if (_discovery) {
+
+    Ami::Python::L3TClient cl(new Ami::RawFilter);
+
+    int result = cl.initialize(*_discovery->allocate(cl));
+
+    if (result == Ami::Python::L3TClient::Success) {
+      return Py_None;
+    }
+    else if (result == Ami::Python::L3TClient::TimedOut) {
+      PyErr_SetString(PyExc_RuntimeError,"Ami configure timeout");
+    }
+  }
+  else {
+    PyErr_SetString(PyExc_RuntimeError,"Must connect before calling set_l3t.");
+  }
+
+  return NULL;
 }
 
 static PyMethodDef PyamiMethods[] = {

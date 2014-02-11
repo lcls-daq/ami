@@ -26,11 +26,10 @@ L3TClient::L3TClient(AbsFilter* f) :
 
 L3TClient::~L3TClient() 
 {
-  if (_manager) delete _manager;
-
-  delete[] _request;
-
   sem_destroy(&_initial_sem);
+  if (_manager) delete _manager;
+  delete[] _request;
+  delete   _filter;
 }
 
 void L3TClient::connected()
