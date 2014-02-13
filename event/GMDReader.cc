@@ -34,11 +34,11 @@ void   GMDReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockT
 void   GMDReader::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
   _index =
-  _cache.add("BLD:GMD:MilliJoulesPerPulse");
-  _cache.add("BLD:GMD:MilliJoulesAverage");
-  _cache.add("BLD:GMD:CorrectedSumPerPulse");
-  _cache.add("BLD:GMD:BgValuePerSample");
-  _cache.add("BLD:GMD:RelativeEnergyPerPulse");
+  _add_to_cache("BLD:GMD:MilliJoulesPerPulse");
+  _add_to_cache("BLD:GMD:MilliJoulesAverage");
+  _add_to_cache("BLD:GMD:CorrectedSumPerPulse");
+  _add_to_cache("BLD:GMD:BgValuePerSample");
+  _add_to_cache("BLD:GMD:RelativeEnergyPerPulse");
 }
 
 void   GMDReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
