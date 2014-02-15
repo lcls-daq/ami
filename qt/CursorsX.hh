@@ -13,6 +13,7 @@
 
 class QVBoxLayout;
 class QComboBox;
+class QPushButton;
 
 #include "ami/qt/Cursors.hh"
 #include "ami/data/ConfigureRequest.hh"
@@ -99,6 +100,8 @@ namespace Ami {
       QStringList     _names;
       CursorLocation* _new_value;
       QVBoxLayout*    _clayout;
+      QPushButton*    _plotB;
+      QPushButton*    _ovlyB;
 
 #if 0
       QLineEdit* _expr;

@@ -166,6 +166,8 @@ CursorsX::CursorsX(QWidget* parent,
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));
 
+  _plotB = plotB;
+  _ovlyB = ovlyB;
   _scalar_desc->post(this, SLOT(add_post()));
 }
   
@@ -276,6 +278,9 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
 			 ChannelDefinition* channels[], int* signatures, unsigned nchannels,
 			 ConfigureRequest::Source source)
 {
+  _plotB->setEnabled(!_channels[_channel]->smp_prohibit());
+  _ovlyB->setEnabled(!_channels[_channel]->smp_prohibit());
+
   _list_sem.take();
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
@@ -316,6 +321,8 @@ void CursorsX::initialize(const DescEntry& e)
 void CursorsX::set_channel(int c) 
 { 
   _channel=c; 
+  _plotB->setEnabled(!_channels[c]->smp_prohibit());
+  _ovlyB->setEnabled(!_channels[c]->smp_prohibit());
 }
 
 void CursorsX::add_cursor()
