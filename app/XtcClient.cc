@@ -454,7 +454,9 @@ int XtcClient::process(Pds::Xtc* xtc)
         for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
           EventHandler* h = *it;
           const char* name = _name_service->name(h->info());
-          if (name) h->rename(name);
+          if (name) {
+            h->rename(name);
+          }
 	}
         break;
       default: break;

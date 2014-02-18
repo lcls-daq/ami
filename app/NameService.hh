@@ -9,7 +9,9 @@ namespace Ami {
   class NameService {
   public:
     NameService();
+    ~NameService();
   public:
+    void        clear ();
     void        append(const Pds::Xtc&);
     const char* name  (const Pds::Src&);
   private:
