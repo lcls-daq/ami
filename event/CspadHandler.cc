@@ -39,18 +39,7 @@ static const double pixel_size = 110e-6;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
 
-enum Rotation { D0, D90, D180, D270, NPHI=4 };
-
-static void _transform(double& x,double& y,double dx,double dy,Rotation r)
-{
-  switch(r) {
-  case D0  :    x += dx; y += dy; break;
-  case D90 :    x += dy; y -= dx; break;
-  case D180:    x -= dx; y -= dy; break;
-  case D270:    x -= dy; y += dx; break;
-  default:                        break;
-  }
-}
+static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
 //
 //  Much of the "template" code which follows is meant to 
@@ -302,6 +291,7 @@ static double unbondedNoise(const int16_t*  data,
   return double(v)-dOffset;
 }
 
+namespace Ami {
 namespace CspadGeometry {
 
   //
@@ -588,7 +578,7 @@ namespace CspadGeometry {
   static int16_t  off_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
   static float    fgn_no_ped[CsPad::MaxRowsPerASIC*CsPad::ColumnsPerASIC*2];
 
-#define AsicTemplate(classname,bi,ti,PPB)                               \
+#define AsicTemplate(classname,bi,ti,PPB,rot)                           \
   class classname : public AsicP {                                      \
   public:                                                               \
     classname(double x, double y,                                       \
@@ -601,7 +591,7 @@ namespace CspadGeometry {
       dx0=x0; dx1=x1; dy0=y0; dy1=y1; }                                 \
     void fill(Ami::DescImage& image) const {                            \
       FRAME_BOUNDS;                                                     \
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);                           \
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1,rot);                       \
     }                                                                   \
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const                               \
@@ -651,30 +641,30 @@ namespace CspadGeometry {
 
 #define CALC_X(a,b,c) (a+b)         
 #define CALC_Y(a,b,c) (a-c)          
-  AsicTemplate(  AsicD0B1P, B1, T1, 1);
-  AsicTemplate(  AsicD0B2P, B2, T2, 2);
-  AsicTemplate(  AsicD0B4P, B4, T4, 4);
+  AsicTemplate(  AsicD0B1P, B1, T1, 1, D0);
+  AsicTemplate(  AsicD0B2P, B2, T2, 2, D0);
+  AsicTemplate(  AsicD0B4P, B4, T4, 4, D0);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)         
 #define CALC_Y(a,b,c) (a+b)          
-  AsicTemplate( AsicD90B1P, B1, T1, 1);
-  AsicTemplate( AsicD90B2P, B2, T2, 2);
-  AsicTemplate( AsicD90B4P, B4, T4, 4);
+  AsicTemplate( AsicD90B1P, B1, T1, 1, D90);
+  AsicTemplate( AsicD90B2P, B2, T2, 2, D90);
+  AsicTemplate( AsicD90B4P, B4, T4, 4, D90);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)         
 #define CALC_Y(a,b,c) (a+c)          
-  AsicTemplate(AsicD180B1P, B1, T1, 1);
-  AsicTemplate(AsicD180B2P, B2, T2, 2);
-  AsicTemplate(AsicD180B4P, B4, T4, 4);
+  AsicTemplate(AsicD180B1P, B1, T1, 1, D180);
+  AsicTemplate(AsicD180B2P, B2, T2, 2, D180);
+  AsicTemplate(AsicD180B4P, B4, T4, 4, D180);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)         
 #define CALC_Y(a,b,c) (a-b)          
-  AsicTemplate(AsicD270B1P, B1, T1, 1);
-  AsicTemplate(AsicD270B2P, B2, T2, 2);
-  AsicTemplate(AsicD270B4P, B4, T4, 4);
+  AsicTemplate(AsicD270B1P, B1, T1, 1, D270);
+  AsicTemplate(AsicD270B2P, B2, T2, 2, D270);
+  AsicTemplate(AsicD270B4P, B4, T4, 4, D270);
 #undef CALC_X
 #undef CALC_Y
 
@@ -1324,6 +1314,7 @@ namespace CspadGeometry {
     Ami::EntryImage* _values;
   };
 };
+};
 
 using namespace Ami;
 
@@ -1479,14 +1470,8 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
     }
 
     if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
-      const int NameSize=128;
-      char oname1[NameSize];
-      char oname2[NameSize];
-      
-      sprintf(oname1,"ped.%08x.dat",info().phy());
-      sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
-      FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-
+      const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
+      FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
       if (f) {
 	_detector->set_pedestals(f);
 	_entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
@@ -1519,4 +1504,15 @@ void CspadHandler::_damaged()
     _entry->invalid(); 
   if (_unbinned_entry) 
     _unbinned_entry->invalid(); 
+}
+
+void _transform(double& x,double& y,double dx,double dy,Rotation r)
+{
+  switch(r) {
+  case D0  :    x += dx; y += dy; break;
+  case D90 :    x += dy; y -= dx; break;
+  case D180:    x -= dx; y -= dy; break;
+  case D270:    x -= dy; y += dx; break;
+  default:                        break;
+  }
 }

@@ -6,12 +6,12 @@
 
 #include <stdio.h>
 
-namespace CspadMiniGeometry { 
-  class ConfigCache;
-  class Detector; 
-};
-
 namespace Ami {
+  namespace CspadMiniGeometry { 
+    class ConfigCache;
+    class Detector; 
+  };
+
   class EntryImage;
   class FeatureCache;
 

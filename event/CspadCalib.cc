@@ -41,15 +41,6 @@ std::string CspadCalib::save_pedestals(Entry* e,
   const Ami::DescImage& desc = entry.desc();
   const unsigned nframes = entry.desc().nframes();
 
-  //
-  //  Load pedestals
-  //
-  double** _off = new double*[nframes];
-  for(unsigned s=0; s<nframes; s++) {
-    _off[s] = new double[Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2];
-    memset(_off[s],0,Pds::CsPad::MaxRowsPerASIC*Pds::CsPad::ColumnsPerASIC*2*sizeof(double));
-  }
-
   char tbuf[32];
   sprintf(tbuf,"%08x.dat",desc.info().phy());
   std::string oname;
@@ -90,30 +81,28 @@ std::string CspadCalib::save_pedestals(Entry* e,
       const SubFrame& frame = entry.desc().frame(0);
       unsigned ix = frame.x;
       unsigned iy = frame.y+frame.ny-1;
-      printf("CspadCalib::save_pedestals:  norm %f  doff %f  off[0] %f  content[0] %u  ped[0] %f\n",
+      printf("CspadCalib::save_pedestals:  norm %f  doff %f  content[0] %u  ped[0] %f\n",
              dn, doff,
-             *_off[0], entry.content(ix,iy),
-             double(*_off[0]) + (double(entry.content(ix,iy)-doff)/dn));
+             entry.content(ix,iy),
+             (double(entry.content(ix,iy)-doff)/dn));
     }
 #endif
 
     for(unsigned i=0; i<nframes; i++) {
-      double* off = _off[i];
       const SubFrame& frame = entry.desc().frame(i);
 
-      enum Rotation { D0, D90, D180, D270, NPHI=4 };
       static const Rotation _tr[] = {  D0  , D90 , D180, D90 ,
                                        D90 , D180, D270, D180,
                                        D180, D270, D0  , D270,
                                        D270, D0  , D90 , D0 };
-      
-      switch(_tr[i>>1]) {
+
+      switch(frame.r) {
       case D0:
         { unsigned x = frame.x;
           unsigned y = frame.y + frame.ny - 1;
           for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-              fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+col/ppx,y-row/ppy))-doff)/dn);
+            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+              fprintf(fn, " %.0f", (double(entry.content(x+col/ppx,y-row/ppy))-doff)/dn);
             fprintf(fn, "\n");
           }
           break; }
@@ -121,8 +110,8 @@ std::string CspadCalib::save_pedestals(Entry* e,
         { unsigned x = frame.x;
           unsigned y = frame.y;
           for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-              fprintf(fn, " %.0f", double(*off) + (double(entry.content(x+row/ppx,y+col/ppy))-doff)/dn);
+            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+              fprintf(fn, " %.0f", (double(entry.content(x+row/ppx,y+col/ppy))-doff)/dn);
             fprintf(fn, "\n");
           }
           break; }
@@ -130,8 +119,8 @@ std::string CspadCalib::save_pedestals(Entry* e,
         { unsigned x = frame.x + frame.nx - 1;
           unsigned y = frame.y;
           for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-              fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-col/ppx,y+row/ppy))-doff)/dn);
+            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+              fprintf(fn, " %.0f", (double(entry.content(x-col/ppx,y+row/ppy))-doff)/dn);
             fprintf(fn, "\n");
           }
           break; }
@@ -139,8 +128,8 @@ std::string CspadCalib::save_pedestals(Entry* e,
         { unsigned x = frame.x + frame.nx - 1;
           unsigned y = frame.y + frame.ny - 1;
           for(unsigned col=0; col<Pds::CsPad::ColumnsPerASIC; col++) {
-            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++,off++)
-              fprintf(fn, " %.0f", double(*off) + (double(entry.content(x-row/ppx,y-col/ppy))-doff)/dn);
+            for (unsigned row=0; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
+              fprintf(fn, " %.0f", (double(entry.content(x-row/ppx,y-col/ppy))-doff)/dn);
             fprintf(fn, "\n");
           }
           break; }
@@ -164,9 +153,5 @@ std::string CspadCalib::save_pedestals(Entry* e,
   if (fail)
     rename(nname.c_str(),oname.c_str());
     
-  for(unsigned s=0; s<nframes; s++)
-    delete _off[s];
-  delete[] _off;
-
   return msg;
 }

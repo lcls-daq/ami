@@ -43,18 +43,7 @@ static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
 
-enum Rotation { D0, D90, D180, D270, NPHI=4 };
-
-static void _transform(double& x,double& y,double dx,double dy,Rotation r)
-{
-  switch(r) {
-  case D0  :    x += dx; y += dy; break;
-  case D90 :    x += dy; y -= dx; break;
-  case D180:    x -= dx; y -= dy; break;
-  case D270:    x -= dy; y += dx; break;
-  default:                        break;
-  }
-}
+static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
 static inline unsigned sum1(const int16_t*& data,
                             const int16_t*& off,
@@ -200,6 +189,7 @@ static double unbondedNoise(const int16_t*  data,
   return double(v)-dOffset;
 }
 
+namespace Ami {
 namespace CspadMiniGeometry {
 
   //
@@ -393,7 +383,7 @@ namespace CspadMiniGeometry {
   static int16_t  off_no_ped[Columns*Rows];
   static float    fgn_no_ped[Columns*Rows];
 
-#define AsicTemplate(classname,bi,ti,PPB)                               \
+#define AsicTemplate(classname,bi,ti,PPB,rot)                           \
   class classname : public AsicP {					\
   public:								\
     classname(double x, double y,                                       \
@@ -406,7 +396,7 @@ namespace CspadMiniGeometry {
       dx0=x0; dx1=x1; dy0=y0; dy1=y1; }					\
     void fill(Ami::DescImage& image) const {				\
       FRAME_BOUNDS;							\
-      image.add_frame(x0,y0,x1-x0+1,y1-y0+1);				\
+      image.add_frame(x0,y0,x1-x0+1,y1-y0+1,rot);                       \
     }									\
     void fill(Ami::EntryImage& image,                                   \
               double v0, double v1) const {                             \
@@ -452,22 +442,22 @@ namespace CspadMiniGeometry {
 
 #define CALC_X(a,b,c) (a+b)			    
 #define CALC_Y(a,b,c) (a-c)			     
-  AsicTemplate(  AsicD0B1P, B1, T1, 1);
+  AsicTemplate(  AsicD0B1P, B1, T1, 1, D0);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a+c)			    
 #define CALC_Y(a,b,c) (a+b)			     
-  AsicTemplate( AsicD90B1P, B1, T1, 1);
+  AsicTemplate( AsicD90B1P, B1, T1, 1, D90);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-b)			    
 #define CALC_Y(a,b,c) (a+c)			     
-  AsicTemplate(AsicD180B1P, B1, T1, 1);
+  AsicTemplate(AsicD180B1P, B1, T1, 1, D180);
 #undef CALC_X
 #undef CALC_Y
 #define CALC_X(a,b,c) (a-c)			    
 #define CALC_Y(a,b,c) (a-b)			     
-  AsicTemplate(AsicD270B1P, B1, T1, 1);
+  AsicTemplate(AsicD270B1P, B1, T1, 1, D270);
 #undef CALC_X
 #undef CALC_Y
 
@@ -477,16 +467,25 @@ namespace CspadMiniGeometry {
 
   class TwoByTwo {
   public:
-    TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
+    TwoByTwo(double x, double y, unsigned ppb, Rotation r[3], 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
              const ndarray<const uint16_t,2>& gmap, 
              FILE* f=0, FILE* s=0, FILE* g=0, FILE* rms=0) 
     {
       for(unsigned i=0,imap=0; i<2; i++,imap+=2) {
-	double tx(x), ty(y);
-	_transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
+        //  rotate in place
+        double dx(-0.5*pixel_size*double(Columns));
+        double dy(-0.5*pixel_size*double(Rows));
+        double xOrigin(a.xAsicOrigin[i<<1]-dx);
+        double yOrigin(a.yAsicOrigin[i<<1]-dy);
+        _transform(xOrigin,yOrigin,dx,dy,r[i+1]);
 
-        switch(r) {
+        //  rotate globally (around some detector axis)
+	double tx(x), ty(y);
+	_transform(tx,ty,xOrigin,yOrigin,r[0]);
+
+        unsigned qr = (r[0]+r[i+1])%NPHI;
+        switch(qr) {
         case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms,gmap,imap); break;
         case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms,gmap,imap); break;
         case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms,gmap,imap); break;
@@ -702,17 +701,18 @@ namespace CspadMiniGeometry {
       double x,y;
 
       Ami::Cspad::TwoByTwoAlignment qalign = qalign_def[0].twobytwo(0);
-      Rotation qrot = D0;
+      Rotation qrot[3] = { D0, D0, D0 };
       if (gm) {
         qalign = Ami::Cspad::QuadAlignment::load(gm)->twobytwo(0);
 
         size_t sz=256;
         char* linep = (char *)malloc(sz);
+        unsigned i=0;
         while(1) {
           if (getline(&linep, &sz, gm)==-1) break;
           if (linep[0]=='#') continue;
-          qrot = Rotation(strtoul(linep,0,0));
-          break;
+          qrot[i++] = Rotation(strtoul(linep,0,0));
+          if (i==3) break;
         }
         free(linep);
       }
@@ -909,6 +909,7 @@ namespace CspadMiniGeometry {
     Ami::EntryImage* _values;
   };
 };
+};
 
 using namespace Ami;
 
@@ -1059,18 +1060,13 @@ void CspadMiniHandler::_event    (Pds::TypeId, const void* payload, const Pds::C
     }
 
     if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
-      const int NameSize=128;
-      char oname1[NameSize];
-      char oname2[NameSize];
-      
-      sprintf(oname1,"ped.%08x.dat",info().phy());
-      sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/ped.%08x.dat",info().phy());
-      FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-
-      _detector->set_pedestals(f);
-      _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
-
-      fclose(f);
+      const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
+      FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
+      if (f) {
+        _detector->set_pedestals(f);
+        _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
+        fclose(f);
+      }
     }
 
     _detector->fill(*_entry,*xtc);
@@ -1085,3 +1081,13 @@ void CspadMiniHandler::_damaged()
     _entry->invalid(); 
 }
 
+void _transform(double& x,double& y,double dx,double dy,Rotation r)
+{
+  switch(r) {
+  case D0  :    x += dx; y += dy; break;
+  case D90 :    x += dy; y -= dx; break;
+  case D180:    x -= dx; y -= dy; break;
+  case D270:    x -= dy; y += dx; break;
+  default:                        break;
+  }
+}

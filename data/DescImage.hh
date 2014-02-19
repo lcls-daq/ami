@@ -5,14 +5,17 @@
 
 namespace Ami {
 
+  enum Rotation { D0, D90, D180, D270, NPHI=4 };
+
   class SubFrame {
   public:
-    SubFrame() : x(0), y(0), nx(0), ny(0) {}
+    SubFrame() : x(0), y(0), nx(0), ny(0), r(D0) {}
   public:
     uint16_t x;  // units are bins
     uint16_t y;
     uint16_t nx;
     uint16_t ny;
+    Rotation r;  // rotation from standard orientation
   };
 
   class ImageMask;
@@ -70,7 +73,8 @@ namespace Ami {
     void add_frame(unsigned x,  // units are bins
 		   unsigned y,
 		   unsigned nx,
-		   unsigned ny);
+		   unsigned ny,
+                   Rotation r=D0);
 
     void set_mask(const ImageMask&);
 
