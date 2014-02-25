@@ -16,6 +16,7 @@
 using namespace Ami;
 
 static const unsigned offset=1<<16;
+static const double  doffset=double(offset);
 
 static const Pds::TypeId Config_Type = Pds::TypeId(Pds::TypeId::Id_EpixConfig,1);
 static const Pds::TypeId Data_Type   = Pds::TypeId(Pds::TypeId::Id_EpixElement,1);
@@ -25,6 +26,9 @@ static const unsigned _channel_map[] = { 11, 10, 9,  8,
 					 12, 13, 14, 15,
 					 0,  1,  2,  3 };
 
+//                        2|1
+//  ASICs are numbered    -+-
+//                        3|0
 static const unsigned _asic_map[] = { 2, 1, 3, 0 };
 struct AsicLocation { unsigned row, col; };
 typedef struct AsicLocation AsicLocation_s;
@@ -152,7 +156,8 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   _pentry       (0),
   _config_buffer(0),
   _options      (0),
-  _pedestals    (make_ndarray<unsigned>(1,1))
+  _pedestals    (make_ndarray<unsigned>(1,1)),
+  _pedestals_lo (make_ndarray<unsigned>(1,1))
 {
 }
 
@@ -293,6 +298,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     }
 
     _load_pedestals();
+    _load_gains    ();
   }
 }
 
@@ -330,6 +336,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       d.options()&FrameCalib::option_no_pedestal() ?
       _offset : _pedestals;
 
+    const ndarray<const unsigned,2>& pa_lo =
+      d.options()&FrameCalib::option_no_pedestal() ?
+      _offset : _pedestals_lo;
+
     ndarray<const uint16_t,2> a = f.frame(_config);
 
     int ppbin = _entry->desc().ppxbin();
@@ -347,10 +357,15 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	unsigned r = i*_config.numberOfRowsPerAsic()+j;
 	unsigned m = _asicLocation[asic].col;
 	const uint16_t* d = & a[r][m*_config.numberOfPixelsPerAsicRow()];
-	const unsigned* p = &pa[j][0];
+	const unsigned* p_hi = &pa   [j][0];
+	const unsigned* p_lo = &pa_lo[j][0];
 	const SubFrame& fr = _entry->desc().frame(0);
-	for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++)
-	  _entry->addcontent(unsigned(d[k]) + p[k], fr.x+k/ppbin, fr.y+j/ppbin);
+	for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
+	  unsigned v = ((d[k]>>14)==1) ? 
+	    unsigned(d[k]&0x3fff) + p_lo[k] :
+	    unsigned(d[k]&0x3fff) + p_hi[k];
+	  _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
+	}
       }
     }
     else {
@@ -359,11 +374,17 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	  unsigned r = i*_config.numberOfRowsPerAsic()+j;
 	  for(unsigned m=0; m<_config.numberOfAsicsPerRow(); m++) {
 	    if (_config.asicMask() & 1<<_asic_map[i*_config.numberOfAsicsPerRow()+m]) {
-	      const uint16_t* d = & a[r][m*_config.numberOfPixelsPerAsicRow()];
-	      const unsigned* p = &pa[r][m*_config.numberOfPixelsPerAsicRow()];
+	      unsigned q = m*_config.numberOfPixelsPerAsicRow();
+	      const uint16_t* d    = &a    [r][q];
+	      const unsigned* p_hi = &pa   [r][q];
+	      const unsigned* p_lo = &pa_lo[r][q];
 	      const SubFrame& fr = _entry->desc().frame(i*_config.numberOfAsicsPerRow()+m);
-	      for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++)
-		_entry->addcontent(unsigned(d[k]) + p[k], fr.x+k/ppbin, fr.y+j/ppbin);
+	      for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
+		unsigned v = ((d[k]>>14)==1) ? 
+		  unsigned(d[k]&0x3fff) + p_lo[k] :
+		  unsigned(d[k]&0x3fff) + p_hi[k];
+		_entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
+	      }
 	    }
 	  }
 	}
@@ -384,13 +405,13 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
 	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
 	  continue;
-	ndarray<uint32_t,2> a = _entry->contents(k);
+	ndarray<uint32_t,2> e = _entry->contents(k);
 	unsigned shape[2];
-	shape[0] = a.shape()[0];
-	shape[1] = a.shape()[1]/4;
+	shape[0] = e.shape()[0];
+	shape[1] = e.shape()[1]/4;
 	for(unsigned m=0; m<4; m++) {
 	  for(unsigned y=0; y<shape[0]; y++) {
-	    ndarray<uint32_t,1> s(&a[y][m*shape[1]],&shape[1]);
+	    ndarray<uint32_t,1> s(&e[y][m*shape[1]],&shape[1]);
 	    int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
 	    if (Ami::EventHandler::post_diagnostics() && k==3 && m==0 && y<80)
 	      _cache.cache(_feature[(y%16)+_config.numberOfAsics()],double(fn));
@@ -406,13 +427,13 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
 	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
 	  continue;
-	ndarray<uint32_t,2> a = _entry->contents(k);
+	ndarray<uint32_t,2> e = _entry->contents(k);
 	unsigned shape[2];
-	shape[0] = a.shape()[0];
-	shape[1] = a.shape()[1]/4;
+	shape[0] = e.shape()[0];
+	shape[1] = e.shape()[1]/4;
 	for(unsigned m=0; m<4; m++) {
-	  ndarray<uint32_t,2> s(&a[0][m*shape[1]],shape);
-	  s.strides(a.strides());
+	  ndarray<uint32_t,2> s(&e[0][m*shape[1]],shape);
+	  s.strides(e.strides());
 	  int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
 	  for(unsigned y=0; y<shape[0]; y++) {
 	    uint32_t* v = &s[y][0];
@@ -421,6 +442,31 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	  }
 	  if (Ami::EventHandler::post_diagnostics())
 	    _cache.cache(_feature[4*k+m+_config.numberOfAsics()],double(fn));
+	}
+      }	
+    }
+
+    //
+    //  Correct for gain
+    //
+    const ndarray<const double,2>& gn    = _gain;
+    const ndarray<const double,2>& gn_lo = _gain_lo;
+    {
+      for(unsigned k=0; k<_entry->desc().nframes(); k++) {
+	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
+	  continue;
+	ndarray<uint32_t,2> e = _entry->contents(k);
+	unsigned r = _asicLocation[k].row * _config.numberOfRowsPerAsic();
+	unsigned m = _asicLocation[k].col * _config.numberOfPixelsPerAsicRow();
+	for(unsigned y=0; y<e.shape()[0]; y++,r++) {
+	  uint32_t*        v = &e    [y][0];
+	  const uint16_t*  d = &a    [r][m];
+	  const double* g_hi = &gn   [r][m];
+	  const double* g_lo = &gn_lo[r][m];
+	  for(unsigned x=0; x<e.shape()[1]; x++) {
+	    double q = (double(v[x]) - doffset) * ( (d[x]>>14)==1 ? g_lo[x]:g_hi[x] );
+	    v[x] = unsigned(q+offset);
+	  }
 	}
       }	
     }
@@ -436,15 +482,16 @@ void EpixHandler::_damaged() { if (_entry) _entry->invalid(); }
 void EpixHandler::_load_pedestals()
 {
   const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
-  _pedestals = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
-  _offset    = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
+  _pedestals    = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
+  _pedestals_lo = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
+  _offset       = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
   for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
   const unsigned ny = _config.numberOfRowsPerAsic();
   const unsigned nx = _config.numberOfPixelsPerAsicRow();
 
   EntryImage* p = _pentry;
-  if (FrameCalib::load_pedestals(p,offset)) {
+  if (FrameCalib::load_pedestals(p,offset,"ped")) {
     for(unsigned i=0; i<_config.numberOfAsicsPerColumn(); i++)
       for(unsigned j=0; j<_config.numberOfAsicsPerRow(); j++) {
 	ndarray<uint32_t,2> ap = p->contents(i*_config.numberOfAsicsPerRow()+j);
@@ -455,6 +502,51 @@ void EpixHandler::_load_pedestals()
   }
   else
     for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
+
+  if (FrameCalib::load_pedestals(p,offset,"ped_lo")) {
+    for(unsigned i=0; i<_config.numberOfAsicsPerColumn(); i++)
+      for(unsigned j=0; j<_config.numberOfAsicsPerRow(); j++) {
+	ndarray<uint32_t,2> ap = p->contents(i*_config.numberOfAsicsPerRow()+j);
+	for(unsigned k=0; k<ny; k++)
+	  for(unsigned m=0; m<nx; m++)
+	    _pedestals_lo[i*ny+k][j*nx+m] = ap[k][m];
+      }
+  }
+  else
+    for(unsigned *a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
+}
+
+void EpixHandler::_load_gains()
+{
+  const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
+  _gain    = make_ndarray<double>(_config.numberOfRows(),_config.numberOfColumns());
+  _gain_lo = make_ndarray<double>(_config.numberOfRows(),_config.numberOfColumns());
+
+  const unsigned ny = _config.numberOfRowsPerAsic();
+  const unsigned nx = _config.numberOfPixelsPerAsicRow();
+
+  EntryImage* p = _pentry;
+  ndarray<double,3> ap = FrameCalib::load(p->desc(),"gain");
+  if (ap.size()) {
+    for(unsigned i=0,q=0; i<_config.numberOfAsicsPerColumn(); i++)
+      for(unsigned j=0; j<_config.numberOfAsicsPerRow(); j++,q++)
+	for(unsigned k=0; k<ny; k++)
+	  for(unsigned m=0; m<nx; m++)
+	    _gain[i*ny+k][j*nx+m] = ap[q][k][m];
+  }
+  else
+    for(double* a=_gain.begin(); a!=_gain.end(); *a++=1.) ;
+
+  ap = FrameCalib::load(p->desc(),"gain_lo");
+  if (ap.size()) {
+    for(unsigned i=0,q=0; i<_config.numberOfAsicsPerColumn(); i++)
+      for(unsigned j=0; j<_config.numberOfAsicsPerRow(); j++,q++)
+	for(unsigned k=0; k<ny; k++)
+	  for(unsigned m=0; m<nx; m++)
+	    _gain_lo[i*ny+k][j*nx+m] = ap[q][k][m];
+  }
+  else
+    for(double* a=_gain_lo.begin(); a!=_gain_lo.end(); *a++=100.) ;
 }
 
 double _tps_temp(const uint16_t q)

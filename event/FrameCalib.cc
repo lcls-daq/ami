@@ -25,7 +25,8 @@ unsigned FrameCalib::option_correct_common_mode2() { return _option_correct_comm
 
 std::string FrameCalib::save_pedestals(Entry* e,
                                        bool   subtract,
-                                       bool   prod)
+                                       bool   prod,
+				       const char* prefix)
 {
   std::string msg;
 
@@ -57,8 +58,8 @@ std::string FrameCalib::save_pedestals(Entry* e,
     char oname1[NameSize];
     char oname2[NameSize];
     
-    sprintf(oname1,"ped.%08x.dat",desc.info().phy());
-    sprintf(oname2,"/reg/g/pcds/pds/framecalib/ped.%08x.dat",desc.info().phy());
+    sprintf(oname1,"%s.%08x.dat",prefix,desc.info().phy());
+    sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s.%08x.dat",prefix,desc.info().phy());
     FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
     
     if (f) {
@@ -95,14 +96,14 @@ std::string FrameCalib::save_pedestals(Entry* e,
     }
   }
 
-  char tbuf[32];
-  sprintf(tbuf,"%08x.dat",desc.info().phy());
+  char tbuf[64];
+  sprintf(tbuf,"%s.%08x.dat",prefix,desc.info().phy());
   std::string oname;
 
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/framecalib/ped.") + tbuf;
+    oname = std::string("/reg/g/pcds/pds/framecalib/") + tbuf;
   else
-    oname = std::string("ped.") + tbuf;
+    oname = std::string("./") + tbuf;
 
   //  rename current pedestal file
   time_t t = time(0);
@@ -182,7 +183,8 @@ std::string FrameCalib::save_pedestals(Entry* e,
 }
 
 bool FrameCalib::load_pedestals(EntryImage* c,
-				unsigned    offset)
+				unsigned    offset,
+				const char* prefix)
 {
   //
   //  Load calibration from a file
@@ -192,7 +194,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   char oname1[NameSize];
   char oname2[NameSize];
   const DescImage& d = c->desc();
-  sprintf(oname1,"ped.%08x.dat",d.info().phy());
+  sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
@@ -246,6 +248,145 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   }
 
   return false;
+}
+
+std::string FrameCalib::save(ndarray<const double,3> a,
+			     const DescImage&        desc,
+			     bool                    prod,
+			     const char*             prefix)
+{
+  std::string msg;
+
+  const unsigned nframes = desc.nframes();
+
+  char tbuf[64];
+  sprintf(tbuf,"%s.%08x.dat",prefix,desc.info().phy());
+  std::string oname;
+
+  if (prod)
+    oname = std::string("/reg/g/pcds/pds/framecalib/") + tbuf;
+  else
+    oname = std::string("./") + tbuf;
+
+  //  rename current file
+  time_t t = time(0);
+  strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
+    
+  std::string nname = oname + "." + tbuf;
+  rename(oname.c_str(),nname.c_str());
+
+  bool fail=false;
+  FILE* fn = fopen(oname.c_str(),"w");
+  if (!fn) {
+    msg = std::string("Unable to write new file ") + oname;
+    fail=true;
+  }
+  else {
+    const unsigned ppx = desc.ppxbin();
+    const unsigned ppy = desc.ppybin();
+
+    if (nframes) {
+      for(unsigned i=0; i<nframes; i++) {
+	const SubFrame& frame = desc.frame(i);
+	for (unsigned row=0; row < frame.ny*ppy; row++) {
+	  for(unsigned col=0; col<frame.nx*ppx; col++)
+	    fprintf(fn, " %f", a[i][row][col]);
+	  fprintf(fn, "\n");
+	}
+      }
+    }
+    else {
+      for (unsigned row=0; row < desc.nbinsy()*ppy; row++) {
+	for(unsigned col=0; col<desc.nbinsx()*ppx; col++)
+	  fprintf(fn, " %f", a[0][row][col]);
+	fprintf(fn, "\n");
+      }
+    }
+
+    fsync(fileno(fn));
+    fclose(fn);
+
+    const int NameSize=128;
+    char oname1[NameSize];
+    strncpy(oname1,oname.c_str(),NameSize);
+    int fd = open(dirname(oname1),O_RDONLY|O_DIRECTORY);
+    if (fd>=0) {
+      fsync(fd);
+      close(fd);
+    }
+  }
+
+  if (fail)
+    rename(nname.c_str(),oname.c_str());
+    
+  return msg;
+}
+
+ndarray<double,3> FrameCalib::load(const DescImage& d,
+				   const char*      prefix)
+{
+  ndarray<double,3> a = d.nframes() ?
+    make_ndarray<double>(d.nframes(),d.frame(0).ny,d.frame(0).nx) :
+    make_ndarray<double>(1,d.nbinsy(),d.nbinsx());
+
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+  sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  if (f) {
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    const unsigned ppb  = d.ppxbin();
+
+    if (d.nframes()) {
+      for(unsigned i=0; i<d.nframes(); i++) {
+	const SubFrame& frame = d.frame(i);
+	for(unsigned row=0; row < frame.ny*ppb; row++) {
+	  getline(&linep, &sz, f);
+	  char* p = linep;
+	  unsigned col=0;
+	  while(1) {
+	    double v = strtod(p,&pEnd);
+	    if (pEnd == p) break;
+	    //  when binned, simply take last read value for that bin
+	    a[i][row/ppb][col/ppb] = v;
+	    col++;
+	    p = pEnd+1;
+	  }
+	}
+      }
+    }
+    else {
+      for(unsigned row=0; row < d.nbinsy()*ppb; row++) {
+	getline(&linep, &sz, f);
+	char* p = linep;
+	unsigned col=0;
+	while(1) {
+	  double v = strtod(p,&pEnd);
+	  if (pEnd == p) break;
+	  a[0][row/ppb][col/ppb] = v;
+	  col++;
+	  p = pEnd+1;
+	}
+      }
+    }
+    
+    free(linep);
+    fclose(f);
+  }
+  else
+    a = make_ndarray<double>(0U,0,0);
+  
+  return a;
 }
 
 int FrameCalib::median(ndarray<const uint16_t,1> data,

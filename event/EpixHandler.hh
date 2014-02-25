@@ -31,6 +31,7 @@ namespace Ami {
     void  rename(const char*);
   private:
     void _load_pedestals();
+    void _load_gains    ();
 
     FeatureCache&       _cache;
     EntryImage*         _entry;
@@ -38,7 +39,11 @@ namespace Ami {
     char*               _config_buffer;
     unsigned            _options;
     ndarray<unsigned,2> _pedestals;
+    ndarray<unsigned,2> _pedestals_lo;
     ndarray<unsigned,2> _offset;
+
+    ndarray<double,2>   _gain;
+    ndarray<double,2>   _gain_lo;
 
     ndarray<int,1>      _feature;
   };
