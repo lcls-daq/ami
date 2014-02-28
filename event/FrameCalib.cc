@@ -221,7 +221,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
 	    unsigned v = strtoul(p,&pEnd,0);
 	    if (pEnd == p) break;
 	    c->addcontent(offset-v,x+col/ppb,y+row/ppb);
-	    col++;
+	    if (++col >= frame.nx*ppb) break;
 	    p = pEnd+1;
 	  }
 	}
@@ -236,7 +236,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
 	  unsigned v = strtoul(p,&pEnd,0);
 	  if (pEnd == p) break;
 	  c->addcontent(offset-v,col/ppb,row/ppb);
-	  col++;
+	  if (++col >= d.nbinsx()*ppb) break;
 	  p = pEnd+1;
 	}
       }

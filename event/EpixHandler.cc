@@ -361,7 +361,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	const unsigned* p_lo = &pa_lo[j][0];
 	const SubFrame& fr = _entry->desc().frame(0);
 	for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
-	  unsigned v = ((d[k]>>14)==1) ? 
+	  unsigned v = (d[k]&0x4000) ? 
 	    unsigned(d[k]&0x3fff) + p_lo[k] :
 	    unsigned(d[k]&0x3fff) + p_hi[k];
 	  _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
@@ -380,7 +380,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	      const unsigned* p_lo = &pa_lo[r][q];
 	      const SubFrame& fr = _entry->desc().frame(i*_config.numberOfAsicsPerRow()+m);
 	      for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
-		unsigned v = ((d[k]>>14)==1) ? 
+		unsigned v = (d[k]&0x4000) ? 
 		  unsigned(d[k]&0x3fff) + p_lo[k] :
 		  unsigned(d[k]&0x3fff) + p_hi[k];
 		_entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
@@ -395,10 +395,14 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     for(unsigned a=0; a<_config.numberOfAsics(); a++)
       _cache.cache(_feature[a],_tps_temp(temps[a]));
 #else
-    _cache.cache(_feature[0],_tps_temp(temps[0]));
-    _cache.cache(_feature[1],_thm_temp(temps[1]));
-    _cache.cache(_feature[2],_thm_temp(temps[2]));
-    _cache.cache(_feature[3],_tps_temp(temps[3]));
+    if (aMask&1)
+      _cache.cache(_feature[0],_tps_temp(temps[0]));
+    if (aMask&2)
+      _cache.cache(_feature[1],_thm_temp(temps[1]));
+    if (aMask&4)
+      _cache.cache(_feature[2],_thm_temp(temps[2]));
+    if (aMask&8)
+      _cache.cache(_feature[3],_tps_temp(temps[3]));
 #endif
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
@@ -464,7 +468,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	  const double* g_hi = &gn   [r][m];
 	  const double* g_lo = &gn_lo[r][m];
 	  for(unsigned x=0; x<e.shape()[1]; x++) {
-	    double q = (double(v[x]) - doffset) * ( (d[x]>>14)==1 ? g_lo[x]:g_hi[x] );
+	    double q = (double(v[x]) - doffset) * ( (d[x]&0x4000) ? g_lo[x]:g_hi[x] );
 	    v[x] = unsigned(q+offset);
 	  }
 	}
