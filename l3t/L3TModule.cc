@@ -39,6 +39,7 @@
 #include "ami/event/OceanOpticsHandler.hh"
 #include "ami/event/FliHandler.hh"
 #include "ami/event/AndorHandler.hh"
+#include "ami/event/PimaxHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
@@ -75,7 +76,7 @@ L3TModule::L3TModule() :
     _features.push_back(new FeatureCache);
 }
 
-L3TModule::~L3TModule() 
+L3TModule::~L3TModule()
 {
   if (_import) delete _import;
 }
@@ -103,7 +104,7 @@ void L3TModule::pre_configure()
   if (_import)
     delete _import;
 
-  for(std::list<EventHandler*>::iterator hit = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator hit = _handlers.begin();
       hit != _handlers.end(); hit++)
     delete *hit;
   _handlers.clear();
@@ -114,7 +115,7 @@ void L3TModule::pre_configure()
   _features[ PreAnalysis]->clear();
   _features[PostAnalysis]->clear();
   _discovery.reset();
-  for(std::list<EventHandler*>::iterator hit = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator hit = _handlers.begin();
       hit != _handlers.end(); hit++)
     (*hit)->reset();
   if (_name_service) {
@@ -132,22 +133,22 @@ void L3TModule::pre_configure()
  **/
 void L3TModule::post_configure()
 {
-  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++) {
     std::list<int>::iterator sit = _signatures[(*it)->info().phy()].begin();
-    for(unsigned k=0; k<(*it)->nentries(); k++,sit++) {                     
+    for(unsigned k=0; k<(*it)->nentries(); k++,sit++) {
       const Entry* e = (*it)->entry(k);
       if (e) {
-	unsigned signature = (*sit)>>16;
-	unsigned options   = (*sit)&0xffff;
+  unsigned signature = (*sit)>>16;
+  unsigned options   = (*sit)&0xffff;
 #ifdef DBUG
-	printf("Assigning signature %d options %x to %s\n",
-	       signature, options, e->desc().name());
+  printf("Assigning signature %d options %x to %s\n",
+         signature, options, e->desc().name());
 #endif
         /// Assign the correct (fixed) signature
         _discovery.add   (const_cast<Entry*>(e),signature);
-	/// Assign any special options that were in effect
-	_discovery.entry(signature)->desc().options(options);
+  /// Assign any special options that were in effect
+  _discovery.entry(signature)->desc().options(options);
       }
     }
   }
@@ -204,7 +205,7 @@ void L3TModule::configure(const Pds::ProcInfo&  src,
     if (!_name_service)
       _name_service = new NameService;
     _name_service->append(*xtc);
-    for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+    for(std::list<EventHandler*>::iterator it = _handlers.begin();
         it != _handlers.end(); it++) {
       EventHandler* h = *it;
       const char* name = _name_service->name(h->info());
@@ -219,7 +220,7 @@ void L3TModule::_configure(const Pds::Src&       src,
                            const Pds::TypeId&    typeId,
                            void*                 payload)
 {
-  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++) {
     EventHandler* h = *it;
     if (h->info().level() == src.level() &&
@@ -243,9 +244,9 @@ void L3TModule::_configure(const Pds::Src&       src,
   }
 }
 
-void L3TModule::pre_event() 
+void L3TModule::pre_event()
 {
-  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++)
     (*it)->_damaged();
 
@@ -278,7 +279,7 @@ void L3TModule::_event(const Pds::Src&     src,
                        const Pds::TypeId&  type,
                        void*               payload)
 {
-  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++) {
     EventHandler* h = *it;
     if (h->info().level() == src.level() &&
@@ -287,7 +288,7 @@ void L3TModule::_event(const Pds::Src&     src,
 
 #ifdef DBUG
       printf("Found handler [%p] for %08x.%08x used %c\n",
-	     h, src.log(), src.phy(), h->used() ? 't':'f');
+       h, src.log(), src.phy(), h->used() ? 't':'f');
 #endif
 
       if (!h->used()) return;
@@ -295,7 +296,7 @@ void L3TModule::_event(const Pds::Src&     src,
       const std::list<Pds::TypeId::Type>& types = h->data_types();
 
       Xtc* xtc = reinterpret_cast<Xtc*>(payload)-1;  // argh!!
-      boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
+      boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ?
         Pds::CompressedXtc::uncompress(*xtc) :
         boost::shared_ptr<Xtc>(xtc,Destroy);
 
@@ -304,8 +305,8 @@ void L3TModule::_event(const Pds::Src&     src,
           it != types.end(); it++) {
         if (*it == type) {
 #ifdef DBUG
-	  printf("Handling type %s with damage %x\n",
-		 Pds::TypeId::name(type), pxtc->damage.value());
+    printf("Handling type %s with damage %x\n",
+     Pds::TypeId::name(type), pxtc->damage.value());
 #endif
           if (pxtc->damage.value())
             h->_damaged();
@@ -328,7 +329,7 @@ bool L3TModule::complete()
 
 #ifdef DBUG
   printf("L3TModule::complete _filter %p  valid %c\n",
-	 _filter, _filter->valid() ? 't':'f');
+   _filter, _filter->valid() ? 't':'f');
 #endif
   return _filter && _filter->valid();
 }
@@ -336,7 +337,7 @@ bool L3TModule::complete()
 bool L3TModule::accept()
 {
 #if 0
-  for(std::list<EventHandler*>::iterator it = _handlers.begin(); 
+  for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++) {
     if ((*it)->data_type() == Pds::TypeId::NumberOf)
       (*it)->_event(dg->xtc.contains, dg->xtc.payload(), _seq->clock());
@@ -350,7 +351,7 @@ bool L3TModule::accept()
   return _filter->accept();
 }
 
-void L3TModule::handler (const Pds::Src& src, 
+void L3TModule::handler (const Pds::Src& src,
                          const std::list<Pds::TypeId::Type>& types,
                          const std::list<int>& signatures)
 {
@@ -376,7 +377,7 @@ void L3TModule::handler (const Pds::Src& src,
     case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
     case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
     case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
-    case Pds::TypeId::Id_CspadConfig:      
+    case Pds::TypeId::Id_CspadConfig:
       if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
       else                                 h = new CspadMiniHandler  (info,cache);
       break;
@@ -384,6 +385,7 @@ void L3TModule::handler (const Pds::Src& src,
     case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
     case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
     case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
+    case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
     case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
     case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
     case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
@@ -415,9 +417,9 @@ void L3TModule::handler (const Pds::Src& src,
   }
 }
 
-void L3TModule::analysis(unsigned id, 
+void L3TModule::analysis(unsigned id,
                          ConfigureRequest::Source src,
-                         unsigned input, 
+                         unsigned input,
                          unsigned output,
                          void*    op)
 {
@@ -426,9 +428,9 @@ void L3TModule::analysis(unsigned id,
     cds_name << "Analysis " << id;
     _cds[id] = new Cds(cds_name.str().c_str());
   }
-  
+
   const Cds* pcds = 0;
-  if  (src == ConfigureRequest::Discovery) 
+  if  (src == ConfigureRequest::Discovery)
     pcds = &_discovery;
   else
     pcds = _cds[id];
@@ -436,21 +438,21 @@ void L3TModule::analysis(unsigned id,
   const Entry* input_e = pcds->entry(input);
   if (!input_e) {
     printf("L3TModule::analysis failed to lookup input %s[%d]\n",
-	   src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input);
+     src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input);
     _config_complete=false;
     return;
   }
-	 
+
 #ifdef DBUG
   printf("L3TModule::analysis creating from input %s/%d %p\n",
-	 src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input,input_e);
+   src==ConfigureRequest::Discovery ? "Discovery":"Analysis",input,input_e);
 #endif
 
   const char* p = (const char*)op;
   Ami::Analysis* a = new Ami::Analysis(id, *input_e, output, *_cds[id],
-                                       *_features[PostAnalysis], 
-				       *_features[PostAnalysis],
-				       p);
+                                       *_features[PostAnalysis],
+               *_features[PostAnalysis],
+               p);
   a->input().desc().used(true);
   _analyses.push_back(a);
 }

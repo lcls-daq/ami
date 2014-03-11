@@ -6,7 +6,7 @@
 #include "ami/app/SyncAnalysis.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryScan.hh"
-#include "pdsdata/psddl/evr.ddl.h" 
+#include "pdsdata/psddl/evr.ddl.h"
 #include <list>
 
 namespace Pds {
@@ -24,7 +24,7 @@ namespace Ami {
   public:
     enum {ForceRefill, ValidateRefill};
     static SummaryAnalysis& instance();
- 
+
   private:
     SummaryAnalysis();
     ~SummaryAnalysis();
@@ -47,6 +47,7 @@ namespace Ami {
     void processPrincetonData(SyncAnalysis* syncPtr);
     void processFliData(SyncAnalysis* syncPtr);
     void processAndorData(SyncAnalysis* syncPtr);
+    void processPimaxData(SyncAnalysis* syncPtr);
     void processGasDetectorData(SyncAnalysis* syncPtr);
     void processEBeamData(SyncAnalysis* syncPtr);
     void processPhaseCavityData(SyncAnalysis* syncPtr);
@@ -77,14 +78,14 @@ namespace Ami {
     double     _liteMaxVal;
     double     _darkMinVal;
     double     _darkMaxVal;
-    unsigned   _liteLookUpIndexHigh; 
-    unsigned   _darkLookUpIndexHigh; 
+    unsigned   _liteLookUpIndexHigh;
+    unsigned   _darkLookUpIndexHigh;
     unsigned   _liteLookUpIndexLow;
     unsigned   _darkLookUpIndexLow;
     unsigned   _summaryEntries;
-    unsigned   _analyzeCount; 
-    unsigned   _liteLookUpIndexHighX; 
-    unsigned   _darkLookUpIndexHighX; 
+    unsigned   _analyzeCount;
+    unsigned   _liteLookUpIndexHighX;
+    unsigned   _darkLookUpIndexHighX;
     unsigned   _liteLookUpIndexLowX;
     unsigned   _darkLookUpIndexLowX;
     unsigned   _notRefilledCount;
@@ -94,7 +95,7 @@ namespace Ami {
     SyncAnalysis* _syncPtrDetY;
     EntryScan*    _scatterPlotEntry;
     unsigned      _scatterPlotBinsCount;
- 
+
   };
 };
 

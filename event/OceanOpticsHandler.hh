@@ -25,12 +25,13 @@ namespace Ami {
     void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    OceanOpticsHandler(const Pds::DetInfo& info, 
-		       const Pds::OceanOptics::ConfigV1& config);
+    //OceanOpticsHandler(const Pds::DetInfo& info,
+    //       const Pds::OceanOptics::ConfigV1& config);
   private:
-    Pds::OceanOptics::ConfigV1 _config;
+    char _configBuffer[sizeof(Pds::OceanOptics::ConfigV2)];
+    int  _iConfigVer;
     enum { MaxEntries=32 };
-    unsigned       _nentries;    
+    unsigned       _nentries;
     EntryWaveform* _entry[MaxEntries];
   };
 };

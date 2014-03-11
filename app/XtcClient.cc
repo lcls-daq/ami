@@ -38,6 +38,7 @@
 #include "ami/event/OceanOpticsHandler.hh"
 #include "ami/event/FliHandler.hh"
 #include "ami/event/AndorHandler.hh"
+#include "ami/event/PimaxHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
@@ -67,16 +68,16 @@ static Ami::XtcClient* _instance=0;
 static double clockTimeDiff(const Pds::ClockTime& a,
                             const Pds::ClockTime& b)
 {
-  return double(a.seconds()-b.seconds()) + 
+  return double(a.seconds()-b.seconds()) +
     1.e-9*(double(a.nanoseconds())-double(b.nanoseconds()));
 }
 
 using namespace Ami;
 
-XtcClient::XtcClient(std::vector<FeatureCache*>& cache, 
+XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
                      Factory&      factory,
                      EventFilter&  filter,
-		     bool          sync) :
+         bool          sync) :
   _cache   (cache),
   _factory (factory),
   _filter  (filter),
@@ -102,7 +103,7 @@ XtcClient::~XtcClient()
 void XtcClient::insert(EventHandler* h) { _handlers.push_back(h); }
 void XtcClient::remove(EventHandler* h) { _handlers.remove(h); }
 
-void XtcClient::processDgram(Pds::Dgram* dg) 
+void XtcClient::processDgram(Pds::Dgram* dg)
 {
   bool accept=false;
 
@@ -126,7 +127,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       cache.cache(_event_index,_seq->stamp().vector());
       cache.cache(_evtim_index,_seq->clock().asDouble());
       cache.cache(_evrtm_index,clockTimeDiff(_seq->clock(),_runtim));
-      
+
       for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
         if ((*it)->data_type() == Pds::TypeId::NumberOf)
           (*it)->_event(dg->xtc.contains, dg->xtc.payload(), _seq->clock());
@@ -137,14 +138,14 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         }
       }
 
-      iterate(&dg->xtc); 
+      iterate(&dg->xtc);
 
       _cache[PostAnalysis]->cache(cache);
 
       if (_filter.accept()) {
-	accept = true;
-	_entry.front()->valid(_seq->clock());
-	_factory.analyze();
+  accept = true;
+  _entry.front()->valid(_seq->clock());
+  _factory.analyze();
       }
     }
     //
@@ -155,7 +156,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     clock_gettime(CLOCK_REALTIME, &tq);
     if (_ptime_index>=0) {
       double dt;
-      dt = double(tq.tv_sec-tp.tv_sec) + 
+      dt = double(tq.tv_sec-tp.tv_sec) +
         1.e-9*(double(tq.tv_nsec)-double(tp.tv_nsec));
       cache.cache(_ptime_index,dt);
       if (accept) {
@@ -163,7 +164,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         _cache[PostAnalysis]->cache(_ptime_acc_index,dt);
       }
 
-      dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) + 
+      dt = double(tq.tv_sec)-double(dg->seq.clock().seconds()) +
         1.e-9*(double(tq.tv_nsec)-double(dg->seq.clock().nanoseconds()));
       cache.cache(_pltnc_index,dt);
       _cache[PostAnalysis]->cache(_pltnc_index,dt);
@@ -205,9 +206,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       delete _name_service;
       _name_service = 0;
     }
-    
+
     // This adds entries back to the handlers via process()
-    iterate(&dg->xtc); 
+    iterate(&dg->xtc);
 
     //  Create and register new entries
     _entry.clear();
@@ -227,12 +228,12 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     }
 
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-      for(unsigned k=0; k<(*it)->nentries(); k++) {                     
+      for(unsigned k=0; k<(*it)->nentries(); k++) {
         const Entry* e = (*it)->entry(k);
         if (e) {
           unsigned signature = _factory.discovery().add   (const_cast<Entry*>(e));
           const Entry* o = (*it)->hidden_entry(k);
-          if (o) 
+          if (o)
             _factory.hidden().add   (const_cast<Entry*>(o),signature);
         }
       }
@@ -263,11 +264,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       _ready = false;
 
     _seq = &dg->seq;
-    iterate(&dg->xtc); 
+    iterate(&dg->xtc);
   }
 }
 
-void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h) 
+void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
 {
   const char* infoName;
   switch(xtc->src.level()) {
@@ -280,7 +281,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
   case Pds::Level::Event:
     break;
   default:
-    printf("Default name lookup failed for src %08x.%08x!\n", 
+    printf("Default name lookup failed for src %08x.%08x!\n",
            xtc->src.phy(), xtc->src.log());
     infoName = 0;
     break;
@@ -317,7 +318,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
   }
 }
 
-int XtcClient::process(Pds::Xtc* xtc) 
+int XtcClient::process(Pds::Xtc* xtc)
 {
   if (xtc->extent < sizeof(Xtc) ||
       xtc->contains.id() >= TypeId::NumberOf)
@@ -331,9 +332,9 @@ int XtcClient::process(Pds::Xtc* xtc)
   else {
 #ifdef DBUG
     if (_seq->service()==Pds::TransitionId::Configure) {
-      printf("Type %s  Src %08x.%08x\n", 
-	     TypeId::name(xtc->contains.id()),
-	     xtc->src.phy(),xtc->src.log());
+      printf("Type %s  Src %08x.%08x\n",
+       TypeId::name(xtc->contains.id()),
+       xtc->src.phy(),xtc->src.log());
     }
 #endif
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
@@ -343,38 +344,38 @@ int XtcClient::process(Pds::Xtc* xtc)
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
 
-	  if (h->used()) {
+    if (h->used()) {
 
-	    const std::list<Pds::TypeId::Type>& types = h->data_types();
+      const std::list<Pds::TypeId::Type>& types = h->data_types();
 
-	    Pds::TypeId::Type type = xtc->contains.id();
-	    for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-		it != types.end(); it++) {
-	      if (*it == type) {
+      Pds::TypeId::Type type = xtc->contains.id();
+      for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+    it != types.end(); it++) {
+        if (*it == type) {
 #ifdef DBUG
-		printf("Src %08x.%08x  Type %08x handled by %p\n",
-		       xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
+    printf("Src %08x.%08x  Type %08x handled by %p\n",
+           xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
-                boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ? 
+                boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ?
                   Pds::CompressedXtc::uncompress(*xtc) :
                   boost::shared_ptr<Xtc>(xtc,Destroy);
-                
+
                 h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
-		return 1;
-	      }
-	      else
-		continue;
-	    }
+    return 1;
+        }
+        else
+    continue;
+      }
           }
 #ifdef DBUG
-	  else {
-	    const std::list<Pds::TypeId::Type>& types = h->data_types();
-	    printf("Handler %p not used [",h);
-	    for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-		it != types.end(); it++) 
-	      printf("%s,",TypeId::name(*it));
-	    printf("]\n");
-	  }
+    else {
+      const std::list<Pds::TypeId::Type>& types = h->data_types();
+      printf("Handler %p not used [",h);
+      for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+    it != types.end(); it++)
+        printf("%s,",TypeId::name(*it));
+      printf("]\n");
+    }
 #endif
         }
         else {
@@ -397,12 +398,12 @@ int XtcClient::process(Pds::Xtc* xtc)
     }
     //  Wasn't handled
     if (_seq->service()==Pds::TransitionId::Configure &&
-	xtc->damage.value()==0) {
+  xtc->damage.value()==0) {
       const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       FeatureCache& cache = *_cache[PreAnalysis];
       EventHandler* h = 0;
-      
+
       switch(xtc->contains.id()) {
       case Pds::TypeId::Any:                 h = new EpixHandlerT      (info); break;
       case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
@@ -418,7 +419,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_FccdConfig  :     h = new FccdHandler       (info); break;
       case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
       case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
-      case Pds::TypeId::Id_CspadConfig:      
+      case Pds::TypeId::Id_CspadConfig:
         if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
         else                                 h = new CspadMiniHandler  (info,cache);
         break;
@@ -426,6 +427,7 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
       case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
       case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
+      case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
       case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
       case Pds::TypeId::Id_L3TConfig:        h = new L3THandler        (cache); break;
       case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
@@ -446,8 +448,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
-      case Pds::TypeId::Id_AliasConfig: 
-	/*  Apply new name service to discovered data */
+      case Pds::TypeId::Id_AliasConfig:
+  /*  Apply new name service to discovered data */
         if (!_name_service)
           _name_service = new NameService;
         _name_service->append(*xtc);
@@ -457,7 +459,7 @@ int XtcClient::process(Pds::Xtc* xtc)
           if (name) {
             h->rename(name);
           }
-	}
+  }
         break;
       default: break;
       }
@@ -470,23 +472,23 @@ int XtcClient::process(Pds::Xtc* xtc)
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
       }
       else {
-	char buff[128];
-	const char* infoName = buff;
+  char buff[128];
+  const char* infoName = buff;
 
-	switch(xtc->src.level()) {
-	case Level::Source  : infoName = Pds::DetInfo::name(info); break;
-	case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
-	default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
-	}
+  switch(xtc->src.level()) {
+  case Level::Source  : infoName = Pds::DetInfo::name(info); break;
+  case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
+  default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
+  }
 
-	if (_name_service) {
-	  const char* name = _name_service->name(h->info());
-	  if (name) {
-	    h->rename(name);
-	    strcpy(buff,name);
-	    infoName = buff;
-	  }
-	}
+  if (_name_service) {
+    const char* name = _name_service->name(h->info());
+    if (name) {
+      h->rename(name);
+      strcpy(buff,name);
+      infoName = buff;
+    }
+  }
 
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
         printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);

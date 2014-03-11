@@ -85,7 +85,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   _serverGroup(serverGroup),
   _connect_mgr(new ConnectionManager(ppinterface)),
   _manager    (new ClientManager(interface,
-                                 serverGroup, 
+                                 serverGroup,
                                  *_connect_mgr,
                                  *this)),
   _filters    (new FilterSetup(*_manager)),
@@ -131,8 +131,8 @@ DetectorSelect::DetectorSelect(const QString& label,
 
     QPushButton* resetB  = new QPushButton("Reset Plots");
     QPushButton* saveB   = new QPushButton("Save Plots");
-    QPushButton* filterB = new QPushButton("Event Filter"); 
-    QPushButton* exportB = new QPushButton("L3T Export"); 
+    QPushButton* filterB = new QPushButton("Event Filter");
+    QPushButton* exportB = new QPushButton("L3T Export");
     layout->addWidget(resetB ,0,0);
     layout->addWidget(saveB  ,0,1);
     layout->addWidget(filterB,1,0);
@@ -142,7 +142,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
     connect(exportB, SIGNAL(clicked()), _filter_export, SLOT(front()));
     connect(_filter_export, SIGNAL(changed()), this, SLOT(l3t_export()));
-    
+
     layout->addWidget(_detList = new QListWidget(this),2,0,1,2);
 #if 1
     //
@@ -159,7 +159,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     //    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
     //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
     //    *new DetectorListItem(_detList, "Script", scriptInfo , 0);
-    connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)), 
+    connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)),
       this, SLOT(show_detector(QListWidgetItem*)));
 
     data_box->setLayout(layout);
@@ -235,7 +235,7 @@ void DetectorSelect::save_setup ()
 
 void DetectorSelect::load_setup ()
 {
-  // get the file 
+  // get the file
   QString fname = QFileDialog::getOpenFileName(this,"Load Setup from File (.ami)",
                  Path::base(), "*.ami");
 
@@ -295,7 +295,7 @@ void DetectorSelect::set_setup(const char* p, int size)
       printf("Seeking %s (%08x.%08x.%d)\n",tag.name.c_str(),log,phy,channel);
 
       SrcV info(log,phy);
-      
+
       bool lFound=false;
       for(std::list<QtTopWidget*>::iterator it = _client.begin();
           it != _client.end(); it++)
@@ -305,7 +305,7 @@ void DetectorSelect::set_setup(const char* p, int size)
           (*it)->load(p);
           break;
         }
-    
+
       if (!lFound) {
         _create_client(info,channel,tag.name.c_str(),p);
       }
@@ -363,8 +363,8 @@ void DetectorSelect::save_plots()
     (*it)->save_plots(QString("%1_%2").arg(prefix).arg((*it)->title()));
 }
 
-Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src, 
-						   unsigned channel,
+Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
+               unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {
@@ -373,39 +373,40 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
   Ami::Qt::AbsClient* client = 0;
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
-    case Pds::DetInfo::NoDevice : 
+    case Pds::DetInfo::NoDevice :
       { switch(info.devId()) {
-	case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
-	  //	case 1: client = new Ami::Qt::ScriptClient (this, info , channel); break;
-	default: break; } } break;
+  case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
+    //  case 1: client = new Ami::Qt::ScriptClient (this, info , channel); break;
+  default: break; } } break;
     case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel, name); break;
-    case Pds::DetInfo::OceanOptics : 
+    case Pds::DetInfo::OceanOptics :
     case Pds::DetInfo::Imp      :
     case Pds::DetInfo::EpixSampler:
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel, name); break;
-    case Pds::DetInfo::Opal1000 : 
-    case Pds::DetInfo::Opal2000 : 
-    case Pds::DetInfo::Opal4000 : 
-    case Pds::DetInfo::Opal8000 : 
-    case Pds::DetInfo::Quartz4A150 : 
+    case Pds::DetInfo::Opal1000 :
+    case Pds::DetInfo::Opal2000 :
+    case Pds::DetInfo::Opal4000 :
+    case Pds::DetInfo::Opal8000 :
+    case Pds::DetInfo::Quartz4A150 :
     case Pds::DetInfo::Phasics  :
     case Pds::DetInfo::Timepix  :
     case Pds::DetInfo::Rayonix  :
-    case Pds::DetInfo::TM6740   : 
-    case Pds::DetInfo::Princeton: 
-    case Pds::DetInfo::Fli      : 
-    case Pds::DetInfo::OrcaFl40 : 
+    case Pds::DetInfo::TM6740   :
+    case Pds::DetInfo::Princeton:
+    case Pds::DetInfo::Fli      :
+    case Pds::DetInfo::Pimax    :
+    case Pds::DetInfo::OrcaFl40 :
       client = new Ami::Qt::ImageClient   (this, info, channel, name);
       break;
-    case Pds::DetInfo::Andor    : 
+    case Pds::DetInfo::Andor    :
       client = new Ami::Qt::FrameClient   (this, info, channel, name);
       break;
     case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel, name); break;
     case Pds::DetInfo::Cspad    :
     case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel, name); break;
     case Pds::DetInfo::pnCCD    : client = new Ami::Qt::PnccdClient   (this, info, channel, name); break;
-    case Pds::DetInfo::Epix     : 
+    case Pds::DetInfo::Epix     :
     case Pds::DetInfo::NumDevice: client = new Ami::Qt::EpixClient    (this, info, channel, name); break;
     default: printf("Device type %x not recognized\n", info.device()); break;
     }
@@ -427,12 +428,12 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::BldInfo::SxrSpec0:
     case Pds::BldInfo::XppSpec0:
       client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
-    default: 
+    default:
       printf("Bld type %x not recognized\n", bld.type()); break;
     }
   }
   else if (src.level()==Pds::Level::Event) {
-    client = new Ami::Qt::SummaryClient (this, info , channel, name, ConfigureRequest::User); 
+    client = new Ami::Qt::SummaryClient (this, info , channel, name, ConfigureRequest::User);
   }
   else {
     printf("Ignoring %s [%08x.%08x]\n",qPrintable(name), src.log(), src.phy());
@@ -448,17 +449,17 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
 
  void DetectorSelect::_connect_client(Ami::Qt::AbsClient* client)
  {
-   ClientManager* manager = new ClientManager(_interface,     
+   ClientManager* manager = new ClientManager(_interface,
                                               _serverGroup,
                                               *_connect_mgr,
-                                              *client); 
-   client->managed(*manager);         
+                                              *client);
+   client->managed(*manager);
    _client.push_back(client);
    //   _update_groups();
 
    connect(client, SIGNAL(changed()), this, SLOT(queue_autosave()));
 }
-   
+
 void DetectorSelect::show_detector(QListWidgetItem* item)
 {
   DetectorListItem* ditem = static_cast<DetectorListItem*>(item);
@@ -472,26 +473,26 @@ void DetectorSelect::show_detector(QListWidgetItem* item)
   _create_client(ditem->info,ditem->channel,ditem->text(),p);
 }
 
-void DetectorSelect::connected       () 
+void DetectorSelect::connected       ()
 {
-  _manager->discover(); 
+  _manager->discover();
 }
 
-int  DetectorSelect::configure       (iovec* iov) 
-{ 
+int  DetectorSelect::configure       (iovec* iov)
+{
   char* p = _request;
-  { ConfigureRequest& r = 
+  { ConfigureRequest& r =
       *new(p) ConfigureRequest(ConfigureRequest::Filter,
                                _filters->selected(),
-			       _filters->filter());
+             _filters->filter());
     p += r.size(); }
 
   if (_l3t_export) {
     _l3t_export=false;
-    ConfigureRequest& r = 
+    ConfigureRequest& r =
       *new(p) ConfigureRequest(ConfigureRequest::Filter,
                                (1<<31),
-			       *_filter_export->filter());
+             *_filter_export->filter());
     p += r.size();
   }
 
@@ -499,13 +500,13 @@ int  DetectorSelect::configure       (iovec* iov)
 
   iov[0].iov_base = _request;
   iov[0].iov_len  = p-_request;
-  return 1; 
+  return 1;
 }
 
 int  DetectorSelect::configured      () { return 0; }
 
-void DetectorSelect::discovered      (const DiscoveryRx& rx) 
-{ 
+void DetectorSelect::discovered      (const DiscoveryRx& rx)
+{
   SMPRegistry::instance().nservers(rx.nsources());
 
   for(int i=0; i<Ami::NumberOfSets; i++) {
@@ -551,7 +552,7 @@ void DetectorSelect::change_detectors(const char* c)
             lFound=true;
             break;
           }
-        
+
         if (!lFound)
           remove.push_back(*it);
       }
@@ -561,7 +562,7 @@ void DetectorSelect::change_detectors(const char* c)
     }
   }
 #endif
-  
+
   //  Register new buttons
   {
     _detList->clear();

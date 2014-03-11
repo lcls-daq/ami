@@ -159,8 +159,12 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     switch(type.version()) {
     case 1: break;
     case 2:
-      _cache.cache(_iCacheIndexTemperature,
-                   reinterpret_cast<const Pds::Princeton::FrameV2*>(payload)->temperature()); 
+      if (_iCacheIndexTemperature != -1)
+      {
+        float fTemperature = reinterpret_cast<const Pds::Princeton::FrameV2*>(payload)->temperature();
+        if (fTemperature != 999) // temperature not defined
+        _cache.cache(_iCacheIndexTemperature,fTemperature);
+      }
       break;
     default: break;
     }
@@ -171,10 +175,10 @@ void PrincetonHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     switch(type.version()) {
     case 1:
       { const Pds::Princeton::InfoV1& info1 = *reinterpret_cast<const Pds::Princeton::InfoV1*>(payload);
-	if (_iCacheIndexTemperature != -1)
-	  _cache.cache(_iCacheIndexTemperature, info1.temperature());
+        if (_iCacheIndexTemperature != -1)
+          _cache.cache(_iCacheIndexTemperature, info1.temperature());
       } break;
-    default: 
+    default:
       break;
     }
   }

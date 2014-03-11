@@ -14,7 +14,7 @@ static char _buffer[BSIZ];
 #define AcqChannel(title)                                       \
   if (info.device()==DetInfo::Acqiris) {                        \
     if (channel.is_mask())                                      \
-      strcpy(_buffer,title);					\
+      strcpy(_buffer,title);          \
     else                                                        \
       sprintf(_buffer,"%s_%d",title,channel+1);                 \
   }
@@ -23,13 +23,13 @@ static char _buffer[BSIZ];
       info.device()==DetInfo::Opal2000 ||               \
       info.device()==DetInfo::Opal4000) {               \
     if (info.devId()==0)                                \
-      strcpy(_buffer,title);				\
+      strcpy(_buffer,title);        \
     else                                                \
       sprintf(_buffer,"%s_%d",title,info.devId()+1);    \
-  }             
+  }
 #define PnccdDetector                                   \
   if (info.device()==DetInfo::pnCCD)                    \
-    sprintf(_buffer,"pnCCD_%d",info.devId()+1);    
+    sprintf(_buffer,"pnCCD_%d",info.devId()+1);
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
@@ -38,7 +38,7 @@ static void _default(char* b, const DetInfo& info, unsigned channel)
     if (!ch.is_mask())
       sprintf(b,"%s_%s_%d",
               DetInfo::name(info.detector()),
-              DetInfo::name(info.device  ()), 
+              DetInfo::name(info.device  ()),
               channel+1);
     else
       sprintf(b,"%s_%s",
@@ -69,7 +69,7 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
     case DetInfo::AmoMbes  : AcqChannel("MBES"); break;
     case DetInfo::AmoBps   : OpalDetector("BPS"); break;
       //  CAMP Detectors
-    case DetInfo::Camp     : 
+    case DetInfo::Camp     :
       AcqChannel("ACQ")
       else OpalDetector("VMI")
       else PnccdDetector
@@ -93,10 +93,10 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Acqiris : {
         char buff[32];
         sprintf(buff,"ACQ%d",info.devId());
-        AcqChannel(buff); 
+        AcqChannel(buff);
         break;
       }
-      case DetInfo::Opal1000: 
+      case DetInfo::Opal1000:
         sprintf(_buffer,"End_Opal_%d",info.devId()+1);
         break;
       case DetInfo::Princeton:
@@ -108,9 +108,12 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Andor:
         sprintf(_buffer,"Andor.%d.%d",info.detId(),info.devId());
         break;
+      case DetInfo::Pimax:
+        sprintf(_buffer,"Pimax.%d.%d",info.detId(),info.devId());
+        break;
       default: _default(_buffer,info,channel); break;
       }
-      break;    
+      break;
     case DetInfo::XcsBeamline:
       if (info.device() == DetInfo::Ipimb && info.detId()>0 && info.detId()<3) {
         sprintf(_buffer,"XCS-%s-%02d",
@@ -125,13 +128,13 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       } // else fall through
     default:
       switch(info.device()) {
-      case DetInfo::TM6740: 
+      case DetInfo::TM6740:
         sprintf(_buffer,"%sCvd.%d.%d",
                 Pds::DetInfo::name(info.detector()),
-                info.detId(),info.devId()); 
+                info.detId(),info.devId());
         break;
       case DetInfo::Princeton:
-        sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId()); 
+        sprintf(_buffer,"PI.%d.%d",info.detId(),info.devId());
         break;
       case DetInfo::Fli:
         sprintf(_buffer,"Fli.%d.%d",info.detId(),info.devId());
@@ -139,10 +142,10 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Andor:
         sprintf(_buffer,"Andor.%d.%d",info.detId(),info.devId());
         break;
-      default: 
-        _default(_buffer,info,channel); 
+      default:
+        _default(_buffer,info,channel);
         break;
-      } 
+      }
       break;
     }
   }
@@ -151,5 +154,5 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
     sprintf(_buffer,"%s",Pds::BldInfo::name(bld));
   }
   return _buffer;
-}   
+}
 
