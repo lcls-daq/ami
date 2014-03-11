@@ -12,7 +12,7 @@ namespace Ami {
     static unsigned    option_reload_pedestal();
     static unsigned    option_correct_common_mode();
     static std::string save_pedestals(Entry*,bool corrected,bool prod);
-    static void        load_pedestals(EntryImage*,bool tform);
+    static void        load_pedestals(EntryImage*,bool tform, bool no_cache);
   };
 };
 

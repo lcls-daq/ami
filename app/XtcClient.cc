@@ -175,9 +175,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _runtim      = dg->seq.clock();
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
-
+#ifdef DBUG
     printf("XtcClient configure\n");
-
+#endif
     _cache[ PreAnalysis]->clear();
     _cache[PostAnalysis]->clear();
 
@@ -238,7 +238,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         }
       }
     }
+#ifdef DBUG
     printf("XC\n");
+#endif
     _factory.discovery().sort();  // Need to set a consistent order across all server processes
     _factory.discovery().showentries();
     //    _factory.hidden   ().showentries();
@@ -252,9 +254,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _runno_index     = cache.add("RunNumber");
 
     _cache[PostAnalysis]->add(cache);
-
+#ifdef DBUG
     printf("XtcClient configure done\n");
-
+#endif
     //  Advertise
     _factory.discover(_sync);
     _ready =  true;
@@ -314,7 +316,9 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
     const_cast<DescEntry&>(desc).recorded(_recorded);  // flag recorded/unrecorded data
     const DescEntry* descPtr = &desc;
     const char* name = descPtr->name();
+#ifdef DBUG
     printf("%s XtcClient::_configure: %s (%s): entry[%d]=%s\n", time, infoName, typeName, i, name);
+#endif
   }
 }
 
@@ -491,8 +495,9 @@ int XtcClient::process(Pds::Xtc* xtc)
   }
 
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
+#ifdef DBUG
         printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);
-
+#endif
 #if 1
         // Sanity check -- a newly created handler should have no entries.
         int nentries = h->nentries();

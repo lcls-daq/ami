@@ -11,7 +11,7 @@
 #include <time.h>
 #include <errno.h>
 
-#define DBUG
+//#define DBUG
 
 static const unsigned rows = 1024;
 static const unsigned cols = 1024;
@@ -141,7 +141,7 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
   else
     _tform = true;
 
-  PnccdCalib::load_pedestals(_correct,_tform);
+  PnccdCalib::load_pedestals(_correct,_tform,false);
 }
 
 void PnccdHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -158,7 +158,7 @@ void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::Clock
     }
 
     if (_entry->desc().options() & PnccdCalib::option_reload_pedestal()) {
-      PnccdCalib::load_pedestals(_correct,_tform);
+      PnccdCalib::load_pedestals(_correct,_tform,true);
       _entry->desc().options( _entry->desc().options()&~PnccdCalib::option_reload_pedestal() );
     }
   }

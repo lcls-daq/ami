@@ -1061,7 +1061,7 @@ void CspadMiniHandler::_event    (Pds::TypeId, const void* payload, const Pds::C
 
     if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
       const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
-      FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
+      FILE *f = Calib::fopen(dInfo, "ped", "pedestals", true);
       if (f) {
         _detector->set_pedestals(f);
         _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );

@@ -12,9 +12,12 @@ namespace Ami {
   public:
     static FILE* fopen     (const Pds::DetInfo&, 
                             const char* onl_calib_type,
-                            const char* off_calib_type="None");
+                            const char* off_calib_type="None",
+                            bool        no_cache=false);
 
-    static FILE *fopen_dual(const char *path1, const char * path2, const char *description);
+    static FILE *fopen_dual(const char *path1, const char * path2, 
+                            const char *description,
+                            bool        no_cache=false);
 
     static void load_array      (ndarray<double,1>& a, 
                                  unsigned phy,

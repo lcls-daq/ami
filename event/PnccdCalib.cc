@@ -116,7 +116,8 @@ std::string PnccdCalib::save_pedestals(Entry* entry,
 }
 
 void PnccdCalib::load_pedestals(EntryImage* correct,
-                                bool tform) 
+                                bool tform,
+                                bool no_cache) 
 {
   //
   //  Load calibration from a file
@@ -128,7 +129,7 @@ void PnccdCalib::load_pedestals(EntryImage* correct,
   const DescImage& d = correct->desc();
   sprintf(oname1,"ped.%08x.dat",d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals",no_cache);
   if (f) {
     size_t sz = 8 * 1024;
     char* linep = (char *)malloc(sz);

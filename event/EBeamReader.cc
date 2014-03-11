@@ -53,6 +53,11 @@ void   EBeamReader::_configure(Pds::TypeId id,
           _add_to_cache("BLD:EBEAM:UNDY");
           _add_to_cache("BLD:EBEAM:UNDXP");
           index = _add_to_cache("BLD:EBEAM:UNDYP");
+          if (id.version()>=5) {
+            _add_to_cache("BLD:EBEAM:XTCAVAMPL");
+            _add_to_cache("BLD:EBEAM:XTCAVPHASE");
+            index = _add_to_cache("BLD:EBEAM:QDUMP");
+          }
         }
       }
     }
@@ -170,6 +175,29 @@ void   EBeamReader::_event    (Pds::TypeId id,
         TEST(UndPosY);
         TEST(UndAngX);
         TEST(UndAngY);
+        break;
+      }
+    case 5:
+      {
+        const Pds::Bld::BldDataEBeamV5& bld = 
+          *reinterpret_cast<const Pds::Bld::BldDataEBeamV5*>(payload);
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
+        TEST(PkCurrBC1);
+        TEST(EnergyBC1);
+        TEST(UndPosX);
+        TEST(UndPosY);
+        TEST(UndAngX);
+        TEST(UndAngY);
+        TEST(XTCAVAmpl);
+        TEST(XTCAVPhase);
+        TEST(DumpCharge);
         break;
       }
     default:

@@ -4,6 +4,7 @@
 
 #include <sstream>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
 #include <iomanip>
@@ -61,15 +62,35 @@ static const char* offCalibClass[] = { NULL,                // NoDevice
                                        "CsPad2x2::CalibV1",
                                        NULL };
 
-static FILE* _fopen(const char* fname)
+static FILE* _fopen(const char* fname, bool no_cache)
 {
   printf("Calib::fopen opening %s\n",fname);
-  return ::fopen(fname,"r");
+
+  FILE* f = 0;
+  int flags = no_cache ? O_RDONLY|O_DIRECT : O_RDONLY;
+  int fd = ::open(fname,flags);
+  if (fd >= 0)
+    f = ::fdopen(fd,"r");
+    
+  return f;
+}
+
+static void _stat64(const char* fname, struct stat64* s, bool no_cache)
+{
+  if (no_cache) {
+    int fd = ::open(fname,O_RDONLY|O_DIRECT);
+    stat64(fname,s);
+    if (fd >= 0)
+      ::close(fd);
+  }
+  else
+    stat64(fname,s);
 }
 
 FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
                         const char* onl_calib_type,
-                        const char* off_calib_type)
+                        const char* off_calib_type,
+                        bool no_cache)
 {
   std::string path1;
   { std::ostringstream o;
@@ -110,19 +131,19 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   memset(&st2,0,sizeof(st2));
   memset(&st3,0,sizeof(st3));
   memset(&st4,0,sizeof(st4));
-  if (!path1.empty()) stat64(path1.c_str(),&st1);
-  if (!path2.empty()) stat64(path2.c_str(),&st2);
-  if (!path3.empty()) stat64(path3.c_str(),&st3);
-  if (!path4.empty()) stat64(path4.c_str(),&st4);
+  if (!path1.empty()) _stat64(path1.c_str(),&st1,no_cache);
+  if (!path2.empty()) _stat64(path2.c_str(),&st2,no_cache);
+  if (!path3.empty()) _stat64(path3.c_str(),&st3,no_cache);
+  if (!path4.empty()) _stat64(path4.c_str(),&st4,no_cache);
 
   if (_use_offline && st4.st_mtime > 0)
-    return _fopen(path4.c_str());
+    return _fopen(path4.c_str(),no_cache);
   if (st1.st_mtime > 0)
-    return _fopen(path1.c_str());
+    return _fopen(path1.c_str(),no_cache);
   if (_use_offline && st3.st_mtime > 0)
-    return _fopen(path3.c_str());
+    return _fopen(path3.c_str(),no_cache);
   if (st2.st_mtime > 0)
-    return _fopen(path2.c_str());
+    return _fopen(path2.c_str(),no_cache);
 
   printf("Calib::fopen failed to open [%s,%s,%s]\n",
          path1.c_str(),path2.c_str(),path3.c_str());
@@ -130,28 +151,26 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   return 0;
 }
 
-FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2, const char *description)
+FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2, 
+                             const char *description,
+                             bool        no_cache)
 {
-  //  Try this to get client cache coherency
-  char path[256];
-  strcpy(path,path1);
-  struct stat64 st;
-  stat64(dirname(path),&st);
-
+  FILE *f = 0;
   const int ErrMsgSize=200;
   char errmsg[ErrMsgSize];
-  FILE *f = ::fopen(path1, "r");
+  int flags = no_cache ? O_RDONLY|O_DIRECT : O_RDONLY;
+  int fd = ::open(path1, flags);
 
-  if (f) {
+  if (fd >= 0) {
+    f = ::fdopen(fd, "r");
     printf("Loaded %s from %s\n", description, path1);
   } else {
     snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path1);
     perror(errmsg);
 
-    strcpy(path,path2);
-    stat64(dirname(path),&st);
-    f = ::fopen(path2, "r");
-    if (f) {
+    fd = ::open(path2, flags);
+    if (fd >= 0) {
+      f = ::fdopen(fd, "r");
       printf("Loaded %s from %s\n", description, path2);
     } else {
       snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path2);
