@@ -466,7 +466,7 @@ void Ami::PnccdModule::ModulePlots::reset()
   // lookup pedestal
   DescImage pdsc(_info,unsigned(0),"peds",cols,rows);
   EntryImage* correct = new EntryImage(pdsc);
-  PnccdCalib::load_pedestals(correct,false);
+  PnccdCalib::load_pedestals(correct,false,false);
   ndarray<const unsigned,2> ped = correct->content();
 
   for(unsigned i=0; i<4; i++)

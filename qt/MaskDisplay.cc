@@ -275,7 +275,7 @@ namespace Ami {
     class PixlHandle : public Cursors,
                        public ImageMarker {
     public:
-      PixlHandle (MaskDisplay& p) : _parent(p) {}
+      PixlHandle (MaskDisplay& p) : _parent(p), _pressed(false) {}
       ~PixlHandle() {}
     public:
       void mousePressEvent  (double dx, double dy)
@@ -286,18 +286,22 @@ namespace Ami {
         if (y < 0) y = 0;
         else if (y > _ymax) y = _ymax;
        _x0=x; _y0=y;
+       _pressed=true;
        _parent.pixl(_x0,_y0,_x0,_y0);
       }
       void mouseMoveEvent   (double dx, double dy)
       {
-        int x((int)dx), y((int)dy);
-        _parent.pixl(_x0,_y0,x,y);
-        _x0=x; _y0=y;
+        if (_pressed) {
+          int x((int)dx), y((int)dy);
+          _parent.pixl(_x0,_y0,x,y);
+          _x0=x; _y0=y;
+        }
       }
       void mouseReleaseEvent(double x, double y)
       {
         mouseMoveEvent(x,y);
         _parent.push();
+        _pressed=false;
       }
     public:
       void draw(QImage& image)
@@ -313,6 +317,7 @@ namespace Ami {
       int _x1;
       int _y1;
       int _xmax, _ymax;
+      bool _pressed;
     };
   };
 };

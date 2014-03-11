@@ -50,3 +50,8 @@ libincs_XPPSummary := pdsdata/include ndarray/include boost/include
 libnames += PnccdModule
 libsrcs_PnccdModule := PnccdModule.cc
 libincs_PnccdModule := pdsdata/include ndarray/include boost/include
+
+libnames += AmiEpics
+libsrcs_AmiEpics := AmiEpics.cc CspadTHandler.cc CspadMiniTHandler.cc PrincetonTHandler.cc
+libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
+liblibs_AmiEpics := epics/ca

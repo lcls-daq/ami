@@ -141,6 +141,7 @@ namespace Ami {
       bool _running;
       bool _paused;
       bool _stopped;
+      bool _needs_configure;
       int _dgCount;
       double _executionStart;
       uint32_t _damageMask;

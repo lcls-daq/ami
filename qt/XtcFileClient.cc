@@ -72,7 +72,7 @@ void XtcFileClient::setPauseButtonLabel(const QString label) {
 }
 
 void XtcFileClient::setStatus(const QString status) {
-  cout << qPrintable(status) << endl;
+  cout << "XtcFileClient: " << qPrintable(status) << endl;
   if (pthread_equal(pthread_self(), _qtThread)) {
     setStatusLabelText(status);
   } else {
@@ -287,6 +287,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& clien
   _running(false),
   _paused (false),
   _stopped(false),
+  _needs_configure(false),
 
   _damageMask(0),
   _damageCount(0),
@@ -427,7 +428,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& clien
   emit _setEnabled(_nextCalibButton, false);
 
   setDir(QString(_curdir));
-  configure_run();
+  //  configure_run();
 }
 
 void XtcFileClient::hzSliderChanged(int value) {
@@ -644,11 +645,14 @@ void XtcFileClient::routine()
   emit _setEnabled(_nextCalibButton, true);
   emit _setEnabled(_prevCalibButton, true);
 
-  do_configure(_runName);
+  if (_needs_configure)
+    do_configure(_runName);
+
   if (_runValid) {
     _running = true;
     _stopped = false;
     _paused  = false;
+    _needs_configure=true;
     run();
   }
 
@@ -803,6 +807,7 @@ void XtcFileClient::do_configure(QString runName)
 
   setStatus("Finished configuring run " + runName + ".");
   _runValid = true;
+  _needs_configure = false;
 }
 
 int XtcFileClient::seekTime(double time) {
