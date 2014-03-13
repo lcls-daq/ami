@@ -373,12 +373,13 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	for(unsigned j=0; j<_config.numberOfRowsPerAsic(); j++) {
 	  unsigned r = i*_config.numberOfRowsPerAsic()+j;
 	  for(unsigned m=0; m<_config.numberOfAsicsPerRow(); m++) {
-	    if (_config.asicMask() & 1<<_asic_map[i*_config.numberOfAsicsPerRow()+m]) {
+	    unsigned fn = i*_config.numberOfAsicsPerRow()+m;
+	    if (_config.asicMask() & 1<<_asic_map[fn]) {
 	      unsigned q = m*_config.numberOfPixelsPerAsicRow();
 	      const uint16_t* d    = &a    [r][q];
 	      const unsigned* p_hi = &pa   [r][q];
 	      const unsigned* p_lo = &pa_lo[r][q];
-	      const SubFrame& fr = _entry->desc().frame(i*_config.numberOfAsicsPerRow()+m);
+	      const SubFrame& fr = _entry->desc().frame(fn);
 	      for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
 		unsigned v = (d[k]&0x4000) ? 
 		  unsigned(d[k]&0x3fff) + p_lo[k] :
@@ -460,8 +461,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
 	  continue;
 	ndarray<uint32_t,2> e = _entry->contents(k);
-	unsigned r = _asicLocation[k].row * _config.numberOfRowsPerAsic();
-	unsigned m = _asicLocation[k].col * _config.numberOfPixelsPerAsicRow();
+	unsigned r = (k/_config.numberOfAsicsPerRow()) * _config.numberOfRowsPerAsic();
+	unsigned m = (k%_config.numberOfAsicsPerRow()) * _config.numberOfPixelsPerAsicRow();
 	for(unsigned y=0; y<e.shape()[0]; y++,r++) {
 	  uint32_t*        v = &e    [y][0];
 	  const uint16_t*  d = &a    [r][m];
