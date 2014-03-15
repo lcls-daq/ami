@@ -397,6 +397,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Fli      :
     case Pds::DetInfo::Pimax    :
     case Pds::DetInfo::OrcaFl40 :
+    case Pds::DetInfo::Fccd960  :
       client = new Ami::Qt::ImageClient   (this, info, channel, name);
       break;
     case Pds::DetInfo::Andor    :
