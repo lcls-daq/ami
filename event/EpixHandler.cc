@@ -350,7 +350,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     //
     if ((aMask&(aMask-1))==0) {
       unsigned asic=0;
-      while(aMask>>=1)
+      while((aMask&(1<<asic))==0)
 	asic++;
       unsigned i = _asicLocation[asic].row;
       for(unsigned j=0; j<_config.numberOfRowsPerAsic(); j++) {
