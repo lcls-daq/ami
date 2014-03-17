@@ -99,14 +99,20 @@ namespace Ami {
     class EdgeFinderConfigApp : public VAConfigApp {
     public:
       EdgeFinderConfigApp(QWidget* parent, 
-			  const QString&, 
-			  unsigned i, 
-			  const Ami::EdgeFinderConfig& c);
+			  std::vector<Ami::EdgeFinderConfig*>&,
+			  unsigned icfg,
+			  unsigned ichan);
+      EdgeFinderConfigApp(QWidget* parent, 
+			  std::vector<Ami::EdgeFinderConfig*>&,
+			  const char*&);
       virtual ~EdgeFinderConfigApp();
+    public:
+      unsigned config() const { return _icfg; }
     protected:
       Ami::AbsOperator* _op(const char*);
     private:
-      const Ami::EdgeFinderConfig&  _config;
+      std::vector<Ami::EdgeFinderConfig*>&  _config;
+      unsigned _icfg;
     };
 
     class EdgeFinderConfig : public QWidget {

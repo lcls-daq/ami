@@ -37,6 +37,7 @@ namespace Ami {
     public:
       const Rect& rect() const { return _rect; }
       unsigned channel() const { return _channel; }
+      unsigned signature() const { return _signature; }
     public:
       void save(char*& p) const;
       void load(const char*& p);
@@ -52,6 +53,7 @@ namespace Ami {
       void      add_projection (AbsOperator*);
       void      add_cursor_plot(BinMath*);
       void      add_zoom_plot  ();
+      void      request_roi    (bool);
     public:
       QString   add_post      (const QString&, const char*);
       QString   add_post      (const QString&, const char*, SharedData*&);
@@ -75,6 +77,7 @@ namespace Ami {
       std::list<ZoomPlot*>       _zplots;
       std::list<CursorPost*>     _posts;
       std::list<CursorOverlay*>  _ovls;
+      bool                       _roi_requested;
     };
 
   };

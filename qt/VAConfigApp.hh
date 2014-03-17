@@ -31,9 +31,14 @@ namespace Ami {
       VAConfigApp(QWidget* parent, 
 		  const QString&, 
 		  unsigned i);
+      VAConfigApp(QWidget* parent,
+		  const char*&);
       virtual ~VAConfigApp();
     protected:
       virtual Ami::AbsOperator* _op(const char* name) = 0;
+    public:
+      const QString name   () const { return _name; }
+      unsigned      channel() const { return _channel; }
     public:
       void add_map        (Ami::AbsOperator*);   
       void add_cursor_plot(BinMath*);   
@@ -45,7 +50,6 @@ namespace Ami {
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
       void setup_payload(Cds&);
       void update();
-      void load(const char*&);
       void save(char*&) const;
       void save_plots(const QString&) const;
     public slots:

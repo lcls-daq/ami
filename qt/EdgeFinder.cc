@@ -172,16 +172,11 @@ void EdgeFinder::load(const char*& p)
     else if (tag.name == "_configs") {
       Ami::EdgeFinderConfig* c = new Ami::EdgeFinderConfig;
       c->load(p); 
+      _setBox->addItem(QString("Set%1").arg(_configs.size()));
       _configs.push_back(c);
     }
     else if (tag.name == "_apps") {
-      int set = _apps.size()/_nchannels;
-      QString name = QString("Set%1").arg(set);
-      unsigned channel = _apps.size()%_nchannels;
-      if (channel==0)
-        _setBox->addItem(name);
-      EdgeFinderConfigApp* app = new EdgeFinderConfigApp(this, name, channel, *_configs[set]);
-      app->load(p);
+      EdgeFinderConfigApp* app = new EdgeFinderConfigApp(this, _configs, p);
       _apps.push_back(app);
       connect(app, SIGNAL(changed()), this, SIGNAL(changed()));
     }
@@ -290,15 +285,9 @@ void EdgeFinder::prototype(const DescEntry& i)
 
 void EdgeFinder::new_set()
 {
-  int i=_apps.size()/_nchannels;
+  int i=_configs.size();
   _configs.push_back(new Ami::EdgeFinderConfig);
-  QString name = QString("Set%1").arg(i);
-  _setBox->addItem(name);
-  for(unsigned j=0; j<_nchannels; j++) {
-    EdgeFinderConfigApp* set = new EdgeFinderConfigApp(this, name,j,*_configs[i]);
-    _apps.push_back(set);
-    connect(set, SIGNAL(changed()), this, SIGNAL(changed()));
-  }
+  _setBox->addItem(QString("Set%1").arg(i));
   _setBox->setCurrentIndex(i);
 }
 
@@ -308,16 +297,41 @@ void EdgeFinder::select_set(int i)
     _config->load(*_configs[i]);
 }
 
-EdgeFinderConfigApp& EdgeFinder::_app() { return *_apps[_setBox->currentIndex()*_nchannels + _channelBox->currentIndex()]; }
+EdgeFinderConfigApp& EdgeFinder::_app() 
+{
+  unsigned ichan = _channelBox->currentIndex();
+  unsigned icfg  = _setBox    ->currentIndex();
+  for(unsigned i=0; i<_apps.size(); i++)
+    if (_apps[i]->channel() == ichan &&
+	_apps[i]->config () == icfg)
+      return *_apps[i];
 
+  EdgeFinderConfigApp* set = new EdgeFinderConfigApp(this, _configs, 
+						     icfg, ichan);
+  _apps.push_back(set);
+  connect(set, SIGNAL(changed()), this, SIGNAL(changed()));
+  return *set;
+}
+
+
+EdgeFinderConfigApp::EdgeFinderConfigApp(QWidget* parent,
+					 std::vector<Ami::EdgeFinderConfig*>& cfgs,
+					 unsigned icfg,
+					 unsigned ichan) :
+  VAConfigApp(parent,QString("EF_%1_%2").arg(icfg).arg(ichan),ichan),
+  _config    (cfgs)
+{
+}
 
 EdgeFinderConfigApp::EdgeFinderConfigApp(QWidget* parent, 
-					 const QString& name, 
-					 unsigned i, 
-					 const Ami::EdgeFinderConfig& c) :
-  VAConfigApp(parent,name,i),
-  _config    (c)
+					 std::vector<Ami::EdgeFinderConfig*>& cfgs,
+					 const char*& p) :
+  VAConfigApp(parent,p),
+  _config    (cfgs)
 {
+  QString n = name();
+  QStringList args = n.split("_");
+  _icfg = args[1].toInt();
 }
 
 EdgeFinderConfigApp::~EdgeFinderConfigApp() 
@@ -326,7 +340,7 @@ EdgeFinderConfigApp::~EdgeFinderConfigApp()
 
 Ami::AbsOperator* EdgeFinderConfigApp::_op(const char* name)
 {
-  return new Ami::EdgeFinder(name,_config);
+  return new Ami::EdgeFinder(name,*_config[_icfg]);
 }
 
 

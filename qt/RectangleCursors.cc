@@ -23,7 +23,8 @@ static double _limit(double i, double lo, double hi)
 }
 
 RectangleCursors::RectangleCursors(ImageFrame& f,
-                                   QtPWidget*  fParent) :
+                                   QtPWidget*  fParent,
+				   LayoutStyle style) :
   QWidget(0),
   _frame(f),
   _frameParent(fParent),
@@ -58,22 +59,29 @@ RectangleCursors::RectangleCursors(ImageFrame& f,
   layout->addWidget(new QLabel("column"),  row, 1, ::Qt::AlignHCenter);
   layout->addWidget(new QLabel("row")   ,  row, 2, ::Qt::AlignHCenter);
   row++;
-  layout->addWidget(new QLabel("top-left"),row,0);
+  if (style==Standard)
+    layout->addWidget(new QLabel("top-left"),row,0);
   layout->addWidget(_edit_x0              ,row,1);
   layout->addWidget(_edit_y0              ,row,2);
   row++;
-  layout->addWidget(new QLabel("btm-rght"),row,0);
+  if (style==Standard)
+    layout->addWidget(new QLabel("btm-rght"),row,0);
   layout->addWidget(_edit_x1              ,row,1);
   layout->addWidget(_edit_y1              ,row,2);
   
-  layout->addWidget(grab                ,1,3,2,1);
-
   row++;
-  layout->addWidget(new QLabel(QString(QChar(0x0394))),row,0);
-  layout->addWidget(_delta_x              ,row,1);
-  layout->addWidget(_delta_y              ,row,2);
-  layout->addWidget(_npixels              ,row,3);
-  
+  if (style==Standard) {
+    layout->addWidget(new QLabel(QString(QChar(0x0394))),row,0);
+    layout->addWidget(_delta_x              ,row,1);
+    layout->addWidget(_delta_y              ,row,2);
+    layout->addWidget(_npixels              ,row,3);
+
+    layout->addWidget(grab                ,1,3,2,1);
+  }
+  else {
+    layout->addWidget(grab                ,row,1,1,2);
+  }
+
   setLayout(layout);
 
   connect(grab, SIGNAL(clicked()), this, SLOT(grab()));

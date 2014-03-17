@@ -32,7 +32,8 @@ RectROI::RectROI(QWidget*         p,
   _channel(ch),
   _signature(-1),
   _rect   (r),
-  _list_sem(Semaphore::FULL)
+  _list_sem(Semaphore::FULL),
+  _roi_requested(false)
 {
 }
 
@@ -46,12 +47,6 @@ RectROI::~RectROI()
 
 void RectROI::save(char*& p) const
 {  
-  if (!(_pplots.size() || _cplots.size() || _zplots.size() ||
-        _posts.size() || _ovls.size())) {
-    XML_insert( p, "Nothing", "nil", ; );
-    return;
-  }
-
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
     XML_insert(p, "ProjectionPlot", "_pplots", (*it)->save(p) );
   }
@@ -70,10 +65,13 @@ void RectROI::save(char*& p) const
     XML_insert( p, "CursorOverlay", "_ovls",
                 (*it)->save(p) );
   }
+  XML_insert( p, "bool", "_roi_requested", QtPersistent::insert(p,_roi_requested));
 }
 
 void RectROI::load(const char*& p)
 {
+  _roi_requested = false;
+
   _list_sem.take();
 
   for(std::list<ProjectionPlot*>::iterator it=_pplots.begin(); it!=_pplots.end(); it++)
@@ -121,6 +119,8 @@ void RectROI::load(const char*& p)
       CursorOverlay* ovl = new CursorOverlay(*this, p);
       _ovls.push_back(ovl);
     }
+    else if (tag.name == "_roi_requested")
+      _roi_requested = QtPersistent::extract_b(p);
     else if (tag.name == "nil")
       ;
   XML_iterate_close(RectROI,tag);
@@ -148,7 +148,7 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
   bool smp_prohibit = channels[_channel]->smp_prohibit();
 
   if (!(_pplots.size() || _cplots.size() || _zplots.size() ||
-        _posts.size() || _ovls.size())) return;
+        _posts.size() || _ovls.size() || _roi_requested)) return;
 
   if (smp_prohibit && (_pplots.size() || _cplots.size() || _posts.size() ||
 		       _ovls.size())) {
@@ -367,3 +367,4 @@ void RectROI::remove_cursor_post(CursorPost* post)
   emit changed();
 }
 
+void RectROI::request_roi(bool v) { _roi_requested=v; }

@@ -16,10 +16,11 @@ using namespace Ami::Qt;
 
 RectROIDesc::RectROIDesc(QtPWidget& p,
 			 ImageFrame& frame,
-			 unsigned nchannels) 
+			 unsigned nchannels,
+			 RectangleCursors::LayoutStyle style) 
   : QWidget(0), _frame(frame), _nchannels(nchannels)
 {
-  _rectangle = new RectangleCursors(_frame, &p);
+  _rectangle = new RectangleCursors(_frame, &p, style);
   
   _roiButton = new QPushButton("New");
   _roiBox = new QComboBox;
@@ -31,12 +32,15 @@ RectROIDesc::RectROIDesc(QtPWidget& p,
   QVBoxLayout* layout2 = new QVBoxLayout;
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
-    layout1->addWidget(new QLabel("Select"));
+    if (style == RectangleCursors::Standard)
+      layout1->addWidget(new QLabel("Select"));
     layout1->addWidget(_roiBox);
     layout1->addWidget(_roiButton);
     layout1->addStretch();
     layout2->addLayout(layout1); }
+  layout2->addStretch();
   layout2->addWidget(_rectangle);
+  layout2->addStretch();
   locations_box->setLayout(layout2);
   layout->addWidget(locations_box); 
   setLayout(layout);
@@ -166,7 +170,13 @@ void RectROIDesc::select_roi(int i)
     _rectangle->load(*_rect[i]);
 }
 
-RectROI& RectROIDesc::roi(unsigned ichannel) { return *_rois[_roiBox->currentIndex()*_nchannels + ichannel]; }
+RectROI& RectROIDesc::roi(unsigned ichannel) { 
+  return *_rois[iroi(ichannel)];
+}
+
+unsigned RectROIDesc::iroi(unsigned ichannel) const { return _roiBox->currentIndex()*_nchannels+ichannel; }
+
+const std::vector<RectROI*>& RectROIDesc::rois() const { return _rois; }
 
 void RectROIDesc::showEvent(QShowEvent* ev)
 {

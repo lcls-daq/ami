@@ -26,11 +26,11 @@ VAConfigApp::VAConfigApp(QWidget* parent,
 {
 }
 
-VAConfigApp::~VAConfigApp() 
-{
-}
-
-void VAConfigApp::load(const char*& p)
+VAConfigApp::VAConfigApp(QWidget* parent, 
+			 const char*& p) :
+  _parent   (parent),
+  _signature(-1),
+  _list_sem (Semaphore::FULL)
 {
   _list_sem.take();
 
@@ -54,7 +54,13 @@ void VAConfigApp::load(const char*& p)
   _ovls.clear();
 
   XML_iterate_open(p,tag)
-    if (tag.name == "_pplots") {
+    if (tag.name == "_name") {
+      _name = QtPersistent::extract_s(p);
+    }
+    else if (tag.name == "_channel") {
+      _channel = QtPersistent::extract_i(p);
+    }
+    else if (tag.name == "_pplots") {
       PeakPlot* plot = new PeakPlot(_parent, p);
       _pplots.push_back(plot);
       connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
@@ -86,13 +92,14 @@ void VAConfigApp::load(const char*& p)
   _list_sem.give();
 }
 
+VAConfigApp::~VAConfigApp() 
+{
+}
+
 void VAConfigApp::save(char*& p) const
 {
-  if (!(_pplots.size() || _cplots.size() || _zplots.size() ||
-        _posts.size() || _ovls.size())) {
-    XML_insert( p, "Nothing", "nil", ; );
-    return;
-  }
+  XML_insert(p, "QString" , "_name"   , QtPersistent::insert(p,_name));
+  XML_insert(p, "unsigned", "_channel", QtPersistent::insert(p,_channel));
 
   for(std::list<PeakPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
     XML_insert(p, "PeakPlot", "_pplots", (*it)->save(p) );

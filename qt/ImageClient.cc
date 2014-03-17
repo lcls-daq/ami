@@ -52,7 +52,7 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
 
   { QPushButton* dropB = new QPushButton("Droplet");
     addWidget(dropB);
-    _droplet = new Droplet(this,_channels,NCHANNELS);
+    _droplet = new Droplet(this,_channels,NCHANNELS,*wd.plot());
     connect(dropB, SIGNAL(clicked()), _droplet, SLOT(front()));}
 
   connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));

@@ -1,6 +1,7 @@
 #ifndef AmiQt_RectROIDesc_hh
 #define AmiQt_RectROIDesc_hh
 
+#include "ami/qt/RectangleCursors.hh"
 #include <QtGui/QWidget>
 #include <vector>
 
@@ -11,7 +12,6 @@ namespace Ami {
   class Cds;
   namespace Qt {
     class ImageFrame;
-    class RectangleCursors;
     class Rect;
     class RectROI;
     class QtPWidget;
@@ -22,7 +22,8 @@ namespace Ami {
     public:
       RectROIDesc(QtPWidget&,
 		  ImageFrame&,
-		  unsigned);
+		  unsigned,
+		  RectangleCursors::LayoutStyle=RectangleCursors::Standard);
       ~RectROIDesc();
     public:
       void save(char*&) const;
@@ -33,6 +34,9 @@ namespace Ami {
       void update();
       void setup_payload(Ami::Cds&);
       RectROI& roi(unsigned);
+    public:
+      unsigned iroi(unsigned) const;
+      const std::vector<RectROI*>& rois() const;
     public slots:
       void update_range();
       void new_roi     ();

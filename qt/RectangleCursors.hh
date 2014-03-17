@@ -22,8 +22,10 @@ namespace Ami {
 			     public ImageMarker {
       Q_OBJECT
     public:
+      enum LayoutStyle { Standard, Condensed };
       RectangleCursors(ImageFrame&,
-                       QtPWidget* =0);
+                       QtPWidget* =0,
+		       LayoutStyle =Standard);
       ~RectangleCursors();
     public:
       void save(char*& p) const;

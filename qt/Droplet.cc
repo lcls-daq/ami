@@ -9,6 +9,8 @@
 #include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/VectorArrayDesc.hh"
 #include "ami/qt/QtPlotSelector.hh"
+#include "ami/qt/RectROI.hh"
+#include "ami/qt/RectROIDesc.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/Droplet.hh"
@@ -40,6 +42,14 @@
 static inline int avgRound(int n, int d)
 {
   return (n+d-1)/d;
+}
+
+static QLineEdit* _qlineedit(const char* n)
+{
+  QLineEdit* e = new QLineEdit(n);
+  e->setMaximumWidth(44);
+  new QDoubleValidator(e);
+  return e;
 }
 
 namespace Ami {
@@ -113,7 +123,8 @@ using namespace Ami::Qt;
 enum { PlotMap, PlotAnalysis };
 
 Droplet::Droplet(QWidget* parent,
-		 ChannelDefinition* channels[], unsigned nchannels) :
+		 ChannelDefinition* channels[], unsigned nchannels,
+		 ImageFrame& frame) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
@@ -132,6 +143,9 @@ Droplet::Droplet(QWidget* parent,
   _setButton = new QPushButton("New");
   _setBox    = new QComboBox;
   new_set();
+
+  _rect = new RectROIDesc(*this,frame,nchannels,
+			  RectangleCursors::Condensed);
 
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* ovlyB  = new QPushButton("Overlay");
@@ -156,6 +170,7 @@ Droplet::Droplet(QWidget* parent,
     layout1->addStretch();
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
+  { QHBoxLayout* layout0 = new QHBoxLayout;
   { QGroupBox* selection_box = new QGroupBox("Photon Selection");
     selection_box->setToolTip("Define photon selection criteria.");
     QVBoxLayout* layout2 = new QVBoxLayout;
@@ -168,8 +183,9 @@ Droplet::Droplet(QWidget* parent,
       layout2->addLayout(layout1); }
     layout2->addWidget(_config);
     selection_box->setLayout(layout2);
-    layout->addWidget(selection_box); }
-
+    layout0->addWidget(selection_box); }
+  layout0->addWidget(_rect);
+  layout->addLayout(layout0); }
   { QGroupBox* plot_box = new QGroupBox;
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* layout2 = new QHBoxLayout;
@@ -193,6 +209,7 @@ Droplet::Droplet(QWidget* parent,
   connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(_setButton , SIGNAL(clicked()),      this, SLOT(new_set()));
   connect(_setBox    , SIGNAL(currentIndexChanged(int)), this, SLOT(select_set(int)));
+  connect(_rect      , SIGNAL(changed()),      this, SIGNAL(changed()));
   connect(plotB      , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB      , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB     , SIGNAL(clicked()),      this, SLOT(hide()));
@@ -216,6 +233,8 @@ void Droplet::save(char*& p) const
     XML_insert(p, "DropletConfig", "_configs", _configs[i]->save(p));
   }
 
+  XML_insert(p, "RectROIDesc", "_rect", _rect->save(p));
+
   for(unsigned i=0; i<_apps.size(); i++) {
     XML_insert(p, "ConfigApp", "_apps", _apps[i]->save(p));
   }
@@ -237,24 +256,25 @@ void Droplet::load(const char*& p)
   XML_iterate_open(p,tag)
     if      (tag.element == "QtPWidget")
       QtPWidget::load(p);
-    else if (tag.name == "_channel")
+    else if (tag.name == "_channel") {
       _channel = QtPersistent::extract_i(p);
+      _channelBox->setCurrentIndex(_channel);
+    }
     else if (tag.name == "_config")
       _config->load(p);
     else if (tag.name == "_configs") {
+      unsigned i=_configs.size();
       Ami::DropletConfig* c = new Ami::DropletConfig;
       c->load(p); 
       _configs.push_back(c);
+      _setBox->addItem(QString("Set%1").arg(i));
     }
+    else if (tag.name == "_rect")
+      _rect->load(p);
     else if (tag.name == "_apps") {
-      int set = _apps.size()/_nchannels;
-      QString name = QString("Set%1").arg(set);
-      unsigned channel = _apps.size()%_nchannels;
-      if (channel==0)
-        _setBox->addItem(name);
-      DropletConfigApp* app = new DropletConfigApp(this, name, channel, *_configs[set]);
-      app->load(p);
+      DropletConfigApp* app = new DropletConfigApp(this, _configs, _rect->rois(), p);
       _apps.push_back(app);
+      _rect->rois()[app->roi()]->request_roi(true);
       connect(app, SIGNAL(changed()), this, SIGNAL(changed()));
     }
   XML_iterate_close(Droplet,tag);
@@ -271,18 +291,30 @@ void Droplet::save_plots(const QString& p) const
 void Droplet::configure(char*& p, unsigned input, unsigned& output,
 			ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {
-  for(unsigned i=0; i<_apps.size(); i++)
-    _apps[i]->configure(p,input,output,channels,signatures,nchannels);
+  _rect->configure(p,input,output,channels,signatures,nchannels);
+
+  int _signatures[nchannels];
+  for(unsigned i=0; i<_apps.size(); i++) {
+    DropletConfigApp& app = *_apps[i];
+    _signatures[app.channel()] = _rect->rois()[app.roi()]->signature();
+    app.configure(p,input,output,channels,_signatures,nchannels);
+#ifdef DBUG
+    printf("Configured app [channel %d  config %d  roi %d] from roi signature %d\n",
+	   app.channel(),app.config(),app.roi(),_signatures[app.channel()]);
+#endif
+  }
 }
 
 void Droplet::setup_payload(Cds& cds)
 {
+  _rect->setup_payload(cds);
   for(unsigned i=0; i<_apps.size(); i++)
     _apps[i]->setup_payload(cds);
 }
 
 void Droplet::update()
 {
+  //  _rect->update();
   for(unsigned i=0; i<_apps.size(); i++)
     _apps[i]->update();
 }
@@ -392,7 +424,7 @@ void Droplet::change_channel()
 
 void Droplet::new_set()
 {
-  int i=_apps.size()/_nchannels;
+  int i = _configs.size();
   if (_configs.size())
     _configs.push_back(new Ami::DropletConfig(*_configs.back()));
   else
@@ -400,11 +432,6 @@ void Droplet::new_set()
 
   QString name = QString("Set%1").arg(i);
   _setBox->addItem(name);
-  for(unsigned j=0; j<_nchannels; j++) {
-    DropletConfigApp* set = new DropletConfigApp(this, name,j,*_configs[i]);
-    _apps.push_back(set);
-    connect(set, SIGNAL(changed()), this, SIGNAL(changed()));
-  }
   _setBox->setCurrentIndex(i);
 }
 
@@ -414,55 +441,100 @@ void Droplet::select_set(int i)
     _config->load(*_configs[i]);
 }
 
-DropletConfigApp& Droplet::_app() { return *_apps[_setBox->currentIndex()*_nchannels + _channelBox->currentIndex()]; }
+DropletConfigApp& Droplet::_app() 
+{
+  unsigned ichan = _channelBox->currentIndex();
+  unsigned icfg  = _setBox->currentIndex();
+  unsigned iroi  = _rect->iroi(ichan);
+
+  for(unsigned i=0; i<_apps.size(); i++)
+    if (_apps[i]->channel() == ichan &&
+	_apps[i]->config () == icfg  &&
+	_apps[i]->roi    () == iroi) {
+#ifdef DBUG
+      printf("Found app [channel %d  config %d  roi %d]\n",
+	     ichan,icfg,iroi);
+#endif
+      return *_apps[i];
+    }
+
+  DropletConfigApp* app = new DropletConfigApp(this, _configs, _rect->rois(), 
+					       icfg, iroi, ichan);
+  _apps.push_back(app);
+  _rect->rois()[iroi]->request_roi(true);
+  connect(app, SIGNAL(changed()), this, SIGNAL(changed()));
+#ifdef DBUG
+  printf("Created app [channel %d  config %d  roi %d]\n",
+	 ichan,icfg,iroi);
+#endif
+  return *app;
+}
 
 
 DropletConfigApp::DropletConfigApp(QWidget* parent,
-				   const QString& s,
-				   unsigned i,
-				   const Ami::DropletConfig& c) :
-  VAConfigApp(parent,s,i),
-  _config    (c)
+				   const std::vector<Ami::DropletConfig*>& cfgs,
+				   const std::vector<RectROI*>& rois,
+				   unsigned icfg, unsigned iroi,
+				   unsigned ichan) :
+  VAConfigApp(parent,QString("DC_%1_%2_%3").arg(icfg).arg(iroi).arg(ichan),ichan),
+  _config    (cfgs),
+  _roi       (rois),
+  _icfg      (icfg),
+  _iroi      (iroi)
 {
 }
 
+DropletConfigApp::DropletConfigApp(QWidget* parent,
+				   const std::vector<Ami::DropletConfig*>& cfgs,
+				   const std::vector<RectROI*>& rois,
+				   const char*& p) :
+  VAConfigApp(parent,p),
+  _config    (cfgs),
+  _roi       (rois)
+{
+  QString n = name();
+  QStringList args = n.split("_");
+  _icfg = args[1].toInt();
+  _iroi = args[2].toInt();
+}
+		       
 DropletConfigApp::~DropletConfigApp() {}
 
 Ami::AbsOperator* DropletConfigApp::_op(const char* name)
 {
-  return new Ami::Droplet(name,_config);
+  return new Ami::Droplet(name,*_config[_icfg]);
 }
 
 DropletConfig::DropletConfig(QWidget* parent) : QWidget(parent)
 { QGridLayout* l = new QGridLayout;
   unsigned row=0;
   l->addWidget(new QLabel("Seed Threshold [ADU]"),row,0,::Qt::AlignRight);
-  l->addWidget(_seed_thr = new QLineEdit("0")    ,row,1,::Qt::AlignLeft);
+  l->addWidget(_seed_thr = _qlineedit("0")    ,row,1,::Qt::AlignLeft);
   new QIntValidator(_seed_thr); row++;
   connect(_seed_thr, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 
   l->addWidget(new QLabel("Neighbor Threshold [ADU]"),row,0,::Qt::AlignRight);
-  l->addWidget(_nbor_thr = new QLineEdit("0")        ,row,1,::Qt::AlignLeft);
+  l->addWidget(_nbor_thr = _qlineedit("0")        ,row,1,::Qt::AlignLeft);
   new QIntValidator(_nbor_thr); row++;
   connect(_nbor_thr, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Esum Minimum [ADU]"),row,0,::Qt::AlignRight);
-  l->addWidget(_esum_min = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
+  l->addWidget(_esum_min = _qlineedit("0")  ,row,1,::Qt::AlignLeft);
   new QIntValidator(_esum_min); row++;
   connect(_esum_min, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Esum Maximum [ADU]"),row,0,::Qt::AlignRight);
-  l->addWidget(_esum_max = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
+  l->addWidget(_esum_max = _qlineedit("0")  ,row,1,::Qt::AlignLeft);
   new QIntValidator(_esum_max); row++;
   connect(_esum_max, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Npixel Minimum")  ,row,0,::Qt::AlignRight);
-  l->addWidget(_npix_min = new QLineEdit("0"),row,1,::Qt::AlignLeft);
+  l->addWidget(_npix_min = _qlineedit("0"),row,1,::Qt::AlignLeft);
   new QIntValidator(_npix_min); row++;
   connect(_npix_min, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 
   l->addWidget(new QLabel("Npixel Maximum")  ,row,0,::Qt::AlignRight);
-  l->addWidget(_npix_max = new QLineEdit("0"),row,1,::Qt::AlignLeft);
+  l->addWidget(_npix_max = _qlineedit("0"),row,1,::Qt::AlignLeft);
   new QIntValidator(_npix_max); row++;
   connect(_npix_max, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 

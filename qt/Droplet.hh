@@ -46,13 +46,17 @@ namespace Ami {
     class ZoomPlot;
     class CursorPost;
     class CursorOverlay;
+    class RectROI;
+    class RectROIDesc;
+    class ImageFrame;
 
     class Droplet : public QtPWidget,
 		    public OverlayParent {
       Q_OBJECT
     public:
       Droplet(QWidget* parent,
-	      ChannelDefinition* channels[], unsigned nchannels);
+	      ChannelDefinition* channels[], unsigned nchannels,
+	      ImageFrame&);
       ~Droplet();
     public:
       void save(char*& p) const;
@@ -88,6 +92,7 @@ namespace Ami {
       Ami::DescImage                   _prototype;
 
       DropletConfig*                   _config;
+      RectROIDesc*                     _rect;
 
       QLineEdit*                       _title;
       QTabWidget*                      _plot_tab;
@@ -96,6 +101,7 @@ namespace Ami {
       VectorArrayDesc*                 _analysis_plot;
 
       std::vector<Ami::DropletConfig*> _configs;
+      std::vector<RectROI*>            _rois;
       std::vector<DropletConfigApp*>   _apps;
 
       QComboBox*                       _setBox;
@@ -106,14 +112,26 @@ namespace Ami {
     class DropletConfigApp : public VAConfigApp {
     public:
       DropletConfigApp(QWidget* parent, 
-		       const QString&, 
-		       unsigned i, 
-		       const Ami::DropletConfig& c);
+		       const std::vector<Ami::DropletConfig*>&,
+		       const std::vector<RectROI*>&,
+		       unsigned iconfig,
+		       unsigned iroi,
+		       unsigned ichannel);
+      DropletConfigApp(QWidget* parent,
+		       const std::vector<Ami::DropletConfig*>&,
+		       const std::vector<RectROI*>&,
+		       const char*&);
       virtual ~DropletConfigApp();
+    public:
+      unsigned config() const { return _icfg; }
+      unsigned roi   () const { return _iroi; }
     protected:
       Ami::AbsOperator* _op(const char*);
     private:
-      const Ami::DropletConfig&  _config;
+      const std::vector<Ami::DropletConfig*> _config;
+      const std::vector<RectROI*>            _roi;
+      unsigned _icfg;
+      unsigned _iroi;
     };
 
     class DropletConfig : public QWidget {
