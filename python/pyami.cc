@@ -3,6 +3,7 @@
 
 #define MyArg_ParseTupleAndKeywords(args,kwds,fmt,kwlist,...) PyArg_ParseTupleAndKeywords(args,kwds,fmt,const_cast<char**>(kwlist),__VA_ARGS__)
 
+#include "ami/python/Handler.hh"
 #include "ami/python/Client.hh"
 #include "ami/python/L3TClient.hh"
 #include "ami/python/Discovery.hh"
@@ -10,6 +11,7 @@
 
 #include "ami/app/FilterExport.hh"
 
+#include "ami/data/Discovery.hh"
 #include "ami/data/RawFilter.hh"
 #include "ami/data/FeatureRange.hh"
 #include "ami/data/LogicAnd.hh"
@@ -116,7 +118,7 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
     return -1;
   }
 
-  unsigned index=0, index_n=0;
+  unsigned index=0;
   PyObject* t;
   int sts;
 
@@ -129,7 +131,7 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
   while(1) {
     { const char* kwlist[] = {"name","entry_type",NULL};
       const char *name = 0, *entry_type=0;
-      t = PyTuple_GetSlice(args,index,index_n=2);
+      t = PyTuple_GetSlice(args,index,index+2);
       sts = MyArg_ParseTupleAndKeywords(t,kwds,"s|s",kwlist,
 					&name, &entry_type);
 
@@ -138,7 +140,9 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
       //  Handle scalar variables (like diodes and BLD)
       //
       if (sts) {
-	index = index_n;
+	index++;
+	if (entry_type) index++;
+
 	if (entry_type==0 || strcmp(entry_type,"Scalar")==0) {
 	  op = new Ami::EnvPlot(Ami::DescScalar(name,"mean"));
 	  break;
@@ -147,10 +151,11 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	  unsigned nbins = 0;
           char* xtitle = 0;
 	  const char* ekwlist[] = {"xtitle","nbins",NULL};
-	  t = PyTuple_GetSlice(args,index,index_n+=2);
+	  t = PyTuple_GetSlice(args,index,index+2);
 	  sts = MyArg_ParseTupleAndKeywords(t,kwds,"sI",ekwlist,
 					    &xtitle, &nbins);
           if (sts) {
+	    index += 2;
             // printf( "Creating Scan %s, %s, %d\n" , name,xtitle,nbins);
             op = new Ami::EnvPlot(Ami::DescScan(name,xtitle,"mean",nbins));
             break;
@@ -162,12 +167,12 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	  float    range_lo = 0;
 	  float    range_hi = 0;
 	  const char* ekwlist[] = {"nbins","range_lo","range_hi",NULL};
-	  t = PyTuple_GetSlice(args,index,index_n+=3);
+	  t = PyTuple_GetSlice(args,index,index+3);
 	  sts = MyArg_ParseTupleAndKeywords(t,kwds,"Iff",ekwlist,
 					    &nbins, &range_lo, &range_hi);
 	  Py_DECREF(t);
 	  if (sts) {
-	    index = index_n;
+	    index += 3;
 	    op = new Ami::EnvPlot(Ami::DescTH1F(name,name,"events",nbins,range_lo,range_hi));
 	    break;
 	  }
@@ -175,21 +180,22 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 	return -1;
       }
     }
-    { const char* kwlist[] = {"det_id","channel","op",NULL};
-      const char* op_str = 0;
-      t = PyTuple_GetSlice(args,index,index_n=2);
-      sts = MyArg_ParseTupleAndKeywords(t,kwds,"II|s",kwlist,
-					&phy, &channel, &op_str);
+    { const char* kwlist[] = {"det_id","channel","events",NULL};
+      int events=-1;
+      t = PyTuple_GetSlice(args,index,index+4);
+      sts = MyArg_ParseTupleAndKeywords(t,kwds,"II|I",kwlist,
+					&phy, &channel, &events);
       Py_DECREF(t);
       if (sts) {
-        index = index_n;
+        index+=2;
+	if (events>=0) index++;
 
 	info = Info_pyami(phy);
-        if (op_str==0 || strcasecmp(op_str,"average")==0) {
-          op   = new Ami::Average;
+        if (events!=1) {
+          op   = new Ami::Average(events>0 ? events:0);
           break;
         }
-        else if (strcasecmp(op_str,"single")==0) {
+        else {
           op   = new Ami::Single;
           break;
         }          
@@ -201,9 +207,10 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 
   { const char* kwlist[] = {"filter",NULL};
     const char* filter_str = 0;
-    t = PyTuple_GetSlice(args,index,index_n+=1);
-    sts = MyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
+    t = PyTuple_GetSlice(args,index,index+1);
+    MyArg_ParseTupleAndKeywords(t,kwds,"|s",kwlist,&filter_str);
     Py_DECREF(t);
+    if (filter_str) index++;
     filter = parse_filter(filter_str);
     // printf("parsed filter from %s\n",filter_str);
   }
@@ -310,7 +317,7 @@ static PyObject* _getentrylist(Ami::Python::Client* client, bool push)
 		  PyList_SetItem(col,j,PyFloat_FromDouble(s->content(f.x+j,f.y+i)));
 		PyList_SetItem(rows,i,col);
 	      }
-	      PyList_SetItem(t,k,Py_BuildValue("ddO",f.x,f.y,rows));
+	      PyList_SetItem(t,k,Py_BuildValue("hhO",f.x,f.y,rows));
 	    }
 	    o = PyDict_New();
 	    PyDict_SetItemString(o,"type",   PyString_FromString("ImageArray"));
@@ -804,6 +811,54 @@ pyami_connect(PyObject *self, PyObject *args)
   return Py_None;
 }
 
+static PyObject*
+pyami_discovery(PyObject *self, PyObject *args)
+{
+  PyObject* o_list = PyList_New(0);
+
+  const Ami::DiscoveryRx& rx = _discovery->rx();
+
+  const Pds::DetInfo noInfo;
+  const Ami::DescEntry* n;
+  for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = n) {
+    n = reinterpret_cast<const Ami::DescEntry*>
+      (reinterpret_cast<const char*>(e) + e->size());
+
+    if (e->info() == noInfo)   // Skip unknown devices 
+      continue;
+
+    PyObject* o = PyDict_New();
+    PyDict_SetItemString(o,"name",PyString_FromString(e->name()));
+    PyDict_SetItemString(o,"type",PyString_FromString(e->type_str(e->type())));
+    PyDict_SetItemString(o,"det_id", PyLong_FromLong(e->info().phy()));
+    switch(e->type()) {
+    case Ami::DescEntry::Waveform:
+      { const Ami::DescWaveform* d = static_cast<const Ami::DescWaveform*>(e);
+	PyDict_SetItemString(o,"nbins",  PyLong_FromLong(d->nbins()));
+	PyDict_SetItemString(o,"xlow" ,  PyFloat_FromDouble(d->xlow()));
+	PyDict_SetItemString(o,"xup"  ,  PyFloat_FromDouble(d->xup ()));
+	break;
+      }
+    case Ami::DescEntry::Image:
+      { const Ami::DescImage* d = static_cast<const Ami::DescImage*>(e);
+	PyDict_SetItemString(o,"nbinsx", PyLong_FromLong(d->nbinsx()));
+	PyDict_SetItemString(o,"ppxbin", PyLong_FromLong(d->ppxbin()));
+	PyDict_SetItemString(o,"xlow"  , PyFloat_FromDouble(d->xlow()));
+	PyDict_SetItemString(o,"xup"   , PyFloat_FromDouble(d->xup ()));
+	PyDict_SetItemString(o,"nbinsy", PyLong_FromLong(d->nbinsy()));
+	PyDict_SetItemString(o,"ppybin", PyLong_FromLong(d->ppybin()));
+	PyDict_SetItemString(o,"ylow"  , PyFloat_FromDouble(d->ylow()));
+	PyDict_SetItemString(o,"yup"   , PyFloat_FromDouble(d->yup ()));
+	break;
+      }
+    default:
+      break;
+    }
+    PyList_Append(o_list,o); 
+  }
+  return o_list;
+}
+
 static unsigned colormap_jet[] = { 0x80, 0x84, 0x89, 0x8d, 0x92, 0x96, 0x9b, 0x9f, 0xa4, 0xa9, 0xad, 0xb2, 0xb6, 0xbb, 0xbf, 0xc4,
                                    0xc9, 0xcd, 0xd2, 0xd6, 0xdb, 0xdf, 0xe4, 0xe8, 0xed, 0xf2, 0xf6, 0xfb, 0xff, 0xff, 0xff, 0xff,
                                    0xff, 0x4ff, 0x8ff, 0xcff, 0x10ff, 0x14ff, 0x18ff, 0x1cff, 0x20ff, 0x24ff, 0x28ff, 0x2cff, 0x30ff, 0x34ff, 0x38ff, 0x3cff,
@@ -998,11 +1053,80 @@ pyami_clear_l3t(PyObject *self, PyObject *args)
   return NULL;
 }
 
+static PyObject*
+pyami_get_handler_options(PyObject *self, PyObject *args, PyObject* kwds)
+{
+  if (_discovery) {
+
+    unsigned phy=0;
+    const char* kwlist[] = {"det_id",NULL};
+    if (MyArg_ParseTupleAndKeywords(args,kwds,"I",kwlist,
+				    &phy)) {
+      Info_pyami info(phy);
+      Ami::Python::Handler cl(info);
+
+      int result = cl.initialize(*_discovery->allocate(cl));
+
+      if (result == Ami::Python::Handler::Success) {
+	return PyLong_FromLong(cl.get());
+      }
+      else if (result == Ami::Python::Handler::TimedOut) {
+	PyErr_SetString(PyExc_RuntimeError,"Ami configure timeout");
+      }
+      else if (result == Ami::Python::Handler::NoEntry) {
+	PyErr_SetString(PyExc_RuntimeError,"Entry not found.");
+      }
+    }
+    else
+      PyErr_SetString(PyExc_RuntimeError,"Parse error get_handler_options.");
+  }
+  else {
+    PyErr_SetString(PyExc_RuntimeError,"Must connect before calling get_handler_options.");
+  }
+
+  return NULL;
+}
+
+static PyObject*
+pyami_set_handler_options(PyObject *self, PyObject *args, PyObject* kwds)
+{
+  if (_discovery) {
+
+    unsigned phy=0;
+    unsigned options=0;
+    const char* kwlist[] = {"det_id","options",NULL};
+    if (MyArg_ParseTupleAndKeywords(args,kwds,"II",kwlist,
+				    &phy, &options)) {
+      Ami::Python::Handler cl(Info_pyami(phy),options);
+
+      int result = cl.initialize(*_discovery->allocate(cl));
+
+      if (result == Ami::Python::Handler::Success) {
+	return Py_None;
+      }
+      else if (result == Ami::Python::Handler::TimedOut) {
+	PyErr_SetString(PyExc_RuntimeError,"Ami configure timeout");
+      }
+      else if (result == Ami::Python::Handler::NoEntry) {
+	PyErr_SetString(PyExc_RuntimeError,"Entry not found.");
+      }
+    }
+  }
+  else {
+    PyErr_SetString(PyExc_RuntimeError,"Must connect before calling set_handler_options.");
+  }
+
+  return NULL;
+}
+
 static PyMethodDef PyamiMethods[] = {
     {"connect"  , pyami_connect  , METH_VARARGS, "Connect to servers."},
+    {"discovery", pyami_discovery, METH_VARARGS, "Discovery analysis inputs."},
     {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
     {"set_l3t"  , pyami_set_l3t  , METH_VARARGS, "Set L3 trigger expression."},
     {"clear_l3t", pyami_clear_l3t, METH_VARARGS, "Clear L3 trigger expression."},
+    { "set_handler_options", (PyCFunction)pyami_set_handler_options, METH_KEYWORDS, "Set detector handler options."},
+    { "get_handler_options", (PyCFunction)pyami_get_handler_options, METH_KEYWORDS, "Get detector handler options."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
 

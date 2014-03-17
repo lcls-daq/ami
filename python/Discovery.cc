@@ -21,7 +21,9 @@ Discovery::Discovery(unsigned ppinterface,
   _manager    (new ClientManager(interface,
                                  serverGroup, 
 				 *_connect_mgr,
-                                 *this))
+                                 *this)),
+  _discover_sem(Ami::Semaphore::EMPTY),
+  _pdiscovery  (0)
 {
   _manager->connect();
 }
@@ -47,15 +49,18 @@ int Discovery:: configured      () { return 0; }
 
 void Discovery::discovered      (const DiscoveryRx& rx) 
 { 
-  const Pds::DetInfo noInfo;
-  const Ami::DescEntry* n;
-  for(const Ami::DescEntry* e = rx.entries(); e < rx.end(); e = n) {
-    n = reinterpret_cast<const Ami::DescEntry*>
-      (reinterpret_cast<const char*>(e) + e->size());
-    
-    if (e->info() == noInfo)   // Skip unknown devices 
-      continue;
+  if (_pdiscovery==0) {
+    _pdiscovery = &rx;
+    _discover_sem.give();
   }
+  else
+    _pdiscovery = &rx;
+}
+
+const Ami::DiscoveryRx& Discovery::rx() const { 
+  if (_pdiscovery==0)
+    _discover_sem.take();
+  return *_pdiscovery; 
 }
 
 int Discovery::read_description(Socket& s,int len) {

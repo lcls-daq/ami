@@ -2,7 +2,7 @@ libnames := pyami
 
 libsrcs_pyami := pyami.cc
 libsrcs_pyami += Discovery.cc
-libsrcs_pyami += Client.cc L3TClient.cc
+libsrcs_pyami += Handler.cc Client.cc L3TClient.cc
 libincs_pyami := python/include/python2.5 pdsdata/include ndarray/include boost/include 
 libincs_pyami += ndarray/include boost/include 
 liblibs_pyami := pdsdata/xtcdata pdsdata/psddl_pdsdata pdsdata/compressdata pdsdata/appdata

@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-//#define DBUG
+#define DBUG
 
 using namespace Ami::Python;
 
@@ -137,17 +137,21 @@ int  Client::configure       (iovec* iov)
 {
   char* p = _request;
 
+  //
+  //  Configure the analyses based upon the source either 
+  //    detector (info.phy!=0) or output of previous analysis (info.phy==0)
+  //
   unsigned output = _output[_args.size()-1];
   for(unsigned i=0; i<_args.size(); i++) {
     ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                     ConfigureRequest::Discovery,
-                                                    _input[i],
+                                                    _args[i].info.phy() ? _input[i] : _output[_args[i].channel],
                                                     _output[i] = ++output,
                                                     *_args[i].filter, *_args[i].op,
                                                     Ami::PostAnalysis);
     p += r.size();
 #ifdef DBUG
-    printf("[%p] output[%d] = %d\n",this,i,_output[i]);
+    printf("[%p] input/output[%d] = %d/%d\n",this,i,_input[i],_output[i]);
 #endif
   }
 
