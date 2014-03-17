@@ -79,6 +79,8 @@ void BldSpectrometerHandler::_event    (Pds::TypeId, const void* payload, const 
 
 void BldSpectrometerHandler::_damaged() 
 {
-  if (_entry[0]) _entry[0]->invalid();
-  if (_entry[1]) _entry[1]->invalid();
+  if (_nentries) {
+    if (_entry[0]) _entry[0]->invalid();
+    if (_entry[1]) _entry[1]->invalid();
+  }
 }

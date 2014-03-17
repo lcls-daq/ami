@@ -106,6 +106,8 @@ Entry&     RectROI::_operate(const Entry& e) const
     const ImageMask*   mask = inputd.mask();
     if (mask) {
       SET_BOUNDS(unsigned) ;
+      if (ihi > inputd.nbinsx()) ihi=inputd.nbinsx(); 
+      if (jhi > inputd.nbinsy()) jhi=inputd.nbinsy();
       o->reset();
       for(unsigned i=ilo,ii=0; i<ihi; i++,ii++) {
         if (!mask->col(i)) continue;
@@ -138,6 +140,8 @@ Entry&     RectROI::_operate(const Entry& e) const
     }
     else {
       SET_BOUNDS(unsigned) ;
+      if (ihi > inputd.nbinsx()) ihi=inputd.nbinsx(); 
+      if (jhi > inputd.nbinsy()) jhi=inputd.nbinsy();
       for(unsigned i=ilo,ii=0; i<ihi; i++,ii++) {
         for(unsigned j=jlo,jj=0; j<jhi; j++,jj++)
           o->content(_input->content(i,j),ii,jj);

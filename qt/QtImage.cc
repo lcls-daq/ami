@@ -78,7 +78,7 @@ void           QtImage::canvas_size(const QSize& sz,
                                     QGridLayout& layout)
 {
   if (_scalexy) {
-    _xgrid->resize(sz.width ());
+    _xgrid->resize(sz.width ()-1);  // Need to subtract 1 to get proper size (don't know why)
     _ygrid->resize(sz.height());
   }
   layout.addWidget(_xgrid,1,0);

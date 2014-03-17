@@ -16,6 +16,8 @@
 #include <QtGui/QBoxLayout>
 #include <QtGui/QLabel>
 
+#define DBUG
+
 using namespace Ami::Qt;
 
 // static void _shift(unsigned& x,
@@ -62,15 +64,24 @@ void ImageFrame::attach(QtImage* image)
     image->set_color_table(_engine.control().color_table());
 
     if (image->scalexy()) {
+#ifdef DBUG
+      printf("ImageFrame::attach csz %dx%d\n",
+             _canvas->size().width(),_canvas->size().height());
+#endif
       const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
       _canvas->setMinimumSize(sz,sz);
     }
 
     QSize sz(_canvas->size());
-    sz.rwidth()  += CanvasSizeIncrease;
-    sz.rheight() += CanvasSizeIncrease;
+    //    sz.rwidth()  += CanvasSizeIncrease;
+    //    sz.rheight() += CanvasSizeIncrease;
     QGridLayout* l = static_cast<QGridLayout*>(layout()); 
     image->canvas_size(sz,*l);
+#ifdef DBUG
+    printf("ImageFrame::attach isz %dx%d  sz %dx%d\n",
+           _canvas->size().width(),_canvas->size().height(),
+           sz.width(),sz.height());
+#endif    
   }
 }
 
