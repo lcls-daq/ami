@@ -37,6 +37,8 @@ static const double incTemp = 0.01;
 static const unsigned int adcCnt = 4096;
 static double tempTable[adcCnt];
 
+#include <stdio.h>
+
 // Constructor
 CspadTemp::CspadTemp ( ) {
    double       temp;

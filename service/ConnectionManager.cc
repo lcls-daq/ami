@@ -25,14 +25,10 @@ ConnectionManager::ConnectionManager(int interface) :
   do {
     _port=port;
     Ins ins(interface,_port);
-    //    try { _socket->bind(ins); }
-    //    catch(Event& e) {
-    //      printf("bind error : %s : trying port %d\n",
-    //             e.what(),_port);
-    //      port++;
-    //    }
     if (!_socket->bind(ins)) {
+#ifdef DBUG
       perror("ConnectionManager bind error (retrying)");
+#endif
       port++;
     }
   } while(_port!=port);
@@ -71,10 +67,11 @@ void ConnectionManager::remove(ConnectionHandler& h)
 
 void ConnectionManager::routine()
 {
+#ifdef DBUG
   printf("ConnectionManager listening on %x/%d\n", 
          _socket->ins().address(), 
          _socket->ins().portId());
-  
+#endif  
   while(1) {
     if (::listen(_socket->socket(),10)<0)
       printf("ConnectionManager listen failed\n");

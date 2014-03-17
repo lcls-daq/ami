@@ -64,7 +64,7 @@ static void Destroy(Xtc*) {}
 
 static Ami::XtcClient* _instance=0;
 
-//#define DBUG
+#define DBUG
 
 static double clockTimeDiff(const Pds::ClockTime& a,
                             const Pds::ClockTime& b)
@@ -474,7 +474,8 @@ int XtcClient::process(Pds::Xtc* xtc)
       if (!h) {
         if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
             xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
-            xtc->contains.id()==Pds::TypeId::Id_AliasConfig)
+            xtc->contains.id()==Pds::TypeId::Id_AliasConfig  ||
+            xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
           ;
         else
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
