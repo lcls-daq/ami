@@ -77,8 +77,10 @@ bool Entry::valid() const { return _payload!=0 && ((*_payload)&VALID_BIT)==0; }
 
 void Entry::merge(char* p) const
 {
-  uint64_t* u = reinterpret_cast<uint64_t*>(p);
+  unsigned long long* u = reinterpret_cast<unsigned long long*>(p);
 
+  char db_buff[128];
+  char* pdb = db_buff;
 #ifdef DBUG
   const bool ldbug = desc().type() == DescEntry::Image;
 #else
@@ -86,47 +88,37 @@ void Entry::merge(char* p) const
 #endif
 
   if (ldbug)
-    printf("Entry[%s]::merge %016llx + %016llx",
-	   DescEntry::type_str(desc().type()),
-	   *_payload, *u);
+    pdb += sprintf(pdb,"Entry[%s]::merge %016llx + %016llx",
+		   DescEntry::type_str(desc().type()),
+		   *_payload, *u);
 
-  if (valid()) {
-    // if the existing data is invalid, replace it, unless 
-    //   aggregate is requested (all required)
-    if (*u & VALID_BIT) {
-      //  can't require all because readout groups may prevent
-      //  all processes from seeing a detector
-      //      if (!desc().aggregate()) {
-      if (1) {
-	if (ldbug)
-	  printf(" invalid->valid\n");
-	memcpy(p,_payload,_payloadsize);
-      }
-      else if (ldbug)
-	printf(" invalid aggregate\n");
-    }
-    else {
-      if (desc().aggregate()) {  // merge the data, keeping the latest timestamp
+  bool lvalid = valid();
+  bool pvalid = !(*u & VALID_BIT);
+
+  if (desc().aggregate()) {  // merge the valid data, keeping the latest timestamp
+    if (pvalid) {
+      if (lvalid) {
 	if (*_payload > *u) *u = *_payload;
 	_merge((char*)(u+1));
 	if (ldbug)
-	  printf(" merged   : ts %016llx\n",*u);
+	  pdb += sprintf(pdb," merged   : ts %016llx",*u);
       }
-      else if (*_payload > *u) { // keep only the latest data
-	memcpy(p,_payload,_payloadsize);
-	if (ldbug)
-	  printf(" replaced : ts %016llx\n",*u);
-      }
-      else if (ldbug)
-	printf(" kept     : ts %016llx\n",*u);
+    }
+    else {
+      memcpy(p,_payload,_payloadsize);
+      if (ldbug)
+	pdb += sprintf(pdb," replaced : ts %016llx",*u);
     }
   }
-  else {
-    //  can't require all because readout groups may prevent
-    //  all processes from seeing a detector
-    //     if (desc().aggregate())
-    //       *u |= VALID_BIT;
-    if (ldbug)
-      printf(" invalid\n");
+
+  else { // keep the latest
+    if (*_payload > *u) {
+      memcpy(p,_payload,_payloadsize);
+      if (ldbug)
+	pdb += sprintf(pdb," replaced : ts %016llx",*u);
+    }
   }
+
+  if (ldbug)
+    printf("%s\n",db_buff);
 }
