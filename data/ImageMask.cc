@@ -78,7 +78,7 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
 	if (v) {
 	  _rowcol[k   ]  = v;
 	  _rows  [i>>5] |= 1<<(i&0x1f);
-	  _cols  [j>>5] |= 1<<(j&0x1f);
+          _cols  [j   ] |= v;
 	}
       }
     }
@@ -93,7 +93,7 @@ ImageMask::ImageMask(unsigned rows, unsigned cols,
 	if (v) {
 	  _rowcol[k   ]  = v;
 	  _rows  [i>>5] |= 1<<(i&0x1f);
-	  _cols  [j>>5] |= 1<<(j&0x1f);
+          _cols  [j   ] |= v;
 	}
       }
     }

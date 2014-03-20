@@ -546,6 +546,44 @@ bool DropletBuilder::_test_pixel(const unsigned* p)
   return true;
 }
 
+DropletConfig::DropletConfig() :
+  seed_threshold(0),
+  nbor_threshold(0),
+  esum_min      (0),
+  esum_max      (0),
+  npix_min      (1),
+  npix_max      (1)
+{
+}
+
+DropletConfig::DropletConfig(const DropletConfig& c)
+{
+  if (c.seed_threshold > c.nbor_threshold) {
+    seed_threshold = c.seed_threshold;
+    nbor_threshold = c.nbor_threshold;
+  }
+  else {
+    seed_threshold = c.nbor_threshold;
+    nbor_threshold = c.seed_threshold;
+  }
+  if (c.esum_min < c.esum_max) {
+    esum_min = c.esum_min;
+    esum_max = c.esum_max;
+  }
+  else {
+    esum_min = c.esum_max;
+    esum_max = c.esum_min;
+  }
+  if (c.npix_min < c.npix_max) {
+    npix_min = c.npix_min;
+    npix_max = c.npix_max;
+  }
+  else {
+    npix_min = c.npix_max;
+    npix_max = c.npix_min;
+  }
+}
+
 void DropletConfig::load(const char*& p)
 {
   XML_iterate_open(p,tag)

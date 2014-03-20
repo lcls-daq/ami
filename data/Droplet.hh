@@ -21,6 +21,9 @@ namespace Ami {
 
   class DropletConfig {
   public:
+    DropletConfig();
+    DropletConfig(const DropletConfig&);
+  public:
     void load(const char*&);
     void save(char*&) const;
   public:
