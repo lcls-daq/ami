@@ -454,8 +454,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     //
     //  Correct for gain
     //
-    const ndarray<const double,2>& gn    = _gain;
-    const ndarray<const double,2>& gn_lo = _gain_lo;
+    const ndarray<const double,2>& gn    = 
+      (d.options()&FrameCalib::option_correct_gain()) ? _gain : _no_gain;
+    const ndarray<const double,2>& gn_lo = 
+      (d.options()&FrameCalib::option_correct_gain()) ? _gain_lo : _no_gain;
     {
       for(unsigned k=0; k<_entry->desc().nframes(); k++) {
 	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
@@ -526,6 +528,9 @@ void EpixHandler::_load_gains()
   const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
   _gain    = make_ndarray<double>(_config.numberOfRows(),_config.numberOfColumns());
   _gain_lo = make_ndarray<double>(_config.numberOfRows(),_config.numberOfColumns());
+  _no_gain = make_ndarray<double>(_config.numberOfRows(),_config.numberOfColumns());
+
+  for(double* a=_no_gain.begin(); a!=_no_gain.end(); *a++=1.) ;
 
   const unsigned ny = _config.numberOfRowsPerAsic();
   const unsigned nx = _config.numberOfPixelsPerAsicRow();

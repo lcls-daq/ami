@@ -44,6 +44,7 @@ namespace Ami {
 
     ndarray<double,2>   _gain;
     ndarray<double,2>   _gain_lo;
+    ndarray<double,2>   _no_gain;
 
     ndarray<int,1>      _feature;
   };

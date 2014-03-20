@@ -64,7 +64,7 @@ static void Destroy(Xtc*) {}
 
 static Ami::XtcClient* _instance=0;
 
-#define DBUG
+//#define DBUG
 
 static double clockTimeDiff(const Pds::ClockTime& a,
                             const Pds::ClockTime& b)

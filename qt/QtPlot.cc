@@ -183,16 +183,8 @@ void QtPlot::_layout()
     layout->addLayout(l); }
   layout->addWidget(_frame);
   layout->setSpacing(0);
-  { QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addStretch();
-    layout1->addWidget(_xrange);
-    layout1->addStretch();
-    layout->addLayout(layout1); }
-  { QHBoxLayout* layout1 = new QHBoxLayout;
-    layout1->addStretch();
-    layout1->addWidget(_yrange);
-    layout1->addStretch();
-    layout->addLayout(layout1); }
+  layout->addWidget(_xrange,0,::Qt::AlignCenter);
+  layout->addWidget(_yrange,0,::Qt::AlignCenter);
   setLayout(layout);
   
   show();

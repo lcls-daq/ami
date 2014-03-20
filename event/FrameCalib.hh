@@ -13,6 +13,7 @@ namespace Ami {
   public:
     static unsigned    option_no_pedestal        ();
     static unsigned    option_reload_pedestal    ();
+    static unsigned    option_correct_gain       ();
     static unsigned    option_correct_common_mode();
     static unsigned    option_correct_common_mode2();
 

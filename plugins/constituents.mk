@@ -55,3 +55,7 @@ libincs_PnccdModule := pdsdata/include ndarray/include boost/include
 libsrcs_AmiEpics := AmiEpics.cc CspadTHandler.cc CspadMiniTHandler.cc PrincetonTHandler.cc
 libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_AmiEpics := epics/ca
+
+tgtnames := dat_to_msk
+tgtsrcs_dat_to_msk := dat_to_msk.cc
+tgtincs_dat_to_msk := ndarray/include boost/include

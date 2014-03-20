@@ -48,8 +48,28 @@ static QLineEdit* _qlineedit(const char* n)
 {
   QLineEdit* e = new QLineEdit(n);
   e->setMaximumWidth(44);
-  new QDoubleValidator(e);
+  new QIntValidator(e);
   return e;
+}
+
+static QLineEdit* _qlineedit(const char* n, int i0, int i1)
+{
+  QLineEdit* e = new QLineEdit(n);
+  e->setMaximumWidth(44);
+  new QIntValidator(i0,i1,e);
+  return e;
+}
+
+static void _validate_pair(QLineEdit* lo, QLineEdit* hi)
+{
+  QPalette p(lo->palette());
+  if (lo->text().toInt() <= hi->text().toInt())
+    p.setColor(QPalette::Text, QColor(0,0,0));
+  else
+    p.setColor(QPalette::Text, QColor(0xc0,0,0));
+
+  lo->setPalette(p);
+  hi->setPalette(p);
 }
 
 namespace Ami {
@@ -510,32 +530,32 @@ DropletConfig::DropletConfig(QWidget* parent) : QWidget(parent)
   unsigned row=0;
   l->addWidget(new QLabel("Seed Threshold [ADU]"),row,0,::Qt::AlignRight);
   l->addWidget(_seed_thr = _qlineedit("0")    ,row,1,::Qt::AlignLeft);
-  new QIntValidator(_seed_thr); row++;
+  row++;
   connect(_seed_thr, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 
   l->addWidget(new QLabel("Neighbor Threshold [ADU]"),row,0,::Qt::AlignRight);
   l->addWidget(_nbor_thr = _qlineedit("0")        ,row,1,::Qt::AlignLeft);
-  new QIntValidator(_nbor_thr); row++;
+  row++;
   connect(_nbor_thr, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Esum Minimum [ADU]"),row,0,::Qt::AlignRight);
   l->addWidget(_esum_min = _qlineedit("0")  ,row,1,::Qt::AlignLeft);
-  new QIntValidator(_esum_min); row++;
+  row++;
   connect(_esum_min, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Esum Maximum [ADU]"),row,0,::Qt::AlignRight);
   l->addWidget(_esum_max = _qlineedit("0")  ,row,1,::Qt::AlignLeft);
-  new QIntValidator(_esum_max); row++;
+  row++;
   connect(_esum_max, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Npixel Minimum")  ,row,0,::Qt::AlignRight);
-  l->addWidget(_npix_min = _qlineedit("0"),row,1,::Qt::AlignLeft);
-  new QIntValidator(_npix_min); row++;
+  l->addWidget(_npix_min = _qlineedit("1",1,99),row,1,::Qt::AlignLeft);
+  row++;
   connect(_npix_min, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 
   l->addWidget(new QLabel("Npixel Maximum")  ,row,0,::Qt::AlignRight);
-  l->addWidget(_npix_max = _qlineedit("0"),row,1,::Qt::AlignLeft);
-  new QIntValidator(_npix_max); row++;
+  l->addWidget(_npix_max = _qlineedit("0",1,99),row,1,::Qt::AlignLeft);
+  row++;
   connect(_npix_max, SIGNAL(editingFinished()), this, SIGNAL(changed()));
 
   setLayout(l);
@@ -545,12 +565,19 @@ DropletConfig::~DropletConfig() {}
 
 Ami::DropletConfig DropletConfig::value() const {
   Ami::DropletConfig v;
-  v.seed_threshold = _seed_thr->text().toInt();
-  v.nbor_threshold = _nbor_thr->text().toInt();
+  v.seed_threshold   = _seed_thr->text().toInt();
+  v.nbor_threshold   = _nbor_thr->text().toInt();
+
   v.esum_min       = _esum_min->text().toInt();
   v.esum_max       = _esum_max->text().toInt();
-  v.npix_min       = _npix_min->text().toInt();
-  v.npix_max       = _npix_max->text().toInt();
+
+  v.npix_min        = _npix_min->text().toInt();
+  v.npix_max        = _npix_max->text().toInt();
+
+  _validate_pair(_nbor_thr,_seed_thr);
+  _validate_pair(_esum_min,_esum_max);
+  _validate_pair(_npix_min,_npix_max);
+
   return v;
 }
 

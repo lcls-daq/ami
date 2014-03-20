@@ -30,6 +30,7 @@ namespace Ami {
       QCheckBox* _npBox;
       QCheckBox* _fnBox;
       QCheckBox* _fnBox2;
+      QCheckBox* _gnBox;
       bool _reloadPedestals;
     };
   };

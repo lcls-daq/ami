@@ -119,19 +119,15 @@ void           QtTH2F::dump  (FILE* f) const
 {
   int prec = Defaults::instance()->save_precision();
   const DescTH2F&  _desc  = static_cast<const DescTH2F& >(entry().desc());
-  
+  const EntryTH2F& _e     = static_cast<const EntryTH2F&>(entry());
   fprintf(f,"%.*g %.*g %.*g %.*g\n",
           prec,_desc.xlow(),
           prec,_desc.xup(),
           prec,_desc.ylow(),
           prec,_desc.yup());
-  double dx = (_desc.xup()-_desc.xlow())/double(_desc.nbinsx());
-  double dy = (_desc.yup()-_desc.ylow())/double(_desc.nbinsy());
-  double y = _desc.ylow()+0.5*dy;
-  for(unsigned iy=0; iy<_desc.nbinsy(); iy++, y+=dy) {
-    double x = _desc.xlow()+0.5*dx;
-    for(unsigned ix=0; ix<_desc.nbinsx(); ix++, x+=dx)
-      fprintf(f,"%.*g ",prec,_z->value(x,y));
+  for(unsigned iy=0; iy<_desc.nbinsy(); iy++) {
+    for(unsigned ix=0; ix<_desc.nbinsx(); ix++)
+      fprintf(f,"%.*g ",prec,_e.content(ix,iy));
     fprintf(f,"\n");
   }
 }
