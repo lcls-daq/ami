@@ -2,6 +2,7 @@
 #define Ami_EpixHandler_hh
 
 #include "ami/event/EventHandler.hh"
+#include "ami/data/DescImage.hh"
 
 #include "ndarray/ndarray.h"
 
@@ -34,6 +35,7 @@ namespace Ami {
     void _load_gains    ();
 
     FeatureCache&       _cache;
+    DescImage           _desc;
     EntryImage*         _entry;
     EntryImage*         _pentry;
     char*               _config_buffer;

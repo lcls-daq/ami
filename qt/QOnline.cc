@@ -117,7 +117,8 @@ namespace Ami {
       }
     public:
       void set_node_mask(unsigned mask) 
-      { Pds::MonShmComm::Set m(_info.name.c_str(),mask);
+      //      { Pds::MonShmComm::Set m(_info.name.c_str(),mask);
+      { Pds::MonShmComm::Set m(mask);
 	_socket.write(&m,sizeof(m)); }
       NodeInfo&       info()       { return _info; }
       const NodeInfo& info() const { return _info; }

@@ -342,7 +342,7 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
-    size_t sz = 8 * 1024;
+    size_t sz = 16 * 1024;
     char* linep = (char *)malloc(sz);
     memset(linep, 0, sz);
     char* pEnd = linep;

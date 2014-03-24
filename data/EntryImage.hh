@@ -42,6 +42,9 @@ namespace Ami {
      */
     ndarray<uint32_t,2>             contents(unsigned);
     const ndarray<const uint32_t,2> contents(unsigned) const;
+    
+    ndarray<uint32_t,2>             contents(const SubFrame&);
+    const ndarray<const uint32_t,2> contents(const SubFrame&) const;
 
     /*
      *  Modify contents
