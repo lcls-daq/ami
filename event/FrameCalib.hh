@@ -33,6 +33,8 @@ namespace Ami {
 		      unsigned& iLo, unsigned& iHi);
     static int median(ndarray<const uint32_t,1> data,
 		      unsigned& iLo, unsigned& iHi);
+    static int median(ndarray<const uint32_t,2> data,
+		      unsigned& iLo, unsigned& iHi);
     static int median(ndarray<const int32_t,1> data,
 		      int& iLo, int& iHi,
 		      unsigned*&);

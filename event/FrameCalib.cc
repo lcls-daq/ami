@@ -489,6 +489,57 @@ int FrameCalib::median(ndarray<const uint32_t,1> data,
   return (iLo+i);
 }
 
+int FrameCalib::median(ndarray<const uint32_t,2> d,
+		       unsigned& iLo, unsigned& iHi)
+{
+  unsigned* bins = 0;
+  unsigned nbins = 0;
+
+  while(1) {
+    if (bins) delete[] bins;
+
+    nbins = iHi-iLo+1;
+    bins  = new unsigned[nbins];
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    for(unsigned j=0; j<d.shape()[0]; j++) {
+      const uint32_t* data = &d[j][0];
+      for(unsigned i=0; i<d.shape()[1]; i++)
+        if (data[i] < iLo)
+          bins[0]++;
+        else if (data[i] >= iHi)
+          bins[nbins-1]++;
+        else
+          bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > d.size()/2)
+      if (iLo > nbins/4) 
+	iLo -= nbins/4;
+      else if (iLo > 0)
+	iLo = 0;
+      else {
+	delete[] bins;
+	return iLo;
+      }
+    else if (bins[nbins-1] > d.size()/2)
+      iHi += nbins/4;
+    else
+      break;
+  }
+    
+  unsigned i=1;
+  int s=(d.size()-bins[0]-bins[nbins-1])/2;
+  while( s>0 )
+    s -= bins[i++];
+
+  if (unsigned(-s) > bins[i-1]/2) i--;
+
+  delete[] bins;
+
+  return (iLo+i);
+}
+
 int FrameCalib::median(ndarray<const int32_t,1> data,
 		       int& iLo, int& iHi,
 		       unsigned*& bins)

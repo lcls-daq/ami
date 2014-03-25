@@ -376,7 +376,7 @@ void L3TModule::handler (const Pds::Src& src,
     case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
     case Pds::TypeId::Id_RayonixConfig:    h = new RayonixHandler    (info); break;
     case Pds::TypeId::Id_FccdConfig  :
-      if (info.device()==DetInfo::Fccd960) h = new Fccd960Handler    (info);
+      if (info.device()==DetInfo::Fccd960) h = new Fccd960Handler    (info, cache);
       else                                 h = new FccdHandler       (info);
       break;
     case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
