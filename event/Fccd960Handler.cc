@@ -6,6 +6,16 @@
 #include "ami/data/EntryImage.hh"
 #include "pdsdata/psddl/camera.ddl.h"
 
+//#define DBUG
+
+#ifdef DBUG
+static inline double tdiff(const timespec& tv_b, 
+                           const timespec& tv_e)
+{
+  return double(tv_e.tv_sec-tv_b.tv_sec)+1.e-9*(double(tv_e.tv_nsec)-double(tv_b.tv_nsec));
+}
+#endif
+
 using namespace Ami;
 
 static const unsigned offset=1<<16;
@@ -24,15 +34,6 @@ static std::list<Pds::TypeId::Type> config_type_list()
   types.push_back(Pds::TypeId::Id_FccdConfig);
   return types;
 }
-
-static int frameNoise(ndarray<const uint32_t,1> data,
-		      unsigned off)
-{
-  unsigned lo = off-100;
-  unsigned hi = off+100;
-  return FrameCalib::median(data,lo,hi)-int(off);
-}
-
 
 Fccd960Handler::Fccd960Handler(const Pds::Src& info, FeatureCache& cache) :
   EventHandler  (info, Data_Type.id(), config_type_list()),
@@ -121,71 +122,129 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
     _entry->reset();
     const DescImage& d = _entry->desc();
 
-    const ndarray<const unsigned,2>& pa =
+    const ndarray<const unsigned,2>& p =
       d.options()&FrameCalib::option_no_pedestal() ?
       _offset : _pedestals;
 
     ndarray<const uint16_t,2> a = f.data16();
 
-    int ppbin = _entry->desc().ppxbin();
-
-    for(unsigned j=0; j<a.shape()[0]; j++) {
-      const uint16_t* d = & a[j][0];
-      const unsigned* p = &pa[j][0];
-      for(unsigned k=0; k<a.shape()[1]; k++) {
-        unsigned v = (d[k]&0x1fff) + p[k];
-        _entry->addcontent(v, k/ppbin, j/ppbin);
-      }
+#ifdef DBUG
+    timespec tv_b,tv_e;
+    clock_gettime(CLOCK_REALTIME,&tv_b);
+#endif
+    ndarray<unsigned,2> e = make_ndarray<unsigned>(a.shape()[0],a.shape()[1]);
+    { const uint16_t* pa=a.begin();
+      const unsigned* pp=p.begin();
+      for(unsigned* pe=e.begin(); pe!=e.end(); pe++,pa++,pp++)
+        *pe = (*pa&0x1fff)+*pp;
     }
+#ifdef DBUG
+    clock_gettime(CLOCK_REALTIME,&tv_e);
+    printf("Fccd960H:apply_ped %f sec\n",tdiff(tv_b,tv_e));
+#endif
 
     //
     //  correct each line even(odd) pixels in blocks of 160 columns
     //
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
-      int off = offset*d.ppxbin()*d.ppybin();
-      ndarray<uint32_t,2> e = _entry->content();
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_b);
+#endif
       const int str[] = {2};
+      const unsigned asicCol = 160;
       for(unsigned i=0; i<e.shape()[0]; i++) {
-        for(unsigned j=0; j<e.shape()[1]/160; j++)
+        for(unsigned j=0; j<e.shape()[1]/asicCol; j++)
           for(unsigned k=0; k<2; k++) {
-            ndarray<uint32_t,1> s = make_ndarray<uint32_t>(&e[i][j*160+k],80);
+            ndarray<uint32_t,1> s = make_ndarray<uint32_t>(&e[i][j*asicCol+k],asicCol/2);
             s.strides(str);
-            unsigned iLo=off-128,iHi=off+128;
-            int fn = FrameCalib::median(s,iLo,iHi)-off;
+            unsigned iLo=offset-128,iHi=offset+128;
+            int fn = FrameCalib::median(s,iLo,iHi)-offset;
             uint32_t* v = &s[0];
-            for(unsigned x=0; x<160; x+=2)
+            for(unsigned x=0; x<asicCol; x+=2)
               v[x] -= fn;
           }
       }
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_e);
+      printf("Fccd960H:apply_cm2 %f sec\n",tdiff(tv_b,tv_e));
+#endif
     }
 
     //
     //  correct each block (10 columns x 480 rows)
     //
     if (d.options()&FrameCalib::option_correct_common_mode()) {
-      int off = offset*d.ppxbin()*d.ppybin();
-      ndarray<uint32_t,2> e = _entry->content();
-      for(unsigned i=0; i<Rows/480; i++)
-        for(unsigned j=0; j<Columns/10; j++) {
-          ndarray<uint32_t,2> s = make_ndarray<uint32_t>(&e[i*480][j*10],480,10);
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_b);
+#endif
+      const unsigned asicRow = 480;
+      const unsigned asicCol =  10;
+      for(unsigned i=0; i<Rows/asicRow; i++)
+        for(unsigned j=0; j<Columns/asicCol; j++) {
+          ndarray<uint32_t,2> s = make_ndarray<uint32_t>(&e[i*asicRow][j*asicCol],asicRow,asicCol);
           s.strides(e.strides());
-          unsigned iLo=off-128,iHi=off+128;
-          int fn = FrameCalib::median(s,iLo,iHi)-off;
-          for(unsigned y=0; y<480; y++) {
+          unsigned iLo=offset-128,iHi=offset+128;
+          int fn = FrameCalib::median(s,iLo,iHi)-offset;
+          for(unsigned y=0; y<asicRow; y++) {
             uint32_t* v = &s[y][0];
-            for(unsigned x=0; x<10; x++)
+            for(unsigned x=0; x<asicCol; x++)
               v[x] -= fn;
           }
         }          
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_e);
+      printf("Fccd960H:apply_cm  %f sec\n",tdiff(tv_b,tv_e));
+#endif
     }
 
     //
     //  Correct for gain
     //
-    const ndarray<const double,2>& gn    = 
-      (d.options()&FrameCalib::option_correct_gain()) ? _gain : _no_gain;
-    {
+    if (d.options()&FrameCalib::option_correct_gain()) {
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_b);
+#endif
+      const double* pg=_gain.begin();
+      for(unsigned* pe=e.begin(); pe!=e.end(); pe++,pg++)
+        *pe = unsigned(*pg*(double(int(*pe-offset))))+offset;
+#ifdef DBUG
+      clock_gettime(CLOCK_REALTIME,&tv_e);
+      printf("Fccd960H:apply_gain %f sec\n",tdiff(tv_b,tv_e));
+#endif
     }
+
+    //
+    //  Bin
+    //
+#ifdef DBUG
+    clock_gettime(CLOCK_REALTIME,&tv_b);
+#endif
+    const int ppbin = _entry->desc().ppxbin();
+    switch(ppbin) {
+    case 1:
+      { unsigned* enp = _entry->contents();
+        for(const unsigned* pe=e.begin(); pe!=e.end(); pe++,enp++)
+          *enp = *pe;
+      } break;
+    case 2:
+      { unsigned* enp = _entry->contents();
+        for(unsigned i=0; i<Rows; i+=2) {
+          const unsigned* pe =&e[i][0];
+          const unsigned* pe2=&e[i+1][0];
+          for(unsigned j=0; j<Columns; j+=2)
+            *enp++ = pe[0]+pe[1]+pe2[0]+pe2[1];
+        }
+      } break;
+    default:
+      for(unsigned i=0; i<Rows; i++)
+        for(unsigned j=0; j<Columns; j++)
+          _entry->addcontent(e[i][j],i/ppbin,j/ppbin);
+      break;
+    }
+#ifdef DBUG
+    clock_gettime(CLOCK_REALTIME,&tv_e);
+    printf("Fccd960H:apply_bin %f sec\n",tdiff(tv_b,tv_e));
+#endif
 
     _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
     _entry->info(1.,EntryImage::Normalization);

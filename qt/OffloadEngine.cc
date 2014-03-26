@@ -55,7 +55,7 @@ OffloadEngine::OffloadEngine(ImageOffload& offload,
   connect(this, SIGNAL(_image_rendered(QImage*)), this, SLOT(_render_canvas(QImage*)));
 }
 
-OffloadEngine::~OffloadEngine() { _task->destroy(); }
+OffloadEngine::~OffloadEngine() { _task->destroy_b(); }
 
 void OffloadEngine::qimage(QtImage* q)
 {
