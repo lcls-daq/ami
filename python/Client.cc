@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami::Python;
 
