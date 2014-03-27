@@ -232,7 +232,7 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
           const unsigned* pe =&e[i][0];
           const unsigned* pe2=&e[i+1][0];
           for(unsigned j=0; j<Columns; j+=2)
-            *enp++ = pe[0]+pe[1]+pe2[0]+pe2[1];
+            *enp++ = pe[j+0]+pe[j+1]+pe2[j+0]+pe2[j+1];
         }
       } break;
     default:
