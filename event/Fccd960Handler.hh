@@ -43,6 +43,9 @@ namespace Ami {
 
     ndarray<double,2>   _gain;
     ndarray<double,2>   _no_gain;
+
+    ndarray<unsigned,3> _cm_channel;
+    ndarray<unsigned,3> _cm_row;
   };
 };
 

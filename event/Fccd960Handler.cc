@@ -92,6 +92,17 @@ void Fccd960Handler::_configure(Pds::TypeId tid, const void* payload, const Pds:
 
     _load_pedestals();
     _load_gains    ();
+
+    _cm_channel = make_ndarray<unsigned>(2,96,2);
+    for(unsigned* p=_cm_channel.begin(); p!=_cm_channel.end(); ) {
+      *p++ = offset-32;
+      *p++ = offset+32;
+    }
+    _cm_row     = make_ndarray<unsigned>(960,12,2);
+    for(unsigned* p=_cm_row.begin(); p!=_cm_row.end(); ) {
+      *p++ = offset-32;
+      *p++ = offset+32;
+    }
   }
 }
 
@@ -157,8 +168,19 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
           for(unsigned k=0; k<2; k++) {
             ndarray<uint32_t,1> s = make_ndarray<uint32_t>(&e[i][j*asicCol+k],asicCol/2);
             s.strides(str);
-            unsigned iLo=offset-128,iHi=offset+128;
-            int fn = FrameCalib::median(s,iLo,iHi)-offset;
+            unsigned m=2*j+k;
+            int fn = FrameCalib::median(s,
+                                        _cm_row[i][m][0],
+                                        _cm_row[i][m][1]);
+            if (fn<0) {
+              printf("Fcc960Handler common_mode2 skipping row %d col %d\n",
+                     i,m);
+              _cm_row[i][m][0] = offset-32;
+              _cm_row[i][m][1] = offset+32;
+              fn = 0;
+            }
+            else
+              fn-=offset;
             uint32_t* v = &s[0];
             for(unsigned x=0; x<asicCol; x+=2)
               v[x] -= fn;
@@ -183,8 +205,9 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
         for(unsigned j=0; j<Columns/asicCol; j++) {
           ndarray<uint32_t,2> s = make_ndarray<uint32_t>(&e[i*asicRow][j*asicCol],asicRow,asicCol);
           s.strides(e.strides());
-          unsigned iLo=offset-128,iHi=offset+128;
-          int fn = FrameCalib::median(s,iLo,iHi)-offset;
+          int fn = FrameCalib::median(s,
+                                      _cm_channel[i][j][0],
+                                      _cm_channel[i][j][1])-offset;
           for(unsigned y=0; y<asicRow; y++) {
             uint32_t* v = &s[y][0];
             for(unsigned x=0; x<asicCol; x++)
