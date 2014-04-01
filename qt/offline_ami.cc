@@ -34,6 +34,7 @@ static void usage(char* progname) {
 	  "         [-e <filename for error messages>]\n"
           "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "         [-D (post detector diagnostics)]\n"
+          "         [-N <threads> (set parallel processing threads, default=1)]\n"
           "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
           "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
