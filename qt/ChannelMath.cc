@@ -89,6 +89,8 @@ bool ChannelMath::resolve(ChannelDefinition* channels[],
 			  const Ami::AbsFilter& f)
 {
   QString expr(_expr->text());
+  if (expr.isEmpty()) return false;
+
   expr.replace(_exponentiate,Expression::exponentiate());
   expr.replace(_multiply    ,Expression::multiply());
   expr.replace(_divide      ,Expression::divide());
