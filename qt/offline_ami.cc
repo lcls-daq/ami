@@ -1,7 +1,7 @@
 #include "ami/app/AmiApp.hh"
 #include "ami/app/AnalysisFactory.hh"
 #include "ami/app/EventFilter.hh"
-#include "ami/app/XtcClient.hh"
+#include "ami/app/XtcClientT.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/UserModule.hh"
 #include "ami/qt/Client.hh"
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
   // Error goes to console if no other file was specified with -e
   redirect(outputFile, errorFile);
 
-  std::vector<XtcClient*> clients;
+  std::vector<XtcClientT*> clients;
   while(nclients--) {
     //  Create User Modules
     list<UserModule*>& userModules = *new list<UserModule*>;
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
     //    bool sync = nclients == 0;
     //    bool sync = false;
     
-    clients.push_back(new XtcClient(features, factory, filter, sync));
+    clients.push_back(new XtcClientT(features, factory, filter, sync));
   }
 
   // Start the DetectorSelect GUI unless separateWindowMode (-W) is chosen.

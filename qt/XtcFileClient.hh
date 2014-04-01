@@ -15,7 +15,7 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QWidget>
 
-#include "ami/app/XtcClient.hh"
+#include "ami/app/XtcClientT.hh"
 #include "ami/qt/RunTree.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"
@@ -36,7 +36,7 @@ namespace Ami {
     class XtcFileClient : public QWidget, public Routine {
       Q_OBJECT
     public:
-      XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& client, const char* curdir, bool testMode, bool liveReadMode);
+      XtcFileClient(QGroupBox* groupBox, std::vector<XtcClientT*>& client, const char* curdir, bool testMode, bool liveReadMode);
       ~XtcFileClient();
       void configure();
     private slots:
@@ -84,7 +84,7 @@ namespace Ami {
       void setDir(QString dir);
       XtcRun _run;
       bool _runValid;
-      std::vector<XtcClient*>& _client;
+      std::vector<XtcClientT*>& _client;
       unsigned _iclient;
       QString _curdir;
       bool _testMode;

@@ -228,7 +228,7 @@ static void _connect(const QObject* sender, const char* signal, const QObject* r
   }
 }
 
-XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClient*>& client, const char* curdir, bool testMode, bool liveReadMode) :
+XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClientT*>& client, const char* curdir, bool testMode, bool liveReadMode) :
   QWidget (0,::Qt::Window),
   _runValid(false),
   _client(client),
@@ -929,8 +929,15 @@ void XtcFileClient::run()
     _dgCount++;
     _payloadTotal += dg->xtc.sizeofPayload();
 
-    _client[_iclient++]->processDgram(dg);
-    if (_iclient == _client.size()) _iclient=0;
+    TransitionId::Value transition = dg->seq.service();
+    if (transition==TransitionId::L1Accept) {
+      _client[_iclient++]->processDgram(dg);
+      if (_iclient == _client.size()) _iclient=0;
+    }
+    else {
+      for(unsigned i=0; i<_client.size(); i++)
+        _client[i]->processDgram(dg);
+    }
 
     uint32_t damage = dg->xtc.damage.value();
     if (damage) {
@@ -938,7 +945,6 @@ void XtcFileClient::run()
         _damageMask |= damage;
     }
 
-    TransitionId::Value transition = dg->seq.service();
     assert(transition != TransitionId::Configure);
     if (transition == TransitionId::L1Accept) {
       double now = ::now();
