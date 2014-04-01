@@ -400,7 +400,19 @@ int FrameCalib::median(ndarray<const uint16_t,1> data,
   while(1) {
     if (bins) delete[] bins;
 
+    if (iLo>iHi) {
+      printf("Warning: FrameCalib::median iLo,iHi arguments reversed [%d,%d]\n",
+             iLo,iHi);
+      unsigned v=iLo; iLo=iHi; iHi=v;
+    }
+
     nbins = iHi-iLo+1;
+
+    if (nbins>10000) {
+      printf("Warning: FrameCalib::median too many bins [%d]\n",nbins);
+      return -1;
+    }
+
     bins  = new unsigned[nbins];
     memset(bins,0,nbins*sizeof(unsigned));
 
@@ -449,7 +461,19 @@ int FrameCalib::median(ndarray<const uint32_t,1> data,
   while(1) {
     if (bins) delete[] bins;
 
+    if (iLo>iHi) {
+      printf("Warning: FrameCalib::median iLo,iHi arguments reversed [%d,%d]\n",
+             iLo,iHi);
+      unsigned v=iLo; iLo=iHi; iHi=v;
+    }
+
     nbins = iHi-iLo+1;
+
+    if (nbins>10000) {
+      printf("Warning: FrameCalib::median too many bins [%d]\n",nbins);
+      return -1;
+    }
+
     bins  = new unsigned[nbins];
     memset(bins,0,nbins*sizeof(unsigned));
 
@@ -498,7 +522,19 @@ int FrameCalib::median(ndarray<const uint32_t,2> d,
   while(1) {
     if (bins) delete[] bins;
 
+    if (iLo>iHi) {
+      printf("Warning: FrameCalib::median iLo,iHi arguments reversed [%d,%d]\n",
+             iLo,iHi);
+      unsigned v=iLo; iLo=iHi; iHi=v;
+    }
+
     nbins = iHi-iLo+1;
+
+    if (nbins>10000) {
+      printf("Warning: FrameCalib::median too many bins [%d]\n",nbins);
+      return -1;
+    }
+
     bins  = new unsigned[nbins];
     memset(bins,0,nbins*sizeof(unsigned));
 
