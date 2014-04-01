@@ -36,7 +36,7 @@ namespace Ami {
     public:
       Client(QWidget*,const Pds::DetInfo&, unsigned, const QString&,
 	     Display*, 
-	     double request_rate=2.5);
+	     double request_rate=0);
       ~Client();
     public:
       const QString& title() const;

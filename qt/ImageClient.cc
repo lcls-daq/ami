@@ -10,6 +10,7 @@
 #include "ami/qt/PeakFinder.hh"
 #include "ami/qt/BlobFinder.hh"
 #include "ami/qt/Droplet.hh"
+#include "ami/qt/Defaults.hh"
 
 #include <QtGui/QPushButton>
 #include <QtGui/QHBoxLayout>
@@ -20,7 +21,7 @@ class ImageDisplay;
 class Control;
 
 Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsigned ch, const QString& name) :
-  Client  (parent,info,ch,name, new ImageDisplay,1.)
+  Client  (parent,info,ch,name, new ImageDisplay,Defaults::instance()->image_update_rate())
 {
   ImageDisplay& wd = (ImageDisplay&)(display());
   connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));

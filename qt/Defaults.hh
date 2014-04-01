@@ -5,6 +5,7 @@
 
 class QCheckBox;
 class QComboBox;
+class QLineEdit;
 
 namespace Ami {
   namespace Qt {
@@ -13,6 +14,8 @@ namespace Ami {
       bool select_run     () const;
       bool show_grid      () const;
       bool show_minor_grid() const;
+      double image_update_rate() const;
+      double other_update_rate() const;
       QString movie_format() const;
       int  save_precision () const;
     public:
@@ -27,6 +30,8 @@ namespace Ami {
       QCheckBox* _run;
       QCheckBox* _grid;
       QCheckBox* _minor_grid;
+      QLineEdit* _image_rate;
+      QLineEdit* _others_rate;
       QComboBox* _movie_format_box;
       QComboBox* _save_precision;
     };

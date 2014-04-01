@@ -9,6 +9,7 @@
 //#include "ami/qt/AggChannels.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/QtUtils.hh"
+#include "ami/qt/Defaults.hh"
 
 #include "ami/client/ClientManager.hh"
 #include "ami/data/Channel.hh"
@@ -72,6 +73,8 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _denials         (0),
   _attempts        (0)
 {
+  if (!request_rate) request_rate = Defaults::instance()->other_update_rate();
+
   setWindowTitle(QString("%1[*]").arg(name));
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
