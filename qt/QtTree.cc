@@ -189,8 +189,12 @@ void QtTree::load(const char*& p)
 
 void QtTree::save_preferences(char*& p)
 {
-  for(int i=0; i<_most_recent.size(); i++)
-    XML_insert( p, "QString", "recent", QtPersistent::insert(p,_most_recent[i]));
+  if (_most_recent.size()) {
+    for(int i=0; i<_most_recent.size(); i++)
+      XML_insert( p, "QString", "recent", QtPersistent::insert(p,_most_recent[i]));
+  }
+  else
+    XML_insert( p, "Nothing", "name", QtPersistent::insert(p, "nil"));
 }
 
 void QtTree::load_preferences(const char*& p)
