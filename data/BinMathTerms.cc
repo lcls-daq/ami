@@ -230,11 +230,11 @@ double BinMathC::EntryImageTermF::evaluate() const
                       _xc, _yc, _r1)) {
       double xc(_xc), yc(_yc);
       double r0sq(_r0*_r0), r1sq(_r1*_r1);
-      for(int j=iylo; j<=iyhi; j++) {
+      for(int j=iylo; j<iyhi; j++) {
         if (!mask->row(j)) continue;
         double dy  = d.biny(j)-yc;
         double dy2 = dy*dy;
-        for(int i=ixlo; i<=ixhi; i++) {
+        for(int i=ixlo; i<ixhi; i++) {
           if (!mask->rowcol(j,i)) continue;
           double dx  = d.binx(i)-xc;
           double dx2 = dx*dx;
@@ -260,10 +260,10 @@ double BinMathC::EntryImageTermF::evaluate() const
                         _xc, _yc, _r1, fn)) {
         double xc(_xc), yc(_yc);
         double r0sq(_r0*_r0), r1sq(_r1*_r1);
-        for(int j=iylo; j<=iyhi; j++) {
+        for(int j=iylo; j<iyhi; j++) {
           double dy  = d.biny(j)-yc;
           double dy2 = dy*dy;
-          for(int i=ixlo; i<=ixhi; i++) {
+          for(int i=ixlo; i<ixhi; i++) {
             double dx  = d.binx(i)-xc;
             double dx2 = dx*dx;
             double rsq = dx2 + dy2;
@@ -287,10 +287,10 @@ double BinMathC::EntryImageTermF::evaluate() const
                       _xc, _yc, _r1)) {
       double xc(_xc), yc(_yc);
       double r0sq(_r0*_r0), r1sq(_r1*_r1);
-      for(int j=iylo; j<=iyhi; j++) {
+      for(int j=iylo; j<iyhi; j++) {
         double dy  = d.biny(j)-yc;
         double dy2 = dy*dy;
-        for(int i=ixlo; i<=ixhi; i++) {
+        for(int i=ixlo; i<ixhi; i++) {
           double dx  = d.binx(i)-xc;
           double dx2 = dx*dx;
           double rsq = dx2 + dy2;

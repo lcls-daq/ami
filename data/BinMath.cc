@@ -69,8 +69,12 @@ BinMath::BinMath(const DescEntry& output,
   _cache     (0),
   _term      (0),
   _fterm     (0),
+  _input     (0),
   _entry     (0),
-  _v         (true)
+  _v         (true),
+  _index     (0),
+  _loop      (false),
+  _fterm_uses(false)
 {
   strncpy_val(_expression, expr, EXPRESSION_LEN);
   memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
@@ -86,7 +90,9 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, F
   _cache (&icache),
   _term  (0),
   _fterm (0),
+  _input (0),
   _v     (true),
+  _index     (0),
   _loop  (false)
 {
   _extract(p, _expression , EXPRESSION_LEN);
@@ -136,8 +142,12 @@ BinMath::BinMath(const char*& p) :
   _cache     (0),
   _term      (0),
   _fterm     (0),
+  _input     (0),
   _entry     (0),
-  _v         (true)
+  _v         (true),
+  _index     (0),
+  _loop      (false),
+  _fterm_uses(false)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
@@ -198,7 +208,7 @@ Entry&     BinMath::_operate(const Entry& e) const
     for(_index=0; _index<n; _index++) {
       double y = _term->evaluate();
 
-      if (_fterm_uses)
+      if (_fterm_uses && _fterm)
 	x = _fterm->evaluate();
 
       switch(_entry->desc().type()) {
