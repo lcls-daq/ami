@@ -65,7 +65,8 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
   _collect (false),
   _ncollect(0),
   _entry   (0),
-  _tform   (true)
+  _tform   (true),
+  _options (0)
 {
   PixelsPerBin = _full_resolution() ? 1 : 2;
 
