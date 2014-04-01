@@ -84,8 +84,8 @@ EntryMath::EntryMath(const char*& p, const DescEntry& e, const Cds& cds, Feature
   FeatureExpression parser;
   _term = parser.evaluate(features,new_expr);
   if (!_term) {
-    printf("EntryMath  FeatureExpression failed to parse %s\n",
-           qPrintable(new_expr));
+    printf("EntryMath  FeatureExpression failed to parse %s [%s]\n",
+           qPrintable(new_expr),_expression);
     abort();
   }
 #endif

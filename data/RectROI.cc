@@ -98,7 +98,7 @@ Entry&     RectROI::_operate(const Entry& e) const
   T jhi = T((d.yup ()-inputd.ylow())/inputd.ppybin());
   
   const EntryImage* _input = static_cast<const EntryImage*>(&e);
-  if (_input) {
+  if (_input && _input->desc().type()==DescEntry::Image) {
     const DescImage& inputd = _input->desc();
     const DescImage& d = static_cast<const DescImage&>(_routput());
     EntryImage*      o = static_cast<EntryImage*>(_output);
