@@ -175,6 +175,26 @@ DetectorSelect::DetectorSelect(const QString& label,
 
   //  autoload();
 
+  { QString fname = QString("%1/.defaults.ami").arg(getenv("HOME"));
+    FILE* f = fopen(qPrintable(fname),"r");
+    if (f) {
+      char* buffer = new char[MaxConfigSize];
+      int size;
+      if ((size=fread(buffer,1,MaxConfigSize,f))>0) {
+        sprintf(buffer+size,"</Document>");
+        const char* p = buffer;
+        XML_iterate_open(p,tag)
+          if (tag.element == "Defaults")
+            Defaults::instance()->load(p);
+          else if (tag.element == "QtTree")
+            QtTree::load_preferences(p);
+        XML_iterate_close(DetectorSelect,tag);
+      }
+      fclose(f);
+      delete[] buffer;
+    }
+  }
+
   _autosave_timer = new QTimer(this);
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
@@ -631,16 +651,9 @@ void DetectorSelect::queue_autosave()
   _autosave_timer->start(10000);
 }
 
-void DetectorSelect::autosave()
+static void _save(const QString& fname, char* buffer, int len)
 {
   static bool warned = false;
-
-  char* buffer = new char[MaxConfigSize];
-
-  int len = get_setup(buffer);
-
-  QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
-
   FILE* o = fopen(qPrintable(fname),"w");
   if (o) {
     fwrite(buffer,len,1,o);
@@ -653,6 +666,21 @@ void DetectorSelect::autosave()
     //    QMessageBox::critical(this,"Save Error",msg);
     printf("Save Error: %s\n",qPrintable(msg));
   }
+}
+
+void DetectorSelect::autosave()
+{
+
+  char* buffer = new char[MaxConfigSize];
+
+  int len = get_setup(buffer);
+  _save(QString("%1/AUTOSAVE.ami").arg(Path::base()),buffer,len);
+
+  char* p = buffer;
+  XML_insert(p, "Defaults", "Defaults", Defaults::instance()->save(p));
+  XML_insert(p, "QtTree", "QtTree", QtTree::save_preferences(p));
+  len = p-buffer;
+  _save(QString("%1/.defaults.ami").arg(getenv("HOME")),buffer,len);
 
   delete[] buffer;
 }

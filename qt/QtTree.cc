@@ -187,6 +187,21 @@ void QtTree::load(const char*& p)
   XML_iterate_close(QtTree,tag);
 }
 
+void QtTree::save_preferences(char*& p)
+{
+  for(int i=0; i<_most_recent.size(); i++)
+    XML_insert( p, "QString", "recent", QtPersistent::insert(p,_most_recent[i]));
+}
+
+void QtTree::load_preferences(const char*& p)
+{
+  XML_iterate_open(p,tag)
+    if (tag.name == "recent") {
+      _most_recent.push_back(QtPersistent::extract_s(p));
+    }
+  XML_iterate_close(QtTree,tag);
+}
+
 const QString& QtTree::entry() const { return _entry; }
 
 void QtTree::clear()
