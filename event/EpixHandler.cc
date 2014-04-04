@@ -223,8 +223,11 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     unsigned nchip_columns=c.numberOfAsicsPerRow();
     unsigned nchip_rows   =c.numberOfAsicsPerColumn();
 
-    unsigned columns = nchip_columns*c.numberOfPixelsPerAsicRow() + (nchip_columns-1)*chip_margin;
-    unsigned rows    = nchip_rows   *c.numberOfRowsPerAsic()      + (nchip_rows   -1)*chip_margin;
+    unsigned columns = c.numberOfColumns() + (nchip_columns-1)*chip_margin;
+    //    unsigned rows    = nchip_rows   *c.numberOfRowsPerAsic()      + (nchip_rows   -1)*chip_margin;
+    unsigned rows    = c.numberOfRows()      + (nchip_rows   -1)*chip_margin;
+    
+    unsigned rowsPerAsic = c.numberOfRows()/c.numberOfAsicsPerColumn();
 
     { int ppb = 1;
       DescImage desc(det, (unsigned)0, ChannelID::name(det),
@@ -234,9 +237,9 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
       for(unsigned i=0; i<nchip_rows; i++)
 	for(unsigned j=0; j<nchip_columns; j++) {
 	  float x0 = j*(c.numberOfPixelsPerAsicRow()+chip_margin);
-	  float y0 = i*(c.numberOfRowsPerAsic()     +chip_margin);
+	  float y0 = i*(rowsPerAsic+chip_margin);
 	  float x1 = x0+c.numberOfPixelsPerAsicRow();
-	  float y1 = y0+c.numberOfRowsPerAsic();
+	  float y1 = y0+rowsPerAsic;
 	  _desc.add_frame(desc.xbin(x0),desc.ybin(y0),
                           desc.xbin(x1)-desc.xbin(x0),
                           desc.ybin(y1)-desc.ybin(y0));
@@ -253,7 +256,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     unsigned aMask = c.asicMask();
     if ((aMask&(aMask-1))==0) {
       columns = c.numberOfPixelsPerAsicRow();
-      rows    = c.numberOfRowsPerAsic()     ;
+      rows    = rowsPerAsic;
 
       int ppb = image_ppbin(columns,rows);
       DescImage desc(det, (unsigned)0, ChannelID::name(det),
@@ -263,7 +266,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
       float x0 = 0;
       float y0 = 0;
       float x1 = x0+c.numberOfPixelsPerAsicRow();
-      float y1 = y0+c.numberOfRowsPerAsic();
+      float y1 = y0+rowsPerAsic;
       _desc.add_frame(desc.xbin(x0),desc.ybin(y0),
                       desc.xbin(x1)-desc.xbin(x0),
                       desc.ybin(y1)-desc.ybin(y0));
@@ -280,9 +283,9 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
       for(unsigned i=0; i<nchip_rows; i++)
 	for(unsigned j=0; j<nchip_columns; j++) {
 	  float x0 = j*(c.numberOfPixelsPerAsicRow()+chip_margin);
-	  float y0 = i*(c.numberOfRowsPerAsic()     +chip_margin);
+	  float y0 = i*(rowsPerAsic+chip_margin);
 	  float x1 = x0+c.numberOfPixelsPerAsicRow();
-	  float y1 = y0+c.numberOfRowsPerAsic();
+	  float y1 = y0+rowsPerAsic;
 	  _desc.add_frame(desc.xbin(x0),desc.ybin(y0),
                           desc.xbin(x1)-desc.xbin(x0),
                           desc.ybin(y1)-desc.ybin(y0));
@@ -341,6 +344,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     const Pds::Epix::ElementV1& f = *reinterpret_cast<const Pds::Epix::ElementV1*>(payload);
     const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
 
+    unsigned rowsPerAsic = _config.numberOfRows()/_config.numberOfAsicsPerColumn();
+
     _entry->reset();
     const DescImage& d = _entry->desc();
 
@@ -365,8 +370,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       while((aMask&(1<<asic))==0)
 	asic++;
       unsigned i = _asicLocation[asic].row;
-      for(unsigned j=0; j<_config.numberOfRowsPerAsic(); j++) {
-	unsigned r = i*_config.numberOfRowsPerAsic()+j;
+      for(unsigned j=0; j<rowsPerAsic; j++) {
+	unsigned r = i*rowsPerAsic+j;
 	unsigned m = _asicLocation[asic].col;
 	const uint16_t* d = & a[r][m*_config.numberOfPixelsPerAsicRow()];
 	const unsigned* p_hi = &pa   [j][0];
@@ -382,8 +387,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     }
     else {
       for(unsigned i=0; i<_config.numberOfAsicsPerColumn(); i++)
-	for(unsigned j=0; j<_config.numberOfRowsPerAsic(); j++) {
-	  unsigned r = i*_config.numberOfRowsPerAsic()+j;
+	for(unsigned j=0; j<rowsPerAsic; j++) {
+	  unsigned r = i*rowsPerAsic+j;
 	  for(unsigned m=0; m<_config.numberOfAsicsPerRow(); m++) {
 	    unsigned fn = i*_config.numberOfAsicsPerRow()+m;
 	    if (_config.asicMask() & 1<<_asic_map[fn]) {
@@ -475,7 +480,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	if ((_config.asicMask() & 1<<_asic_map[k])==0) 
 	  continue;
 	ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-	unsigned r = (k/_config.numberOfAsicsPerRow()) * _config.numberOfRowsPerAsic();
+	unsigned r = (k/_config.numberOfAsicsPerRow()) * rowsPerAsic;
 	unsigned m = (k%_config.numberOfAsicsPerRow()) * _config.numberOfPixelsPerAsicRow();
 	for(unsigned y=0; y<e.shape()[0]; y++,r++) {
 	  uint32_t*        v = &e    [y][0];
