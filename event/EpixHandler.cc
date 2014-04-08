@@ -5,6 +5,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/data/ImageMask.hh"
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/psddl/epix.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
@@ -404,12 +405,14 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	const uint16_t* d = & a[r][m*_config.numberOfPixelsPerAsicRow()];
 	const unsigned* p_hi = &pa   [j][0];
 	const unsigned* p_lo = &pa_lo[j][0];
+        const unsigned* s = & _status[r][m*_config.numberOfPixelsPerAsicRow()];
 	const SubFrame& fr = _desc.frame(0);
 	for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
-	  unsigned v = (d[k]&0x4000) ? 
-	    unsigned(d[k]&0x3fff) + p_lo[k] :
-	    unsigned(d[k]&0x3fff) + p_hi[k];
-	  _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
+          unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
+                                  unsigned(d[k]&0x3fff) + p_lo[k] :
+                                  unsigned(d[k]&0x3fff) + p_hi[k]) :
+            offset;
+          _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
 	}
       }
     }
@@ -424,12 +427,14 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	      const uint16_t* d    = &a    [r][q];
 	      const unsigned* p_hi = &pa   [r][q];
 	      const unsigned* p_lo = &pa_lo[r][q];
+              const unsigned* s    = & _status[r][m*_config.numberOfPixelsPerAsicRow()];
 	      const SubFrame& fr = _desc.frame(fn);
 	      for(unsigned k=0; k<_config.numberOfPixelsPerAsicRow(); k++) {
-		unsigned v = (d[k]&0x4000) ? 
-		  unsigned(d[k]&0x3fff) + p_lo[k] :
-		  unsigned(d[k]&0x3fff) + p_hi[k];
-		_entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
+                unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
+                                        unsigned(d[k]&0x3fff) + p_lo[k] :
+                                        unsigned(d[k]&0x3fff) + p_hi[k]) :
+                  offset;
+                _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
 	      }
 	    }
 	  }
@@ -545,12 +550,28 @@ void EpixHandler::_damaged() { if (_entry) _entry->invalid(); }
 void EpixHandler::_load_pedestals()
 {
   const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
+  _status       = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
   _pedestals    = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
   _pedestals_lo = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
   _offset       = make_ndarray<unsigned>(_config.numberOfRows(),_config.numberOfColumns());
   for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
   EntryImage* p = _pentry;
+  if (FrameCalib::load_pedestals(p,0,"sta")) {
+    for(unsigned *a=_status.begin(), *b=p->contents(); a!=_status.end(); *a++=*b++) ;
+
+    const DescImage& d = _entry->desc();
+    ImageMask mask(d.nbinsy(),d.nbinsx());
+    for(unsigned i=0; i<_status.shape()[0]; i++)
+      for(unsigned j=0; j<_status.shape()[1]; j++)
+        if (_status[i][j])
+          mask.fill(i,j);
+    mask.update();
+    _entry->desc().set_mask(mask);
+  }
+  else
+    for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
+
   if (FrameCalib::load_pedestals(p,offset,"ped")) {
     for(unsigned *a=_pedestals.begin(), *b=p->contents(); a!=_pedestals.end(); *a++=*b++) ;
   }

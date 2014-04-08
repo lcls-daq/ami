@@ -56,3 +56,10 @@ libsrcs_AmiEpics := AmiEpics.cc CspadTHandler.cc CspadMiniTHandler.cc PrincetonT
 libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_AmiEpics := epics/ca
 
+#tgtnames := dat_to_msk
+tgtsrcs_dat_to_msk := dat_to_msk.cc
+tgtincs_dat_to_msk := ndarray/include boost/include
+
+#tgtnames := dat_to_gain
+tgtsrcs_dat_to_gain := dat_to_gain.cc
+tgtincs_dat_to_gain := ndarray/include boost/include

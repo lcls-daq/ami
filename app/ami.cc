@@ -17,7 +17,7 @@ static void usage(char* progname) {
 	  "          -L <user module plug-in path>\n"
           "          [-D (post detector diagnostics)]\n"
           "          [-R <pixels>] (set resolution, no pixels arg is full resolution)\n"
-          "          [-C] (use offline calibs)\n"
+          "          [-E <expt name>] (set experiment for offline calib access)\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
   bool offline=false;
   std::vector<char *> module_names;
 
-  while ((c = getopt(argc, argv, "?hfDCR::p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDR::E:p:n:i:s:L:")) != -1) {
     switch (c) {
       case 'f':
         offline=true;
@@ -56,8 +56,9 @@ int main(int argc, char* argv[]) {
         else
           Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
         break;
-      case 'C':
+      case 'E':
         Ami::Calib::use_offline(true);
+        Ami::Calib::set_experiment(optarg);
         break;
       case 'D':
         Ami::EventHandler::post_diagnostics(true);

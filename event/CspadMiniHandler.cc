@@ -251,7 +251,7 @@ namespace CspadMiniGeometry {
 		      const int16_t*     data,
                       Ami::FeatureCache& cache,
                       unsigned           index) const = 0;
-    virtual void set_pedestals(FILE*) { printf("v set_pedestals\n"); }
+    virtual void set_pedestals(double*) { printf("v set_pedestals\n"); }
   public:
     virtual void boundary(unsigned& x0, unsigned& x1, 
 			  unsigned& y0, unsigned& y1) const = 0;
@@ -264,21 +264,15 @@ namespace CspadMiniGeometry {
   class AsicP : public Asic {
   public:
     AsicP(double x, double y, unsigned ppbin, 
-          FILE* ped, FILE* status, FILE* gain, FILE* sigma,
+          double* ped, double* status, double* gain, double* sigma,
           const ndarray<const uint16_t,2>& gmap, unsigned imap) :
       Asic(x,y,ppbin)
     { // load offset-pedestal 
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      char* pEnd;
-
       if (ped) {
         int16_t* off = _off;
         for(unsigned col=0; col<Columns; col++) {
-          getline(&linep, &sz, ped);
-          *off++ = Offset - int16_t(strtod(linep,&pEnd));
-          for (unsigned row=1; row < Rows; row++)
-            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
+          for (unsigned row=0; row < Rows; row++)
+            *off++ = Offset - int16_t(*ped++);
         }
       }
       else {
@@ -292,11 +286,8 @@ namespace CspadMiniGeometry {
         int16_t*  off = _off;
         int16_t** sta = _sta;
         for(unsigned col=0; col<Columns; col++) {
-          getline(&linep, &sz, status);
-          if (strtoul(linep,&pEnd,0)) *sta++ = off;
-          off++;
-          for (unsigned row=1; row < Rows; row++, off++)
-            if (strtoul(pEnd,&pEnd,0)) *sta++ = off;
+          for (unsigned row=0; row < Rows; row++, off++)
+            if (*status++) *sta++ = off;
         }
       }
       else
@@ -304,19 +295,15 @@ namespace CspadMiniGeometry {
 
       if (gain) {
         float* gn = _gn;
-        for(unsigned col=0; col<Columns; col++) {
-          getline(&linep, &sz, gain);
-          *gn++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row<Rows; row++)
-            *gn++ = strtod(pEnd,&pEnd);
-        }
+        for(unsigned col=0; col<Columns; col++)
+          for (unsigned row=0; row<Rows; row++)
+            *gn++ = *gain++;
       }
       else {
         float* gn = _gn;
-        for(unsigned col=0; col<Columns; col++) {
+        for(unsigned col=0; col<Columns; col++)
           for (unsigned row=0; row<Rows; row++)
             *gn++ = 1.;
-        }
       }
       
       { float* gn = _gn;
@@ -332,10 +319,8 @@ namespace CspadMiniGeometry {
         float* sg = _sg;
         float* gn = _gn;
         for(unsigned col=0; col<Columns; col++) {
-          getline(&linep, &sz, sigma);
-          *sg++ = strtod(linep,&pEnd);
-          for (unsigned row=1; row<Rows; row++)
-            *sg++ = strtod(pEnd,&pEnd)*(*gn++);
+          for (unsigned row=0; row<Rows; row++)
+            *sg++ = *sigma++*(*gn++);
         }
       }
       else {
@@ -345,25 +330,14 @@ namespace CspadMiniGeometry {
             *sg++ = 0;
         }
       }
-      
-      if (linep) {
-        free(linep);
-      }
     }
-    void set_pedestals(FILE* ped)
+    void set_pedestals(double* ped)
     {
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      char* pEnd;
-
       if (ped) {
         int16_t* off = _off;
-        for(unsigned col=0; col<Columns; col++) {
-          getline(&linep, &sz, ped);
-          *off++ = Offset - int16_t(strtod(linep,&pEnd));
-          for (unsigned row=1; row<Rows; row++)
-            *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
-        }
+        for(unsigned col=0; col<Columns; col++)
+          for (unsigned row=0; row<Rows; row++)
+            *off++ = Offset - int16_t(*ped++);
       }
       else {
         int16_t* off = _off;
@@ -371,9 +345,6 @@ namespace CspadMiniGeometry {
           for (unsigned row=0; row<Rows; row++)
             *off++ = Offset;
       }
-
-      if (linep)
-        free(linep);
     }
   protected:
     int16_t  _off [Columns*Rows];
@@ -388,7 +359,7 @@ namespace CspadMiniGeometry {
   class classname : public AsicP {					\
   public:								\
     classname(double x, double y,                                       \
-              FILE* p, FILE* s, FILE* g, FILE* r,                       \
+              double* p, double* s, double* g, double* r,               \
               const ndarray<const uint16_t,2>& gmap, unsigned imap)     \
       : AsicP(x,y,PPB,p,s,g,r,gmap,imap) {}                             \
     void boundary(unsigned& dx0, unsigned& dx1,				\
@@ -471,7 +442,7 @@ namespace CspadMiniGeometry {
     TwoByTwo(double x, double y, unsigned ppb, Rotation r[3], 
 	     const Ami::Cspad::TwoByTwoAlignment& a,
              const ndarray<const uint16_t,2>& gmap, 
-             FILE* f=0, FILE* s=0, FILE* g=0, FILE* rms=0) 
+             double* f=0, double* s=0, double* g=0, double* rms=0) 
     {
       for(unsigned i=0,imap=0; i<2; i++,imap+=2) {
         //  rotate in place
@@ -493,6 +464,11 @@ namespace CspadMiniGeometry {
         case D270: asic[i] = new  AsicD270B1P(tx,ty,f,s,g,rms,gmap,imap); break;
         default  : break;
         }
+
+        if (f) f+=Columns*Rows;
+        if (s) s+=Columns*Rows;
+        if (g) g+=Columns*Rows;
+        if (rms) rms+=Columns*Rows;
       }
     }
     ~TwoByTwo() {  for(unsigned i=0; i<2; i++) delete asic[i]; }
@@ -517,10 +493,10 @@ namespace CspadMiniGeometry {
       asic[0]->fill(image,&element[0][0][0],cache,index+0);
       asic[1]->fill(image,&element[0][0][1],cache,index+2);
     }
-    void set_pedestals(FILE* f)
+    void set_pedestals(double* f)
     {
       asic[0]->set_pedestals(f);
-      asic[1]->set_pedestals(f);
+      asic[1]->set_pedestals(f ? f+Columns*Rows:0);
     }
   public:
     Asic* asic[2];
@@ -689,10 +665,10 @@ namespace CspadMiniGeometry {
   public:
     Detector(const Src& src,
              const ConfigCache& c,
-             FILE* f,    // offsets
-             FILE* s,    // status
-             FILE* g,    // gain
-             FILE* rms,  // noise
+             double* f,    // offsets
+             double* s,    // status
+             double* g,    // gain
+             double* rms,  // noise
              FILE* gm,   // geometry
              unsigned max_pixels,
 	     const CspadTemp& therm) :
@@ -756,7 +732,8 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap(),f,s,g,rms);
+      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap(),
+                          f,s,g,rms);
     }
     ~Detector() { delete mini; }
 
@@ -825,7 +802,7 @@ namespace CspadMiniGeometry {
     {
       mini->fill(image, (1<<2)-1, v0, v1);
     }
-    void set_pedestals(FILE* f)
+    void set_pedestals(double* f)
     {
       mini->set_pedestals(f);
     }
@@ -867,8 +844,8 @@ namespace CspadMiniGeometry {
 
   class CspadMiniPFF : public Ami::PeakFinderFn {
   public:
-    CspadMiniPFF(FILE* gain,
-                 FILE* rms,
+    CspadMiniPFF(bool gain,
+                 bool rms,
                  const Detector*  detector,
                  Ami::DescImage& image) :
       _detector(*detector),
@@ -877,8 +854,8 @@ namespace CspadMiniGeometry {
       _values  (new Ami::EntryImage(image))
     {
       image.pedcalib (true);
-      image.gaincalib(gain!=0);
-      image.rmscalib (rms !=0);
+      image.gaincalib(gain);
+      image.rmscalib (rms );
     }
     virtual ~CspadMiniPFF()
     {
@@ -969,6 +946,39 @@ bool CspadMiniHandler::used() const
 	  (_detector && _detector->used()));
 }
 
+//
+//  accomodate the different calib file formats
+//
+static ndarray<double,3> get_calib(FILE* f)
+{
+  ndarray<double,3> a;
+  if (f) {
+    a = make_ndarray<double>(2,Columns,Rows);
+    
+    size_t sz = 8 * 1024;
+    char* linep = (char *)malloc(sz);
+    getline(&linep, &sz, f);
+    double v;
+    if (sscanf(linep,"%lf %lf %lf",&v,&v,&v)==2) {
+      rewind(f);
+      double* p0 = &a[0][0][0];
+      double* p1 = &a[1][0][0];
+      while(p1 < a.end()) {
+        fscanf(f,"%lf %lf",p0,p1);
+        p0++;
+        p1++;
+      }
+    }
+    else {
+      rewind(f);
+      for(double* p=a.begin(); p<a.end(); p++)
+        fscanf(f,"%lf",p);
+    }
+    fclose(f);
+  }
+  return a;
+}
+
 void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   //
@@ -979,48 +989,46 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   char oname2[NameSize];
 
   const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
-  FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
-  FILE *s = Calib::fopen(dInfo, "sta", "pixel_status");
+  ndarray<double,3> f = get_calib(Calib::fopen(dInfo, "ped", "pedestals"));
+  ndarray<double,3> s = get_calib(Calib::fopen(dInfo, "sta", "pixel_status"));
 
   sprintf(oname1,"gain.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
-  FILE *g = Calib::fopen_dual(oname1, oname2, "gain map");
+  ndarray<double,3> g = get_calib(Calib::fopen_dual(oname1, oname2, "gain map"));
 
   sprintf(oname1,"res.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
-  FILE *rms = Calib::fopen_dual(oname1, oname2, "noise");
+  ndarray<double,3> rms = get_calib(Calib::fopen_dual(oname1, oname2, "noise"));
 
   sprintf(oname1,"geo.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
-  FILE *gm = Calib::fopen_dual(oname1, oname2, "geometry");
+  FILE* gm = Calib::fopen_dual(oname1, oname2, "geometry");
 
   CspadMiniGeometry::ConfigCache cfg(type,payload);
 
-  _create_entry( cfg,f,s,g,rms,gm, 
+  _create_entry( cfg,
+                 f.size() ? f.begin():0,
+                 s.size() ? s.begin():0,
+                 g.size() ? g.begin():0,
+                 rms.size() ? rms.begin():0,
+                 gm,
                  _detector, _entry, _max_pixels);
 
   Ami::PeakFinder::register_(info().phy(),   
-                             new CspadMiniGeometry::CspadMiniPFF(g,rms,_detector,_entry->desc()));
-
-  if (f ) fclose(f);
-  if (s ) fclose(s);
-  if (g ) fclose(g);
-  if (rms) fclose(rms);
-  if (gm) fclose(gm);
+                             new CspadMiniGeometry::CspadMiniPFF(g.size(),rms.size(),
+                                                                 _detector,_entry->desc()));
 }
 
 void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
-                                     FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
+                                     double* f,
+                                     double* s,
+                                     double* g,
+                                     double* rms,
+                                     FILE* gm,
                                      CspadMiniGeometry::Detector*& detector,
                                      EntryImage*& entry, 
                                      unsigned max_pixels) 
 {
-  if (f ) rewind(f);
-  if (s ) rewind(s);
-  if (g ) rewind(g);
-  if (rms) rewind(rms);
-  if (gm) rewind(gm);
-
   if (detector)
     delete detector;
 
@@ -1030,7 +1038,7 @@ void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
   const DetInfo& det = static_cast<const DetInfo&>(info());
   DescImage desc(det, ChannelID::name(det,0), "photons",
                  detector->xpixels()/ppb, detector->ypixels()/ppb, 
-                 ppb, ppb,
+                 ppb, ppb, 
                  f!=0, g!=0, false);
   desc.set_scale(pixel_size*1e3,pixel_size*1e3);
     
@@ -1066,11 +1074,10 @@ void CspadMiniHandler::_event    (Pds::TypeId, const void* payload, const Pds::C
 
     if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
       const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
-      FILE *f = Calib::fopen(dInfo, "ped", "pedestals", true);
-      if (f) {
-        _detector->set_pedestals(f);
+      ndarray<double,3> f = get_calib(Calib::fopen(dInfo, "ped", "pedestals", true));
+      if (f.size()) {
+        _detector->set_pedestals(f.begin());
         _entry->desc().options( _entry->desc().options()&~CspadCalib::option_reload_pedestal() );
-        fclose(f);
       }
     }
 

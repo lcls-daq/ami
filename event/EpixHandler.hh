@@ -41,6 +41,7 @@ namespace Ami {
     EntryImage*         _pentry;
     char*               _config_buffer;
     unsigned            _options;
+    ndarray<unsigned,2> _status;
     ndarray<unsigned,2> _pedestals;
     ndarray<unsigned,2> _pedestals_lo;
     ndarray<unsigned,2> _offset;

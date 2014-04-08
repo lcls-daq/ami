@@ -10,10 +10,12 @@
 #include <iomanip>
 #include <vector>
 
+#define DBUG
+
 static std::string onlRoot("/reg/g/pcds/pds/");
 static std::string offRoot("/reg/d/psdm/");
 static std::string _expt;
-static int         _run =0;
+static int         _run =0x7fffffff;
 static bool        _use_offline=false;
 static bool        _use_test   =false;
 
@@ -121,6 +123,11 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   if (!_expt.empty() && offCalibClass[info.device()]) {
     path4 = offl_path(std::string("./"),info,off_calib_type);
   }
+
+#ifdef DBUG
+  printf("Trying paths [%s] [%s] [%s] [%s] (%s)\n",
+         path1.c_str(), path2.c_str(), path3.c_str(), path4.c_str(), _expt.c_str());
+#endif
 
   //  Try to get NFS client cache coherency
   char path[256];
@@ -248,9 +255,11 @@ std::string offl_path(std::string basepath,
     << Pds::DetInfo::name(info.device  ()) << "." << info.devId()
     << "/" << off_calib_type << "/*";
 
-  char buff[256];
+  char buff[512];
   glob_t g;
   glob(o.str().c_str(),0,0,&g);
+
+  int last_begin = 0;
 
   for(unsigned i=0; i<g.gl_pathc; i++) {
     std::string base(basename(strcpy(buff,g.gl_pathv[i])));
@@ -276,8 +285,12 @@ std::string offl_path(std::string basepath,
       if (endPtr==endstr.c_str() || end < _run)
         continue;
     }
+
+    if (begin < last_begin)
+      continue;
+
+    last_begin = begin;
     path = std::string(g.gl_pathv[i]);
-    break;
   }
   globfree(&g);
   return path;
