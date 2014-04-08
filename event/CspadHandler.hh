@@ -2,6 +2,7 @@
 #define Ami_CspadHandler_hh
 
 #include "ami/event/EventHandlerF.hh"
+#include "ami/event/CspadTemp.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -46,6 +47,7 @@ namespace Ami {
     CspadGeometry::Detector* _detector;
     CspadGeometry::Detector* _unbinned_detector;
     unsigned             _options;
+    CspadTemp            _therm;
   };
 };
 

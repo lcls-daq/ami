@@ -26,7 +26,6 @@ static const double t25    = 10000.0;
 static const double k0     = 273.15;
 static const double vmax   = 3.3;
 static const double vref   = 2.5;
-static const double rdiv   = 20000;
 
 // Temp range
 static const double minTemp = -50;
@@ -35,12 +34,14 @@ static const double incTemp = 0.01;
 
 // Conversion table
 static const unsigned int adcCnt = 4096;
-static double tempTable[adcCnt];
 
 #include <stdio.h>
 
 // Constructor
-CspadTemp::CspadTemp ( ) {
+CspadTemp::CspadTemp ( double rdiv ) :
+  _rdiv(rdiv),
+  _tempTable(new double[adcCnt]) 
+{
    double       temp;
    double       tk;
    double       res;
@@ -51,35 +52,31 @@ CspadTemp::CspadTemp ( ) {
    while ( temp < maxTemp ) {
       tk = k0 + temp;
       res = t25 * exp(coeffA+(coeffB/tk)+(coeffC/(tk*tk))+(coeffD/(tk*tk*tk)));      
-      volt = (res*vmax)/(rdiv+res);
+      volt = (res*vmax)/(_rdiv+res);
       idx = (int)((volt / vref) * (double)(adcCnt-1));
-      if ( idx < adcCnt ) tempTable[idx] = temp; 
+      if ( idx < adcCnt ) _tempTable[idx] = temp; 
       temp += incTemp;
    }
 }
 
-static CspadTemp* _instance = 0;
-
-CspadTemp& CspadTemp::instance() { 
-  if (!_instance)
-    _instance = new CspadTemp;
-  return *_instance;
+CspadTemp::~CspadTemp() {
+  delete[] _tempTable;
 }
 
 // Get Resistance from adc value
-double CspadTemp::getResist (unsigned adcValue)
+double CspadTemp::getResist (unsigned adcValue) const
 {
    double v;
    if ( adcValue < adcCnt) {
       v = getVoltage(adcValue);
-      return((v * rdiv) / (vmax - v));
+      return((v * _rdiv) / (vmax - v));
    }
    else return(0);
 }
 
 
 // Get Voltage from adc value
-double CspadTemp::getVoltage (unsigned adcValue)
+double CspadTemp::getVoltage (unsigned adcValue) const
 {
    if ( adcValue < adcCnt) return(((double)adcValue / (double)(adcCnt-1)) * vref);
    else return(0);
@@ -87,9 +84,9 @@ double CspadTemp::getVoltage (unsigned adcValue)
 
 
 // Get Temperature from adc value, deg C
-double CspadTemp::getTemp (unsigned adcValue)
+double CspadTemp::getTemp (unsigned adcValue) const
 {
-   if ( adcValue < adcCnt) return(tempTable[adcValue]);
+   if ( adcValue < adcCnt) return(_tempTable[adcValue]);
    else return(0);
 }
 

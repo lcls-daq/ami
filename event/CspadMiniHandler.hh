@@ -2,6 +2,7 @@
 #define Ami_CspadMiniHandler_hh
 
 #include "ami/event/EventHandler.hh"
+#include "ami/event/CspadTemp.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 
 #include <stdio.h>
@@ -45,6 +46,7 @@ namespace Ami {
     FeatureCache&        _cache;
     unsigned             _max_pixels;
     unsigned             _options;
+    CspadTemp            _therm;
   };
 };
 

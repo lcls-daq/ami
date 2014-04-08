@@ -2,7 +2,6 @@
 #include "CspadAlignment.hh"
 #include "CspadAlignment_Commissioning.hh"
 
-#include "ami/event/CspadTemp.hh"
 #include "ami/event/CspadCalib.hh"
 #include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
@@ -38,6 +37,7 @@ static const double  dOffset = double(Offset);
 static const double pixel_size = 110e-6;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
+static const double RDIV = 20000;
 
 static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
@@ -1017,10 +1017,12 @@ namespace CspadGeometry {
              FILE* rms,  // noise
              FILE* gm,   // geometry
              unsigned max_pixels,
-             bool     full_resolution) :
+             bool     full_resolution,
+	     const CspadTemp& therm) :
       _hdl   (hdl),
       _src   (src),
-      _config(c)
+      _config(c),
+      _therm (therm)
     {
       unsigned smask = 
         (_config.roiMask(0)<< 0) |
@@ -1192,7 +1194,7 @@ namespace CspadGeometry {
 
           for(int a=0; a<4; a++)
             cache.cache(_feature[20*q+a],
-                        CspadTemp::instance().getTemp(temp[a]));
+                        _therm.getTemp(temp[a]));
 
           //  Calculate integral
           if (image.desc().options()&CspadCalib::option_post_integral()) {
@@ -1264,6 +1266,7 @@ namespace CspadGeometry {
     mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;
+    const CspadTemp& _therm;
   };
 
   class CspadPFF : public Ami::PeakFinderFn {
@@ -1332,7 +1335,8 @@ CspadHandler::CspadHandler(const Pds::DetInfo& info, FeatureCache& features) :
   _unbinned_entry(0),
   _detector(0),
   _unbinned_detector(0),
-  _options   (0)
+  _options   (0),
+  _therm     (RDIV)
 {
   unsigned s = sizeof(CspadGeometry::off_no_ped)/sizeof(int16_t);
   for (unsigned i=0; i<s; i++) {
@@ -1430,7 +1434,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution());
+  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution(),_therm);
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

@@ -42,6 +42,7 @@ static const unsigned Columns = CsPad2x2::ColumnsPerASIC;
 static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
+static const double RDIV = 20000;
 
 static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
@@ -693,9 +694,11 @@ namespace CspadMiniGeometry {
              FILE* g,    // gain
              FILE* rms,  // noise
              FILE* gm,   // geometry
-             unsigned max_pixels) :
+             unsigned max_pixels,
+	     const CspadTemp& therm) :
       _src   (src),
-      _config(c)
+      _config(c),
+      _therm (therm)
     {
       //  Determine layout : binning, origin
       double x,y;
@@ -795,7 +798,7 @@ namespace CspadMiniGeometry {
 
       for(int a=0; a<4; a++)
         _cache->cache(_feature[a],
-                      CspadTemp::instance().getTemp(temp[a]));
+                      _therm.getTemp(temp[a]));
 
       mini->fill(image,data,*_cache,_feature[4]);
 
@@ -859,6 +862,7 @@ namespace CspadMiniGeometry {
     mutable int _feature[NumFeatures];
     unsigned _ppb;
     unsigned _pixels;
+    const CspadTemp& _therm;
   };
 
   class CspadMiniPFF : public Ami::PeakFinderFn {
@@ -927,7 +931,8 @@ CspadMiniHandler::CspadMiniHandler(const Pds::DetInfo& info, FeatureCache& featu
   _detector(0),
   _cache(features),
   _max_pixels(max_pixels),
-  _options   (0)
+  _options   (0),
+  _therm     (RDIV)
 {
   unsigned s = sizeof(CspadMiniGeometry::off_no_ped)/sizeof(int16_t);
   for (unsigned i=0; i<s; i++) { 
@@ -1019,7 +1024,7 @@ void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadMiniGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels);
+  detector = new CspadMiniGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels,_therm);
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

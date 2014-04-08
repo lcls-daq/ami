@@ -2,7 +2,6 @@
 
 #include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
-#include "ami/event/CspadTemp.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
@@ -18,6 +17,7 @@ using namespace Ami;
 
 static const unsigned offset=1<<16;
 static const double  doffset=double(offset);
+static const double  RDIV=30000;
 
 static const Pds::TypeId Config_Type = Pds::TypeId(Pds::TypeId::Id_EpixConfig,1);
 static const Pds::TypeId Data_Type   = Pds::TypeId(Pds::TypeId::Id_EpixElement,1);
@@ -36,7 +36,6 @@ typedef struct AsicLocation AsicLocation_s;
 static const AsicLocation_s _asicLocation[] = { {1,1}, {0,1}, {0,0}, {1,0} };
 
 static double _tps_temp(const uint16_t q);
-static double _thm_temp(const uint16_t q);
 
 namespace EpixAmi {
   class MapElement {
@@ -159,7 +158,8 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   _config_buffer(0),
   _options      (0),
   _pedestals    (make_ndarray<unsigned>(1,1)),
-  _pedestals_lo (make_ndarray<unsigned>(1,1))
+  _pedestals_lo (make_ndarray<unsigned>(1,1)),
+  _therm        (RDIV)
 {
 }
 
@@ -178,16 +178,29 @@ void EpixHandler::rename(const char* s)
   if (_entry) {
     _entry->desc().name(s);
     char buff[64];
+    int index=0;
     const Pds::Epix::ConfigV1& _config = *new(_config_buffer) Pds::Epix::ConfigV1;
     unsigned nAsics = _config.numberOfAsics();
     for(unsigned a=0; a<nAsics; a++) {
-      sprintf(buff,"%s:TempRelAsic%d",s,a);
-      _cache.rename(_feature[a],buff);
+      sprintf(buff,"%s:AsicMonitor%d",s,a);
+      _cache.rename(_feature[index++],buff);
+    }
+    if (_config.lastRowExclusions()) {
+      sprintf(buff,"%s:Epix:AVDD",s);
+      _cache.rename(_feature[index++],buff);
+      sprintf(buff,"%s:Epix:DVDD",s);
+      _cache.rename(_feature[index++],buff);
+      sprintf(buff,"%s:Epix:AnaCardT",s);
+      _cache.rename(_feature[index++],buff);
+      sprintf(buff,"%s:Epix:StrBackT",s);
+      _cache.rename(_feature[index++],buff);
+      sprintf(buff,"%s:Epix:Humidity",s);
+      _cache.rename(_feature[index++],buff);
     }
     if (Ami::EventHandler::post_diagnostics())
       for(unsigned a=0; a<16; a++) {
 	sprintf(buff,"%s:CommonMode%d",s,_channel_map[a]);
-	_cache.rename(_feature[a+_config.numberOfAsics()],buff);
+	_cache.rename(_feature[index++],buff);
       }
   }
 }
@@ -296,19 +309,34 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     }
 
     unsigned nFeatures = 4;
+    if (c.lastRowExclusions())
+      nFeatures += 5;
     if (Ami::EventHandler::post_diagnostics())
       nFeatures += 16;
     _feature = make_ndarray<int>(nFeatures);
 
     char buff[64];
+    int index=0;
     for(unsigned a=0; a<c.numberOfAsics(); a++) {
-      sprintf(buff,"%s:Epix:TempRelAsic%d",detname,a);
-      _feature[a] = _cache.add(buff);
+      sprintf(buff,"%s:Epix:AsicMonitor:%d",detname,a);
+      _feature[index++] = _cache.add(buff);
+    }
+    if (c.lastRowExclusions()) {
+      sprintf(buff,"%s:Epix:AVDD",detname);
+      _feature[index++] = _cache.add(buff);
+      sprintf(buff,"%s:Epix:DVDD",detname);
+      _feature[index++] = _cache.add(buff);
+      sprintf(buff,"%s:Epix:AnaCardT",detname);
+      _feature[index++] = _cache.add(buff);
+      sprintf(buff,"%s:Epix:StrBackT",detname);
+      _feature[index++] = _cache.add(buff);
+      sprintf(buff,"%s:Epix:Humidity",detname);
+      _feature[index++] = _cache.add(buff);
     }
     if (Ami::EventHandler::post_diagnostics()) {
       for(unsigned a=0; a<16; a++) {
 	sprintf(buff,"%s:Epix:CommonMode%d",detname,_channel_map[a]);
-	_feature[a+c.numberOfAsics()] = _cache.add(buff);
+	_feature[index++] = _cache.add(buff);
       }
     }
 
@@ -408,20 +436,31 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	}
     }
 
+    int index = _feature[0];
     ndarray<const uint16_t,1> temps = f.temperatures(_config);
-#if 0
+#if 1
     for(unsigned a=0; a<_config.numberOfAsics(); a++)
-      _cache.cache(_feature[a],_tps_temp(temps[a]));
+      _cache.cache(index++,double(temps[a]));
 #else
     if (aMask&1)
-      _cache.cache(_feature[0],_tps_temp(temps[0]));
+      _cache.cache(index++,_tps_temp(temps[0]));
     if (aMask&2)
-      _cache.cache(_feature[1],_thm_temp(temps[1]));
+      _cache.cache(index++,_therm.getTemp(temps[1]));
     if (aMask&4)
-      _cache.cache(_feature[2],_thm_temp(temps[2]));
+      _cache.cache(index++,_therm.getTemp(temps[2]));
     if (aMask&8)
-      _cache.cache(_feature[3],_tps_temp(temps[3]));
+      _cache.cache(index++,_tps_temp(temps[3]));
 #endif
+
+    if (_config.lastRowExclusions()) {
+      ndarray<const uint16_t,2> e = f.excludedRows(_config);
+      const uint16_t* last = &e[e.shape()[0]-1][0];
+      _cache.cache(index++, double(last[2])*0.00183);
+      _cache.cache(index++, double(last[3])*0.00183);
+      _cache.cache(index++, double(last[4])*(-0.0194) + 78.393);
+      _cache.cache(index++, _therm.getTemp(last[6]));
+      _cache.cache(index++, double(last[7])*0.0291 - 23.8);
+    }
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
@@ -436,7 +475,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
             ndarray<uint32_t,1> s(&e[y][m*shape[1]],&shape[1]);
             int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
             if (Ami::EventHandler::post_diagnostics() && k==3 && m==0 && y<80)
-              _cache.cache(_feature[(y%16)+_config.numberOfAsics()],double(fn));
+              _cache.cache(_feature[(y%16)+index],double(fn));
             uint32_t* v = &s[0];
             for(unsigned x=0; x<shape[1]; x++)
               v[x] -= fn;
@@ -463,7 +502,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	      v[x] -= fn;
 	  }
 	  if (Ami::EventHandler::post_diagnostics())
-	    _cache.cache(_feature[4*k+m+_config.numberOfAsics()],double(fn));
+	    _cache.cache(_feature[4*k+m+index],double(fn));
 	}
       }	
     }
@@ -555,8 +594,4 @@ double _tps_temp(const uint16_t q)
   return double(q)*degCperADU + t0;
 }
 
-double _thm_temp(const uint16_t q)
-{
-  return CspadTemp::instance().getTemp(q);
-}
 

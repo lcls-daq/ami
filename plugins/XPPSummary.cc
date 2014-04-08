@@ -19,11 +19,14 @@
 #include <string>
 #include <iostream>
 
+static const double RDIV=20000;
+
 using namespace Ami;
 using namespace std;
 
-XPPSummary::XPPSummary() : _cds(0) {}
-XPPSummary::~XPPSummary() {}
+XPPSummary::XPPSummary() : _cds(0), _cspad_temp_conv(new CspadTemp(RDIV))
+ {}
+XPPSummary::~XPPSummary() { delete _cspad_temp_conv; }
 
 const char* XPPSummary::name() const { return "XPPPlots"; }
 void XPPSummary::clock    (const Pds::ClockTime& clk) { _clk=clk; }
@@ -176,7 +179,6 @@ void XPPSummary::_configure(const Pds::Src&       src,
     //   } else {
     //    printf("XPPSummary found ALSO %s\n",Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(src)));
   }
-  _cspad_temp_conv->instance();
 }
 
 bool matches(const Pds::Src& a, const Pds::Src& b)

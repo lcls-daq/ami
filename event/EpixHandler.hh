@@ -2,6 +2,7 @@
 #define Ami_EpixHandler_hh
 
 #include "ami/event/EventHandler.hh"
+#include "ami/event/CspadTemp.hh"
 #include "ami/data/DescImage.hh"
 
 #include "ndarray/ndarray.h"
@@ -49,6 +50,7 @@ namespace Ami {
     ndarray<double,2>   _no_gain;
 
     ndarray<int,1>      _feature;
+    CspadTemp           _therm;
   };
 };
 

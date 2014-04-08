@@ -8,17 +8,20 @@
 #include "pdsdata/psddl/cspad.ddl.h"
 #include "pdsdata/psddl/cspad2x2.ddl.h"
 
+static const double RDIV=20000;
+
 using namespace Ami;
 
 XppBase::XppBase(const char* name, const char* short_name) :
   _cds(0),
   _fname(name),
-  _sname(short_name)
+  _sname(short_name),
+  _cspad_temp_conv(new CspadTemp(RDIV))
 {
   clear_data();
 }
 
-XppBase::~XppBase() {}
+XppBase::~XppBase() { delete _cspad_temp_conv; }
 
 const char* XppBase::name() const { return _fname; }
 
@@ -114,7 +117,6 @@ void XppBase::configure(const Pds::DetInfo&   src,
       printf("(not used)");
     }
   }
-  _cspad_temp_conv->instance(); 
 }
 
 void XppBase::configure(const Pds::BldInfo&   src,

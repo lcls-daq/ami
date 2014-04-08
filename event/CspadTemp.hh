@@ -19,22 +19,25 @@
 // Calibration Data Class
 class CspadTemp {
 
-   public:
+public:
 
-  static CspadTemp& instance();
+  // Constructor
+  CspadTemp (double rdiv);
+  // Destructor
+  ~CspadTemp();
 
-      // Get Resistance from adc value
-      double getResist (unsigned);
+  // Get Resistance from adc value
+  double getResist (unsigned) const;
 
-      // Get Voltage from adc value
-      double getVoltage (unsigned);
+  // Get Voltage from adc value
+  double getVoltage (unsigned) const;
 
-      // Get Temperature from adc value, deg C
-      double getTemp (unsigned);
+  // Get Temperature from adc value, deg C
+  double getTemp (unsigned) const;
 
 private:
-      // Constructor
-      CspadTemp ();
+  double  _rdiv;
+  double* _tempTable;
 };
 
 #endif
