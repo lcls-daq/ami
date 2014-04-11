@@ -1,6 +1,7 @@
 #include "PlotFrame.hh"
 
 #include "ami/qt/Cursors.hh"
+#include "ami/qt/Defaults.hh"
 
 #include <QtGui/QMouseEvent>
 
@@ -10,6 +11,8 @@ using namespace Ami::Qt;
 
 PlotFrame::PlotFrame(QWidget* parent) : QwtPlot(parent), _c(0)
 {
+  setMinimumSize(Defaults::instance()->plot_width(),
+                 Defaults::instance()->plot_height());
   setAutoDelete(false); 
 }
 

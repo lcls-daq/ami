@@ -16,6 +16,8 @@ namespace Ami {
       bool show_minor_grid() const;
       double image_update_rate() const;
       double other_update_rate() const;
+      int plot_width () const;
+      int plot_height() const;
       QString movie_format() const;
       int  save_precision () const;
     public:
@@ -32,6 +34,8 @@ namespace Ami {
       QCheckBox* _minor_grid;
       QLineEdit* _image_rate;
       QLineEdit* _others_rate;
+      QLineEdit* _plot_width;
+      QLineEdit* _plot_height;
       QComboBox* _movie_format_box;
       QComboBox* _save_precision;
     };

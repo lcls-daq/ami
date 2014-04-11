@@ -24,6 +24,7 @@ namespace Ami {
       void load(const char*&);
       static void save_preferences(char*&);
       static void load_preferences(const char*&);
+      static void load_favorites(char*);
     public:
       const QString& entry() const;
       void  clear();

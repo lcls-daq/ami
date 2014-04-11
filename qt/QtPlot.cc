@@ -27,7 +27,12 @@ namespace Ami {
   namespace Qt {
     class QwtLPlot : public QwtPlot {
     public:
-      QwtLPlot(const QString& name) : QwtPlot(name) { setAutoDelete(false); }
+      QwtLPlot(const QString& name) : QwtPlot(name) 
+      {
+        setMinimumSize(Defaults::instance()->plot_width(),
+                       Defaults::instance()->plot_height());
+        setAutoDelete(false); 
+      }
       ~QwtLPlot() {}
     public:
       //

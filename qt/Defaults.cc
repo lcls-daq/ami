@@ -27,6 +27,11 @@ Defaults::Defaults()
   (_others_rate = new QLineEdit("2.5"))->setMaximumWidth(40);
   new QDoubleValidator(_others_rate);
 
+  (_plot_width  = new QLineEdit("200"))->setMaximumWidth(40);
+  new QIntValidator(_plot_width);
+  (_plot_height = new QLineEdit("200"))->setMaximumWidth(40);
+  new QIntValidator(_plot_height);
+
   _movie_format_box = new QComboBox;
   _movie_format_box->addItem("jpg");
   _movie_format_box->addItem("png");
@@ -55,6 +60,18 @@ Defaults::Defaults()
     g->setLayout(l);
     layout->addWidget(g); }
 
+  { QGroupBox* g = new QGroupBox("Plot Size");
+    QGridLayout* l = new QGridLayout;
+    l->addWidget(new QLabel("Width"),0,0,::Qt::AlignRight);
+    l->addWidget(_plot_width,0,1);
+    l->addWidget(new QLabel("pixels"),0,2,::Qt::AlignLeft);
+    l->addWidget(new QLabel("Height"),1,0,::Qt::AlignRight);
+    l->addWidget(_plot_height,1,1);
+    l->addWidget(new QLabel("pixels"),1,2,::Qt::AlignLeft);
+    l->setColumnStretch(2,1);
+    g->setLayout(l);
+    layout->addWidget(g); }
+
   { QHBoxLayout* hl = new QHBoxLayout;
     hl->addWidget(new QLabel("Save data precision"));
     hl->addWidget(_save_precision);
@@ -76,6 +93,8 @@ bool Defaults::show_grid      () const { return _grid->isChecked      (); }
 bool Defaults::show_minor_grid() const { return _minor_grid->isChecked(); }
 double Defaults::image_update_rate() const { return _image_rate->text().toDouble(); }
 double Defaults::other_update_rate() const { return _others_rate->text().toDouble(); }
+int  Defaults::plot_width () const { return _plot_width ->text().toInt(); }
+int  Defaults::plot_height() const { return _plot_height->text().toInt(); }
 int  Defaults::save_precision () const { return _save_precision->currentIndex(); }
 QString Defaults::movie_format() const { return _movie_format_box->currentText(); }
 
@@ -86,6 +105,8 @@ void Defaults::save(char*& p) const
   XML_insert( p, "bool", "show_minor_grid", QtPersistent::insert(p,_minor_grid->isChecked()));
   XML_insert( p, "double", "image_rate", QtPersistent::insert(p,_image_rate->text().toDouble()));
   XML_insert( p, "double", "others_rate", QtPersistent::insert(p,_others_rate->text().toDouble()));
+  XML_insert( p, "int", "plot_width" , QtPersistent::insert(p,_plot_width ->text().toInt()));
+  XML_insert( p, "int", "plot_height", QtPersistent::insert(p,_plot_height->text().toInt()));
   XML_insert( p, "int", "save_precision", QtPersistent::insert(p,_save_precision->currentIndex()));
   XML_insert( p, "int", "movie_format", QtPersistent::insert(p,_movie_format_box->currentIndex()));
 }
@@ -103,6 +124,10 @@ void Defaults::load(const char*& p)
       _image_rate->setText( QString::number(QtPersistent::extract_d(p)) );
     else if (tag.name == "others_rate")
       _others_rate->setText( QString::number(QtPersistent::extract_d(p)) );
+    else if (tag.name == "plot_width")
+      _plot_width->setText( QString::number(QtPersistent::extract_i(p)) );
+    else if (tag.name == "plot_height")
+      _plot_height->setText( QString::number(QtPersistent::extract_i(p)) );
     else if (tag.name == "save_precision")
       _save_precision->setCurrentIndex( QtPersistent::extract_i(p) );
     else if (tag.name == "movie_format")

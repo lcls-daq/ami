@@ -194,6 +194,17 @@ DetectorSelect::DetectorSelect(const QString& label,
       delete[] buffer;
     }
   }
+  { QString fname = QString("%1/.ami_favorites").arg(getenv("HOME"));
+    FILE* f = fopen(qPrintable(fname),"r");
+    if (f) {
+      char* buffer = new char[MaxConfigSize];
+      int size;
+      if ((size=fread(buffer,1,MaxConfigSize,f))>0) {
+        buffer[size]=0;
+        QtTree::load_favorites(buffer);
+      }
+    }
+  }
 
   _autosave_timer = new QTimer(this);
   _autosave_timer->setSingleShot(true);

@@ -9,8 +9,9 @@
 using namespace Ami::Qt;
 
 static QStringList _most_recent;
-const int MOST_RECENT_DISPLAY =  5;
+const int MOST_RECENT_DISPLAY = 8;
 const int MOST_RECENT_SIZE    = 10;
+static QStringList _favorites;
 
 static void push(QStandardItem& root, 
                  const QString& name, 
@@ -160,6 +161,7 @@ void QtTree::fill(const QStringList& names)
       }
     }
 
+    root->insertRow( 0, new QStandardItem( QString("[Favorites]")) );
     root->insertRow( 0, new QStandardItem( QString("[Most Recent]")) );
   }
 
@@ -204,6 +206,16 @@ void QtTree::load_preferences(const char*& p)
       _most_recent.push_back(QtPersistent::extract_s(p));
     }
   XML_iterate_close(QtTree,tag);
+}
+
+void QtTree::load_favorites(char* p)
+{
+  char* s;
+  char* arg = strtok_r(p,"\t\n ",&s);
+  while(arg) {
+    _favorites.push_back(QString(arg));
+    arg = strtok_r(NULL,"\t\n ",&s);
+  }
 }
 
 const QString& QtTree::entry() const { return _entry; }
@@ -268,7 +280,16 @@ static bool has_child_named(const QStandardItem& root,
 void QtTree::show_tree()
 {
   _model.invisibleRootItem()->takeRow(0);
+  _model.invisibleRootItem()->takeRow(0);
 
+  QStandardItem& fav_root = *new QStandardItem( QString("[Favorites]"));
+  _model.invisibleRootItem()->insertRow(0, &fav_root);
+
+  for(int i=0; i<_favorites.size(); i++) {
+    if (has_child_named(*_model.invisibleRootItem(), _favorites[i]))
+      fav_root.appendRow( new QStandardItem(_favorites[i]) );
+  }
+  
   QStandardItem& mru_root = *new QStandardItem( QString("[Most Recent]"));
   _model.invisibleRootItem()->insertRow(0, &mru_root);
 

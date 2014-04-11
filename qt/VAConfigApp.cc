@@ -13,6 +13,8 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/RawFilter.hh"
 
+//#define DBUG
+
 using namespace Ami::Qt;
 
 VAConfigApp::VAConfigApp(QWidget* parent, 
@@ -249,7 +251,7 @@ void VAConfigApp::add_map(Ami::AbsOperator* op)
   _pplots.push_back(plot);
   _list_sem.give();
 
-  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
   connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
 #endif
   emit changed();
