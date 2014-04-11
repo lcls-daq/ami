@@ -53,7 +53,7 @@ static const char* offCalibClass[] = { NULL,                // NoDevice
                                        NULL,
                                        NULL,
                                        NULL,
-                                       NULL,
+                                       "PNCCD::CalibV1",
                                        NULL,
                                        NULL,
                                        NULL,
@@ -92,7 +92,8 @@ static void _stat64(const char* fname, struct stat64* s, bool no_cache)
 FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
                         const char* onl_calib_type,
                         const char* off_calib_type,
-                        bool no_cache)
+                        bool no_cache,
+                        bool* offl_type)
 {
   std::string path1;
   { std::ostringstream o;
@@ -143,14 +144,22 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   if (!path3.empty()) _stat64(path3.c_str(),&st3,no_cache);
   if (!path4.empty()) _stat64(path4.c_str(),&st4,no_cache);
 
-  if (_use_offline && st4.st_mtime > 0)
+  if (_use_offline && st4.st_mtime > 0) {
+    if (offl_type) *offl_type=true;
     return _fopen(path4.c_str(),no_cache);
-  if (st1.st_mtime > 0)
+  }
+  if (st1.st_mtime > 0) {
+    if (offl_type) *offl_type=false;
     return _fopen(path1.c_str(),no_cache);
-  if (_use_offline && st3.st_mtime > 0)
+  }
+  if (_use_offline && st3.st_mtime > 0) {
+    if (offl_type) *offl_type=true;
     return _fopen(path3.c_str(),no_cache);
-  if (st2.st_mtime > 0)
+  }
+  if (st2.st_mtime > 0) {
+    if (offl_type) *offl_type=false;
     return _fopen(path2.c_str(),no_cache);
+  }
 
   printf("Calib::fopen failed to open [%s,%s,%s]\n",
          path1.c_str(),path2.c_str(),path3.c_str());

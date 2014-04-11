@@ -20,9 +20,10 @@ static const int nrg_max   = 16000;
 static int nrg_bins  = (1<<14)/10;
 static int nrg_range = (1<<14)-256;
 static int nrg_min   = -256;
+#if 0
 static int ped_events= 100;
 static int ped_reject=   4;
-
+#endif
 static Pds::ClockTime __clk(1,0);
 
 namespace Ami {
@@ -466,7 +467,7 @@ void Ami::PnccdModule::ModulePlots::reset()
   // lookup pedestal
   DescImage pdsc(_info,unsigned(0),"peds",cols,rows);
   EntryImage* correct = new EntryImage(pdsc);
-  PnccdCalib::load_pedestals(correct,false,false);
+  PnccdCalib::load_pedestals(correct,Ami::D0,false);
   ndarray<const unsigned,2> ped = correct->content();
 
   for(unsigned i=0; i<4; i++)

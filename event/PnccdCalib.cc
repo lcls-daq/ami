@@ -23,12 +23,16 @@ std::string PnccdCalib::save_pedestals(Entry* entry,
                                        bool   lsubtract,
                                        bool   prod)
 {
+  if (lsubtract)
+    return std::string("Select retain pedestal");
+
   const EntryImage& image = *static_cast<const EntryImage*>(entry);
   const DescImage&  desc  = image.desc();
   unsigned ppb = desc.ppxbin();
 
-  double* pedestals = new double[desc.nbinsx()*desc.nbinsy()*ppb*ppb];
-  { double* p = pedestals;
+  ndarray<double,2> pedestals = make_ndarray<double>(desc.nbinsx()*ppb,
+                                                     desc.nbinsy()*ppb);
+  { double* p = pedestals.begin();
     double  n = double(image.info(EntryImage::Normalization)*ppb*ppb);
     double  o = image.info(EntryImage::Pedestal);
     for(unsigned i=0; i<desc.nbinsy(); i++)
@@ -38,39 +42,7 @@ std::string PnccdCalib::save_pedestals(Entry* entry,
             *p++ = (double(image.content(j,i))-o)/n;
   }
 
-  if (lsubtract) {
-    //
-    //  Load pedestals
-    //
-
-    const int NameSize=128;
-    char oname1[NameSize];
-    char oname2[NameSize];
-    
-    sprintf(oname1,"ped.%08x.dat",desc.info().phy());
-    sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/ped.%08x.dat",desc.info().phy());
-    FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
-    
-    if (f) {
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      memset(linep, 0, sz);
-      char* pEnd = linep;
-
-      double* p = pedestals;
-      for(unsigned i=0; i<desc.nbinsy()*ppb; i++) {
-	getline(&linep, &sz, f);
-	*p++ += strtod(linep,&pEnd);
-	for(unsigned j=1; j<desc.nbinsx()*ppb; j++)
-	  *p++ += strtod(pEnd,&pEnd);
-      }
-      
-      free(linep);
-      fclose(f);
-    }
-  }
-
-  char tbuf[32];
+  char tbuf[64];
   sprintf(tbuf,"%08x.dat",desc.info().phy());
   std::string oname;
     
@@ -89,14 +61,31 @@ std::string PnccdCalib::save_pedestals(Entry* entry,
   FILE* fn = fopen(oname.c_str(),"w");
   if (!fn) {
     rename(nname.c_str(),oname.c_str());
-    delete[] pedestals;
     return std::string("Unable to write new pedestal file ")+oname;
   }
   else {
-    double* p = pedestals;
-    for(unsigned i=0; i<desc.nbinsy()*ppb; i++) {
-      for(unsigned j=0; j<desc.nbinsx()*ppb; j++)
-	fprintf(fn,"%f ",*p++);
+    Rotation r = desc.frame(0).r;
+    unsigned nx = desc.nbinsx()*ppb;
+    unsigned ny = desc.nbinsy()*ppb;
+    for(unsigned i=0; i<ny; i++) {
+      for(unsigned j=0; j<nx; j++) {
+        switch(r) {
+        case D0:
+          fprintf(fn,"%f ",pedestals[i][j]);
+          break;
+        case D90:
+          fprintf(fn,"%f ",pedestals[nx-j][i]);
+          break;
+        case D180:
+          fprintf(fn,"%f ",pedestals[ny-i][nx-j]);
+          break;
+        case D270:
+          fprintf(fn,"%f ",pedestals[j][ny-i]);
+          break;
+        default:
+          break;
+        }
+      }
       fprintf(fn,"\n");
     }
     fsync(fileno(fn));
@@ -110,26 +99,21 @@ std::string PnccdCalib::save_pedestals(Entry* entry,
       fsync(fd);
       close(fd);
     }
-    delete[] pedestals;
     return std::string();
   }
 }
 
 void PnccdCalib::load_pedestals(EntryImage* correct,
-                                bool tform,
+                                Rotation r,
                                 bool no_cache) 
 {
   //
   //  Load calibration from a file
   //    Always read and write values for each pixel (even when binned)
   //
-  const int NameSize=128;
-  char oname1[NameSize];
-  char oname2[NameSize];
   const DescImage& d = correct->desc();
-  sprintf(oname1,"ped.%08x.dat",d.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals",no_cache);
+  bool offl_type;
+  FILE* f = Calib::fopen(d.info(),"ped","pedestals",no_cache,&offl_type);
   if (f) {
     size_t sz = 8 * 1024;
     char* linep = (char *)malloc(sz);
@@ -137,38 +121,81 @@ void PnccdCalib::load_pedestals(EntryImage* correct,
     char* pEnd = linep;
 
     const unsigned ppb  = d.ppxbin();
-    const unsigned cols = d.nbinsx()*ppb;
-    const unsigned rows = d.nbinsy()*ppb;
-    const unsigned dsz  = d.nbinsx()*d.nbinsy()*ppb*ppb;
-    double* pedestals = new double[dsz];
+    ndarray<double,2> pedestals = make_ndarray<double>(1024,1024);
 
-    double* p = pedestals;
-    for(unsigned i=0; i<rows; i++) {
-      getline(&linep, &sz, f);
-      *p++ = strtod(linep,&pEnd);
-      for(unsigned j=1; j<cols; j++)
-        *p++ = strtod(pEnd,&pEnd);
+    if (offl_type) {
+      for(unsigned i=0; i<512; i++) {
+        double* p = &pedestals[i][0];
+        getline(&linep, &sz, f);
+        *p++ = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p++ = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=1023; i>=512; i--) {
+        double* p = &pedestals[i][511];
+        getline(&linep, &sz, f);
+        *p-- = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p-- = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=1023; i>=512; i--) {
+        double* p = &pedestals[i][1023];
+        getline(&linep, &sz, f);
+        *p-- = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p-- = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=0; i<512; i++) {
+        double* p = &pedestals[i][512];
+        getline(&linep, &sz, f);
+        *p++ = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p++ = strtod(pEnd,&pEnd);
+      }
+    }
+    else {
+      for(unsigned i=0; i<1024; i++) {
+        double* p = &pedestals[i][0];
+        getline(&linep, &sz, f);
+        *p++ = strtod(linep,&pEnd);
+        for(unsigned j=1; j<1024; j++)
+          *p++ = strtod(pEnd,&pEnd);
+      }
     }
     
     free(linep);
     fclose(f);
+
+    if (offl_type)
+      r = Rotation((r+NPHI-1)%NPHI);
 
     for(unsigned iy=0; iy<d.nbinsy(); iy++)
       for(unsigned ix=0; ix<d.nbinsx(); ix++) {
         unsigned v = 0;
         for(unsigned i=0; i<ppb; i++)
           for(unsigned j=0; j<ppb; j++)
-            v += unsigned(pedestals[ix*ppb + j + cols*(iy*ppb + i)]);
+            v += unsigned(pedestals[iy*ppb + i][ix*ppb + j]);
         //
         //  Rotate the pedestal correction here rather 
         //  than in the PnncdHandler::event method
         //
-        if (tform)
-          correct->content(v,d.nbinsx()-1-iy,ix);
-        else
+        switch(r) {
+        case D0:
           correct->content(v,ix,iy);
+          break;
+        case D90:
+          correct->content(v,d.nbinsy()-1-iy,ix);
+          break;
+        case D180:
+          correct->content(v,d.nbinsx()-1-ix,d.nbinsy()-1-iy);
+          break;
+        case D270:
+          correct->content(v,iy,d.nbinsx()-1-ix);
+          break;
+        default:
+          break;
+        }
       }
-    delete[] pedestals;
   }
   else
     memset(correct->contents(), 0, d.nbinsx()*d.nbinsy()*sizeof(unsigned)); 

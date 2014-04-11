@@ -13,7 +13,8 @@ namespace Ami {
     static FILE* fopen     (const Pds::DetInfo&, 
                             const char* onl_calib_type,
                             const char* off_calib_type="None",
-                            bool        no_cache=false);
+                            bool        no_cache=false,
+                            bool*       offl_type=0);
 
     static FILE *fopen_dual(const char *path1, const char * path2, 
                             const char *description,

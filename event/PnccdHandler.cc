@@ -65,7 +65,6 @@ PnccdHandler::PnccdHandler(const Pds::DetInfo& info,
   _collect (false),
   _ncollect(0),
   _entry   (0),
-  _tform   (true),
   _options (0)
 {
   PixelsPerBin = _full_resolution() ? 1 : 2;
@@ -116,11 +115,26 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
 {
   _config = *reinterpret_cast<const Pds::PNCCD::ConfigV1*>(payload);
 
+  Ami::Rotation r(D0);
+
+  char oname1[256];
+  char oname2[256];
+  sprintf(oname1,"rot.%08x.dat",info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"rotation");
+  if (f) {
+    r = Ami::D0;
+    fclose(f);
+  }
+  else
+    r = Ami::D90;
+
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		 cols / PixelsPerBin,
 		 rows / PixelsPerBin,
 		 PixelsPerBin, PixelsPerBin);
+  desc.add_frame(0,0,cols/PixelsPerBin,rows/PixelsPerBin,r);
   _entry = new EntryImage(desc);
 
   DescImage cdsc(det, (unsigned)1, 
@@ -130,19 +144,7 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
 		 PixelsPerBin, PixelsPerBin);
   _common = new EntryImage(cdsc);
 
-  char oname1[256];
-  char oname2[256];
-  sprintf(oname1,"rot.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"rotation");
-  if (f) {
-    _tform = false;
-    fclose(f);
-  }
-  else
-    _tform = true;
-
-  PnccdCalib::load_pedestals(_correct,_tform,false);
+  PnccdCalib::load_pedestals(_correct,r,false);
 }
 
 void PnccdHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -159,7 +161,7 @@ void PnccdHandler::_event    (Pds::TypeId, const void* payload, const Pds::Clock
     }
 
     if (_entry->desc().options() & PnccdCalib::option_reload_pedestal()) {
-      PnccdCalib::load_pedestals(_correct,_tform,true);
+      PnccdCalib::load_pedestals(_correct,_entry->desc().frame(0).r,true);
       _entry->desc().options( _entry->desc().options()&~PnccdCalib::option_reload_pedestal() );
     }
   }
@@ -271,12 +273,17 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       int common = lcommon ? 
 	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
 
-      if (_tform)
-	for(unsigned k=0, ix=511-(x>>1); k<rows_segment/2; k++, ix--)
-	  _entry->content(a[k]-common,iy,ix);
-      else
+      switch(_entry->desc().frame(0).r) {
+      case D0:
 	for(unsigned k=0, ix=(x>>1); k<rows_segment/2; k++, ix++)
 	  _entry->content(a[k]-common,ix,iy);
+        break;
+      case D90:
+	for(unsigned k=0, ix=511-(x>>1); k<rows_segment/2; k++, ix--)
+	  _entry->content(a[k]-common,iy,ix);
+      default:
+        break;
+      }
     }
   }
   else {
@@ -296,12 +303,18 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       int common = lcommon ? 
 	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
 
-      if (_tform)
-	for(unsigned k=0, ix=1023-x; k<cols_segment; k++, ix--)
-	  _entry->content(a[k]-common,iy,ix);
-      else
+      switch(_entry->desc().frame(0).r) {
+      case D0:
 	for(unsigned k=0,ix=x; k<cols_segment; k++, ix++)
 	  _entry->content(a[k]-common,ix,iy);
+        break;
+      case D90:
+	for(unsigned k=0, ix=1023-x; k<cols_segment; k++, ix--)
+	  _entry->content(a[k]-common,iy,ix);
+        break;
+      default:
+        break;
+      }
     }
   }
 }
@@ -343,12 +356,18 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
       int common = lcommon ? 
 	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
 
-      if (_tform)
-	for(unsigned k=0,ix=511-(x>>1); k<cols_segment/2; k++,ix++)
-	  _entry->content(a[k]-common,(y>>1)-j,ix);
-      else
+      switch(_entry->desc().frame(0).r) {
+      case D0:
 	for(unsigned k=0,ix=(x>>1); k<cols_segment/2; k++, ix--)
 	  _entry->content(a[k]-common,ix,(y>>1)-j);
+        break;
+      case D90:
+	for(unsigned k=0,ix=511-(x>>1); k<cols_segment/2; k++,ix++)
+	  _entry->content(a[k]-common,(y>>1)-j,ix);
+        break;
+      default:
+        break;
+      }
     }
   }
   else {
@@ -368,12 +387,18 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
       int common = lcommon ? 
 	int(FrameCalib::median(a,_common_lo,_common_hi)-o) : 0;
       
-      if (_tform)
-	for(unsigned k=0,ix=1023-x; k<cols_segment; k++, ix++)
-	  _entry->content(a[k]-common,iy,ix);
-      else
+      switch(_entry->desc().frame(0).r) {
+      case D0:
 	for(unsigned k=0,ix=x; k<cols_segment; k++, ix--)
 	  _entry->content(a[k]-common,ix,iy);
+        break;
+      case D90:
+	for(unsigned k=0,ix=1023-x; k<cols_segment; k++, ix++)
+	  _entry->content(a[k]-common,iy,ix);
+        break;
+      default:
+        break;
+      }
     }
   }
 }

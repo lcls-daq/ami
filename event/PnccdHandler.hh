@@ -41,7 +41,6 @@ namespace Ami {
     unsigned             _ncollect;
     EntryImage*          _entry;
     EntryImage*          _common;
-    bool                 _tform;
     unsigned             _options;
     unsigned             _common_lo;
     unsigned             _common_hi;
