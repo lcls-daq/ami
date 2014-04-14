@@ -558,14 +558,22 @@ void EpixHandler::_load_pedestals()
 
   EntryImage* p = _pentry;
   if (FrameCalib::load_pedestals(p,0,"sta")) {
+
+    printf("Loaded status %d x %d [%d x %d]\n",
+           p->content().shape()[0],
+           p->content().shape()[1],
+           _status.shape()[0],
+           _status.shape()[1]);
+
     for(unsigned *a=_status.begin(), *b=p->contents(); a!=_status.end(); *a++=*b++) ;
 
     const DescImage& d = _entry->desc();
     ImageMask mask(d.nbinsy(),d.nbinsx());
+    mask.fill();
     for(unsigned i=0; i<_status.shape()[0]; i++)
       for(unsigned j=0; j<_status.shape()[1]; j++)
         if (_status[i][j])
-          mask.fill(i,j);
+          mask.clear(i,j);
     mask.update();
     _entry->desc().set_mask(mask);
   }

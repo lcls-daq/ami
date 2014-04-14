@@ -65,7 +65,7 @@ VAPlot::VAPlot(const char*& p, const DescEntry& e) :
   _current     (0),
   _cache       (0)
 {
-  memcpy(_desc, p, sizeof(DescImage));
+  DescImage::deserialize(_desc,p);
   const DescImage& o = *reinterpret_cast<const DescImage*>(_desc);
   _output_entry = static_cast<EntryImage*>(EntryFactory::entry(o));
 
