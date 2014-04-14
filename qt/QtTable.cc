@@ -1,36 +1,17 @@
 #include "ami/qt/QtTable.hh"
+#include "ami/qt/QtTableDisplay.hh"
 #include "ami/data/EntryScalar.hh"
 
 #include <QtCore/QString>
 #include <QtGui/QLabel>
 #include <QtGui/QHBoxLayout>
-#include <QtGui/QVBoxLayout>
 #include <QtGui/QPushButton>
 
 #include <map>
 
-namespace Ami {
-  namespace Qt {
-    class QtTableDisplay : public QWidget {
-    public:
-      QtTableDisplay();
-      ~QtTableDisplay();
-    public:
-      void add   (QtTable&);
-      void update();
-    protected:
-      void paintEvent(QPaintEvent*);
-    public:
-      static QtTableDisplay* instance();
-    private:
-      bool _size_changed;
-    };
-  };
-};
-
 using namespace Ami::Qt;
 
-QtTable::QtTable(QObject* p) : _entry(0), _cache(0)
+QtTable::QtTable() : _entry(0), _cache(0)
 {
   _label = new QLabel("-");
   _value = new QLabel("-");
@@ -49,12 +30,14 @@ QtTable::QtTable(QObject* p) : _entry(0), _cache(0)
 
   QtTableDisplay::instance()->add   (*this);
 
-  connect(this, SIGNAL(destroyed()), p, SLOT(remove()));
-  connect(xButton, SIGNAL(clicked()), this, SLOT(remove()));
+  connect(xButton, SIGNAL(clicked()), this, SIGNAL(remove()));
+  connect(this, SIGNAL(entry_changed()), this, SLOT(set_label()));
+  connect(this, SIGNAL(destroyed()), QtTableDisplay::instance(), SLOT(update()));
 }
 
 QtTable::~QtTable() 
 {
+  _entry = 0;
   if (_cache)
     delete _cache;
 }
@@ -63,12 +46,17 @@ void QtTable::entry (const EntryScalar* e)
 {
   _entry = e; 
   if (e) {
-    _label->setText(e->desc().name());
+    emit entry_changed();
     if (_cache)
       delete _cache;
     _cache = new EntryScalar(e->desc());
     _cache->setto(*e);
   }
+}
+
+void QtTable::set_label()
+{
+  _label->setText(_entry->desc().name());
 }
 
 void QtTable::update()
@@ -89,55 +77,3 @@ void QtTable::update()
   _value->setText("-");
 }
 
-void QtTable::remove()
-{
-  delete this;
-  QtTableDisplay::instance()->update();
-}
-  
-
-static QtTableDisplay* _instance = 0;
-
-QtTableDisplay::QtTableDisplay() :
-  QWidget(0)
-{
-  //  setAttribute(::Qt::WA_DeleteOnClose, true);
-  QVBoxLayout* l = new QVBoxLayout;
-  l->setSpacing(0);
-  setLayout(l);
-  show();
-}
-
-QtTableDisplay::~QtTableDisplay()
-{
-  _instance = 0;
-}
-
-void QtTableDisplay::add(QtTable& q)
-{
-  static_cast<QVBoxLayout*>(layout())->addWidget(&q);
-}
-
-void QtTableDisplay::update()
-{
-  _size_changed = true;
-  updateGeometry();
-  resize(minimumWidth(),minimumHeight());
-}
-
-void QtTableDisplay::paintEvent(QPaintEvent* e)
-{
-  if (_size_changed) {
-    resize(minimumWidth(),minimumHeight());
-    _size_changed = false;
-  }
-  QWidget::paintEvent(e);
-}
-
-QtTableDisplay* QtTableDisplay::instance()
-{
-  if (!_instance)
-    _instance = new QtTableDisplay;
-
-  return _instance;
-}

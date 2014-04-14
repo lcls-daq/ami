@@ -12,13 +12,16 @@ namespace Ami {
     class QtTable : public QWidget {
       Q_OBJECT
     public:
-      QtTable(QObject*);
+      QtTable();
       ~QtTable();
     public:
       const EntryScalar* entry() const { return _entry; }
       void entry (const EntryScalar* e);
-      void update();
     public slots:
+      void update();
+      void set_label();
+    signals:
+      void entry_changed();
       void remove();
     private:
       const EntryScalar* _entry;

@@ -187,7 +187,7 @@ void EnvClient::load(const char*& p)
   // mem leak?
   _ovls.clear();
   for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++) {
-    disconnect(*it, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
+    disconnect(*it, SIGNAL(remove(QObject*)), this, SLOT(remove_table(QObject*)));
     delete *it;
   }
   _tabls.clear();
@@ -217,7 +217,7 @@ void EnvClient::load(const char*& p)
     else if (tag.name == "_tabls") {
       EnvTable* tabl = new EnvTable(this, p);
       _tabls.push_back(tabl);
-      connect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
+      connect(tabl, SIGNAL(remove(QObject*)), this, SLOT(remove_table(QObject*)));
     }
     else if (tag.element == "Control")
       _control->load(p);
@@ -367,8 +367,9 @@ void EnvClient::_read_description(int size)
     (*it)->setup_payload(_cds);
   for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     (*it)->setup_payload(_cds);
-  for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
+  for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++) {
     (*it)->setup_payload(_cds);
+  }
   _list_sem.give();
 
   _status->set_state(Status::Described);
@@ -488,7 +489,7 @@ void EnvClient::table()
   _tabls.push_back(tabl);
   _list_sem.give();
 
-  connect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
+  connect(tabl, SIGNAL(remove(QObject*)), this, SLOT(remove_table(QObject*)));
   emit changed();
 }
 
@@ -528,7 +529,6 @@ void EnvClient::remove_table(QObject* obj)
   _tabls.remove(tabl);
   _list_sem.give();
 
-  disconnect(tabl, SIGNAL(closed(QObject*)), this, SLOT(remove_table(QObject*)));
   delete tabl;
   emit changed();
 }

@@ -34,6 +34,9 @@ namespace Ami {
       void update();
     public slots:
       void remove();
+    signals:
+      void update_plot();
+      void remove(QObject*);
     private:
       Ami::AbsFilter* _filter;
       DescScalar*     _desc;

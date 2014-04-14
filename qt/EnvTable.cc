@@ -23,8 +23,10 @@ EnvTable::EnvTable(QWidget*,
   _desc    (desc),
   _set     (set),
   _output_signature(0),
-  _plot    (new QtTable(this))
+  _plot    (new QtTable)
 {
+  connect(this, SIGNAL(update_plot()), _plot, SLOT(update()));
+  connect(_plot, SIGNAL(remove()), this, SLOT(remove()));
 }
 
 EnvTable::EnvTable(QWidget*, const char*& p)
@@ -43,12 +45,16 @@ EnvTable::EnvTable(QWidget*, const char*& p)
     }
   XML_iterate_close(EnvPost,tag);
 
-  _plot = new QtTable(this);
+  _plot = new QtTable;
+  connect(this, SIGNAL(update_plot()), _plot, SLOT(update()));
+  connect(_plot, SIGNAL(remove()), this, SLOT(remove()));
 }
 
 EnvTable::~EnvTable()
 {
+  delete _plot;
   delete _desc;
+  delete _filter;
 }
 
 void EnvTable::save(char*& p) const
@@ -89,10 +95,10 @@ void EnvTable::setup_payload(Cds& cds)
 
 void EnvTable::update()
 {
-  _plot->update();
+  emit update_plot();
 }
 
 void EnvTable::remove()
 {
-  delete this;
+  emit remove(this);
 }
