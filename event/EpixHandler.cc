@@ -73,8 +73,7 @@ static double frameNoise(ndarray<const uint32_t,2> data,
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
     for(unsigned i=0; i<data.shape()[0]; i++) {
       for(unsigned j=0; j<data.shape()[1]; j++) {
-        //        if (status[i][j]==0) {
-        if (1) {
+        if (status[i][j]==0) {
           nhist++;
           int v = data[i][j] - fnPixelMin;
           if (v >= 0 && v < int(fnPixelBins))
