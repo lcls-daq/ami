@@ -62,12 +62,43 @@ namespace Ami {
 
     class ShmServer : public Fd {
     public:
-      ShmServer(QOnline& qo, QString& qnode, unsigned platform) : _qo(qo) 
+      ShmServer(QOnline& qo, QString& qnode, unsigned platform) : _qo(qo), _platform(platform)
       {
         unsigned ip = Ami::Ins::parse_ip(qPrintable(qnode));
+        _connect(ip);
+      }
+    public:
+      int fd() const { return _socket.socket(); }
+      int processIo() 
+      { 
+	Pds::MonShmComm::Get m;
+	if (_socket.read(&m,sizeof(m))==sizeof(m)) {
+	  _info.events = _info.revents;
+	  _info.dmg    = _info.rdmg;
+	  _info.rmask  = m.mask;
+	  _info.revents= m.events;
+	  _info.rdmg   = m.dmg;
+	  _qo.update();
+	  return 1;
+	}
+	else {
+	  //_qo.remove(this);
+          _connect(_info.ip);
+          return 1;
+	}
+      }
+    public:
+      void set_node_mask(unsigned mask) 
+      { Pds::MonShmComm::Set m(_info.name.c_str(),mask);
+	//{ Pds::MonShmComm::Set m(mask);
+	_socket.write(&m,sizeof(m)); }
+      NodeInfo&       info()       { return _info; }
+      const NodeInfo& info() const { return _info; }
+    private:
+      void _connect(unsigned ip) {
         unsigned short insp = Pds::MonShmComm::ServerPort;
         if (((ip>>8)&0xff) < 20)
-          insp -= platform;
+          insp -= _platform;
 
         Ami::Ins ins(ip,insp);
 	while(1) {
@@ -96,34 +127,9 @@ namespace Ami {
 	_info.dmg    = get.dmg;
 	_info.rdmg   = get.dmg;
       }
-    public:
-      int fd() const { return _socket.socket(); }
-      int processIo() 
-      { 
-	Pds::MonShmComm::Get m;
-	if (_socket.read(&m,sizeof(m))==sizeof(m)) {
-	  _info.events = _info.revents;
-	  _info.dmg    = _info.rdmg;
-	  _info.rmask  = m.mask;
-	  _info.revents= m.events;
-	  _info.rdmg   = m.dmg;
-	  _qo.update();
-	  return 1;
-	}
-	else {
-	  _qo.remove(this);
-	  return 0;
-	}
-      }
-    public:
-      void set_node_mask(unsigned mask) 
-      { Pds::MonShmComm::Set m(_info.name.c_str(),mask);
-	//{ Pds::MonShmComm::Set m(mask);
-	_socket.write(&m,sizeof(m)); }
-      NodeInfo&       info()       { return _info; }
-      const NodeInfo& info() const { return _info; }
     private:
       QOnline& _qo;
+      unsigned _platform;
       TSocket _socket;
       NodeInfo _info;
     };

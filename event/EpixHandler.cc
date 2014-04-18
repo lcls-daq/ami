@@ -59,6 +59,7 @@ namespace EpixAmi {
 };
 
 static double frameNoise(ndarray<const uint32_t,2> data,
+                         ndarray<const uint32_t,2> status,
 			 unsigned off)
 {
   const int fnPixelMin = -100 + off;
@@ -68,12 +69,17 @@ static double frameNoise(ndarray<const uint32_t,2> data,
   
   //  histogram the pixel values
   unsigned hist[fnPixelBins];
+  unsigned nhist=0;
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
     for(unsigned i=0; i<data.shape()[0]; i++) {
       for(unsigned j=0; j<data.shape()[1]; j++) {
-	int v = data[i][j] - fnPixelMin;
-	if (v >= 0 && v < int(fnPixelBins))
-	  hist[v]++;
+        //        if (status[i][j]==0) {
+        if (1) {
+          nhist++;
+          int v = data[i][j] - fnPixelMin;
+          if (v >= 0 && v < int(fnPixelBins))
+            hist[v]++;
+        }
       }
     }
   }
@@ -82,7 +88,7 @@ static double frameNoise(ndarray<const uint32_t,2> data,
   // the first peak from the left above this is the pedestal
   { const int fnPeakBins = 5;
     const int fnPixelRange = fnPixelBins-fnPeakBins-1;
-    const unsigned fnPedestalThreshold = 1000;
+    const unsigned fnPedestalThreshold = nhist>>5;
     
     unsigned i=fnPeakBins;
     while( int(i)<fnPixelRange ) {
@@ -151,7 +157,7 @@ static int frameNoise(ndarray<const uint32_t,1> data,
 
 EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   //  EventHandler(info, Pds::TypeId::Id_EpixElement, Pds::TypeId::Id_EpixConfig),
-  EventHandler  (info, Data_Type.id(), Config_Type.id()),
+  EventHandlerF  (info, Data_Type.id(), Config_Type.id(), cache),
   _cache        (cache),
   _desc         ("template",0,0),
   _entry        (0),
@@ -184,24 +190,24 @@ void EpixHandler::rename(const char* s)
     unsigned nAsics = _config.numberOfAsics();
     for(unsigned a=0; a<nAsics; a++) {
       sprintf(buff,"%s:AsicMonitor%d",s,a);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
     }
     if (_config.lastRowExclusions()) {
       sprintf(buff,"%s:Epix:AVDD",s);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
       sprintf(buff,"%s:Epix:DVDD",s);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
       sprintf(buff,"%s:Epix:AnaCardT",s);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
       sprintf(buff,"%s:Epix:StrBackT",s);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
       sprintf(buff,"%s:Epix:Humidity",s);
-      _cache.rename(_feature[index++],buff);
+      _rename_cache(_feature[index++],buff);
     }
     if (Ami::EventHandler::post_diagnostics())
       for(unsigned a=0; a<16; a++) {
 	sprintf(buff,"%s:CommonMode%d",s,_channel_map[a]);
-	_cache.rename(_feature[index++],buff);
+	_rename_cache(_feature[index++],buff);
       }
   }
 }
@@ -309,7 +315,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
       _entry->invalid();
     }
 
-    unsigned nFeatures = 4;
+    unsigned nFeatures = c.numberOfAsics();
     if (c.lastRowExclusions())
       nFeatures += 5;
     if (Ami::EventHandler::post_diagnostics())
@@ -320,24 +326,24 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     int index=0;
     for(unsigned a=0; a<c.numberOfAsics(); a++) {
       sprintf(buff,"%s:Epix:AsicMonitor:%d",detname,a);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
     }
     if (c.lastRowExclusions()) {
       sprintf(buff,"%s:Epix:AVDD",detname);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
       sprintf(buff,"%s:Epix:DVDD",detname);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
       sprintf(buff,"%s:Epix:AnaCardT",detname);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
       sprintf(buff,"%s:Epix:StrBackT",detname);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
       sprintf(buff,"%s:Epix:Humidity",detname);
-      _feature[index++] = _cache.add(buff);
+      _feature[index++] = _add_to_cache(buff);
     }
     if (Ami::EventHandler::post_diagnostics()) {
       for(unsigned a=0; a<16; a++) {
 	sprintf(buff,"%s:Epix:CommonMode%d",detname,_channel_map[a]);
-	_feature[index++] = _cache.add(buff);
+	_feature[index++] = _add_to_cache(buff);
       }
     }
 
@@ -347,14 +353,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 }
 
 void EpixHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
-
-bool EpixHandler::used() const 
-{ 
-  if (_entry && _entry->desc().used()) return true;
-  for(unsigned i=0; i<_feature.shape()[0]; i++)
-    if (_cache.used(_feature[i])) return true;
-  return false;
-}
 
 void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
@@ -441,30 +439,31 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	}
     }
 
-    int index = _feature[0];
+    int index = 0;
     ndarray<const uint16_t,1> temps = f.temperatures(_config);
 #if 1
     for(unsigned a=0; a<_config.numberOfAsics(); a++)
-      _cache.cache(index++,double(temps[a]));
+      _cache.cache(_feature[index++],double(temps[a]));
 #else
     if (aMask&1)
-      _cache.cache(index++,_tps_temp(temps[0]));
+      _cache.cache(_feature[index+0],_tps_temp(temps[0]));
     if (aMask&2)
-      _cache.cache(index++,_therm.getTemp(temps[1]));
+      _cache.cache(_feature[index+1],_therm.getTemp(temps[1]));
     if (aMask&4)
-      _cache.cache(index++,_therm.getTemp(temps[2]));
+      _cache.cache(_feature[index+2],_therm.getTemp(temps[2]));
     if (aMask&8)
-      _cache.cache(index++,_tps_temp(temps[3]));
+      _cache.cache(_feature[index+3],_tps_temp(temps[3]));
+    index += 4;
 #endif
 
     if (_config.lastRowExclusions()) {
       ndarray<const uint16_t,2> e = f.excludedRows(_config);
       const uint16_t* last = &e[e.shape()[0]-1][0];
-      _cache.cache(index++, double(last[2])*0.00183);
-      _cache.cache(index++, double(last[3])*0.00183);
-      _cache.cache(index++, double(last[4])*(-0.0194) + 78.393);
-      _cache.cache(index++, _therm.getTemp(last[6]));
-      _cache.cache(index++, double(last[7])*0.0291 - 23.8);
+      _cache.cache(_feature[index++], double(last[2])*0.00183);
+      _cache.cache(_feature[index++], double(last[3])*0.00183);
+      _cache.cache(_feature[index++], double(last[4])*(-0.0194) + 78.393);
+      _cache.cache(_feature[index++], _therm.getTemp(last[6]));
+      _cache.cache(_feature[index++], double(last[7])*0.0291 - 23.8);
     }
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
@@ -500,7 +499,9 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	for(unsigned m=0; m<4; m++) {
 	  ndarray<uint32_t,2> s(&e[0][m*shape[1]],shape);
 	  s.strides(e.strides());
-	  int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          ndarray<uint32_t,2> t(_status.begin()+(s.begin()-_entry->content().begin()),shape);
+          t.strides(_status.strides());
+	  int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
 	  for(unsigned y=0; y<shape[0]; y++) {
 	    uint32_t* v = &s[y][0];
 	    for(unsigned x=0; x<shape[1]; x++)

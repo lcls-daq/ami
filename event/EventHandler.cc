@@ -120,7 +120,7 @@ bool   EventHandler::post_diagnostics() { return _post_diagnostics; }
 bool   EventHandler::used() const
 {
   for(unsigned i=0; i<nentries(); i++)
-    if (entry(i)->desc().used()) return true;
+    if (entry(i) && entry(i)->desc().used()) return true;
   return false;
 }
 

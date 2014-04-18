@@ -1369,12 +1369,6 @@ void CspadHandler::rename(const char* s)
 
 void CspadHandler::reset() { _entry = 0; _unbinned_entry = 0; EventHandlerF::reset(); }
 
-bool CspadHandler::used() const
-{
-  return ((_entry && _entry->desc().used()) ||
-	  EventHandler::used());
-}
-
 void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   //

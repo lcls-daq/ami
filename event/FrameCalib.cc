@@ -220,7 +220,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
 	  char* p = linep;
 	  unsigned col=0;
 	  while(1) {
-	    unsigned v = strtoul(p,&pEnd,0);
+	    int v = int(strtod(p,&pEnd));
 	    if (pEnd == p) break;
 	    c->addcontent(offset-v,x+col/ppb,y+row/ppb);
 	    if (++col >= frame.nx*ppb) break;
@@ -235,7 +235,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
 	char* p = linep;
 	unsigned col=0;
 	while(1) {
-	  unsigned v = strtoul(p,&pEnd,0);
+	  int v = int(strtod(p,&pEnd));
 	  if (pEnd == p) break;
 	  c->addcontent(offset-v,col/ppb,row/ppb);
 	  if (++col >= d.nbinsx()*ppb) break;

@@ -1,7 +1,7 @@
 #ifndef Ami_EpixHandler_hh
 #define Ami_EpixHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "ami/event/CspadTemp.hh"
 #include "ami/data/DescImage.hh"
 
@@ -10,7 +10,7 @@
 namespace Ami {
   class EntryImage;
   class FeatureCache;
-  class EpixHandler : public EventHandler {
+  class EpixHandler : public EventHandlerF {
   public:
     EpixHandler(const Pds::Src&     info, 
 		FeatureCache&       cache);
@@ -27,8 +27,6 @@ namespace Ami {
     const Entry* entry            (unsigned) const;
     //  Cleanup existing entries
     void         reset   ();
-    //  event data needs to be parsed
-    bool  used() const;
   public:
     void  rename(const char*);
   private:
