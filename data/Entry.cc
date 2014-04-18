@@ -9,10 +9,10 @@
 
 #include <stdio.h>
 
-//#define DBUG
+#define DBUG
 
-static const uint64_t VALID_BIT  = 1ULL;
-static const uint64_t VALID_MASK = VALID_BIT;
+static const uint64_t INVALID_BIT  = 1ULL;
+static const uint64_t VALID_MASK = ~INVALID_BIT;
 
 using namespace Ami;
 
@@ -65,15 +65,15 @@ const Pds::ClockTime& Entry::time() const
 
 void Entry::valid(const Pds::ClockTime& t) 
 {
-  *_payload = *(reinterpret_cast<const unsigned long long*>(&t)) & ~VALID_MASK;
+  *_payload = *(reinterpret_cast<const unsigned long long*>(&t)) & VALID_MASK;
 }
 
 void Entry::invalid() 
 { 
-  *_payload |= VALID_MASK;
+  *_payload |= INVALID_BIT;
 }
 
-bool Entry::valid() const { return _payload!=0 && ((*_payload)&VALID_BIT)==0; }
+bool Entry::valid() const { return _payload!=0 && ((*_payload)&INVALID_BIT)==0; }
 
 void Entry::merge(char* p) const
 {
@@ -93,7 +93,7 @@ void Entry::merge(char* p) const
 		   *_payload, *u);
 
   bool lvalid = valid();
-  bool pvalid = !(*u & VALID_BIT);
+  bool pvalid = !(*u & INVALID_BIT);
 
   if (desc().aggregate()) {  // merge the valid data, keeping the latest timestamp
     if (pvalid) {
@@ -104,7 +104,7 @@ void Entry::merge(char* p) const
 	  pdb += sprintf(pdb," merged   : ts %016llx",*u);
       }
     }
-    else {
+    else if (lvalid) {
       memcpy(p,_payload,_payloadsize);
       if (ldbug)
 	pdb += sprintf(pdb," replaced : ts %016llx",*u);

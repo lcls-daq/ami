@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-//#define DBUG
+#define DBUG
 
 using namespace Ami;
 
@@ -26,14 +26,14 @@ bool ConfigureRequest::operator==(const ConfigureRequest& r) const
   for(unsigned i=0; i<4*sizeof(uint32_t); i++)
     if (cthis[i]!=cthat[i]) {
 #ifdef DBUG
-      printf("ConfigureRequest::==(output %d) this %02x that %02x %d\n",_output,unsigned(cthis[i]),unsigned(cthat[i]),i);
+      printf("ConfigureRequest::==(output %d[%d]) this %02x that %02x %d\n",_output,r._output,unsigned(cthis[i]),unsigned(cthat[i]),i);
 #endif
       return false;
     }
   for(unsigned i=sizeof(*this); i<unsigned(_size); i++)
     if (cthis[i]!=cthat[i]) {
 #ifdef DBUG
-      printf("ConfigureRequest::==(output %d) this %02x that %02x %d\n",_output,unsigned(cthis[i]),unsigned(cthat[i]),i);
+      printf("ConfigureRequest::==(output %d[%d]) this %02x that %02x %d\n",_output,r._output,unsigned(cthis[i]),unsigned(cthat[i]),i);
 #endif
       return false;
     }

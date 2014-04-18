@@ -142,6 +142,8 @@ namespace Ami {
               bool hasPedCalib=false, bool hasGainCalib=false, bool hasRmsCalib=false,
               unsigned options=0);
 
+    DescEntry(const DescEntry&);
+
   private:
     Pds::DetInfo _info;
     uint32_t     _channel;

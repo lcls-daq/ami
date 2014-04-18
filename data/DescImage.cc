@@ -25,8 +25,10 @@ DescImage::DescImage(const char* name,
   _yp0   (yp0),
   _mmppx (0),
   _mmppy (1),
+  _reserved  (0),
   _nsubframes(0)
 {
+  memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
 }
@@ -47,8 +49,10 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _yp0   (0),
   _mmppx (0),
   _mmppy (1),
+  _reserved  (0),
   _nsubframes(0)
 {
+  memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
 }
@@ -75,8 +79,10 @@ DescImage::DescImage(const Pds::DetInfo& info,
   _yp0   (0),
   _mmppx (0),
   _mmppy (1),
+  _reserved  (0),
   _nsubframes(0)
 {
+  memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
 }
@@ -91,12 +97,15 @@ DescImage::DescImage(const DescImage& d) :
   _yp0     (d._yp0),
   _mmppx   (d._mmppx),
   _mmppy   (d._mmppy),
+  _reserved  (d._reserved),
   _nsubframes(0)
 {
   for(unsigned i=0; i<d._nsubframes; i++) {
     const SubFrame& f = d._subframes[i];
     add_frame(f.x, f.y, f.nx, f.ny, f.r);
   }
+
+  memset(&_subframes[d._nsubframes], 0, (MAX_SUBFRAMES-d._nsubframes)*sizeof(SubFrame));
 
   strncpy_val(_mask_path, d._mask_path, PATHLEN);
 
@@ -118,12 +127,15 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
   _yp0     (d._yp0),
   _mmppx   (d._mmppx),
   _mmppy   (d._mmppy),
+  _reserved(d._reserved),
   _nsubframes(0)
 {
   for(unsigned i=0; i<d._nsubframes; i++) {
     const SubFrame& f = d._subframes[i];
     add_frame(f.x, f.y, f.nx, f.ny, f.r);
   }
+
+  memset(&_subframes[d._nsubframes], 0, (MAX_SUBFRAMES-d._nsubframes)*sizeof(SubFrame));
 
   strncpy_val(_mask_path, mask_path, PATHLEN);
 

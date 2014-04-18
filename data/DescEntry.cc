@@ -17,6 +17,7 @@ DescEntry::DescEntry(const char* name,
   Desc(name),
   _info(0,DetInfo::NoDetector,0,DetInfo::NoDevice,0),
   _channel(-1),
+  _reserved(-1),
   _group(-1),
   _options(options<<User),
   _type(type),
@@ -45,6 +46,7 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   Desc(name),
   _info   (info),
   _channel(channel),
+  _reserved(-1),
   _group(-1),
   _options(options<<User),
   _type(type),
@@ -77,6 +79,7 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   Desc(name),
   _info   (info),
   _channel(channel),
+  _reserved(-1),
   _group(-1),
   _options(options<<User),
   _type(type),
@@ -94,6 +97,24 @@ DescEntry::DescEntry(const Pds::DetInfo& info,
   strncpy_val(_ytitle, ytitle, TitleSize);
   _ytitle[TitleSize-1] = 0;
   strncpy_val(_zunits, zunits, TitleSize);
+  _zunits[TitleSize-1] = 0;
+}
+
+DescEntry::DescEntry(const DescEntry& o) :
+  Desc    (o),
+  _info   (o._info),
+  _channel(o._channel),
+  _reserved(o._reserved),
+  _group  (o._group),
+  _options(o._options),
+  _type   (o._type),
+  _size   (o._size)
+{ 
+  strncpy_val(_xtitle, o._xtitle, TitleSize);
+  _xtitle[TitleSize-1] = 0;
+  strncpy_val(_ytitle, o._ytitle, TitleSize);
+  _ytitle[TitleSize-1] = 0;
+  strncpy_val(_zunits, o._zunits, TitleSize);
   _zunits[TitleSize-1] = 0;
 }
 
