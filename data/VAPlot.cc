@@ -108,7 +108,7 @@ void*      VAPlot::_serialize(void* p) const
 Entry&     VAPlot::_operate(const Entry& e) const
 {
   if (!e.valid()) 
-    return *_output_entry;
+    return _accumulate<=0 ? *_output_entry : *_cache;
 
   if (e.desc().type() != DescEntry::Ref) {
     printf("VAPlot::_operator on %d type %s \n",
