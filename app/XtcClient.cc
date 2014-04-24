@@ -60,6 +60,9 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <sstream>
+#include <iomanip>
+
 static void Destroy(Xtc*) {}
 
 static Ami::XtcClient* _instance=0;
@@ -92,6 +95,7 @@ XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
   _evrtm_index    (-1),
   _runno_index    (-1),
   _runtim         (0,0),
+  _nevents        (0),
   _name_service   (0)
 {
   _instance = this;
@@ -121,6 +125,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   //  if (dg->seq.isEvent() && dg->xtc.damage.value()==0) {
   if (dg->seq.isEvent() && _ready) {
     _seq = &dg->seq;
+    _nevents++;
 
     if (_filter.accept(dg)) {
 
@@ -174,6 +179,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   else if (dg->seq.service() == Pds::TransitionId::BeginRun) {
     _runno_value = dg->env.value();
     _runtim      = dg->seq.clock();
+    _nevents     = 0;
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 #ifdef DBUG
@@ -315,9 +321,9 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
     const Entry* entry = h->entry(i);
     const DescEntry& desc = entry->desc();
     const_cast<DescEntry&>(desc).recorded(_recorded);  // flag recorded/unrecorded data
+#ifdef DBUG
     const DescEntry* descPtr = &desc;
     const char* name = descPtr->name();
-#ifdef DBUG
     printf("%s XtcClient::_configure: %s (%s): entry[%d]=%s\n", time, infoName, typeName, i, name);
 #endif
   }
@@ -535,4 +541,17 @@ std::list<const EventHandler*> XtcClient::handlers() const
       it!=_handlers.end(); it++)
     v.push_back(*it);
   return v;
+}
+
+std::string XtcClient::dump() const
+{
+  std::ostringstream s;
+  time_t t(_seq->clock().seconds());
+  char buff[64];
+  strftime(buff, 64, "%T", localtime(&t));
+  s << "\tXtcClient : nevts " << _nevents <<
+    << " : seq " << buff
+    << "." << std::setw(9) <<  _seq->clock().nanoseconds()
+    << std::endl;
+  return s.str();
 }

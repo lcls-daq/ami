@@ -3,7 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
-#include "ami/service/Semaphore.hh"
+#include "ami/service/DumpCollector.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -97,6 +97,7 @@ namespace Ami {
       bool           _discovered;
       Filter*        _filter_export;
       bool           _l3t_export;
+      DumpCollector  _dump;
     };
   };
 };

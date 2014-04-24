@@ -14,6 +14,8 @@
 #include "ami/data/EntryFactory.hh"
 #include "ami/server/ServerManager.hh"
 
+#include <sstream>
+
 //#define DBUG
 
 using namespace Ami;
@@ -365,4 +367,13 @@ void AnalysisFactory::recreate(UserModule* user)
       _srv.discover_key(i);
       break;
     }
+}
+
+std::string AnalysisFactory::dump() const
+{
+  std::ostringstream s;
+  s << "\tAnalysisFactory" << std::endl;
+  s << _cds.dump();
+  s << _ocds.dump();
+  return s.str();
 }

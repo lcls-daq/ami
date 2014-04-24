@@ -10,6 +10,7 @@
 
 #include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/DumpCollector.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -71,6 +72,11 @@ int AmiApp::run(char *partitionTag, unsigned serverGroup, std::vector<char *> mo
 
   XtcClient myClient(features, factory, filter, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
+
+  DumpCollector dump;
+  dump.add(myClient);
+  dump.add(srv);
+  dump.add(factory);
 
   srv.manage(input);
   srv.serve(factory);

@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <sstream>
+
 //#define DBUG
 
 using namespace Ami;
@@ -69,4 +71,13 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
     printf("Error in Server::reply write wrote %d/%zd bytes\n",
            nbytes, _reply.payload()+sizeof(_reply));
   }
+}
+
+std::string Server::dump() const
+{
+  std::ostringstream s;
+  s << "Server : socket " << _socket->socket()
+    << " : reply " << _reply.type_str()
+    << "." << _reply.id() << std::endl;
+  return s.str();
 }

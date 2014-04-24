@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#include <sstream>
+
 //#define DBUG
 
 using namespace Ami;
@@ -332,4 +334,15 @@ void Aggregator::request_payload(const EntryList& request)
 void Aggregator::dump_throttle() const
 {
   printf("[%p] : %s : State %s : remaining %d/%d\n", this, "throttled", State[_state], _remaining, _n);
+}
+
+std::string Aggregator::dump() const
+{
+  std::ostringstream s;
+  s << "Aggregator : State " << State[_state]
+    << " : remaining " << _remaining 
+    << " : nsources "  << _nsources 
+    << " : n " << _n << std::endl;
+  s << _cds.dump();
+  return s.str();
 }

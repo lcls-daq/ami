@@ -96,6 +96,8 @@ DetectorSelect::DetectorSelect(const QString& label,
   _filter_export(new Filter((QtPWidget*)0,"L3T Export", new L3Features)),
   _l3t_export(false)
 {
+  _dump.add(*_manager);
+
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
   setWindowTitle(label);
@@ -490,6 +492,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
    //   _update_groups();
 
    connect(client, SIGNAL(changed()), this, SLOT(queue_autosave()));
+
+  _dump.add(*manager);
 }
 
 void DetectorSelect::show_detector(QListWidgetItem* item)

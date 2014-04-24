@@ -5,6 +5,8 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryList.hh"
 
+#include <string>
+
 class iovec;
 
 namespace Ami {
@@ -29,6 +31,8 @@ namespace Ami {
   public:
     void request_payload (const EntryList&);
     void dump_throttle   () const;
+  public:
+    std::string dump     () const;
   private:
     void _checkState     (const char*);
     void _checkState     (const char*, unsigned);

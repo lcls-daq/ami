@@ -5,6 +5,7 @@
 #include "ami/data/Aggregator.hh"
 #include "ami/service/ConnectionHandler.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/DumpSource.hh"
 #include "ami/service/Semaphore.hh"
 
 #include <list>
@@ -26,7 +27,8 @@ namespace Ami {
    *   A class for managing the client end of a connection with the set of
    *   monitoring server processes.  This object listens 
    */
-  class ClientManager : public ConnectionHandler {
+  class ClientManager : public ConnectionHandler,
+			public DumpSource {
   public:
     /**
      *  Constructor which listens on a local interface for server processes
@@ -85,6 +87,8 @@ namespace Ami {
     void _flush_socket (ClientSocket&, int);
   public:
     void dump_throttle() const;
+  public:
+    std::string dump() const;
   private:
     enum State { Disconnected, Connected };
     Aggregator      _client;

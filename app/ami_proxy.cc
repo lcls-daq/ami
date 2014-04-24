@@ -1,6 +1,6 @@
 #include "ami/data/Message.hh"
 #include "ami/client/VClientSocket.hh"
-#include "ami/server/VServerSocket.hh"
+#include "ami/service/VServerSocket.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/Routine.hh"
 #include "ami/service/Task.hh"

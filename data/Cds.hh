@@ -31,6 +31,7 @@ namespace Ami {
     void reset      ();
     void sort       ();
     void showentries() const;
+    std::string dump() const;
 
     //  serialize
     unsigned description() const { return totaldescs(); }

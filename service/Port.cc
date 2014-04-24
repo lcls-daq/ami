@@ -9,3 +9,5 @@ unsigned short Port::clientPort()     { return 5720; }
 unsigned short Port::serverPortBase() { return 5721; }
 
 unsigned Port::nPorts() { return 10; }
+
+unsigned short Port::dumpPort() { return 5732; }

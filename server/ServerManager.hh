@@ -3,6 +3,7 @@
 
 #include "ami/service/Fd.hh"
 #include "ami/service/Poll.hh"
+#include "ami/service/DumpSource.hh"
 
 #include <list>
 #include <vector>
@@ -18,7 +19,8 @@ namespace Ami {
   class EventFd;
 
   class ServerManager : public Poll,
-			public Fd {
+			public Fd,
+			public DumpSource {
   public:
     ServerManager (unsigned interface,
 		   unsigned serverGroup);
@@ -44,6 +46,8 @@ namespace Ami {
   public:    // Fd interface
     virtual int fd() const;
     virtual int processIo();
+  public:
+    std::string dump() const;
   private:
     typedef std::list<Server*> SvList;
     unsigned           _interface;

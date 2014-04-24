@@ -5,6 +5,8 @@
 
 #include "ami/data/Message.hh"
 
+#include <string>
+
 class iovec;
 
 namespace Ami {
@@ -20,6 +22,8 @@ namespace Ami {
   protected:
     void _adjust     (int);
     void reply       (unsigned,Message::Type,unsigned);
+  public:
+    std::string dump() const;
   protected:
     Socket*         _socket;
     iovec*          _iov;

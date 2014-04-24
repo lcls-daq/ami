@@ -12,6 +12,8 @@ namespace Ami {
     static unsigned short serverPortBase();
 
     static unsigned nPorts();
+
+    static unsigned short dumpPort();
   };
 };
 

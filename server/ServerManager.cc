@@ -9,7 +9,7 @@
 
 #include "ami/data/Message.hh"
 #include "ami/server/Server.hh"
-#include "ami/server/VServerSocket.hh"
+#include "ami/service/VServerSocket.hh"
 #include "ami/service/Semaphore.hh"
 #include "ami/service/TSocket.hh"
 #include "ami/service/Exception.hh"
@@ -21,6 +21,8 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <sstream>
 
 //#define DBUG
 
@@ -243,4 +245,13 @@ int ServerManager::processIn (const char* payload, int size)
   for(SvList::iterator it=_servers.begin(); it!=_servers.end(); it++)
     (*it)->processIo(payload,size);
   return 1;
+}
+
+std::string ServerManager::dump() const
+{
+  std::ostringstream s;
+  s << "ServerManager" << std::endl;
+  for(SvList::const_iterator it=_servers.begin(); it!=_servers.end(); it++)
+    s << (*it)->dump();
+  return s.str();
 }

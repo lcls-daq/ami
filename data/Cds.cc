@@ -6,6 +6,8 @@
 #include "DescEntry.hh"
 #include "ami/service/Semaphore.hh"
 
+#include <sstream>
+
 //#define DBUG
 
 using namespace Ami;
@@ -125,6 +127,30 @@ void Cds::showentries() const
 	   en->desc().name());
 #endif
   }
+}
+
+std::string Cds::dump() const
+{
+  std::ostringstream s;
+  s << _desc.name() << " serving " << totalentries() << " entries." << std::endl;
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    const Entry* en = *it;
+#ifdef DBUG
+    s << "  [" << en->desc().signature() 
+      << "] [" << DescEntry::type_str(en->desc().type())
+      << "] "  << en->desc().name() 
+      << "  agg "  << (en->desc().aggregate   ()?'t':'f')
+      << "  norm " << (en->desc().isnormalized()?'t':'f')
+      << "  cnt "  << (en->desc().countmode()?'t':'f')
+      << std::endl;
+#else    
+    s << "  [" << en->desc().signature() 
+      << "] [" << DescEntry::type_str(en->desc().type())
+      << "] "  << en->desc().name()
+      << std::endl;
+#endif
+  }
+  return s.str();
 }
 
 void Cds::description(iovec* iov) const

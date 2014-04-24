@@ -1,9 +1,10 @@
 #ifndef Ami_XtcClient_hh
 #define Ami_XtcClient_hh
 
-#include "pdsdata/xtc/ClockTime.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
+#include "ami/service/DumpSource.hh"
 
+#include "pdsdata/xtc/ClockTime.hh"
 #include "ami/app/EventFilter.hh"
 
 #include <list>
@@ -24,7 +25,8 @@ namespace Ami {
   class Entry;
   class NameService;
 
-  class XtcClient : private XtcIterator {
+  class XtcClient : private XtcIterator,
+		    public DumpSource {
   public:
     XtcClient(std::vector<FeatureCache*>& cache, 
 	      Factory&      factory, 
@@ -38,6 +40,8 @@ namespace Ami {
   public:
     static XtcClient* instance();
     std::list<const EventHandler*> handlers() const;
+  public:
+    std::string dump() const;
   private:
     typedef std::list<EventHandler*> HList;
     typedef std::list<Composer*>     CList;
@@ -61,6 +65,7 @@ namespace Ami {
     int       _runno_index;
     double    _runno_value;
     Pds::ClockTime _runtim;
+    unsigned  _nevents;
     bool      _recorded;
     NameService* _name_service;
   };

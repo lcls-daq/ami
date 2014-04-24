@@ -18,13 +18,12 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/Message.hh"
-#include "ami/data/Aggregator.hh"
 
 #include "ami/client/AbsClient.hh"
 #include "ami/client/ClientSocket.hh"
 #include "ami/client/VClientSocket.hh"
 
-#include "ami/server/VServerSocket.hh"
+#include "ami/service/VServerSocket.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -32,6 +31,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <netpacket/packet.h>
+
+#include <sstream>
 
 //#define DBG
 //#define DBUG
@@ -538,3 +539,11 @@ int ClientManager::processTmo()
 }
 
 void ClientManager::dump_throttle() const { _client.dump_throttle(); }
+
+std::string ClientManager::dump() const 
+{
+  std::ostringstream s;
+  s << "\tClientManager" << std::endl
+    << _client.dump();
+  return s.str();
+}

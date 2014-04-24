@@ -5,6 +5,7 @@
 #include "ami/data/UserModuleDriver.hh"
 #include "ami/data/Analysis.hh"
 #include "ami/data/Cds.hh"
+#include "ami/service/DumpSource.hh"
 
 #include <list>
 #include <vector>
@@ -19,7 +20,8 @@ namespace Ami {
   class EventFilter;
 
   class AnalysisFactory : public Factory,
-			  public UserModuleDriver {
+			  public UserModuleDriver,
+			  public DumpSource {
   public:
     AnalysisFactory(std::vector<FeatureCache*>&,
 		    ServerManager&,
@@ -37,6 +39,8 @@ namespace Ami {
     void remove   (unsigned);
   public:
     void recreate (UserModule*);
+  public:
+    std::string dump() const;
   private:
     ServerManager& _srv;
     Cds       _cds;
