@@ -20,7 +20,8 @@ QtProf::QtProf(const QString&   title,
   _yscale(y),
   _curve(entry.desc().name())
 {
-  _curve.setStyle(QwtPlotCurve::Dots);
+  //  _curve.setStyle(QwtPlotCurve::Dots);
+  _curve.setStyle(QwtPlotCurve::Lines);
   QwtSymbol symbol(QwtSymbol::Diamond,QBrush(c),QPen(c),QSize(5,5));
   _curve.setSymbol(symbol);
   _curve.setPen  (QPen(c));

@@ -39,6 +39,7 @@ namespace Ami {
     signals:
       void redraw();
       void counts_changed(double);
+      void curve_changed();
     public slots:
       void save_data();
       void set_plot_title();
@@ -55,7 +56,6 @@ namespace Ami {
       void save_reference();
       void load_reference();
       void show_reference();
-    public:
       void set_style();
     public:
       QString      _name;

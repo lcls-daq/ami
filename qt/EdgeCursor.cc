@@ -6,6 +6,7 @@
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
 #include <QtGui/QLineEdit>
+#include <QtGui/QDoubleValidator>
 #include <QtGui/QPushButton>
 #include <QtCore/QString>
 
@@ -24,6 +25,8 @@ EdgeCursor::EdgeCursor(const QString& name,
   _input (new QLineEdit()),
   _marker(new QwtPlotMarker)
 {
+  new QDoubleValidator(_input);
+
   _marker->setLabel(name);
   _marker->setLineStyle(QwtPlotMarker::HLine);
 
@@ -74,8 +77,6 @@ void EdgeCursor::set_value()
 {
   _marker->setYValue(value());
   _showB->setChecked(true);
-  show_in_plot(true);
-  emit changed();
 }
 
 void EdgeCursor::grab()

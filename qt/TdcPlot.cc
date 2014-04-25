@@ -112,6 +112,7 @@ void TdcPlot::setup_payload(Cds& cds)
       _plot = PlotFactory::plot(_name,*entry,
                                 noTransform,noTransform,QColor(0,0,0));
       _plot->attach(_frame);
+      emit curve_changed();
     }
   }
   else {

@@ -196,6 +196,7 @@ void QtPlot::_layout()
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
   connect(this, SIGNAL(counts_changed(double)), 
 	  this, SLOT(update_counts(double)));
+  connect(this, SIGNAL(curve_changed()), this, SLOT(set_style()));
   connect(_xrange, SIGNAL(windowChanged()), this , SLOT(xrange_change()));
   connect(_yrange, SIGNAL(windowChanged()), this , SLOT(yrange_change()));
 }

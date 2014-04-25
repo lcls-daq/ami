@@ -162,6 +162,7 @@ void CursorPlot::setup_payload(Cds& cds)
         return;
       }
       _plot->attach(_frame);
+      emit curve_changed();
     }
   }
   else {

@@ -56,6 +56,8 @@ static QChar _subtract    (0x002D);
 
 void ChannelMath::calc()
 {
+  static const QChar Asterisk('*');  // denote smp_prohibit limitations
+
   QStringList ops;
   ops << _exponentiate
       << _multiply
@@ -67,8 +69,12 @@ void ChannelMath::calc()
 
   QStringList names;
   for(unsigned i=0; i<_nch; i++)
-    if (!(i==_ich || _chs[i]->smp_prohibit()))
-      names << _chs[i]->name();
+    if (!(i==_ich)) {
+      if (_chs[i]->smp_prohibit())
+	names << QString("%1%2").arg(_chs[i]->name()).arg(Asterisk);
+      else
+	names << _chs[i]->name();
+    }
 
   names << FeatureRegistry::instance().names();
 
@@ -76,7 +82,7 @@ void ChannelMath::calc()
                                  tr("Channel Math"),"",
 				 names, vops, ops);
   if (c->exec()==QDialog::Accepted) {
-    _expr->setText(c->result());
+    _expr->setText(c->result().remove(Asterisk));
     _changed = true;
   }
 

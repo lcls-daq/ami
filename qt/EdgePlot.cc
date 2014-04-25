@@ -208,6 +208,7 @@ void EdgePlot::setup_payload(Cds& cds)
       }
     }
   }
+  emit curve_changed();
 }
 
 void EdgePlot::addfinder(Ami::EdgeFinder *f)

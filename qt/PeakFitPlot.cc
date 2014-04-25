@@ -159,6 +159,7 @@ void PeakFitPlot::setup_payload(Cds& cds)
         _plot = new QtEmpty;
       }
       _plot->attach(_frame);
+      emit curve_changed();
     }
   }
   else {
