@@ -296,8 +296,6 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
     break;
   }
 
-  const char* typeName = Pds::TypeId::name(xtc->contains.id());
-
   if (_name_service) {
     const char* name = _name_service->name(h->info());
     if (name)
@@ -314,7 +312,6 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
 
   const int nentries = h->nentries();
   if (nentries == 0) {
-    //printf("%s XtcClient::_configure: %s (%s): no entries\n", time, infoName, typeName);
     return;
   }
   for (int i = 0; i < nentries; i++) {
@@ -323,6 +320,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
     const_cast<DescEntry&>(desc).recorded(_recorded);  // flag recorded/unrecorded data
 #ifdef DBUG
     const DescEntry* descPtr = &desc;
+    const char* typeName = Pds::TypeId::name(xtc->contains.id());
     const char* name = descPtr->name();
     printf("%s XtcClient::_configure: %s (%s): entry[%d]=%s\n", time, infoName, typeName, i, name);
 #endif
@@ -549,7 +547,7 @@ std::string XtcClient::dump() const
   time_t t(_seq->clock().seconds());
   char buff[64];
   strftime(buff, 64, "%T", localtime(&t));
-  s << "\tXtcClient : nevts " << _nevents <<
+  s << "\tXtcClient : nevts " << _nevents
     << " : seq " << buff
     << "." << std::setw(9) <<  _seq->clock().nanoseconds()
     << std::endl;
