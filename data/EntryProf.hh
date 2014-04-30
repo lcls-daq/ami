@@ -35,8 +35,8 @@ namespace Ami {
     const double* ysum   () const;
     const double* y2sum  () const;
 
-    void addy(double y, unsigned bin);
-    void addy(double y, double x);
+    void addy(double y, unsigned bin, double w=1);
+    void addy(double y, double x, double w=1);
 
     enum Info { Underflow, Overflow, Normalization, InfoSize };
     double info(Info) const;
@@ -102,13 +102,13 @@ namespace Ami {
   inline double EntryProf::nentries(unsigned bin) const {return *(_nentries+bin);}
   inline void EntryProf::nentries(double nent, unsigned bin) {*(_nentries+bin) = nent;}
 
-  inline void EntryProf::addy(double y, unsigned bin) 
+  inline void EntryProf::addy(double y, unsigned bin, double w) 
   {
-    _ysum[bin] += y;
-    _y2sum[bin] += y*y;
-    _nentries[bin] += 1;
+    _ysum[bin] += y*w;
+    _y2sum[bin] += y*y*w;
+    _nentries[bin] += w;
   }
-  inline void EntryProf::addy(double y, double x)
+  inline void EntryProf::addy(double y, double x, double w)
   {
     int bin = int((x-_desc.xlow())*double(_desc.nbins())/(_desc.xup()-_desc.xlow()));
     if (bin < 0)      
@@ -116,7 +116,7 @@ namespace Ami {
     else if ((unsigned)bin >= _desc.nbins())
       addinfo(y,Overflow);
     else 
-      addy   (y,(unsigned)bin);
+      addy   (y,(unsigned)bin,w);
   }
 
   inline double EntryProf::info(Info i) const { return *(_nentries+_desc.nbins()+int(i)); }

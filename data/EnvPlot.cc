@@ -166,9 +166,9 @@ Entry&     EnvPlot::_operate(const Entry& e) const
       case DescEntry::Prof:    
 	if (_term) {
 	  double x=_term->evaluate();
-	  if (_term->valid()) {
+	  if (_term->valid() && (!_weight || _weight->valid())) {
 	    EntryProf* en = static_cast<EntryProf*>(_entry);
-	    en->addy(y,x);
+	    en->addy(y,x,w);
 	    en->addinfo(1.,EntryProf::Normalization);
 	  }
 	}

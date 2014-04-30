@@ -6,6 +6,7 @@
 #include <QtGui/QLabel>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QPushButton>
+#include <QtGui/QPalette>
 
 #include <map>
 
@@ -57,6 +58,7 @@ void QtTable::entry (const EntryScalar* e)
 void QtTable::set_label()
 {
   _label->setText(_entry->desc().name());
+  _value->setText("-");
 }
 
 void QtTable::update()
@@ -69,11 +71,13 @@ void QtTable::update()
     if (n > 0) {
       double v = (_entry->sum() - _cache->sum())/n;
       _value->setText(QString::number(v));
+      _value->setPalette(QPalette());
       _cache->setto(*_entry);
       return;
     }
     _cache->setto(*_entry);
   }
-  _value->setText("-");
+  QPalette p; p.setColor(QPalette::Text, ::Qt::red);
+  _value->setPalette(p);
 }
 
