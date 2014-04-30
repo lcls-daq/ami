@@ -29,7 +29,7 @@
 
 #include <stdio.h>
 
-#define ACCUM_STATS
+//#define ACCUM_STATS
 
 using namespace Ami::Qt;
 
@@ -200,7 +200,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 
   switch(_plot_grp->currentIndex()) {
   case ScalarPlotDesc::TH1F:
-    { QString v = _ynorm->isChecked() ? vn : qtitle;
+    { QString v = _xnorm->isChecked() ? vn : qtitle;
       switch(_hist->method()) {
       case DescBinning::Fixed:
         desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",

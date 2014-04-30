@@ -1,4 +1,5 @@
 #include "Calib.hh"
+#include "CalibFile.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -256,7 +257,6 @@ std::string offl_path(std::string basepath,
                       const Pds::DetInfo& info,
                       std::string off_calib_type)
 {
-  std::string path;
   std::ostringstream o;
   o << basepath
     << offCalibClass[info.device()] << "/"
@@ -264,43 +264,28 @@ std::string offl_path(std::string basepath,
     << Pds::DetInfo::name(info.device  ()) << "." << info.devId()
     << "/" << off_calib_type << "/*";
 
-  char buff[512];
+  //
+  //  Follow the CalibFileFinder.cpp prescription
+  //
   glob_t g;
   glob(o.str().c_str(),0,0,&g);
 
-  int last_begin = 0;
+  std::vector<Ami::CalibFile> calfiles;
 
   for(unsigned i=0; i<g.gl_pathc; i++) {
-    std::string base(basename(strcpy(buff,g.gl_pathv[i])));
-
-    std::string::size_type p = base.find("-");
-    if (p == std::string::npos)
-      continue;
-
-    std::string::size_type q = base.find(".");
-    if (q != std::string::npos)
-      q -= p+1;
-    
-    std::string beginstr(base, 0, p);
-    std::string endstr  (base, p+1, q);
-
-    char* endPtr;
-    int begin = strtol(beginstr.c_str(),&endPtr,0);
-    if (endPtr==beginstr.c_str() || begin > _run)
-      continue;
-    
-    if (endstr != "end") {
-      int end = strtol(endstr.c_str(),&endPtr,0);
-      if (endPtr==endstr.c_str() || end < _run)
-        continue;
-    }
-
-    if (begin < last_begin)
-      continue;
-
-    last_begin = begin;
-    path = std::string(g.gl_pathv[i]);
+    try {
+      calfiles.push_back(Ami::CalibFile(std::string(g.gl_pathv[i])));
+    } 
+    catch (const std::exception& ex) {}
   }
   globfree(&g);
-  return path;
+
+  std::sort(calfiles.begin(), calfiles.end());
+  typedef std::vector<Ami::CalibFile>::const_reverse_iterator FileIter;
+  for (FileIter it = calfiles.rbegin() ; it != calfiles.rend() ; ++ it ) {
+    if (int(it->begin()) <= _run &&
+	_run <= int(it->end()))
+      return it->path();
+  }
+  return std::string();
 }
