@@ -78,6 +78,10 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
 
   unsigned channelMask = (1<<c.numberOfChannels())-1;
   unsigned channelNumber = 0;
+  { Pds::DetInfo::Device dev =static_cast<const Pds::DetInfo&>(info()).device();
+    if (dev==Pds::DetInfo::Epix || dev==Pds::DetInfo::Epix10k)
+      channelNumber = 1;
+  }
 
   double sampleInterval = 20.e-9;
   //  double sampleInterval = c.sampleInterval_sec();

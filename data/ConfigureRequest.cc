@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 

@@ -5,6 +5,8 @@
 #include "ami/event/CspadTemp.hh"
 #include "ami/data/DescImage.hh"
 
+#include "pdsdata/xtc/TypeId.hh"
+
 #include "ndarray/ndarray.h"
 
 namespace Ami {
@@ -38,6 +40,7 @@ namespace Ami {
     EntryImage*         _entry;
     EntryImage*         _pentry;
     char*               _config_buffer;
+    Pds::TypeId         _config_id;
     unsigned            _options;
     ndarray<unsigned,2> _status;
     ndarray<unsigned,2> _pedestals;
