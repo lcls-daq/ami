@@ -44,6 +44,8 @@ Aggregator::Aggregator(AbsClient& client) :
   _state           (Init),
   _latest          (0),
   _current         (0),
+  _nprocess        (0),
+  _tmo             (0),
   _tag             (-1),
   _request         (EntryList::Full)
 {
@@ -98,6 +100,7 @@ int  Aggregator::configured      ()
 void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 {
   _checkState("dcov",id);
+  _latest = id;
 
   if (_state != Discovering || id != _tag) {
     _state = Discovering;
@@ -124,6 +127,7 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 int Aggregator::read_description(Socket& socket, int len, unsigned id) 
 {
   _checkState("desc",id);
+  _latest = id;
 
   int nbytes = 0;
   if (_n == 1) {
@@ -217,6 +221,8 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 int  Aggregator::read_payload    (Socket& s, int sz, unsigned id) 
 {
   //  _checkState("payl");
+  _latest = id;
+
   int nbytes = 0;
   if (_state != Described) {
 #ifdef DBUG
@@ -293,12 +299,15 @@ bool Aggregator::svc() const { return _client.svc(); }
 void Aggregator::process         () 
 {
   //  _checkState("proc");
-  if (_state==Described && _remaining==0)
+  if (_state==Described && _remaining==0) {
+    _nprocess++;
     _client.process();
+  }
 }
 
 void Aggregator::tmo()
 {
+  _tmo++;
   //  _checkState("tmo");
 #ifdef DBUG
   if (_remaining != 0) {
@@ -342,7 +351,13 @@ std::string Aggregator::dump() const
   s << "Aggregator : State " << State[_state]
     << " : remaining " << _remaining 
     << " : nsources "  << _nsources 
-    << " : n " << _n << std::endl;
-  s << _cds.dump();
+    << " : n " << _n << std::endl
+    << "\t: tag " << _tag
+    << " : current " << _current 
+    << " : latest " << _latest
+    << " : nprocess " << _nprocess
+    << " : tmo " << _tmo << std::endl;
+  if (_n > 1)
+    s << _cds.dump();
   return s.str();
 }

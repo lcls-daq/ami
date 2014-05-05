@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 
-#define DBUG
+//#define DBUG
 
 static const uint64_t INVALID_BIT  = 1ULL;
 static const uint64_t VALID_MASK = ~INVALID_BIT;

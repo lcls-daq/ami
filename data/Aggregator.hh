@@ -50,8 +50,10 @@ namespace Ami {
     enum { Init, Connecting, Connected, 
            Discovering, Discovered, Configured, 
            Describing, Described, Processing } _state;
-    double     _latest;
+    unsigned   _latest;
     unsigned   _current;
+    unsigned   _nprocess;
+    unsigned   _tmo;
     unsigned   _tag;
     EntryList  _request;
   };
