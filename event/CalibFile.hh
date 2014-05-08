@@ -22,6 +22,7 @@ namespace Ami {
       
       std::string beginstr(basename, 0, p);
       std::string endstr(basename, p+1);
+      endstr = endstr.substr(0,endstr.find('.'));
       
       m_begin = boost::lexical_cast<unsigned>(beginstr);
       if (endstr == "end") {
