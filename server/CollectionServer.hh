@@ -34,6 +34,8 @@ namespace Ami {
     int  read_payload    (Socket&,int);
     bool svc             () const;
     void process         ();
+  public:
+    std::string dump() const;
   private:
     void _reply  (Message::Type, Socket&, int);
   private:

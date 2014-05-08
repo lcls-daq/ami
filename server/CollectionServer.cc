@@ -9,6 +9,8 @@
 #include "ami/client/ClientManager.hh"
 #include "ami/data/Discovery.hh"
 
+#include <sstream>
+
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -144,4 +146,14 @@ void CollectionServer::_reply(Message::Type t, Socket& s, int len)
   _iov[1].iov_len  = len;
   reply(_client_manager->request().id(), t, 2);
 #endif
+}
+
+std::string CollectionServer::dump() const
+{
+  std::stringstream s;
+  s << "<CollectionServer>" << std::endl
+    << Server::dump()
+    << _client_manager->dump()
+    << "</CollectionServer>" << std::endl;
+  return s.str();
 }

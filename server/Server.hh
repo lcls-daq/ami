@@ -2,6 +2,7 @@
 #define Ami_Server
 
 #include "ami/service/Fd.hh"
+#include "ami/service/DumpSource.hh"
 
 #include "ami/data/Message.hh"
 
@@ -13,7 +14,8 @@ namespace Ami {
 
   class Socket;
 
-  class Server : public Fd {
+  class Server : public Fd,
+		 public DumpSource {
   public:
     Server(Socket*);
     ~Server();

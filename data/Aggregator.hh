@@ -38,6 +38,7 @@ namespace Ami {
     void _checkState     (const char*, unsigned);
   private:
     AbsClient& _client;
+    uint64_t   _allocated;
     unsigned   _n;
     unsigned   _remaining;
     unsigned   _nsources;

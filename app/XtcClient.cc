@@ -548,9 +548,11 @@ std::string XtcClient::dump() const
   time_t t(_seq->clock().seconds());
   char buff[64];
   strftime(buff, 64, "%T", localtime(&t));
-  s << "\tXtcClient : nevts " << _nevents
-    << " : seq " << buff
-    << "." << std::setw(9) <<  _seq->clock().nanoseconds()
+  s << "\tXtcClient : rdy " << (_ready ? 't':'f')
+    << " : nevts " << _nevents
+    << " : " << Pds::TransitionId::name(_seq->service()) 
+    << " " << buff
+    << "." << std::setfill('0') << std::setw(9) <<  _seq->clock().nanoseconds()
     << std::endl;
   return s.str();
 }

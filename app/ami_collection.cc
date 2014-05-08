@@ -1,6 +1,7 @@
 #include "ami/app/AmiApp.hh"
 #include "ami/server/CollectionServerManager.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/DumpCollector.hh"
 
 #include <stdlib.h>
 
@@ -52,6 +53,10 @@ int main(int argc, char* argv[]) {
                                    client_group,
                                    server_interface, 
                                    server_group);
+
+  Ami::DumpCollector dump;
+  dump.add(srv);
+
   srv.serve();
   srv.routine();
   srv.dont_serve();

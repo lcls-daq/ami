@@ -128,6 +128,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
 {
   _checkState("desc",id);
   _latest = id;
+  _allocated = 0;
 
   int nbytes = 0;
   if (_n == 1) {
@@ -245,6 +246,8 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       }
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
+
+      _allocated = 1ULL<<s.socket();
 #ifdef DBUG
       //
       // validate
@@ -270,6 +273,8 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 #endif
     }
     else {  // aggregate
+      _allocated |= 1ULL<<s.socket();
+
       int niov = _cds.payload(_iovload,_request);
       _cds.description(_iovdesc,_request);
       nbytes = s.readv(_iovload,niov);
@@ -314,7 +319,7 @@ void Aggregator::tmo()
     printf("[%p] : tmo : State %s : remaining %d/%d\n", this, State[_state], _remaining, _n);
   }
 #endif
-  if (_state == Connected)    
+  if (_state == Connected)
     _client.connected();
   else if (_state == Connecting)    
     _state = Connected;
@@ -352,7 +357,8 @@ std::string Aggregator::dump() const
     << " : remaining " << _remaining 
     << " : nsources "  << _nsources 
     << " : n " << _n << std::endl
-    << "\t: tag " << _tag
+    << " : alloc 0x" << std::hex << _allocated
+    << "\t: tag " << std::dec << _tag
     << " : current " << _current 
     << " : latest " << _latest
     << " : nprocess " << _nprocess
