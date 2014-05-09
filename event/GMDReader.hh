@@ -24,6 +24,7 @@ namespace Ami {
   private:
     FeatureCache& _cache;
     int           _index;
+    int           _version;
   };
 
 };
