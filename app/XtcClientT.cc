@@ -17,6 +17,7 @@ namespace AmiT {
       _c.Ami::XtcClient::processDgram(pdg); 
       sem_post(_sem); 
       delete[] _dg;
+      delete this;
     }
   private:
     Ami::XtcClient& _c;

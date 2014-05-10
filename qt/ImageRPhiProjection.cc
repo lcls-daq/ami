@@ -17,8 +17,6 @@
 #include "ami/qt/ControlLog.hh"
 
 #include "ami/data/BinMath.hh"
-#include "ami/data/DescTH1F.hh"
-#include "ami/data/DescProf.hh"
 #include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/RPhiProjection.hh"

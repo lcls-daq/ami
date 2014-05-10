@@ -1,14 +1,6 @@
 #include "CurveFit.hh"
 
-#include "ami/data/FeatureCache.hh"
 #include "ami/data/DescEntry.hh"
-#include "ami/data/Entry.hh"
-#include "ami/data/EntryScalar.hh"
-#include "ami/data/EntryImage.hh"
-#include "ami/data/EntryTH1F.hh"
-#include "ami/data/EntryProf.hh"
-#include "ami/data/EntryScan.hh"
-#include "ami/data/EntryCache.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 
@@ -17,6 +9,7 @@
 #include "ami/data/FeatureExpression.hh"
 #include "ami/data/valgnd.hh"
 
+#include <math.h>
 #include <stdio.h>
 
 #define DBUG
@@ -31,7 +24,6 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
   _input(0),
   _op(op),
   _entry(0),
-  _fterm(0),
   _nterm(0),
   _v    (true)
 {
@@ -47,7 +39,6 @@ CurveFit::CurveFit(const char *name, int op, const DescEntry& output, const char
 CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& features) :
     AbsOperator     (AbsOperator::CurveFit),
     _input          (&input),
-    _fterm          (0),
     _v              (true)
 {
     FILE *fp;
@@ -95,16 +86,7 @@ CurveFit::CurveFit(const char*& p, const DescEntry& input, FeatureCache& feature
     } else
         _nterm = 0;
 
-    if (o.type() == DescEntry::Prof ||
-        o.type() == DescEntry::Scan) {
-        QString expr(o.xtitle());
-        FeatureExpression parser;
-        _fterm = parser.evaluate(features,expr);
-        if (!_fterm) {
-            printf("CurveFit failed to parse f %s\n",qPrintable(expr));
-            _v = false;
-        }
-    }
+    _setup(o, features);
 }
 
 CurveFit::~CurveFit()
@@ -121,7 +103,7 @@ CurveFit::~CurveFit()
 
 void CurveFit::use() 
 { 
-  if (_fterm) _fterm->use();
+  _use();
   if (_nterm) _nterm->use();
 }
 
@@ -147,8 +129,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
 
     Pds::ClockTime now = e.time();
     int slot;
-    double x, y = 0.0;
-    bool damaged = false;
+    double y = 0.0;
 
     // Look for our cache slot.
     for (slot = 0; slot < CALC_LEN; slot++)
@@ -241,49 +222,7 @@ Entry&     CurveFit::_operate(const Entry& e) const
     if (_nterm)
         y = y / _nterm->evaluate();
 
-    /* Send it on its way! */
-    switch(_entry->desc().type()) {
-    case DescEntry::Scalar:  
-        { EntryScalar* en = static_cast<EntryScalar*>(_entry);
-            en->addcontent(y);
-            break; }
-    case DescEntry::TH1F:
-        { EntryTH1F* en = static_cast<EntryTH1F*  >(_entry);
-            en->addcontent(1.,y); 
-            en->addinfo(1.,EntryTH1F::Normalization);
-            break; }
-    case DescEntry::Prof:
-        if (!_fterm)
-            return *_entry;
-        x = _fterm->evaluate();
-        if (!damaged) {
-            EntryProf *ep = static_cast<EntryProf*>(_entry);
-            ep->addy(y, x);
-            ep->addinfo(1., EntryProf::Normalization);
-        }
-        break;
-    case DescEntry::Scan:    
-        if (!_fterm)
-            return *_entry;
-        x = _fterm->evaluate();
-        if (!damaged) {
-            EntryScan *es = static_cast<EntryScan*>(_entry);
-            es->addy(y, x, 1., e.last());
-            es->addinfo(1., EntryScan::Normalization);
-        }
-        break;
-    case DescEntry::Cache:
-        { EntryCache* en = static_cast<EntryCache*>(_entry);
-            en->set(y,false);
-            break; }
-    case DescEntry::Waveform:
-    case DescEntry::TH2F:
-    case DescEntry::Image:
-    default:
-        printf("CurvFit::_operator no implementation for type %d\n",_entry->desc().type());
-        break;
-    }
-    _entry->valid(now);
+    _fill(*_entry, y, now);
     return *_entry;
 }
 

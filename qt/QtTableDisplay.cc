@@ -8,7 +8,8 @@ using namespace Ami::Qt;
 static QtTableDisplay* _instance = 0;
 
 QtTableDisplay::QtTableDisplay() :
-  QWidget(0)
+  QWidget(0),
+  _size_changed(0)
 {
   //  setAttribute(::Qt::WA_DeleteOnClose, true);
   QVBoxLayout* l = new QVBoxLayout;

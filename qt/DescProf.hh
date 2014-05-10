@@ -25,7 +25,7 @@ namespace Ami {
       double   lo  () const;
       double   hi  () const;
       QString  expr() const;
-      QString  feature() const;
+      //      QString  feature() const;
     private:
       QRadioButton* _button;
       QLineEdit *_bins, *_lo, *_hi;

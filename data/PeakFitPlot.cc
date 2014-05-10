@@ -22,45 +22,6 @@
 
 #include <stdio.h>
 
-namespace Ami {
-  class EntryAccessor {
-  public:
-    virtual ~EntryAccessor() {}
-    virtual double bin_value(unsigned,bool&) const = 0;
-    virtual unsigned nbins() const = 0;
-    virtual double xlow() const = 0;
-    virtual double xup () const = 0;
-  };
-  class TH1FAccessor : public EntryAccessor {
-  public:
-    TH1FAccessor(const EntryTH1F& e) : _entry(e) {}
-    double bin_value(unsigned bin,
-		     bool& valid) const 
-    { valid=true; return _entry.content(bin)/_entry.info(EntryTH1F::Normalization); }
-    unsigned nbins() const { return _entry.desc().nbins(); }
-    double xlow() const { return _entry.desc().xlow(); }
-    double xup () const { return _entry.desc().xup (); }
-  private:
-    const EntryTH1F& _entry;
-  };
-  class ProfAccessor : public EntryAccessor {
-  public:
-    ProfAccessor(const EntryProf& e) : _entry(e) {}
-    double bin_value(unsigned bin,
-		     bool& valid) const 
-    {
-      double n=_entry.nentries(bin);
-      if (!(n>0)) { valid=false; return 0; }
-      else { valid = true; return _entry.ysum(bin)/n; } 
-    }
-    unsigned nbins() const { return _entry.desc().nbins(); }
-    double xlow() const { return _entry.desc().xlow(); }
-    double xup () const { return _entry.desc().xup (); }
-  private:
-    const EntryProf& _entry;
-  };
-};
-
 using namespace Ami;
 
 
@@ -72,7 +33,6 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _baseline  (baseline),
   _prm       (prm),
   _cache     (0),
-  _term      (0),
   _entry     (0)
 {
   memcpy (_desc_buffer, &output, output.size());
@@ -88,7 +48,6 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _baseline  (0),
   _prm       (prm),
   _cache     (0),
-  _term      (0),
   _entry     (0),
   _v         (true)
 {
@@ -100,7 +59,6 @@ PeakFitPlot::PeakFitPlot(const char*& p,
                          FeatureCache& features) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache (&features),
-  _term  (0),
   _v     (true)
 {
   _extract(p, _desc_buffer, DESC_LEN);
@@ -117,23 +75,12 @@ PeakFitPlot::PeakFitPlot(const char*& p,
 
   _entry = EntryFactory::entry(o);
 
-  if (o.type()==DescEntry::Prof ||
-      o.type()==DescEntry::Scan ||
-      o.type()==DescEntry::TH2F) {
-    QString expr(o.xtitle());
-    FeatureExpression parser;
-    _term = parser.evaluate(features,expr);
-    if (!_term) {
-      printf("PeakFitPlot failed to parse %s\n",qPrintable(expr));
-      _v = false;
-    }
-  }
+  _v = _setup(o, features);
 }
 
 PeakFitPlot::PeakFitPlot(const char*& p) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache(0),
-  _term (0),
   _entry(0),
   _v    (true)
 {
@@ -150,11 +97,10 @@ PeakFitPlot::PeakFitPlot(const char*& p) :
 
 PeakFitPlot::~PeakFitPlot()
 {
-  if (_term ) delete _term;
   if (_entry) delete _entry;
 }
 
-void PeakFitPlot::use() { if (_term) _term->use(); }
+void PeakFitPlot::use() { _use(); }
 
 PeakFitPlot::Parameter  PeakFitPlot::prm      () const { return _prm; }
 
@@ -263,70 +209,8 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     }
   }
 
-  bool damaged=false;
-  switch(_entry->desc().type()) {
-  case DescEntry::Scalar: 
-    { EntryScalar* en = static_cast<EntryScalar*>(_entry);
-      en->addcontent(y);    
-      break; }
-  case DescEntry::ScalarRange: 
-    { EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
-      en->addcontent(y);    
-      break; }
-  case DescEntry::ScalarDRange: 
-    if (!_term) return *_entry;
-    { double x=_term->evaluate();
-      if (!damaged) {
-        EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
-        en->addcontent(x,y);    
-      }
-      break; }
-  case DescEntry::TH1F: 
-    { EntryTH1F* en = static_cast<EntryTH1F*>(_entry);
-      en->addcontent(1.,y); 
-      en->addinfo(1.,EntryTH1F::Normalization);
-      break; }
-  case DescEntry::TH2F: 
-    if (!_term) return *_entry;
-    { double x=_term->evaluate();
-      if (!damaged) {
-        EntryTH2F* en = static_cast<EntryTH2F*>(_entry);
-        en->addcontent(1.,x,y); 
-        en->addinfo(1.,EntryTH2F::Normalization);
-      }
-      break; }
-  case DescEntry::Prof:    
-    if (!_term)
-      return *_entry;
-    { double x=_term->evaluate();
-      if (!damaged) {
-	EntryProf* en = static_cast<EntryProf*>(_entry);
-	en->addy(y,x);
-	en->addinfo(1.,EntryProf::Normalization);
-      }
-      break; }
-  case DescEntry::Scan:    
-    if (!_term)
-      return *_entry;
-    { double x=_term->evaluate();
-      if (!damaged) {
-	EntryScan* en = static_cast<EntryScan*>(_entry);
-	en->addy(y,x,1.,e.last());
-	en->addinfo(1.,EntryScan::Normalization);
-      }
-      break; }
-  case DescEntry::Cache:
-    { EntryCache* en = static_cast<EntryCache*>(_entry);
-      en->set(y,damaged);
-      break; }
-  case DescEntry::Waveform:
-  case DescEntry::Image:
-  default:
-    printf("PeakFitPlot::_operator no implementation for type %d\n",_entry->desc().type());
-    break;
-  }
-  if (!damaged)
-    _entry->valid(e.time());
+  _fill(*_entry, y, e.time());
+
   return *_entry;
 }
 

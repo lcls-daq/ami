@@ -6,6 +6,7 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryProf2D.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/SelfExpression.hh"
 #include "ami/data/valgnd.hh"
@@ -113,6 +114,17 @@ Entry&     Average::_operate(const Entry& e) const
       if (_n) {
         if (++_current>=_n) {
           static_cast<EntryProf*>(_cache)->setto(_en);
+          _en.reset();
+          _current=0;
+        }
+      }
+      break; }
+  case DescEntry::Prof2D:
+    { EntryProf2D& _en = static_cast<EntryProf2D&>(*_entry);
+      _en.sum(_en,static_cast<const EntryProf2D&>(e));
+      if (_n) {
+        if (++_current>=_n) {
+          static_cast<EntryProf2D*>(_cache)->setto(_en);
           _en.reset();
           _current=0;
         }

@@ -3,10 +3,8 @@
 #include "ami/data/Complex.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescTH1F.hh"
-#include "ami/data/DescProf.hh"
 #include "ami/data/DescWaveform.hh"
 #include "ami/data/EntryTH1F.hh"
-#include "ami/data/EntryProf.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryFactory.hh"
 

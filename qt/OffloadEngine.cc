@@ -35,7 +35,7 @@ namespace Ami {
     public:
       SyncRoutine(Ami::Semaphore& sem) : _sem(sem) {}
     public:
-      void routine() { _sem.give(); }
+      void routine() { _sem.give(); delete this; }
     private:
       Ami::Semaphore& _sem;
     };

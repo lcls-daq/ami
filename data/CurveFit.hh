@@ -2,6 +2,7 @@
 #define Ami_CurveFit_hh
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/ScalarPlot.hh"
 #include "ami/data/DescTH1F.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 #include <vector>
@@ -17,7 +18,7 @@ namespace Ami {
   //
   //  Leading edge finder
   //
-  class CurveFit : public AbsOperator {
+  class CurveFit : public AbsOperator, public ScalarPlot {
   public:
     CurveFit(const char *name, int op, const DescEntry& output, const char *norm = 0);
     CurveFit(const char*&, const DescEntry& input, FeatureCache& features);
@@ -46,7 +47,6 @@ namespace Ami {
     std::vector<double> _refdata;
     double         _refstart, _refend;
     double         _refbw;
-    Term*         _fterm;
     Term*         _nterm;
     bool          _v;
 

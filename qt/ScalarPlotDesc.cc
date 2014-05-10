@@ -4,6 +4,7 @@
 #include "ami/qt/DescTH2F.hh"
 #include "ami/qt/DescChart.hh"
 #include "ami/qt/DescProf.hh"
+#include "ami/qt/DescProf2D.hh"
 #include "ami/qt/DescScan.hh"
 //#include "ami/qt/DescText.hh"
 #include "ami/qt/SMPRegistry.hh"
@@ -13,6 +14,7 @@
 #include "ami/data/DescTH2F.hh"
 #include "ami/data/DescScalar.hh"
 #include "ami/data/DescProf.hh"
+#include "ami/data/DescProf2D.hh"
 #include "ami/data/DescScan.hh"
 #include "ami/data/DescScalarRange.hh"
 #include "ami/data/DescScalarDRange.hh"
@@ -49,7 +51,8 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
 
   _hist   = new DescTH1F  ("1dH");
   _vTime  = new DescChart ("v Time");
-  _vFeature = new DescProf("Mean v Var" , registry);
+  _vFeature  = new DescProf("Mean v Var" , registry);
+  _vFeature2 = new DescProf2D("Mean v Var2D" , registry);
   _vScan    = new DescScan("Mean v Scan", registry);
   _hist2d = new DescTH2F  ("2dH", registry);
 
@@ -90,11 +93,12 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
   { QGroupBox* box = new QGroupBox("Plot Type");
     QVBoxLayout* vl = new QVBoxLayout;
     QTabWidget* tab = new QTabWidget;
-    tab->addTab(_hist    , _hist    ->button()->text());
-    tab->addTab(_vTime   , _vTime   ->button()->text());
-    tab->addTab(_vFeature, _vFeature->button()->text());
-    tab->addTab(_vScan   , _vScan   ->button()->text());
-    tab->addTab(_hist2d  , _hist2d  ->button()->text());
+    tab->addTab(_hist     , _hist     ->button()->text());
+    tab->addTab(_vTime    , _vTime    ->button()->text());
+    tab->addTab(_vFeature , _vFeature ->button()->text());
+    tab->addTab(_vScan    , _vScan    ->button()->text());
+    tab->addTab(_hist2d   , _hist2d   ->button()->text());
+    tab->addTab(_vFeature2, _vFeature2->button()->text());
     //    tab->addTab(_text    , _text    ->button()->text());
     vl->addWidget(tab);
     _plot_grp = tab;
@@ -147,11 +151,12 @@ ScalarPlotDesc::~ScalarPlotDesc()
 
 void ScalarPlotDesc::save(char*& p) const
 {
-  XML_insert(p, "DescTH1F" , "_hist"    , _hist    ->save(p) );
-  XML_insert(p, "DescChart", "_vTime"   , _vTime   ->save(p) );
-  XML_insert(p, "DescProf" , "_vFeature", _vFeature->save(p) );
-  XML_insert(p, "DescScan" , "_vScan"   , _vScan   ->save(p) );
-  XML_insert(p, "DescTH2F" , "_hist2d"  , _hist2d  ->save(p) );
+  XML_insert(p, "DescTH1F"  , "_hist"     , _hist     ->save(p) );
+  XML_insert(p, "DescChart" , "_vTime"    , _vTime    ->save(p) );
+  XML_insert(p, "DescProf"  , "_vFeature" , _vFeature ->save(p) );
+  XML_insert(p, "DescProf2D", "_vFeature2", _vFeature2->save(p) );
+  XML_insert(p, "DescScan"  , "_vScan"    , _vScan    ->save(p) );
+  XML_insert(p, "DescTH2F"  , "_hist2d"   , _hist2d   ->save(p) );
   XML_insert(p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->currentIndex ()) );
 #ifdef ACCUM_STATS
   XML_insert(p, "QButtonGroup", "_agg_grp" , QtPersistent::insert(p,_agg_grp->checkedId ()) );
@@ -170,6 +175,8 @@ void ScalarPlotDesc::load(const char*& p)
       _vTime   ->load(p);
     else if (tag.name == "_vFeature")
       _vFeature->load(p);
+    else if (tag.name == "_vFeature2")
+      _vFeature2->load(p);
     else if (tag.name == "_vScan")
       _vScan   ->load(p);
     else if (tag.name == "_hist2d")
@@ -248,6 +255,17 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 			       qPrintable(vx),"mean",
 			       _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean",
 			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+      break; }
+  case ScalarPlotDesc::vF2:
+    { QString vy = _ynorm->isChecked() ? QString("(%1)/(%2)").arg(_vFeature2->yexpr()).arg(_vnorm->entry()) : _vFeature2->yexpr();
+      QString vx = _xnorm->isChecked() ? QString("(%1)/(%2)").arg(_vFeature2->xexpr()).arg(_vnorm->entry()) : _vFeature2->xexpr();
+      QString vz = qtitle;
+      desc = new Ami::DescProf2D(qPrintable(vz),
+                                 qPrintable(vx),qPrintable(vy),
+                                 _vFeature2->xbins(),_vFeature2->xlo(),_vFeature2->xhi(),
+                                 _vFeature2->ybins(),_vFeature2->ylo(),_vFeature2->yhi(),
+                                 "mean",
+                                 _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
       break; }
   case ScalarPlotDesc::vS:
     { QString vy = _ynorm->isChecked() ? vn : qtitle;
@@ -354,6 +372,19 @@ bool ScalarPlotDesc::postAnalysis() const
     if (_vFeature->expr().contains(_post_str))
       post = true;
     if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
+      post = true;
+    if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
+      post = true;
+    break;
+
+  case ScalarPlotDesc::vF2:
+    if (_vFeature2->xexpr().contains(_post_str))
+      post = true;
+    if (_vFeature2->yexpr().contains(_post_str))
+      post = true;
+    if (_xnorm->isChecked() && _vnorm->entry().contains(_post_str))
+      post = true;
+    if (_ynorm->isChecked() && _vnorm->entry().contains(_post_str))
       post = true;
     if (_weightB->isChecked() && _vweight->entry().contains(_post_str))
       post = true;

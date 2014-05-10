@@ -20,7 +20,7 @@ namespace Ami {
   class DescEntry : public Desc {
   public:
     ///  Enumeration of subclasses
-    enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan, Ref, Cache, ScalarRange, ScalarDRange};
+    enum Type {Scalar, TH1F, TH2F, Prof, Image, Waveform, Scan, Ref, Cache, ScalarRange, ScalarDRange, Prof2D };
     Type type() const;
     static const char* type_str(Type);
 

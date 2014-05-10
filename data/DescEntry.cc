@@ -193,6 +193,7 @@ static const char* _type_str[] = { "Scalar",
                                    "Cache",
                                    "ScalarRange",
                                    "ScalarDRange",
+                                   "Prof2D",
                                    NULL };
 
 const char* DescEntry::type_str(Type t) { return _type_str[t]; }

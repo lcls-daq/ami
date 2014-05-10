@@ -6,6 +6,7 @@
 #include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
+#include "ami/qt/QtProf2D.hh"
 #include "ami/qt/QtScan.hh"
 #include "ami/qt/QtEmpty.hh"
 #include "ami/qt/Path.hh"
@@ -21,6 +22,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryProf2D.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
@@ -81,6 +83,7 @@ EnvPlot::EnvPlot(QWidget*     parent,
       switch(desc->type()) {
         CASEENTRY(TH1F)
           CASEENTRY(Prof)
+          CASEENTRY(Prof2D)
           CASEENTRY(Scan)
           CASEENTRY(Scalar)
           CASEENTRY(ScalarDRange)
@@ -145,13 +148,19 @@ void EnvPlot::setup_payload(Cds& cds)
 
       _auto_range = 0;
 
+#define CASE_ENTRY(t) \
+      case Ami::DescEntry::t:                                         \
+        _plot = new Qt##t(_name,*static_cast<const Ami::Entry##t*>(entry), \
+                          Ami::AbsTransform::null(),                    \
+                          Ami::AbsTransform::null(),                    \
+                          QColor(0,0,0));                               \
+      break;
+
       switch(entry->desc().type()) {
-      case Ami::DescEntry::TH1F: 
-        _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-                           Ami::AbsTransform::null(),
-                           Ami::AbsTransform::null(),
-                           QColor(0,0,0));
-        break;
+        CASE_ENTRY(TH1F)
+        CASE_ENTRY(TH2F)
+        CASE_ENTRY(Prof)
+        CASE_ENTRY(Prof2D)
       case Ami::DescEntry::ScalarRange: 
         _auto_range = static_cast<const Ami::EntryScalarRange*>(entry);
         _plot = 0;
@@ -169,26 +178,12 @@ void EnvPlot::setup_payload(Cds& cds)
                             QColor(0,0,0));
         edit_xrange(false);
         break;
-      case Ami::DescEntry::Prof: 
-        _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
-                           Ami::AbsTransform::null(),
-                           Ami::AbsTransform::null(),
-                           QColor(0,0,0));
-        break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
                            Ami::AbsTransform::null(),
                            Ami::AbsTransform::null(),
                            QColor(0,0,0),
                            _style.symbol_size(),_style.symbol_style());
-        break;
-      case Ami::DescEntry::TH2F: 
-        _plot = new QtTH2F(_name,*static_cast<const Ami::EntryTH2F*>(entry),
-                           Ami::AbsTransform::null(),
-                           Ami::AbsTransform::null(),
-                           QColor(0,0,0));
-        edit_xrange(false);
-        edit_yrange(false);
         break;
       default:
         printf("EnvPlot type %d not implemented yet\n",entry->desc().type()); 

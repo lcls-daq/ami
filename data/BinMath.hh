@@ -2,6 +2,7 @@
 #define Ami_BinMath_hh
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/ScalarPlot.hh"
 #include "ami/data/DescEntry.hh"
 
 #include <QtCore/QString>
@@ -21,7 +22,7 @@ namespace Ami {
    *    and generates a mean value (Scalar), a distribution (TH1F), or a profile (Prof)
    *    versus a BLD or PV quantity.
    */
-  class BinMath : public AbsOperator {
+  class BinMath : public AbsOperator, public ScalarPlot {
   public:
     //  Defined by the input entry's signature, the output entry's description,
     //    the algebraic expression, and any BLD/PV dependence for profiles.
@@ -52,7 +53,7 @@ namespace Ami {
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
     void       _invalid  ();
-    QString    _process_expr(QString,DescEntry::Type);
+    Term*      _process_expr(FeatureCache&,const char*,bool&);
   private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];
@@ -61,13 +62,11 @@ namespace Ami {
 
     FeatureCache* _cache;
     Term*         _term;
-    Term*         _fterm;
     mutable const Entry*  _input;
     Entry*        _entry;
     bool          _v;
     mutable unsigned _index;
     bool          _loop;
-    bool          _fterm_uses;
   };
 
 };

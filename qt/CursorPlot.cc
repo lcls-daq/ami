@@ -8,6 +8,7 @@
 #include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtChart.hh"
 #include "ami/qt/QtProf.hh"
+#include "ami/qt/QtProf2D.hh"
 #include "ami/qt/QtScan.hh"
 #include "ami/qt/QtEmpty.hh"
 
@@ -21,6 +22,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryProf2D.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/EntryScalarRange.hh"
@@ -123,17 +125,17 @@ void CursorPlot::setup_payload(Cds& cds)
       edit_xrange(true);
       edit_yrange(true);
 
+#define CASE_ENTRY(t) \
+      case Ami::DescEntry::t:                                         \
+        _plot = new Qt##t(_name,*static_cast<const Ami::Entry##t*>(entry), \
+                          noTransform,noTransform,QColor(0,0,0));       \
+      break;
+
       switch(entry->desc().type()) {
-      case Ami::DescEntry::TH1F: 
-        _plot = new QtTH1F(_name,*static_cast<const Ami::EntryTH1F*>(entry),
-                           noTransform,noTransform,QColor(0,0,0));
-        break;
-      case Ami::DescEntry::TH2F: 
-        _plot = new QtTH2F(_name,*static_cast<const Ami::EntryTH2F*>(entry),
-                           noTransform,noTransform,QColor(0,0,0));
-        edit_xrange(false);
-        edit_yrange(false);
-        break;
+        CASE_ENTRY(TH1F)
+        CASE_ENTRY(TH2F)
+        CASE_ENTRY(Prof)
+        CASE_ENTRY(Prof2D)
       case Ami::DescEntry::Scalar:  // create a chart from a scalar
         _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
                             QColor(0,0,0));
@@ -147,10 +149,6 @@ void CursorPlot::setup_payload(Cds& cds)
         _auto_range = static_cast<const Ami::EntryScalarDRange*>(entry);
         _plot = new QtEmpty;
         return;
-      case Ami::DescEntry::Prof: 
-        _plot = new QtProf(_name,*static_cast<const Ami::EntryProf*>(entry),
-                           noTransform,noTransform,QColor(0,0,0));
-        break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
                            noTransform,noTransform,QColor(0,0,0),

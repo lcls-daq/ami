@@ -187,6 +187,7 @@ public:
 		 const DropletConfig&            cfg,
 		 const ndarray<const double,1>   xcal,
 		 const ndarray<const double,1>   ycal);
+  ~DropletBuilder();
 public:
   bool              process(const unsigned*);
   ndarray<double,1> result () const;
@@ -357,6 +358,11 @@ DropletBuilder::DropletBuilder(const ndarray<const unsigned,2> data,
   _map = new unsigned[msize];
 
   memset(&_ncut[0],0,NumberOfCuts*sizeof(unsigned));
+}
+
+DropletBuilder::~DropletBuilder()
+{
+  delete[] _map;
 }
 
 ndarray<double,1> DropletBuilder::result() const

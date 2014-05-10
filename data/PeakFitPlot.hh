@@ -8,6 +8,7 @@
 //
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/ScalarPlot.hh"
 
 namespace Ami {
 
@@ -16,7 +17,7 @@ namespace Ami {
   class Term;
   class FeatureCache;
 
-  class PeakFitPlot : public AbsOperator {
+  class PeakFitPlot : public AbsOperator, public ScalarPlot {
   public:
     enum Parameter { Position, Height, FWHM, RMS, NumberOf };
     static const char* name(Parameter);
@@ -55,7 +56,6 @@ namespace Ami {
     Parameter        _prm;
 
     FeatureCache* _cache;
-    Term*         _term;
     Entry*        _entry;
     bool          _v;
   };

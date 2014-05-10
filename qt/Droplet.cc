@@ -6,7 +6,6 @@
 #include "ami/qt/SMPRegistry.hh"
 #include "ami/qt/SMPWarning.hh"
 #include "ami/qt/ControlLog.hh"
-#include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/VectorArrayDesc.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/RectROI.hh"

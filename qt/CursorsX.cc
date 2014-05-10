@@ -1,9 +1,5 @@
 #include "CursorsX.hh"
 
-#include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescProf.hh"
-#include "ami/qt/DescScan.hh"
-#include "ami/qt/DescChart.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorDefinition.hh"
 #include "ami/qt/CursorPlot.hh"

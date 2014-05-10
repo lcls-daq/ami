@@ -205,6 +205,7 @@ DetectorSelect::DetectorSelect(const QString& label,
         buffer[size]=0;
         QtTree::load_favorites(buffer);
       }
+      delete[] buffer;
     }
   }
 

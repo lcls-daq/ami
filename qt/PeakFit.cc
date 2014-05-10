@@ -1,13 +1,6 @@
 #include "PeakFit.hh"
 
-#if 0
-#include "ami/qt/DescTH1F.hh"
-#include "ami/qt/DescProf.hh"
-#include "ami/qt/DescScan.hh"
-#include "ami/qt/DescChart.hh"
-#else
 #include "ami/qt/ScalarPlotDesc.hh"
-#endif
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/ChannelDefinition.hh"
@@ -91,16 +84,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
 
   _title    = new QLineEdit("Peak plot");
 
-#if 0
-  QPushButton* addPostB = new QPushButton("Post");
-
-  _hist   = new DescTH1F (bold(Sum (1dH)));
-  _vTime  = new DescChart(bold(Mean v Time));
-  _vFeature = new DescProf (bold(Mean v Var) , &FeatureRegistry::instance());
-  _vScan    = new DescScan (bold(Mean v Scan));
-#else
   _scalar_desc = new ScalarPlotDesc(0,&FeatureRegistry::instance(),false);
-#endif
 
   _lvalue = new CursorLocation;
   QPushButton *lgrabB  = new QPushButton("Grab");
@@ -215,15 +199,7 @@ void PeakFit::save(char*& p) const
 
   XML_insert(p, "QLineEdit", "_baseline", QtPersistent::insert(p,_baseline ->value()) );
   XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()) );
-#if 0
-  XML_insert(p, "DescTH1F", "_hist", _hist->save(p) );
-  XML_insert(p, "DescChart", "_vTime", _vTime->save(p) );
-  XML_insert(p, "DescProf", "_vFeature", _vFeature->save(p) );
-  XML_insert(p, "DescScan", "_vScan", _vScan->save(p) );
-  XML_insert(p, "QTabWidget", "_plottype_tab", QtPersistent::insert(p,_plottype_tab->currentIndex()));
-#else
   XML_insert(p, "ScalarPlotDesc", "_scalar_desc", _scalar_desc->save(p) );
-#endif
   XML_insert(p, "QTabWidget", "_baseline_tab", QtPersistent::insert(p,_baseline_tab->currentIndex()));
 
   for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {

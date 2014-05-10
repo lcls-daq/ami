@@ -67,6 +67,7 @@ QRadioButton* DescProf::button() { return _button; }
 
 QString  DescProf::expr() const { return _expr->text(); }
 
+#if 0
 QString  DescProf::feature() const 
 {
   QString e(_expr->text());
@@ -98,6 +99,7 @@ QString  DescProf::feature() const
   //  printf("new_expr %s\n",qPrintable(new_expr));
   return new_expr;
 }
+#endif
 
 unsigned DescProf::bins() const { return _bins->text().toInt(); }
 double   DescProf::lo  () const { return _lo->text().toDouble(); }

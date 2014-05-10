@@ -8,6 +8,7 @@
 //
 
 #include "ami/data/AbsOperator.hh"
+#include "ami/data/ScalarPlot.hh"
 
 namespace Ami {
 
@@ -17,7 +18,7 @@ namespace Ami {
   class Term;
   class FeatureCache;
 
-  class EnvPlot : public AbsOperator {
+  class EnvPlot : public AbsOperator, public ScalarPlot {
   public:
     //  Defined by the output entry's description,
     //    the BLD/PV, and any BLD/PV dependence for profiles.
@@ -42,8 +43,6 @@ namespace Ami {
     char             _desc_buffer[DESC_LEN];
 
     FeatureCache* _cache;
-    Term*         _term;
-    Term*         _weight;
     Entry*        _entry;
     Term*         _input;
     bool          _v;

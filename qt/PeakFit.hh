@@ -32,14 +32,7 @@ namespace Ami {
     class PeakFitPlot;
     class PeakFitPost;
     class PeakFitOverlay;
-#if 0
-    class DescTH1F;
-    class DescProf;
-    class DescScan;
-    class DescChart;
-#else
     class ScalarPlotDesc;
-#endif
     class WaveformDisplay;
     class CursorLocation;
     class CursorDefinition;
@@ -99,15 +92,7 @@ namespace Ami {
       QLineEdit* _title;
       CursorLocation *_lvalue;
 
-#if 0
-      QTabWidget* _plottype_tab;
-      DescTH1F*  _hist;
-      DescChart* _vTime;
-      DescProf*  _vFeature;
-      DescScan*  _vScan;
-#else
       ScalarPlotDesc* _scalar_desc;
-#endif
 
       Semaphore               _list_sem;
       std::list<PeakFitPlot*> _plots;

@@ -3,6 +3,7 @@
 #include "ami/data/AbsTransform.hh"
 #include "ami/qt/QtTH1F.hh"
 #include "ami/qt/QtProf.hh"
+#include "ami/qt/QtProf2D.hh"
 #include "ami/qt/QtTH2F.hh"
 #include "ami/qt/QtImage.hh"
 #include "ami/qt/QtChart.hh"
@@ -11,6 +12,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryProf2D.hh"
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/DescEntry.hh"
@@ -35,6 +37,7 @@ QtBase* PlotFactory::plot(const QString&    name,
     //    QTCASE(Scalar);
     QTCASE(TH1F);
     QTCASE(Prof);
+    QTCASE(Prof2D);
     QTCASE(TH2F);
     QTCASE(Waveform);
     QTCASE(Image);

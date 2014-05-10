@@ -90,7 +90,8 @@ static QStringList*         _plot_names[] = { &_scalar_plots,  // Scalar [Chart]
                                               &_no_plots,      // Ref
                                               &_no_plots,      // Cache
                                               &_no_plots,      // ScalarRange
-                                              &_no_plots };    // ScalarDRange
+                                              &_no_plots,      // ScalarDRange
+                                              &_no_plots };    // cant overlap Prof2D
 static QtPlotSelector*      _selector=0;
 static QColor ref_color( 64,  64,  64);
 

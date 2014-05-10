@@ -14,6 +14,7 @@
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryTH2F.hh"
 #include "ami/data/EntryProf.hh"
+#include "ami/data/EntryProf2D.hh"
 #include "ami/data/EntryScan.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/EntryCache.hh"
@@ -68,13 +69,11 @@ BinMath::BinMath(const DescEntry& output,
   AbsOperator(AbsOperator::BinMath),
   _cache     (0),
   _term      (0),
-  _fterm     (0),
   _input     (0),
   _entry     (0),
   _v         (true),
   _index     (0),
-  _loop      (false),
-  _fterm_uses(false)
+  _loop      (false)
 {
   strncpy_val(_expression, expr, EXPRESSION_LEN);
   memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
@@ -89,8 +88,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, F
   AbsOperator(AbsOperator::BinMath),
   _cache (&icache),
   _term  (0),
-  _fterm (0),
-  _input (0),
+  _input (EntryFactory::entry(input)),
   _v     (true),
   _index     (0),
   _loop  (false)
@@ -102,52 +100,24 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, F
 
   _entry = EntryFactory::entry(o,&ocache);
 
-  QString new_expr = _process_expr(_expression,input.type());
+  bool term_uses=false;
+  _term = _process_expr(icache,_expression,term_uses);
+  if (!_term) _v = false; 
 
-#ifdef DBUG
-  printf("BM: parse %s => %s\n",
-	 qPrintable(expr),qPrintable(new_expr));
-#endif
+  _v &= _setup(o,icache);
 
-  //     std::list<Variable*> variables; // none
-  //     Expression parser(variables);
-  //     _term = parser.evaluate(new_expr);
-  FeatureExpression parser;
-  _term = parser.evaluate(icache,new_expr);
-  if (!_term) {
-    printf("BinMath failed to parse %s (%s)\n",qPrintable(new_expr),_expression);
-    _v = false; 
-  }
-
-  if (o.type() == DescEntry::Prof ||
-      o.type() == DescEntry::Scan ||
-      o.type() == DescEntry::TH2F ||
-      o.type() == DescEntry::ScalarDRange) {
-    QString expr = _process_expr(o.xtitle(),input.type());
-    _fterm_uses= (expr!=o.xtitle());
-
-    FeatureExpression parser;
-    _fterm = parser.evaluate(icache,expr);
-    if (!_fterm) {
-      printf("BinMath failed to parse f %s\n",qPrintable(expr));
-      _v = false;
-    }
-  }
-  else
-    _fterm_uses=false;
+  delete _input;
+  _input = 0;
 }
 
 BinMath::BinMath(const char*& p) :
   AbsOperator(AbsOperator::BinMath),
   _cache     (0),
-  _term      (0),
-  _fterm     (0),
   _input     (0),
   _entry     (0),
   _v         (true),
   _index     (0),
-  _loop      (false),
-  _fterm_uses(false)
+  _loop      (false)
 {
   _extract(p, _expression , EXPRESSION_LEN);
   _extract(p, _desc_buffer, DESC_LEN);
@@ -155,14 +125,12 @@ BinMath::BinMath(const char*& p) :
 
 BinMath::~BinMath()
 {
-  if (_term) delete _term;
-  if (_fterm) delete _fterm;
+  if (_term ) delete _term;
   if (_entry) delete _entry;
 }
 
 void BinMath::use() {
-  if (_term ) _term ->use();
-  if (_fterm) _fterm->use();
+  _use();
 }
 
 DescEntry& BinMath::_routput   () const 
@@ -185,18 +153,8 @@ Entry&     BinMath::_operate(const Entry& e) const
     return *_entry;
 
   if (_term) {
-
     _input = &e;
 
-    double x = -1;
-    if (_fterm) {
-      bool damaged=false;
-      _index = 0;
-      x = _fterm->evaluate();
-      if (damaged)
-	return *_entry;
-    }
-    
 #ifdef DBUG
     printf("BinMath::_operate _term %f\n",y);
 #endif
@@ -207,60 +165,9 @@ Entry&     BinMath::_operate(const Entry& e) const
 
     for(_index=0; _index<n; _index++) {
       double y = _term->evaluate();
-
-      if (_fterm_uses && _fterm)
-	x = _fterm->evaluate();
-
-      switch(_entry->desc().type()) {
-      case DescEntry::Scalar:  
-	{ EntryScalar* en = static_cast<EntryScalar*>(_entry);
-	  en->addcontent(y);
-	  break; }
-      case DescEntry::ScalarRange:  
-	{ EntryScalarRange* en = static_cast<EntryScalarRange*>(_entry);
-	  en->addcontent(y);
-	  break; }
-      case DescEntry::ScalarDRange:  
-	if (!_fterm) return *_entry;
-	{ EntryScalarDRange* en = static_cast<EntryScalarDRange*>(_entry);
-	  en->addcontent(x,y);
-	} break;
-      case DescEntry::TH1F:
-	{ EntryTH1F* en = static_cast<EntryTH1F*  >(_entry);
-	  en->addcontent(1.,y); 
-	  en->addinfo(1.,EntryTH1F::Normalization);
-	  break; }
-      case DescEntry::TH2F:
-	if (!_fterm) return *_entry;
-	{ EntryTH2F* en = static_cast<EntryTH2F*  >(_entry);
-	  en->addcontent(1.,x,y); 
-	  en->addinfo(1.,EntryTH2F::Normalization);
-	  break; }
-      case DescEntry::Prof:  
-	if (!_fterm) return *_entry;
-	{ EntryProf* en = static_cast<EntryProf*  >(_entry);
-	  en->addy(y,x);
-	  en->addinfo(1.,EntryProf::Normalization);
-	  break; }
-      case DescEntry::Scan:    
-	if (!_fterm) return *_entry;
-	{ EntryScan* en = static_cast<EntryScan*  >(_entry);
-	  en->addy(y,x,1.,e.last());
-	  en->addinfo(1.,EntryScan::Normalization);
-	  break; }
-      case DescEntry::Cache:
-	{ EntryCache* en = static_cast<EntryCache*>(_entry);
-	  en->set(y,false);
-	  break; }
-      case DescEntry::Waveform:
-      case DescEntry::Image:
-      default:
-	printf("BinMath::_operator no implementation for type %d\n",_entry->desc().type());
-	break;
-      }
+      _fill(*_entry, y, e.time(), _index==0);
     }
   }
-  _entry->valid(e.time());
   return *_entry;
 }
 
@@ -312,9 +219,12 @@ static bool _parseIndices(const QString& use,
   return true;
 }
 
-QString BinMath::_process_expr(QString expr,
-			       DescEntry::Type type)
+Term* BinMath::_process_expr(FeatureCache& input,
+                             const char* iexpr,
+                             bool& term_uses)
 {
+  QString expr(iexpr);
+  DescEntry::Type type = _input->desc().type();
   QString new_expr;
   // parse expression for bin indices
   QString mex("\\[[0-9");
@@ -331,6 +241,7 @@ QString BinMath::_process_expr(QString expr,
   int last=0;
   int pos=0;
   int mlen=0;
+  std::list<Term*> free;
   while( (pos=match.indexIn(expr,pos)) != -1) {
     mlen = match.matchedLength();
     QString use = expr.mid(pos+1,mlen-2);
@@ -340,7 +251,7 @@ QString BinMath::_process_expr(QString expr,
       pos += mlen;
       continue;
     }
-    Term* t;
+    Term* t = 0;
     switch(type) {
       CASETERM(Waveform);
       CASETERM(TH1F);
@@ -384,9 +295,21 @@ QString BinMath::_process_expr(QString expr,
     new_expr.append(QString("[%1]").arg((ulong)t,0,16));
     pos += mlen;
     last = pos;
+    if (t) free.push_back(t);
   }
   new_expr.append(expr.mid(last));
-  return new_expr;
+
+  term_uses = (new_expr!=iexpr);
+  FeatureExpression parser;
+  Term* term = parser.evaluate(input,new_expr);
+  if (!term) {
+    printf("BinMath failed to parse %s [%s]\n",
+           qPrintable(new_expr),iexpr);
+    for(std::list<Term*>::iterator it=free.begin();
+        it!=free.end(); it++)
+      delete *it;
+  }
+  return term;
 }
 
 void BinMath::_invalid() {}
