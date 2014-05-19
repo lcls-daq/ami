@@ -16,7 +16,7 @@
 static std::string onlRoot("/reg/g/pcds/pds/");
 static std::string offRoot("/reg/d/psdm/");
 static std::string _expt;
-static int         _run =0x7fffffff;
+static unsigned    _run =0x7fffffff;
 static bool        _use_offline=false;
 static bool        _use_test   =false;
 
@@ -284,8 +284,8 @@ std::string offl_path(std::string basepath,
   std::sort(calfiles.begin(), calfiles.end());
   typedef std::vector<Ami::CalibFile>::const_reverse_iterator FileIter;
   for (FileIter it = calfiles.rbegin() ; it != calfiles.rend() ; ++ it ) {
-    if (int(it->begin()) <= _run &&
-	_run <= int(it->end()))
+    if (it->begin() <= _run &&
+	_run <= it->end())
       return it->path();
   }
   return std::string();
