@@ -48,7 +48,7 @@ void Status::update_state()
   case Discovered  : _label->setText("Discovered"); break;
   case Configured  : _label->setText("Configured"); break;
   case Described   : _label->setText("Described"); break;
-  case Throttled   :
+  case Throttled   : _label->setText("Throttled"); break;
   case Requested   : _label->setText("Requested"); break;
 //   case Received    : _label->setText(QString("Rec %1:%2").
 //                                      arg(_requested,4,16).
