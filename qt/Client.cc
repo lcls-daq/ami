@@ -147,7 +147,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       layout->addLayout(layout1,1); }
   }
   else {
-    layout->addWidget(_frame->widget(),0);
+    layout->addWidget(_frame->widget(),1);
   }
 
   if (_use_scroll_area) {
