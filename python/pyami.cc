@@ -1121,7 +1121,7 @@ pyami_set_handler_options(PyObject *self, PyObject *args, PyObject* kwds)
 
 static PyMethodDef PyamiMethods[] = {
     {"connect"  , pyami_connect  , METH_VARARGS, "Connect to servers."},
-    {"discovery", pyami_discovery, METH_VARARGS, "Discovery analysis inputs."},
+    {"discovery", pyami_discovery, METH_VARARGS, "Discover analysis inputs."},
     {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
     {"set_l3t"  , pyami_set_l3t  , METH_VARARGS, "Set L3 trigger expression."},
     {"clear_l3t", pyami_clear_l3t, METH_VARARGS, "Clear L3 trigger expression."},
