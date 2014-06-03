@@ -64,6 +64,7 @@ CursorPlot::CursorPlot(QWidget* parent,
 CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
   QtPlot   (parent),
+  _input   (0),
   _plot    (new QtEmpty),
   _auto_range(0)
 {
@@ -72,7 +73,7 @@ CursorPlot::CursorPlot(QWidget* parent,
 
 CursorPlot::~CursorPlot()
 {
-  delete _input;
+  if (_input   ) delete _input;
   if (_plot    ) delete _plot;
 }
 

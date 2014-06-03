@@ -113,6 +113,7 @@ BinMath::BinMath(const char*& p, const DescEntry& input, FeatureCache& icache, F
 BinMath::BinMath(const char*& p) :
   AbsOperator(AbsOperator::BinMath),
   _cache     (0),
+  _term      (0),
   _input     (0),
   _entry     (0),
   _v         (true),
