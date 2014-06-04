@@ -588,6 +588,5 @@ void CursorsX::remove_cursor_post(CursorPost* post)
   _posts.remove(post);
   _list_sem.give();
 
-  delete post;
   emit changed();
 }

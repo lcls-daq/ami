@@ -441,7 +441,6 @@ void ImageRPhiProjection::remove_cursor_post(CursorPost* post)
 {
   _list_sem.take();
   _posts.remove(post);
-  delete post;
   _list_sem.give();
   emit changed();
 }
