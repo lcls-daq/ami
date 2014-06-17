@@ -23,6 +23,7 @@ namespace Ami {
     void         rename  (const char*);
   private:
     int           _index;
+    int           _version;
   };
 
 };
