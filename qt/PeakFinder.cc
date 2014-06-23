@@ -269,7 +269,7 @@ void PeakFinder::plot()
 					    _center_only->isChecked(),
 					    _accumulate->isChecked() ? avgRound(_interval->text().toInt(),nproc) : -1);
 
-#if 1
+#if 0
   if (nproc>1 && _accumulate->isChecked()) {
     ZoomPlot* plot = new ZoomPlot(this,
 				  QString("%1 HitFinder : %2,%3").arg(_channels[_channel]->name())

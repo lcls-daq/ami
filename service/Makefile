@@ -21,7 +21,7 @@ include $(RELEASE_DIR)/make/sw/package.mk
 #
 #  Always stamp the build time and tag
 #
-.PHONY: $(objdir)/BuildStamp.o
+#.PHONY: $(objdir)/BuildStamp.o
 
 BUILDTIME := \"`date | sed -e 's/\ /_/g'`\"
 #BUILDTIME := \"`date`\"

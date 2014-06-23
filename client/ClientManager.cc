@@ -34,7 +34,6 @@
 
 #include <sstream>
 
-//#define DBG
 //#define DBUG
 
 namespace Ami {
@@ -425,7 +424,7 @@ int ClientManager::handle_client_io(ClientSocket& socket)
   size = 0;
 
   if (reply.type() == Message::Discover) { // unsolicited message
-#ifdef DBG
+#ifdef DBUG
     printf("CM discover when expecting request %s %d\n",
            _request.type_str(),_request.id());
 #endif

@@ -179,7 +179,7 @@ void PeakPlot::save(char*& p) const
               QtPersistent::insert(p,buff,(char*)_op->serialize(buff)-buff) );
 
   XML_insert( p, "bool", "_displayOnly",
-	      QtPersistent::insert(p,buff,_displayOnly));
+	      QtPersistent::insert(p,_displayOnly));
 
   for(unsigned i=0; i<NCHANNELS; i++)
     XML_insert( p, "ChannelDefinition", "_channels",
@@ -240,9 +240,11 @@ void PeakPlot::load(const char*& p)
 void PeakPlot::save_plots(const QString& p) const
 {
   _frame ->save_plots(p);
-  _xyproj->save_plots(p+"_xyproj");
-  _rfproj->save_plots(p+"_rfproj");
-  _cntproj->save_plots(p+"_cntproj");
+  if (!_displayOnly) {
+    _xyproj->save_plots(p+"_xyproj");
+    _rfproj->save_plots(p+"_rfproj");
+    _cntproj->save_plots(p+"_cntproj");
+  }
 }
 
 void PeakPlot::update_configuration(bool)
@@ -264,7 +266,7 @@ void PeakPlot::setup_payload(Cds& cds)
 
   for(unsigned i=0; i<NCHANNELS; i++)
     _channels[i]->setup_payload(cds);
-
+    
   _xyproj->setup_payload(cds);
   _rfproj->setup_payload(cds);
   _cntproj->setup_payload(cds);
@@ -325,9 +327,11 @@ void PeakPlot::configure(char*& p, unsigned input, unsigned& output)
 void PeakPlot::update()
 {
   _frame  ->update();
-  _xyproj ->update();
-  _rfproj ->update();
-  _cntproj->update();
+  if (!_displayOnly) {
+    _xyproj ->update();
+    _rfproj ->update();
+    _cntproj->update();
+  }
 }
 
 void PeakPlot::set_chrome_visible(bool v)
