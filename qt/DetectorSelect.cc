@@ -94,7 +94,8 @@ DetectorSelect::DetectorSelect(const QString& label,
                                 _manager)),
   _discovered(false),
   _filter_export(new Filter((QtPWidget*)0,"L3T Export", new L3Features)),
-  _l3t_export(false)
+  _l3t_export(false),
+  _dump(interface)
 {
   _dump.add(*_manager);
 

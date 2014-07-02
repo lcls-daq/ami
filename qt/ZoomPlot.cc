@@ -113,6 +113,7 @@ ZoomPlot::ZoomPlot(QWidget*         parent,
 
 ZoomPlot::~ZoomPlot()
 {
+  PWidgetManager::remove(this);
   if (_op) delete _op;
 }
 

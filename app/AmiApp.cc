@@ -73,7 +73,7 @@ int AmiApp::run(char *partitionTag, unsigned serverGroup, std::vector<char *> mo
   XtcClient myClient(features, factory, filter, offline);
   XtcShmClient input(myClient, partitionTag, partitionIndex);
 
-  DumpCollector dump;
+  DumpCollector dump(interface);
   dump.add(myClient);
   dump.add(srv);
   dump.add(factory);

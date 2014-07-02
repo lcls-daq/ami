@@ -2,6 +2,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageDisplay.hh"
+#include "ami/qt/OffloadEngine.hh"
 #include "ami/service/Ins.hh"
 #include "ami/qt/QOnline.hh"
 
@@ -83,6 +84,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-E")==0) {
       Ami::Qt::ImageDisplay::enable_movie_option();
+    }
+    else if (strcmp(argv[1],"-Z")==0) {
+      Ami::Qt::OffloadEngine::disable();
     }
     else if (strcmp(argv[i],"-p")==0) {
       platform = strtoul(argv[++i],NULL,0);

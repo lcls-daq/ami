@@ -24,6 +24,8 @@ namespace Ami {
       void     qimage(QtImage*);
       void     render_sync();
       void     render();
+    public:
+      static void disable();
     private:
       void     _start_render();
       void     _render_complete(QImage*);

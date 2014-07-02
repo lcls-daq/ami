@@ -1,6 +1,8 @@
 #ifndef Ami_FeatureCache_hh
 #define Ami_FeatureCache_hh
 
+#include "ami/service/Semaphore.hh"
+
 #include <stdint.h>
 #include <vector>
 #include <string>
@@ -43,6 +45,7 @@ namespace Ami {
     std::vector<uint32_t>    _damaged;
     std::vector<uint32_t>    _used;
     bool                     _update;
+    mutable Semaphore        _sem;
   };
 };
 

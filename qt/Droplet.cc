@@ -513,8 +513,13 @@ DropletConfigApp::DropletConfigApp(QWidget* parent,
 {
   QString n = name();
   QStringList args = n.split("_");
-  _icfg = args[1].toInt();
-  _iroi = args[2].toInt();
+  if (args.size()>=3) {
+    _icfg = args[1].toInt();
+    _iroi = args[2].toInt();
+  }
+  else {
+    _icfg = _iroi = 0;
+  }
 }
 		       
 DropletConfigApp::~DropletConfigApp() {}

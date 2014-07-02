@@ -12,7 +12,8 @@ namespace Ami {
   class Task;
   class DumpCollector : public Routine {
   public:
-    DumpCollector(int interface=0x7f000001);
+    DumpCollector(int interface=0x7f000001,
+                  int secondary=0);
     ~DumpCollector();
   public:
     void add(const DumpSource&);
@@ -21,6 +22,7 @@ namespace Ami {
   private:
     Task*                  _task;
     VServerSocket          _srv;
+    int                    _sec;
     std::list<const DumpSource*> _servers;
   };
 };

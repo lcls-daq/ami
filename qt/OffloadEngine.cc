@@ -9,6 +9,8 @@
 #include "ami/service/Routine.hh"
 #include "ami/service/Semaphore.hh"
 
+static bool _enabled=true;
+
 namespace Ami {
   namespace Qt {
     class RenderRoutine : public Ami::Routine {
@@ -57,6 +59,8 @@ OffloadEngine::OffloadEngine(ImageOffload& offload,
 
 OffloadEngine::~OffloadEngine() { _task->destroy_b(); }
 
+void OffloadEngine::disable() { _enabled=false; }
+
 void OffloadEngine::qimage(QtImage* q)
 {
   _pending=false;
@@ -68,15 +72,27 @@ void OffloadEngine::qimage(QtImage* q)
 
 void OffloadEngine::render_sync()
 {
-  Ami::Semaphore sem(Ami::Semaphore::EMPTY);
-  _task->call( new SyncRoutine(sem) );
-  sem.take();
+  if (_enabled) {
+    Ami::Semaphore sem(Ami::Semaphore::EMPTY);
+    _task->call( new SyncRoutine(sem) );
+    sem.take();
+  }
 }
 
 void OffloadEngine::render()
 {
-  if (_image)
-    _task->call( new RenderRoutine(this) );
+  if (_image) {
+    if (_enabled)
+      _task->call( new RenderRoutine(this) );
+    else {
+      QImage* output = _image->image(_control.pedestal(),_control.scale(),_control.linear());
+      if (output) {
+        _offload.render_image(*output);
+        _offload.render_pixmap(*output);
+        _image->release(output);
+      }
+    }
+  }
 }
 
 void OffloadEngine::_start_render()

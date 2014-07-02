@@ -8,6 +8,7 @@
 #include "ami/qt/DetectorSelect.hh"
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageDisplay.hh"
+#include "ami/qt/OffloadEngine.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/event/EventHandler.hh"
@@ -39,6 +40,7 @@ static void usage(char* progname) {
           "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
 	  "         [-t (calib test mode)]\n"
+          "         [-Z (disable image render offload)]\n"
 	  "         [-T (test mode)]\n"
           "         [-E (expert mode/movie option)]\n", 
           progname,
@@ -120,7 +122,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTW?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTWZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -174,6 +176,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'W':
       separateWindowMode = true;
+      break;
+    case 'Z':
+      Ami::Qt::OffloadEngine::disable();
       break;
     case '?':
     case 'h':

@@ -9,7 +9,8 @@
 using namespace Ami;
 
 FeatureCache::FeatureCache() :
-  _update(false)
+  _update(false),
+  _sem   (Semaphore::FULL)
 {
 }
 
@@ -19,9 +20,11 @@ FeatureCache::~FeatureCache()
 
 void     FeatureCache::clear()
 {
+  _sem.take();
   _names.clear();
   _cache.clear();
   _damaged.clear();
+  _sem.give();
 }
 
 unsigned FeatureCache::add(const std::string& name)
@@ -35,6 +38,7 @@ unsigned FeatureCache::add(const char* name)
     if (sname==_names[k])
       return k;
 
+  _sem.take();
   _update=true;
   _names.push_back(sname);
   unsigned len = _names.size();
@@ -43,6 +47,7 @@ unsigned FeatureCache::add(const char* name)
   _damaged.resize((len+0x1f)>>5);
   _damaged[index>>5] |= 1<<(index&0x1f);
   _used.resize((len+0x1f)>>5);
+  _sem.give();
   return index;
 }
 
@@ -146,12 +151,14 @@ bool   FeatureCache::used(int index) const
 
 char*  FeatureCache::serialize(int& len) const
 {
+  _sem.take();
   len = _names.size()*FEATURE_NAMELEN;
   char* result = new char[len];
   char* p = result;
   for(unsigned k=0; k<_names.size(); k++, p+=FEATURE_NAMELEN) {
     strncpy_val(p, _names[k].c_str(), FEATURE_NAMELEN);
   }
+  _sem.give();
   return result;
 }
 

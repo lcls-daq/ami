@@ -54,7 +54,8 @@ int main(int argc, char* argv[]) {
                                    server_interface, 
                                    server_group);
 
-  Ami::DumpCollector dump;
+  Ami::DumpCollector dump(client_interface,
+                          server_interface);
   dump.add(srv);
 
   srv.serve();

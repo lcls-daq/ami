@@ -3,6 +3,7 @@
 
 #include "ami/data/EntryScalar.hh"
 #include <QtGui/QLabel>
+#include <time.h>
 
 namespace Ami {
   namespace Qt {
@@ -20,8 +21,8 @@ namespace Ami {
       void changed(QString text);
     private:
       Ami::EntryScalar* _entry;
-      double   _last;
       double   _entries;
+      struct timespec _last;
     };
   };
 };

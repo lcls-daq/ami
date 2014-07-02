@@ -2,6 +2,7 @@
 #define AmiQt_RecvCalculator_hh
 
 #include <QtGui/QLabel>
+#include <time.h>
 
 namespace Ami {
   class ConnectionManager;
@@ -19,6 +20,7 @@ namespace Ami {
       void changed(QString text);
     private:
       ConnectionManager& _m;
+      struct timespec _last;
     };
   };
 };
