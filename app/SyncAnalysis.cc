@@ -266,7 +266,7 @@ namespace Ami {
 
   template<> double eBeamDataSpace::processData()
   {
-    Pds::Bld::BldDataEBeamV3* EBeamData = detDataPtr;
+    Pds::Bld::BldDataEBeamV6* EBeamData = detDataPtr;
     double val = fabs(EBeamData->ebeamCharge());
     return val;
   }
@@ -289,9 +289,8 @@ namespace Ami {
 
   template<> double gmdDataSpace::processData()
   {
-    Pds::Bld::BldDataGMDV1* gmdData = detDataPtr;
+    Pds::Bld::BldDataGMDV2* gmdData = detDataPtr;
     double val = fabs(gmdData->milliJoulesPerPulse()) + fabs(gmdData->milliJoulesAverage());
     return val;
   }
-
 };

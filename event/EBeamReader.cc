@@ -57,12 +57,16 @@ void   EBeamReader::_configure(Pds::TypeId id,
             _add_to_cache("BLD:EBEAM:XTCAVAMPL");
             _add_to_cache("BLD:EBEAM:XTCAVPHASE");
             index = _add_to_cache("BLD:EBEAM:QDUMP");
+            if (id.version()>=6) {
+              _add_to_cache("BLD:EBEAM:PHOTENERGY");
+              _add_to_cache("BLD:EBEAM:LTU250");
+              index = _add_to_cache("BLD:EBEAM:LTU450");
+            }
           }
         }
       }
     }
   }
-
   _nvars = index-_index+1;
 }
 
@@ -78,10 +82,21 @@ void   EBeamReader::_event    (Pds::TypeId id,
                                Pds::Damage dmg)
 {
 #define TEST(val) {                                                  \
-    if (bld.damageMask()&bld.Ebeam##val##Damage)                     \
-      _cache.cache(index++,-1,true);                                 \
-    else                                                             \
-      _cache.cache(index++,bld.ebeam##val());                        \
+  if (bld.damageMask()&bld.Ebeam##val##Damage)                       \
+    _cache.cache(index++,-1,true);                                   \
+  else                                                               \
+    _cache.cache(index++,bld.ebeam##val());                          \
+  }
+
+  /* LTU250 and LTU450 are shot-by-shot BPM measurements
+     that are used to compute the photon energy value.  The 
+     PhotonEnergy bit reflects problems with any of the 3 numbers. */
+
+#define TESTLTU(val) {                                               \
+  if (bld.damageMask()&bld.EbeamPhotonEnergyDamage)                       \
+    _cache.cache(index++,-1,true);                                   \
+  else                                                               \
+    _cache.cache(index++,bld.ebeam##val());                          \
   }
 
 #if 0
@@ -198,6 +213,32 @@ void   EBeamReader::_event    (Pds::TypeId id,
         TEST(XTCAVAmpl);
         TEST(XTCAVPhase);
         TEST(DumpCharge);
+        break;
+      }
+    case 6:
+      {
+        const Pds::Bld::BldDataEBeamV6& bld = 
+          *reinterpret_cast<const Pds::Bld::BldDataEBeamV6*>(payload);
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
+        TEST(PkCurrBC1);
+        TEST(EnergyBC1);
+        TEST(UndPosX);
+        TEST(UndPosY);
+        TEST(UndAngX);
+        TEST(UndAngY);
+        TEST(XTCAVAmpl);
+        TEST(XTCAVPhase);
+        TEST(DumpCharge);
+        TEST(PhotonEnergy);
+        TESTLTU(LTU250);
+        TESTLTU(LTU450);
         break;
       }
     default:

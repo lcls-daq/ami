@@ -9,6 +9,19 @@ BLD:EBEAM:LTUY			Electron y-position @ undulator
 BLD:EBEAM:LTUXP			Electron x-angle @ undulator
 BLD:EBEAM:LTUYP			Electron y-angle @ undulator
 BLD:EBEAM:PKCURRBC2		Electron peak bunch current @ compressor 2
+BLD:EBEAM:ENERGYBC2		Electron beam position/energy @ compressor 2 [mm]
+BLD:EBEAM:PKCURRBC1		Electron peak bunch current @ compressor 1
+BLD:EBEAM:ENERGYBC1		Electron beam position/energy @ compressor 1 [mm]
+BLD:EBEAM:UNDX			Undulator launch feedback eam x-pos [mm]
+BLD:EBEAM:UNDY			Undulator launch feedback beam y-pos [mm]
+BLD:EBEAM:UNDXP			Undulator launch feedback beam x-angle [mrad]
+BLD:EBEAM:UNDYP			Undulator launch feedback beam y-angle [mrad]
+BLD:EBEAM:XTCAVAMPL		XTCAV Amplitude [mV]
+BLD:EBEAM:XTCAVPHASE		XTCAV Phase [deg]
+BLD:EBEAM:QDUMP			Bunch charge at dump [num e-]
+BLD:EBEAM:PHOTENERGY		Computed photon energy [eV]
+BLD:EBEAM:LTU250		LTU250 BPM value [mm]
+BLD:EBEAM:LTU450		LTU450 BPM value [mm]
 BLD:PHASECAV:T1			Phase cavity 1 electron bunch time
 BLD:PHASECAV:Q1			Phase cavity 1 electron bunch charge [pC]
 BLD:PHASECAV:T2			Phase cavity 2 electron bunch time
