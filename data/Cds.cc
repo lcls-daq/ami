@@ -35,6 +35,15 @@ unsigned Cds::add(Entry* entry)
 
 void Cds::add(Entry* entry, unsigned signature)
 {
+  for (EnList::iterator it=_entries.begin(); it!=_entries.end(); it++) {
+    Entry* e = *it;
+    if (e->desc().signature() == int(signature)) {
+      printf("Cds::add entry %p already exists with signature %d [%p]\n",
+	     e, signature, entry);
+      abort();
+    }
+  }
+
   entry->desc().signature(signature);
   _entries.push_back(entry);
 
@@ -208,6 +217,14 @@ unsigned Cds::payload(iovec* iov, EntryList request)
     printf("psize %x\n",psize); }
 #endif
   return iov-iov_b;
+}
+
+void Cds::refresh()
+{
+  unsigned i=0;
+  for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++,i++)
+    if ((*it)->desc().auto_refresh())
+      (*it)->reset();
 }
 
 void Cds::invalidate_payload()

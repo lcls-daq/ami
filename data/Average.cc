@@ -21,7 +21,7 @@
 
 using namespace Ami;
 
-Average::Average(unsigned n, const char* scale) : 
+Average::Average(int n, const char* scale) : 
   AbsOperator(AbsOperator::Average),
   _n         (n),
   _current   (0),
@@ -45,7 +45,7 @@ Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
 
   _entry = EntryFactory::entry(e);
   _entry->reset();
-  if (_n) {
+  if (_n>0) {
     _cache = EntryFactory::entry(e);
     _cache->desc().aggregate(true);
     _cache->invalid();
@@ -53,6 +53,8 @@ Average::Average(const char*& p, const DescEntry& e, FeatureCache& features) :
   else {
     _cache = (Entry*)0;
     _entry->desc().aggregate(true);
+    if (_n<0)
+      _entry->desc().auto_refresh(true);
   }
 
   if (_scale_buffer[0]) {
@@ -77,7 +79,7 @@ Average::~Average()
 
 void Average::use() { if (_term) _term->use(); }
 
-DescEntry& Average::_routput   () const { return _n ? _cache->desc() : _entry->desc(); }
+DescEntry& Average::_routput   () const { return _n>0 ? _cache->desc() : _entry->desc(); }
 
 void*      Average::_serialize(void* p) const
 {
@@ -89,7 +91,7 @@ void*      Average::_serialize(void* p) const
 Entry&     Average::_operate(const Entry& e) const
 {
   if (!e.valid())
-    return _n ? *_cache : *_entry;
+    return _n>0 ? *_cache : *_entry;
 
   _input = &e;
   const double v = _term ? _term->evaluate() : 1;
@@ -100,7 +102,7 @@ Entry&     Average::_operate(const Entry& e) const
   case DescEntry::TH1F:
     { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
       _en.add(static_cast<const EntryTH1F&>(e));
-      if (_n) {
+      if (_n>0) {
         if (++_current>=_n) {
           static_cast<EntryTH1F*>(_cache)->setto(_en);
           _en.reset();
@@ -111,7 +113,7 @@ Entry&     Average::_operate(const Entry& e) const
   case DescEntry::Prof:
     { EntryProf& _en = static_cast<EntryProf&>(*_entry);
       _en.sum(_en,static_cast<const EntryProf&>(e));
-      if (_n) {
+      if (_n>0) {
         if (++_current>=_n) {
           static_cast<EntryProf*>(_cache)->setto(_en);
           _en.reset();
@@ -122,7 +124,7 @@ Entry&     Average::_operate(const Entry& e) const
   case DescEntry::Prof2D:
     { EntryProf2D& _en = static_cast<EntryProf2D&>(*_entry);
       _en.sum(_en,static_cast<const EntryProf2D&>(e));
-      if (_n) {
+      if (_n>0) {
         if (++_current>=_n) {
           static_cast<EntryProf2D*>(_cache)->setto(_en);
           _en.reset();
@@ -178,7 +180,7 @@ Entry&     Average::_operate(const Entry& e) const
         _en.addinfo(en.info(i),i);
       }
       
-      if (_n) {
+      if (_n>0) {
         if (++_current>=_n) {
           static_cast<EntryImage*>(_cache)->setto(_en);
           _en.reset();
@@ -200,7 +202,7 @@ Entry&     Average::_operate(const Entry& e) const
         EntryWaveform::Info i = (EntryWaveform::Info)j;
         _en.addinfo(en.info(i),i);
       }
-      if (_n) {
+      if (_n>0) {
         if (++_current>=_n) {
           static_cast<EntryWaveform*>(_cache)->setto(_en);
           _en.reset();
@@ -213,7 +215,7 @@ Entry&     Average::_operate(const Entry& e) const
     break;
   }
 
-  return _n ? *_cache : *_entry;
+  return _n>0 ? *_cache : *_entry;
 }
 
 void Average::_invalid() {}

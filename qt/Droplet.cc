@@ -117,14 +117,27 @@ namespace Ami {
       virtual ~MapPlotDesc() {}
     public:
       Ami::AbsOperator* op(const DescImage& o) {
-	unsigned nproc = SMPRegistry::instance().nservers();
-	return new VAPlot(Ami::Droplets::X,
-			  Ami::Droplets::Y,
-			  _proc_grp->checkedId()==0 ? -1 :
-			  Ami::Droplets::Esum,
-			  _accumulate->isChecked() ? 
-			  avgRound(_interval->text().toInt(),nproc) : -1,
-			  o);
+        if (!_accumulate->isChecked())
+          return new VAPlot(Ami::Droplets::X,
+                            Ami::Droplets::Y,
+                            _proc_grp->checkedId()==0 ? -1 :
+                            Ami::Droplets::Esum,
+                            VAPlot::Single,o);
+        else if (_interval->text().toInt()<0)
+          return new VAPlot(Ami::Droplets::X,
+                            Ami::Droplets::Y,
+                            _proc_grp->checkedId()==0 ? -1 :
+                            Ami::Droplets::Esum,
+                            VAPlot::AutoRefresh,o);
+        else {
+          unsigned nproc = SMPRegistry::instance().nservers();
+          return new VAPlot(Ami::Droplets::X,
+                            Ami::Droplets::Y,
+                            _proc_grp->checkedId()==0 ? -1 :
+                            Ami::Droplets::Esum,
+                            avgRound(_interval->text().toInt(),nproc),
+                            o);
+        }
       }
     private:
       QCheckBox* _accumulate;

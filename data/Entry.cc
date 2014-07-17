@@ -16,6 +16,8 @@ static const uint64_t VALID_MASK = ~INVALID_BIT;
 
 using namespace Ami;
 
+enum { LastTime=0, FirstTime=1, NFields=2 };
+
 Entry::Entry() : 
   _payloadsize(0),
   _payload(0)
@@ -44,36 +46,45 @@ void* Entry::allocate(unsigned size)
   if (_payload)
     delete [] _payload;  
 
-  _payloadsize = sizeof(unsigned long long)+size;
+  _payloadsize = NFields*sizeof(unsigned long long)+size;
   _payload = new unsigned long long[(_payloadsize>>3)+1];
 
   reset();
 
-  return (_payload+1);
+  return (_payload+NFields);
 }
 
 double Entry::last() const 
 {
   const Pds::ClockTime& t = time();
-  return t.seconds() + 1.e-9 * t.nanoseconds();
+  return t.asDouble();
+}
+
+double Entry::first() const 
+{
+  const Pds::ClockTime& t = *reinterpret_cast<const Pds::ClockTime*>(_payload+FirstTime);
+  return t.asDouble();
 }
 
 const Pds::ClockTime& Entry::time() const 
 {
-  return *reinterpret_cast<const Pds::ClockTime*>(_payload);
+  return *reinterpret_cast<const Pds::ClockTime*>(&_payload[LastTime]);
 }
 
 void Entry::valid(const Pds::ClockTime& t) 
 {
-  *_payload = *(reinterpret_cast<const unsigned long long*>(&t)) & VALID_MASK;
+  if (_payload[LastTime]==INVALID_BIT)
+    _payload[FirstTime] = *(reinterpret_cast<const unsigned long long*>(&t));
+
+  _payload[LastTime] = *(reinterpret_cast<const unsigned long long*>(&t)) & VALID_MASK;
 }
 
 void Entry::invalid() 
 { 
-  *_payload |= INVALID_BIT;
+  _payload[LastTime] |= INVALID_BIT;
 }
 
-bool Entry::valid() const { return _payload!=0 && ((*_payload)&INVALID_BIT)==0; }
+bool Entry::valid() const { return _payload!=0 && (_payload[LastTime]&INVALID_BIT)==0; }
 
 void Entry::merge(char* p) const
 {
@@ -98,8 +109,11 @@ void Entry::merge(char* p) const
   if (desc().aggregate()) {  // merge the valid data, keeping the latest timestamp
     if (pvalid) {
       if (lvalid) {
-	if (*_payload > *u) *u = *_payload;
-	_merge((char*)(u+1));
+	if (_payload[LastTime ] > u[LastTime ]) 
+          u[LastTime ] = _payload[LastTime ];
+        if (_payload[FirstTime] < u[FirstTime])
+          u[FirstTime] = _payload[FirstTime];
+	_merge((char*)(u+NFields));
 	if (ldbug)
 	  pdb += sprintf(pdb," merged   : ts %016llx",*u);
       }
@@ -112,7 +126,7 @@ void Entry::merge(char* p) const
   }
 
   else { // keep the latest
-    if (*_payload > *u) {
+    if (_payload[LastTime] > u[LastTime]) {
       memcpy(p,_payload,_payloadsize);
       if (ldbug)
 	pdb += sprintf(pdb," replaced : ts %016llx",*u);

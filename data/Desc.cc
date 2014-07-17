@@ -18,6 +18,7 @@ Desc::Desc(const Desc& desc) :
   _nentries (0)
 {
   strncpy_val(_name, desc._name, NameSize);
+  _name[NameSize-1] = 0;
 }
 
 Desc::~Desc() {}

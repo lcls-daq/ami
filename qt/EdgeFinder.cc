@@ -37,11 +37,6 @@
 
 //#define DBUG
 
-static inline int avgRound(int n, int d)
-{
-  return (n+d-1)/d;
-}
-
 using namespace Ami::Qt;
 
 EdgeFinder::EdgeFinder(QWidget* parent,

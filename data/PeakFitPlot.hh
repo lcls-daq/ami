@@ -33,7 +33,7 @@ namespace Ami {
 		Parameter prm);
     //  Reconstituted from the input serial stream, the BldState and PvState
     //    accessors, and the Cds input entry accessor.
-    PeakFitPlot(const char*&, FeatureCache&);
+    PeakFitPlot(const char*&, FeatureCache&, FeatureCache&);
     PeakFitPlot(const char*&);
     ~PeakFitPlot();
   public:

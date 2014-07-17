@@ -8,6 +8,7 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Message.hh"
 #include "ami/data/ConfigureRequest.hh"
+#include "ami/data/RefreshRequest.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/DescCache.hh"
 #include "ami/data/Entry.hh"
@@ -326,6 +327,55 @@ void AnalysisFactory::configure(unsigned       id,
     _waitingForConfigure = false;
     pthread_cond_signal(&_condition);
     printf("AnalysisFactory: configuration is done.\n");
+  }
+
+  pthread_mutex_unlock(&_mutex);
+}
+
+void AnalysisFactory::refresh(unsigned       id,
+                              const Message& msg, 
+                              const char*    payload, 
+                              Cds&           cds)
+{
+  pthread_mutex_lock(&_mutex);
+
+  // create
+  const char* const end = payload + msg.payload();
+  while(payload < end) {
+    const RefreshRequest& req = *reinterpret_cast<const RefreshRequest*>(payload);
+    
+    if (req.source() == ConfigureRequest::User) {
+    }
+    else if (req.source() == ConfigureRequest::Filter) {
+    }
+    else {
+      Cds* pcds = 0;
+      const char *reqType = NULL;
+      switch(req.source()) {
+        case ConfigureRequest::Discovery: pcds = &_cds; reqType = "Discovery"; break;
+        case ConfigureRequest::Analysis : pcds = & cds; reqType = "Analysis"; break;
+        case ConfigureRequest::Hidden   : pcds = &_ocds; reqType = "Hidden"; break;
+        default:
+          printf("AnalysisFactory::refresh unknown source RefreshRequest::%d\n",req.source());
+          break;
+      }
+      if (!pcds) {
+        printf("AnalysisFactory::refresh failed (null pcds) for RefreshRequest::%s\n", reqType);
+        printf("\tinp %d\n",req.input());
+        break;
+      }
+      Cds& input_cds = *pcds;
+      Entry* input = input_cds.entry(req.input());
+      if (!input) {
+        printf("AnalysisFactory::refresh failed (null input) for RefreshRequest::%s\n", reqType);
+        printf("\tinp %d\n",req.input());
+        input_cds.showentries();
+      }
+      else if (input->valid() && req.tmo().asDouble()>input->first()) {
+        input->reset();
+      }
+    }
+    payload += sizeof(req);
   }
 
   pthread_mutex_unlock(&_mutex);

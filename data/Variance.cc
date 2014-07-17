@@ -34,14 +34,15 @@ static void _zero(ndarray<double,2>& m1,
     }
 }
 
-Variance::Variance(unsigned n, const char* scale) : 
+Variance::Variance(int n, const char* scale) : 
   AbsOperator(AbsOperator::Variance),
   _n         (n),
   _i         (0),
   _cache     (0),
   _input     (0),
   _term      (0),
-  _v         (true)
+  _v         (true),
+  _ve        (false)
 {
   strncpy_val(_scale_buffer,scale,SCALE_LEN);
 }
@@ -50,7 +51,8 @@ Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
   AbsOperator(AbsOperator::Variance),
   _i         (0),
   _input     (0),
-  _v         (true)
+  _v         (true),
+  _ve        (false)
 {
   _extract(p,_scale_buffer, SCALE_LEN);
   _extract(p, &_n, sizeof(_n));
@@ -58,6 +60,8 @@ Variance::Variance(const char*& p, const DescEntry& e, FeatureCache& features) :
   _cache = EntryFactory::entry(e);
   _cache->reset();
   _cache->invalid();
+  if (_n<0)
+    _cache->desc().auto_refresh(true);
 
   switch(e.type()) {
   case DescEntry::TH1F:
@@ -126,6 +130,12 @@ Entry&     Variance::_operate(const Entry& e) const
   if (!e.valid())
     return *_cache;
 
+  //  Detect (external) reset of cache
+  if (_ve && !_cache->valid()) {
+    _ve = false;
+    _zero(_m1[0],_m2[0]);
+  }
+
   _input = &e;
   const double vn = _term ? _term->evaluate() : 1;
   std::vector<ndarray<const double,2> > in;
@@ -136,14 +146,14 @@ Entry&     Variance::_operate(const Entry& e) const
     { const EntryTH1F& en = static_cast<const EntryTH1F&>(e);
       unsigned shape[] = {1,en.desc().nbins()};
       ndarray<const double,2> in (en.content(),shape);
-      if (_i<_n)
+      if (int(_i)<_n)
         psalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
       else {
         EntryTH1F& ca = static_cast<EntryTH1F&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
         psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
         _cache->valid(e.time());
-        if (_n) {
+        if (_n>0) {
           _i = 0;
           _zero(_m1[0],_m2[0]);
         }
@@ -153,14 +163,14 @@ Entry&     Variance::_operate(const Entry& e) const
     { const EntryWaveform& en = static_cast<const EntryWaveform&>(e);
       unsigned shape[] = {1,en.desc().nbins()};
       ndarray<const double,2> in (en.content(),shape);
-      if (_i<_n)
+      if (int(_i)<_n)
         psalg::variance_accumulate(1./vn,in,_m1[0],_m2[0]);
       else {
         EntryWaveform& ca = static_cast<EntryWaveform&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
         psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
         _cache->valid(e.time());
-        if (_n) {
+        if (_n>0) {
           _i = 0;
           _zero(_m1[0],_m2[0]);
         }
@@ -182,12 +192,12 @@ Entry&     Variance::_operate(const Entry& e) const
 #endif
           for(k=0; k<int(d.nframes()); k++) {
             ndarray<const unsigned,2> in (en.contents(k));
-            if (_i<_n)
+            if (int(_i)<_n)
               psalg::variance_accumulate(1./vn,ped,in,_m1[k],_m2[k]);
             else {
               ndarray<unsigned,2>       out(ca.contents(k));
               psalg::variance_calculate (1./vn,ped,in,_m1[k],_m2[k],_i,out);
-              if (_n)
+              if (_n>0)
                 _zero(_m1[k],_m2[k]);
             }
           }
@@ -195,24 +205,26 @@ Entry&     Variance::_operate(const Entry& e) const
       }
       else {
         ndarray<const unsigned,2> in (en.content());
-        if (_i<_n)
+        if (int(_i)<_n)
           psalg::variance_accumulate(1./vn,ped,in,_m1[0],_m2[0]);
         else {
           ndarray<unsigned,2>       out(ca.content());
           psalg::variance_calculate (1./vn,ped,in,_m1[0],_m2[0],_i,out);
-          if (_n)
+          if (_n>0)
             _zero(_m1[0],_m2[0]);
         }
       }
-      if (_i>=_n) {
-        if (_n) _i=0;
+      if (int(_i)>=_n) {
+        if (_n>0) _i=0;
         _cache->valid(e.time());
       }
     } break;
   default:
     break;
   }
-
+    
+  _ve = _cache->valid();
+    
   return *_cache;
 }
 

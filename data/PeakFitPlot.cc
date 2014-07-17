@@ -56,7 +56,8 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
 }
 
 PeakFitPlot::PeakFitPlot(const char*& p, 
-                         FeatureCache& features) :
+                         FeatureCache& features,
+                         FeatureCache& ocache) :
   AbsOperator(AbsOperator::PeakFitPlot),
   _cache (&features),
   _v     (true)
@@ -73,7 +74,7 @@ PeakFitPlot::PeakFitPlot(const char*& p,
 
   const DescEntry& o = *reinterpret_cast<const DescEntry*>(_desc_buffer);
 
-  _entry = EntryFactory::entry(o);
+  _entry = EntryFactory::entry(o,&ocache);
 
   _v = _setup(o, features);
 }

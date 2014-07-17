@@ -121,6 +121,10 @@ int AnalysisServer::processIo()
       reply(request.id(), Message::Description, n); 
     }
     break;
+  case Message::RefreshReq:
+    { _socket->read(_buffer,request.payload());
+      _factory.refresh(fd(), request,_buffer,_cds); }
+    break;
   case Message::PayloadReq:
     if (_described) {
       int n = _cds.payload()+1;
@@ -128,6 +132,7 @@ int AnalysisServer::processIo()
       n = _cds.payload(_iov+1, request.list())+1;
       reply(request.id(), Message::Payload, n); 
       //      _cds.invalidate_payload();
+      _cds.refresh();
     }
 #ifdef DBUG
     else

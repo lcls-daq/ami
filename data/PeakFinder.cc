@@ -24,6 +24,24 @@ PeakFinder::PeakFinder(double threshold_v0,
                        double threshold_v1,
                        Mode   mode,
                        bool   center_only,
+                       Option opt) :
+  AbsOperator(AbsOperator::PeakFinder),
+  _threshold_v0(threshold_v0),
+  _threshold_v1(threshold_v1),
+  _mode        (mode),
+  _center_only (center_only),
+  _accumulate  (opt==AutoRefresh ? -2 : -1),
+  _current     (0),
+  _output_entry(0),
+  _cache       (0),
+  _fn          (0)
+{
+}
+
+PeakFinder::PeakFinder(double threshold_v0,
+                       double threshold_v1,
+                       Mode   mode,
+                       bool   center_only,
                        int    accumulate) :
   AbsOperator(AbsOperator::PeakFinder),
   _threshold_v0(threshold_v0),
@@ -70,10 +88,12 @@ PeakFinder::PeakFinder(const char*& p, const DescEntry& e) :
   _cache       (0),
   _fn          (0)
 {
+  printf("PF::extract accum %d\n",_accumulate);
   _output_entry->info(0,EntryImage::Pedestal);
-  _output_entry->desc().aggregate(_accumulate>=0);
-  _output_entry->desc().normalize(_accumulate<0);
+  _output_entry->desc().aggregate(_accumulate!=-1);
+  _output_entry->desc().normalize(_accumulate==-1);
   _output_entry->desc().countmode(_mode==Count);
+  _output_entry->desc().auto_refresh(_accumulate==-2);
 
   if (_accumulate > 0) {
     _cache = static_cast<EntryImage*>(EntryFactory::entry(_output_entry->desc()));
@@ -101,6 +121,7 @@ DescEntry& PeakFinder::_routput   () const { return _accumulate<=0 ? _output_ent
 
 void*      PeakFinder::_serialize(void* p) const
 {
+  printf("PF::serialize accum %d\n",_accumulate);
   _insert(p, &_threshold_v0, sizeof(_threshold_v0));
   _insert(p, &_threshold_v1, sizeof(_threshold_v1));
   _insert(p, &_mode        , sizeof(_mode));
@@ -111,8 +132,10 @@ void*      PeakFinder::_serialize(void* p) const
 
 Entry&     PeakFinder::_operate(const Entry& e) const
 {
+  Entry* output = _accumulate<=0 ? _output_entry : _cache;
+
   if (!e.valid()) 
-    return *_output_entry;
+    return *output;
 
   const EntryImage& entry = static_cast<const EntryImage&>(e);
   const DescImage& d  = entry.desc();
@@ -130,7 +153,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
         _threshold[j][k] = p + unsigned(dn*_fn->value(k,j)+0.5);
   }
 
-  if (_accumulate<0) {
+  if (_accumulate==-1) {
     _output_entry->reset();
   }
 
@@ -164,15 +187,11 @@ Entry&     PeakFinder::_operate(const Entry& e) const
         psalg::sum_excess(ain, threshold, p, aout);
   }
 
-  Entry* output;
   _output_entry->valid(e.time());
-  if (_accumulate >= 0) {
+  if (_accumulate != -1) {
     if (_mode == Sum)
       _output_entry->addinfo(entry.info(EntryImage::Normalization), EntryImage::Normalization);
-    if (_accumulate == 0) {
-      output = _output_entry;
-    }
-    else {
+    if (_accumulate > 0) {
       if (++_current >= _accumulate) {
 	_cache->setto(*_output_entry);
 	_output_entry->reset();
@@ -180,12 +199,10 @@ Entry&     PeakFinder::_operate(const Entry& e) const
       }
       else
 	_cache->invalid();
-      output = _cache;
     }
   }
   else {
     _output_entry->info(1, EntryImage::Normalization);
-    output =_output_entry;
   }
   return *output;
 }
@@ -209,4 +226,4 @@ PeakFinderFn* _lookup(unsigned phy)
   return (it == _fn_map.end()) ? 0 : _fn_map[phy]->clone();
 }
 
-void PeakFinder::_invalid() { if (_accumulate<0) _output_entry->invalid(); }
+void PeakFinder::_invalid() { if (_accumulate==-1) _output_entry->invalid(); }

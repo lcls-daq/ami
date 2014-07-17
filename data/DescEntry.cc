@@ -127,9 +127,12 @@ const char* DescEntry::zunits() const {return _zunits;}
 const Pds::DetInfo& DescEntry::info() const { return _info; }
 unsigned            DescEntry::channel() const { return _channel; }
 
-bool DescEntry::isnormalized() const {return _options&(1<<Normalized);}
-bool DescEntry::aggregate   () const {return _options&(1<<Aggregate);}
-bool DescEntry::countmode   () const {return _options&(1<<CountMode);}
+bool DescEntry::isnormalized   () const {return _options&(1<<Normalized);}
+bool DescEntry::aggregate      () const {return _options&(1<<Aggregate);}
+bool DescEntry::check_refresh  () const {return _options&(1<<CheckRefresh);}
+bool DescEntry::force_refresh  () const {return _options&(1<<ForceRefresh);}
+bool DescEntry::auto_refresh   () const {return _options&(1<<AutoRefresh);}
+bool DescEntry::countmode      () const {return _options&(1<<CountMode);}
 bool DescEntry::isweighted_type() const {return (_type==Scan);}
 bool DescEntry::hasPedCalib    () const {return _options&(1<<CalibMom0);}
 bool DescEntry::hasGainCalib   () const {return _options&(1<<CalibMom1);}
@@ -137,44 +140,26 @@ bool DescEntry::hasRmsCalib    () const {return _options&(1<<CalibMom2);}
 bool DescEntry::used           () const {return _options&(1<<Used);}
 bool DescEntry::recorded       () const {return !(_options&(1<<NotRecorded));}
 
-void DescEntry::normalize(bool v) {
-  if (v) _options |=  (1<<Normalized);
-  else   _options &= ~(1<<Normalized);
+void DescEntry::_set_opt(bool v,Option opt)
+{
+  if (v) _options |=  (1<<opt);
+  else   _options &= ~(1<<opt);
 }
 
-void DescEntry::aggregate(bool v) {
-  if (v) _options |=  (1<<Aggregate);
-  else   _options &= ~(1<<Aggregate);
-}
+void DescEntry::normalize    (bool v) { _set_opt(v,Normalized); }
+void DescEntry::aggregate    (bool v) { _set_opt(v,Aggregate); }
+void DescEntry::check_refresh(bool v) { _set_opt(v,CheckRefresh); }
+void DescEntry::force_refresh(bool v) { _set_opt(v,ForceRefresh); }
+void DescEntry::auto_refresh (bool v) { _set_opt(v,AutoRefresh); }
+void DescEntry::countmode    (bool v) { _set_opt(v,CountMode); }
+void DescEntry::pedcalib     (bool v) { _set_opt(v,CalibMom0); }
+void DescEntry::gaincalib    (bool v) { _set_opt(v,CalibMom1); }
+void DescEntry::rmscalib     (bool v) { _set_opt(v,CalibMom2); }
+void DescEntry::recorded     (bool v) { _set_opt(!v,NotRecorded); }
 
-void DescEntry::countmode(bool v) {
-  if (v) _options |=  (1<<CountMode);
-  else   _options &= ~(1<<CountMode);
-}
-
-void DescEntry::pedcalib(bool v) {
-  if (v) _options |=  (1<<CalibMom0);
-  else   _options &= ~(1<<CalibMom0);
-}
-
-void DescEntry::gaincalib(bool v) {
-  if (v) _options |=  (1<<CalibMom1);
-  else   _options &= ~(1<<CalibMom1);
-}
-
-void DescEntry::rmscalib(bool v) {
-  if (v) _options |=  (1<<CalibMom2);
-  else   _options &= ~(1<<CalibMom2);
-}
-
-void DescEntry::used(bool v) const {
+void DescEntry::used         (bool v) const {
   if (v) _options |=  (1<<Used);
   else   _options &= ~(1<<Used);
-}
-
-void DescEntry::recorded(bool v) {
-  if (!v) _options |=  (1<<NotRecorded);
-  else    _options &= ~(1<<NotRecorded);
 }
 
 void DescEntry::options(unsigned o) {

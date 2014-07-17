@@ -42,6 +42,12 @@ namespace Ami {
     bool isnormalized() const;
     ///  Indicates whether the data content is to be merged with data from other events
     bool aggregate   () const;
+    ///  Indicates whether the data content is to be periodically refreshed
+    bool check_refresh() const;
+    ///  Indicates whether the data content is to be refreshed now
+    bool force_refresh() const;
+    ///  Indicates whether the data content is to be refreshed every update
+    bool auto_refresh() const;
     ///  Indicates whether the data represents counts/occurrences or summed analog data
     bool countmode   () const;
     ///  Indicates whether the data is to be weighted by an event-variable
@@ -67,6 +73,12 @@ namespace Ami {
 
     /// merge distributed data = sum contents and normalization, else just keep latest set
     void aggregate(bool);  
+    /// periodically refresh
+    void check_refresh(bool);  
+    /// refresh now
+    void force_refresh(bool);  
+    /// refresh every update
+    void auto_refresh(bool);  
     /// bin contents count events, else sum ADUs
     void countmode(bool); 
     ///
@@ -145,6 +157,16 @@ namespace Ami {
     DescEntry(const DescEntry&);
 
   private:
+    ///  Enumeration of options in a bit mask
+    enum Option {Normalized, Aggregate, 
+                 CheckRefresh, ForceRefresh, 
+                 AutoRefresh,
+                 CountMode, 
+                 CalibMom0, CalibMom1, CalibMom2,  // has calibrations of these orders { Ped, Gain, Sigma }
+                 Used, NotRecorded, User};
+    void _set_opt(bool,Option);
+
+  private:
     Pds::DetInfo _info;
     uint32_t     _channel;
     uint32_t     _reserved;
@@ -156,12 +178,6 @@ namespace Ami {
     mutable int16_t   _options;
     uint16_t  _type;
     uint16_t  _size;
-
-  private:
-    ///  Enumeration of options in a bit mask
-    enum Option {Normalized, Aggregate, CountMode, 
-                 CalibMom0, CalibMom1, CalibMom2,  // has calibrations of these orders { Ped, Gain, Sigma }
-                 Used, NotRecorded, User};
   };
 };
 

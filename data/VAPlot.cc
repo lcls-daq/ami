@@ -18,6 +18,28 @@ using namespace Ami;
 VAPlot::VAPlot(int ix,
 	       int iy,
 	       int iz,
+	       Option opt,
+	       const DescImage& o) :
+  AbsOperator(AbsOperator::VAPlot),
+  _ix          (ix),
+  _iy          (iy),
+  _iz          (iz),
+  _accumulate  (opt==Single ? -1 : -2),
+  _current     (0),
+  _output_entry(0),
+  _cache       (0)
+{
+  memcpy(_desc, &o, o.size());
+
+#ifdef DBUG
+  printf("VAPlot:ctor ix,iy,iz [%d,%d,%d]  acc %d  o.nx,ny [%d,%d]\n",
+	 ix,iy,iz,accumulate,o.nbinsx(),o.nbinsy());
+#endif
+}
+
+VAPlot::VAPlot(int ix,
+	       int iy,
+	       int iz,
 	       int    accumulate,
 	       const DescImage& o) :
   AbsOperator(AbsOperator::VAPlot),
@@ -70,9 +92,10 @@ VAPlot::VAPlot(const char*& p, const DescEntry& e) :
   _output_entry = static_cast<EntryImage*>(EntryFactory::entry(o));
 
   _output_entry->info(0,EntryImage::Pedestal);
-  _output_entry->desc().aggregate(_accumulate>=0);
-  _output_entry->desc().normalize(_accumulate<0);
+  _output_entry->desc().aggregate(_accumulate!=-1);
+  _output_entry->desc().normalize(_accumulate==-1);
   _output_entry->desc().countmode(_iz<0);
+  _output_entry->desc().auto_refresh(_accumulate==-2);
 
   if (_accumulate > 0) {
     _cache = static_cast<EntryImage*>(EntryFactory::entry(_output_entry->desc()));
@@ -119,7 +142,7 @@ Entry&     VAPlot::_operate(const Entry& e) const
   const EntryRef& entry = static_cast<const EntryRef&>(e);
   const VectorArray& a  = *reinterpret_cast<const VectorArray*>(entry.data());
 
-  if (_accumulate<0)
+  if (_accumulate==-1)
     _output_entry->reset();
 
   if (_iz<0)
@@ -135,10 +158,10 @@ Entry&     VAPlot::_operate(const Entry& e) const
 
   Entry* output;
   _output_entry->valid(e.time());
-  if (_accumulate >= 0) {
+  if (_accumulate != -1) {
     if (_iz>=0)
       _output_entry->addinfo(1, EntryImage::Normalization);
-    if (_accumulate == 0) {
+    if (_accumulate <= 0) {
       output = _output_entry;
     }
     else {

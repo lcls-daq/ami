@@ -15,6 +15,10 @@ namespace Ami {
   //
   class VAPlot : public AbsOperator {
   public:
+    enum Option { Single, AutoRefresh };
+    VAPlot(int ix, int iy, int iz,
+	   Option,
+	   const  DescImage& output);
     VAPlot(int ix, int iy, int iz,
 	   int               accumulate,
 	   const  DescImage& output);
@@ -32,7 +36,7 @@ namespace Ami {
     int               _ix;
     int               _iy;
     int               _iz;
-    int               _accumulate;   /// single event (-1), running sum(0), fixed event sum(>0)
+    int               _accumulate;   /// auto refresh (-2), single event (-1), running sum(0), fixed event sum(>0)
     char              _desc[sizeof(DescImage)];
     mutable int       _current;
     EntryImage*       _output_entry; /// Holds single event result and indefinite running sum

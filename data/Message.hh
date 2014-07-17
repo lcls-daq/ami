@@ -21,6 +21,7 @@ namespace Ami {
 	      ConfigReq,
 	      DescriptionReq, 
 	      Description, 
+              RefreshReq,
 	      PayloadReq, 
 	      Payload,
 	      PayloadFragment};

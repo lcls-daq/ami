@@ -61,7 +61,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::BinMath   : o = new BinMath   (p,input,_input,_output); break;
   case AbsOperator::EdgeFinder: o = new EdgeFinder(p); break;
   case AbsOperator::PeakFinder: o = new PeakFinder(p, input); break;
-  case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _input); break;
+  case AbsOperator::PeakFitPlot   : o = new PeakFitPlot   (p, _input, _output); break;
   case AbsOperator::XYHistogram   : o = new XYHistogram   (p,input); break;
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;

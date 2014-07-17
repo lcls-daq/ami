@@ -23,7 +23,7 @@ namespace Ami {
    */
   class Variance : public AbsOperator {
   public:
-    Variance(unsigned n=0, const char* p=0);
+    Variance(int n=0, const char* p=0);
     Variance(const char*&, const DescEntry&, FeatureCache&);
     ~Variance();
   public:
@@ -37,7 +37,7 @@ namespace Ami {
   private:
     enum { SCALE_LEN=256 };
     char           _scale_buffer[SCALE_LEN];
-    unsigned       _n;
+    int            _n;
     mutable unsigned _i;
     mutable std::vector<ndarray<double,2> > _m1;
     mutable std::vector<ndarray<double,2> > _m2;
@@ -45,6 +45,7 @@ namespace Ami {
     mutable const Entry*   _input;
     Term*          _term ;
     bool           _v;
+    mutable bool   _ve;
   };
 
 };

@@ -18,6 +18,7 @@ namespace Ami {
     virtual Cds& discovery() = 0;
     virtual Cds& hidden   () = 0;
     virtual void configure(unsigned id, const Message&, const char*, Cds&, bool post_svc) = 0;
+    virtual void refresh  (unsigned id, const Message&, const char*, Cds&) = 0;
     virtual void analyze  () = 0;
     virtual void discover (bool waitForConfigure) = 0;
     virtual void remove   (unsigned id) = 0;

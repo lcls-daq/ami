@@ -263,12 +263,26 @@ void PeakFinder::set_channel(int c)
 void PeakFinder::plot()
 {
   unsigned nproc = SMPRegistry::instance().nservers();
-  Ami::PeakFinder* op = new Ami::PeakFinder(_threshold->value(0),
-					    _threshold->value(1),
-					    Ami::PeakFinder::Mode(_proc_grp->checkedId()),
-					    _center_only->isChecked(),
-					    _accumulate->isChecked() ? avgRound(_interval->text().toInt(),nproc) : -1);
-
+  Ami::PeakFinder* op;
+  if (!_accumulate->isChecked())
+    op = new Ami::PeakFinder(_threshold->value(0),
+                             _threshold->value(1),
+                             Ami::PeakFinder::Mode(_proc_grp->checkedId()),
+                             _center_only->isChecked(),
+                             Ami::PeakFinder::Single);
+  else if (_interval->text().toInt()<0)
+    op = new Ami::PeakFinder(_threshold->value(0),
+                             _threshold->value(1),
+                             Ami::PeakFinder::Mode(_proc_grp->checkedId()),
+                             _center_only->isChecked(),
+                             Ami::PeakFinder::AutoRefresh);
+  else
+    op = new Ami::PeakFinder(_threshold->value(0),
+                             _threshold->value(1),
+                             Ami::PeakFinder::Mode(_proc_grp->checkedId()),
+                             _center_only->isChecked(),
+                             avgRound(_interval->text().toInt(),nproc));
+  
 #if 0
   if (nproc>1 && _accumulate->isChecked()) {
     ZoomPlot* plot = new ZoomPlot(this,

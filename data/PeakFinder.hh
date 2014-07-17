@@ -16,7 +16,13 @@ namespace Ami {
   //
   class PeakFinder : public AbsOperator {
   public:
-    enum Mode { Count, Sum };
+    enum Mode   { Count, Sum };
+    enum Option { Single, AutoRefresh };
+    PeakFinder(double threshold_v0,
+               double threshold_v1,
+               Mode   mode,
+               bool   center_only,
+               Option);
     PeakFinder(double threshold_v0,
                double threshold_v1,
                Mode   mode,
@@ -39,7 +45,7 @@ namespace Ami {
     double            _threshold_v1;
     Mode              _mode;
     bool              _center_only;
-    int               _accumulate;   /// single event (-1), running sum(0), fixed event sum(>0)
+    int               _accumulate;   /// auto refresh (-2), single event (-1), running sum(0), fixed event sum(>0)
     mutable int       _current;
     EntryImage*       _output_entry; /// Holds single event result and indefinite running sum
     EntryImage*       _cache;        /// Holds fixed event number sum

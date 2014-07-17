@@ -49,7 +49,7 @@
 
 static inline int avgRound(int n, int d)
 {
-  return (n+d-1)/d;
+  return n<0 ? -1 : (n+d-1)/d;
 }
 
 using namespace Ami::Qt;

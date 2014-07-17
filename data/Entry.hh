@@ -45,6 +45,8 @@ namespace Ami {
     bool                  valid  () const;
     ///  Returns most recent update time in seconds
     double                last() const;
+    ///  Returns first update time in seconds
+    double                first() const;
     ///  Returns most recent update time in wall-clock {seconds,nanoseconds}
     const Pds::ClockTime& time() const;
 
