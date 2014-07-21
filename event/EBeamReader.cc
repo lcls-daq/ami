@@ -262,3 +262,4 @@ void   EBeamReader::_damaged  ()
 unsigned     EBeamReader::nentries() const { return 0; }
 const Entry* EBeamReader::entry   (unsigned) const { return 0; }
 void         EBeamReader::rename(const char*) {}
+void         EBeamReader::reset   () { EventHandlerF::reset(); _index=-1; _nvars=0; }
