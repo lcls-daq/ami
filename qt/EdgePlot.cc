@@ -195,7 +195,8 @@ void EdgePlot::setup_payload(Cds& cds)
           delete _plot[i];
 
         _plot[i] = PlotFactory::plot(entry->desc().name(),*entry,
-                                     noTransform,noTransform,getcolor(i));
+                                     noTransform,noTransform,getcolor(i),
+				     cds.lock());
         _plot[i]->attach(_frame);
       }
     }

@@ -7,6 +7,7 @@ class QString;
 namespace Ami {
   class AbsTransform;
   class Entry;
+  class DataLock;
   namespace Qt {
     class QtBase;
     class PlotFactory {
@@ -15,7 +16,8 @@ namespace Ami {
 			  const Entry&, 
 			  const AbsTransform& x, 
 			  const AbsTransform& y,
-			  const QColor&);
+			  const QColor&,
+                          DataLock&);
     };
   };
 };

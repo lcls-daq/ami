@@ -20,6 +20,7 @@
 
 #include "ami/service/Socket.hh"
 #include "ami/service/Semaphore.hh"
+#include "ami/service/DataLock.hh"
 
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -430,7 +431,9 @@ int Ami::Qt::Client::read_payload     (Socket& socket, int size)
   if (_niovread==0) 
     ;
   else if (_status->state() == Status::Requested) {
+    _cds.lock().write_lock();
     nbytes = socket.readv(_iovload,_niovread);
+    _cds.lock().write_unlock();
   }
   else if (!_one_shot) {
     //

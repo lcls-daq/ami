@@ -515,7 +515,7 @@ void ChannelDefinition::setup_payload(Cds& cds, bool vis)
   Entry* entry = cds.entry(_output_signature);
   if (entry) {
     cds.request(*entry, _show && vis);
-    _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color);
+    _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color,cds.lock());
     if (_plot) {
       _frame.add(_plot, _show);
       _meditB->setEnabled(true);

@@ -14,6 +14,8 @@ class QGridLayout;
 namespace Ami {
   class EntryImage;
   class AbsTransform;
+  class DataLock;
+  class Semaphore;
   namespace Qt {
     class AxisBins;
     class ImageData;
@@ -24,7 +26,8 @@ namespace Ami {
 	      const EntryImage&, 
 	      const AbsTransform& x, 
 	      const AbsTransform& y,
-	      const QColor& c);
+	      const QColor& c,
+              DataLock* lock=0);
       ~QtImage();
     public:
       void        dump  (FILE*) const;
@@ -60,6 +63,9 @@ namespace Ami {
       bool       _scalexy;
       ImageGrid* _xgrid;
       ImageGrid* _ygrid;
+
+      DataLock*  _lock;
+      Semaphore* _sem;
     };
   };
 };

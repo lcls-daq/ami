@@ -16,6 +16,7 @@
 #include "ami/data/EntryWaveform.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/service/DataLock.hh"
 
 #include <stdio.h>
 
@@ -25,7 +26,8 @@ QtBase* PlotFactory::plot(const QString&    name,
 			  const Ami::Entry& entry,
 			  const AbsTransform&  x,
 			  const AbsTransform&  y,
-			  const QColor&     c)
+			  const QColor&     c,
+                          DataLock&         lock)
 {
 #define QTCASE(type) \
   case Ami::DescEntry::type : \
@@ -40,7 +42,10 @@ QtBase* PlotFactory::plot(const QString&    name,
     QTCASE(Prof2D);
     QTCASE(TH2F);
     QTCASE(Waveform);
-    QTCASE(Image);
+    //    QTCASE(Image);
+  case Ami::DescEntry::Image:
+    { b = new QtImage(name,static_cast<const Ami::EntryImage&>(entry),x,y,c,&lock);
+      break; }
   case Ami::DescEntry::ScalarRange:  // silently ignore
     b = 0;
     break;

@@ -15,6 +15,7 @@
 #include "ami/event/Calib.hh"
 #include "ami/server/AnalysisServerManager.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/DataLock.hh"
 #include "ami/service/Semaphore.hh"
 
 #include <iostream>
@@ -40,6 +41,7 @@ static void usage(char* progname) {
           "         [-S (use scroll bars)]\n"
 	  "         [-l (live read mode)]\n"
 	  "         [-t (calib test mode)]\n"
+	  "         [-Y (disable synchronous image locking)]\n"
           "         [-Z (disable image render offload)]\n"
 	  "         [-T (test mode)]\n"
           "         [-E (expert mode/movie option)]\n", 
@@ -122,7 +124,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTWZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTWYZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -176,6 +178,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'W':
       separateWindowMode = true;
+      break;
+    case 'Y':
+      Ami::DataLock::disable();
       break;
     case 'Z':
       Ami::Qt::OffloadEngine::disable();

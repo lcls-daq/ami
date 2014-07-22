@@ -173,7 +173,8 @@ void EdgeOverlay::setup_payload(Cds& cds)
         _plot[i] = PlotFactory::plot(entry->desc().name(),*entry,
                                      Ami::AbsTransform::null(),
                                      Ami::AbsTransform::null(),
-                                     QColor(0,0,0));
+                                     QColor(0,0,0),
+				     cds.lock());
 
         if (_frame)
           _attach(i);

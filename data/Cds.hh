@@ -12,7 +12,7 @@ namespace Ami {
 
   class DescEntry;
   class Entry;
-  class Semaphore;
+  class DataLock;
 
   class Cds {
   public:
@@ -53,7 +53,8 @@ namespace Ami {
     void      clear_used();
     void      reset_plots();
 
-    Semaphore& payload_sem() const { return *_payload_sem; }
+    DataLock& lock() const { return *_lock; }
+    
   private:
     void adjust();
 
@@ -61,7 +62,7 @@ namespace Ami {
     typedef std::list<Entry*> EnList;
     Desc              _desc;
     EnList            _entries;
-    mutable Semaphore* _payload_sem;
+    DataLock*         _lock;
     unsigned          _signature;
     EntryList         _request;
   };

@@ -14,6 +14,7 @@
 #include "ami/qt/AbsClient.hh"
 
 #include "ami/data/Cds.hh"
+
 #include <QtGui/QHBoxLayout>
 
 class QLayout;

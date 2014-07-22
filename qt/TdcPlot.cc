@@ -110,7 +110,8 @@ void TdcPlot::setup_payload(Cds& cds)
 
       edit_xrange(true);
       _plot = PlotFactory::plot(_name,*entry,
-                                noTransform,noTransform,QColor(0,0,0));
+                                noTransform,noTransform,QColor(0,0,0),
+				cds.lock());
       _plot->attach(_frame);
       emit curve_changed();
     }

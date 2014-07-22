@@ -5,6 +5,8 @@
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryImage.hh"
+#include "ami/service/DataLock.hh"
+#include "ami/service/Semaphore.hh"
 
 #include <QtGui/QImage>
 #include <QtGui/QGridLayout>
@@ -17,8 +19,11 @@ QtImage::QtImage(const QString&   title,
 		 const Ami::EntryImage& entry,
 		 const AbsTransform& x,
 		 const AbsTransform& y,
-		 const QColor& c) :
-  QtBase(title,entry)
+		 const QColor& c,
+                 DataLock* lock) :
+  QtBase(title,entry),
+  _lock (lock),
+  _sem  (lock ? lock->read_register():0)
 {
   const Ami::DescImage& d = entry.desc();
   _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy();
@@ -41,6 +46,8 @@ QtImage::QtImage(const QString&   title,
   
 QtImage::~QtImage()
 {
+  if (_lock) _lock->read_resign(_sem);
+
   for(unsigned i=0; i<NBUFFERS; i++)
     delete _qimage[i];
   delete _xinfo;
@@ -91,6 +98,8 @@ void           QtImage::canvas_size(const QSize& sz,
 
 QImage*  QtImage::image(float p0, float s, bool linear)
 {
+  if (_sem) _sem->take();
+
   if (!entry().valid()) {
 #ifdef DBUG
     printf("QtImage::image invalid\n");
@@ -149,6 +158,8 @@ QImage*  QtImage::image(float p0, float s, bool linear)
       }
     }
   }
+
+  if (_sem) _sem->give();
 
   return qimage;
 }

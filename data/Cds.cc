@@ -4,7 +4,7 @@
 #include "Entry.hh"
 #include "EntryView.hh"
 #include "DescEntry.hh"
-#include "ami/service/Semaphore.hh"
+#include "ami/service/DataLock.hh"
 
 #include <sstream>
 
@@ -14,7 +14,7 @@ using namespace Ami;
 
 Cds::Cds(const char* name) :
   _desc       (name),
-  _payload_sem(new Semaphore(Semaphore::FULL)),
+  _lock       (new DataLock),
   _signature  (0)
 {
   _desc.signature(_signature++);
@@ -23,7 +23,7 @@ Cds::Cds(const char* name) :
 Cds::~Cds()
 {
   reset();
-  delete _payload_sem;
+  delete _lock;
 }
 
 unsigned Cds::add(Entry* entry) 

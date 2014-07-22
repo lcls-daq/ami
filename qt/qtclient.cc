@@ -4,6 +4,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/OffloadEngine.hh"
 #include "ami/service/Ins.hh"
+#include "ami/service/DataLock.hh"
 #include "ami/qt/QOnline.hh"
 
 #include <QtGui/QApplication>
@@ -29,7 +30,10 @@ static void usage(char* p)
          "-f <path>      : default path for load/save operations\n"
          "-F <path>      : file to load initial configuration\n"
          "-C <int>       : color palette choice (0-jette, 1-radiation)\n"
-         "-E             : expert mode/movie option\n",p);
+         "-E             : expert mode/movie option\n"
+	 "-Y             : disable synchronous image locking\n"
+	 "-Z             : disable image render offload\n"
+	 ,p);
 }
 
 static void QtAssertHandler(QtMsgType type, 
@@ -85,7 +89,10 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-E")==0) {
       Ami::Qt::ImageDisplay::enable_movie_option();
     }
-    else if (strcmp(argv[1],"-Z")==0) {
+    else if (strcmp(argv[i],"-Y")==0) {
+      Ami::DataLock::disable();
+    }
+    else if (strcmp(argv[i],"-Z")==0) {
       Ami::Qt::OffloadEngine::disable();
     }
     else if (strcmp(argv[i],"-p")==0) {
