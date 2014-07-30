@@ -15,6 +15,7 @@ namespace Ami {
     bool  valid () const;
     bool  accept() const;
     AbsFilter* clone() const;
+    std::string text() const;
   public:
     const char* feature() const { return _feature; }
   private:

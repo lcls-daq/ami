@@ -31,6 +31,7 @@
 #include <QtCore/QRegExp>
 
 #include <stdio.h>
+#include <sstream>
 
 //#define DBUG
 
@@ -314,3 +315,12 @@ Term* BinMath::_process_expr(FeatureCache& input,
 }
 
 void BinMath::_invalid() {}
+
+std::string BinMath::_text() const
+{
+  std::ostringstream s;
+  s << _expression << ":" 
+    << DescEntry::type_str(_entry->desc().type()) << "["
+    << _entry->desc().name() << "]";
+  return s.str();
+}

@@ -16,6 +16,7 @@
  */
 
 #include <stdint.h>
+#include <string>
 
 namespace Ami {
 
@@ -59,6 +60,8 @@ namespace Ami {
     virtual void use() {}
     ///  Operator was not applied due to error
     void         invalid();
+    ///  Human readable description
+    std::string  text() const;
   protected:
     ///  Subclass-specific operation on input/intermediate data
     virtual Entry& _operate  (const Entry&) const = 0;
@@ -70,6 +73,8 @@ namespace Ami {
     virtual bool   _valid     ()            const = 0;
     ///  Subclass-specific determination of accumulated data validity
     virtual void   _invalid   () = 0;
+    ///  Human readable description
+    virtual std::string  _text() const;
   protected:
     /// helper function for serialization
     void _insert (void*& p, const void* b, unsigned size) const;

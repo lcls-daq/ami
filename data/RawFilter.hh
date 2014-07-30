@@ -12,6 +12,7 @@ namespace Ami {
     bool valid () const;
     bool accept() const;
     AbsFilter* clone() const;
+    std::string text() const;
   private:
     void* _serialize(void*) const;
   };

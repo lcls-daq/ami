@@ -418,12 +418,14 @@ void _insert_analysis(char*& p, const Analysis* a, bool discovery)
   XML_insert(p, "unsigned", "discovery", QtPersistent::insert(p, discovery));
   XML_insert(p, "unsigned", "input"    , QtPersistent::insert(p, a->input().desc().signature()));
   XML_insert(p, "unsigned", "output"   , QtPersistent::insert(p, a->output().signature()));
+  XML_insert(p, "text"    , "text"     , QtPersistent::insert(p, QString(a->op().text().c_str())));
   XML_insert(p, "binary"  , "operator" , QtPersistent::insert(p, buff, (char*)a->op().serialize(f.serialize(buff))-buff));
 }
 
 void _insert_filter(char*& p, const AbsFilter* f)
 {
   char* buffer = new char[8*1024];
+  XML_insert(p, "text"  , "_text"  , QtPersistent::insert(p, QString(f->text().c_str())));
   XML_insert(p, "binary", "_filter", QtPersistent::insert(p, buffer, (char*)f->serialize(buffer)-buffer));
   delete[] buffer;
 }

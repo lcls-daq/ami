@@ -4,6 +4,7 @@
 #include "ami/data/valgnd.hh"
 
 #include <string.h>
+#include <sstream>
 
 using namespace Ami;
 
@@ -65,3 +66,9 @@ void* FeatureRange::_serialize(void* p) const
 }
 
 AbsFilter* FeatureRange::clone() const { return new FeatureRange(_feature,_lo,_hi); }
+
+std::string FeatureRange::text() const { 
+  std::ostringstream s;
+  s << _lo << " LTEQ " << _feature << " LTEQ " << _hi;
+  return s.str();
+}

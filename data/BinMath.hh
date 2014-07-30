@@ -54,6 +54,7 @@ namespace Ami {
     bool       _valid    () const { return _v; }
     void       _invalid  ();
     Term*      _process_expr(FeatureCache&,const char*,bool&);
+    std::string _text    () const;
   private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];

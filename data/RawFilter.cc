@@ -10,3 +10,5 @@ bool RawFilter::accept() const { return true; }
 void* RawFilter::_serialize(void* p) const { return p; }
 
 AbsFilter* RawFilter::clone() const { return new RawFilter; }
+
+std::string RawFilter::text() const { return std::string("TRUE"); }

@@ -13,6 +13,7 @@
  */
 
 #include <stdint.h>
+#include <string>
 
 namespace Ami {
   class AbsFilter {
@@ -34,6 +35,8 @@ namespace Ami {
     virtual bool  accept() const = 0;
     ///  Clones filter object for application to another analysis thread
     virtual AbsFilter* clone() const = 0;
+    ///  Converts to a readable expression
+    virtual std::string text() const = 0;
   public:
     ///  Serializes object data for network transmission.
     void* serialize(void*) const;

@@ -100,3 +100,5 @@ Entry&     Single::_operate(const Entry& e) const
 #undef SET_CASE
 
 void Single::_invalid() { _entry->invalid(); }
+
+std::string Single::_text() const { return std::string("Single"); }

@@ -1,6 +1,7 @@
 #include "AbsOperator.hh"
 
 #include <string.h>
+#include <sstream>
 
 using namespace Ami;
 
@@ -25,6 +26,16 @@ DescEntry&             AbsOperator::output() const
   return _next ? _next->output() : _routput();
 }
 
+std::string            AbsOperator::text() const
+{
+  std::ostringstream s;
+  s << _text();
+  if (_next)
+    s << " : " << _next->text();
+  return s.str();
+}
+
+std::string            AbsOperator::_text() const { return std::string(); }
 
 bool                   AbsOperator::valid() const
 {

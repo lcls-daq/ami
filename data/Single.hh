@@ -26,6 +26,7 @@ namespace Ami {
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
     void       _invalid  ();
+    std::string _text    () const;
   private:
     enum { SCALE_LEN=256 };
     char           _scale_buffer[SCALE_LEN];

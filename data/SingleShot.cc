@@ -27,3 +27,5 @@ bool SingleShot::accept() const
 void*      SingleShot::_serialize(void* p) const { return p; }
 
 AbsFilter* SingleShot::clone() const { return new SingleShot; }
+
+std::string SingleShot::text() const { return std::string("ONCE"); }
