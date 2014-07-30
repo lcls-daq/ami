@@ -381,7 +381,6 @@ void Ami::Qt::Client::_read_description(int size)
   //  printf("%s Described si\n",qPrintable(_title));
   //  printf("description\n"); 
 
-  _frame->reset();
   _cds.reset();
 
   const char* payload = _description;

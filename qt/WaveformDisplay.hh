@@ -29,7 +29,7 @@ namespace Ami {
       void load(const char*& p);
     public:
       void prototype(const Ami::DescEntry*);
-      void add   (QtBase*, bool);
+      void add   (QtBase*, Cds&, bool);
       void reset ();
       void show  (QtBase*);
       void hide  (QtBase*);

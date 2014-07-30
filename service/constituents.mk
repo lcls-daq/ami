@@ -12,7 +12,8 @@ libincs_amisvc := pdsdata/include
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include
 
-tgtnames := tcptest amidump
+#tgtnames := tcptest amidump
+tgtnames := amidump
 
 tgtsrcs_tcptest := tcptest.cc
 tgtlibs_tcptest := ami/amisvc pdsdata/xtcdata

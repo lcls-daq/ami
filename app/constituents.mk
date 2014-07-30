@@ -1,18 +1,19 @@
 # List targets (if any) for this package
-tgtnames := ami ami_proxy ami_collection test tcptest
+tgtnames := ami ami_proxy ami_collection l3ftest tcptest
 
 # List source files for each target
 tgtsrcs_ami := ami.cc AmiApp.cc AmiApp.hh
 tgtsrcs_ami_proxy := ami_proxy.cc
 tgtsrcs_ami_collection := ami_collection.cc
-tgtsrcs_test := test.cc
-tgtlibs_test := psalg/psalg pdsdata/xtcdata
-tgtlibs_test += pdsdata/appdata pdsdata/psddl_pdsdata
-tgtlibs_test += pdsdata/compressdata
-tgtlibs_test += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
-tgtlibs_test += $(qtlibdir)
-tgtlibs_test += gsl/gsl gsl/gslcblas
-tgtincs_test := $(qtincdir) pdsdata/include
+
+tgtsrcs_l3ftest := l3ftest.cc
+tgtlibs_l3ftest := psalg/psalg pdsdata/xtcdata
+tgtlibs_l3ftest += pdsdata/appdata pdsdata/psddl_pdsdata
+tgtlibs_l3ftest += pdsdata/compressdata
+tgtlibs_l3ftest += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app
+tgtlibs_l3ftest += $(qtlibdir)
+tgtlibs_l3ftest += gsl/gsl gsl/gslcblas
+tgtincs_l3ftest := $(qtincdir) pdsdata/include
 
 tgtsrcs_tcptest := tcptest.cc
 
@@ -61,8 +62,8 @@ tgtlibs_tcptest := ami/amisvc pdsdata/xtcdata
 libnames := app
 
 # List source files for each library
-#libsrcs_app := $(filter-out Agent.cc ami_agent.cc test.cc ami.cc,$(wildcard *.cc))
-libsrcs_app := $(filter-out SummaryAnalysis.cc SyncAnalysis.cc test.cc ami.cc ami_proxy.cc tcptest.cc,$(wildcard *.cc))
+#libsrcs_app := $(filter-out Agent.cc ami_agent.cc l3ftest.cc ami.cc,$(wildcard *.cc))
+libsrcs_app := $(filter-out SummaryAnalysis.cc SyncAnalysis.cc l3ftest.cc ami.cc ami_proxy.cc tcptest.cc,$(wildcard *.cc))
 # libsrcs_lib_b := src_6.cc
 
 # List special include directories (if any) needed by lib_a as

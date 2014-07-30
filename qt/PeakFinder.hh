@@ -28,7 +28,7 @@ namespace Ami {
     class PeakPlot;
     class ZoomPlot;
     class DescImage;
-    class SMPWarning;
+    class QAggSelect;
 
     class PeakFinder : public QtPWidget {
       Q_OBJECT
@@ -50,7 +50,7 @@ namespace Ami {
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
       void remove_plot   (QObject*);
-      void update_interval();
+      void update_agg();
       void change_channel();
     signals:
       void changed();
@@ -64,9 +64,7 @@ namespace Ami {
       QButtonGroup*  _proc_grp;
       QCheckBox*     _center_only;
       QCheckBox*     _accumulate;
-      QLineEdit*     _interval;
-      QLabel*        _intervalq;
-      SMPWarning*    _smp_warning;
+      QAggSelect*    _agg_select;
       QPushButton*   _plotB;
 
       Semaphore            _list_sem;

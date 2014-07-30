@@ -86,7 +86,7 @@ namespace Ami {
       ~PagePlot() {}
     public:
       const QString& title() const { return _title; }
-      void add   (QtBase* plot, int row, int col)
+      void add   (QtBase* plot, Cds& cds, int row, int col)
       {
         if (row<0 || col<0) {
           row = _layout->rowCount();
@@ -108,10 +108,10 @@ namespace Ami {
 	_layout->addWidget(frame, row, col);
 	_plots.push_back(frame);
       }
-      void add   (QtImage* plot, int row, int col)
+      void add   (QtImage* plot, Cds& cds, int row, int col)
       {
         ImageDisplay* frame = new ImageDisplay;
-        frame->add(plot,true);
+        frame->add(plot,cds,true);
         if (row<0 || col<0) {
           row = _layout->rowCount();
           col = 0;
@@ -405,9 +405,9 @@ void SummaryClient::_read_description(int size)
     for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
       if ((*it)->title() == page_title) {
         if (plot)
-          (*it)->add(plot,row,col);
+          (*it)->add(plot,_cds,row,col);
         else if (img)
-          (*it)->add(img ,row,col);
+          (*it)->add(img ,_cds,row,col);
         lFound=true;
         break;
       }
@@ -415,9 +415,9 @@ void SummaryClient::_read_description(int size)
     if (!lFound) {
       PagePlot* page = new PagePlot(page_title);
       if (plot)
-        page->add(plot,row,col);
+        page->add(plot,_cds,row,col);
       else if (img)
-        page->add(img ,row,col);
+        page->add(img ,_cds,row,col);
       pages.push_back(page);
     }
 

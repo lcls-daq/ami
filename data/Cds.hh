@@ -13,6 +13,7 @@ namespace Ami {
   class DescEntry;
   class Entry;
   class DataLock;
+  class Cdu;
 
   class Cds {
   public:
@@ -54,6 +55,8 @@ namespace Ami {
     void      reset_plots();
 
     DataLock& lock() const { return *_lock; }
+    void      subscribe  (Cdu&);
+    void      unsubscribe(Cdu&);
     
   private:
     void adjust();
@@ -65,6 +68,8 @@ namespace Ami {
     DataLock*         _lock;
     unsigned          _signature;
     EntryList         _request;
+    typedef std::list<Cdu*> UList;
+    UList             _users;
   };
 };
 

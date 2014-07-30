@@ -1,4 +1,5 @@
 #include "ami/app/AmiApp.hh"
+#include "ami/app/CmdLineTools.hh"
 #include "ami/service/Ins.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/event/Calib.hh"
@@ -7,6 +8,7 @@
 #include <stdlib.h>
 
 using Ami::AmiApp;
+using Ami::CmdLineTools;
 
 static void usage(char* progname) {
   fprintf(stderr,
@@ -29,6 +31,7 @@ int main(int argc, char* argv[]) {
   int   partitionIndex = 0;
   bool offline=false;
   std::vector<char *> module_names;
+  bool parseValid=true;
 
   while ((c = getopt(argc, argv, "?hfDR::E:p:n:i:s:L:")) != -1) {
     switch (c) {
@@ -45,7 +48,7 @@ int main(int argc, char* argv[]) {
         partitionTag = optarg;
         break;
       case 'n':
-        partitionIndex = strtoul(optarg,NULL,0);
+        parseValid &= CmdLineTools::parseInt(optarg,partitionIndex);
         break;
       case 'L':
         module_names.push_back(optarg);
@@ -53,8 +56,11 @@ int main(int argc, char* argv[]) {
       case 'R':
         if (!optarg)
           Ami::EventHandler::enable_full_resolution(true);
-        else
-          Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
+        else {
+          unsigned arg;
+          parseValid &= CmdLineTools::parseUInt(optarg,arg);
+          Ami::EventHandler::limit_resolution(arg);
+        }
         break;
       case 'E':
         Ami::Calib::use_offline(true);
@@ -71,7 +77,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!partitionTag || !interface || !serverGroup) {
+  parseValid &= (optind==argc);
+
+  if (!parseValid || !partitionTag || !interface || !serverGroup) {
     usage(argv[0]);
     exit(0);
   }

@@ -1,4 +1,5 @@
 #include "ami/app/AmiApp.hh"
+#include "ami/app/CmdLineTools.hh"
 #include "ami/server/CollectionServerManager.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/DumpCollector.hh"
@@ -21,6 +22,7 @@ int main(int argc, char* argv[]) {
   unsigned server_interface   = 0x7f000001;
   unsigned client_group = 0;
   unsigned server_group = 0;
+  bool     parseValid = true;
 
   while ((c = getopt(argc, argv, "?hI:i:S:s:")) != -1) {
     switch (c) {
@@ -44,7 +46,9 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (!server_group || !client_group) {
+  parseValid &= (optind==argc);
+
+  if (!parseValid || !server_group || !client_group) {
     usage(argv[0]);
     exit(0);
   }

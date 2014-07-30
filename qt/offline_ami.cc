@@ -1,3 +1,4 @@
+#include "ami/app/CmdLineTools.hh"
 #include "ami/app/AmiApp.hh"
 #include "ami/app/AnalysisFactory.hh"
 #include "ami/app/EventFilter.hh"
@@ -115,6 +116,7 @@ int main(int argc, char* argv[]) {
   char* outputFile = NULL;
   char* errorFile = NULL;
   char* userModulesArg = NULL;
+  bool parse_valid = true;
   
   qInstallMsgHandler(QtAssertHandler);
 
@@ -165,8 +167,11 @@ int main(int argc, char* argv[]) {
     case 'R':
       if (!optarg)
         Ami::EventHandler::enable_full_resolution(true);
-      else
-        Ami::EventHandler::limit_resolution(strtoul(optarg,NULL,0));
+      else {
+        unsigned arg;
+        parse_valid &= CmdLineTools::parseUInt(optarg,arg);
+        Ami::EventHandler::limit_resolution(arg);
+      }
       break;
     case 'S':
       Ami::Qt::Client::use_scroll_area(true);
@@ -191,6 +196,13 @@ int main(int argc, char* argv[]) {
       usage(argv[0]);
       exit(0);
     }
+  }
+
+  parse_valid &= (optind==argc);
+  
+  if (!parse_valid) {
+    usage(argv[0]);
+    exit(-1);
   }
 
   // Output goes to /dev/null if no other file was specified with -o

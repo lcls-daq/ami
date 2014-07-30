@@ -141,6 +141,7 @@ DetectorSelect::DetectorSelect(const QString& label,
     layout->addWidget(filterB,1,0);
     layout->addWidget(exportB,1,1);
     connect(resetB , SIGNAL(clicked()), this, SLOT(reset_plots()));
+    connect(this   , SIGNAL(_reset_plots()), this, SLOT(reset_plots()));
     connect(saveB  , SIGNAL(clicked()), this, SLOT(save_plots()));
     connect(filterB, SIGNAL(clicked()), this, SLOT(set_filters()));
     connect(exportB, SIGNAL(clicked()), _filter_export, SLOT(front()));
@@ -248,6 +249,8 @@ int DetectorSelect::get_setup(char* buffer) const
       XML_insert( p, id, qPrintable((*it)->title()), (*it)->save(p) );
     }
 
+  XML_insert( p, "Filter", "_filter_export", _filter_export->save(p) );
+
   XML_insert( p, "QtTopWidget", "self", save(p) );
 
   return p-buffer;
@@ -319,6 +322,8 @@ void DetectorSelect::set_setup(const char* p, int size)
       load(p);
     else if (tag.name == "_filters")
       _filters->load(p);
+    else if (tag.name == "_filter_export")
+      _filter_export->load(p);
     else {
 
       uint32_t log, phy, channel;
@@ -347,6 +352,7 @@ void DetectorSelect::set_setup(const char* p, int size)
     }
   }
 
+  //  emit _reset_plots();
 }
 
 void DetectorSelect::print_setup()
@@ -579,33 +585,6 @@ void DetectorSelect::change_detectors(const char* c)
   const DiscoveryRx& rx = *reinterpret_cast<const DiscoveryRx*>(c);
 
   setUpdatesEnabled(false);
-
-#if 0
-  //  Remove all clients not discovered
-  {
-    std::list<QtTopWidget*> remove;
-    for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++) {
-      if (match((*it)->info,envInfo) && (*it)->channel <= 1)
-        ;
-      else {
-        bool lFound=false;
-        for(const Ami::DescEntry* e = rx.entries(); e < rx.end();
-            e = reinterpret_cast<const Ami::DescEntry*>
-              (reinterpret_cast<const char*>(e) + e->size()))
-          if (match((*it)->info,e->info()) && (*it)->channel == e->channel()) {
-            lFound=true;
-            break;
-          }
-
-        if (!lFound)
-          remove.push_back(*it);
-      }
-    }
-    for(std::list<QtTopWidget*>::iterator it = remove.begin(); it != remove.end(); it++) {
-      _client.remove(*it);
-    }
-  }
-#endif
 
   //  Register new buttons
   {

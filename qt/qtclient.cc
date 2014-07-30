@@ -64,6 +64,7 @@ int main(int argc, char **argv)
   const char* loadfile = 0;
   unsigned platform = 0;
   const char* nodes = 0;
+  bool parse_valid = true;
 
   qInstallMsgHandler(QtAssertHandler);
 
@@ -96,7 +97,9 @@ int main(int argc, char **argv)
       Ami::Qt::OffloadEngine::disable();
     }
     else if (strcmp(argv[i],"-p")==0) {
-      platform = strtoul(argv[++i],NULL,0);
+      char* endptr;
+      platform = strtoul(argv[++i],&endptr,0);
+      parse_valid &= (*endptr==0);
     }
     else if (strcmp(argv[i],"-n")==0) {
       nodes = argv[++i];
@@ -107,6 +110,12 @@ int main(int argc, char **argv)
       exit(1);
     }
   }
+
+  if (!parse_valid) {
+    usage(argv[0]);
+    exit(-1);
+  }
+
   QApplication app(argc, argv);
 
   QWidget* onlW = new Ami::Qt::QOnline(nodes,platform);

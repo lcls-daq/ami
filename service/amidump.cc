@@ -16,6 +16,11 @@
 
 using namespace Ami;
 
+static void usage(const char* p)
+{
+  printf("Usage: %s [-i <interface_name/dotted_ip>]\n",p);
+}
+
 int main(int argc, char* argv[])
 {
   unsigned ip_dst = DumpCollector::ins().address();
@@ -24,7 +29,7 @@ int main(int argc, char* argv[])
   TSocket _listen;
 
   char c;
-  while ((c = getopt(argc, argv, "i:")) != -1) {
+  while ((c = getopt(argc, argv, "i:h")) != -1) {
     switch(c) {
     case 'i': 
       { if (optarg[0]<'0' || optarg[0]>'9') {
@@ -40,9 +45,16 @@ int main(int argc, char* argv[])
 	  ip_host = ntohl(inet_addr(optarg));
 	}
       } break;
+    case 'h':
     default:
-      break;
+      usage(argv[0]);
+      exit(0);
     }
+  }
+
+  if (optind!=argc) {
+    usage(argv[0]);
+    exit(-1);
   }
 
   unsigned short port = 32768;

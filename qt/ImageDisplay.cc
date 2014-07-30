@@ -14,6 +14,7 @@
 #include "ami/qt/RunMaster.hh"
 #include "ami/qt/QtUtils.hh"
 
+#include "ami/data/Cds.hh"
 #include "ami/data/DescEntry.hh"
 #include "ami/data/Entry.hh"
 
@@ -249,8 +250,10 @@ void Ami::Qt::ImageDisplay::prototype(const DescEntry* e)
 {
 }
 
-void Ami::Qt::ImageDisplay::add   (QtBase* b, bool show) 
+void Ami::Qt::ImageDisplay::add   (QtBase* b, Cds& cds, bool show) 
 {
+  subscribe(cds);
+
   if (show) {
     _sem.take();
     _curves.push_back(b);
@@ -299,6 +302,8 @@ void Ami::Qt::ImageDisplay::hide(QtBase* b)
   }
   _sem.give();
 }
+
+void Ami::Qt::ImageDisplay::clear_payload() { reset(); }
 
 void Ami::Qt::ImageDisplay::reset()
 {

@@ -4,7 +4,7 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageScale.hh"
 #include "ami/qt/SMPRegistry.hh"
-#include "ami/qt/SMPWarning.hh"
+#include "ami/qt/QAggSelect.hh"
 #include "ami/qt/ControlLog.hh"
 #include "ami/qt/VectorArrayDesc.hh"
 #include "ami/qt/QtPlotSelector.hh"
@@ -81,11 +81,7 @@ namespace Ami {
 	_accumulate = new QCheckBox("accumulate events");
 	_accumulate->setChecked(true);
 
-	_interval  = new QLineEdit;
-	_intervalq = new QLabel;
-	new QIntValidator(_interval);
-  
-	_smp_warning = new SMPWarning;
+        _agg_select = new QAggSelect;
 
 	_proc_grp = new QButtonGroup;
 	QRadioButton* countB = new QRadioButton("count hits");
@@ -106,9 +102,7 @@ namespace Ami {
 	{ QHBoxLayout* layout1 = new QHBoxLayout;
 	  layout1->addStretch();
 	  layout1->addWidget(_accumulate);
-	  layout1->addWidget(_interval);
-	  layout1->addWidget(_intervalq);
-	  layout1->addWidget(_smp_warning);
+	  layout1->addWidget(_agg_select);
 	  layout1->addStretch();
 	  layout->addLayout(layout1); }
 	layout->addStretch();
@@ -123,27 +117,24 @@ namespace Ami {
                             _proc_grp->checkedId()==0 ? -1 :
                             Ami::Droplets::Esum,
                             VAPlot::Single,o);
-        else if (_interval->text().toInt()<0)
+        else if (_agg_select->value()<0)
           return new VAPlot(Ami::Droplets::X,
                             Ami::Droplets::Y,
                             _proc_grp->checkedId()==0 ? -1 :
                             Ami::Droplets::Esum,
                             VAPlot::AutoRefresh,o);
         else {
-          unsigned nproc = SMPRegistry::instance().nservers();
           return new VAPlot(Ami::Droplets::X,
                             Ami::Droplets::Y,
                             _proc_grp->checkedId()==0 ? -1 :
                             Ami::Droplets::Esum,
-                            avgRound(_interval->text().toInt(),nproc),
+                            _agg_select->value(),
                             o);
         }
       }
     private:
       QCheckBox* _accumulate;
-      QLineEdit* _interval;
-      QLabel*    _intervalq;
-      SMPWarning* _smp_warning;
+      QAggSelect* _agg_select;
       QButtonGroup* _proc_grp;
     };  
   };

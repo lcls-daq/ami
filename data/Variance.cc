@@ -132,8 +132,10 @@ Entry&     Variance::_operate(const Entry& e) const
 
   //  Detect (external) reset of cache
   if (_ve && !_cache->valid()) {
+    _i  = 0;
     _ve = false;
-    _zero(_m1[0],_m2[0]);
+    for(unsigned k=0; k<_m1.size(); k++)
+      _zero(_m1[k],_m2[k]);
   }
 
   _input = &e;
@@ -152,6 +154,7 @@ Entry&     Variance::_operate(const Entry& e) const
         EntryTH1F& ca = static_cast<EntryTH1F&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
         psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        ca.info(1,EntryTH1F::Normalization);
         _cache->valid(e.time());
         if (_n>0) {
           _i = 0;
@@ -169,6 +172,7 @@ Entry&     Variance::_operate(const Entry& e) const
         EntryWaveform& ca = static_cast<EntryWaveform&>(*_cache);
         ndarray<double,2> out(ca.content(),shape);
         psalg::variance_calculate (1./vn,in,_m1[0],_m2[0],_i,out);
+        ca.info(1,EntryWaveform::Normalization);
         _cache->valid(e.time());
         if (_n>0) {
           _i = 0;
@@ -179,6 +183,7 @@ Entry&     Variance::_operate(const Entry& e) const
   case DescEntry::Image:
     { const EntryImage& en = static_cast<const EntryImage&>(e);
       EntryImage& ca = static_cast<EntryImage&>(*_cache);
+      ca.info(1,EntryImage::Normalization);
       const DescImage& d = en.desc();
       double ped = en.info(EntryImage::Pedestal);
       if (d.nframes()) {

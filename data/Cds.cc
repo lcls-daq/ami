@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "Cds.hh"
+#include "Cdu.hh"
 #include "Entry.hh"
 #include "EntryView.hh"
 #include "DescEntry.hh"
@@ -69,6 +70,10 @@ void Cds::remove(Entry* entry)
 
 void Cds::reset()
 {
+  for (UList::iterator it=_users.begin(); it!=_users.end(); it++)
+    (*it)->clear_payload();
+  _users.clear();
+
   for (EnList::iterator it=_entries.begin(); it!=_entries.end(); it++) {
     Entry* entry = *it;
 
@@ -291,4 +296,14 @@ void Cds::reset_plots()
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++) {
     (*it)->reset();
   }
+}
+
+void Cds::subscribe(Cdu& user)
+{
+  _users.push_back(&user);
+}
+
+void Cds::unsubscribe(Cdu& user)
+{
+  _users.remove(&user);
 }

@@ -126,3 +126,4 @@ void OffloadEngine::_render_complete(QImage* output)
       _start_render();
   }
 }
+

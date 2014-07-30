@@ -70,7 +70,7 @@ namespace Ami {
       void change_detectors (const char*);
     signals:
       void detectors_discovered (const char*);
-
+      void _reset_plots();
     private:
       Ami::Qt::AbsClient* _create_client (const Pds::Src&, unsigned, const QString&, const char*&);
       void                _connect_client(Ami::Qt::AbsClient* client);

@@ -38,6 +38,10 @@ unsigned FeatureCache::add(const char* name)
     if (sname==_names[k])
       return k;
 
+#ifdef DBUG
+  printf("FeatureCache::add %s\n",name);
+#endif
+
   _sem.take();
   _update=true;
   _names.push_back(sname);

@@ -174,7 +174,7 @@ void ZoomPlot::setup_payload(Cds& cds)
                               *static_cast<const EntryImage*>(entry),
                               transform(), transform(), _color);
     qi->scalexy(_scalexy);
-    _frame->add( qi, true );
+    _frame->add( qi, cds, true );
     _frame->grid_scale().setup_payload(cds);
   }
 }

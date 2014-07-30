@@ -2,6 +2,7 @@
 #define AmiQt_ImageDisplay_hh
 
 #include "ami/qt/Display.hh"
+#include "ami/data/Cdu.hh"
 #include <QtGui/QWidget>
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QHBoxLayout>
@@ -25,7 +26,8 @@ namespace Ami {
     class QtBase;
 
     class ImageDisplay : public QWidget,
-			 public Display {
+			 public Display,
+                         public Cdu {
       Q_OBJECT
     public:
       ImageDisplay(bool grab=true);
@@ -36,7 +38,7 @@ namespace Ami {
       void save_plots(const QString&) const;
     public:
       void prototype(const Ami::DescEntry*);
-      void add   (QtBase*, bool);
+      void add   (QtBase*, Cds&, bool);
       void reset ();
       void show  (QtBase*);
       void hide  (QtBase*);
@@ -51,6 +53,8 @@ namespace Ami {
 //       const std::list<QtBase*> plots() const;
 //       const AxisArray&    xinfo     () const;
       ImageFrame*          plot      () const;
+    public:
+      void clear_payload();
     public slots:
       void save_image();
       void save_data();

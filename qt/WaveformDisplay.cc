@@ -325,7 +325,7 @@ void WaveformDisplay::prototype(const Ami::DescEntry* e)
   _xrange->update(*_xinfo);
 }
 
-void WaveformDisplay::add   (QtBase* b, bool show) 
+void WaveformDisplay::add   (QtBase* b, Cds& cds, bool show) 
 {
   if (show) {
     _xrange->update(*_xinfo);

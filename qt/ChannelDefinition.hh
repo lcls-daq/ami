@@ -29,7 +29,7 @@ namespace Ami {
     class Transform;
     class QtBase;
     class MaskDisplay;
-    class SMPWarning;
+    class QAggSelect;
     class ChannelDefinition : public QtPWidget {
       Q_OBJECT
     public:
@@ -71,7 +71,6 @@ namespace Ami {
       void load_mask();
       void edit_mask();
       void load_fir();
-      void update_interval();
       void change_agg(int);
     signals:
       void reference_loaded(bool);
@@ -79,8 +78,6 @@ namespace Ami {
       void newplot(bool);
       void show_plot_changed(bool);
       void agg_changed();
-    private:
-      void _update_agg();
     private:
       QString       _name;
       Display&      _frame;
@@ -90,8 +87,6 @@ namespace Ami {
       AbsOperator*  _operator;
       Transform*    _transform;
       ChannelMath*  _math;
-      QLineEdit*    _interval;
-      QLabel*       _intervalq;
       unsigned      _mode;
       unsigned      _output_signature;
       bool          _changed;
@@ -108,10 +103,9 @@ namespace Ami {
       QString       _mask_file;
       time_t        _mask_file_mtime;
       MaskDisplay*  _mask_display;
-      SMPWarning*   _smp_warning;
       QCheckBox*    _firB;
       QString       _fir_file;
-      bool          _smp_prohibit;
+      QAggSelect*   _agg_select;
     };
   };
 };

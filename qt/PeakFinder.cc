@@ -5,8 +5,8 @@
 #include "ami/qt/ZoomPlot.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ImageScale.hh"
+#include "ami/qt/QAggSelect.hh"
 #include "ami/qt/SMPRegistry.hh"
-#include "ami/qt/SMPWarning.hh"
 #include "ami/qt/ControlLog.hh"
 
 #include "ami/data/DescImage.hh"
@@ -29,11 +29,6 @@
 #include <sys/socket.h>
 #include <stdio.h>
 
-static inline int avgRound(int n, int d)
-{
-  return (n+d-1)/d;
-}
-
 using namespace Ami::Qt;
 
 PeakFinder::PeakFinder(QWidget* parent,
@@ -46,14 +41,10 @@ PeakFinder::PeakFinder(QWidget* parent,
 {
   _threshold = new ImageScale("threshold");
   
-  _accumulate = new QCheckBox("accumulate events");
+  _accumulate = new QCheckBox("accumulate");
   _accumulate->setChecked(true);
 
-  _interval  = new QLineEdit;
-  _intervalq = new QLabel;
-  new QIntValidator(_interval);
-  
-  _smp_warning = new SMPWarning;
+  _agg_select = new QAggSelect;
 
   _center_only = new QCheckBox("local max only");
   _center_only->setChecked(true);
@@ -96,9 +87,7 @@ PeakFinder::PeakFinder(QWidget* parent,
   { layout->addWidget(_center_only); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(_accumulate);
-    layout1->addWidget(_interval);
-    layout1->addWidget(_intervalq);
-    layout1->addWidget(_smp_warning);
+    layout1->addWidget(_agg_select);
     layout->addLayout(layout1); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
@@ -111,14 +100,12 @@ PeakFinder::PeakFinder(QWidget* parent,
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
-  connect(_interval , SIGNAL(editingFinished()), this, SLOT(update_interval()));
-  connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
-  connect(_accumulate, SIGNAL(clicked()),     this, SLOT(update_interval()));
+  connect(_accumulate, SIGNAL(clicked()),     this, SLOT(update_agg()));
   connect(channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
   for(unsigned i=0; i<_nchannels; i++)
     connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
 
-  update_interval();
+  update_agg();
   _proc_grp->button(Ami::PeakFinder::Count)->setChecked(true);
 
   _channelBox = channelBox;
@@ -139,7 +126,7 @@ void PeakFinder::save(char*& p) const
   XML_insert(p, "QButtonGroup", "_proc_grp", QtPersistent::insert(p,_proc_grp->checkedId()) );
   XML_insert(p, "QCheckBox", "_center_only", QtPersistent::insert(p,_center_only->isChecked()) );
   XML_insert(p, "QCheckBox", "_accumulate", QtPersistent::insert(p,_accumulate->isChecked()) );
-  XML_insert( p, "QLineEdit"   , "_interval", QtPersistent::insert(p,_interval->text()) );
+  XML_insert( p, "QAggSelect", "_agg_select", _agg_select->save(p) );
 
   for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
     XML_insert(p, "PeakPlot", "_plots", (*it)->save(p) );
@@ -174,8 +161,8 @@ void PeakFinder::load(const char*& p)
       _threshold->value(1,QtPersistent::extract_d(p));
     else if (tag.name == "_accumulate")
       _accumulate->setChecked(QtPersistent::extract_b(p));
-    else if (tag.name == "_interval")
-      _interval->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_agg_select")
+      _agg_select->load(p);
     else if (tag.name == "_center_only")
       _center_only->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_proc_grp")
@@ -195,7 +182,7 @@ void PeakFinder::load(const char*& p)
 
   _list_sem.give();
 
-  update_interval();
+  update_agg();
 }
 
 void PeakFinder::save_plots(const QString& p) const
@@ -270,7 +257,7 @@ void PeakFinder::plot()
                              Ami::PeakFinder::Mode(_proc_grp->checkedId()),
                              _center_only->isChecked(),
                              Ami::PeakFinder::Single);
-  else if (_interval->text().toInt()<0)
+  else if (_agg_select->value()<0)
     op = new Ami::PeakFinder(_threshold->value(0),
                              _threshold->value(1),
                              Ami::PeakFinder::Mode(_proc_grp->checkedId()),
@@ -281,27 +268,10 @@ void PeakFinder::plot()
                              _threshold->value(1),
                              Ami::PeakFinder::Mode(_proc_grp->checkedId()),
                              _center_only->isChecked(),
-                             avgRound(_interval->text().toInt(),nproc));
+                             _agg_select->value());
   
-#if 0
-  if (nproc>1 && _accumulate->isChecked()) {
-    ZoomPlot* plot = new ZoomPlot(this,
-				  QString("%1 HitFinder : %2,%3").arg(_channels[_channel]->name())
-				  .arg(_threshold->value(0))
-				  .arg(_threshold->value(1)),
-				  _channel,
-				  op);
-    _list_sem.take();
-    _zplots.push_back(plot);
-    _list_sem.give();
-    connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  }
-  else {
-    bool displayOnly=false;
-#else
   {
     bool displayOnly=nproc>1 && _accumulate->isChecked();
-#endif
     PeakPlot* plot = new PeakPlot(this,
 				  QString("%1 HitFinder : %2,%3").arg(_channels[_channel]->name())
 				  .arg(_threshold->value(0))
@@ -336,19 +306,10 @@ void PeakFinder::remove_plot(QObject* obj)
   emit changed();
 }
 
-void PeakFinder::update_interval()
+void PeakFinder::update_agg()
 {
-  unsigned nproc = SMPRegistry::instance().nservers();
-  int n = _interval->text().toInt();
-  int m = nproc*avgRound(n,nproc);
-  if (n>1 && m!=n)
-    _intervalq->setText(QString("(%1)").arg(QString::number(m)));
-  else
-    _intervalq->clear();
-
   bool checked = _accumulate->checkState()==::Qt::Checked;
-  _interval   ->setEnabled(checked);
-  _smp_warning->setEnabled(checked);
+  _agg_select->setEnabled(checked);
 }
 
 void PeakFinder::change_channel()

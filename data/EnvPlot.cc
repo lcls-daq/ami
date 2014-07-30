@@ -57,7 +57,7 @@ EnvPlot::EnvPlot(const char*&  p,
     }
   }
 
-  _v = _setup(o,input);
+  _v &= _setup(o,input);
 }
 
 EnvPlot::~EnvPlot()

@@ -175,7 +175,7 @@ void XPPSummary::_configure(const Pds::Src&       src,
   else if (type.id()==Pds::TypeId::Id_Cspad2x2Config) {    
     _cspad2x2.push_back(static_cast<const Pds::DetInfo&>(src));
     _cspad2x2_data.push_back(0);
-    printf("XPPSummary found a 140k %s - # %d\n",Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(src)), _cspad2x2_data.size());
+    printf("XPPSummary found a 140k %s - # %zd\n",Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(src)), _cspad2x2_data.size());
     //   } else {
     //    printf("XPPSummary found ALSO %s\n",Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(src)));
   }

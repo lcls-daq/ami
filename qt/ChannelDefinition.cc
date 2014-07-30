@@ -10,9 +10,9 @@
 #include "ami/qt/FeatureCalculator.hh"
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/MaskDisplay.hh"
+#include "ami/qt/QAggSelect.hh"
 #include "ami/qt/QtBase.hh"
 #include "ami/qt/SMPRegistry.hh"
-#include "ami/qt/SMPWarning.hh"
 
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/Reference.hh"
@@ -47,11 +47,6 @@
 
 #define bold(t) #t
 
-static inline int avgRound(int n, int d)
-{
-  return n<0 ? -1 : (n+d-1)/d;
-}
-
 using namespace Ami::Qt;
 
 enum { _None, _Single, _Average, _Variance, _Math, _Reference };
@@ -76,8 +71,6 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _operator        (0),
   _transform       (new Transform(this,QString("%1 : Y Transform").arg(name),"y")),
   _math            (new ChannelMath(chs,ich,nch)),
-  _interval        (new QLineEdit),
-  _intervalq       (new QLabel),
   _output_signature(NOT_INIT),
   _changed         (false),
   _show            (false),
@@ -87,8 +80,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _configured_ref  (false),
   _mask_file_mtime (0),
   _mask_display    (new MaskDisplay),
-  _smp_warning     (new SMPWarning),
-  _smp_prohibit    (true)
+  _agg_select      (new QAggSelect)
 {
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -108,8 +100,6 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   _plot_grp->addButton(mathB    , _Math);
   _plot_grp->addButton(refB     , _Reference);
   refB->setEnabled(false);
-
-  new QIntValidator(_interval);
 
   QPushButton* loadB = new QPushButton("Load");
 
@@ -148,10 +138,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     { QGridLayout* layout1 = new QGridLayout;
       layout1->addWidget(averageB ,0,0);
       layout1->addWidget(varianceB,1,0);
-      layout1->addWidget(new QLabel("Events"),0,1,2,1);
-      layout1->addWidget(_interval ,0,2,2,1);
-      layout1->addWidget(_intervalq,0,3,2,1);
-      layout1->addWidget(_smp_warning,0,4,2,1);
+      layout1->addWidget(_agg_select,0,1,2,1);
       layout->addLayout(layout1); }
     { QHBoxLayout* layout1 = new QHBoxLayout;
       layout1->addWidget(mathB);
@@ -210,16 +197,12 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(mloadB  , SIGNAL(clicked()), this, SLOT(load_mask()));
   connect(meditB  , SIGNAL(clicked()), this, SLOT(edit_mask()));
   connect(floadB  , SIGNAL(clicked()), this, SLOT(load_fir()));
-  connect(_interval, SIGNAL(editingFinished()), this, SLOT(update_interval()));
-
-  connect(&SMPRegistry::instance(), SIGNAL(changed()), this, SLOT(update_interval()));
   connect(_plot_grp, SIGNAL(buttonClicked(int)), this, SLOT(change_agg(int)));
 
   noneB  ->setChecked(!init);
   singleB->setChecked(init);
   apply();
   show_plot(init);
-  update_interval();
   (_meditB = meditB)->setEnabled(false);
 }
 	  
@@ -232,7 +215,7 @@ void ChannelDefinition::save(char*& p) const
   XML_insert( p, "QtPWidget", "self", QtPWidget::save(p) );
 
   XML_insert( p, "QButtonGroup", "_plot_grp", QtPersistent::insert(p,_plot_grp->checkedId()) );
-  XML_insert( p, "QLineEdit"   , "_interval", QtPersistent::insert(p,_interval->text()) );
+  XML_insert( p, "QAggSelect"  , "_agg_select", _agg_select->save(p));
   XML_insert( p, "ChannelMath" , "_math"    , QtPersistent::insert(p,_math->expr()) );
   XML_insert( p, "QString"     , "_ref_file", QtPersistent::insert(p,_plot_grp->button(_Reference)->isEnabled() ? _ref_file : QString("")) );
   XML_insert( p, "bool"        , "_show"    , QtPersistent::insert(p,_show) );
@@ -256,8 +239,10 @@ void ChannelDefinition::load(const char*& p)
       QtPWidget::load(p);
     else if (tag.name == "_plot_grp")
       id = QtPersistent::extract_i(p);
-    else if (tag.name == "_interval")
-      _interval->setText(QtPersistent::extract_s(p));
+//     else if (tag.name == "_interval")
+//       _interval->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_agg_select")
+      _agg_select->load(p);
     else if (tag.name == "_math")
       _math->expr(QtPersistent::extract_s(p));
     else if (tag.name == "_ref_file") {
@@ -293,8 +278,6 @@ void ChannelDefinition::load(const char*& p)
   XML_iterate_close(ChannelDefinition,tag);
 
   _plot_grp->button(id)->setChecked(true);
-
-  update_interval();
 
   show_plot(show);
 
@@ -348,19 +331,6 @@ void ChannelDefinition::load_fir()
     _fir_file = file;
 }
 
-void ChannelDefinition::update_interval()
-{
-  unsigned nproc = SMPRegistry::instance().nservers();
-  int n = _interval->text().toInt();
-  int m = nproc*avgRound(n,nproc);
-  if (n>1 && m!=n)
-    _intervalq->setText(QString("(%1)").arg(QString::number(m)));
-  else
-    _intervalq->clear();
-
-  _update_agg();
-}
-
 void ChannelDefinition::show_plot(bool s) 
 {
   //  This should be a slot on the display (QwtPlot)
@@ -380,7 +350,6 @@ void ChannelDefinition::apply()
   if (_operator) delete _operator;
 
   const char* scale = qPrintable(_scale->text());
-  unsigned nproc = SMPRegistry::instance().nservers();
 
   switch(_mode = _plot_grp->checkedId()) {
   case _Single:
@@ -388,11 +357,11 @@ void ChannelDefinition::apply()
     _operator_is_ref  = false;
     break;
   case _Average     : 
-    _operator = new Average  (avgRound(_interval->text().toInt(),nproc),scale);
+    _operator = new Average  (_agg_select->value(),scale);
     _operator_is_ref  = false;
     break;
   case _Variance    : 
-    _operator = new Variance (avgRound(_interval->text().toInt(),nproc),scale);
+    _operator = new Variance (_agg_select->value(),scale);
     _operator_is_ref  = false;
     break;
   case _Reference:
@@ -517,7 +486,7 @@ void ChannelDefinition::setup_payload(Cds& cds, bool vis)
     cds.request(*entry, _show && vis);
     _plot=PlotFactory::plot(_name,*entry,_frame.xtransform(),transform(),_color,cds.lock());
     if (_plot) {
-      _frame.add(_plot, _show);
+      _frame.add(_plot, cds, _show);
       _meditB->setEnabled(true);
     }
     else {
@@ -556,22 +525,18 @@ void ChannelDefinition::set_scale()
 
 unsigned  ChannelDefinition::output_signature() const { return _output_signature; }
 
-bool      ChannelDefinition::smp_prohibit     () const { return _smp_prohibit; }
-
-void ChannelDefinition::change_agg(int id) { _update_agg(); }
-
-void ChannelDefinition::_update_agg()
+bool      ChannelDefinition::smp_prohibit     () const
 {
   int id = _plot_grp->checkedId();
-  
-  bool ldist = (id == _Average ||
-		id == _Variance) &&
+  return (id == _Average ||
+          id == _Variance) &&
     (SMPRegistry::instance().nservers())>1;
+}
 
-  _smp_warning->setEnabled(ldist);
-
-  if (ldist != _smp_prohibit) {
-    _smp_prohibit = ldist;
-    emit agg_changed();
-  }
+void      ChannelDefinition::change_agg(int)
+{
+  int id = _plot_grp->checkedId();
+  _agg_select->enable(id == _Average ||
+                      id == _Variance);
+  emit agg_changed();
 }

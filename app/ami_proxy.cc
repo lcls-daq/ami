@@ -109,8 +109,11 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-s")==0) {
       serverGroup = Ami::Ins::parse_ip(argv[++i]);
     }
-    else if (strcmp(argv[i],"-h")==0) 
+    //else if (strcmp(argv[i],"-h")==0) 
+    else {
       showUsage(argv[0]);
+      exit(0);
+    }
   }
 
   Ins mcast(serverGroup, Port::serverPort());

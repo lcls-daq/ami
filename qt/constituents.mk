@@ -1,6 +1,6 @@
 # List targets (if any) for this package
-#tgtnames := online_ami offline_ami blviewer qttest
-tgtnames := online_ami offline_ami qttest
+#tgtnames := online_ami offline_ami blviewer
+tgtnames := online_ami offline_ami
 
 # List source files for each target
 tgtsrcs_online_ami += qtclient.cc QOnline.cc QOnline_moc.cc
@@ -8,8 +8,6 @@ tgtsrcs_online_ami += qtclient.cc QOnline.cc QOnline_moc.cc
 tgtsrcs_offline_ami := offline_ami.cc XtcRun.cc XtcFileClient.cc XtcFileClient_moc.cc
 
 tgtsrcs_blviewer := blvclient.cc blvclient_moc.cc
-
-tgtsrcs_qttest := qttest.cc
 
 # List system libraries (if any) needed by exe_a as <dir>/<lib>. 
 # Note that <lib> is the name of the library, not of the file: i.e.
@@ -45,12 +43,6 @@ tgtlibs_blviewer += psalg/psalg
 tgtlibs_blviewer += $(qt_libs)
 tgtlibs_blviewer += gsl/gsl gsl/gslcblas
 
-tgtlibs_qttest := $(datalibs)
-tgtlibs_qttest += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
-tgtlibs_qttest += psalg/psalg
-tgtlibs_qttest += $(qt_libs)
-tgtlibs_qttest += gsl/gsl gsl/gslcblas
-
 # List special include directories (if any) needed by exe_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
@@ -59,7 +51,6 @@ qt_incs := $(qtincdir) $(qwtincs) qwt/include
 tgtincs_online_ami  := $(qt_incs) pdsdata/include
 tgtincs_offline_ami := $(qt_incs) pdsdata/include ndarray/include boost/include
 tgtincs_blviewer    := $(qt_incs) pdsdata/include
-tgtincs_qttest := $(qt_incs) pdsdata/include
 
 # List system include directories (if any) needed by exe_a as <incdir>.
 # tgtsinc_exe_a := /usr/include
@@ -76,6 +67,7 @@ libsrcs_amiqt += SMPRegistry.cc SMPRegistry_moc.cc
 libsrcs_amiqt += SMPWarning.cc SMPWarning_moc.cc
 libsrcs_amiqt += QHComboBox.cc QHComboBox_moc.cc
 libsrcs_amiqt += FeatureBox.cc FeatureBox_moc.cc
+libsrcs_amiqt += QAggSelect.cc QAggSelect_moc.cc
 libsrcs_amiqt += QtTree.cc QtTree_moc.cc
 libsrcs_amiqt += RunTree.cc RunTree_moc.cc
 libsrcs_amiqt += FeatureTree.cc FeatureTree_moc.cc
