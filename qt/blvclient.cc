@@ -280,7 +280,7 @@ int main(int argc, char **argv)
   const char* loadfile = 0;
   const char* configdb = 0;
 
-  for(int i=0; i<argc; i++) {
+  for(int i=1; i<argc; i++) {
     if (strcmp(argv[i],"-i")==0) {
       interface = parse_interface(argv[++i]);
     }
@@ -290,8 +290,10 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-c")==0) {
       configdb = argv[++i];
     }
-    else if (strcmp(argv[i],"-h")==0) {
-      showUsage(argv[0]);
+    //    else if (strcmp(argv[i],"-h")==0) {
+    else {
+      showUsage(argv[0]);                      
+      exit(1);
     }
   }
 

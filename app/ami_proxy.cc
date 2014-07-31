@@ -99,7 +99,7 @@ int main(int argc, char **argv)
   unsigned interface   = 0x7f000001;
   unsigned serverGroup = 0xefff2000;
 
-  for(int i=0; i<argc; i++) {
+  for(int i=1; i<argc; i++) {
     if (strcmp(argv[i],"-I")==0) {
       ppinterface = Ami::Ins::parse_interface(argv[++i]);
     }

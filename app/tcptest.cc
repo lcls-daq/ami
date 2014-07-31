@@ -17,7 +17,7 @@ int main(int argc, char **argv)
   unsigned port  = 0;
   bool lreceiver = false;
 
-  for(int i=0; i<argc; i++) {
+  for(int i=1; i<argc; i++) {
     if (strcmp(argv[i],"-i")==0) {
       interface = Ami::Ins::parse_interface(argv[++i]);
     }

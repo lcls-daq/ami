@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
   qInstallMsgHandler(QtAssertHandler);
 
-  for(int i=0; i<argc; i++) {
+  for(int i=1; i<argc; i++) {
     if (strcmp(argv[i],"-I")==0) {
       ppinterface = Ami::Ins::parse_interface(argv[++i]);
     }
@@ -104,8 +104,9 @@ int main(int argc, char **argv)
     else if (strcmp(argv[i],"-n")==0) {
       nodes = argv[++i];
     }
-    else if (strcmp(argv[i],"-h")==0 ||
-             strcmp(argv[i],"-?")==0) {
+//     else if (strcmp(argv[i],"-h")==0 ||
+//              strcmp(argv[i],"-?")==0) {
+    else {
       usage(argv[0]);
       exit(1);
     }

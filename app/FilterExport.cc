@@ -36,8 +36,15 @@ static void _insert_analysis(char*& p, const Analysis* a, bool discovery);
 static void _insert_filter(char*& p, const AbsFilter* f);
 static const char* _default_fname = "ami.l3t";
 
+class CantFilter : public RawFilter {
+public:
+  CantFilter() {}
+public:
+  bool valid() const { return false; }
+};
+
 FilterImport::FilterImport(const char* fname) :
-  _filter (0)
+  _filter (new CantFilter)
 {
   if (fname == 0)
     fname = _default_fname;
@@ -51,7 +58,7 @@ FilterImport::FilterImport(const char* fname) :
   std::ifstream i(o.str().c_str());
   if (!i.good()) {
     o.str(std::string());
-    o << "<QString name=error>"
+    o << "<QString name=\"error\">"
       << "Ami::L3T::FilterImport failed to open "
       << fname
       << "</QString>\n</Document>\n";
@@ -75,6 +82,7 @@ FilterImport::FilterImport(const char* fname) :
         if      (rtag.name == "_filter") {
           XML_iterate_open(p,stag)
             if      (stag.name == "_filter") {
+              delete _filter;
               const char* o = (const char*)QtPersistent::extract_op(p);
               _filter = fact.deserialize(o);
             }
