@@ -45,6 +45,7 @@
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
 #include "ami/event/EpixHandlerT.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/Analysis.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
@@ -75,6 +76,29 @@ L3TModule::L3TModule() :
 {
   for(unsigned i=0; i<Ami::NumberOfSets; i++)
     _features.push_back(new FeatureCache);
+
+  std::string host(getenv("HOST"));
+  if (host.find("daq-")==0) {
+    std::string hutch(host.substr(4,3));
+    std::ostringstream cmd;
+    cmd << "/reg/g/pcds/dist/pds/"
+        << hutch
+        << "/current/build/pdsapp/bin/x86_64-linux-opt/currentexp ";
+    std::transform(hutch.begin(), hutch.end(), hutch.begin(), (int (*)(int))std::toupper);    
+    cmd << hutch;
+    
+    size_t ln=256;
+    char line[ln]; char* lineptr=&line[0];
+    FILE* f = popen(cmd.str().c_str(),"r");
+    getline(&lineptr, &ln, f);
+    std::string result(line);
+    pclose(f);
+    
+    std::string exp = result.substr(result.find(" ")+1,8);
+    printf("L3TModule found experiment [%s]\n",exp.c_str());
+    Ami::Calib::set_experiment(exp.c_str());
+    Ami::Calib::use_offline(true);
+  }
 }
 
 L3TModule::~L3TModule()

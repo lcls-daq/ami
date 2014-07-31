@@ -11,3 +11,13 @@ liblibs_amil3t += psalg/psalg
 libslib_amil3t := gomp
 
 libincs_amil3t := ndarray/include boost/include  pdsdata/include 
+
+tgtnames := l3ttest
+tgtsrcs_l3ttest := l3ttest.cc
+tgtlibs_l3ttest := psalg/psalg pdsdata/xtcdata
+tgtlibs_l3ttest += pdsdata/appdata pdsdata/psddl_pdsdata
+tgtlibs_l3ttest += pdsdata/compressdata
+tgtlibs_l3ttest += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/client ami/app ami/amil3t
+tgtlibs_l3ttest += $(qtlibdir)
+tgtlibs_l3ttest += gsl/gsl gsl/gslcblas
+tgtincs_l3ttest := $(qtincdir) pdsdata/include
