@@ -12,6 +12,7 @@ namespace Ami {
     public:
       void signup();
       void resign();
+      int  value ();
     private:
 #if QT_VERSION >= 0x040400
       QAtomicInt _ref;
@@ -25,9 +26,11 @@ namespace Ami {
 #if QT_VERSION >= 0x040400
     inline void SharedData::signup() { _ref.ref(); }
     inline void SharedData::resign() { if (!_ref.deref()) delete this; }
+    inline int  SharedData::value () { return int(_ref); }
 #else
     inline void SharedData::signup() { q_atomic_increment(&_ref); }
     inline void SharedData::resign() { if (q_atomic_decrement(&_ref)==0) delete this; }
+    inline int  SharedData::value () { return _ref; }
 #endif
   };
 };

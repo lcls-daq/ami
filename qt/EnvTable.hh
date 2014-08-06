@@ -32,6 +32,8 @@ namespace Ami {
       void configure(char*& p, unsigned input, unsigned& output);
       void setup_payload(Cds&);
       void update();
+    public:
+      const DescScalar& desc() const { return *_desc; }
     public slots:
       void remove();
     signals:

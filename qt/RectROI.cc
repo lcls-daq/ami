@@ -311,6 +311,7 @@ QString RectROI::add_post(const QString& title,
 
   emit changed();
 
+  FeatureRegistry::instance(Ami::PostAnalysis).share(qtitle,post);
   shared = post;
   return qtitle;
 }

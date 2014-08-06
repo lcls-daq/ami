@@ -332,6 +332,8 @@ QString CurveFit::_add_post()
 
     emit changed();
 
+    FeatureRegistry::instance(Ami::PostAnalysis).share(qtitle,post);
+
     return qtitle;
 }
 

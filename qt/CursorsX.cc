@@ -491,7 +491,9 @@ QString CursorsX::_add_post()
 
   emit changed();
 
-  return QString(qtitle);
+  FeatureRegistry::instance(Ami::PostAnalysis).share(qtitle,post);
+
+  return qtitle;
 }
 
 void CursorsX::hide_cursors()

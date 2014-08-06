@@ -12,6 +12,7 @@
 #include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/qt/QtPlot.hh"
 #include "ami/qt/QtPlotSelector.hh"
+#include "ami/qt/SharedData.hh"
 
 #include "ami/app/XtcClient.hh"
 #include "ami/client/ClientManager.hh"
@@ -72,6 +73,9 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _source_edit    = new QLineEdit("");
   _source_compose = new QPushButton("Select");
 
+  _source_remove  = new QPushButton("Remove");
+  _source_remove->setEnabled(false);
+
   _scalar_plot = new ScalarPlotDesc(this, &FeatureRegistry::instance(_set));
 
   QPushButton* plotB  = new QPushButton("Plot");
@@ -89,6 +93,7 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addWidget(_source_edit);
     layout1->addWidget(_source_compose);
+    layout1->addWidget(_source_remove);
     layout1->addWidget(filterB);
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
@@ -104,8 +109,9 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   setLayout(layout);
 
   connect(filterB   , SIGNAL(clicked()),   _filter, SLOT(front()));
-  connect(_source_edit   , SIGNAL(editingFinished()), this, SLOT(validate_source()));
+  connect(_source_edit   , SIGNAL(textChanged(const QString&)), this, SLOT(validate_source(const QString&)));
   connect(_source_compose, SIGNAL(clicked()),         this, SLOT(select_source()));
+  connect(_source_remove, SIGNAL(clicked()),         this, SLOT(remove_source()));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(tablB     , SIGNAL(clicked()),      this, SLOT(table()));
@@ -543,9 +549,38 @@ void EnvClient::select_source()
   delete c;
 }
 
-void EnvClient::validate_source()
+void EnvClient::remove_source()
 {
-  //  Don't know how to validate yet
+  QString qtitle(_source_edit->text());
+
+  _list_sem.take();
+
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    if ((*it)->_name == qtitle) {
+      _plots.remove(*it);
+      delete (*it);
+      break;
+    }
+
+  for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
+    if (QString((*it)->desc().name())==qtitle) {
+      _tabls.remove(*it);
+      delete (*it);
+      break;
+    }
+
+  _list_sem.give();
+
+  FeatureRegistry::instance(Ami::PostAnalysis).remove(qtitle);
+
+  _source_edit->setText(QString());
+
+  emit changed();
+}
+
+void EnvClient::validate_source(const QString& t)
+{
+  _source_remove->setEnabled(t.mid(0,5)==QString("Post:"));
 }
 
 void EnvClient::plot(const QString& name, 

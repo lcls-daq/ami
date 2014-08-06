@@ -402,6 +402,8 @@ QString ImageRPhiProjection::_add_post(const QString& title, const char* expr)
 
   emit changed();
 
+  FeatureRegistry::instance(Ami::PostAnalysis).share(qtitle,post);
+
   return qtitle;
 }
 

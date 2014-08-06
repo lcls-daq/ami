@@ -3,6 +3,7 @@
 
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Discovery.hh"
+#include "ami/qt/SharedData.hh"
 
 #include <stdio.h>
 
@@ -91,4 +92,36 @@ QString FeatureRegistry::validate_name(const QString& n) const
   while (_names.contains(v))
     v = QString("%1_%2").arg(m).arg(++j);
   return v;
+}
+
+QString FeatureRegistry::find_name(const QString& n) const
+{
+  QString m;
+  if (this == _instance[PostAnalysis] && !n.startsWith("Post:"))
+    m = QString("Post:%1").arg(n);
+  else
+    m = n;
+
+  QString v(m);
+  return (_names.contains(v)) ? v : QString();
+}
+
+void         FeatureRegistry::share        (const QString& name, SharedData* s)
+{
+  std::map<QString,SharedData*>::iterator it=_shared.find(name);
+  if (it!=_shared.end())
+    printf("FeatureRegistry::shared inserting duplicate entry [%s][%p->%p]!\n",
+           qPrintable(name), _shared[name], s);
+
+  _shared[name] = s;
+}
+
+void         FeatureRegistry::remove       (const QString& name)
+{
+  std::map<QString,SharedData*>::iterator it=_shared.find(name);
+  if (it!=_shared.end()) {
+    it->second->resign();
+    _shared.erase(it);
+    _names.removeAll(name);
+  }
 }

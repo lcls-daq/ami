@@ -63,7 +63,8 @@ namespace Ami {
       void remove_plot         (QObject*);
       void remove_table        (QObject*);
       void select_source       ();
-      void validate_source     ();
+      void remove_source       ();
+      void validate_source     (const QString&);
       void add_post            ();
     signals:
       void description_changed(int);
@@ -96,6 +97,7 @@ namespace Ami {
 
       QLineEdit*   _source_edit;
       QPushButton* _source_compose;
+      QPushButton* _source_remove;
       Filter*      _filter;
 
       ScalarPlotDesc* _scalar_plot;
