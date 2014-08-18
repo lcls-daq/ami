@@ -23,6 +23,8 @@ namespace Ami {
       const char* expression() const;
       bool        postAnalysis() const;
       Ami::DescEntry* desc(const char*) const;
+    public:
+      ScalarPlotDesc& scalar() { return *_desc; }
     private:
       QComboBox* _parameter;
       AmendedRegistry* _registry;

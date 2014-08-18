@@ -76,6 +76,7 @@ namespace Ami {
     public slots:
       void set_channel   (int); // set the source
       void plot          ();   // configure the plot
+      void post          ();   // configure the plot
       void overlay       ();   // configure the plot
       void update_interval();
       void new_set       ();

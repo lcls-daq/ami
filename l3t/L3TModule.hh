@@ -28,8 +28,8 @@ namespace Ami {
       L3TModule();
       ~L3TModule();
     public:
-      void pre_configure();
-      void post_configure();
+      void pre_configure(const std::string&);
+      bool post_configure();
       void configure(const Pds::DetInfo&   src,
                      const Pds::TypeId&    type,
                      void*                 payload);

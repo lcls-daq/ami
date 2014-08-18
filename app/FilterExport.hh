@@ -5,6 +5,7 @@
 #include "pdsdata/xtc/TypeId.hh"
 
 #include <list>
+#include <string>
 
 namespace Pds {
   class Src;
@@ -31,7 +32,7 @@ namespace Ami {
 
   class FilterImport {
   public:
-    FilterImport(const char* fname = 0);
+    FilterImport(const std::string&);
     ~FilterImport();
   public:
     const std::string& stream() const { return _stream; }
@@ -39,7 +40,9 @@ namespace Ami {
     void parse_handlers(FilterImportCb&);
     void parse_analyses(FilterImportCb&);
     void parse_filter  (FilterImportCb&);
+    bool status() const { return _status; }
   private:
+    bool        _status;
     std::string _stream;
     AbsFilter*  _filter;
   };

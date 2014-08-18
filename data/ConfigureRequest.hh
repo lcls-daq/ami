@@ -5,6 +5,8 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/FeatureCache.hh"
 
+#include <strings.h>
+
 namespace Ami {
 
   class AbsFilter;
@@ -56,7 +58,8 @@ namespace Ami {
     }
     ConfigureRequest(Source           source,
                      unsigned         options,
-                     const AbsFilter& filter) :
+                     const AbsFilter& filter,
+		     const char*      output=0) :
       _state (SetOpt),
       _source(source),
       _scalars(PreAnalysis),
@@ -66,6 +69,13 @@ namespace Ami {
       uint32_t* u = reinterpret_cast<uint32_t*>(this+1);
       *u=options;
       char* e = (char*)filter.serialize(u+1);
+      if (output) {
+	strcpy(e,output);
+	e += strlen(output)+1;
+      }
+      else
+	*e++ = 0;
+     
       _size = e - (char*)this;
     }
     ConfigureRequest(const ConfigureRequest&);

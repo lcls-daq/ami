@@ -228,6 +228,12 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
   cfg.seed_threshold += offset;
   cfg.nbor_threshold += offset;
 
+#ifdef DBUG
+  printf("find_droplets: v[2][2] %u  off %u  seed %u  nbor %u\n",
+	 v[2][2],offset,cfg.seed_threshold,cfg.nbor_threshold);
+#endif
+
+
   unsigned shape[] = {0,0};
   ndarray<unsigned,2> no_mask(shape);
 

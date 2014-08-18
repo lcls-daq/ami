@@ -8,6 +8,9 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+#include <fstream>
+#include <sstream>
+
 class MyCallback : public Ami::FilterImportCb {
 public:
   MyCallback() {}
@@ -62,7 +65,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  Ami::FilterImport e(fname);
+  std::ostringstream o;
+  std::ifstream i(fname);
+  if (i.good())
+    i >> o.rdbuf();
+  Ami::FilterImport e(o.str());
 
   MyCallback cb;
   e.parse_handlers(cb);

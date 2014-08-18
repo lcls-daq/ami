@@ -10,6 +10,8 @@
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/RectROI.hh"
 #include "ami/qt/RectROIDesc.hh"
+#include "ami/qt/ScalarPlotDesc.hh"
+#include "ami/qt/SharedData.hh"
 
 #include "ami/data/DescImage.hh"
 #include "ami/data/Droplet.hh"
@@ -180,7 +182,8 @@ Droplet::Droplet(QWidget* parent,
     parms << Ami::Droplets::name(Ami::Droplets::Parameter(Ami::Droplets::NumberOf));
     for(unsigned i=0; i<Ami::Droplets::NumberOf; i++)
       parms << Ami::Droplets::name(Ami::Droplets::Parameter(i));
-    _analysis_plot = new VectorArrayDesc(0,parms); }
+    _analysis_plot = new VectorArrayDesc(0,parms); 
+    _analysis_plot->scalar().post(this, SLOT(post())); }
   _plot_tab->insertTab(PlotMap     ,_map_plot     ,"Map");
   _plot_tab->insertTab(PlotAnalysis,_analysis_plot,"Analysis");
   _title         = new QLineEdit("Droplets");
@@ -394,6 +397,15 @@ void Droplet::plot()
   default:
     break;
   }
+}
+
+void Droplet::post()
+{
+  SharedData* post;
+  _app().add_post(_analysis_plot->scalar().qtitle(),
+		  _analysis_plot->expression(),
+		  post);
+  post->signup();
 }
 
 void Droplet::overlay()

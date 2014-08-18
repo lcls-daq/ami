@@ -20,7 +20,7 @@
 
 #include <sys/stat.h>
 
-#define DBUG
+//#define DBUG
 
 static const Pds::TypeId NoType(Pds::TypeId::Any,0);
 static const unsigned MaxConfigSize = 64*1024;
@@ -43,24 +43,16 @@ public:
   bool valid() const { return false; }
 };
 
-FilterImport::FilterImport(const char* fname) :
-  _filter (new CantFilter)
+FilterImport::FilterImport(const std::string& input) :
+  _filter (new CantFilter),
+  _status (false)
 {
-  if (fname == 0)
-    fname = _default_fname;
+  std::ostringstream o;
 
-  std::stringstream o;
-  char* home = getenv("HOME");
-  if (home)
-    o << home << '/';
-  o << fname;
-  
-  std::ifstream i(o.str().c_str());
-  if (!i.good()) {
+  if (input.size()==0) {
     o.str(std::string());
     o << "<QString name=\"error\">"
-      << "Ami::L3T::FilterImport failed to open "
-      << fname
+      << "Ami::L3T::FilterImport no input data"
       << "</QString>\n</Document>\n";
     _stream = o.str();
     perror(_stream.c_str());
@@ -68,8 +60,7 @@ FilterImport::FilterImport(const char* fname) :
   }
   
   o.str(std::string());
-  while(i.good())
-    o << char(i.get());
+  o << input;
   o << "</Document>" << std::endl;
 
   _stream = o.str();
@@ -99,6 +90,7 @@ FilterImport::FilterImport(const char* fname) :
       XML_iterate_close(FilterExport,rtag);
     }
   XML_iterate_close(FilterExport,tag);
+  _status = true;
 }
 
 FilterImport::~FilterImport()
@@ -249,9 +241,9 @@ void FilterExport::write(const char* fname) const
   //  Obtain a lock or silently fail
   //
   std::stringstream o;
-  char* home = getenv("HOME");
-  if (home)
-    o << home << '/';
+//   char* home = getenv("HOME");
+//   if (home)
+//     o << home << '/';
   o << fname;
 
   if (_lock(o.str())) {
@@ -268,7 +260,8 @@ void FilterExport::write(const char* fname) const
       fclose(f);
     }
     else
-      ;
+      printf("Failed to open [%s]\n",o.str().c_str());
+
     _unlock(o.str());
   }
   else {

@@ -103,7 +103,7 @@ Entry&     Average::_operate(const Entry& e) const
     { EntryTH1F& _en = static_cast<EntryTH1F&>(*_entry);
       _en.add(static_cast<const EntryTH1F&>(e));
       if (_n>0) {
-        if (++_current>=_n) {
+        if (int(++_current)>=_n) {
           static_cast<EntryTH1F*>(_cache)->setto(_en);
           _en.reset();
           _current=0;
@@ -114,7 +114,7 @@ Entry&     Average::_operate(const Entry& e) const
     { EntryProf& _en = static_cast<EntryProf&>(*_entry);
       _en.sum(_en,static_cast<const EntryProf&>(e));
       if (_n>0) {
-        if (++_current>=_n) {
+        if (int(++_current)>=_n) {
           static_cast<EntryProf*>(_cache)->setto(_en);
           _en.reset();
           _current=0;
@@ -125,7 +125,7 @@ Entry&     Average::_operate(const Entry& e) const
     { EntryProf2D& _en = static_cast<EntryProf2D&>(*_entry);
       _en.sum(_en,static_cast<const EntryProf2D&>(e));
       if (_n>0) {
-        if (++_current>=_n) {
+        if (int(++_current)>=_n) {
           static_cast<EntryProf2D*>(_cache)->setto(_en);
           _en.reset();
           _current=0;
@@ -181,7 +181,7 @@ Entry&     Average::_operate(const Entry& e) const
       }
       
       if (_n>0) {
-        if (++_current>=_n) {
+        if (int(++_current)>=_n) {
           static_cast<EntryImage*>(_cache)->setto(_en);
           _en.reset();
           _current=0;
@@ -203,7 +203,7 @@ Entry&     Average::_operate(const Entry& e) const
         _en.addinfo(en.info(i),i);
       }
       if (_n>0) {
-        if (++_current>=_n) {
+        if (int(++_current)>=_n) {
           static_cast<EntryWaveform*>(_cache)->setto(_en);
           _en.reset();
           _current=0;

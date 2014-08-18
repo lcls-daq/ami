@@ -124,7 +124,7 @@ std::string L3TModule::configuration() const
  **  Discovery Cds needs to be reset
  **  Handlers need to be reset
  **/
-void L3TModule::pre_configure()
+void L3TModule::pre_configure(const std::string& input)
 {
   if (_import)
     delete _import;
@@ -134,7 +134,7 @@ void L3TModule::pre_configure()
     delete *hit;
   _handlers.clear();
 
-  _import = new FilterImport;
+  _import = new FilterImport(input);
   _import->parse_handlers(*this);
 
   _features[ PreAnalysis]->clear();
@@ -156,7 +156,7 @@ void L3TModule::pre_configure()
  **  PreAnalysis cache added to PostAnalysis cache
  **
  **/
-void L3TModule::post_configure()
+bool L3TModule::post_configure()
 {
   for(std::list<EventHandler*>::iterator it = _handlers.begin();
       it != _handlers.end(); it++) {
@@ -205,6 +205,8 @@ void L3TModule::post_configure()
   for(unsigned i=0; i<n.size(); i++)
     printf("\t%s\n",n[i].c_str());
 #endif
+
+  return _import->status();
 }
 
 void L3TModule::configure(const Pds::DetInfo&   src,
@@ -439,8 +441,9 @@ void L3TModule::handler (const Pds::Src& src,
       _signatures[h->info().phy()] = signatures;
       break;
     }
-    else if (*it != Pds::TypeId::Id_FrameFexConfig) {
-      printf("Ami::L3T::handler cannot handle type %s src %08x.%08x\n",Pds::TypeId::name(types.front()),src.log(),src.phy());
+    else if (*it != Pds::TypeId::Id_FrameFexConfig &&
+	     *it != Pds::TypeId::Id_PimImageConfig) {
+      printf("Ami::L3T::handler cannot handle type %s src %08x.%08x\n",Pds::TypeId::name(*it),src.log(),src.phy());
     }
   }
 }

@@ -16,6 +16,7 @@ class QListWidget;
 class QListWidgetItem;
 class QTimer;
 class QGroupBox;
+class QFileDialog;
 
 namespace Ami {
   class ClientManager;
@@ -97,6 +98,7 @@ namespace Ami {
       bool           _discovered;
       Filter*        _filter_export;
       bool           _l3t_export;
+      QFileDialog*   _l3t_export_file;
       DumpCollector  _dump;
     };
   };

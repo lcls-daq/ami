@@ -229,7 +229,8 @@ void Filter::_apply()
   _filter = parser.evaluate(_expr->text());
 
   if (_filter==0) {
-    printf("Filter parser failed to evaluate %s\nResetting filter.\n",qPrintable(_expr->text()));
+    QMessageBox::critical(this,"Filter Parsing Error",
+			  QString("Failed to evaluate %1\nResetting filter.\n").arg(_expr->text()));
     clear();
   }
 }

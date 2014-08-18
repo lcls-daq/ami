@@ -2,6 +2,7 @@
 #define AmiQt_VAConfigApp_hh
 
 #include "ami/qt/OverlayParent.hh"
+#include "ami/qt/CPostParent.hh"
 
 #include "ami/data/ConfigureRequestor.hh"
 #include "ami/service/Semaphore.hh"
@@ -25,7 +26,8 @@ namespace Ami {
     class ChannelDefinition;
 
     class VAConfigApp : public QObject,
-			public OverlayParent {
+			public OverlayParent,
+			public CPostParent {
       Q_OBJECT
     public:
       VAConfigApp(QWidget* parent, 
@@ -42,9 +44,11 @@ namespace Ami {
     public:
       void add_map        (Ami::AbsOperator*);   
       void add_cursor_plot(BinMath*);   
+      QString add_post    (const QString&, const char*, SharedData*&);   
       void add_overlay    (QtPlot&,BinMath*);
       void add_overlay    (DescEntry*,QtPlot*,SharedData*);
       void remove_overlay (QtOverlay*);
+      void remove_cursor_post(CursorPost*);
     public:
       void configure(char*& p, unsigned input, unsigned& output,
 		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);

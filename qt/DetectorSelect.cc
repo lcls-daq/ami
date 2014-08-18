@@ -215,6 +215,12 @@ DetectorSelect::DetectorSelect(const QString& label,
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
 
+  _l3t_export_file = new QFileDialog(_filter_export);
+  _l3t_export_file->setFileMode(QFileDialog::AnyFile);
+  _l3t_export_file->setNameFilter("*.l3t");
+  _l3t_export_file->setDefaultSuffix("l3t");
+  _l3t_export_file->selectFile(QString("%1/ami.l3t").arg(getenv("HOME")));
+
   _manager->connect();
 }
 
@@ -534,16 +540,24 @@ int  DetectorSelect::configure       (iovec* iov)
   { ConfigureRequest& r =
       *new(p) ConfigureRequest(ConfigureRequest::Filter,
                                _filters->selected(),
-             _filters->filter());
+			       _filters->filter());
     p += r.size(); }
 
   if (_l3t_export) {
     _l3t_export=false;
-    ConfigureRequest& r =
-      *new(p) ConfigureRequest(ConfigureRequest::Filter,
-                               (1<<31),
-             *_filter_export->filter());
-    p += r.size();
+
+    if (_l3t_export_file->exec()) {
+      QStringList ofiles = _l3t_export_file->selectedFiles();
+
+      if (ofiles.length()>0) {
+	ConfigureRequest& r =
+	  *new(p) ConfigureRequest(ConfigureRequest::Filter,
+				   (1<<31),
+				   *_filter_export->filter(),
+				   qPrintable(ofiles[0]));
+	p += r.size();
+      }
+    }
   }
 
   _rate_display->configure(p);

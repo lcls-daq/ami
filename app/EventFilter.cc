@@ -42,7 +42,7 @@ void EventFilter::enable (const ConfigureRequest& req,
 
   if ((*u) & 0x80000000) {
     FilterExport x(*f, e, a);
-    x.write();
+    x.write(p);
   }
   else {
     _enable = (*u) & 0x7fffffff;

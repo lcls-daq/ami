@@ -7,11 +7,13 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/ControlLog.hh"
 #include "ami/qt/AxisBins.hh"
+#include "ami/qt/FeatureRegistry.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/RawFilter.hh"
+#include "ami/data/DescCache.hh"
 
 //#define DBUG
 
@@ -271,6 +273,30 @@ void VAConfigApp::add_cursor_plot(BinMath* op)
   emit changed();
 }
 
+QString VAConfigApp::add_post(const QString& title,
+			      const char*    expr,
+			      SharedData*&   shared)
+{
+  QString qtitle = FeatureRegistry::instance(Ami::PostAnalysis).validate_name(title);
+
+  Ami::DescCache*  desc = new Ami::DescCache(qPrintable(qtitle),
+                                             qPrintable(qtitle),
+                                             Ami::PostAnalysis);
+  
+  CursorPost* post = new CursorPost(0,
+				    new BinMath(*desc,expr),
+				    this);
+  _posts.push_back(post);
+
+  delete desc;
+
+  emit changed();
+
+  FeatureRegistry::instance(Ami::PostAnalysis).share(qtitle,post);
+  shared = post;
+  return qtitle;
+}
+
 void VAConfigApp::remove_plot(QObject* obj)
 {
   _list_sem.take();
@@ -313,5 +339,13 @@ void VAConfigApp::remove_overlay(QtOverlay* obj)
   _list_sem.take();
   _ovls.remove(ovl);
   _list_sem.give();
+}
+
+void VAConfigApp::remove_cursor_post(CursorPost* post)
+{
+  _list_sem.take();
+  _posts.remove(post);
+  _list_sem.give();
+  emit changed();
 }
 
