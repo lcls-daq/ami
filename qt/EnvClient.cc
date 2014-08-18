@@ -13,6 +13,7 @@
 #include "ami/qt/QtPlot.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/SharedData.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/app/XtcClient.hh"
 #include "ami/client/ClientManager.hh"
@@ -440,7 +441,9 @@ void EnvClient::request_payload()
            !_throttled) {
     _status->set_state(Status::Throttled);
     _throttled = true;
-    printf("%s request_payload throttling\n",qPrintable(_title));
+    QString msg = QString("%1 request payload throttling").arg(_title);
+    printf("%s\n",qPrintable(msg));
+    ControlLog::instance().appendText(msg);
   }
 }
 

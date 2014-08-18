@@ -352,7 +352,7 @@ EdgeFinderConfig::EdgeFinderConfig(QWidget* parent,
   l->addWidget(_leading_edge = new QCheckBox("Leading Edges"),row,0,1,2,::Qt::AlignCenter);
   _leading_edge->setChecked(true);
   row++;
-  connect(_leading_edge, SIGNAL(toggled()), this, SIGNAL(changed()));
+  connect(_leading_edge, SIGNAL(clicked()), this, SIGNAL(changed()));
 	
   l->addWidget(new QLabel("Deadtime [sec]"),row,0,::Qt::AlignRight);
   l->addWidget(_deadtime = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);

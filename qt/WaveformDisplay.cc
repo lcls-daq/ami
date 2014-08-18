@@ -327,6 +327,8 @@ void WaveformDisplay::prototype(const Ami::DescEntry* e)
 
 void WaveformDisplay::add   (QtBase* b, Cds& cds, bool show) 
 {
+  subscribe(cds);
+
   if (show) {
     _xrange->update(*_xinfo);
     _sem.take();
@@ -381,15 +383,17 @@ void WaveformDisplay::hide(QtBase* b)
   _sem.give();
 }
 
+void WaveformDisplay::clear_payload() { reset(); }
+
 void WaveformDisplay::reset()
 {
   _sem.take();
   _curves.merge(_hidden);
-
-  for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++) {
-    delete (*it);
+  while(!_curves.empty()) {
+    QtBase* c = _curves.front();
+    _curves.pop_front();
+    delete c;
   }
-  _curves.clear();
   _sem.give();
 }
 

@@ -10,6 +10,7 @@
 #include "ami/qt/FeatureRegistry.hh"
 #include "ami/qt/QtUtils.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/client/ClientManager.hh"
 #include "ami/data/Channel.hh"
@@ -480,9 +481,10 @@ void Ami::Qt::Client::request_payload()
       _status->set_state(Status::Throttled);
     }
     if ((_denials%20)==1) {
-      printf("Client %s request_payload throttled %d/%d\n",
-	     qPrintable(_title),_denials,_attempts);
+      QString msg = QString("Client %1 request payload throttled %2/%3").arg(_title).arg(_denials).arg(_attempts);
+      printf("%s\n",qPrintable(msg));
       _manager->dump_throttle();
+      ControlLog::instance().appendText(msg);
 #ifdef DBUG
       printf("..resetting throttle.\n");
       _status->set_state(Status::Processed);

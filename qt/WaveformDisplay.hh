@@ -2,6 +2,7 @@
 #define AmiQt_WaveformDisplay_hh
 
 #include "ami/qt/Display.hh"
+#include "ami/data/Cdu.hh"
 #include <QtGui/QWidget>
 
 #include "ami/service/Semaphore.hh"
@@ -19,7 +20,8 @@ namespace Ami {
     class Transform;
     class PlotFrame;
     class WaveformDisplay : public QWidget,
-			    public Display {
+			    public Display,
+			    public Cdu {
       Q_OBJECT
     public:
       WaveformDisplay();
@@ -43,6 +45,8 @@ namespace Ami {
       const std::list<QtBase*> plots() const;
       const AxisInfo&     xinfo     () const;
       PlotFrame*          plot      () const;
+    public:
+      void                clear_payload();
     public slots:
       void save_image();
       void save_data();

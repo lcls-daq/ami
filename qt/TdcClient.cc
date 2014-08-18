@@ -10,6 +10,7 @@
 #include "ami/qt/TwoDPlot.hh"
 #include "ami/qt/DescTH1F.hh"
 #include "ami/qt/DescTH2T.hh"
+#include "ami/qt/ControlLog.hh"
 
 #include "ami/client/ClientManager.hh"
 
@@ -447,7 +448,10 @@ void TdcClient::request_payload()
            !_throttled) {
     _status->set_state(Status::Throttled);
     _throttled = true;
-    printf("TdcClient request_payload throttling\n");
+    QString msg("TdcClient request payload throttled");
+    printf("%s\n",qPrintable(msg));
+    _manager->dump_throttle();
+    ControlLog::instance().appendText(msg);
   }
 }
 

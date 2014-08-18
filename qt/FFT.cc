@@ -170,7 +170,7 @@ void FFT::plot()
   _list_sem.give();
 
   connect(plot, SIGNAL(closed(QObject*)), this, SLOT(remove_plot(QObject*)));
-  connect(plot, SIGNAL(changed()), this, SIGNAL(changed()));
+  connect(plot, SIGNAL(description_changed()), this, SIGNAL(changed()));
 
   emit changed();
 }
