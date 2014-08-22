@@ -12,6 +12,7 @@ DescWaveform::DescWaveform(const Pds::DetInfo& info,
 			   float xup) :
   DescEntry(info, channel, name, xtitle, ytitle, Waveform, sizeof(DescWaveform), true),
   _nbins(nbins ? nbins : 1),
+  _reserved(-1),
   _xlow(xlow),
   _xup(xup)
 {}

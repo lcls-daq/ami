@@ -3,6 +3,7 @@
 
 #include <ndarray/ndarray.h>
 
+#include <string>
 #include <stdio.h>
 
 namespace Pds { class DetInfo; };
@@ -14,7 +15,8 @@ namespace Ami {
                             const char* onl_calib_type,
                             const char* off_calib_type="None",
                             bool        no_cache=false,
-                            bool*       offl_type=0);
+                            bool*       offl_type=0,
+			    std::string* fname=0);
 
     static FILE *fopen_dual(const char *path1, const char * path2, 
                             const char *description,

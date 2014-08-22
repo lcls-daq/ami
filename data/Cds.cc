@@ -301,6 +301,7 @@ void Cds::reset_plots()
 void Cds::subscribe(Cdu& user)
 {
   _users.push_back(&user);
+  _users.unique();
 }
 
 void Cds::unsubscribe(Cdu& user)

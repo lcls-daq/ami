@@ -94,7 +94,8 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
                         const char* onl_calib_type,
                         const char* off_calib_type,
                         bool no_cache,
-                        bool* offl_type)
+                        bool* offl_type,
+			std::string* fname)
 {
   std::string path1;
   { std::ostringstream o;
@@ -147,18 +148,22 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
 
   if (_use_offline && st4.st_mtime > 0) {
     if (offl_type) *offl_type=true;
+    if (fname) *fname=path4;
     return _fopen(path4.c_str(),no_cache);
   }
   if (st1.st_mtime > 0) {
     if (offl_type) *offl_type=false;
+    if (fname) *fname=path1;
     return _fopen(path1.c_str(),no_cache);
   }
   if (_use_offline && st3.st_mtime > 0) {
     if (offl_type) *offl_type=true;
+    if (fname) *fname=path3;
     return _fopen(path3.c_str(),no_cache);
   }
   if (st2.st_mtime > 0) {
     if (offl_type) *offl_type=false;
+    if (fname) *fname=path2;
     return _fopen(path2.c_str(),no_cache);
   }
 
