@@ -279,7 +279,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
 
 void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
 {
-  const char* infoName;
+  const char* infoName(0);
   switch(xtc->src.level()) {
   case Pds::Level::Source:
     infoName = Pds::DetInfo::name(static_cast<const DetInfo&>(xtc->src));
@@ -292,7 +292,6 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
   default:
     printf("Default name lookup failed for src %08x.%08x!\n",
            xtc->src.phy(), xtc->src.log());
-    infoName = 0;
     break;
   }
 

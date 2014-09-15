@@ -118,7 +118,7 @@ void FilterImport::parse_handlers(FilterImportCb& cb)
             else if (stag.name == "_types")
               types.push_back(Pds::TypeId::Type(QtPersistent::extract_i(p)));
             else if (stag.name == "_entries") {
-	      unsigned signature, options=0;
+	      unsigned signature(-1U), options=0;
               XML_iterate_open(p,qtag)
                if (qtag.name == "signature")
                   signature = QtPersistent::extract_i(p);

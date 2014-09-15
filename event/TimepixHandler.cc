@@ -123,11 +123,9 @@ void TimepixHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cl
       _fill<uint16_t>(dataV2, *_entry); } break;
   case 1:
     { const Pds::Timepix::DataV1& dataV1 = *reinterpret_cast<const Pds::Timepix::DataV1*>(payload);
-#if 0
-      //
-      //  This transformation is missing psddl_pdsdata
-      //
-      char buf[sizeof(dataV1) + dataV1.data_size()];
+#if 1
+      Pds::Timepix::DataV2 tmp(dataV1.width(), dataV1.height(), 0, 0, 0);
+      char buf[tmp._sizeof()];
       const Pds::Timepix::DataV2& dataV2 = *new (buf) Pds::Timepix::DataV2(dataV1);
       _fill<uint16_t>(dataV2, *_entry);
 #endif

@@ -103,7 +103,7 @@ Entry&     FFT::_operate(const Entry& e) const
   if (!e.valid())
     return *_output;
 
-  unsigned na;
+  unsigned na(0);
   ndarray<double,1> a;
 
 #define CASETERM(type) case DescEntry::type: {				\
