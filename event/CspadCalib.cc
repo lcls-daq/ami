@@ -91,10 +91,12 @@ std::string CspadCalib::save_pedestals(Entry* e,
     for(unsigned i=0; i<nframes; i++) {
       const SubFrame& frame = entry.desc().frame(i);
 
+#if 0
       static const Rotation _tr[] = {  D0  , D90 , D180, D90 ,
                                        D90 , D180, D270, D180,
                                        D180, D270, D0  , D270,
                                        D270, D0  , D90 , D0 };
+#endif
 
       switch(frame.r) {
       case D0:

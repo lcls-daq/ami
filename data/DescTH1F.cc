@@ -12,6 +12,7 @@ DescTH1F::DescTH1F(const char* name,
   DescEntry(name, xtitle, ytitle, TH1F, sizeof(DescTH1F), normalize),
   _nbins(nbins ? nbins : 1),
   _unused(0),
+  _reserved(0),
   _xlow(xlow),
   _xup(xup)
 {}
@@ -26,7 +27,8 @@ DescTH1F::DescTH1F(InitOpt,
 		   bool normalize) :
   DescEntry(name, xtitle, ytitle, TH1F, sizeof(DescTH1F), normalize),
   _nbins(nbins ? nbins : 1),
-  _unused(0)
+  _unused(0),
+  _reserved(0)
 {
   if (_nbins > 1) {
     double nn = 2*double(nbins)-1;
@@ -52,6 +54,7 @@ DescTH1F::DescTH1F(const Pds::DetInfo& info,
   DescEntry(info, channel, name, xtitle, ytitle, TH1F, sizeof(DescTH1F), normalize),
   _nbins(nbins ? nbins : 1),
   _unused(0),
+  _reserved(0),
   _xlow(xlow),
   _xup(xup)
 {}

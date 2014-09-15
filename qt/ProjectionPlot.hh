@@ -71,6 +71,7 @@ namespace Ami {
 
       enum {NCHANNELS=4};
       ChannelDefinition* _channels[NCHANNELS];
+      QButtonGroup*      _showPlotBoxes;
       WaveformDisplay*   _frame;
       const DescEntry*   _input_entry;
       CursorsX*          _cursors;

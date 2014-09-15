@@ -35,6 +35,7 @@ void   L3THandler::_configure(Pds::TypeId id,
                                const Pds::ClockTime& t) 
 {
   _index = _cache.add("DAQ:L3Accept");
+  _cache.add("DAQ:L3Bias");
 }
 
 void   L3THandler::_event    (Pds::TypeId id,
@@ -47,7 +48,15 @@ void   L3THandler::_event    (Pds::TypeId id,
       {
         const Pds::L3T::DataV1& l3t = 
           *reinterpret_cast<const Pds::L3T::DataV1*>(payload);
-        _cache.cache(_index, l3t.accept()==0 ? 0:1);
+        _cache.cache(_index+0, l3t.accept()==0 ? 0:1);
+        _cache.cache(_index+1, 0);
+      } break;
+    case 2:
+      {
+        const Pds::L3T::DataV2& l3t = 
+          *reinterpret_cast<const Pds::L3T::DataV2*>(payload);
+        _cache.cache(_index+0, l3t.result());
+        _cache.cache(_index+1, l3t.bias());
       } break;
     default:
       break;
@@ -57,8 +66,10 @@ void   L3THandler::_event    (Pds::TypeId id,
 
 void   L3THandler::_damaged  ()
 {
-  if (_index>=0)
-    _cache.cache(_index,-1,true);
+  if (_index>=0) {
+    _cache.cache(_index+0,-1,true);
+    _cache.cache(_index+1,-1,true);
+  }
 }
 
 //  No Entry data

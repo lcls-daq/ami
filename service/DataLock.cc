@@ -25,6 +25,7 @@ Semaphore* DataLock::read_register()
 void DataLock::read_resign(Semaphore* sem)
 {
   _locks.remove(sem);
+  delete sem;
 }
 
 void DataLock::write_lock()

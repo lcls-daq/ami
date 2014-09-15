@@ -208,6 +208,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
 	  
 ChannelDefinition::~ChannelDefinition()
 {
+  delete _plot_grp;
 }
 
 void ChannelDefinition::save(char*& p) const

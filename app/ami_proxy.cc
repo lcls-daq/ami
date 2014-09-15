@@ -116,41 +116,48 @@ int main(int argc, char **argv)
     }
   }
 
-  Ins mcast(serverGroup, Port::serverPort());
-  VServerSocket server(mcast, interface);
-  VClientSocket client; client.set_dst(mcast, interface);
+  try {
+    Ins mcast(serverGroup, Port::serverPort());
+    VServerSocket server(mcast, interface);
+    VClientSocket client; client.set_dst(mcast, interface);
 
-  Poll clients(1000);
-  clients.start();
+    Poll clients(1000);
+    clients.start();
 
-  ConnectRoutine conn(clients, server);
+    ConnectRoutine conn(clients, server);
 
-  TSocket* _listen = new TSocket;
-  unsigned short port  = Port::serverPort();
-  try  { _listen->bind(Ins(ppinterface,port)); }
-  catch(Event& e) { 
-    printf("Failed to bind to port %d\n",port);
+    TSocket* _listen = new TSocket;
+    unsigned short port  = Port::serverPort();
+    try  { _listen->bind(Ins(ppinterface,port)); }
+    catch(Event& e) { 
+      printf("Failed to bind to port %d\n",port);
+      exit(1);
+    }
+
+    while(1) {
+
+      ::listen(_listen->socket(),5);
+
+      Ami::Sockaddr name;
+      unsigned length = name.sizeofName();
+      int s = ::accept(_listen->socket(),name.name(), &length);
+      if (s<0)
+	printf("ami_proxy accept failed\n");
+      else {
+	Ins remote = name.get();
+
+	printf("ami_proxy accepting connection from %x.%d\n",
+	       remote.address(),remote.portId());
+
+	clients.manage_p(*new PSocket(s,client));
+      }
+    }
+
+    delete _listen;
+
+  } catch (Ami::Event& e) {
+    printf("Caught Ami::Event [%s] [%s]\n",
+	   e.who(),e.what());
     exit(1);
   }
-
-  while(1) {
-
-    ::listen(_listen->socket(),5);
-
-    Ami::Sockaddr name;
-    unsigned length = name.sizeofName();
-    int s = ::accept(_listen->socket(),name.name(), &length);
-    if (s<0)
-      printf("ami_proxy accept failed\n");
-    else {
-      Ins remote = name.get();
-
-      printf("ami_proxy accepting connection from %x.%d\n",
-	     remote.address(),remote.portId());
-
-      clients.manage_p(*new PSocket(s,client));
-    }
-  }
-
-  delete _listen;
 }

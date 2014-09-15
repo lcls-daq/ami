@@ -181,7 +181,7 @@ void Transform::remove(const QString& name)
   for(std::list<TransformConstant*>::iterator it=_constants.begin(); it!=_constants.end(); it++)
     if ((*it)->name() == name) {
       delete (*it);
-      _constants.remove(*it);
+      _constants.erase(it);
       break;
     }
 }

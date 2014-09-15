@@ -100,6 +100,8 @@ ProjectionPlot::~ProjectionPlot()
 
   PWidgetManager::remove(this);
   delete _proj;
+
+  delete _showPlotBoxes;
 }
 
 void ProjectionPlot::_layout()
@@ -107,8 +109,8 @@ void ProjectionPlot::_layout()
   setWindowTitle(_name);
   setAttribute(::Qt::WA_DeleteOnClose, true);
 
-  QButtonGroup* showPlotBoxes = new QButtonGroup;
-  showPlotBoxes->setExclusive( !_frame->canOverlay() );
+  _showPlotBoxes = new QButtonGroup;
+  _showPlotBoxes->setExclusive( !_frame->canOverlay() );
 
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
@@ -120,7 +122,7 @@ void ProjectionPlot::_layout()
 	chanB[i]->setPalette(QPalette(color[i]));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
-	  showPlotBoxes->addButton(box);
+	  _showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
 	  box->setChecked( _showMask & (1<<i) );
 	  layout4->addWidget(box);

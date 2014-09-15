@@ -56,6 +56,7 @@ QAggSelect::QAggSelect() :
 
 QAggSelect::~QAggSelect()
 {
+  delete _group;
 }
 
 bool QAggSelect::at_rate() const { return _group->checkedId()==Rate; }

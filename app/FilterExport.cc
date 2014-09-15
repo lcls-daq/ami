@@ -44,8 +44,8 @@ public:
 };
 
 FilterImport::FilterImport(const std::string& input) :
-  _filter (new CantFilter),
-  _status (false)
+  _status (false),
+  _filter (new CantFilter)
 {
   std::ostringstream o;
 

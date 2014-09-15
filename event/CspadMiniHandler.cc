@@ -682,7 +682,9 @@ namespace CspadMiniGeometry {
       Ami::Cspad::TwoByTwoAlignment qalign = qalign_def[0].twobytwo(0);
       Rotation qrot[3] = { D0, D0, D0 };
       if (gm) {
-        qalign = Ami::Cspad::QuadAlignment::load(gm)->twobytwo(0);
+        { Ami::Cspad::QuadAlignment* ta = Ami::Cspad::QuadAlignment::load(gm);
+          qalign = ta->twobytwo(0);
+          delete[] ta; }
 
         size_t sz=256;
         char* linep = (char *)malloc(sz);
@@ -922,6 +924,8 @@ CspadMiniHandler::~CspadMiniHandler()
 {
   if (_detector)
     delete _detector;
+
+  Ami::PeakFinder::register_(info().phy(),NULL);
 }
 
 unsigned CspadMiniHandler::nentries() const { return _entry ? 1 : 0; }
@@ -974,6 +978,7 @@ static ndarray<double,3> get_calib(FILE* f)
       for(double* p=a.begin(); p<a.end(); p++)
         fscanf(f,"%lf",p);
     }
+    free(linep);
     fclose(f);
   }
   return a;

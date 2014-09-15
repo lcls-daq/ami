@@ -558,17 +558,17 @@ void EnvClient::remove_source()
 
   _list_sem.take();
 
-  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+  for(std::list<EnvPlot*>::iterator it=_plots.begin(); it!=_plots.end(); it++)
     if ((*it)->_name == qtitle) {
-      _plots.remove(*it);
       delete (*it);
+      _plots.erase(it);
       break;
     }
 
-  for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
+  for(std::list<EnvTable*>::iterator it=_tabls.begin(); it!=_tabls.end(); it++)
     if (QString((*it)->desc().name())==qtitle) {
-      _tabls.remove(*it);
       delete (*it);
+      _tabls.erase(it);
       break;
     }
 

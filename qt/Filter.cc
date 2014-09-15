@@ -211,7 +211,7 @@ void Filter::remove(const QString& name)
   for(std::list<Condition*>::iterator it=_conditions.begin(); it!=_conditions.end(); it++)
     if ((*it)->name() == name) {
       delete (*it);
-      _conditions.remove(*it);
+      _conditions.erase(it);
       break;
     }
 }

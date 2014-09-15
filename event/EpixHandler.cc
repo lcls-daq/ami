@@ -7,6 +7,7 @@
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/ImageMask.hh"
 #include "pdsdata/xtc/TypeId.hh"
+#include "pdsdata/psddl/genericpgp.ddl.h"
 #include "pdsdata/psddl/epix.ddl.h"
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -25,6 +26,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
   std::list<Pds::TypeId::Type> types;
   types.push_back(Pds::TypeId::Id_EpixConfig);
   types.push_back(Pds::TypeId::Id_Epix10kConfig);
+  types.push_back(Pds::TypeId::Id_GenericPgpConfig);
   return types;
 }
 
@@ -271,6 +273,12 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   unsigned nAsics = 0;
   unsigned lastRowExclusions = 0;
 
+  if (tid.id()==Pds::TypeId::Id_GenericPgpConfig) {
+    const Pds::GenericPgp::ConfigV1& c = *reinterpret_cast<const Pds::GenericPgp::ConfigV1*>(payload);
+    reinterpret_cast<uint32_t&>(tid) = c.stream()[0].config_type();
+    payload = reinterpret_cast<const void*>(c.payload().data()+c.stream()[0].config_offset());
+  }
+
 #define PARSE_CONFIG(typ) {						\
     const typ& c = *reinterpret_cast<const typ*>(payload);		\
     if (_config_buffer) delete[] _config_buffer;			\
@@ -292,6 +300,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     PARSE_CONFIG(Pds::Epix::ConfigV1); break;
   case Pds::TypeId::Id_Epix10kConfig: 
     PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+  case Pds::TypeId::Id_GenericPgpConfig:
+    
   default:
     printf("EpixHandler::configure unrecognized configuration type %08x\n",
 	   tid.value());
