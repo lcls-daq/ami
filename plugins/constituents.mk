@@ -19,6 +19,11 @@ libsrcs_timetooldb := TimeToolC.cc
 libincs_timetooldb := pdsdata/include ndarray/include boost/include psalg/include timetool/include
 liblibs_timetooldb := timetool/ttsvc psalg/psalg
 
+libnames += timetooldbd
+libsrcs_timetooldbd := TimeToolD.cc
+libincs_timetooldbd := pdsdata/include ndarray/include boost/include psalg/include timetool/include
+liblibs_timetooldbd := timetool/ttsvc psalg/psalg
+
 libnames += xppbase
 libsrcs_xppbase := XppBase.cc
 libincs_xppbase := pdsdata/include ndarray/include boost/include
