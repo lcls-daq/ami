@@ -131,6 +131,7 @@ Entry&     FFT::_operate(const Entry& e) const
 
 #define CASETERM(type) case DescEntry::type: {				\
       Entry##type& _e = *static_cast<Entry##type*>(_output);		\
+      _e.info(1.,Entry##type::Normalization);                           \
       switch(_parameter) {						\
       case Ampl:							\
 	_e.content(a[0],0);						\
