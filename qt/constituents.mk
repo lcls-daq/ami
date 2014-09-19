@@ -88,7 +88,6 @@ libsrcs_amiqt += VectorArrayDesc.cc
 libsrcs_amiqt += XYHistogramPlotDesc.cc
 libsrcs_amiqt += XYProjectionPlotDesc.cc
 libsrcs_amiqt += RPhiProjectionPlotDesc.cc
-#libsrcs_amiqt += QtPersistent.cc QtUtils.cc
 libsrcs_amiqt += QtUtils.cc
 libsrcs_amiqt += ChannelDefinition.cc ChannelDefinition_moc.cc
 libsrcs_amiqt += AxisArray.cc
@@ -125,7 +124,8 @@ libsrcs_amiqt += EdgeFinder.cc EdgeFinder_moc.cc
 libsrcs_amiqt += CurveFitPost.cc CurveFitOverlay.cc
 libsrcs_amiqt += CurveFitPlot.cc CurveFitPlot_moc.cc
 libsrcs_amiqt += CurveFit.cc CurveFit_moc.cc
-libsrcs_amiqt += QtPWidget.cc QtPWidget_moc.cc
+libsrcs_amiqt += QtPWidget.cc QtPWidget_moc.cc 
+libsrcs_amiqt += QtPStack.cc QtPStack_moc.cc 
 libsrcs_amiqt += AbsClient.cc AbsClient_moc.cc
 libsrcs_amiqt += Client.cc Client_moc.cc
 libsrcs_amiqt += WaveformClient.cc
@@ -193,7 +193,7 @@ libsrcs_amiqt += VAConfigApp.cc VAConfigApp_moc.cc
 # List special include directories (if any) needed by lib_a as
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
-libincs_amiqt := $(qt_incs) qwt/include  ndarray/include boost/include pdsdata/include gsl/include
+libincs_amiqt := $(qt_incs) qwt/include  ndarray/include boost/include pdsdata/include gsl/include psalg/include
 libsinc_amiqt := $(qwtsinc)
 
 # List system include directories (if any) needed by lib_a as <incdir>.

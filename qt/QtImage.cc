@@ -2,16 +2,21 @@
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/ImageGrid.hh"
+#include "ami/qt/ImageColorControl.hh"
 
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryImage.hh"
+#include "ami/data/ImageMask.hh"
 #include "ami/service/DataLock.hh"
 #include "ami/service/Semaphore.hh"
+
+#include "psalg/psalg.h"
 
 #include <QtGui/QImage>
 #include <QtGui/QGridLayout>
 
 #include <stdio.h>
+#include <climits>
 
 using namespace Ami::Qt;
 
@@ -26,10 +31,9 @@ QtImage::QtImage(const QString&   title,
   _sem  (lock ? lock->read_register():0)
 {
   const Ami::DescImage& d = entry.desc();
-  _x0 = 0; _y0 = 0; _nx = d.nbinsx(); _ny = d.nbinsy();
 
   for(unsigned i=0; i<NBUFFERS; i++) {
-    _qimage[i] = new QImage(_nx, _ny, QImage::Format_Indexed8);
+    _qimage[i] = new QImage(d.nbinsx(), d.nbinsy(), QImage::Format_Indexed8);
     _qimage[i]->fill(128);
   }
   _mimage = (1<<NBUFFERS)-1;
@@ -39,9 +43,9 @@ QtImage::QtImage(const QString&   title,
 
   _scalexy = false;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
-                         d.binx(_x0), double(d.ppxbin()*_nx), _nx);
+                         d.binx(0), double(d.ppxbin()*d.nbinsx()), d.nbinsx());
   _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
-                         d.biny(_y0), double(d.ppybin()*_ny), _ny);
+                         d.biny(0), double(d.ppybin()*d.nbinsy()), d.nbinsy());
 }
   
 QtImage::~QtImage()
@@ -59,10 +63,11 @@ QtImage::~QtImage()
 void           QtImage::dump  (FILE* f) const
 {
   const EntryImage& _entry = static_cast<const EntryImage&>(entry());
+  const DescImage& d = _entry.desc();
   fprintf(f,"%f %f\n", _entry.info(EntryImage::Normalization), _entry.info(EntryImage::Pedestal));
   ndarray<const uint32_t,2> data(_entry.content());
-  for(unsigned j=_y0; j<_y0+_ny; j++) {
-    for(unsigned k=_x0; k<_x0+_nx; k++)
+  for(unsigned j=0; j<d.nbinsy(); j++) {
+    for(unsigned k=0; k<d.nbinsx(); k++)
       fprintf(f,"%d ", data[j][k]);
     fprintf(f,"\n");
   }
@@ -96,7 +101,7 @@ void           QtImage::canvas_size(const QSize& sz,
 #define LINTRANS(x) (x > p   ? (x-p)/n : 0)
 #define LOGTRANS(x) (x > ppn ? (log(x-p)-logn)*invlogs : 0)
 
-QImage*  QtImage::image(float p0, float s, bool linear)
+QImage*  QtImage::image(ImageColorControl& control)
 {
   if (_sem) _sem->take();
 
@@ -120,7 +125,8 @@ QImage*  QtImage::image(float p0, float s, bool linear)
   if (qimage) {
     const Ami::EntryImage& _entry = static_cast<const Ami::EntryImage&>(entry());
     const Ami::DescImage&  d = _entry.desc();
-    
+    const ImageMask* mask = d.mask();
+
     //   unsigned n = _entry.info(EntryImage::Normalization);
     //   n = (n ? n : 1)*d.ppxbin()*d.ppybin();
     //   if (s>0)  n<<= s;
@@ -129,16 +135,62 @@ QImage*  QtImage::image(float p0, float s, bool linear)
     float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
     if (!d.countmode())
       n = (n ? n : 1)*d.ppxbin()*d.ppybin();
+
+    switch(control.range()) {
+    case ImageColorControl::Fixed: break;
+    case ImageColorControl::Full:
+      { unsigned vshape[] = {2};
+        ndarray<unsigned,1> v(vshape);
+        if (mask)
+          v = psalg::extremes(_entry.content(), mask->row_mask(), mask->all_mask());
+        else if (d.nframes()) {
+          v[0] = UINT_MAX;
+          v[1] = 0;
+          for(unsigned fn=0; fn<d.nframes(); fn++) {
+            ndarray<unsigned,1> fv = psalg::extremes(_entry.contents(fn));
+            if (fv[0]<v[0]) v[0]=fv[0];
+            if (fv[1]>v[1]) v[1]=fv[1];
+          }
+        }
+        else
+          v = psalg::extremes(_entry.content());
+        control.full_range_setup((double(v[0])-p)/n,
+                                 (double(v[1])-p)/n);
+      } break;
+    case ImageColorControl::Dynamic:
+      { unsigned vshape[] = {5};
+        ndarray<double,1> v(vshape);
+        if (mask)
+          v = psalg::moments(_entry.content(), mask->row_mask(), mask->all_mask(),p);
+        else if (d.nframes()) {
+          memset(v.data(),0,v.size()*sizeof(unsigned));
+          for(unsigned fn=0; fn<d.nframes(); fn++) {
+            ndarray<double,1> fv = psalg::moments(_entry.contents(fn),p);
+            for(unsigned j=0; j<v.size(); j++)
+              v[j] += fv[j];
+          }
+        }
+        else
+          v = psalg::moments(_entry.content(),p);
+        control.dynamic_range_setup(v[0],v[1]/n,v[2]/(n*n));
+      } break;
+    default: break;
+    }
+
+    float p0 = control.pedestal();
+    float s  = control.scale();
+    bool linear = control.linear();
+    
     p += float(n)*p0;
     
     if (linear) {
       n *= double(s);
 
       ndarray<const uint32_t,2> src(_entry.content());	      
-      for(unsigned k=0; k<_ny; k++) {			      
+      for(unsigned k=0; k<d.nbinsy(); k++) {			      
 	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
-	for(unsigned j=_x0; j<_x0+_nx; j++) {		      
-	  unsigned sh = unsigned(LINTRANS(src[_y0+k][j]));	      
+	for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	  unsigned sh = unsigned(LINTRANS(src[k][j]));	      
 	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	}						      
       }
@@ -149,10 +201,10 @@ QImage*  QtImage::image(float p0, float s, bool linear)
       const double invlogs = 256./(log(s)+log(256));
 
       ndarray<const uint32_t,2> src(_entry.content());	      
-      for(unsigned k=0; k<_ny; k++) {			      
+      for(unsigned k=0; k<d.nbinsy(); k++) {			      
 	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
-	for(unsigned j=_x0; j<_x0+_nx; j++) {		      
-	  unsigned sh = unsigned(LOGTRANS(src[_y0+k][j]));	      
+	for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	  unsigned sh = unsigned(LOGTRANS(src[k][j]));	      
 	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	}						      
       }
@@ -189,7 +241,7 @@ float QtImage::value(unsigned x,unsigned y) const // units are bins
   float n = entry().desc().isnormalized() ? _entry.info(EntryImage::Normalization) : 1;
   if (!d.countmode())
     n = (n ? n : 1)*d.ppxbin()*d.ppybin();
-  return (float(_entry.content(_x0+x,_y0+y))-p)/n;
+  return (float(_entry.content(x,y))-p)/n;
  }
 
 const AxisInfo* QtImage::xinfo() const { return _xinfo; }
@@ -207,8 +259,8 @@ void QtImage::set_color_table(const QVector<QRgb>& colors)
 void QtImage::set_grid_scale(double scalex, double scaley)
 {
   const DescImage& d = static_cast<const EntryImage&>(entry()).desc();
-  _xgrid->set_scale(scalex*d.binx(_x0),
-                    scalex*double(d.ppxbin()*_nx));
-  _ygrid->set_scale(scaley*d.biny(_y0),
-                    scaley*double(d.ppybin()*_ny));
+  _xgrid->set_scale(scalex*d.binx(0),
+                    scalex*double(d.ppxbin()*d.nbinsx()));
+  _ygrid->set_scale(scaley*d.biny(0),
+                    scaley*double(d.ppybin()*d.nbinsy()));
 }

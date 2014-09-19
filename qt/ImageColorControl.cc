@@ -6,9 +6,11 @@
 #include <QtGui/QPushButton>
 #include <QtGui/QRadioButton>
 #include <QtGui/QCheckBox>
+#include <QtGui/QComboBox>
 #include <QtGui/QButtonGroup>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QVBoxLayout>
+#include <QtGui/QStackedWidget>
 
 #include <math.h>
 #include <vector>
@@ -122,19 +124,23 @@ const QVector<QRgb>& ImageColorControl::current_color_table()
 ImageColorControl::ImageColorControl(QWidget* parent,
 				     const QString&  title) :
   QGroupBox(title,parent),
-  _scale (1),
-  _pedestal(0),
-  _scale_min(new QLineEdit),
-  _scale_mid(new QLabel),
-  _scale_max(new QLineEdit)
+  _scale_min     (new QLineEdit),
+  _scale_mid     (new QLabel),
+  _scale_max     (new QLineEdit),
+  _range         (Fixed)
 {
+  for(unsigned i=0; i<NRanges; i++) {
+    _scale   [i] = 1;
+    _pedestal[i] = 0;
+  }
+
   _scale_min->setMaximumWidth(60);
   _scale_min->setValidator(new QDoubleValidator(_scale_min));
-  _scale_min->setText(QString::number(_pedestal));
+  _scale_min->setText(QString::number(_pedestal[_range]));
 
   _scale_max->setMaximumWidth(60);
   _scale_max->setValidator(new QDoubleValidator(_scale_max));
-  //  _scale_max->setText(QString::number(_pedestal));
+  //  _scale_max->setText(QString::number(_pedestal[_range]));
 
   _scale_min->setAlignment(::Qt::AlignLeft);
   _scale_mid->setAlignment(::Qt::AlignHCenter);
@@ -142,9 +148,9 @@ ImageColorControl::ImageColorControl(QWidget* parent,
 
   setAlignment(::Qt::AlignHCenter);
 
-  QPushButton* autoB = new QPushButton("Reset");
-  QPushButton* zoomB = new QPushButton("Zoom");
-  QPushButton* panB  = new QPushButton("Pan");
+  QPushButton* resetB = new QPushButton("Reset");
+  QPushButton* zoomB  = new QPushButton("Zoom");
+  QPushButton* panB   = new QPushButton("Pan");
 
   QImage palette(256,16,QImage::Format_Indexed8);
   { unsigned char* dst = palette.bits();
@@ -164,14 +170,36 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   *_color_table = _palettes.palette(_palettes.num_palettes()-1);
   paletteButtons[_palettes.num_palettes()-1]->setChecked(true);
 
-  _logscale = new QCheckBox("Log Scale");
-  _logscale->setChecked(false);
+  QStringList ranges;
+  ranges << "Fixed";
+  ranges << "Full";
+  ranges << "Dynamic";
+  QComboBox* rangebox  = new QComboBox;
+  rangebox->addItems(ranges);
+  rangebox->setCurrentIndex(0);
+
+  QStackedWidget* stack = new QStackedWidget;
+  { _logscale_fixed = new QCheckBox("Log Scale");
+    _logscale_fixed->setChecked(false);
+    stack->addWidget(_logscale_fixed); }
+  { _logscale_full = new QCheckBox("Log Scale");
+    _logscale_full->setChecked(false);
+    stack->addWidget(_logscale_full); }
+  { QWidget* w = new QWidget;
+    QHBoxLayout* h = new QHBoxLayout;
+    _nsigma = new QLineEdit("3");
+    _nsigma->setMaximumWidth(30);
+    *new QDoubleValidator(_nsigma);
+    h->addWidget(_nsigma);
+    h->addWidget(new QLabel("sigma"));
+    w->setLayout(h);
+    stack->addWidget(w); }
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
     layout1->addWidget(zoomB);
-    layout1->addWidget(autoB);
+    layout1->addWidget(resetB);
     layout1->addWidget(panB);
     layout1->addStretch();
     layout->addLayout(layout1); }
@@ -196,18 +224,25 @@ ImageColorControl::ImageColorControl(QWidget* parent,
       layout1->addLayout(layout2); }
     layout1->addStretch();
     layout->addLayout(layout1); }
-  layout->addWidget(_logscale,0,::Qt::AlignCenter);
+  { QHBoxLayout* layout1 = new QHBoxLayout;
+    layout1->addStretch();
+    layout1->addWidget(rangebox);
+    layout1->addWidget(stack);
+    layout->addLayout(layout1); }
   setLayout(layout);
 
-  connect(autoB , SIGNAL(clicked(bool)), this, SLOT(set_auto(bool)));
+  connect(resetB, SIGNAL(clicked(bool)), this, SLOT(reset(bool)));
   connect(zoomB , SIGNAL(clicked()), this, SLOT(zoom()));
   connect(panB  , SIGNAL(clicked()), this, SLOT(pan ()));
   connect(_paletteGroup, SIGNAL(buttonClicked(int)), this, SLOT(set_palette(int)));
   connect(_scale_min, SIGNAL(editingFinished()), this, SLOT(scale_changed()));
   connect(_scale_max, SIGNAL(editingFinished()), this, SLOT(scale_changed()));
-  connect(_logscale, SIGNAL(clicked()), this, SIGNAL(windowChanged()));
+  connect(_logscale_fixed, SIGNAL(clicked()), this, SIGNAL(windowChanged()));
+  connect(_logscale_full , SIGNAL(clicked()), this, SIGNAL(windowChanged()));
   connect(this  , SIGNAL(windowChanged()), this, SLOT(show_scale()));
-
+  connect(this  , SIGNAL(scaleChanged()), this, SLOT(show_scale()));
+  connect(rangebox, SIGNAL(currentIndexChanged(int)), stack, SLOT(setCurrentIndex(int)));
+  connect(rangebox, SIGNAL(currentIndexChanged(int)), this, SLOT(range_changed(int)));
   show_scale();
 }   
 
@@ -217,38 +252,50 @@ ImageColorControl::~ImageColorControl()
 
 void ImageColorControl::save(char*& p) const
 {
-  XML_insert(p, "double", "scale", QtPersistent::insert(p,_scale) );
+  for(unsigned i=0; i<NRanges; i++) {
+    XML_insert(p, "double", "_scale", QtPersistent::insert(p,_scale[i]) );
+    XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,double(_pedestal[i])) );
+  }
   XML_insert(p, "QButtonGroup", "_paletteGroup", QtPersistent::insert(p,_paletteGroup->checkedId()) );
-  XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,double(_pedestal)) );
-  XML_insert(p, "QCheckBox", "_logscale", QtPersistent::insert(p,_logscale->isChecked()) );
+  XML_insert(p, "QCheckBox", "_logscale_fixed", QtPersistent::insert(p,_logscale_fixed->isChecked()) );
+  XML_insert(p, "QCheckBox", "_logscale_full" , QtPersistent::insert(p,_logscale_full->isChecked()) );
 }
 
 void ImageColorControl::load(const char*& p)
 {
   XML_iterate_open(p,tag)
     if (tag.name == "scale")
-      _scale = QtPersistent::extract_d(p);
+      QtPersistent::extract_d(p,_scale);
+    else if (tag.name == "_pedestal")
+      QtPersistent::extract_d(p,_pedestal);
     else if (tag.name == "_paletteGroup") {
       int palette = QtPersistent::extract_i(p);
       _paletteGroup->button(palette)->setChecked(true);
       set_palette(palette);
     }
-    else if (tag.name == "_pedestal")
-      _pedestal     = QtPersistent::extract_d(p);
-    else if (tag.name == "_logscale")
-      _logscale->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_logscale_fixed")
+      _logscale_fixed->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_logscale_full")
+      _logscale_full ->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(ImageColorControl,tag);
 
   show_scale();
   emit windowChanged();
 }
 
-bool   ImageColorControl::linear() const { return !_logscale->isChecked(); }
+bool   ImageColorControl::linear() const 
+{
+  switch(_range) {
+  case Fixed   : return !_logscale_fixed->isChecked();
+  case Full    : return !_logscale_full ->isChecked();
+  default:       break;
+  }
+  return true;
+}
 
-float ImageColorControl::pedestal() const { return _pedestal; }
+float ImageColorControl::pedestal() const { return _pedestal[_range]; }
 
-//float ImageColorControl::scale() const { return powf(2,0.5*float(-_scale)); }
-float ImageColorControl::scale() const { return _scale; }
+float ImageColorControl::scale() const { return _scale[_range]; }
 
 const QVector<QRgb>& ImageColorControl::color_table() const { return *_color_table; }
 
@@ -263,39 +310,67 @@ void   ImageColorControl::set_palette(int p)
 void   ImageColorControl::show_scale()
 {
   unsigned v = static_cast<unsigned>(0xff*scale());
-  if (_logscale->isChecked()) {
-    _scale_min->setText(QString::number(_pedestal+1));
-    _scale_mid->setText(QString::number(_pedestal+int(sqrt(v)+0.5)));
-    _scale_max->setText(QString::number(_pedestal+v));
+  double   p = _pedestal[_range];
+  if (!linear()) {
+    _scale_min->setText(QString::number(p+1));
+    _scale_mid->setText(QString::number(p+int(sqrt(v)+0.5)));
+    _scale_max->setText(QString::number(p+v));
   }
   else {
-    _scale_min->setText(QString::number(_pedestal));
-    _scale_mid->setText(QString::number(_pedestal+(v>>1)));
-    _scale_max->setText(QString::number(_pedestal+v));
+    _scale_min->setText(QString::number(p));
+    _scale_mid->setText(QString::number(p+(v>>1)));
+    _scale_max->setText(QString::number(p+v));
   }
 }
 
-void   ImageColorControl::set_auto(bool s)
+void   ImageColorControl::reset(bool s)
 {
-  _scale = 1;
+  _pedestal[_range] = 0;
+  _scale   [_range] = 1;
   emit windowChanged();
 }
 
 void   ImageColorControl::zoom ()
 {
-  _scale /= sqrt(2);
+  _scale[_range] /= sqrt(2);
   emit windowChanged();
 }
 
 void   ImageColorControl::pan ()
 {
-  _scale *= sqrt(2);
+  _scale[_range] *= sqrt(2);
   emit windowChanged();
 }
 
 void   ImageColorControl::scale_changed()
 {
-  _pedestal = _scale_min->text().toFloat();
-  _scale    = (_scale_max->text().toFloat()-_pedestal)/255.;
+  _pedestal[_range] = _scale_min->text().toDouble();
+  _scale   [_range] = (_scale_max->text().toDouble()-_pedestal[_range])/255.;
   emit windowChanged();
+}
+
+void   ImageColorControl::range_changed(int m)
+{
+  _range = (Range)m;
+  emit windowChanged();
+}
+
+ImageColorControl::Range   ImageColorControl::range() const { return _range; }
+
+void ImageColorControl::full_range_setup(double zmin, double zmax)
+{
+  _pedestal[Full] = zmin;
+  _scale   [Full] = (zmax-zmin)/255.;
+  emit scaleChanged();
+}
+
+void ImageColorControl::dynamic_range_setup(double n, double sum, double sqsum)
+{
+  double mean = sum/n;
+  double rang = sqrt(sqsum/n - mean*mean);
+  double nsgm = _nsigma->text().toDouble();
+  rang *= nsgm;
+  _pedestal[Dynamic] = mean-rang;
+  _scale   [Dynamic] = 2*rang/255.;
+  emit scaleChanged();
 }

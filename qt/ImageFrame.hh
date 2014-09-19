@@ -31,7 +31,7 @@ namespace Ami {
                        public ImageOffload {
       Q_OBJECT
     public:
-      ImageFrame(QWidget*, const ImageColorControl&);
+      ImageFrame(QWidget*, ImageColorControl&);
       ~ImageFrame();
     public:
       void attach(QtImage*);

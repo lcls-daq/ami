@@ -12,6 +12,7 @@
 #include "ami/qt/OffloadEngine.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
+#include "ami/qt/QtPStack.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/event/Calib.hh"
 #include "ami/server/AnalysisServerManager.hh"
@@ -30,22 +31,23 @@ using namespace std;
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s -p <xtc path>\n"
-	  "         [-f <path for save/load files>]\n"
-	  "         [-L <user plug-in path>]\n"
-	  "         [-o <filename for debugging messages>]\n"
-	  "         [-e <filename for error messages>]\n"
-          "         [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
-          "         [-D (post detector diagnostics)]\n"
-          "         [-N <threads> (set parallel processing threads, default=1)]\n"
-          "         [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
-          "         [-S (use scroll bars)]\n"
-	  "         [-l (live read mode)]\n"
-	  "         [-t (calib test mode)]\n"
-	  "         [-Y (disable synchronous image locking)]\n"
-          "         [-Z (disable image render offload)]\n"
-	  "         [-T (test mode)]\n"
-          "         [-E (expert mode/movie option)]\n", 
+	  "Usage: %s [-p <xtc path>]\n"
+	  "          [-f <path for save/load files>]\n"
+	  "          [-e <filename for error messages>]\n"
+	  "          [-o <filename for debugging messages>]\n"
+	  "          [-l (live read mode)]\n"
+	  "          [-t (calib test mode)]\n"
+          "          [-A (attach dialogs rather than popup)]\n"
+          "          [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
+          "          [-D (post detector diagnostics)]\n"
+          "          [-E (expert mode/movie option)]\n"
+	  "          [-L <user plug-in path>]\n"
+          "          [-N <threads> (set parallel processing threads, default=1)]\n"
+          "          [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
+          "          [-S (use scroll bars)]\n"
+	  "          [-T (test mode)]\n"
+	  "          [-Y (disable synchronous image locking)]\n"
+          "          [-Z (disable image render offload)]\n",
           progname,
           Ami::Qt::ImageColorControl::palette_set().c_str());
 }
@@ -126,10 +128,13 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:C:L:N:lDER::StTWYZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:AC:L:N:lDER::StTWYZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
+      break;
+    case 'A':
+      Ami::Qt::QtPStack::attach(true);
       break;
     case 'C':
       if (!Ami::Qt::ImageColorControl::parse_palette_set(optarg)) {

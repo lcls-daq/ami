@@ -141,6 +141,12 @@ void QtPersistent::insert(char*& p, void* b, int len)
     p += sprintf(p, "%02hhx", *bp);
 }
 
+void QtPersistent::insert(char*& p, double* s, unsigned n)
+{
+  for(unsigned i=0; i<n; i++)
+    p += sprintf(p,"%g,",s[i]);
+}
+
 StartTag QtPersistent::extract_tag(const char*& p)
 {
   while( *p++ != '<' ) ;
@@ -207,3 +213,15 @@ void* QtPersistent::extract_op(const char*& p)
   }
   return buff;
 }
+
+unsigned QtPersistent::extract_d(const char*& p, double* s)
+{
+  char* endPtr;
+  unsigned n=0;
+  while(*p != '<') {
+    s[n++] = strtod(p, &endPtr);
+    p = endPtr+1;
+  }
+  return n;
+}
+

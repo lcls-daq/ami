@@ -13,6 +13,7 @@
 
 #include "ami/qt/AbsClient.hh"
 
+#include "ami/qt/QtPStack.hh"
 #include "ami/data/Cds.hh"
 
 #include <QtGui/QHBoxLayout>
@@ -66,7 +67,8 @@ namespace Ami {
     signals:
       void description_changed(int);
     protected:
-      void              addWidget(QWidget*);
+      void              addWidget (QWidget*);
+      void              addOverlay(QWidget*);
       Ami::Qt::Display& display  ();
       const Ami::Qt::Display& display  () const;
     protected:
@@ -112,12 +114,15 @@ namespace Ami {
 
     public slots:
       void set_chrome_visible(bool);
+      void hide_stack();
     protected:
       void paintEvent(QPaintEvent*);
+
+      QtPStack* _stack;
     private:
       QLayout*     _layout;
       QVBoxLayout* _layout3;
-      QHBoxLayout* _layout4;
+      //      QHBoxLayout* _layout4;
       bool         _chrome_changed;
 
     private:

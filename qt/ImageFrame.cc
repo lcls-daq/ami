@@ -36,7 +36,7 @@ static const int CanvasSizeDefault  = 512;
 static const int CanvasSizeIncrease = 4;
 
 ImageFrame::ImageFrame(QWidget* parent,
-		       const ImageColorControl& control) : 
+		       ImageColorControl& control) : 
   QWidget     (parent), 
   _engine     (*this, control),
   _canvas     (new QLabel),

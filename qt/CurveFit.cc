@@ -109,6 +109,7 @@ CurveFit::CurveFit(QWidget* parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+  layout->addStretch();
   setLayout(layout);
 
   connect(loadB     , SIGNAL(clicked()),      this, SLOT(load_file()));
@@ -116,6 +117,7 @@ CurveFit::CurveFit(QWidget* parent,
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
 
   _scalar_desc->post(this, SLOT(add_post()));
 }

@@ -16,10 +16,10 @@ namespace Ami {
     class OffloadEngine : public QObject {
       Q_OBJECT
     public:
-      OffloadEngine(ImageOffload&, const ImageColorControl&);
+      OffloadEngine(ImageOffload&, ImageColorControl&);
       virtual ~OffloadEngine();
     public:
-      const ImageColorControl& control() const { return _control; }
+      ImageColorControl& control() const { return _control; }
       QtImage* qimage() const { return _image; }
       void     qimage(QtImage*);
       void     render_sync();
@@ -36,7 +36,7 @@ namespace Ami {
     private:
       ImageOffload&            _offload;
       QtImage*                 _image;
-      const ImageColorControl& _control;
+      ImageColorControl&       _control;
       Task*                    _task;
       bool                     _pending;
       friend class RenderRoutine;

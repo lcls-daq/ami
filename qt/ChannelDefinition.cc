@@ -126,7 +126,8 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     else {
       _refBox = 0;
     }
-    QGroupBox* plot_box = new QGroupBox("Plot");
+    QGroupBox* plot_box = new QGroupBox(name);
+    plot_box->setAlignment(::Qt::AlignHCenter);
     QVBoxLayout* layout = new QVBoxLayout;
     { QHBoxLayout* layout1 = new QHBoxLayout;
       layout1->addWidget(new QLabel("Normalize to"));
@@ -183,6 +184,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
     meditB->hide();
   }
 
+  l->addStretch();
   setLayout(l);
 
   connect(this    , SIGNAL(reference_loaded(bool)), refB, SLOT(setEnabled(bool)));
@@ -193,6 +195,7 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
   connect(applyB  , SIGNAL(clicked()), this, SLOT(apply()));
   connect(_filter , SIGNAL(changed()), this, SLOT(apply()));
   connect(closeB  , SIGNAL(clicked()), this, SLOT(hide()));
+  connect(closeB  , SIGNAL(clicked()), this, SIGNAL(closed()));
   connect(scaleB  , SIGNAL(clicked()), this, SLOT(set_scale()));
   connect(mloadB  , SIGNAL(clicked()), this, SLOT(load_mask()));
   connect(meditB  , SIGNAL(clicked()), this, SLOT(edit_mask()));

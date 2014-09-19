@@ -29,33 +29,43 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
+      enum Range { Fixed, Full, Dynamic, NRanges };
+      Range  range   () const;  
       bool   linear  () const;
-      float  pedestal() const;
-      float  scale   () const;
+      float  pedestal() const;  // Fixed
+      float  scale   () const;  // Fixed
+      float  nsigma  () const;  // Auto2
       const QVector<QRgb>& color_table() const;
+    public:
+      void   full_range_setup   (double zmin, double zmax);
+      void   dynamic_range_setup(double n, double sum, double sqsum);
     public:
       static std::string palette_set();
       static bool parse_palette_set(const char*);
       static const QVector<QRgb>& current_color_table();
     public slots:
       void show_scale();
-      void set_auto(bool);
+      void reset(bool);
       void zoom();
       void pan ();
       void set_palette(int);
       void scale_changed();
+      void range_changed(int);
     signals:
+      void scaleChanged();
       void windowChanged();
     private:
-      double  _scale;
-      float   _pedestal;
-      QString _title;
+      double         _scale   [NRanges];
+      double         _pedestal[NRanges];
       QVector<QRgb>* _color_table;
-      QLineEdit* _scale_min;
-      QLabel* _scale_mid;
-      QLineEdit* _scale_max;
-      QButtonGroup* _paletteGroup;
-      QCheckBox* _logscale;
+      QLineEdit*     _scale_min;
+      QLabel*        _scale_mid;
+      QLineEdit*     _scale_max;
+      QButtonGroup*  _paletteGroup;
+      Range          _range;
+      QCheckBox* _logscale_fixed;
+      QCheckBox* _logscale_full;
+      QLineEdit* _nsigma;
     };
   };
 };

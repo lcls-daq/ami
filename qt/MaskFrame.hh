@@ -28,7 +28,7 @@ namespace Ami {
                       public ImageOffload {
       Q_OBJECT
     public:
-      MaskFrame(MaskDisplay*, const ImageXYControl&, const ImageColorControl&);
+      MaskFrame(MaskDisplay*, const ImageXYControl&, ImageColorControl&);
       ~MaskFrame();
     public:
       void attach_bkg   (QtImage&);

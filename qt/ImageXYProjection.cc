@@ -32,6 +32,7 @@
 #include <QtGui/QComboBox>
 #include <QtGui/QMessageBox>
 #include <QtGui/QTabWidget>
+#include <QtGui/QStackedWidget>
 
 #include <sys/socket.h>
 #include <limits.h>
@@ -41,7 +42,7 @@ using namespace Ami::Qt;
 enum { PlotHistogram, PlotProjection, PlotFunction };
 
 
-ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
+ImageXYProjection::ImageXYProjection(QWidget*           parent,
 				     ChannelDefinition* channels[],
 				     unsigned           nchannels, 
 				     ImageFrame&        frame) :
@@ -50,6 +51,14 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   _nchannels(nchannels),
   _title    (new QLineEdit("Projection"))
 {
+  _layout(frame);
+}
+
+void ImageXYProjection::_layout(ImageFrame& frame)
+{
+  ChannelDefinition** channels = _channels;
+  unsigned           nchannels = _nchannels;
+
   _rect = new RectROIDesc(*this,frame,nchannels);
 
   setWindowTitle("Image Projection");
@@ -99,6 +108,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+  layout->addStretch();
 
   setLayout(layout);
 
@@ -108,6 +118,7 @@ ImageXYProjection::ImageXYProjection(QtPWidget*         parent,
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(zoomB     , SIGNAL(clicked()),      this, SLOT(zoom()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
   connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
   for(unsigned i=0; i<_nchannels; i++)
     connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));

@@ -47,7 +47,7 @@ namespace Ami {
 using namespace Ami::Qt;
 
 OffloadEngine::OffloadEngine(ImageOffload& offload,
-                             const ImageColorControl& control) :
+                             ImageColorControl& control) :
   _offload(offload),
   _image  (0),
   _control(control),
@@ -85,7 +85,7 @@ void OffloadEngine::render()
     if (_enabled)
       _task->call( new RenderRoutine(this) );
     else {
-      QImage* output = _image->image(_control.pedestal(),_control.scale(),_control.linear());
+      QImage* output = _image->image(_control);
       if (output) {
         _offload.render_image(*output);
         _offload.render_pixmap(*output);
@@ -98,7 +98,7 @@ void OffloadEngine::render()
 void OffloadEngine::_start_render()
 {
   if (_image) {
-    QImage* output = _image->image(_control.pedestal(),_control.scale(),_control.linear());
+    QImage* output = _image->image(_control);
           
     if (output) {
       _pending=false;

@@ -2,6 +2,8 @@
 
 #include <QtCore/QPoint>
 #include <QtGui/QCloseEvent>
+#include <QtGui/QStackedWidget>
+#include <QtGui/QVBoxLayout>
 
 #include <stdio.h>
 
@@ -13,8 +15,14 @@ QtPWidget::QtPWidget() :
 {
 }
 
+QtPWidget::QtPWidget(int) : 
+  QWidget(0),
+  _parent(0),
+  _initial_hide(false)
+{
+}
+
 QtPWidget::QtPWidget(QWidget* parent) : 
-  //  QWidget(parent,::Qt::Window) 
   QWidget(0),
   _parent(parent),
   _initial_hide(false)
@@ -78,8 +86,10 @@ void QtPWidget::front()
   //  if (_parent)
   //    move(_parent->pos());
 
-  if (!isVisible())
+  if (!isVisible()) {
+    emit opened();
     show();
+  }
   else {
     raise();
     activateWindow();
@@ -88,6 +98,7 @@ void QtPWidget::front()
 
 void QtPWidget::closeEvent(QCloseEvent* event)
 {
+  printf("QtPW close\n");
   event->accept();
   emit closed(this);
 }

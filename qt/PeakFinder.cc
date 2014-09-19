@@ -95,11 +95,13 @@ PeakFinder::PeakFinder(QWidget* parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+  layout->addStretch();
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
   connect(_accumulate, SIGNAL(clicked()),     this, SLOT(update_agg()));
   connect(channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
   for(unsigned i=0; i<_nchannels; i++)

@@ -29,39 +29,38 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
   { QPushButton* rectB = new QPushButton("X / Y Selection");
     addWidget(rectB);
     _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(rectB, SIGNAL(clicked()), _xyproj, SLOT(front())); }
+    _stack->add(rectB,_xyproj);
+    connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
     addWidget(cylB);
     _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cylB, SIGNAL(clicked()), _rfproj, SLOT(front())); }
+    _stack->add(cylB,_rfproj);
+    connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* cntB = new QPushButton("Contour Projection");
     addWidget(cntB);
     _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*wd.plot());
-    connect(cntB, SIGNAL(clicked()), _cntproj, SLOT(front())); }
+    _stack->add(cntB,_cntproj);
+    connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* hitB = new QPushButton("Hit Finder");
     addWidget(hitB);
     _hit = new PeakFinder(this,_channels,NCHANNELS);
-    connect(hitB, SIGNAL(clicked()), _hit, SLOT(front()));}
+    _stack->add(hitB,_hit);
+    connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* blobB = new QPushButton("Blob Finder");
     addWidget(blobB);
     _blob = new BlobFinder(this,_channels,NCHANNELS,*wd.plot());
-    connect(blobB, SIGNAL(clicked()), _blob, SLOT(front()));}
+    _stack->add(blobB,_blob);
+    connect(_blob   , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* dropB = new QPushButton("Droplet");
     addWidget(dropB);
     _droplet = new Droplet(this,_channels,NCHANNELS,*wd.plot());
-    connect(dropB, SIGNAL(clicked()), _droplet, SLOT(front()));}
-
-  connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_blob   , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_droplet, SIGNAL(changed()), this, SIGNAL(changed()));
+    _stack->add(dropB,_droplet);
+    connect(_droplet, SIGNAL(changed()), this, SIGNAL(changed())); }
 }
 
 Ami::Qt::ImageClient::~ImageClient() {}

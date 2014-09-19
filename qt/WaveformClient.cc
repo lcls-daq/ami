@@ -22,24 +22,23 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
   { QPushButton* edgesB = new QPushButton("Edges");
     addWidget(edgesB);
     _edges = new EdgeFinder(this,_channels,NCHANNELS,wd,this);
-    connect(edgesB, SIGNAL(clicked()), _edges, SLOT(front())); }
+    _stack->add(edgesB,_edges);
+    connect(_edges  , SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* cursorsB = new QPushButton("Cursors");
     addWidget(cursorsB);
     _cursors = new CursorsX(this,_channels,NCHANNELS,wd, this);
-    connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(front())); }
+    _stack->add(cursorsB,_cursors);
+    connect(_cursors, SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* fitB = new QPushButton("Waveform Fit");
     addWidget(fitB);
     _fits = new CurveFit(this,_channels,NCHANNELS,wd);
-    connect(fitB, SIGNAL(clicked()), _fits, SLOT(front())); }
+    _stack->add(fitB,_fits);
+    connect(_fits   , SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* fftB = new QPushButton("Waveform FFT");
     addWidget(fftB);
     _fft = new FFT(this,_channels,NCHANNELS);
-    connect(fftB, SIGNAL(clicked()), _fft, SLOT(front())); }
-
-  connect(_cursors, SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_edges  , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_fits   , SIGNAL(changed()), this, SIGNAL(changed()));
-  connect(_fft    , SIGNAL(changed()), this, SIGNAL(changed()));
+    _stack->add(fftB,_fft);
+    connect(_fft    , SIGNAL(changed()), this, SIGNAL(changed())); }
 }
 
 WaveformClient::~WaveformClient() {}

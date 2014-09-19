@@ -32,7 +32,7 @@ namespace Ami {
                               public OverlayParent {
       Q_OBJECT
     public:
-      ImageXYProjection(QtPWidget* parent,
+      ImageXYProjection(QWidget* parent,
 			ChannelDefinition* channels[], unsigned nchannels, ImageFrame&);
       ~ImageXYProjection();
     public:
@@ -57,6 +57,8 @@ namespace Ami {
       void change_channel();
     signals:
       void changed();
+    private:
+      void _layout(ImageFrame&);
     private:
       ChannelDefinition** _channels;
       unsigned _nchannels;

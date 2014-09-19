@@ -45,8 +45,6 @@ typedef Pds::DetInfo DI;
 
 static const int BufferSize = 0x40000; // 256 kB
 
-static const bool oldLayout=false;
-
 static bool _use_scroll_area=false;
 
 Ami::Qt::Client::Client(QWidget*            parent,
@@ -68,6 +66,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _niovload        (5),
   _niovread        (5),
   _iovload         (new iovec[_niovload]),
+  _stack           (new QtPStack),
   _layout          (new QVBoxLayout),
   _chrome_changed  (false),
   _sem             (new Semaphore(Semaphore::EMPTY)),
@@ -81,7 +80,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
 
   setAttribute(::Qt::WA_DeleteOnClose, false);
 
-  _control = new Control(*this,request_rate,oldLayout);
+  _control = new Control(*this,request_rate,false);
   _status  = new Status;
 
   QButtonGroup* showPlotBoxes = new QButtonGroup;
@@ -98,15 +97,13 @@ Ami::Qt::Client::Client(QWidget*            parent,
   }
   
   QHBoxLayout* layout = new QHBoxLayout;
-  { _layout3 = new QVBoxLayout;
-    if (!oldLayout) {
-      { QGroupBox* ctrlBox = new QGroupBox("Control");
-        QVBoxLayout* layout1 = new QVBoxLayout;
-        layout1->addWidget(_control);
-        layout1->addWidget(_status); 
-        ctrlBox->setLayout(layout1);
-        _layout3->addWidget(ctrlBox); }
-    }
+  { QVBoxLayout* layout3 = new QVBoxLayout;
+    { QGroupBox* ctrlBox = new QGroupBox("Control");
+      QVBoxLayout* layout1 = new QVBoxLayout;
+      layout1->addWidget(_control);
+      layout1->addWidget(_status); 
+      ctrlBox->setLayout(layout1);
+      layout3->addWidget(ctrlBox); }
     { QGroupBox* chanBox = new QGroupBox("Channels");
       QVBoxLayout* layout1 = new QVBoxLayout;
       QPushButton* chanB[NCHANNELS];
@@ -118,39 +115,30 @@ Ami::Qt::Client::Client(QWidget*            parent,
 					     *_frame, color[i], init, refnames);
 	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
 	chanB[i]->setPalette(QPalette(color[i]));
-	{ _layout4 = new QHBoxLayout;
+	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
 	  connect(box, SIGNAL(toggled(bool)), _channels[i], SLOT(show_plot(bool)));
 	  connect(_channels[i], SIGNAL(show_plot_changed(bool)), box, SLOT(setChecked(bool)));
 	  box->setChecked( init );
-	  _layout4->addWidget(box);
-	  _layout4->addWidget(chanB[i]);
-	  layout1->addLayout(_layout4);
-	  connect(chanB[i], SIGNAL(clicked()), _channels[i], SLOT(front()));
+	  layout4->addWidget(box);
+	  layout4->addWidget(chanB[i]);
+	  layout1->addLayout(layout4);
+          _stack->add(chanB[i],_channels[i]);
 	  connect(_channels[i], SIGNAL(changed()), this, SIGNAL(changed()));
 	  connect(_channels[i], SIGNAL(newplot(bool)), box , SLOT(setChecked(bool))); 
 	  connect(box, SIGNAL(toggled(bool)), this, SLOT(update_configuration(bool)));
 	}
       }
       chanBox->setLayout(layout1);
-      _layout3->addWidget(chanBox); }
-    _layout3->addLayout(_layout);
-    _layout3->addStretch();
-    layout->addLayout(_layout3,0); }
-  if (oldLayout) {
-    { QVBoxLayout* layout1 = new QVBoxLayout;
-      { QHBoxLayout* layout2 = new QHBoxLayout;
-        layout2->addWidget(_control);
-        layout2->addStretch();
-        layout2->addWidget(_status);
-        layout1->addLayout(layout2); }
-      layout1->addWidget(_frame->widget());
-      layout->addLayout(layout1,1); }
-  }
-  else {
-    layout->addWidget(_frame->widget(),1);
-  }
+      layout3->addWidget(chanBox); }
+    layout3->addLayout(_layout);
+    layout3->addStretch();
+    layout->addLayout(_layout3=layout3); }
+  layout->addWidget(_frame->widget(),1);
+
+  layout->addWidget(_stack);
+  connect(_stack, SIGNAL(hidden()), this, SLOT(hide_stack()));
 
   if (_use_scroll_area) {
     layout->addStretch(2);
@@ -527,7 +515,15 @@ void Ami::Qt::Client::set_chrome_visible(bool v)
 {
   _chrome_changed = true;
   QtUtils::setChildrenVisible(_layout3,v);
-  QtUtils::setChildrenVisible(_layout ,v);
+  // QtUtils::setChildrenVisible(_layout ,v);
+  _stack->setVisible(v);
+  updateGeometry();
+  resize(minimumWidth(),minimumHeight());
+}
+
+void Ami::Qt::Client::hide_stack()
+{
+  _chrome_changed = true;
   updateGeometry();
   resize(minimumWidth(),minimumHeight());
 }

@@ -18,8 +18,7 @@
 
 typedef std::list<ndarray<double,1> > PLIST;
 
-static const unsigned STEP_SIZE = 50;
-
+#if 0
 static PLIST find_edges(const Ami::EntryWaveform& e,
 			const Ami::EdgeFinderConfig&,
 			unsigned index);
@@ -32,6 +31,7 @@ static void _add_edge(const double*,
 		      unsigned                start, 
 		      double&                 last,
 		      PLIST&                  result);
+#endif
 
 using namespace Ami;
 using Ami::XML::QtPersistent;
@@ -138,6 +138,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   return *_entry;
 }
 
+#if 0
 PLIST find_edges(const EntryWaveform& e,
 		 const EdgeFinderConfig& c,
 		 unsigned index)
@@ -220,6 +221,7 @@ void _add_edge(const double*           v,
     last = thisx;
   }
 }
+#endif
 
 void EdgeFinder::_invalid() {}
 

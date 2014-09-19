@@ -3,6 +3,7 @@
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/OffloadEngine.hh"
+#include "ami/qt/QtPStack.hh"
 #include "ami/service/Ins.hh"
 #include "ami/service/DataLock.hh"
 #include "ami/qt/QOnline.hh"
@@ -28,6 +29,7 @@ static void usage(char* p)
          "                   to the DSS node data. The user can dynamically change that mapping from the GUI.\n"
          "                   Note that only one process may control the servers.\n"
          "-f <path>      : default path for load/save operations\n"
+         "-A             : attach dialogs rather than popup\n"
          "-F <path>      : file to load initial configuration\n"
          "-C <int>       : color palette choice (0-jette, 1-radiation)\n"
          "-E             : expert mode/movie option\n"
@@ -83,6 +85,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-F")==0) {
       loadfile = argv[++i];
+    }
+    else if (strcmp(argv[i],"-A")==0) {
+      Ami::Qt::QtPStack::attach(true);
     }
     else if (strcmp(argv[i],"-C")==0) {
       Ami::Qt::ImageColorControl::parse_palette_set(argv[++i]);

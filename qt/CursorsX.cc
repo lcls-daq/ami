@@ -150,6 +150,7 @@ CursorsX::CursorsX(QWidget* parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+  layout->addStretch();
   setLayout(layout);
     
   connect(channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
@@ -158,6 +159,7 @@ CursorsX::CursorsX(QWidget* parent,
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
   connect(grabB     , SIGNAL(clicked()),      this, SLOT(grab_cursorx()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(add_cursor()));
   connect(this      , SIGNAL(grabbed()),      this, SLOT(front()));

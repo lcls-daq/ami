@@ -79,11 +79,11 @@ void Ami::Qt::ImageDisplay::_layout()
     QVBoxLayout* layout1 = new QVBoxLayout;
     { QHBoxLayout* hl = new QHBoxLayout;
       hl->addWidget(_menu_bar);
-      hl->addWidget(_time_display=new QLabel("Time: Seconds . nseconds"));
+      hl->addWidget(_time_display=new QLabel("Dec 31, 1969 16:00:00.000"));
       layout1->addLayout(hl); }
     layout1->addWidget(_plot);
     _plotBox->setLayout(layout1);
-    mainLayout->addWidget(_plotBox,1); }
+    mainLayout->addWidget(_plotBox); }
   { QHBoxLayout* layout2 = new QHBoxLayout;
     layout2->addWidget(_units );
     layout2->addWidget(_zrange);

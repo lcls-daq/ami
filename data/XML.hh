@@ -38,15 +38,17 @@ namespace Ami {
       static void insert(char*&, double);
       static void insert(char*&, bool);
       static void insert(char*&, void*, int);
+      static void insert(char*&, double*, unsigned);  // array
       /**
        **  extract data of the return type from the char-stream
        **/
       static Ami::XML::StartTag extract_tag(const char*&);
-      static int     extract_i(const char*&);
-      static double  extract_d(const char*&);
-      static QString extract_s(const char*&);
-      static bool    extract_b(const char*&);
-      static void*   extract_op(const char*&);
+      static int      extract_i(const char*&);
+      static double   extract_d(const char*&);
+      static QString  extract_s(const char*&);
+      static bool     extract_b(const char*&);
+      static void*    extract_op(const char*&);
+      static unsigned extract_d(const char*&,double*);  // array
     };
 
     class StartTag {

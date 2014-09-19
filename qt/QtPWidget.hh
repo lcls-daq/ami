@@ -11,6 +11,7 @@ namespace Ami {
       Q_OBJECT
     public:
       QtPWidget();
+      QtPWidget(int);
       QtPWidget(QWidget* parent);
       virtual ~QtPWidget();
     public:
@@ -21,7 +22,9 @@ namespace Ami {
     protected:
       void closeEvent(QCloseEvent*);
     signals:
+      void opened();
       void closed(QObject*);
+      void closed();
     private:
       QWidget* _parent;
     protected:

@@ -29,7 +29,7 @@ static const int CanvasSizeIncrease = 4;
 
 MaskFrame::MaskFrame(MaskDisplay* parent,
                      const ImageXYControl& xycontrol,
-                     const ImageColorControl& control) : 
+                     ImageColorControl& control) : 
   QWidget(parent), 
   _parent   (parent),
   _engine   (*this,control),

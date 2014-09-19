@@ -117,8 +117,16 @@ void PeakPlot::_layout()
     layout3->addStretch();
     layout->addLayout(_chrome_layout=layout3);
   }    
-  
+
   layout->addWidget(_frame);
+
+#if 0  
+  { QVBoxLayout* l = new QVBoxLayout;
+    l->addWidget(_xyproj); _xyproj->hide();
+    l->addWidget(_rfproj); _rfproj->hide();
+    layout->addLayout(l); }
+#endif
+
   setLayout(layout);
 
   connect(_xyproj , SIGNAL(changed()), this, SLOT(update_configuration()));

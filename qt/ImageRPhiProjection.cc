@@ -15,6 +15,7 @@
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/ControlLog.hh"
+#include "ami/qt/QtPWidgetHost.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescCache.hh"
@@ -104,6 +105,7 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
     layout1->addWidget(closeB);
     layout1->addStretch();
     layout->addLayout(layout1); }
+  layout->addStretch();
   setLayout(layout);
     
   connect(_channelBox, SIGNAL(activated(int)), this, SLOT(set_channel(int)));
@@ -112,6 +114,7 @@ ImageRPhiProjection::ImageRPhiProjection(QtPWidget*         parent,
   connect(plotB     , SIGNAL(clicked()),      this, SLOT(plot()));
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
+  connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
   connect(_channelBox, SIGNAL(currentIndexChanged(int)), this, SLOT(change_channel()));
   for(unsigned i=0; i<_nchannels; i++)
     connect(_channels[i], SIGNAL(agg_changed()), this, SLOT(change_channel()));
