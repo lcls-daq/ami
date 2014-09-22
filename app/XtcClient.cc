@@ -44,6 +44,7 @@
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
 #include "ami/event/EpixHandlerT.hh"
+#include "ami/event/TimeToolHandler.hh"
 #include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
@@ -457,8 +458,10 @@ int XtcClient::process(Pds::Xtc* xtc)
       case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
       case Pds::TypeId::Id_GenericPgpConfig:
       case Pds::TypeId::Id_Epix10kConfig:
+      case Pds::TypeId::Id_Epix100aConfig:
       case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
       case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
+      case Pds::TypeId::Id_TimeToolConfig:   h = new TimeToolHandler  (info,cache); break;
       case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
       case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
       case Pds::TypeId::Id_AliasConfig:

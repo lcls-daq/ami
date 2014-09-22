@@ -13,8 +13,6 @@
 
 #include <string.h>
 
-//#define USE_SUBFRAMES
-
 using namespace Ami;
 
 static const unsigned offset=1<<16;
@@ -26,6 +24,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
   std::list<Pds::TypeId::Type> types;
   types.push_back(Pds::TypeId::Id_EpixConfig);
   types.push_back(Pds::TypeId::Id_Epix10kConfig);
+  types.push_back(Pds::TypeId::Id_Epix100aConfig);
   types.push_back(Pds::TypeId::Id_GenericPgpConfig);
   return types;
 }
@@ -197,19 +196,22 @@ void EpixHandler::rename(const char* s)
     char buff[64];
     int index=0;
     unsigned nAsics=0;
-    unsigned lastRowExclusions=0;
+    bool lastRowExclusions=false;
 
-#define PARSE_CONFIG(typ) {						\
+#define PARSE_CONFIG(typ) 						\
       const typ& c = *reinterpret_cast<const typ*>(_config_buffer);	\
-      nAsics = c.numberOfAsics();					\
-      lastRowExclusions = c.lastRowExclusions();			\
-    }
+      nAsics = c.numberOfAsics();					
 
     switch(_config_id.id()) {
     case Pds::TypeId::Id_EpixConfig   : 
-      PARSE_CONFIG(Pds::Epix::ConfigV1); break;
+      { PARSE_CONFIG(Pds::Epix::ConfigV1);
+	lastRowExclusions = c.lastRowExclusions(); } break;
     case Pds::TypeId::Id_Epix10kConfig: 
-      PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+      { PARSE_CONFIG(Pds::Epix::Config10KV1);
+	lastRowExclusions = c.lastRowExclusions(); } break;
+    case Pds::TypeId::Id_Epix100aConfig: 
+      { PARSE_CONFIG(Pds::Epix::Config100aV1);
+	lastRowExclusions = true; } break;
     default:
       printf("EpixHandler::rename unrecognized configuration type %08x\n",
 	     _config_id.value());
@@ -258,11 +260,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 {
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   const char* detname = Pds::DetInfo::name(det.detector());
-#ifdef USE_SUBFRAMES
-  const unsigned chip_margin=4;
-#else
-  const unsigned chip_margin=0;
-#endif
   unsigned nchip_columns=1;
   unsigned nchip_rows   =1;
   unsigned columns = 0;
@@ -271,7 +268,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   unsigned colsPerAsic = 0;
   unsigned aMask = 0;
   unsigned nAsics = 0;
-  unsigned lastRowExclusions = 0;
+  bool lastRowExclusions = true;
 
   if (tid.id()==Pds::TypeId::Id_GenericPgpConfig) {
     const Pds::GenericPgp::ConfigV1& c = *reinterpret_cast<const Pds::GenericPgp::ConfigV1*>(payload);
@@ -279,27 +276,30 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     payload = reinterpret_cast<const void*>(c.payload().data()+c.stream()[0].config_offset());
   }
 
-#define PARSE_CONFIG(typ) {						\
+#define PARSE_CONFIG(typ) 						\
     const typ& c = *reinterpret_cast<const typ*>(payload);		\
     if (_config_buffer) delete[] _config_buffer;			\
     _config_buffer = new char[c._sizeof()];				\
     memcpy(_config_buffer,&c,c._sizeof());				\
     nchip_columns=c.numberOfAsicsPerRow();				\
     nchip_rows   =c.numberOfAsicsPerColumn();				\
-    columns = c.numberOfColumns() + (nchip_columns-1)*chip_margin;	\
-    rows    = c.numberOfRows()    + (nchip_rows   -1)*chip_margin;	\
+    columns = c.numberOfColumns();					\
+    rows    = c.numberOfRows();						\
     rowsPerAsic = c.numberOfRows()/c.numberOfAsicsPerColumn();		\
     colsPerAsic = c.numberOfPixelsPerAsicRow();				\
     aMask  = c.asicMask();						\
-    nAsics = c.numberOfAsics();						\
-    lastRowExclusions = c.lastRowExclusions();				\
-  }
+    nAsics = c.numberOfAsics();					       
 
   switch(tid.id()) {
   case Pds::TypeId::Id_EpixConfig   : 
-    PARSE_CONFIG(Pds::Epix::ConfigV1); break;
+    { PARSE_CONFIG(Pds::Epix::ConfigV1);
+      lastRowExclusions = c.lastRowExclusions(); } break;
   case Pds::TypeId::Id_Epix10kConfig: 
-    PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+    { PARSE_CONFIG(Pds::Epix::Config10KV1);
+      lastRowExclusions = c.lastRowExclusions(); } break;
+  case Pds::TypeId::Id_Epix100aConfig: 
+    { PARSE_CONFIG(Pds::Epix::Config100aV1);
+      lastRowExclusions = true; } break;
   case Pds::TypeId::Id_GenericPgpConfig:
     
   default:
@@ -319,8 +319,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     _desc = desc;
     for(unsigned i=0; i<nchip_rows; i++)
       for(unsigned j=0; j<nchip_columns; j++) {
-	float x0 = j*(colsPerAsic+chip_margin);
-	float y0 = i*(rowsPerAsic+chip_margin);
+	float x0 = j*(colsPerAsic);
+	float y0 = i*(rowsPerAsic);
 	float x1 = x0+colsPerAsic;
 	float y1 = y0+rowsPerAsic;
 	_desc.add_frame(desc.xbin(x0),desc.ybin(y0),
@@ -364,8 +364,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     _desc = desc;
     for(unsigned i=0; i<nchip_rows; i++)
       for(unsigned j=0; j<nchip_columns; j++) {
-	float x0 = j*(colsPerAsic+chip_margin);
-	float y0 = i*(rowsPerAsic+chip_margin);
+	float x0 = j*(colsPerAsic);
+	float y0 = i*(rowsPerAsic);
 	float x1 = x0+colsPerAsic;
 	float y1 = y0+rowsPerAsic;
 	_desc.add_frame(desc.xbin(x0),desc.ybin(y0),
@@ -429,11 +429,9 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
     }
 
-
-    const Pds::Epix::ElementV1& f = *reinterpret_cast<const Pds::Epix::ElementV1*>(payload);
     ndarray<const uint16_t,2> a;
     ndarray<const uint16_t,1> temps;
-    ndarray<const uint16_t,2> e;
+    ndarray<const uint16_t,2> env;
 
     unsigned nchip_columns=1;
     unsigned nchip_rows   =1;
@@ -443,25 +441,31 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     unsigned nAsics = 0;
     unsigned lastRowExclusions = 0;
 
-#define PARSE_CONFIG(typ) {						\
+#define PARSE_CONFIG(typ,dtyp)  					\
+      const dtyp& f = *reinterpret_cast<const dtyp*>(payload);		\
       const typ& c = *reinterpret_cast<const typ*>(_config_buffer);	\
       a = f.frame(c);							\
       temps = f.temperatures(c);					\
-      e = f.excludedRows(c);						\
       nchip_columns=c.numberOfAsicsPerRow();				\
       nchip_rows   =c.numberOfAsicsPerColumn();				\
       rowsPerAsic = c.numberOfRows()/c.numberOfAsicsPerColumn();	\
       colsPerAsic = c.numberOfPixelsPerAsicRow();			\
       aMask  = c.asicMask();						\
-      nAsics = c.numberOfAsics();					\
-      lastRowExclusions = c.lastRowExclusions();			\
-  }
+      nAsics = c.numberOfAsics();					
 
     switch(_config_id.id()) {
     case Pds::TypeId::Id_EpixConfig   : 
-      PARSE_CONFIG(Pds::Epix::ConfigV1); break;
+      { PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1);
+	env = f.excludedRows(c);
+	lastRowExclusions = c.lastRowExclusions(); } break;
     case Pds::TypeId::Id_Epix10kConfig: 
-      PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+      { PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1);
+	env = f.excludedRows(c);
+	lastRowExclusions = c.lastRowExclusions(); } break;
+    case Pds::TypeId::Id_Epix100aConfig: 
+      { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2);
+	env = f.environmentalRows(c);
+	lastRowExclusions = true; } break;
     default:
       printf("EpixHandler::event unrecognized configuration type %08x\n",
 	     _config_id.value());
@@ -550,7 +554,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 #endif
 
     if (lastRowExclusions) {
-      const uint16_t* last = &e[e.shape()[0]-1][0];
+      const uint16_t* last = &env[env.shape()[0]-1][0];
       _cache.cache(_feature[index++], double(last[2])*0.00183);
       _cache.cache(_feature[index++], double(last[3])*0.00183);
       _cache.cache(_feature[index++], double(last[4])*(-0.0194) + 78.393);
@@ -637,7 +641,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     _entry->valid(t);
   }
 }
-
+  
 void EpixHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void EpixHandler::_load_pedestals()
@@ -656,6 +660,8 @@ void EpixHandler::_load_pedestals()
     PARSE_CONFIG(Pds::Epix::ConfigV1); break;
   case Pds::TypeId::Id_Epix10kConfig:
     PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+  case Pds::TypeId::Id_Epix100aConfig:
+    PARSE_CONFIG(Pds::Epix::Config100aV1); break;
   default:
     return;
   }
@@ -721,6 +727,8 @@ void EpixHandler::_load_gains()
     PARSE_CONFIG(Pds::Epix::ConfigV1); break;
   case Pds::TypeId::Id_Epix10kConfig:
     PARSE_CONFIG(Pds::Epix::Config10KV1); break;
+  case Pds::TypeId::Id_Epix100aConfig:
+    PARSE_CONFIG(Pds::Epix::Config100aV1); break;
   default:
     return;
   }
