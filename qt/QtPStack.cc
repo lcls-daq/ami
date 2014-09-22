@@ -9,7 +9,7 @@ static bool _attach=false;
 
 void QtPStack::attach(bool v) { _attach=v; }
 
-QtPStack::QtPStack()
+QtPStack::QtPStack() : _current(0)
 {
 }
 
@@ -32,16 +32,23 @@ void QtPStack::add(QPushButton* b,
     connect(b, SIGNAL(clicked()), w, SLOT(front()));
 }
 
+void QtPStack::setVisible(bool v)
+{
+  v = v && (_current!=0);
+  QStackedWidget::setVisible(v);
+}
+
 void QtPStack::setPWidget()
 {
   QWidget* p = static_cast<QWidget*>(sender());
-  setCurrentWidget(p);
+  setCurrentWidget(_current=p);
   p->show();
   show();
 }
 
 void QtPStack::resetPWidget()
 {
+  _current=0;
   hide();
   updateGeometry();
   resize(minimumSize());

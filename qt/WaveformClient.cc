@@ -39,6 +39,8 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
     _fft = new FFT(this,_channels,NCHANNELS);
     _stack->add(fftB,_fft);
     connect(_fft    , SIGNAL(changed()), this, SIGNAL(changed())); }
+
+  set_chrome_visible(true);
 }
 
 WaveformClient::~WaveformClient() {}

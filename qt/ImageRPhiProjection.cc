@@ -15,7 +15,6 @@
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/ControlLog.hh"
-#include "ami/qt/QtPWidgetHost.hh"
 
 #include "ami/data/BinMath.hh"
 #include "ami/data/DescCache.hh"

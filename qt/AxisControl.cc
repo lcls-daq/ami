@@ -26,8 +26,8 @@ AxisControl::AxisControl(QWidget* parent,
   _logB  = new QPushButton("Log Scale"); 
   _loBox = new QLineEdit("0");
   _hiBox = new QLineEdit("1000");
-  _loBox->setMaximumWidth(60);
-  _hiBox->setMaximumWidth(60);
+  _loBox->setMinimumWidth(60);
+  _hiBox->setMinimumWidth(60);
   new QDoubleValidator(_loBox);
   new QDoubleValidator(_hiBox);
 

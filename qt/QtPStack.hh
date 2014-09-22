@@ -17,11 +17,15 @@ namespace Ami {
       void add(QPushButton*, QtPWidget*);
     public:
       static void attach(bool);
+    public:
+      virtual void setVisible(bool);
     signals:
       void hidden();
     public slots:
       void setPWidget();
       void resetPWidget();
+    private:
+      QWidget* _current;
     };
   };
 };

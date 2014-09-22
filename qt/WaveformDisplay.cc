@@ -104,6 +104,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
       layout2->addLayout(layout3,1,0); }
     _chrome_layout = layout2;
     layout->addLayout(layout2); }
+  //  layout->addStretch();
   setLayout(layout);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
