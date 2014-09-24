@@ -411,7 +411,7 @@ void DetectorSelect::save_plots()
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
-               unsigned channel,
+						   unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {

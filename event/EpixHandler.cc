@@ -3,6 +3,8 @@
 #include "ami/event/FrameCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
+#include "ami/data/EntryRef.hh"
+#include "ami/data/EntryWaveform.hh"
 #include "ami/data/ChannelID.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/ImageMask.hh"
@@ -12,6 +14,7 @@
 #include "pdsdata/xtc/ClockTime.hh"
 
 #include <string.h>
+#include <string>
 
 using namespace Ami;
 
@@ -80,24 +83,27 @@ namespace EpixAmi {
     unsigned numberOfAsicsPerRow   () const { return _nchip_columns; }
     unsigned numberOfAsicsPerColumn() const { return _nchip_rows; }
 
-    // calibration data size
+    // Full size
     unsigned numberOfColumns() const { return _columns; }
     unsigned numberOfRows   () const { return _rows; }
+    unsigned numberOfRowsCal() const { return _rowsCal; }
 
     // event data size
     unsigned numberOfRowsRead() const { return _rowsRead; }
 
-    // subframe calibration data size
+    // subframe size
     unsigned numberOfColumnsPerAsic () const { return _colsPerAsic; }
     unsigned numberOfRowsPerAsic    () const { return _rowsPerAsic; }
+    unsigned numberOfRowsCalPerAsic () const { return _rowsCalPerAsic; }
 
-    // subframe event data size
+    // subframe data size
     unsigned numberOfRowsReadPerAsic() const { return _rowsReadPerAsic; }
   public:
     void event(const void* payload, 
 	       ndarray<const uint16_t,2>& frame, 
 	       ndarray<const uint16_t,1>& temps,
-	       ndarray<const uint16_t,2>& env) {
+	       ndarray<const uint16_t,2>& env,
+	       ndarray<const uint16_t,2>& cal) {
 #define PARSE_CONFIG(typ,dtyp)  					\
       const dtyp& f = *reinterpret_cast<const dtyp*>(payload);		\
       const typ& c = *reinterpret_cast<const typ*>(_buffer);		\
@@ -113,7 +119,8 @@ namespace EpixAmi {
 	  env = f.excludedRows(c); } break;
       case Pds::TypeId::Id_Epix100aConfig: 
 	{ PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2);
-	  env = f.environmentalRows(c); } break;
+	  env = f.environmentalRows(c); 
+	  cal = f.calibrationRows(c); } break;
       default:
 	break;
       }
@@ -134,6 +141,8 @@ namespace EpixAmi {
     unsigned _rowsPerAsic;
     unsigned _rowsRead;
     unsigned _rowsReadPerAsic;
+    unsigned _rowsCal;
+    unsigned _rowsCalPerAsic;
     bool     _monitorData;
   };
 };
@@ -149,8 +158,8 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
   _nchip_columns=1;
   _nchip_rows   =1;
   _columns = 0;
-  _rows    = _rowsRead = 0;
-  _rowsPerAsic = _rowsReadPerAsic = 0;
+  _rows    = _rowsRead = _rowsCal = 0;
+  _rowsPerAsic = _rowsReadPerAsic = _rowsCalPerAsic = 0;
   _colsPerAsic = 0;
   _aMask = 0;
   _nAsics = 0;
@@ -190,6 +199,8 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
     { PARSE_CONFIG(Pds::Epix::Config100aV1);
       _rowsRead        = c.numberOfReadableRows();
       _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
+      _rowsCal         = c.numberOfCalibrationRows();
+      _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
       _monitorData = true; } break;
   default:
     printf("EpixHandler::ConfigCache unrecognized configuration type %08x\n",
@@ -211,6 +222,8 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   _rowsPerAsic    (o._rowsPerAsic),
   _rowsRead       (o._rowsRead),
   _rowsReadPerAsic(o._rowsReadPerAsic),
+  _rowsCal        (o._rowsCal),
+  _rowsCalPerAsic (o._rowsCalPerAsic),
   _monitorData    (o._monitorData)
 {
   unsigned sz=0;
@@ -248,6 +261,7 @@ void EpixAmi::ConfigCache::dump() const
   printf("columns    %u  perasic %u\n",_columns,_colsPerAsic);
   printf("rows       %u  perasic %u\n",_rows,_rowsPerAsic);
   printf("rowsRead   %u  perasic %u\n",_rowsRead,_rowsReadPerAsic);
+  printf("rowsCal    %u  perasic %u\n",_rowsCal ,_rowsCalPerAsic);
 }
 
 static double frameNoise(ndarray<const uint32_t,2> data,
@@ -352,8 +366,7 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   _desc         ("template",0,0),
   _entry        (0),
   _pentry       (0),
-  _config_buffer(0),
-  _config_id    (Pds::TypeId::Any,0),
+  _ref          (0),
   _options      (0),
   _pedestals    (make_ndarray<unsigned>(1,1)),
   _pedestals_lo (make_ndarray<unsigned>(1,1)),
@@ -365,21 +378,27 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
 EpixHandler::~EpixHandler()
 {
   delete &_config_cache;
-  if (_pentry)
-    delete _pentry;
-  if (_config_buffer)
-    delete _config_buffer;
+  reset();
 }
 
-unsigned EpixHandler::nentries() const { return _entry ? 1 : 0; }
+unsigned EpixHandler::nentries() const { return (_entry ? 1 : 0) + (_ref ? 1 : 0); }
 
-const Entry* EpixHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
+const Entry* EpixHandler::entry(unsigned i) const {
+  switch(i) { 
+  case 0: return _entry; 
+  case 1: return _ref; 
+  default: return 0; } 
+}
 
 void EpixHandler::rename(const char* s)
 {
   if (_entry) {
     _entry->desc().name(s);
+ 
     char buff[64];
+    sprintf(buff,"%s-Cal",s);
+    _ref->desc().name(buff);
+    
     int index=0;
     unsigned nAsics       =_config_cache->numberOfAsics();
     bool lastRowExclusions=_config_cache->hasMonitorData();
@@ -411,6 +430,12 @@ void EpixHandler::rename(const char* s)
 void EpixHandler::reset() 
 {
   _entry = 0; 
+  _ref   = 0;
+
+  for(unsigned i=0; i<_ewf.size(); i++)
+    delete _ewf[i];
+  _ewf.clear();
+
   if (_pentry) { 
     delete _pentry; 
     _pentry=0; 
@@ -507,6 +532,26 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     _entry->invalid();
   }
   
+  if (_config_cache->numberOfRowsCal()) {
+    _ewf.resize(_config_cache->numberOfRowsCal());
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+    unsigned channelNumber=0;
+    for(unsigned i=0; i<_config_cache->numberOfRowsCal(); i++) {
+      DescWaveform desc(det, channelNumber,
+			ChannelID::name(det,channelNumber),
+			"Column","Value",
+			_config_cache->numberOfColumns(), 
+			0., float(_config_cache->numberOfColumns()));
+      _ewf[channelNumber++] = new EntryWaveform(desc);
+    }      
+    Channel ch((1<<channelNumber)-1,Channel::BitMask);
+    std::string name(ChannelID::name(det,ch));
+    name += "-Cal";
+    _ref = new EntryRef(DescRef(det,ch,name.c_str()));
+    _ref->set(_ewf.data());
+    printf("EpixHandler ref %s [%s]\n",name.c_str(),_ref->desc().name());
+  }
+
   unsigned nFeatures = _config_cache->numberOfAsics();
   if (_config_cache->hasMonitorData())
     nFeatures += 5;
@@ -562,8 +607,9 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     ndarray<const uint16_t,2> a;
     ndarray<const uint16_t,1> temps;
     ndarray<const uint16_t,2> env;
+    ndarray<const uint16_t,2> cal;
 
-    _config_cache->event(payload, a, temps, env);
+    _config_cache->event(payload, a, temps, env, cal);
 
     _entry->reset();
     const DescImage& d = _entry->desc();
@@ -635,6 +681,17 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	  }
 	}
     }
+
+    for(unsigned i=0; i<cal.shape()[0]; i++) {
+      EntryWaveform* entry = _ewf[i];
+      const uint16_t* v = &cal[i][0];
+      for(unsigned j=0; j<cal.shape()[1]; j++)
+	entry->content(double(*v++),j);
+      entry->info(1,EntryWaveform::Normalization);
+      entry->valid(t);
+    }
+    if (_ref)
+      _ref->valid(t);
 
     int index = 0;
 #if 1
@@ -746,7 +803,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
   }
 }
   
-void EpixHandler::_damaged() { if (_entry) _entry->invalid(); }
+void EpixHandler::_damaged() { 
+  if (_entry) _entry->invalid(); 
+  if (_ref  ) _ref  ->invalid(); 
+}
 
 void EpixHandler::_load_pedestals()
 {

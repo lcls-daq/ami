@@ -9,10 +9,14 @@
 
 #include "ndarray/ndarray.h"
 
+#include <vector>
+
 namespace EpixAmi { class ConfigCache; }
 
 namespace Ami {
   class EntryImage;
+  class EntryRef;
+  class EntryWaveform;
   class FeatureCache;
   class EpixHandler : public EventHandlerF {
   public:
@@ -41,8 +45,8 @@ namespace Ami {
     DescImage           _desc;
     EntryImage*         _entry;
     EntryImage*         _pentry;
-    char*               _config_buffer;
-    Pds::TypeId         _config_id;
+    std::vector<EntryWaveform*> _ewf;
+    EntryRef*           _ref;
     unsigned            _options;
     ndarray<unsigned,2> _status;
     ndarray<unsigned,2> _pedestals;
