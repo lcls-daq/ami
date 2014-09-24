@@ -252,10 +252,8 @@ ImageColorControl::~ImageColorControl()
 
 void ImageColorControl::save(char*& p) const
 {
-  for(unsigned i=0; i<NRanges; i++) {
-    XML_insert(p, "double", "_scale", QtPersistent::insert(p,_scale[i]) );
-    XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,double(_pedestal[i])) );
-  }
+  XML_insert(p, "double", "_scale"   , QtPersistent::insert(p,&_scale   [0], NRanges));
+  XML_insert(p, "double", "_pedestal", QtPersistent::insert(p,&_pedestal[0], NRanges));
   XML_insert(p, "QButtonGroup", "_paletteGroup", QtPersistent::insert(p,_paletteGroup->checkedId()) );
   XML_insert(p, "QCheckBox", "_logscale_fixed", QtPersistent::insert(p,_logscale_fixed->isChecked()) );
   XML_insert(p, "QCheckBox", "_logscale_full" , QtPersistent::insert(p,_logscale_full->isChecked()) );
@@ -264,7 +262,7 @@ void ImageColorControl::save(char*& p) const
 void ImageColorControl::load(const char*& p)
 {
   XML_iterate_open(p,tag)
-    if (tag.name == "scale")
+    if (tag.name == "_scale")
       QtPersistent::extract_d(p,_scale);
     else if (tag.name == "_pedestal")
       QtPersistent::extract_d(p,_pedestal);

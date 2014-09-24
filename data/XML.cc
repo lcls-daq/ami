@@ -141,7 +141,7 @@ void QtPersistent::insert(char*& p, void* b, int len)
     p += sprintf(p, "%02hhx", *bp);
 }
 
-void QtPersistent::insert(char*& p, double* s, unsigned n)
+void QtPersistent::insert(char*& p, const double* s, unsigned n)
 {
   for(unsigned i=0; i<n; i++)
     p += sprintf(p,"%g,",s[i]);

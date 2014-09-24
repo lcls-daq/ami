@@ -38,7 +38,7 @@ namespace Ami {
       static void insert(char*&, double);
       static void insert(char*&, bool);
       static void insert(char*&, void*, int);
-      static void insert(char*&, double*, unsigned);  // array
+      static void insert(char*&, const double*, unsigned);  // array
       /**
        **  extract data of the return type from the char-stream
        **/
