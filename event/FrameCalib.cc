@@ -391,6 +391,130 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
   return a;
 }
 
+ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
+					  const char*      prefix)
+{
+  unsigned max_rows    = d.nbinsy();
+  unsigned max_columns = d.nbinsx();
+  ndarray<double,2> a = 
+    make_ndarray<double>(max_rows, max_columns);
+
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+  sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  if (f) {
+    size_t sz = 16 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    const unsigned ppb  = d.ppxbin();
+
+    unsigned maxc = 0;
+    unsigned row = 0;
+    do {
+      if (getline(&linep, &sz, f)<0) break;
+      char* p = linep;
+      unsigned col=0;
+      while(col < max_columns) {
+	double v = strtod(p,&pEnd);
+	if (pEnd == p) break;
+	a[row/ppb][col/ppb] = v;
+	col++;
+	p = pEnd+1;
+      }
+      if (col > maxc) maxc=col;
+    } while (++row < max_rows);
+    
+    free(linep);
+    fclose(f);
+
+    if (maxc != max_columns ||
+	row  != max_rows) {
+      ndarray<double,2> b = make_ndarray<double>(row,maxc);
+      for(unsigned i=0; i<row; i++) {
+	double* p = &b[i][0];
+	for(unsigned j=0; j<maxc; j++)
+	  p[j] = a[i][j];
+      }
+      a = b;
+    }
+  }
+  else
+    a = make_ndarray<double>(0U,0);
+  
+  return a;
+}
+
+ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
+					   const char*      prefix)
+{
+  unsigned max_rows    = d.nbinsy();
+  unsigned max_columns = d.nbinsx();
+  ndarray<unsigned,2> a = 
+    make_ndarray<unsigned>(max_rows, max_columns);
+
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  const int NameSize=128;
+  char oname1[NameSize];
+  char oname2[NameSize];
+  sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
+  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  if (f) {
+    size_t sz = 16 * 1024;
+    char* linep = (char *)malloc(sz);
+    memset(linep, 0, sz);
+    char* pEnd = linep;
+
+    const unsigned ppb  = d.ppxbin();
+
+    unsigned maxc = 0;
+    unsigned row = 0;
+    do {
+      if (getline(&linep, &sz, f)<0) break;
+      char* p = linep;
+      unsigned col=0;
+      while(col < max_columns) {
+	unsigned v = strtoul(p,&pEnd,0);
+	if (pEnd == p) break;
+	a[row/ppb][col/ppb] = v;
+	col++;
+	p = pEnd+1;
+      }
+      if (col > maxc) maxc=col;
+    } while (++row < max_rows);
+    
+    free(linep);
+    fclose(f);
+
+    if (maxc != max_columns ||
+	row  != max_rows) {
+      ndarray<unsigned,2> b = make_ndarray<unsigned>(row,maxc);
+      for(unsigned i=0; i<row; i++) {
+	unsigned* p = &b[i][0];
+	for(unsigned j=0; j<maxc; j++)
+	  p[j] = a[i][j];
+      }
+      a = b;
+    }
+  }
+  else
+    a = make_ndarray<unsigned>(0U,0);
+  
+  return a;
+}
+
 int FrameCalib::median(ndarray<const uint16_t,1> data,
 		       unsigned& iLo, unsigned& iHi)
 {

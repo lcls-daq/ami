@@ -9,6 +9,8 @@
 
 #include "ndarray/ndarray.h"
 
+namespace EpixAmi { class ConfigCache; }
+
 namespace Ami {
   class EntryImage;
   class FeatureCache;
@@ -53,6 +55,8 @@ namespace Ami {
 
     ndarray<int,1>      _feature;
     CspadTemp           _therm;
+
+    EpixAmi::ConfigCache* _config_cache;
   };
 };
 

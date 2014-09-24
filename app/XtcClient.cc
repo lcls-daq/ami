@@ -483,6 +483,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
             xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
             xtc->contains.id()==Pds::TypeId::Id_AliasConfig  ||
+            xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
             xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
           ;
         else

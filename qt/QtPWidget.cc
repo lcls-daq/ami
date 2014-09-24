@@ -98,7 +98,6 @@ void QtPWidget::front()
 
 void QtPWidget::closeEvent(QCloseEvent* event)
 {
-  printf("QtPW close\n");
   event->accept();
   emit closed(this);
 }

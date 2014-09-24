@@ -23,6 +23,7 @@
 #include <iostream>
 #include <fstream>
 #include <QtGui/QApplication>
+#include <QtGui/QDesktopWidget>
 
 #include <stdlib.h>
 
@@ -209,6 +210,11 @@ int main(int argc, char* argv[]) {
     usage(argv[0]);
     exit(-1);
   }
+
+//  Consider defaulting resolution to discovered screen size
+//   { QDesktopWidget widget;
+//     QRect mainScreenSize = widget.availableGeometry(widget.primaryScreen()); 
+//     printf("screen size %u x %u\n", mainScreenSize.width(), mainScreenSize.height()); }
 
   // Output goes to /dev/null if no other file was specified with -o
   // Error goes to console if no other file was specified with -e
