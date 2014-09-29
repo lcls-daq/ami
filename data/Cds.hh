@@ -7,6 +7,7 @@
 #include "ami/data/EntryList.hh"
 
 #include <list>
+#include <string>
 
 namespace Ami {
 
