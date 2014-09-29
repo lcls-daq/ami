@@ -7,6 +7,8 @@
 #include "DescEntry.hh"
 #include "ami/service/DataLock.hh"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <sstream>
 
 //#define DBUG
