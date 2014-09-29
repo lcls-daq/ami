@@ -6,6 +6,7 @@
 #include "ami/data/Message.hh"
 #include "ami/service/BSocket.hh"
 
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 
