@@ -5,6 +5,7 @@
 #include "DescEntry.hh"
 #include "ami/service/DataLock.hh"
 
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sstream>
