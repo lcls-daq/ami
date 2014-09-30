@@ -5,7 +5,7 @@
 #include "ami/data/AbsOperator.hh"
 #include "ami/data/FeatureCache.hh"
 
-#include <strings.h>
+#include <string.h>
 
 namespace Ami {
 
