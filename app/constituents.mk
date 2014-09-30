@@ -14,6 +14,7 @@ tgtlibs_l3ftest += ami/amisvc ami/amidata ami/server ami/calib ami/event ami/cli
 tgtlibs_l3ftest += $(qtlibdir)
 tgtlibs_l3ftest += gsl/gsl gsl/gslcblas
 tgtincs_l3ftest := $(qtincdir) pdsdata/include
+tgtslib_l3ftest := $(USRLIBDIR)/rt $(qtslibdir)
 
 tgtsrcs_tcptest := tcptest.cc
 

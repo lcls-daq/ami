@@ -1,5 +1,3 @@
-#include <string.h>
-
 #include "Cds.hh"
 #include "Cdu.hh"
 #include "Entry.hh"

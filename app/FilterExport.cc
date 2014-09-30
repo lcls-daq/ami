@@ -18,6 +18,7 @@
 #include <sstream>
 #include <fstream>
 
+#include <stdlib.h>
 #include <sys/stat.h>
 
 //#define DBUG

@@ -1,7 +1,5 @@
 #include "ami/data/ConfigureRequest.hh"
 
-#include <string.h>
-
 //#define DBUG
 
 using namespace Ami;

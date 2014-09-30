@@ -10,6 +10,7 @@
 #include <QtGui/QRadioButton>
 #include <QtGui/QIntValidator>
 
+#include <stdio.h>
 #include <limits.h>
 
 using namespace Ami::Qt;

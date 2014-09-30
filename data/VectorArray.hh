@@ -1,6 +1,7 @@
 #ifndef Ami_VectorArray_hh
 #define Ami_VectorArray_hh
 
+#include <stdint.h>
 #include <vector>
 #include <stdint.h>
 

@@ -3,6 +3,7 @@
 
 #include "ndarray/ndarray.h"
 
+#include <stdint.h>
 #include <string>
 
 namespace Ami {

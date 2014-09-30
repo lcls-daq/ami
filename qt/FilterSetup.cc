@@ -12,6 +12,8 @@
 #include <QtGui/QListWidget>
 #include <QtGui/QPushButton>
 
+#include <stdio.h>
+
 #define DBUG
 
 using namespace Ami::Qt;

@@ -15,6 +15,9 @@
 #include "ami/data/RawFilter.hh"
 #include "ami/data/DescCache.hh"
 
+#include <stdio.h>
+#include <stdlib.h>
+
 //#define DBUG
 
 using namespace Ami::Qt;

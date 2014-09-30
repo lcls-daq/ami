@@ -10,6 +10,8 @@
 #include <QtGui/QLineEdit>
 #include <QtGui/QDoubleValidator>
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 Defaults::Defaults() 

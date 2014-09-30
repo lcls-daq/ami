@@ -1,5 +1,7 @@
 #include "ami/qt/AmendedRegistry.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 AmendedRegistry::AmendedRegistry(FeatureRegistry&   base,

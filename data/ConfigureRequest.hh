@@ -6,6 +6,7 @@
 #include "ami/data/FeatureCache.hh"
 
 #include <string.h>
+#include <string.h>
 
 namespace Ami {
 

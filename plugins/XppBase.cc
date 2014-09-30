@@ -8,6 +8,8 @@
 #include "pdsdata/psddl/cspad.ddl.h"
 #include "pdsdata/psddl/cspad2x2.ddl.h"
 
+#include <stdio.h>
+
 static const double RDIV=20000;
 
 using namespace Ami;
