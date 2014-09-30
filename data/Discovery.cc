@@ -5,6 +5,7 @@
 #include "ami/data/DescEntry.hh"
 
 #include <string.h>
+#include <stdio.h>
 
 using namespace Ami;
 

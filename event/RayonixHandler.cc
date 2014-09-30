@@ -4,6 +4,8 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/psddl/rayonix.ddl.h"
 
+#include <stdio.h>
+
 static unsigned max_row_pixels   (const DetInfo& info)
 {
   unsigned rv = 0;

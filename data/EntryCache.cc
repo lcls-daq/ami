@@ -2,6 +2,8 @@
 
 #include "ami/data/FeatureCache.hh"
 
+#include <stdio.h>
+
 using namespace Ami;
 
 EntryCache::~EntryCache() {}

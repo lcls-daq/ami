@@ -2,6 +2,7 @@
 #define Ami_VectorArray_hh
 
 #include <vector>
+#include <stdint.h>
 
 namespace Ami {
   class VectorArray {

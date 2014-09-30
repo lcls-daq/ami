@@ -5,6 +5,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static inline unsigned height(const Pds::Fli::ConfigV1& c)
 {
