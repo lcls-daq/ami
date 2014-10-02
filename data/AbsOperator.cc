@@ -21,7 +21,7 @@ Entry&                 AbsOperator::operator()(const Entry& i) const
   return _next ? (*_next)(o) : o;
 }
 
-DescEntry&             AbsOperator::output() const
+const DescEntry&       AbsOperator::output() const
 {
   return _next ? _next->output() : _routput();
 }

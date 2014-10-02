@@ -23,7 +23,7 @@ namespace Ami {
   public:
     void use();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }

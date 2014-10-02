@@ -14,6 +14,7 @@
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/valgnd.hh"
 #include "ami/data/FeatureExpression.hh"
 
 #include "psalg/psalg.h"
@@ -51,7 +52,7 @@ PeakFitPlot::PeakFitPlot(const DescEntry& output,
   _entry     (0),
   _v         (true)
 {
-  memcpy (_desc_buffer, &output, output.size());
+  memcpy_val (_desc_buffer, &output, output.size(), DESC_LEN);
   memcpy (_bins, bins, nbins * sizeof(int));
 }
 
@@ -105,9 +106,9 @@ void PeakFitPlot::use() { _use(); }
 
 PeakFitPlot::Parameter  PeakFitPlot::prm      () const { return _prm; }
 
-DescEntry& PeakFitPlot::_routput   () const 
+const DescEntry& PeakFitPlot::_routput   () const 
 { 
-  return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _entry ? _entry->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      PeakFitPlot::_serialize(void* p) const

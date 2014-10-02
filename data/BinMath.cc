@@ -135,9 +135,9 @@ void BinMath::use() {
   _use();
 }
 
-DescEntry& BinMath::_routput   () const 
+const DescEntry& BinMath::_routput   () const 
 { 
-  return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _entry ? _entry->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer);
 }
 
 const char* BinMath::expression() const { return _expression; }
@@ -324,3 +324,6 @@ std::string BinMath::_text() const
     << _entry->desc().name() << "]";
   return s.str();
 }
+
+char* BinMath::_cdesc_buffer() { return reinterpret_cast<char*>(_desc_buffer); }
+

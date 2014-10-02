@@ -26,7 +26,7 @@ namespace Ami {
     unsigned   id     () const;
     void       use    ();
     void       analyze();
-    DescEntry& output () const;
+    const DescEntry& output () const;
     bool       valid  () const;
     const Entry& input() const;
     const AbsOperator& op() const { return *_op; }

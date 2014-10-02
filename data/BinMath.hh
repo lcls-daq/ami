@@ -48,7 +48,7 @@ namespace Ami {
     static const QChar& ymoment  ();
     static const double floatPrecision();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
@@ -56,10 +56,12 @@ namespace Ami {
     Term*      _process_expr(FeatureCache&,const char*,bool&);
     std::string _text    () const;
   private:
+    char*      _cdesc_buffer();
+  private:
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];
     enum { DESC_LEN = 1024 };
-    char             _desc_buffer[DESC_LEN];
+    uint32_t         _desc_buffer[DESC_LEN/sizeof(uint32_t)];
 
     FeatureCache* _cache;
     Term*         _term;

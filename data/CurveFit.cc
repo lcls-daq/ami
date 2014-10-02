@@ -107,9 +107,9 @@ void CurveFit::use()
   if (_nterm) _nterm->use();
 }
 
-DescEntry& CurveFit::_routput   () const 
+const DescEntry& CurveFit::_routput   () const 
 {
-  return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _entry ? _entry->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      CurveFit::_serialize(void* p) const

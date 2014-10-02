@@ -10,6 +10,7 @@
 #include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/valgnd.hh"
 
 #include <stdio.h>
 #include <math.h>
@@ -27,8 +28,7 @@ RPhiProjection::RPhiProjection(const DescEntry& output,
   _yc        (yc),
   _output    (0)
 {
-  memcpy(_desc_buffer, &output, output.size());
-  memset(_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  memcpy_val(_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
 RPhiProjection::RPhiProjection(const char*& p, const DescEntry& input) :
@@ -62,9 +62,9 @@ RPhiProjection::~RPhiProjection()
   if (_output) delete _output;
 }
 
-DescEntry& RPhiProjection::_routput   () const 
+const DescEntry& RPhiProjection::_routput   () const 
 { 
-  return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _output ? _output->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      RPhiProjection::_serialize(void* p) const

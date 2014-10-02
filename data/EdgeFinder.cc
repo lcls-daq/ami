@@ -74,7 +74,7 @@ EdgeFinder::~EdgeFinder()
 
 void EdgeFinder::use() {}
 
-DescEntry& EdgeFinder::_routput   () const 
+const DescEntry& EdgeFinder::_routput   () const 
 { 
   if (_entry) return _entry->desc();
   abort();

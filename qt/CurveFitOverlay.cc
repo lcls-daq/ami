@@ -73,11 +73,11 @@ void CurveFitOverlay::save(char*& p) const
 
 void CurveFitOverlay::savefit(char*& p) const
 {
-    DescEntry &desc = _fit->output();
-    XML_insert( p, "QString"     , "_name"  , QtPersistent::insert(p, QString(_fit->name())));
-    XML_insert( p, "QString"     , "_norm"  , QtPersistent::insert(p, QString(_fit->norm())));
-    XML_insert( p, "int"         , "_op"    , QtPersistent::insert(p, _fit->op()) );
-    XML_insert( p, "DescEntry"   , "_output", QtPersistent::insert(p, &desc, desc.size()));
+  DescEntry& desc = const_cast<DescEntry&>(_fit->output());
+  XML_insert( p, "QString"     , "_name"  , QtPersistent::insert(p, QString(_fit->name())));
+  XML_insert( p, "QString"     , "_norm"  , QtPersistent::insert(p, QString(_fit->norm())));
+  XML_insert( p, "int"         , "_op"    , QtPersistent::insert(p, _fit->op()) );
+  XML_insert( p, "DescEntry"   , "_output", QtPersistent::insert(p, &desc, desc.size()));
 }
 
 Ami::CurveFit *CurveFitOverlay::loadfit(const char*& p)

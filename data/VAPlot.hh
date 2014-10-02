@@ -27,7 +27,7 @@ namespace Ami {
     ~VAPlot();
   public:
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
@@ -37,7 +37,7 @@ namespace Ami {
     int               _iy;
     int               _iz;
     int               _accumulate;   /// auto refresh (-2), single event (-1), running sum(0), fixed event sum(>0)
-    char              _desc[sizeof(DescImage)];
+    uint32_t          _desc[sizeof(DescImage)/sizeof(uint32_t)];
     mutable int       _current;
     EntryImage*       _output_entry; /// Holds single event result and indefinite running sum
     EntryImage*       _cache;        /// Holds fixed event number sum

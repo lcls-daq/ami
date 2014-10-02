@@ -79,7 +79,7 @@ Average::~Average()
 
 void Average::use() { if (_term) _term->use(); }
 
-DescEntry& Average::_routput   () const { return _n>0 ? _cache->desc() : _entry->desc(); }
+const DescEntry& Average::_routput   () const { return _n>0 ? _cache->desc() : _entry->desc(); }
 
 void*      Average::_serialize(void* p) const
 {

@@ -27,7 +27,7 @@ namespace Ami {
 
     // Implements EntryAutoRange
     double    entries() const;
-    DescTH1F* result(void* =0) const;
+    DescTH1F* result(const void* =0) const;
 
     const ScalarRange& range() const;
   private:

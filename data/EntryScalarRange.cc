@@ -22,8 +22,10 @@ double EntryScalarRange::entries() const { return _range->entries() - _desc.nsam
 const DescScalarRange& EntryScalarRange::desc() const {return _desc;}
 DescScalarRange& EntryScalarRange::desc() {return _desc;}
 
-DescTH1F* EntryScalarRange::result(void* p) const
+DescTH1F* EntryScalarRange::result(const void* cp) const
 {
+  void* p = const_cast<void*>(cp);
+
   double m,r;
   if (_desc.stat() == DescScalarRange::MinMax) {
     r = (0.5+_desc.extent())*(_range->max()-_range->min());

@@ -75,9 +75,9 @@ ContourProjection::~ContourProjection()
   if (_offset) delete[] _offset;
 }
 
-DescEntry& ContourProjection::_routput   () const 
+const DescEntry& ContourProjection::_routput   () const 
 { 
-  return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _output ? _output->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      ContourProjection::_serialize(void* p) const

@@ -19,7 +19,7 @@ namespace Ami {
     Reference(const char*&, const DescEntry&);
     ~Reference();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return true; }
@@ -27,7 +27,7 @@ namespace Ami {
   private:
     enum { PATHLEN=256 };
     char           _path[PATHLEN];
-    char           _buffer[4096];
+    uint32_t       _buffer[4096/sizeof(uint32_t)];
     Entry*         _entry;
   };
 

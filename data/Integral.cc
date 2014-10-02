@@ -41,7 +41,7 @@ Integral::~Integral()
   delete _entry;
 }
 
-DescEntry& Integral::_routput   () const { return _entry->desc(); }
+const DescEntry& Integral::_routput   () const { return _entry->desc(); }
 
 void*      Integral::_serialize(void* p) const
 {

@@ -42,14 +42,14 @@ namespace Ami {
     const char* feature() const;
     void       use();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
     void       _invalid  ();
   private:
     enum { DESC_LEN = 1024, MAX_BINS = 10 };
-    char             _desc_buffer[DESC_LEN];
+    uint32_t         _desc_buffer[DESC_LEN/sizeof(uint32_t)];
     int              _nbins;
     int              _bins[MAX_BINS];
     double           _baseline;

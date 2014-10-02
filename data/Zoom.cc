@@ -31,7 +31,7 @@ Zoom::~Zoom()
   delete _entry;
 }
 
-DescEntry& Zoom::_routput   () const { return _entry->desc(); }
+const DescEntry& Zoom::_routput   () const { return _entry->desc(); }
 
 void*      Zoom::_serialize(void* p) const
 {

@@ -33,7 +33,7 @@ MaskImage::~MaskImage()
   if (_output) delete _output;
 }
 
-DescEntry& MaskImage::_routput   () const { return _output->desc(); }
+const DescEntry& MaskImage::_routput   () const { return _output->desc(); }
 
 void*      MaskImage::_serialize(void* p) const
 {

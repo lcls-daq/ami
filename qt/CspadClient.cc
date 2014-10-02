@@ -6,6 +6,7 @@
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/service/Ins.hh"
 
 #include <QtGui/QCheckBox>
 #include <QtGui/QPushButton>
@@ -125,19 +126,10 @@ void CspadClient::write_pedestals()
   bool lProd = QString(getenv("HOME")).endsWith("opr");
   bool lReqFull = true;
   if (!lProd) {
-    int so = socket(AF_INET, SOCK_DGRAM, 0);
-    if (so) {
-      ifreq ifr;
-      strcpy(ifr.ifr_name,"eth0");
-      int rv = ioctl(so, SIOCGIFADDR, (char*)&ifr);
-      ::close(so);
-      if (rv==0) {
-	unsigned interface = ntohl( *(unsigned*)&(ifr.ifr_addr.sa_data[2]) );
-	if (((interface>>8)&0xff)==10) {
-	  lProd=true;
-          lReqFull=false;
-        }
-      }
+    unsigned interface = Ami::Ins::parse_interface("eth0");
+    if (((interface>>8)&0xff)==10) {
+      lProd=true;
+      lReqFull=false;
     }
   }
 

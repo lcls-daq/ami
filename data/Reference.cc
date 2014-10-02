@@ -85,7 +85,7 @@ Reference::Reference(const char*& p, const DescEntry& e) :
     printf("reference attempt to read desc size %d from %s\n",d.size(),_path);
     abort();
   }
-  READ_SIZE(_buffer+sizeof(DescEntry),d.size()-sizeof(DescEntry),f);
+  READ_SIZE(_buffer+sizeof(DescEntry)/sizeof(uint32_t),d.size()-sizeof(DescEntry),f);
   _entry = EntryFactory::entry(d);
   iovec iov;
   _entry->payload(iov);
@@ -98,7 +98,7 @@ Reference::~Reference()
   if (_entry) delete _entry;
 }
 
-DescEntry& Reference::_routput   () const { return _entry->desc(); }
+const DescEntry& Reference::_routput   () const { return _entry->desc(); }
 
 void*      Reference::_serialize(void* p) const
 {

@@ -66,7 +66,7 @@ void   Analysis::analyze()
     _op->invalid(); 
 }
 
-DescEntry& Analysis::output () const
+const DescEntry& Analysis::output () const
 {
   return _op->output();
 }

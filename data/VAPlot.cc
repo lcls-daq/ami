@@ -117,7 +117,7 @@ VAPlot::~VAPlot()
     delete _cache;
 }
 
-DescEntry& VAPlot::_routput   () const { return _accumulate<=0 ? _output_entry->desc() : _cache->desc(); }
+const DescEntry& VAPlot::_routput   () const { return _accumulate<=0 ? _output_entry->desc() : _cache->desc(); }
 
 void*      VAPlot::_serialize(void* p) const
 {

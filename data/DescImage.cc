@@ -277,7 +277,7 @@ void DescImage::set_mask(const ImageMask& mask) {
   _mask._ptr = new ImageMask(mask);
 }
 
-void DescImage::deserialize(char* q, const char*& p)
+void DescImage::deserialize(void* q, const char*& p)
 {
   memcpy(q, p, sizeof(DescImage)); 
   p += sizeof(DescImage);

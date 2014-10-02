@@ -26,7 +26,7 @@ namespace Ami {
   public:
     void use();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
@@ -35,7 +35,7 @@ namespace Ami {
     enum { EXPRESSION_LEN = 256 };
     char             _expression[EXPRESSION_LEN];
     enum { DESC_LEN = sizeof(DescImage) };
-    char             _desc_buffer[DESC_LEN];
+    uint32_t         _desc_buffer[DESC_LEN/sizeof(uint32_t)];
 
     unsigned      _mask;
     Term*         _xterm;

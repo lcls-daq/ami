@@ -20,14 +20,14 @@ namespace Ami {
     RectROI(const char*&);
     ~RectROI();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid() const { return true; }
     void       _invalid();
   private:
     enum { DESC_LEN = sizeof(DescImage) };
-    char             _desc_buffer[DESC_LEN];
+    uint32_t         _desc_buffer[DESC_LEN/sizeof(uint32_t)];
     Entry*           _output;
   };
 

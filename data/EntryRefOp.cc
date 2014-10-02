@@ -34,7 +34,7 @@ EntryRefOp::~EntryRefOp()
 
 static DescRef _no_entry("NoEntry");
 
-DescEntry& EntryRefOp::_routput   () const 
+const DescEntry& EntryRefOp::_routput   () const 
 { 
   return *_output;
 }

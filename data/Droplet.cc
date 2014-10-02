@@ -123,7 +123,7 @@ Droplet::~Droplet()
 
 void Droplet::use() {}
 
-DescEntry& Droplet::_routput   () const 
+const DescEntry& Droplet::_routput   () const 
 { 
   if (_entry) return _entry->desc();
   abort();

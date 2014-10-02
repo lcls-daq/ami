@@ -30,7 +30,7 @@ namespace Ami {
 
     // Implements EntryAutoRange
     double    entries() const;
-    DescTH2F* result(void* =0) const;
+    DescTH2F* result(const void* =0) const;
 
   private:
     virtual void _merge(char*) const;

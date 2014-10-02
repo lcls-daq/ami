@@ -40,9 +40,10 @@ namespace Ami {
     virtual ~AbsOperator();
 
     ///  Applies subclass operation to the input data and returns a reference to the result
-    Entry&       operator ()(const Entry& e) const;
+    Entry&       operator  ()(const Entry& e) const;
+    ///  Note that EntryAutoRange makes non-const use of the following.
     ///  Returns a reference to the shape of output data
-    DescEntry&   output   () const;
+    const DescEntry& output() const;
     /**
      *   Builds a serial representation of this object at the input memory location and
      *   returns the memory location for the next object in the serialization.
@@ -66,7 +67,7 @@ namespace Ami {
     ///  Subclass-specific operation on input/intermediate data
     virtual Entry& _operate  (const Entry&) const = 0;
     ///  Subclass-specific output/intermediate data shape
-    virtual DescEntry& _routput          () const = 0;
+    virtual const DescEntry& _routput    () const = 0;
     ///  Subclass-specific serialization of object data into memory location
     virtual void*  _serialize(void* p     ) const = 0;
     ///  Subclass-specific determination of valid construction

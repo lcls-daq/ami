@@ -139,9 +139,9 @@ void TdcPlot::use()
   if (_yterm) _yterm->use();
 }
 
-DescEntry& TdcPlot::_routput   () const 
+const DescEntry& TdcPlot::_routput   () const 
 { 
-  return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _output ? _output->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      TdcPlot::_serialize(void* p) const

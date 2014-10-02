@@ -33,7 +33,8 @@ unsigned Ins::parse_interface(const char* interfaceString) {
       printf("Cannot get IP address for network interface %s.\n",interfaceString);
       return 0;
     }
-    interface = ntohl( *(unsigned*)&(ifr.ifr_addr.sa_data[2]) );
+    sockaddr_in* saddr = (sockaddr_in*)&(ifr.ifr_addr);
+    interface = ntohl(saddr->sin_addr.s_addr);
   }
   printf("Using interface %s (%d.%d.%d.%d)\n",
          interfaceString,

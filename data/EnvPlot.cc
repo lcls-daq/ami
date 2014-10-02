@@ -5,6 +5,7 @@
 #include "ami/data/EntryFactory.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/valgnd.hh"
 #include "ami/data/FeatureExpression.hh"
 
 #include <QtCore/QString>
@@ -23,8 +24,7 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   _input     (0),
   _v         (true)
 {
-  memcpy (_desc_buffer, &output, output.size());
-  memset (_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
 EnvPlot::EnvPlot(const char*&  p, 
@@ -72,9 +72,9 @@ void EnvPlot::use()
   if (_input ) _input ->use();
 }
 
-DescEntry& EnvPlot::_routput   () const 
+const DescEntry& EnvPlot::_routput   () const 
 { 
-  return _entry ? _entry->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _entry ? _entry->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      EnvPlot::_serialize(void* p) const

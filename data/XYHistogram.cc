@@ -9,6 +9,7 @@
 #include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/valgnd.hh"
 
 #include <stdio.h>
 #include <string.h>
@@ -19,8 +20,7 @@ XYHistogram::XYHistogram(const DescEntry& output) :
   AbsOperator(AbsOperator::XYHistogram),
   _output    (0)
 {
-  memcpy(_desc_buffer, &output, output.size());
-  memset(_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  memcpy_val(_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
 XYHistogram::XYHistogram(const char*& p, const DescEntry& input) :
@@ -44,9 +44,9 @@ XYHistogram::~XYHistogram()
   if (_output) delete _output;
 }
 
-DescEntry& XYHistogram::_routput   () const 
+const DescEntry& XYHistogram::_routput   () const 
 { 
-  return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _output ? _output->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      XYHistogram::_serialize(void* p) const

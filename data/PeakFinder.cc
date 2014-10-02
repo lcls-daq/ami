@@ -117,7 +117,7 @@ PeakFinder::~PeakFinder()
     delete _fn;
 }
 
-DescEntry& PeakFinder::_routput   () const { return _accumulate<=0 ? _output_entry->desc() : _cache->desc(); }
+const DescEntry& PeakFinder::_routput   () const { return _accumulate<=0 ? _output_entry->desc() : _cache->desc(); }
 
 void*      PeakFinder::_serialize(void* p) const
 {

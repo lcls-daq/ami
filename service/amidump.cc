@@ -32,19 +32,8 @@ int main(int argc, char* argv[])
   while ((c = getopt(argc, argv, "i:h")) != -1) {
     switch(c) {
     case 'i': 
-      { if (optarg[0]<'0' || optarg[0]>'9') {
-	  struct ifreq ifr;
-	  strcpy( ifr.ifr_name, optarg );
-	  int iError = ioctl( _listen.socket(), SIOCGIFADDR, (char*)&ifr );
-	  if ( iError == 0 )
-	    ip_host = ntohl( *(unsigned int*) &(ifr.ifr_addr.sa_data[2]) );
-	  else
-	    printf( "Cannot get IP address from network interface %s\n", optarg );
-	}
-	else {
-	  ip_host = ntohl(inet_addr(optarg));
-	}
-      } break;
+      ip_host = Ins::parse_interface(optarg);
+      break;
     case 'h':
     default:
       usage(argv[0]);

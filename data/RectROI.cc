@@ -75,9 +75,9 @@ RectROI::~RectROI()
   if (_output) delete _output;
 }
 
-DescEntry& RectROI::_routput   () const 
+const DescEntry& RectROI::_routput   () const 
 { 
-  return _output ? _output->desc() : *reinterpret_cast<DescEntry*>(const_cast<char*>(_desc_buffer)); 
+  return _output ? _output->desc() : *reinterpret_cast<const DescEntry*>(_desc_buffer); 
 }
 
 void*      RectROI::_serialize(void* p) const

@@ -11,7 +11,7 @@ namespace Ami {
     virtual ~EntryAutoRange() {}
 
     virtual double     entries() const = 0;
-    virtual DescEntry* result(void* =0) const = 0;
+    virtual DescEntry* result(const void* =0) const = 0;
   };
 };
 

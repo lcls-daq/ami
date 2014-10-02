@@ -93,7 +93,7 @@ namespace Ami {
     bool rphi_bounds(int& x0, int& x1, int& y0, int& y1,
 		     double xc, double yc, double r, unsigned frame) const;
 
-    static void deserialize(char*, const char*&);
+    static void deserialize(void*, const char*&);
   private:
     uint16_t _nbinsx;
     uint16_t _nbinsy;

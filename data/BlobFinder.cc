@@ -473,7 +473,7 @@ BlobFinder::~BlobFinder()
     delete[] _spectrum;
 }
 
-DescEntry& BlobFinder::_routput   () const { return _output_entry->desc(); }
+const DescEntry& BlobFinder::_routput   () const { return _output_entry->desc(); }
 
 void*      BlobFinder::_serialize(void* p) const
 {

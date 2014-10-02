@@ -87,7 +87,7 @@ FFT::~FFT()
   if (_complex  ) gsl_vector_complex_free(_complex);
 }
 
-DescEntry& FFT::_routput   () const 
+const DescEntry& FFT::_routput   () const 
 { 
   return _output->desc();
 }

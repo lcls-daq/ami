@@ -23,8 +23,10 @@ double EntryScalarDRange::entries() const { return _x->entries() - _desc.nsample
 
 #include <stdio.h>
 
-DescTH2F* EntryScalarDRange::result(void* p) const
+DescTH2F* EntryScalarDRange::result(const void* cp) const
 {
+  void* p = const_cast<void*>(cp);
+
 #define GET_RANGE(xlow,xhigh,range,p) {                                 \
     switch(_desc.stat_##p()) {                                          \
     case DescScalarDRange::MinMax : {                                   \

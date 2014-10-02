@@ -99,7 +99,7 @@ EntryMath::~EntryMath()
 
 void EntryMath::use() { if (_term) _term->use(); }
 
-DescEntry& EntryMath::_routput   () const { return _entry->desc(); }
+const DescEntry& EntryMath::_routput   () const { return _entry->desc(); }
 
 void*      EntryMath::_serialize(void* p) const
 {

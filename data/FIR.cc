@@ -66,7 +66,7 @@ FIR::~FIR()
   if (_output) delete _output;
 }
 
-DescEntry& FIR::_routput   () const { return _output->desc(); }
+const DescEntry& FIR::_routput   () const { return _output->desc(); }
 
 void*      FIR::_serialize(void* p) const
 {

@@ -28,7 +28,7 @@ namespace Ami {
     int   op()   { return _op; };
     void use();
   private:
-    DescEntry& _routput   () const;
+    const DescEntry& _routput   () const;
     Entry&     _operate  (const Entry&) const;
     void*      _serialize(void*) const;
     bool       _valid    () const { return _v; }
@@ -38,7 +38,7 @@ namespace Ami {
     enum { NAME_LEN = 256 };
     char       _name[NAME_LEN];
     enum { DESC_LEN = 1024 };
-    char       _desc_buffer[DESC_LEN];
+    uint32_t    _desc_buffer[DESC_LEN/sizeof(uint32_t)];
     enum { scale=0, shift=1, chi2=2 };
     int        _op;
     enum { NORM_LEN = 256 };
