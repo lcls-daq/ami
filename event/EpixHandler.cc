@@ -188,12 +188,12 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
   case Pds::TypeId::Id_EpixConfig   : 
     { PARSE_CONFIG(Pds::Epix::ConfigV1);
       _rowsRead        = _rows;
-      _rowsReadPerAsic = _rowsPerAsic;
+      _rowsReadPerAsic = _rows/_nchip_rows;
       _monitorData = (c.lastRowExclusions()); } break;
   case Pds::TypeId::Id_Epix10kConfig: 
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
       _rowsRead        = _rows;
-      _rowsReadPerAsic = _rowsPerAsic;
+      _rowsReadPerAsic = _rows/_nchip_rows;
       _monitorData = (c.lastRowExclusions()); } break;
   case Pds::TypeId::Id_Epix100aConfig: 
     { PARSE_CONFIG(Pds::Epix::Config100aV1);
@@ -396,9 +396,11 @@ void EpixHandler::rename(const char* s)
     _entry->desc().name(s);
  
     char buff[64];
-    sprintf(buff,"%s-Cal",s);
-    _ref->desc().name(buff);
-    
+    if (_ref) {
+      sprintf(buff,"%s-Cal",s);
+      _ref->desc().name(buff);
+    }
+
     int index=0;
     unsigned nAsics       =_config_cache->numberOfAsics();
     bool lastRowExclusions=_config_cache->hasMonitorData();
