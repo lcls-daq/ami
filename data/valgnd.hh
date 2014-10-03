@@ -18,7 +18,7 @@
     } else memset(dst,0,sz); }
 #define memcpy_val(dst,src,sz,bsz) {		\
     memcpy(dst,src,sz);				\
-    memset(dst+sz,0,bsz-sz); }
+    memset((char*)dst+sz,0,bsz-sz); }
 #else
 #define strncpy_val(dst,src,sz) { \
     if (src) strncpy(dst,src,sz); \
