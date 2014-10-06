@@ -11,15 +11,45 @@
 using namespace Ami;
 
 UsdUsbHandler::UsdUsbHandler(const Pds::DetInfo& info, FeatureCache& f) :
-  EventHandler(info,
-	       Pds::TypeId::Id_UsdUsbData,
-	       Pds::TypeId::Id_UsdUsbConfig),
-  _cache(f)
+  EventHandlerF(info,
+                Pds::TypeId::Id_UsdUsbData,
+                Pds::TypeId::Id_UsdUsbConfig,
+                f)
 {
 }
 
 UsdUsbHandler::~UsdUsbHandler()
 {
+}
+
+void   UsdUsbHandler::reset () 
+{
+  EventHandlerF::reset();
+  _index=-1; 
+}
+
+void         UsdUsbHandler::rename  (const char* s)
+{
+  if (_index<0) return;
+
+  char buffer[64];
+  snprintf(buffer,59,s);
+  char* c = buffer+strlen(buffer);
+  
+  unsigned index(_index);
+  sprintf(c,":TS"); _rename_cache(index,buffer); index++;
+  for(unsigned i=0; i<4; i++) {
+    sprintf(c,":CH%d",i);
+    _rename_cache(index,buffer); index++;
+  }
+  for(unsigned i=0; i<4; i++) {
+    sprintf(c,":AIN%d",i);
+    _rename_cache(index,buffer); index++;
+  }
+  for(unsigned i=0; i<8; i++) {
+    sprintf(c,":DIN%d",i);
+    _rename_cache(index,buffer); index++;
+  }
 }
 
 void   UsdUsbHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -32,18 +62,18 @@ void   UsdUsbHandler::_configure(Pds::TypeId id, const void* payload, const Pds:
   switch(id.version()) {
   case 1: {
     sprintf(c,":TS");
-    _index = _cache.add(buffer);
+    _index = _add_to_cache(buffer);
     for(unsigned i=0; i<4; i++) {
       sprintf(c,":CH%d",i);
-      _cache.add(buffer);
+      _add_to_cache(buffer);
     }
     for(unsigned i=0; i<4; i++) {
       sprintf(c,":AIN%d",i);
-      _cache.add(buffer);
+      _add_to_cache(buffer);
     }
     for(unsigned i=0; i<8; i++) {
       sprintf(c,":DIN%d",i);
-      _cache.add(buffer);
+      _add_to_cache(buffer);
     }
   } break;
   default:
@@ -80,27 +110,3 @@ void   UsdUsbHandler::_damaged  ()
 //  No Entry data
 unsigned     UsdUsbHandler::nentries() const { return 0; }
 const Entry* UsdUsbHandler::entry   (unsigned) const { return 0; }
-void         UsdUsbHandler::reset   () 
-{
-}
-void         UsdUsbHandler::rename  (const char* s)
-{
-  char buffer[64];
-  strncpy(buffer,s,59);
-  char* c = buffer+strlen(buffer);
-
-  unsigned index(_index);
-  sprintf(c,":TS"); _cache.rename(index,buffer); index++;
-  for(unsigned i=0; i<4; i++) {
-    sprintf(c,":CH%d",i);
-    _cache.rename(index,buffer); index++;
-  }
-  for(unsigned i=0; i<4; i++) {
-    sprintf(c,":AIN%d",i);
-    _cache.rename(index,buffer); index++;
-  }
-  for(unsigned i=0; i<8; i++) {
-    sprintf(c,":DIN%d",i);
-    _cache.rename(index,buffer); index++;
-  }
-}

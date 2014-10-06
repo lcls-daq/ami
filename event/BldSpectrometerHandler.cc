@@ -32,10 +32,12 @@ void BldSpectrometerHandler::rename(const char* s)
 {
   char buff[64];
 
-  sprintf(buff,"%s_H",s);
-  _entry[0]->desc().name(buff);
-  sprintf(buff,"%s_V",s);
-  _entry[1]->desc().name(buff);
+  if (_nentries) {
+    sprintf(buff,"%s_H",s);
+    _entry[0]->desc().name(buff);
+    sprintf(buff,"%s_V",s);
+    _entry[1]->desc().name(buff);
+  }
 }
 
 void BldSpectrometerHandler::reset() {

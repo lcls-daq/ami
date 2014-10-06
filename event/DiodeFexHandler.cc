@@ -24,6 +24,7 @@ DiodeFexHandler::~DiodeFexHandler()
 
 void   DiodeFexHandler::rename(const char* s)
 {
+  if (_index<0) return;
   _rename_cache(_index,s);
 }
 

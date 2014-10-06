@@ -94,6 +94,8 @@ const Entry* Gsc16aiHandler::entry   (unsigned) const { return 0; }
 
 void   Gsc16aiHandler::rename(const char* s)
 {
+  if (_index<0) return;
+
   char buffer[68];
   strncpy(buffer,s,59);
   char* cc = buffer+strlen(buffer);

@@ -50,6 +50,7 @@ int EventHandlerF::_add_to_cache(const char* name)
 
 void EventHandlerF::_rename_cache(int index, const char* name)
 {
+  if (index<0) return;
   std::string fname(_cache.names()[index]);
   for(std::list<std::string>::iterator it=_features.begin();
       it!=_features.end(); it++)

@@ -30,6 +30,8 @@ void   EncoderHandler::reset ()
 
 void   EncoderHandler::rename(const char* s)
 {
+  if (_index<0) return;
+
   char buffer[64];
   unsigned index(_index);
   for(unsigned i=0; i<3; i++,index++) {
