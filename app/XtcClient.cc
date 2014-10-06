@@ -150,9 +150,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       _cache[PostAnalysis]->cache(cache);
 
       if (_filter.accept()) {
-  accept = true;
-  _entry.front()->valid(_seq->clock());
-  _factory.analyze();
+        accept = true;
+        _entry.front()->valid(_seq->clock());
+        _factory.analyze();
       }
     }
     //
@@ -359,18 +359,18 @@ int XtcClient::process(Pds::Xtc* xtc)
 
       Pds::TypeId::Type type = xtc->contains.id();
       for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-    it != types.end(); it++) {
+          it != types.end(); it++) {
         if (*it == type) {
 #ifdef DBUG
-    printf("Src %08x.%08x  Type %08x handled by %p\n",
-           xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
+          printf("Src %08x.%08x  Type %08x handled by %p\n",
+                 xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
-                boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ?
-                  Pds::CompressedXtc::uncompress(*xtc) :
-                  boost::shared_ptr<Xtc>(xtc,Destroy);
+          boost::shared_ptr<Xtc> pxtc = xtc->contains.compressed() ?
+            Pds::CompressedXtc::uncompress(*xtc) :
+            boost::shared_ptr<Xtc>(xtc,Destroy);
 
-                h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
-    return 1;
+          h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
+          return 1;
         }
         else
     continue;
@@ -475,7 +475,7 @@ int XtcClient::process(Pds::Xtc* xtc)
           if (name) {
             h->rename(name);
           }
-  }
+        }
         break;
       default: break;
       }
@@ -490,23 +490,23 @@ int XtcClient::process(Pds::Xtc* xtc)
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
       }
       else {
-  char buff[128];
-  const char* infoName = buff;
+        char buff[128];
+        const char* infoName = buff;
+        bool hasAlias=false;
 
-  switch(xtc->src.level()) {
-  case Level::Source  : infoName = Pds::DetInfo::name(info); break;
-  case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
-  default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
-  }
+        switch(xtc->src.level()) {
+        case Level::Source  : infoName = Pds::DetInfo::name(info); break;
+        case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
+        default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
+        }
 
-  if (_name_service) {
-    const char* name = _name_service->name(h->info());
-    if (name) {
-      h->rename(name);
-      strcpy(buff,name);
-      infoName = buff;
-    }
-  }
+        if (_name_service) {
+          const char* name = _name_service->name(h->info());
+          if (name) {
+            strcpy(buff,name);
+            hasAlias = true;
+          }
+        }
 
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
 #ifdef DBUG
@@ -527,6 +527,9 @@ int XtcClient::process(Pds::Xtc* xtc)
 
         insert(h);
         _configure(xtc, h);
+
+        if (hasAlias)
+          h->rename(infoName);
       }
     }
   }
