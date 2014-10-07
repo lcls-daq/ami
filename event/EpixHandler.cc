@@ -748,7 +748,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       }	
     }
 
-    else if (d.options()&FrameCalib::option_correct_common_mode()) {
+    if (d.options()&FrameCalib::option_correct_common_mode()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
         if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
           continue;
@@ -770,6 +770,23 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 	  if (Ami::EventHandler::post_diagnostics())
 	    _cache.cache(_feature[4*k+m+index],double(fn));
 	}
+      }	
+    }
+
+    if (d.options()&FrameCalib::option_correct_common_mode3()) {
+      for(unsigned k=0; k<_desc.nframes(); k++) {
+        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
+          continue;
+        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
+	for(unsigned x=0; x<e.shape()[1]; x++) {
+	  ndarray<uint32_t,1> s(&e[0][x],e.shape());
+	  s.strides(e.strides());
+	  int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+	  //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
+	  //  _cache.cache(_feature[(y%16)+index],double(fn));
+	  for(unsigned y=0; y<e.shape()[0]; y++)
+	    s[y] -= fn;
+        }
       }	
     }
 

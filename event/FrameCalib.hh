@@ -17,6 +17,7 @@ namespace Ami {
     static unsigned    option_correct_gain       ();
     static unsigned    option_correct_common_mode();
     static unsigned    option_correct_common_mode2();
+    static unsigned    option_correct_common_mode3();
 
     static std::string save_pedestals(Entry*,bool corrected,bool prod,
 				      const char* prefix="ped");

@@ -12,7 +12,6 @@
 #include <QtGui/QCheckBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
-#include <QtGui/QButtonGroup>
 
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
@@ -31,18 +30,28 @@ EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QStri
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode [Ch]"));
   addWidget(_fnBox2= new QCheckBox("Correct\nCommon Mode [Row]"));
+  addWidget(_fnBox3= new QCheckBox("Correct\nCommon Mode [Column]"));
   addWidget(_gnBox = new QCheckBox("Correct\nGain"));
   connect(_npBox , SIGNAL(clicked()), this, SIGNAL(changed()));
-  connect(_fnBox , SIGNAL(clicked()), this, SIGNAL(changed()));
-  connect(_fnBox2, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_fnBox , SIGNAL(clicked()), this, SLOT  (set_fn ()));
+  connect(_fnBox2, SIGNAL(clicked()), this, SLOT  (set_fn2()));
+  connect(_fnBox3, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_gnBox , SIGNAL(clicked()), this, SIGNAL(changed()));
-
-  _fnGroup = new QButtonGroup;
-  _fnGroup->addButton(_fnBox);
-  _fnGroup->addButton(_fnBox2);
 }
 
-EpixClient::~EpixClient() { delete _fnGroup; }
+EpixClient::~EpixClient() {}
+
+void EpixClient::set_fn()
+{
+  _fnBox2->setChecked(false);
+  emit changed();
+}
+
+void EpixClient::set_fn2()
+{
+  _fnBox->setChecked(false);
+  emit changed();
+}
 
 void EpixClient::save(char*& p) const
 {
@@ -50,6 +59,7 @@ void EpixClient::save(char*& p) const
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_fnBox2", QtPersistent::insert(p,_fnBox2->isChecked()) );
+  XML_insert(p, "QCheckBox", "_fnBox3", QtPersistent::insert(p,_fnBox3->isChecked()) );
   XML_insert(p, "QCheckBox", "_gnBox", QtPersistent::insert(p,_gnBox->isChecked()) );
 }
 
@@ -64,6 +74,8 @@ void EpixClient::load(const char*& p)
       _fnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_fnBox2")
       _fnBox2->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_fnBox3")
+      _fnBox3->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_gnBox")
       _gnBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(EpixClient,tag);
@@ -80,6 +92,7 @@ void EpixClient::_configure(char*& p,
   if (_npBox->isChecked()) o |= FrameCalib::option_no_pedestal();
   if (_fnBox->isChecked()) o |= FrameCalib::option_correct_common_mode();
   if (_fnBox2->isChecked()) o |= FrameCalib::option_correct_common_mode2();
+  if (_fnBox3->isChecked()) o |= FrameCalib::option_correct_common_mode3();
   if (_gnBox->isChecked()) o |= FrameCalib::option_correct_gain();
   if (_reloadPedestals) {
     o |= FrameCalib::option_reload_pedestal();

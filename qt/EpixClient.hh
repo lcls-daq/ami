@@ -4,7 +4,6 @@
 #include "ami/qt/ImageClient.hh"
 
 class QCheckBox;
-class QButtonGroup;
 
 namespace Ami {
   namespace Qt {
@@ -25,14 +24,16 @@ namespace Ami {
 		      unsigned nchannels);
       void _setup_payload(Cds&);
     public slots:
+      void set_fn ();
+      void set_fn2();
       void write_pedestals();
     private:
       //  Specialization widgets
       QCheckBox* _npBox;
       QCheckBox* _fnBox;
       QCheckBox* _fnBox2;
+      QCheckBox* _fnBox3;
       QCheckBox* _gnBox;
-      QButtonGroup* _fnGroup;
       bool _reloadPedestals;
     };
   };

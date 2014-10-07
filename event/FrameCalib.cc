@@ -17,12 +17,14 @@ static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
 static const unsigned _option_correct_common_mode = 0x04;
 static const unsigned _option_correct_common_mode2= 0x08;
-static const unsigned _option_correct_gain        = 0x10;
+static const unsigned _option_correct_common_mode3= 0x10;
+static const unsigned _option_correct_gain        = 0x20;
 
 unsigned FrameCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned FrameCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned FrameCalib::option_correct_common_mode() { return _option_correct_common_mode; }
 unsigned FrameCalib::option_correct_common_mode2() { return _option_correct_common_mode2; }
+unsigned FrameCalib::option_correct_common_mode3() { return _option_correct_common_mode3; }
 unsigned FrameCalib::option_correct_gain        () { return _option_correct_gain; }
 
 std::string FrameCalib::save_pedestals(Entry* e,
