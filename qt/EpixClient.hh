@@ -4,6 +4,7 @@
 #include "ami/qt/ImageClient.hh"
 
 class QCheckBox;
+class QButtonGroup;
 
 namespace Ami {
   namespace Qt {
@@ -31,6 +32,7 @@ namespace Ami {
       QCheckBox* _fnBox;
       QCheckBox* _fnBox2;
       QCheckBox* _gnBox;
+      QButtonGroup* _fnGroup;
       bool _reloadPedestals;
     };
   };

@@ -12,6 +12,7 @@
 #include <QtGui/QCheckBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
+#include <QtGui/QButtonGroup>
 
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
@@ -35,9 +36,13 @@ EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QStri
   connect(_fnBox , SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_fnBox2, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_gnBox , SIGNAL(clicked()), this, SIGNAL(changed()));
+
+  _fnGroup = new QButtonGroup;
+  _fnGroup->addButton(_fnBox);
+  _fnGroup->addButton(_fnBox2);
 }
 
-EpixClient::~EpixClient() {}
+EpixClient::~EpixClient() { delete _fnGroup; }
 
 void EpixClient::save(char*& p) const
 {
