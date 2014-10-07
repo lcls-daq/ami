@@ -190,7 +190,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows;
       _monitorData = (c.lastRowExclusions()); } break;
-  case Pds::TypeId::Id_Epix10kConfig: 
+  case Pds::TypeId::Id_Epix10kConfig:
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows;
@@ -722,7 +722,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
         unsigned shape[2];
@@ -732,7 +732,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           for(unsigned y=0; y<shape[0]; y++) {
             ndarray<uint32_t,1> s(&e[y][m*shape[1]],&shape[1]);
             int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-            if (Ami::EventHandler::post_diagnostics() && k==3 && m==0 && y<80)
+            if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
               _cache.cache(_feature[(y%16)+index],double(fn));
             uint32_t* v = &s[0];
             for(unsigned x=0; x<shape[1]; x++)
@@ -744,7 +744,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     else if (d.options()&FrameCalib::option_correct_common_mode()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	unsigned shape[2];
@@ -781,7 +781,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       make_ndarray(&_no_gain[nskip][0],a.shape()[0],a.shape()[1]);
     {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-	if ((aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
 	  continue;
 	ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	unsigned r = (k/_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfRowsReadPerAsic();
@@ -850,12 +850,30 @@ void EpixHandler::_load_pedestals()
   else
     for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
 
+  unsigned aMask = _config_cache->asicMask();
   pb = FrameCalib::load_array(p->desc(),"ped");
   if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-    unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
+    unsigned nskip = (p->desc().nbinsy()-pb.shape()[0])/2;
     for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
     printf("Loaded pedestal set %u x %u [%u x %u]  nskip %u\n",
 	   pb.shape()[1], pb.shape()[0], p->desc().nbinsx(), p->desc().nbinsy(), nskip);
+  }
+  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    unsigned nskip = (_entry->desc().nbinsy()-pb.shape()[0])/2;
+    unsigned nx = _entry->desc().nbinsx();
+    unsigned ny = _entry->desc().nbinsy();
+    for(unsigned i=0; i<pb.shape()[0]; i++) {
+      unsigned* a = &pb[i][0];
+      unsigned* b0 = &_pedestals[nskip+i   ][0];
+      unsigned* b1 = &_pedestals[nskip+i+ny][0];
+      for(unsigned j=0; j<pb.shape()[1]; j++) {
+	unsigned v = offset-a[j];
+	b0[j   ] = v;
+	b0[j+nx] = v;
+	b1[j   ] = v;
+	b1[j+nx] = v;
+      }
+    }
   }
   else
     for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
@@ -864,6 +882,20 @@ void EpixHandler::_load_pedestals()
   if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
     unsigned nskip = (_pedestals_lo.shape()[0]-pb.shape()[0])/2;
     for(unsigned *a=pb.begin(), *b=&_pedestals_lo[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
+  }
+  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    unsigned nskip = (_entry->desc().nbinsy()-pb.shape()[0])/2;
+    unsigned nx = _entry->desc().nbinsx();
+    for(unsigned i=0; i<pb.shape()[0]; i++) {
+      unsigned* a = &pb[i][0];
+      unsigned* b = &_pedestals_lo[nskip+i][0];
+      for(unsigned j=0; j<pb.shape()[1]; j++) {
+	unsigned v = offset-a[j];
+	b[j   ] = v;
+	b[j+nx] = v;
+      }
+    }
+    for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
   }
   else
     for(unsigned *a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
