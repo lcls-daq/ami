@@ -470,10 +470,9 @@ int XtcClient::process(Pds::Xtc* xtc)
           _name_service = new NameService;
         _name_service->append(*xtc);
         for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-          EventHandler* h = *it;
-          const char* name = _name_service->name(h->info());
+          const char* name = _name_service->name((*it)->info());
           if (name) {
-            h->rename(name);
+            (*it)->rename(name);
           }
         }
         break;
@@ -492,20 +491,11 @@ int XtcClient::process(Pds::Xtc* xtc)
       else {
         char buff[128];
         const char* infoName = buff;
-        bool hasAlias=false;
 
         switch(xtc->src.level()) {
         case Level::Source  : infoName = Pds::DetInfo::name(info); break;
         case Level::Reporter: infoName = Pds::BldInfo::name(bldInfo); break;
         default:  sprintf(buff,"Proc %08x:%08x", info.log(), info.phy()); break;
-        }
-
-        if (_name_service) {
-          const char* name = _name_service->name(h->info());
-          if (name) {
-            strcpy(buff,name);
-            hasAlias = true;
-          }
         }
 
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
@@ -527,9 +517,6 @@ int XtcClient::process(Pds::Xtc* xtc)
 
         insert(h);
         _configure(xtc, h);
-
-        if (hasAlias)
-          h->rename(infoName);
       }
     }
   }
