@@ -244,6 +244,7 @@ ImageColorControl::ImageColorControl(QWidget* parent,
   connect(rangebox, SIGNAL(currentIndexChanged(int)), stack, SLOT(setCurrentIndex(int)));
   connect(rangebox, SIGNAL(currentIndexChanged(int)), this, SLOT(range_changed(int)));
   show_scale();
+  _range_box = rangebox;
 }   
 
 ImageColorControl::~ImageColorControl()
@@ -257,6 +258,7 @@ void ImageColorControl::save(char*& p) const
   XML_insert(p, "QButtonGroup", "_paletteGroup", QtPersistent::insert(p,_paletteGroup->checkedId()) );
   XML_insert(p, "QCheckBox", "_logscale_fixed", QtPersistent::insert(p,_logscale_fixed->isChecked()) );
   XML_insert(p, "QCheckBox", "_logscale_full" , QtPersistent::insert(p,_logscale_full->isChecked()) );
+  XML_insert(p, "QComboBox", "_range_box" , QtPersistent::insert(p,_range_box->currentIndex()) );
 }
 
 void ImageColorControl::load(const char*& p)
@@ -275,6 +277,8 @@ void ImageColorControl::load(const char*& p)
       _logscale_fixed->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_logscale_full")
       _logscale_full ->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_range_box")
+      _range_box->setCurrentIndex(QtPersistent::extract_i(p));
   XML_iterate_close(ImageColorControl,tag);
 
   show_scale();

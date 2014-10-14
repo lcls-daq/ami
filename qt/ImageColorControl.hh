@@ -14,6 +14,7 @@
 
 class QButtonGroup;
 class QCheckBox;
+class QComboBox;
 class QLabel;
 class QLineEdit;
 
@@ -66,6 +67,7 @@ namespace Ami {
       QCheckBox* _logscale_fixed;
       QCheckBox* _logscale_full;
       QLineEdit* _nsigma;
+      QComboBox* _range_box;
     };
   };
 };
