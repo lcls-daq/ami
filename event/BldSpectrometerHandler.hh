@@ -1,7 +1,7 @@
 #ifndef Ami_BldSpectrometerHandler_hh
 #define Ami_BldSpectrometerHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "pdsdata/psddl/bld.ddl.h"
 #include "pdsdata/xtc/BldInfo.hh"
 
@@ -9,9 +9,9 @@ namespace Ami {
   class EntryWaveform;
   class EntryRef;
 
-  class BldSpectrometerHandler : public EventHandler {
+  class BldSpectrometerHandler : public EventHandlerF {
   public:
-    BldSpectrometerHandler(const Pds::BldInfo& info);
+    BldSpectrometerHandler(const Pds::BldInfo& info, FeatureCache&);
     ~BldSpectrometerHandler();
   public:
     unsigned     nentries() const;
@@ -25,9 +25,11 @@ namespace Ami {
     void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   private:
-    enum { MaxEntries=32 };
+    enum { MaxEntries=2 };
     unsigned       _nentries;    
     EntryWaveform* _entry[MaxEntries];
+    unsigned       _npeaks;
+    int            _index;
   };
 };
 
