@@ -3,7 +3,9 @@
 
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
+#include <QtGui/QLineEdit>
 #include <QtGui/QPushButton>
+#include <QtGui/QValidator>
 
 #include "qwt_plot_marker.h"
 
@@ -21,25 +23,7 @@ CursorDefinition::CursorDefinition(const QString& name,
   _parent  (parent),
   _plot    (plot)
 {
-  _marker = new QwtPlotMarker;
-  _marker->setLabel    (name);
-  _marker->setLineStyle(QwtPlotMarker::VLine);
-  _marker->setXValue   (location);
-  
-  QPushButton* showB = new QPushButton("Show"); showB->setCheckable(true);
-  QPushButton* delB  = new QPushButton("Delete");
-
-  QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(QString("%1 @ %2").arg(name).arg(location)));
-  layout->addStretch();
-  layout->addWidget(showB);
-  layout->addWidget(delB);
-  setLayout(layout);
-
-  connect(delB, SIGNAL(clicked()), this, SLOT(remove()));
-  connect(showB, SIGNAL(clicked(bool)), this, SLOT(show_in_plot(bool)));
-
-  showB->click();
+  _layout();
 }
 
 CursorDefinition::CursorDefinition(const char*& p,
@@ -50,6 +34,18 @@ CursorDefinition::CursorDefinition(const char*& p,
   _plot    (plot)
 {
   load(p);
+  _layout();
+}
+
+CursorDefinition::~CursorDefinition()
+{
+  delete _marker;
+}
+
+void CursorDefinition::_layout()
+{
+  _value  = new QLineEdit(QString::number(_location));
+  new QDoubleValidator(_value);
 
   _marker = new QwtPlotMarker;
   _marker->setLabel    (_name);
@@ -60,21 +56,18 @@ CursorDefinition::CursorDefinition(const char*& p,
   QPushButton* delB  = new QPushButton("Delete");
 
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(QString("%1 @ %2").arg(_name).arg(_location)));
+  layout->addWidget(new QLabel(QString("%1 @").arg(_name)));
+  layout->addWidget(_value);
   layout->addStretch();
   layout->addWidget(showB);
   layout->addWidget(delB);
   setLayout(layout);
 
+  connect(_value, SIGNAL(editingFinished()), this, SLOT(update()));
   connect(delB, SIGNAL(clicked()), this, SLOT(remove()));
   connect(showB, SIGNAL(clicked(bool)), this, SLOT(show_in_plot(bool)));
 
   showB->click();
-}
-
-CursorDefinition::~CursorDefinition()
-{
-  delete _marker;
 }
 
 void CursorDefinition::show_in_plot(bool lShow)
@@ -89,6 +82,12 @@ void CursorDefinition::remove()
 {
   _marker->attach(NULL);
   _parent.remove(*this);
+}
+
+void CursorDefinition::update()
+{
+  _location = _value->text().toDouble();
+  _marker->setXValue(_location);
 }
 
 void CursorDefinition::save(char*& p) const

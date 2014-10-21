@@ -110,7 +110,7 @@ CursorsX::CursorsX(QWidget* parent,
     locations_box->setToolTip("Define a cursor with a NAME and x-axis LOCATION.");
     QVBoxLayout* layout2 = _clayout;
     { QHBoxLayout* layout1 = new QHBoxLayout;
-      layout1->addWidget(new QLabel("Location"));
+      layout1->addWidget(new QLabel("New Cursor Location"));
       layout1->addWidget(_new_value);
       layout1->addWidget(grabB);
       layout2->addLayout(layout1); }

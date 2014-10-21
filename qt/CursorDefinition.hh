@@ -5,6 +5,7 @@
 
 #include <QtCore/QString>
 
+class QLineEdit;
 class QwtPlot;
 class QwtPlotMarker;
 
@@ -30,11 +31,15 @@ namespace Ami {
       void load(const char*&);
     public slots:
       void show_in_plot(bool);
-      void remove();	  
+      void remove();
+      void update();
     private:
-      QString   _name;
-      double    _location;
-      Cursors& _parent;
+      void _layout();
+    private:
+      QString    _name;
+      double     _location;
+      QLineEdit* _value;
+      Cursors&   _parent;
       QwtPlot*       _plot;
       QwtPlotMarker* _marker;
     };
