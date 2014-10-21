@@ -146,8 +146,8 @@ std::string FrameCalib::save_pedestals(Entry* e,
 
         unsigned x = frame.x;
 	unsigned y = frame.y;
-	for (unsigned row=0; row < frame.ny*ppy; row++,off++) {
-	  for(unsigned col=0; col<frame.nx*ppx; col++)
+	for (unsigned row=0; row < frame.ny*ppy; row++) {
+	  for(unsigned col=0; col<frame.nx*ppx; col++,off++)
 	    fprintf(fn, " %d", *off + int((double(entry.content(x+col/ppx,y+row/ppy))-doff)/dn+0.5));
 	  fprintf(fn, "\n");
 	}
@@ -157,8 +157,8 @@ std::string FrameCalib::save_pedestals(Entry* e,
       unsigned* off = _off[0];
       unsigned x = 0;
       unsigned y = 0;
-      for (unsigned row=0; row < desc.nbinsy()*ppy; row++,off++) {
-	for(unsigned col=0; col<desc.nbinsx()*ppx; col++)
+      for (unsigned row=0; row < desc.nbinsy()*ppy; row++) {
+	for(unsigned col=0; col<desc.nbinsx()*ppx; col++,off++)
 	  fprintf(fn, " %d", *off + int((double(entry.content(x+col/ppx,y+row/ppy))-doff)/dn+0.5));
 	fprintf(fn, "\n");
       }
