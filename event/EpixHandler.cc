@@ -471,23 +471,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 
   { int ppb = 1;
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb);
-
-    _desc = desc;
-    for(unsigned i=0; i<nchip_rows; i++)
-      for(unsigned j=0; j<nchip_columns; j++) {
-	float x0 = j*(colsPerAsic);
-	float y0 = i*(rowsPerAsic);
-	float x1 = x0+colsPerAsic;
-	float y1 = y0+rowsPerAsic;
-	_desc.add_frame(desc.xbin(x0),desc.ybin(y0),
-			desc.xbin(x1)-desc.xbin(x0),
-			desc.ybin(y1)-desc.ybin(y0));
-      }
-  }
-  
-  { int ppb = 1;
-    DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   columns, _config_cache->numberOfRows(), ppb, ppb);
 
     _pentry = new EntryImage(desc);
@@ -499,6 +482,8 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   //     Make frame only as large as one ASIC
   //
   unsigned aMask = _config_cache->asicMask();
+  if (aMask==0) return;
+
   if ((aMask&(aMask-1))==0) {
     columns = colsPerAsic;
     rows    = rowsPerAsic;
@@ -643,6 +628,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     //  Special case of one ASIC
     //
     unsigned aMask = _config_cache->asicMask();
+    if (aMask==0) return;
+
     if ((aMask&(aMask-1))==0) {
       unsigned asic=0;
       while((aMask&(1<<asic))==0)
@@ -838,6 +825,7 @@ void EpixHandler::_load_pedestals()
   unsigned rows =_config_cache->numberOfRows();
   unsigned cols =_config_cache->numberOfColumns();
   unsigned aMask=_config_cache->asicMask();
+  if (aMask==0) return;
 
   _status       = make_ndarray<unsigned>(rows,cols);
   _pedestals    = make_ndarray<unsigned>(rows,cols);
@@ -876,10 +864,8 @@ void EpixHandler::_load_pedestals()
 
   pb = FrameCalib::load_array(p->desc(),"ped");
   if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-    unsigned nskip = (p->desc().nbinsy()-pb.shape()[0])/2;
+    unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
     for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
-    printf("Loaded pedestal set %u x %u [%u x %u]  nskip %u\n",
-	   pb.shape()[1], pb.shape()[0], p->desc().nbinsx(), p->desc().nbinsy(), nskip);
   }
   else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
     _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
@@ -896,7 +882,7 @@ void EpixHandler::_load_pedestals()
     _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
   }
   else
-    for(unsigned *a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
+    for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
 }
 
 void EpixHandler::_load_gains()
@@ -904,7 +890,8 @@ void EpixHandler::_load_gains()
   unsigned rows =_config_cache->numberOfRows();
   unsigned cols =_config_cache->numberOfColumns();
   unsigned aMask=_config_cache->asicMask();
-    
+  if (aMask==0) return;
+
   _gain    = make_ndarray<double>(rows,cols);
   _gain_lo = make_ndarray<double>(rows,cols);
   _no_gain = make_ndarray<double>(rows,cols);
@@ -939,8 +926,14 @@ void _load_one_asic(ndarray<unsigned,2>& pb,
 		    unsigned ny,
 		    ndarray<unsigned,2>& pedestals)
 {
+  printf("_load_one_asic pb [%ux%u] pedestals [%ux%u] ny %u\n",
+	 pb.shape()[0],pb.shape()[1],
+	 pedestals.shape()[0],pedestals.shape()[1],
+	 ny);
+
   unsigned nskip = (ny-pb.shape()[0])/2;
   unsigned nx = pb.shape()[1];
+
   for(unsigned i=0; i<pb.shape()[0]; i++) {
     unsigned* a = &pb[i][0];
     unsigned* b0 = &pedestals[nskip+i   ][0];
