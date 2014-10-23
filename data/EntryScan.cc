@@ -1,5 +1,7 @@
 #include "ami/data/EntryScan.hh"
 
+#include <map>
+
 #define SIZE(n) (sizeof(BinV)/sizeof(double)*n+InfoSize)
 
 #ifdef DBUG
@@ -9,6 +11,16 @@ static void _dump(unsigned,const double*,const char*);
 static const unsigned DefaultNbins = 100;
 
 using namespace Ami;
+
+EntryScan::BinV& EntryScan::BinV::operator+=(const EntryScan::BinV& o)
+{
+  _x        += o._x;
+  _nentries += o._nentries;
+  _ysum     += o._ysum;
+  _y2sum    += o._y2sum;
+  if (o._t > _t) _t = o._t;
+  return *this;
+}
 
 EntryScan::~EntryScan() {}
 
@@ -91,27 +103,18 @@ void EntryScan::diff(const EntryScan& curr,
   valid(curr.time());
 }
 
-int EntryScan::_insert_bin(const BinV& bv, int& fb)
+int EntryScan::_insert_bin(const BinV& bv, int& fb, std::map<double,BinV*>& map)
 {
-  int ib = desc().nbins()-1;
-  while(ib >= fb) {
-    if (_p[ib]._x == bv._x) {
-      _p[ib]._nentries += bv._nentries;
-      _p[ib]._ysum     += bv._ysum    ;
-      _p[ib]._y2sum    += bv._y2sum   ;
-      if (bv._t > _p[ib]._t)  _p[ib]._t = bv._t;
-      return 1;
-    }
-    ib--;
+  std::map<double,BinV*>::iterator it=map.find(bv._x);
+  if (it!=map.end()) {
+    *it->second += bv;
+    return 1;
   }
-  if (ib < 0) return 0;
 
-  _p[ib]._nentries = bv._nentries;
-  _p[ib]._x        = bv._x       ;
-  _p[ib]._ysum     = bv._ysum    ;
-  _p[ib]._y2sum    = bv._y2sum   ;
-  _p[ib]._t        = bv._t       ;
-  fb = ib;
+  if (fb==0) return 0;
+
+  _p[--fb] = bv;
+  map[bv._x] = &_p[fb];
   return 1;
 }
 
@@ -121,6 +124,8 @@ int EntryScan::_insert_bin(const BinV& bv, int& fb)
 void EntryScan::_sum(const BinV* a,
 		     const BinV* b)
 {
+  std::map<double,BinV*> map;
+
   unsigned nb = desc().nbins();
   const BinV* p_a = reinterpret_cast<const BinV*>(a);           // BinV array
   const BinV* p_b = reinterpret_cast<const BinV*>(b);
@@ -134,18 +139,19 @@ void EntryScan::_sum(const BinV* a,
   //
   //  Step through both entries arrays and add contents starting with the most recent (Current)
   //  Stop when the destination buffer is full
+  //  Use the binary tree implementation of std::map in _insert_bin to merge points
   //
   do {
     double t_a = done_a ? -1 : p_a[cb_a]._t;
     double t_b = done_b ? -1 : p_b[cb_b]._t;
     if (t_a > t_b) {
-      if (!_insert_bin(p_a[cb_a],fb))
+      if (!_insert_bin(p_a[cb_a],fb,map))
         break;
       cb_a = (cb_a==0) ? nb-1 : cb_a-1;
       done_a = (cb_a == last_a);
     }
     else {
-      if (!_insert_bin(p_b[cb_b],fb))
+      if (!_insert_bin(p_b[cb_b],fb,map))
         break;
       cb_b = (cb_b==0) ? nb-1 : cb_b-1;
       done_b = (cb_b == last_b);

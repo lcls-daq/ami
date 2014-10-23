@@ -7,6 +7,8 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/DescScan.hh"
 
+#include <map>
+
 namespace Ami {
 
   class EntryScan : public Entry {
@@ -63,11 +65,14 @@ namespace Ami {
     DescScan _desc;
 
   private:
-    class BinV { public: double _x; double _nentries; double _ysum; double _y2sum; double _t; };
+    class BinV { public: 
+      double _x; double _nentries; double _ysum; double _y2sum; double _t; 
+      BinV& operator+=(const BinV&);
+    };
     BinV* _p;
 
     void _sum       (const BinV*, const BinV*);
-    int  _insert_bin(const BinV&, int&);
+    int  _insert_bin(const BinV&, int&, std::map<double,BinV*>&);
   };
 
   inline double EntryScan::ymean(unsigned bin) const 
