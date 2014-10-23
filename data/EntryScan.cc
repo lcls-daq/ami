@@ -14,7 +14,6 @@ using namespace Ami;
 
 EntryScan::BinV& EntryScan::BinV::operator+=(const EntryScan::BinV& o)
 {
-  _x        += o._x;
   _nentries += o._nentries;
   _ysum     += o._ysum;
   _y2sum    += o._y2sum;
