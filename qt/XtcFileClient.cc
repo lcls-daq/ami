@@ -2,6 +2,8 @@
 
 #include "ami/event/Calib.hh"
 
+#include <QtCore/QDateTime>
+
 #include <dirent.h>
 #include <fcntl.h>
 #include <glob.h>
@@ -178,12 +180,19 @@ void XtcFileClient::printDgram(const Dgram dg) {
   {
     minDelta = int(clockDelta/60);
     clockDelta = clockDelta - minDelta * 60;
-    sprintf(buf, "Current calib# %d event %d (global %d); Progress: %d min %.1f sec", iCalib, iEventInCalib, iEventGlobal, minDelta, clockDelta);
+    sprintf(buf, "Current calib# %d event %d (global %d); Progress: %d min %.1f sec",
+            iCalib, iEventInCalib, iEventGlobal, minDelta, clockDelta);
   }
   else
     sprintf(buf, "Current calib# %d event %d (global %d); Progress: %.1f sec", iCalib, iEventInCalib, iEventGlobal, clockDelta);
-  _eventLabel->setText(buf);
 
+  QDateTime datime; datime.setTime_t(dg.seq.clock().seconds());
+  QString eventLabel = QString("%1\n\t%2.%3/0x%4")
+    .arg(buf)
+    .arg(datime.toString("MMM dd,yyyy hh:mm:ss"))
+    .arg(QString::number(dg.seq.clock().nanoseconds()),9,QChar('0'))
+    .arg(QString::number(dg.seq.stamp().fiducials(),16),5,QChar('0'));
+  _eventLabel->setText(eventLabel);
 
   sprintf(buf, "Damage: count = %d, mask = %x", _damageCount, _damageMask);
   _damageLabel->setText(buf);
