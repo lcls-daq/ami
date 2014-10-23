@@ -106,8 +106,8 @@ void AcqWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds:
   ndarray<const Acqiris::VertV1,1> vert = _config.vert();
   for (unsigned i=0;i<n;i++) {
     ndarray<const int16_t,2> wfs = d->data(_config,i).waveforms(_config);
-    float slope  = vert[i].slope();
-    float offset = vert[i].offset();
+    double slope  = vert[i].slope();
+    double offset = vert[i].offset();
     EntryWaveform* entry = _entry[i];
     for (unsigned j=0;j<wfs.shape()[1];j++) {
       int16_t data = wfs[0][j];

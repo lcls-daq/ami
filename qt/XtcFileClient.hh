@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <vector>
 
-using namespace Ami;
 using namespace Pds;
 using namespace Pds::Ana;
 using namespace std;
