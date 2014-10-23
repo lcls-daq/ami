@@ -18,7 +18,7 @@
 class QComboBox;
 class QPushButton;
 class QLineEdit;
-class QCheckBox;
+class QButtonGroup;
 class QObject;
 
 #include <list>
@@ -40,7 +40,8 @@ namespace Ami {
     class CursorPlot;
     class CursorPost;
     class CursorOverlay;
-    class EdgeCursor;
+    class Cursor;
+    class DoubleEdit;
     class WaveformDisplay;
 
     class EdgeFinder : public QtPWidget,
@@ -124,17 +125,20 @@ namespace Ami {
       virtual ~EdgeFinderConfig();
     public:
       Ami::EdgeFinderConfig value() const;
+      void prototype(const DescEntry&);
       void load(const Ami::EdgeFinderConfig& v);
       void load(const char*& p);
       void save(char*& p) const;
     signals:
       void changed();
     private:
-      QLineEdit* _fraction;
-      QCheckBox* _leading_edge;
-      QLineEdit* _deadtime;
-      EdgeCursor* _threshold_value;
-      EdgeCursor* _baseline_value;
+      DoubleEdit* _fraction;
+      QButtonGroup* _edge_group;
+      DoubleEdit* _deadtime;
+      Cursor*   _threshold_value;
+      Cursor*   _baseline_value;
+      Cursor*   _xlo;
+      Cursor*   _xhi;
     };
   };
 };

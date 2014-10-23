@@ -19,6 +19,8 @@ namespace Ami {
     double     _deadtime;
     double     _threshold_value;
     double     _baseline_value;
+    double     _xlo;
+    double     _xhi;
   };
 
   class Edges : public VectorArray {

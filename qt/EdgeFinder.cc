@@ -5,10 +5,12 @@
 #include "ami/qt/SMPWarning.hh"
 #include "ami/qt/ControlLog.hh"
 #include "ami/qt/VectorArrayDesc.hh"
+#include "ami/qt/AxisInfo.hh"
 
 #include "ami/qt/QtPlotSelector.hh"
 
-#include "ami/qt/EdgeCursor.hh"
+#include "ami/qt/Cursor.hh"
+#include "ami/qt/DoubleEdit.hh"
 #include "ami/qt/WaveformDisplay.hh"
 
 #include "ami/data/DescWaveform.hh"
@@ -278,6 +280,7 @@ void EdgeFinder::change_channel()
 
 void EdgeFinder::prototype(const DescEntry& i)
 {
+  _config->prototype(i);
 }
 
 void EdgeFinder::new_set()
@@ -347,49 +350,81 @@ EdgeFinderConfig::EdgeFinderConfig(QWidget* parent,
 { QGridLayout* l = new QGridLayout;
   unsigned row=0;
   l->addWidget(new QLabel("Fraction"),row,0,::Qt::AlignRight);
-  l->addWidget(_fraction = new QLineEdit("0.5")    ,row,1,::Qt::AlignLeft);
-  new QDoubleValidator(_fraction); row++;
-  connect(_fraction, SIGNAL(editingFinished()), this, SIGNAL(changed()));
-
-  l->addWidget(_leading_edge = new QCheckBox("Leading Edges"),row,0,1,2,::Qt::AlignCenter);
-  _leading_edge->setChecked(true);
+  l->addWidget(_fraction = new DoubleEdit(0.5)    ,row,1,::Qt::AlignLeft);
   row++;
-  connect(_leading_edge, SIGNAL(clicked()), this, SIGNAL(changed()));
-	
+  connect(_fraction, SIGNAL(changed()), this, SIGNAL(changed()));
+
+  _edge_group = new QButtonGroup;
+  { QCheckBox* leading_edge  = new QCheckBox("Leading Edges");
+    QCheckBox* trailing_edge = new QCheckBox("Trailing Edges");
+    _edge_group->addButton(leading_edge,0);
+    _edge_group->addButton(trailing_edge,1);
+    QHBoxLayout* lh = new QHBoxLayout;
+    lh->addWidget(leading_edge);
+    lh->addWidget(trailing_edge);
+    l->addLayout(lh,row,0,1,2);
+    leading_edge->setChecked(true);
+    row++;
+    connect(leading_edge, SIGNAL(clicked()), this, SIGNAL(changed()));
+    connect(trailing_edge, SIGNAL(clicked()), this, SIGNAL(changed()));
+  }
+
   l->addWidget(new QLabel("Deadtime [sec]"),row,0,::Qt::AlignRight);
-  l->addWidget(_deadtime = new QLineEdit("0")  ,row,1,::Qt::AlignLeft);
-  new QDoubleValidator(_deadtime); row++;
-  connect(_deadtime, SIGNAL(editingFinished()), this, SIGNAL(changed()));
+  l->addWidget(_deadtime = new DoubleEdit(0)  ,row,1,::Qt::AlignLeft);
+  row++;
+  connect(_deadtime, SIGNAL(changed()), this, SIGNAL(changed()));
 	
-  _threshold_value = new EdgeCursor("threshold",*wd.plot(), pFrame);
+  _threshold_value = new Cursor(Cursor::Vertical, "threshold",*wd.plot(), pFrame);
   l->addWidget(_threshold_value,row,0,1,2); row++;
   connect(_threshold_value, SIGNAL(changed()), this, SIGNAL(changed()));
 
-  _baseline_value  = new EdgeCursor("baseline" ,*wd.plot(), pFrame);
+  _baseline_value  = new Cursor(Cursor::Vertical, "baseline" ,*wd.plot(), pFrame);
   l->addWidget(_baseline_value ,row,0,1,2); row++;
   connect(_baseline_value, SIGNAL(changed()), this, SIGNAL(changed()));
+
+  _xlo  = new Cursor(Cursor::Horizontal, "xlo" ,*wd.plot(), pFrame);
+  l->addWidget(_xlo ,row,0,1,2); row++;
+  connect(_xlo, SIGNAL(changed()), this, SIGNAL(changed()));
+  _xlo->value( wd.xinfo().position( wd.xinfo().lo() ) );
+
+  _xhi  = new Cursor(Cursor::Horizontal, "xhi" ,*wd.plot(), pFrame);
+  l->addWidget(_xhi ,row,0,1,2); row++;
+  connect(_xhi, SIGNAL(changed()), this, SIGNAL(changed()));
+  _xhi->value( wd.xinfo().position( wd.xinfo().hi() ) );
 
   setLayout(l);
 }
 
-EdgeFinderConfig::~EdgeFinderConfig() {}
+EdgeFinderConfig::~EdgeFinderConfig() { delete _edge_group; }
 
 Ami::EdgeFinderConfig EdgeFinderConfig::value() const {
   Ami::EdgeFinderConfig v;
   v._fraction        = _fraction->text().toDouble();
-  v._leading_edge    = _leading_edge->isChecked();
+  v._leading_edge    = _edge_group->checkedId()==0;
   v._deadtime        = _deadtime->text().toDouble();
   v._threshold_value = _threshold_value->value();
   v._baseline_value  = _baseline_value ->value();
+  v._xlo             = _xlo ->value();
+  v._xhi             = _xhi ->value();
   return v;
+}
+
+void EdgeFinderConfig::prototype(const DescEntry& d) {
+  if (d.type()==DescEntry::Waveform) {
+    const DescWaveform& w = static_cast<const DescWaveform&>(d);
+    _xlo->value(w.xlow());
+    _xhi->value(w.xup());
+  }
 }
 
 void EdgeFinderConfig::load(const Ami::EdgeFinderConfig& v) {
   _fraction       ->setText(QString::number(v._fraction));
-  _leading_edge   ->setChecked(v._leading_edge);
+  _edge_group->button(v._leading_edge ? 0:1)->setChecked(true);
   _deadtime       ->setText(QString::number(v._deadtime));
   _threshold_value->value(v._threshold_value);
   _baseline_value ->value(v._baseline_value);
+  _xlo            ->value(v._xlo);
+  _xhi            ->value(v._xhi);
 }
 
 void EdgeFinderConfig::load(const char*& p) {
@@ -397,20 +432,26 @@ void EdgeFinderConfig::load(const char*& p) {
     if (tag.name == "_fraction")
       _fraction->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_leading_edge")
-      _leading_edge->setChecked(QtPersistent::extract_b(p));
+      _edge_group->button(QtPersistent::extract_b(p) ? 0:1)->setChecked(true);
     else if (tag.name == "_deadtime")
       _deadtime->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_threshold_value")
       _threshold_value->load(p);
     else if (tag.name == "_baseline_value")
       _baseline_value->load(p);
+    else if (tag.name == "_xlo")
+      _xlo->load(p);
+    else if (tag.name == "_xhi")
+      _xhi->load(p);
   XML_iterate_close(EdgeFinderConfig,tag);
 }
 
 void EdgeFinderConfig::save(char*& p) const {
   XML_insert(p, "QLineEdit", "_fraction"      , QtPersistent::insert(p,_fraction->text()) );
-  XML_insert(p, "QCheckBox", "_leading_edge"  , QtPersistent::insert(p,_leading_edge->isChecked()) );
+  XML_insert(p, "QCheckBox", "_leading_edge"  , QtPersistent::insert(p,_edge_group->checkedId()==0) );
   XML_insert(p, "QLineEdit", "_deadtime"      , QtPersistent::insert(p,_deadtime->text()) );
   XML_insert(p, "QLineEdit", "_threshold_value", _threshold_value->save(p));
   XML_insert(p, "QLineEdit", "_baseline_value" , _baseline_value ->save(p));
+  XML_insert(p, "QLineEdit", "_xlo" , _xlo ->save(p));
+  XML_insert(p, "QLineEdit", "_xhi" , _xhi ->save(p));
 }

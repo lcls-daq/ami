@@ -28,7 +28,7 @@ namespace Ami {
   namespace Qt {
     class AxisArray;
     class ChannelDefinition;
-    class EdgeCursor;
+    class Cursor;
     class PeakFitPlot;
     class PeakFitPost;
     class PeakFitOverlay;
@@ -84,7 +84,7 @@ namespace Ami {
 
       WaveformDisplay&  _frame;
       QtPWidget*        _frameParent;
-      EdgeCursor* _baseline;
+      Cursor*    _baseline;
       unsigned   _quantity;
 
       QTabWidget* _baseline_tab;

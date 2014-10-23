@@ -4,7 +4,7 @@
 #include "ami/qt/AxisInfo.hh"
 #include "ami/qt/AxisBins.hh"
 #include "ami/qt/ChannelDefinition.hh"
-#include "ami/qt/EdgeCursor.hh"
+#include "ami/qt/Cursor.hh"
 #include "ami/qt/PeakFitPlot.hh"
 #include "ami/qt/PeakFitPost.hh"
 #include "ami/qt/PeakFitOverlay.hh"
@@ -72,7 +72,7 @@ PeakFit::PeakFit(QWidget* parent, ChannelDefinition* channels[], unsigned nchann
   for(unsigned i=0; i<nchannels; i++)
     channelBox->addItem(channels[i]->name());
 
-  _baseline  = new EdgeCursor(QString(""), *_frame.plot(), frameParent);
+  _baseline  = new Cursor(Cursor::Vertical, QString(""), *_frame.plot(), frameParent);
   QString bl("baseline");
   _baseline->setName(bl);
 

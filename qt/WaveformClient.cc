@@ -103,6 +103,7 @@ void WaveformClient::_prototype(const DescEntry& e)
     _initialized = true;
     
     _cursors->initialize(e);
+    _edges  ->prototype (e);
     _fits   ->initialize(e);
   }
 }
