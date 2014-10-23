@@ -104,7 +104,15 @@ QString& Expression::_process(QString& text,const QChar& o) throw(Event)
       revText.prepend(text[i]);
       
     Term* b = NULL;
-    if (termMatch.indexIn(text,index+1)==index+1) {
+    if (index+1 == text.size()) {
+      QString exc = QString("Failed to find second term to binary %1 in %2")
+        .arg(o)
+        .arg(text);
+      throw Event("Ami::Expression",qPrintable(exc));
+      text.clear();
+      return text;
+    }
+    else if (termMatch.indexIn(text,index+1)==index+1) {
       int len = termMatch.matchedLength();
       last = index+len;
       QString str = text.mid(index+2,len-2);
@@ -150,7 +158,21 @@ QString& Expression::_process(QString& text,const QChar& o) throw(Event)
       printf("Unrecognized input at %s\n",qPrintable(text.mid(index+1)));
     }
     Term* a = NULL;
-    if ((termMatch.lastIndexIn(text,index-1)+termMatch.matchedLength())==index) {
+    if (index==0) {
+      if (o==_subtract) {
+        printf("Inserting constant 0 before unary %s\n",qPrintable(text));
+        a = new Constant("constant",0.);
+      }
+      else {
+        QString exc = QString("Failed to find first term to binary %1 in %2")
+          .arg(o)
+          .arg(text);
+        throw Event("Ami::Expression",qPrintable(exc));
+        text.clear();
+        return text;
+      }
+    }
+    else if ((termMatch.lastIndexIn(text,index-1)+termMatch.matchedLength())==index) {
       int len = termMatch.matchedLength();
       first = index-len;
       QString str = text.mid(first+1,len-2);
