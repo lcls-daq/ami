@@ -182,10 +182,12 @@ FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2,
   char errmsg[ErrMsgSize];
   int flags = no_cache ? O_RDONLY|O_DIRECT : O_RDONLY;
   int fd = ::open(path1, flags);
+  struct stat st;
 
   if (fd >= 0) {
     f = ::fdopen(fd, "r");
-    printf("Loaded %s from %s\n", description, path1);
+    int rst=fstat(fd, &st);
+    printf("Loaded %s from %s [%s (%d)]\n", description, path1,ctime(&st.st_mtime),rst);
   } else {
     snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path1);
     perror(errmsg);
@@ -193,7 +195,8 @@ FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2,
     fd = ::open(path2, flags);
     if (fd >= 0) {
       f = ::fdopen(fd, "r");
-      printf("Loaded %s from %s\n", description, path2);
+      int rst=fstat(fd, &st);
+      printf("Loaded %s from %s [%s (%d)]\n", description, path2,ctime(&st.st_mtime),rst);
     } else {
       snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path2);
       perror(errmsg);

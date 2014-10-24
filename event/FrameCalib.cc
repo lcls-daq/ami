@@ -27,6 +27,30 @@ unsigned FrameCalib::option_correct_common_mode2() { return _option_correct_comm
 unsigned FrameCalib::option_correct_common_mode3() { return _option_correct_common_mode3; }
 unsigned FrameCalib::option_correct_gain        () { return _option_correct_gain; }
 
+static void copyfile(const char* oname,
+                     const char* nname)
+{
+  FILE* fi = fopen(oname,"r");
+  if (!fi) return;
+
+  FILE* fo = fopen(nname,"w");
+  if (!fo)
+    printf("Failed to copy %s to %s\n",oname,nname);
+  else {
+    unsigned maxln=256*1024;
+    char line[maxln];
+    while(!feof(fi)) {
+      size_t nr = fread (line, 1, maxln, fi);
+      if (nr==0) break;
+      size_t nw = fwrite(line, 1, nr, fo);
+      if (nr!=nw)
+        printf("Error writing [%zd/%zd] bytes\n",nw,nr);
+    }
+    fclose(fo);
+  }
+  fclose(fi);
+}
+
 std::string FrameCalib::save_pedestals(Entry* e,
                                        bool   subtract,
                                        bool   prod,
@@ -114,7 +138,7 @@ std::string FrameCalib::save_pedestals(Entry* e,
   strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
     
   std::string nname = oname + "." + tbuf;
-  rename(oname.c_str(),nname.c_str());
+  copyfile(oname.c_str(),nname.c_str());
 
   bool fail=false;
   FILE* fn = fopen(oname.c_str(),"w");
@@ -178,7 +202,7 @@ std::string FrameCalib::save_pedestals(Entry* e,
   }
 
   if (fail)
-    rename(nname.c_str(),oname.c_str());
+    copyfile(nname.c_str(),oname.c_str());
     
   for(unsigned s=0; s<nframes || s<1; s++)
     delete _off[s];
@@ -277,7 +301,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
   strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
     
   std::string nname = oname + "." + tbuf;
-  rename(oname.c_str(),nname.c_str());
+  copyfile(oname.c_str(),nname.c_str());
 
   bool fail=false;
   FILE* fn = fopen(oname.c_str(),"w");
@@ -321,7 +345,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
   }
 
   if (fail)
-    rename(nname.c_str(),oname.c_str());
+    copyfile(nname.c_str(),oname.c_str());
     
   return msg;
 }
@@ -472,7 +496,7 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  FILE* f = Calib::fopen_dual(oname1,oname2,prefix,true);
   if (f) {
     size_t sz = 16 * 1024;
     char* linep = (char *)malloc(sz);
