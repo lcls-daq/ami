@@ -43,15 +43,14 @@ PWidgetManager::~PWidgetManager()
 void PWidgetManager::add(QtPWidget* p, QString& iname)
 {
   QString name(iname);
-  unsigned j=0;
-  for(unsigned i=0; i<_items.size(); i++) {
+  unsigned i=0, j=0;
+  while(i<_items.size()) {
     if (name == _items[i])
       name = QString("%1_%2").arg(iname).arg(++j);
-  }
-
-  unsigned i=0;
-  while(i<_items.size() && _items[i] < name)
+    else if (name < _items[i])
+      break;
     i++;
+  }
 
   _pitems.insert(_pitems.begin()+i,p);
   _items .insert(_items .begin()+i,name);

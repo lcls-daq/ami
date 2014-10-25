@@ -17,8 +17,8 @@
 
 using namespace Ami;
 
-//static const int BufferSize = 0x2000000;
-static const int BufferSize = 0x2000;
+static const int BufferSize = 0x2000000;
+//static const int BufferSize = 0x2000;
 
 static const char* State[] = { "Init", "Connecting", "Connected",
                                "Discovering", "Discovered", 
