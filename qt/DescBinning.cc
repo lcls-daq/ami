@@ -91,11 +91,6 @@ DescBinning::DescBinning(const char* name, bool autoRange) :
   range->insertWidget(Auto2, auto2);
   if (_method) _method->insertItem(Auto2, "Auto2");
 
-  QStackedWidget* samples = new QStackedWidget;
-  samples->insertWidget(Fixed, new QWidget);
-  samples->insertWidget(Auto1, new QWidget);
-  samples->insertWidget(Auto2, new QWidget);
-
   new QIntValidator   (1,100000,_bins);
   new QDoubleValidator(_lo);
   new QDoubleValidator(_hi);

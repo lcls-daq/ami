@@ -17,10 +17,42 @@
 
 using namespace Ami;
 
-const int Step=32;
-const int BufferSize=0x100000;
+enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn, Manage, None };
 
-enum LoopbackMsg { BroadcastIn, BroadcastOut, Shutdown, PostIn, Manage };
+class LMsg {
+public:
+  LMsg() : _hdr(None), _size(0), _payload(0) {}
+  LMsg(int hdr, const char* p, int size) : 
+    _hdr(hdr), _size(size), _payload(new char[size]) 
+  { memcpy(_payload, p, size); }
+  LMsg(int hdr, const iovec* iov, int len) :
+    _hdr(hdr), _size(0)
+  {
+    for(int i=0; i<len; i++)
+      _size += iov[i].iov_len;
+    char* p = _payload = new char[_size];
+    for(int i=0; i<len; i++) {
+      memcpy(p, iov[i].iov_base, iov[i].iov_len);
+      p += iov[i].iov_len;
+    }
+  }
+  LMsg(int hdr) : _hdr(hdr), _size(0), _payload(0) {}
+  LMsg(Fd& p) :
+    _hdr(Manage), _size(0), _payload(reinterpret_cast<char*>(&p)) {}
+public:
+  LoopbackMsg cmd    () const { return (LoopbackMsg)_hdr; }
+  int         size   () const { return _size; }
+  char*       payload() const { return _payload; }
+public:
+  void        free   () { if (_size) delete[] _payload; }
+private:
+  int _hdr;
+  int _size;
+  char* _payload;
+};
+
+const int Step=32;
+const int BufferSize=sizeof(LMsg);
 
 Poll::Poll(int timeout, const char* s) :
   _timeout (timeout),
@@ -82,8 +114,8 @@ void Poll::start()
 
 void Poll::stop()
 {
-  int msg=Shutdown;
-  _loopback->write(&msg,sizeof(int));
+  LMsg lmsg(Shutdown);
+  _loopback->write(&lmsg,sizeof(lmsg));
 
   int timeout = _timeout;
   _timeout = 10;
@@ -120,31 +152,14 @@ void Poll::bcast_in (const char* msg, int size)
 
 void Poll::bcast    (const char* msg, int size, int hdr)
 {
-  int iovcnt=2;
-  iovec* iov = new iovec[iovcnt];
-  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
-  iov[1].iov_base = (void*)msg; iov[1].iov_len = size;
-  _loopback->writev(iov,iovcnt);
-  delete[] iov;
-//   _loopback->write(&hdr ,sizeof(hdr));
-//   _loopback->write(&bsiz,sizeof(size));
-//   _loopback->write(msg  ,size);
+  LMsg lmsg(hdr, msg, size);
+  _loopback->write(&lmsg, sizeof(lmsg));
 }
 
 void Poll::bcast    (const iovec* iov, int len, int hdr)
 {
-  int iovcnt = len+1;
-  iovec* niov = new iovec[iovcnt];
-  niov[0].iov_base = &hdr ; niov[0].iov_len = sizeof(hdr);
-  for(int i=0; i<len; i++) {
-    niov[i+1].iov_base = iov[i].iov_base;
-    niov[i+1].iov_len  = iov[i].iov_len;
-  }
-  _loopback->writev(niov ,iovcnt);
-  delete[] niov;
-//   _loopback->write(&hdr ,sizeof(hdr));
-//   _loopback->write(&size,sizeof(size));
-//   _loopback->writev(iov ,len);
+  LMsg lmsg(hdr, iov, len);
+  _loopback->write(&lmsg, sizeof(lmsg));
 }
 
 //
@@ -152,25 +167,14 @@ void Poll::bcast    (const iovec* iov, int len, int hdr)
 //
 void Poll::post    (const char* msg, int size)
 {
-  int hdr = PostIn;
-  int iovcnt=2;
-  iovec* iov = new iovec[iovcnt];
-  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
-  iov[1].iov_base = (void*)msg; iov[1].iov_len = size;
-  _loopback->writev(iov,iovcnt);
-  delete[] iov;
+  LMsg lmsg(PostIn, msg, size);
+  _loopback->write(&lmsg, sizeof(lmsg));
 }
 
 void Poll::manage_p(Fd& fd)
 {
-  int hdr = Manage;
-  Fd* p = &fd;
-  int iovcnt=2;
-  iovec* iov = new iovec[iovcnt];
-  iov[0].iov_base = &hdr      ; iov[0].iov_len = sizeof(hdr);
-  iov[1].iov_base = &p        ; iov[1].iov_len = sizeof(p);
-  _loopback->writev(iov,iovcnt);
-  delete[] iov;
+  LMsg lmsg(fd);
+  _loopback->write(&lmsg, sizeof(lmsg));
   _msem.take();
 }
 
@@ -226,50 +230,38 @@ int Poll::poll()
   int result = 1;
   if (::poll(_pfd, _nfds, _timeout) > 0) {
     if (_pfd[0].revents & (POLLIN | POLLERR)) {
-      int size;
-      int& cmd = *reinterpret_cast<int*>(_buffer);
-      if ((size=_loopback->read(_buffer,BufferSize))<=0)
+      LMsg lmsg;
+      if (_loopback->read(&lmsg,sizeof(lmsg))<int(sizeof(LMsg)))
 	printf("Error reading loopback\n");
-      else if (cmd==Shutdown)
+      else if (lmsg.cmd()==Shutdown)
 	result = 0;
       else {
-	size -= sizeof(int);
-	if (size<0)
-	  printf("Error reading bcast\n");
-	else {
-	  const char* payload = _buffer+sizeof(int);
-          if (cmd==BroadcastIn || cmd==BroadcastOut) {
-            for (unsigned short n=1; n<_nfds; n++) {
-              if (_ofd[n]) {
-                if (cmd==BroadcastOut) {
-                  if (::write(_ofd[n]->fd(), payload, size)==-1)
-                    perror("Ami::Poll::poll BroadcastOut");
-#ifdef DBUG
-                  const uint32_t* d = reinterpret_cast<const uint32_t*>(payload);
-                  printf("Poll:Bcast_Out skt %d %08x:%08x:%08x:%08x sz %d\n",
-                         _ofd[n]->fd(), 
-                         d[0],d[1],d[2],d[3],
-                         size);
-#endif
-                }
-                else if (!_ofd[n]->processIo(payload,size)) {
-                  Fd* fd = _ofd[n];
-                  unmanage(*fd);
-                  delete fd;
-                }
-              }
-            }
+	if (lmsg.cmd()==BroadcastIn || lmsg.cmd()==BroadcastOut) {
+	  for (unsigned short n=1; n<_nfds; n++) {
+	    if (_ofd[n]) {
+	      if (lmsg.cmd()==BroadcastOut) {
+		if (::write(_ofd[n]->fd(), lmsg.payload(), lmsg.size())==-1)
+		  perror("Ami::Poll::poll BroadcastOut");
+	      }
+	      else if (!_ofd[n]->processIo(lmsg.payload(),lmsg.size())) {
+		Fd* fd = _ofd[n];
+		unmanage(*fd);
+		delete fd;
+	      }
+	    }
           }
-          else if (cmd==PostIn)
-            processIn(payload,size);
-	  else if (cmd==Manage) {
-	    Fd* fd = *reinterpret_cast<Fd**>(const_cast<char*>(payload));
-	    manage(*fd);
-            _msem.give();
-	    return result;  // not safe to loop over _ofd's below
-	  }
+	}
+	else if (lmsg.cmd()==PostIn)
+	  processIn(lmsg.payload(),lmsg.size());
+	else if (lmsg.cmd()==Manage) {
+	  Fd* fd = reinterpret_cast<Fd*>(const_cast<char*>(lmsg.payload()));
+	  manage(*fd);
+	  _msem.give();
+	  lmsg.free();
+	  return result;  // not safe to loop over _ofd's below
 	}
       }
+      lmsg.free();
     }
     for (unsigned short n=1; n<_nfds; n++) {
       if (_ofd[n] && (_pfd[n].revents & (POLLIN | POLLERR)))

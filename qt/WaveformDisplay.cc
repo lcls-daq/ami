@@ -117,6 +117,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
 WaveformDisplay::~WaveformDisplay()
 {
   delete _xbins;
+  delete _xtransform;
 }
 
 void WaveformDisplay::save(char*& p) const

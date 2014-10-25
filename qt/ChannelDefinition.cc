@@ -211,7 +211,10 @@ ChannelDefinition::ChannelDefinition(QWidget* parent,
 	  
 ChannelDefinition::~ChannelDefinition()
 {
+  delete _mask_display;
   delete _plot_grp;
+  delete _transform;
+  delete _filter;
 }
 
 void ChannelDefinition::save(char*& p) const

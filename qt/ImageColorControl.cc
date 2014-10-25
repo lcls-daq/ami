@@ -249,6 +249,7 @@ ImageColorControl::ImageColorControl(QWidget* parent,
 
 ImageColorControl::~ImageColorControl()
 {
+  delete _paletteGroup;
 }
 
 void ImageColorControl::save(char*& p) const
