@@ -120,7 +120,6 @@ int    EventHandler::display_ppbin(unsigned xpixels, unsigned ypixels, unsigned 
   unsigned res_limit = _res_limit - 2*margin;
   int ppbin = res_limit/pixels;
   if (ppbin==0) ppbin=1;
-  printf("display_ppbin [%d:%d] %d\n",pixels,res_limit,ppbin);
   return ppbin;
 }
 

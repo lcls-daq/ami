@@ -128,11 +128,10 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  if (_c && _engine.qimage()) {
-    printf("ImageFrame::mousePressEvent [%d,%d,%u]\n",e->x(),p2.x(),ix);
+  if (_c && _engine.qimage())
     _c->mousePressEvent(floor(xinfo()->position(ix)),
 			floor(yinfo()->position(iy)));
-  }
+
   QWidget::mousePressEvent(e);
 }
 

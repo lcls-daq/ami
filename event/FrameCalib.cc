@@ -496,7 +496,7 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,prefix,true);
+  FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     size_t sz = 16 * 1024;
     char* linep = (char *)malloc(sz);

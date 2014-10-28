@@ -44,7 +44,8 @@ static void usage(char* progname) {
           "          [-E (expert mode/movie option)]\n"
 	  "          [-L <user plug-in path>]\n"
           "          [-N <threads> (set parallel processing threads, default=1)]\n"
-          "          [-R <pixels> (set resolution, no pixels arg means full resolution)\n"
+          "          [-Q <pixels> (set resolution)\n"
+          "          [-R (set full resolution)\n"
           "          [-S (use scroll bars)]\n"
 	  "          [-T (test mode)]\n"
 	  "          [-Y (disable synchronous image locking)]\n"
@@ -129,7 +130,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:AC:L:N:lDER::StTWYZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "p:f:o:e:r:AC:L:N:lDERQ:StTWYZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -171,13 +172,11 @@ int main(int argc, char* argv[]) {
       liveReadMode = true;
       break;
     case 'R':
-      if (!optarg)
-        Ami::EventHandler::enable_full_resolution(true);
-      else {
-        unsigned arg;
+      Ami::EventHandler::enable_full_resolution(true);
+    case 'Q':
+      { unsigned arg;
         parse_valid &= CmdLineTools::parseUInt(optarg,arg);
-        Ami::EventHandler::limit_resolution(arg);
-      }
+        Ami::EventHandler::limit_resolution(arg); }
       break;
     case 'S':
       Ami::Qt::Client::use_scroll_area(true);
@@ -199,10 +198,14 @@ int main(int argc, char* argv[]) {
     case '?':
     case 'h':
     default:
+      printf("Unrecognized option %c\n",c);
       usage(argv[0]);
       exit(0);
     }
   }
+
+  if (optind!=argc)
+    printf("More parameters than expected [%d/%d]\n",optind,argc);
 
   parse_valid &= (optind==argc);
   
