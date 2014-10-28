@@ -2,23 +2,20 @@
 #define AmiQt_CursorOverlay_hh
 
 #include "ami/qt/QtOverlay.hh"
-
-#include "ami/data/BinMath.hh"
-#include "ami/data/ConfigureRequest.hh"
-#include "ami/data/ConfigureRequestor.hh"
+#include "ami/qt/CursorOp.hh"
 
 #include <QtCore/QString>
 
 namespace Ami {
   class Cds;
-  class DescEntry;
   class EntryScalarRange;
   namespace Qt {
     class AxisInfo;
     class ChannelDefinition;
     class QtBase;
     class QtPlot;
-    class CursorOverlay : public QtOverlay {
+    class CursorOverlay : public QtOverlay,
+			  public CursorOp {
     public:
       CursorOverlay(OverlayParent&   parent,
                     QtPlot&          frame,
@@ -32,14 +29,6 @@ namespace Ami {
       void load(const char*& p);
       void dump(FILE*) const;
       const QtBase* base() const;
-    public:
-      unsigned channel() const { return _channel; }
-    public:
-      void configure(char*& p, unsigned input, unsigned& output,
-		     const AxisInfo&, ConfigureRequest::Source);
-      void configure(char*& p, unsigned input, unsigned& output,
-		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
-		     const AxisInfo&, ConfigureRequest::Source);
       void setup_payload(Cds&);
       void update();
     private:
@@ -47,11 +36,7 @@ namespace Ami {
     private:
       QtPlot*            _frame;
       QString            _frame_name;
-      unsigned           _channel;
-      BinMath*           _input;
-      unsigned           _output_signature;
       QtBase*            _plot;
-      ConfigureRequestor _req;
       EntryScalarRange*  _auto_range;
       int                _order;
     };

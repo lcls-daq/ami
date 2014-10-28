@@ -8,7 +8,9 @@
 #include "ami/service/Semaphore.hh"
 #include <list>
 
+class QwtPlotCurve;
 class QwtPlotGrid;
+class QAction;
 class QLayout;
 
 namespace Ami {
@@ -59,6 +61,8 @@ namespace Ami {
       void set_yaxis_title();
       void toggle_grid();
       void toggle_minor_grid();
+      void set_reference();
+      void show_reference();
     signals:
       void redraw();
     private:
@@ -74,6 +78,9 @@ namespace Ami {
       std::list<QtBase*>  _curves;
       std::list<QtBase*>  _hidden;
       mutable Ami::Semaphore _sem;
+
+      QAction* _show_ref;
+      QwtPlotCurve* _ref;
 
     public slots:
       void toggle_chrome();

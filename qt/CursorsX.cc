@@ -17,6 +17,7 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/Expression.hh"
+#include "ami/data/BinMath.hh"
 
 #include <QtGui/QGridLayout>
 #include <QtGui/QHBoxLayout>
@@ -64,22 +65,14 @@ CursorsX::CursorsX(QWidget* parent,
   _frame    (frame),
   _frameParent(frameParent),
   _clayout  (new QVBoxLayout),
-#if 0
-  _expr     (new QLineEdit("1")),
-#else
   _expr     (new QComboBox),
-#endif
   _list_sem (Semaphore::FULL)
 {
   _names << "a" << "b" << "c" << "d" << "f" << "g" << "h" << "i" << "j" << "k";
 
-#if 0
-  _expr->setReadOnly(true);
-#else
   _expr->setEditable(false);
   _expr->addItem("1");
   _expr->setMaxCount(10);
-#endif
 
   _new_value = new CursorLocation;
 
@@ -279,16 +272,21 @@ void CursorsX::configure(char*& p, unsigned input, unsigned& output,
   _plotB->setEnabled(!_channels[_channel]->smp_prohibit());
   _ovlyB->setEnabled(!_channels[_channel]->smp_prohibit());
 
+  //  map cursor name to value
+  std::map<std::string, double> values;
+  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++)
+    values[std::string(qPrintable((*it)->name()))]=(*it)->location();
+
   _list_sem.take();
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source,values);
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source,values);
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
-      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source);
+      (*it)->configure(p,input,output,channels,signatures,nchannels,_frame.xinfo(),source,values);
   _list_sem.give();
 }
 
@@ -332,6 +330,7 @@ void CursorsX::add_cursor()
 					       _frame.plot());
     _cursors.push_back(d);
     _clayout->addWidget(d);
+    connect(d, SIGNAL(changed()), this, SIGNAL(changed()));
   }
   else {
     QMessageBox::critical(this,tr("Add Cursor"),tr("Too many cursors in use"));
@@ -375,23 +374,8 @@ void CursorsX::calc()
 
 QString CursorsX::_translate_expr()
 {
-  // replace cursors with values
-  // and integrate symbol with 8-bit char
+  // replace operator symbols with 8-bit char
   QString expr = _expr_text();
-  for(std::list<CursorDefinition*>::const_iterator it=_cursors.begin(); it!=_cursors.end(); it++) {
-    QString new_expr;
-    const QString match = (*it)->name();
-    int last=0;
-    int pos=0;
-    while( (pos=expr.indexOf(match,pos)) != -1) {
-      new_expr.append(expr.mid(last,pos-last));
-      new_expr.append(QString("[%1]").arg((*it)->location()));
-      pos += match.size();
-      last = pos;
-    }
-    new_expr.append(expr.mid(last));
-    expr = new_expr;
-  }
   expr.replace(_integrate   ,BinMath::integrate());
   expr.replace(_moment1     ,BinMath::moment1  ());
   expr.replace(_moment2     ,BinMath::moment2  ());
@@ -455,6 +439,7 @@ void CursorsX::add_overlay(DescEntry* desc, QtPlot* plot, SharedData*)
   _ovls.push_back(ovl);
   _list_sem.give();
 
+  connect(ovl, SIGNAL(changed()), this, SIGNAL(changed()));
   emit changed();
 }
 

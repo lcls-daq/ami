@@ -28,10 +28,12 @@
 #include <QtGui/QMessageBox>
 
 #include "qwt_plot_canvas.h"
+#include "qwt_plot_curve.h"
 #include "qwt_plot_grid.h"
 #include "qwt_scale_engine.h"
 #include "qwt_scale_draw.h"
 #include "qwt_scale_widget.h"
+#include "qwt_symbol.h"
 
 #include <sys/uio.h>
 #include <time.h>
@@ -40,10 +42,12 @@
 using namespace Ami::Qt;
 
 static const double no_scale[] = {0, 1000};
+static QColor ref_color( 64,  64,  64);
 
 Ami::Qt::WaveformDisplay::WaveformDisplay() :
   QWidget(0),
-  _sem   (Ami::Semaphore::FULL)
+  _sem   (Ami::Semaphore::FULL),
+  _ref   (0)
 {
   _plot = new PlotFrame(this);
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
@@ -84,8 +88,15 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
     annotate->addAction("Toggle Grid"          , this, SLOT(toggle_grid()));
     annotate->addAction("Toggle Minor Grid"    , this, SLOT(toggle_minor_grid()));
     menu_bar->addMenu(annotate); }
-    _chrome_is_visible = true;
-    _chrome_action = menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
+  { QMenu* m = new QMenu("Reference");
+    m->addAction("Set" , this, SLOT(set_reference()));
+    m->addAction(_show_ref = new QAction("Show", m));
+    _show_ref->setEnabled(false);
+    connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
+    menu_bar->addMenu(m); }
+
+  _chrome_is_visible = true;
+  _chrome_action = menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* plotBox = new QGroupBox("Plot");
@@ -118,6 +129,11 @@ WaveformDisplay::~WaveformDisplay()
 {
   delete _xbins;
   delete _xtransform;
+
+  if (_ref) {
+    _ref->attach(NULL);
+    delete _ref;
+  }
 }
 
 void WaveformDisplay::save(char*& p) const
@@ -461,3 +477,62 @@ const AxisInfo& WaveformDisplay::xinfo() const { return *_xinfo; }
 
 PlotFrame* WaveformDisplay::plot() const { return _plot; }
 
+void WaveformDisplay::set_reference()
+{
+  if (_ref) {
+    _ref->attach(NULL);
+    delete _ref;
+    _ref = 0;
+  }
+
+  const QwtPlotItemList& list = _plot->itemList();
+  QwtPlotCurve* c = 0;
+  for(int i=0; i<list.size(); i++)
+    if ((c=dynamic_cast<QwtPlotCurve*>(list[i])))
+      break;
+
+  if (c==0) return;
+
+  QwtPlotCurve* curve = new QwtPlotCurve( c->title().text()+"(Ref)");
+  curve->setStyle (c->style());
+  QPen pen(c->pen());
+  pen.setColor(ref_color);
+  curve->setPen   (pen);
+  { QwtSymbol sym(c->symbol());
+    sym.setPen(pen);
+    QBrush brush(c->brush());
+    brush.setColor(ref_color);
+    sym.setBrush(brush);
+    curve->setSymbol(sym); }
+  curve->setCurveAttribute(QwtPlotCurve::Inverted,
+                           c->testCurveAttribute(QwtPlotCurve::Inverted));
+
+  //    curve->setData  (c->data());
+  const int sz = c->dataSize();
+  double* x = new double[sz];
+  double* y = new double[sz];
+  for(int i=0; i<sz; i++) {
+    x[i] = c->x(i);
+    y[i] = c->y(i);
+  }
+  curve->setData(x,y,sz);
+  delete[] x;
+  delete[] y;
+
+  _ref = curve;
+  _ref->attach(_plot);
+  _show_ref->setEnabled(true);
+  _show_ref->setText("Hide");
+}
+
+void WaveformDisplay::show_reference()
+{
+  if (_show_ref->text()=="Hide") {
+    _show_ref->setText("Show");
+    _ref->attach(NULL);
+  }
+  else {
+    _show_ref->setText("Hide");
+    _ref->attach(_plot);
+  }
+}

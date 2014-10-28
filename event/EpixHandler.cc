@@ -488,9 +488,10 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     columns = colsPerAsic;
     rows    = rowsPerAsic;
     
-    int ppb = image_ppbin(columns,rows);
+    int ppb = image_ppbin  (columns,rows);
+    int dpb = display_ppbin(columns,rows);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb);
+		   columns, rows, ppb, ppb, dpb, dpb);
     
     _desc = desc;
     float x0 = 0;

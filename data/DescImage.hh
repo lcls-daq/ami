@@ -33,7 +33,8 @@ namespace Ami {
 	      unsigned channel,
 	      const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 
-	      int ppbx=1, int ppby=1); // pixels per bin
+	      int ppbx=1, int ppby=1,  // detector pixels per bin
+	      int dpbx=1, int dpby=1); // display pixels per bin
 
     DescImage(const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 
@@ -61,6 +62,11 @@ namespace Ami {
 
     float mmppx() const { return _mmppx; }
     float mmppy() const { return _mmppy; }
+
+    unsigned disppbx() const;
+    unsigned disppby() const;
+    unsigned ndispx() const;
+    unsigned ndispy() const;
 
     void params(unsigned nbinsx,
 		unsigned nbinsy,
@@ -97,8 +103,13 @@ namespace Ami {
   private:
     uint16_t _nbinsx;
     uint16_t _nbinsy;
-    int16_t  _ppbx;
-    int16_t  _ppby;
+    ///  Detector pixels per bin
+    uint8_t  _ppbx;
+    uint8_t  _ppby;
+    ///  Display pixels per bin
+    uint8_t  _dpbx;
+    uint8_t  _dpby;
+    ///  Detector pixel coordinates at bin origin
     int32_t  _xp0;
     int32_t  _yp0;
     float    _mmppx;
@@ -130,6 +141,11 @@ namespace Ami {
   inline unsigned DescImage::nframes() const { return _nsubframes; }
   inline const SubFrame& DescImage::frame(unsigned i) const { return _subframes[i]; }
   inline const ImageMask* DescImage::mask() const { return _mask._ptr; }
+
+  inline unsigned DescImage::ndispx() const {return _nbinsx*_dpbx;}
+  inline unsigned DescImage::ndispy() const {return _nbinsy*_dpby;}
+  inline unsigned DescImage::disppbx() const { return _dpbx; }
+  inline unsigned DescImage::disppby() const { return _dpby; }
 };
 
 #endif

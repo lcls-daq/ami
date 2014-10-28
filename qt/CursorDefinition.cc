@@ -18,7 +18,7 @@ CursorDefinition::CursorDefinition(const QString& name,
 				   Cursors& parent,
 				   QwtPlot*  plot) :
   QWidget  (0),
-  _name    (name),
+  _name    (new QLineEdit(name)),
   _location(location),
   _parent  (parent),
   _plot    (plot)
@@ -30,6 +30,7 @@ CursorDefinition::CursorDefinition(const char*& p,
 				   Cursors& parent,
 				   QwtPlot*  plot) :
   QWidget  (0),
+  _name    (new QLineEdit),
   _parent  (parent),
   _plot    (plot)
 {
@@ -44,11 +45,13 @@ CursorDefinition::~CursorDefinition()
 
 void CursorDefinition::_layout()
 {
+  _name ->setMaximumWidth(40);
   _value  = new QLineEdit(QString::number(_location));
+  _value->setMaximumWidth(80);
   new QDoubleValidator(_value);
 
   _marker = new QwtPlotMarker;
-  _marker->setLabel    (_name);
+  _marker->setLabel    (_name->text());
   _marker->setLineStyle(QwtPlotMarker::VLine);
   _marker->setXValue   (_location);
   
@@ -56,19 +59,23 @@ void CursorDefinition::_layout()
   QPushButton* delB  = new QPushButton("Delete");
 
   QHBoxLayout* layout = new QHBoxLayout;
-  layout->addWidget(new QLabel(QString("%1 @").arg(_name)));
+  layout->addWidget(_name);
+  layout->addWidget(new QLabel("@"));
   layout->addWidget(_value);
   layout->addStretch();
   layout->addWidget(showB);
   layout->addWidget(delB);
   setLayout(layout);
 
+  connect(_name , SIGNAL(editingFinished()), this, SLOT(update()));
   connect(_value, SIGNAL(editingFinished()), this, SLOT(update()));
   connect(delB, SIGNAL(clicked()), this, SLOT(remove()));
   connect(showB, SIGNAL(clicked(bool)), this, SLOT(show_in_plot(bool)));
 
   showB->click();
 }
+
+QString CursorDefinition::name() const { return _name->text(); }
 
 void CursorDefinition::show_in_plot(bool lShow)
 {
@@ -87,12 +94,14 @@ void CursorDefinition::remove()
 void CursorDefinition::update()
 {
   _location = _value->text().toDouble();
+  _marker->setLabel (_name->text());
   _marker->setXValue(_location);
+  emit changed();
 }
 
 void CursorDefinition::save(char*& p) const
 {
-  XML_insert(p, "QString", "_name", QtPersistent::insert(p, _name) );
+  XML_insert(p, "QString", "_name", QtPersistent::insert(p, _name->text()) );
   XML_insert(p, "double", "_location", QtPersistent::insert(p, _location) );
 }
 
@@ -100,7 +109,7 @@ void CursorDefinition::load(const char*& p)
 {
   XML_iterate_open(p,tag)
     if (tag.name == "_name")
-      _name = QtPersistent::extract_s(p);
+      _name->setText(QtPersistent::extract_s(p));
     else if (tag.name == "_location")
       _location = QtPersistent::extract_d(p);
   XML_iterate_close(CursorDefinition,tag);

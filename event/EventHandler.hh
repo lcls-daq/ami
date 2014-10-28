@@ -125,6 +125,7 @@ namespace Ami {
     static unsigned resolution();
     static void enable_full_resolution(bool);
     static int  image_ppbin(unsigned& xpixels, unsigned& ypixels, unsigned margin=0);
+    static int  display_ppbin(unsigned xpixels, unsigned ypixels, unsigned margin=0);
     static void post_diagnostics(bool);
     static bool post_diagnostics();
   protected:

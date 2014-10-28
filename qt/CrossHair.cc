@@ -116,7 +116,9 @@ void CrossHair::grab_cursor()
 void CrossHair::mousePressEvent  (double x, double y) 
 {
   _column_edit->setText(QString::number(x*_scalex));
+  _column_edit->setCursorPosition(0);
   _row_edit   ->setText(QString::number(y*_scaley));
+  _row_edit   ->setCursorPosition(0);
   _frame.set_cursor_input(0);
   emit changed();
 }

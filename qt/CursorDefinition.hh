@@ -24,11 +24,13 @@ namespace Ami {
 		       QwtPlot*  plot);
       ~CursorDefinition();
     public:
-      const QString& name() const { return _name; }
-      double location() const { return _location; }
+      QString name() const;
+      double  location() const { return _location; }
     public:
       void save(char*&) const;
       void load(const char*&);
+    signals:
+      void changed();
     public slots:
       void show_in_plot(bool);
       void remove();
@@ -36,7 +38,7 @@ namespace Ami {
     private:
       void _layout();
     private:
-      QString    _name;
+      QLineEdit* _name;
       double     _location;
       QLineEdit* _value;
       Cursors&   _parent;

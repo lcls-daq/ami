@@ -519,6 +519,9 @@ void MaskDisplay::save_mask()
   }
 }
 
+//
+//  This implementation is only relevant for CSPAD
+//
 void MaskDisplay::save_gain_map()
 {
   QString def = QString("%1.gain").arg(_entry->desc().name());
@@ -531,6 +534,7 @@ void MaskDisplay::save_gain_map()
       QMessageBox::warning(this, "Save data",
                            QString("Error opening %1 for writing").arg(fname));
     else {
+      //  Ignoring enlarged image case
       const DescImage& d = _entry->desc();
       const unsigned ppb = d.ppxbin();
       for(unsigned q=0; q<4; q++) {

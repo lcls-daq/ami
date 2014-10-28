@@ -128,9 +128,11 @@ void ImageFrame::mousePressEvent(QMouseEvent* e)
 
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
-  if (_c && _engine.qimage())
-    _c->mousePressEvent(xinfo()->position(ix),
-			yinfo()->position(iy));
+  if (_c && _engine.qimage()) {
+    printf("ImageFrame::mousePressEvent [%d,%d,%u]\n",e->x(),p2.x(),ix);
+    _c->mousePressEvent(floor(xinfo()->position(ix)),
+			floor(yinfo()->position(iy)));
+  }
   QWidget::mousePressEvent(e);
 }
 
@@ -141,8 +143,8 @@ void ImageFrame::mouseMoveEvent(QMouseEvent* e)
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
   if (_c)
-    _c->mouseMoveEvent(xinfo()->position(ix),
-		       yinfo()->position(iy));
+    _c->mouseMoveEvent(floor(xinfo()->position(ix)),
+		       floor(yinfo()->position(iy)));
 
   //  QWidget::mousePressEvent(e);
   QWidget::mouseMoveEvent(e);
@@ -155,8 +157,8 @@ void ImageFrame::mouseReleaseEvent(QMouseEvent* e)
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
   if (_c)
-    _c->mouseReleaseEvent(xinfo()->position(ix),
-			  yinfo()->position(iy));
+    _c->mouseReleaseEvent(floor(xinfo()->position(ix)),
+			  floor(yinfo()->position(iy)));
 
   QWidget::mouseReleaseEvent(e);
 }

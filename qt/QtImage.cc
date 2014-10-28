@@ -1,5 +1,5 @@
 #include "QtImage.hh"
-#include "ami/qt/AxisBins.hh"
+#include "ami/qt/AxisPixels.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/ImageGrid.hh"
 #include "ami/qt/ImageColorControl.hh"
@@ -33,19 +33,19 @@ QtImage::QtImage(const QString&   title,
   const Ami::DescImage& d = entry.desc();
 
   for(unsigned i=0; i<NBUFFERS; i++) {
-    _qimage[i] = new QImage(d.nbinsx(), d.nbinsy(), QImage::Format_Indexed8);
+    _qimage[i] = new QImage(d.ndispx(), d.ndispy(), QImage::Format_Indexed8);
     _qimage[i]->fill(128);
   }
   _mimage = (1<<NBUFFERS)-1;
 
-  _xinfo = new AxisBins(d.xlow(),d.xup(),d.nbinsx());
-  _yinfo = new AxisBins(d.ylow(),d.yup(),d.nbinsy());
+  _xinfo = new AxisPixels(d.xlow(),d.xup(),d.ndispx());
+  _yinfo = new AxisPixels(d.ylow(),d.yup(),d.ndispy());
 
   _scalexy = false;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
-                         d.binx(0), double(d.ppxbin()*d.nbinsx()), d.nbinsx());
+                         d.binx(0), double(d.ppxbin()*d.nbinsx()), d.ndispx());
   _ygrid = new ImageGrid(ImageGrid::Y, ImageGrid::TopLeft, 
-                         d.biny(0), double(d.ppybin()*d.nbinsy()), d.nbinsy());
+                         d.biny(0), double(d.ppybin()*d.nbinsy()), d.ndispy());
 }
   
 QtImage::~QtImage()
@@ -187,12 +187,26 @@ QImage*  QtImage::image(ImageColorControl& control)
       n *= double(s);
 
       ndarray<const uint32_t,2> src(_entry.content());	      
-      for(unsigned k=0; k<d.nbinsy(); k++) {			      
-	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
-	for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	  unsigned sh = unsigned(LINTRANS(src[k][j]));	      
-	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
-	}						      
+      if (d.disppbx()==1 && d.disppby()==1) {
+	for(unsigned k=0; k<d.nbinsy(); k++) {			      
+	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	    unsigned sh = unsigned(LINTRANS(src[k][j]));	      
+	    *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	  }						      
+	}
+      }
+      else {
+	for(unsigned k=0; k<d.ndispy(); k++) {			      
+	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	  unsigned ks = k/d.disppby();
+	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	    unsigned sh = unsigned(LINTRANS(src[ks][j]));	      
+	    const uint8_t v = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	    for(unsigned m=0; m<d.disppbx(); m++)
+	      *dst++ = v;
+	  }						      
+	}
       }
     }
     else {
@@ -201,12 +215,26 @@ QImage*  QtImage::image(ImageColorControl& control)
       const double invlogs = 256./(log(s)+log(256));
 
       ndarray<const uint32_t,2> src(_entry.content());	      
-      for(unsigned k=0; k<d.nbinsy(); k++) {			      
-	uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
-	for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	  unsigned sh = unsigned(LOGTRANS(src[k][j]));	      
-	  *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
-	}						      
+      if (d.disppbx()==1 && d.disppby()==1) {
+	for(unsigned k=0; k<d.nbinsy(); k++) {			      
+	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	    unsigned sh = unsigned(LOGTRANS(src[k][j]));	      
+	    *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	  }		
+	}				      
+      }
+      else {
+	for(unsigned k=0; k<d.ndispy(); k++) {			      
+	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
+	  unsigned ks=k/d.disppby();
+	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
+	    unsigned sh = unsigned(LOGTRANS(src[ks][j]));	      
+	    const uint8_t v = 0x01*(sh >= 0xff ? 0xff : sh);	      
+	    for(unsigned m=0; m<d.disppbx(); m++)
+	      *dst++ = v;
+	  }		
+	}				      
       }
     }
   }

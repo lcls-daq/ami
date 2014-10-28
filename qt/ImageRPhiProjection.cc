@@ -252,6 +252,7 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
   _list_sem.take();
   unsigned mask=0;
   const unsigned maxint=0x40000000;
+  AxisBins dummy_axis(0,maxint,maxint);
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels);
@@ -260,19 +261,19 @@ void ImageRPhiProjection::configure(char*& p, unsigned input, unsigned& output,
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
-		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
     else
       mask |= 1<<(*it)->channel();
   for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
-		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
     else
       mask |= 1<<(*it)->channel();
   for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
     if (!_channels[(*it)->channel()]->smp_prohibit())
       (*it)->configure(p,input,output,channels,signatures,nchannels,
-		       AxisBins(0,maxint,maxint),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
     else
       mask |= 1<<(*it)->channel();
   _list_sem.give();
@@ -503,6 +504,7 @@ void ImageRPhiProjection::add_overlay(DescEntry* desc,
   _ovls.push_back(ovl);
   _list_sem.give();
   
+  connect(ovl, SIGNAL(changed()), this, SIGNAL(changed()));
   emit changed();
 }
 

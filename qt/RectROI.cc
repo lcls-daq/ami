@@ -184,19 +184,20 @@ void RectROI::configure(char*& p, unsigned input, unsigned& output,
   //  Configure the derived plots
   if (!smp_prohibit) {
     const unsigned maxpixels=1024;
+    AxisBins dummy_axis(0,maxpixels,maxpixels);
     for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
       (*it)->configure(p,input,output);
     for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
       (*it)->configure(p,input,output,
-		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
     for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
       (*it)->configure(p,input,output);
     for(std::list<CursorPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
       (*it)->configure(p,input,output,
-		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
     for(std::list<CursorOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
       (*it)->configure(p,input,output,
-		       AxisBins(0,maxpixels,maxpixels),Ami::ConfigureRequest::Analysis);
+		       dummy_axis,Ami::ConfigureRequest::Analysis);
   }
   else {
     for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
@@ -357,6 +358,7 @@ void RectROI::add_overlay(QtPlot& plot, BinMath* op)
   _ovls.push_back(ovl);
   _list_sem.give();
 
+  connect(ovl, SIGNAL(changed()), this, SIGNAL(changed()));
   emit changed();
 }
 

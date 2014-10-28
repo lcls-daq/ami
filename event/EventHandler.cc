@@ -114,6 +114,16 @@ int    EventHandler::image_ppbin(unsigned& xpixels, unsigned& ypixels, unsigned 
   return ppbin;
 }
 
+int    EventHandler::display_ppbin(unsigned xpixels, unsigned ypixels, unsigned margin)
+{
+  unsigned pixels  = (xpixels > ypixels) ? xpixels : ypixels;
+  unsigned res_limit = _res_limit - 2*margin;
+  int ppbin = res_limit/pixels;
+  if (ppbin==0) ppbin=1;
+  printf("display_ppbin [%d:%d] %d\n",pixels,res_limit,ppbin);
+  return ppbin;
+}
+
 void   EventHandler::post_diagnostics(bool v) { _post_diagnostics=v; }
 
 bool   EventHandler::post_diagnostics() { return _post_diagnostics; }
