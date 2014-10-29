@@ -6,6 +6,8 @@
 #include "ami/data/BinMath.hh"
 #include "ami/data/RawFilter.hh"
 
+#include <stdio.h>
+
 using namespace Ami::Qt;
 
 void CursorOp::configure(char*& p, unsigned input, unsigned& output,

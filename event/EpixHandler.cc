@@ -717,7 +717,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
         unsigned shape[2];
@@ -739,7 +739,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     if (d.options()&FrameCalib::option_correct_common_mode()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	unsigned shape[2];
@@ -764,7 +764,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     if (d.options()&FrameCalib::option_correct_common_mode3()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	for(unsigned x=0; x<e.shape()[1]; x++) {
@@ -793,7 +793,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       make_ndarray(&_no_gain[nskip][0],a.shape()[0],a.shape()[1]);
     {
       for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1)!=0) && (aMask & 1<<_asic_map[k])==0) 
+        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
 	  continue;
 	ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	unsigned r = (k/_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfRowsReadPerAsic();
