@@ -181,6 +181,11 @@ void AnalysisFactory::configure(unsigned       id,
       break;
     }
 
+#ifdef DBUG
+    printf("AnalysisFactory::configure request {%d:%d:%d:%d:%d:%d}\n",
+	   req.state(),req.source(),req.scalars(),req.input(),req.output(),req.size());
+#endif
+
     if (req.source() == ConfigureRequest::User) {
       int i=0;
       for(UList::iterator it=_user.begin(); it!=_user.end(); it++,i++) {
@@ -236,7 +241,13 @@ void AnalysisFactory::configure(unsigned       id,
       }
       const Cds& input_cds = *pcds;
       const Entry* input = input_cds.entry(req.input());
-      if (!input) {
+      if (req.state() == ConfigureRequest::Reset) {
+	cds.reset_plots();
+        for(AnList::iterator it=oldList.begin(); it!=oldList.end(); it++)
+	  (*it)->use();
+	srcList.splice(srcList.end(),oldList);
+      }
+      else if (!input) {
         printf("AnalysisFactory::configure failed (null input) for ConfigureRequest::%s\n", reqType);
         printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
         input_cds.showentries();

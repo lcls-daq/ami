@@ -309,142 +309,146 @@ void SummaryClient::_read_description(int size)
     printf("%s\n",cache); }
 #endif
 
-  setUpdatesEnabled(false);
+  if (_reset_plots)
+    _reset_plots=false;
 
-  while(_tab->count()) {
-    QWidget* w = _tab->widget(0);
-    _tab->removeTab(0);
-    delete w;
-  }
+  else {
+    setUpdatesEnabled(false);
 
-  _cds.reset();
-
-  std::list<PagePlot*> pages;
-
-  const char* payload = _description;
-  const char* const end = payload + size;
-
-  payload += sizeof(Desc);
-
-  while( payload < end ) {
-    const DescEntry* desc = reinterpret_cast<const DescEntry*>(payload);
-    if (desc->size()==0) {
-      printf("read_description size==0\n");
-      break;
+    while(_tab->count()) {
+      QWidget* w = _tab->widget(0);
+      _tab->removeTab(0);
+      delete w;
     }
-    Entry* entry = EntryFactory::entry(*desc);
-    printf("%s found entry %s of type %d\n",
-           qPrintable(_title),
-	   desc->name(), desc->type());
 
-    QString page_title, plot_title;
-    int row=-1, col=-1;
-    int rgb=0;
-    { QString title(desc->name());
-      int index = title.indexOf( PageIndex );
-      if (index >= 0) {
-	plot_title = title.left(index);
-        int rIndex = title.indexOf( PageIndex, index+1 );
-        if (rIndex >= 0) {
-          page_title = title.mid(index+1,rIndex-index-1);
-          int cIndex = title.indexOf( PageIndex, rIndex+1 );
-          if (cIndex >= 0) {
-            row = title.mid( rIndex+1, cIndex-rIndex-1).toInt();
-            int rgbIndex = title.indexOf( PageIndex, cIndex+1 );
-            if (rgbIndex >= 0) {
-              col = title.mid( cIndex+1, rgbIndex-cIndex-1).toInt();
-              rgb = title.mid( rgbIndex+1 ).toInt(0,16);
-            }
-            else
-              col = title.mid( cIndex+1 ).toInt();
-          }
-          else
-            row = title.mid( rIndex+1 ).toInt();
-        }
-        else
-          page_title = title.mid(index+1);
+    _cds.reset();
+
+    std::list<PagePlot*> pages;
+
+    const char* payload = _description;
+    const char* const end = payload + size;
+
+    payload += sizeof(Desc);
+
+    while( payload < end ) {
+      const DescEntry* desc = reinterpret_cast<const DescEntry*>(payload);
+      if (desc->size()==0) {
+	printf("read_description size==0\n");
+	break;
       }
-      else {
-	plot_title = page_title = title;
+      Entry* entry = EntryFactory::entry(*desc);
+      printf("%s found entry %s of type %d\n",
+	     qPrintable(_title),
+	     desc->name(), desc->type());
+
+      QString page_title, plot_title;
+      int row=-1, col=-1;
+      int rgb=0;
+      { QString title(desc->name());
+	int index = title.indexOf( PageIndex );
+	if (index >= 0) {
+	  plot_title = title.left(index);
+	  int rIndex = title.indexOf( PageIndex, index+1 );
+	  if (rIndex >= 0) {
+	    page_title = title.mid(index+1,rIndex-index-1);
+	    int cIndex = title.indexOf( PageIndex, rIndex+1 );
+	    if (cIndex >= 0) {
+	      row = title.mid( rIndex+1, cIndex-rIndex-1).toInt();
+	      int rgbIndex = title.indexOf( PageIndex, cIndex+1 );
+	      if (rgbIndex >= 0) {
+		col = title.mid( cIndex+1, rgbIndex-cIndex-1).toInt();
+		rgb = title.mid( rgbIndex+1 ).toInt(0,16);
+	      }
+	      else
+		col = title.mid( cIndex+1 ).toInt();
+	    }
+	    else
+	      row = title.mid( rIndex+1 ).toInt();
+	  }
+	  else
+	    page_title = title.mid(index+1);
+	}
+	else {
+	  plot_title = page_title = title;
+	}
       }
-    }
 
-    QtBase* plot = 0;
-    QtImage* img = 0;
-    switch(desc->type()) {
-    case Ami::DescEntry::TH1F: 
-      plot = new QtTH1F(plot_title,*static_cast<const Ami::EntryTH1F*>(entry),
-			noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
-      break;
-    case Ami::DescEntry::Scalar:  // create a chart from a scalar
-      plot = new QtChart(plot_title,*static_cast<const Ami::EntryScalar*>(entry),
-                         QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
-      break;
-    case Ami::DescEntry::Prof: 
-      plot = new QtProf(plot_title,*static_cast<const Ami::EntryProf*>(entry),
-			noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
-      break;
-    case Ami::DescEntry::Scan: 
-      plot = new QtScan(plot_title,*static_cast<const Ami::EntryScan*>(entry),
-			noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
-      break;
-    case Ami::DescEntry::Image:
-      img  = new QtImage(plot_title,*static_cast<const Ami::EntryImage*>(entry),
-                         noTransform,noTransform,QColor(0,0,0));
-      break;
-    case Ami::DescEntry::TH2F:
-      plot = new QtTH2F(plot_title,*static_cast<const Ami::EntryTH2F*>(entry),
-                        noTransform,noTransform,QColor(0,0,0));
-      break;
-    default:
-      printf("%s type %d not implemented yet\n",qPrintable(_title),desc->type()); 
-      break;
-    }
+      QtBase* plot = 0;
+      QtImage* img = 0;
+      switch(desc->type()) {
+      case Ami::DescEntry::TH1F: 
+	plot = new QtTH1F(plot_title,*static_cast<const Ami::EntryTH1F*>(entry),
+			  noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
+	break;
+      case Ami::DescEntry::Scalar:  // create a chart from a scalar
+	plot = new QtChart(plot_title,*static_cast<const Ami::EntryScalar*>(entry),
+			   QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
+	break;
+      case Ami::DescEntry::Prof: 
+	plot = new QtProf(plot_title,*static_cast<const Ami::EntryProf*>(entry),
+			  noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
+	break;
+      case Ami::DescEntry::Scan: 
+	plot = new QtScan(plot_title,*static_cast<const Ami::EntryScan*>(entry),
+			  noTransform,noTransform,QColor((rgb>>16)&0xff,(rgb>>8)&0xff,(rgb>>0)&0xff));
+	break;
+      case Ami::DescEntry::Image:
+	img  = new QtImage(plot_title,*static_cast<const Ami::EntryImage*>(entry),
+			   noTransform,noTransform,QColor(0,0,0));
+	break;
+      case Ami::DescEntry::TH2F:
+	plot = new QtTH2F(plot_title,*static_cast<const Ami::EntryTH2F*>(entry),
+			  noTransform,noTransform,QColor(0,0,0));
+	break;
+      default:
+	printf("%s type %d not implemented yet\n",qPrintable(_title),desc->type()); 
+	break;
+      }
 
-    bool lFound=false;
+      bool lFound=false;
+      for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
+	if ((*it)->title() == page_title) {
+	  if (plot)
+	    (*it)->add(plot,_cds,row,col);
+	  else if (img)
+	    (*it)->add(img ,_cds,row,col);
+	  lFound=true;
+	  break;
+	}
+      }
+      if (!lFound) {
+	PagePlot* page = new PagePlot(page_title);
+	if (plot)
+	  page->add(plot,_cds,row,col);
+	else if (img)
+	  page->add(img ,_cds,row,col);
+	pages.push_back(page);
+      }
+
+      _cds.add(entry, desc->signature());
+      payload += desc->size();
+    }
+    if (_cds.totalentries()>_niovload) {
+      delete[] _iovload;
+      _iovload = new iovec[_niovload=_cds.totalentries()];
+    }
+    _niovread = _cds.payload(_iovload, _cds.request());
+
     for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
-      if ((*it)->title() == page_title) {
-        if (plot)
-          (*it)->add(plot,_cds,row,col);
-        else if (img)
-          (*it)->add(img ,_cds,row,col);
-        lFound=true;
-        break;
-      }
+      (*it)->layout();
+      _tab->addTab(*it, (*it)->title());
     }
-    if (!lFound) {
-      PagePlot* page = new PagePlot(page_title);
-      if (plot)
-        page->add(plot,_cds,row,col);
-      else if (img)
-        page->add(img ,_cds,row,col);
-      pages.push_back(page);
-    }
-
-    _cds.add(entry, desc->signature());
-    payload += desc->size();
-  }
-  if (_cds.totalentries()>_niovload) {
-    delete[] _iovload;
-    _iovload = new iovec[_niovload=_cds.totalentries()];
-  }
-  _niovread = _cds.payload(_iovload, _cds.request());
-
-  for(std::list<PagePlot*>::iterator it = pages.begin(); it != pages.end(); it++) {
-    (*it)->layout();
-    _tab->addTab(*it, (*it)->title());
-  }
 
 #if 0
-  { const char* cache_p = cache;
-    load(cache_p); 
-    printf("Loaded %d bytes\n",cache_p-cache); }
+    { const char* cache_p = cache;
+      load(cache_p); 
+      printf("Loaded %d bytes\n",cache_p-cache); }
 #endif
 
+    setUpdatesEnabled(true);
+  }
+
   _status->set_state(Status::Described);
-
-  setUpdatesEnabled(true);
-
   _sem->give();
 }
 
@@ -503,6 +507,5 @@ void SummaryClient::reset_plots()
   if (_manager) {
     _reset_plots = true;
     _manager->configure(); 
-    _reset_plots = false;
   }
 }

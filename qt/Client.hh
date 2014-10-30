@@ -131,6 +131,8 @@ namespace Ami {
       bool _throttled;
       unsigned _denials;
       unsigned _attempts;
+
+      bool     _reset;
     public:
       static void use_scroll_area(bool);
     };

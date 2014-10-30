@@ -30,7 +30,7 @@ XYHistogramPlotDesc::XYHistogramPlotDesc(QWidget* parent) :
 {
   QVBoxLayout* layout1 = new QVBoxLayout;
   layout1->addStretch();
-  layout1->addWidget(_desc = new DescTH1F("Pixel Values"));
+  layout1->addWidget(_desc = new DescTH1F("Pixel Values",true,false));
   layout1->addStretch();
   setLayout(layout1);
 }

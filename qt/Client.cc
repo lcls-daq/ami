@@ -72,7 +72,8 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _throttled       (false),
   _denials         (0),
-  _attempts        (0)
+  _attempts        (0),
+  _reset           (false)
 {
   if (!request_rate) request_rate = Defaults::instance()->other_update_rate();
 
@@ -211,11 +212,7 @@ void Ami::Qt::Client::load(const char*& p)
 
 void Ami::Qt::Client::reset_plots()
 {
-  _input++;
-  iovec iov;
-  configure(&iov);
-  
-  _input--;
+  _reset=true;
   update_configuration(); 
 }
 
@@ -290,42 +287,49 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 
     char* p = _request;
 
-    //
-    //  Configure channels which depend upon others
-    //
-    bool lAdded;
-    do {
-      lAdded=false;
-      for(unsigned i=0; i<NCHANNELS; i++) {
-	if (signatures[i]<0) {
-	  int sig = _channels[i]->configure(p,_input,_output_signature,
-					    _channels,signatures,NCHANNELS);
-	  if (sig >= 0) {
-	    signatures[i] = sig;
-	    lAdded = true;
-	    //	    printf("Added signature %d for channel %d\n",sig,i);
-	  }
-	}
-      }
-    } while(lAdded);
-
-    char* hp = p;
-
-    _configure(p,_input,_output_signature,
-	       _channels,signatures,NCHANNELS);
-
-    if (p > _request+BufferSize) {
-      printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
-      return 0;
-    }
-    else if (p==hp && !isVisible()) {  // nothing to show
-      return 0;
+    if (_reset) {
+      _reset = false;
+      ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Reset,
+							ConfigureRequest::Analysis,
+							_input);
+      p += req.size();
     }
     else {
-      iov[0].iov_base = _request;
-      iov[0].iov_len  = p - _request;
-      return 1;
+      //
+      //  Configure channels which depend upon others
+      //
+      bool lAdded;
+      do {
+	lAdded=false;
+	for(unsigned i=0; i<NCHANNELS; i++) {
+	  if (signatures[i]<0) {
+	    int sig = _channels[i]->configure(p,_input,_output_signature,
+					      _channels,signatures,NCHANNELS);
+	    if (sig >= 0) {
+	      signatures[i] = sig;
+	      lAdded = true;
+	      //	    printf("Added signature %d for channel %d\n",sig,i);
+	    }
+	  }
+	}
+      } while(lAdded);
+
+      char* hp = p;
+
+      _configure(p,_input,_output_signature,
+		 _channels,signatures,NCHANNELS);
+
+      if (p > _request+BufferSize) {
+	printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
+	return 0;
+      }
+      else if (p==hp && !isVisible()) {  // nothing to show
+	return 0;
+      }
     }
+    iov[0].iov_base = _request;
+    iov[0].iov_len  = p - _request;
+    return 1;
   }
 }
 

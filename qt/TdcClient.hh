@@ -104,6 +104,8 @@ namespace Ami {
       std::list<TdcPlot*>        _plots;
       std::list<ProjectionPlot*> _pplots;
       std::list<TwoDPlot*>       _tplots;
+
+      bool _reset;
     };
   };
 };

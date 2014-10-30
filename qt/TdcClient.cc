@@ -56,7 +56,8 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _iovload         (new iovec[_niovload]),
   _sem             (new Semaphore(Semaphore::EMPTY)),
   _list_sem        (Semaphore::FULL),
-  _throttled       (false)
+  _throttled       (false),
+  _reset           (false)
 {
   setWindowTitle(QString("%1[*]").arg(name));
   setAttribute(::Qt::WA_DeleteOnClose, false);
@@ -236,11 +237,15 @@ void TdcClient::save_plots(const QString& p) const
 
 void TdcClient::reset_plots()
 {
+#if 0
   _input_signature++;
   iovec iov;
   configure(&iov);
 
   _input_signature--;
+#else
+  _reset=true;
+#endif
   update_configuration(); 
 }
 
@@ -288,19 +293,27 @@ int  TdcClient::configure       (iovec* iov)
 
   char* p = _request;
 
-  _list_sem.take();
+  if (_reset) {
+    _reset=false;
+    ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Reset,
+						      ConfigureRequest::Analysis,
+						      _input_signature);
+    p += req.size();
+  }
+  else {
+    _list_sem.take();
 
-  for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-    (*it)->configure(p,_input_signature,_output_signature);
+    for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+      (*it)->configure(p,_input_signature,_output_signature);
 
-  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
-    (*it)->configure(p,_input_signature,_output_signature);
+    for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+      (*it)->configure(p,_input_signature,_output_signature);
 
-  for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
-    (*it)->configure(p,_input_signature,_output_signature);
+    for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
+      (*it)->configure(p,_input_signature,_output_signature);
 
-  _list_sem.give();
-
+    _list_sem.give();
+  }
   if (p > _request+BufferSize) {
     printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
     return 0;

@@ -115,6 +115,8 @@ namespace Ami {
       void remove_overlay(QtOverlay*);
     private:
       std::list<EnvOverlay*> _ovls;
+
+      bool _reset;
     };
   };
 };

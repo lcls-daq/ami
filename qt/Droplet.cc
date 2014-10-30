@@ -390,15 +390,6 @@ void Droplet::plot()
       else {
 	QString title = QString("%1 [%2]").arg(_channels[_channel]->name()).arg(_analysis_plot->title());
 	DescEntry*  desc = _analysis_plot->desc(qPrintable(title));
-        //  Don't normalize the distributions
-        switch(desc->type()) {
-        case DescEntry::TH1F:
-        case DescEntry::ScalarRange:
-          desc->normalize(false);
-          break;
-        default:
-          break;
-        }
 	_app().add_cursor_plot(new BinMath(*desc,
 					   _analysis_plot->expression()));
 	delete desc;

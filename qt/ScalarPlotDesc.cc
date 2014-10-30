@@ -211,21 +211,24 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       switch(_hist->method()) {
       case DescBinning::Fixed:
         desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
-                                 _hist->bins(),_hist->lo(),_hist->hi()); 
+                                 _hist->bins(),_hist->lo(),_hist->hi(),
+				 _hist->normalize()); 
         break;
       case DescBinning::Auto1:
         desc = new Ami::DescScalarRange(qPrintable(v),"events",
                                         DescScalarRange::MeanSigma,
                                         _hist->sigma(),
                                         _hist->nsamples(),
-                                        _hist->bins());
+                                        _hist->bins(),
+					_hist->normalize());
         break;
       case DescBinning::Auto2:
         desc = new Ami::DescScalarRange(qPrintable(v),"events",
                                         DescScalarRange::MinMax,
                                         _hist->extent(),
                                         _hist->nsamples(),
-                                        _hist->bins());
+                                        _hist->bins(),
+					_hist->normalize());
         break;
       default:
         break;
