@@ -15,7 +15,7 @@ namespace Ami {
 
   class ConfigureRequest {
   public:
-    enum State { Create, Destroy, SetOpt };
+    enum State { Create, Destroy, SetOpt, Reset };
     enum Source { Discovery, Analysis, Summary, User, Filter, Hidden };
     ConfigureRequest(State        state, 
 		     Source       source,
