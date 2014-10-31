@@ -2,6 +2,7 @@
 #define AmiXML_hh
 
 #include <map>
+#include <stdio.h>
 
 /*
 **  Tools for saving GUI setup to an XML file

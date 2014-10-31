@@ -204,6 +204,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
   QString vn = QString("(%1)/(%2)").arg(title).arg(_vnorm->entry());
 
   QString qtitle = title ? QString(title) : _title->text();
+  std::string w( _weightB->isChecked() ? qPrintable(_vweight->entry()) : "" );
 
   switch(_plot_grp->currentIndex()) {
   case ScalarPlotDesc::TH1F:
@@ -235,20 +236,16 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       }
       break; }
   case ScalarPlotDesc::vT: 
-    { QString v = _ynorm->isChecked() ? vn : qtitle;
+    { std::string v( qPrintable(_ynorm->isChecked() ? vn : qtitle) );
       switch(_vTime->stat()) {
       case Ami::DescScalar::StdDev:
-        desc = new Ami::DescScalar(qPrintable(v),"stddev", Ami::DescScalar::StdDev,
-                                   _weightB->isChecked() ? qPrintable(_vweight->entry()) : "",
-                                   _vTime->pts(),
-                                   _vTime->dpt());
+        desc = new Ami::DescScalar(v.c_str(),"stddev", Ami::DescScalar::StdDev,
+                                   w.c_str(),_vTime->pts(),_vTime->dpt());
         break;
       case Ami::DescScalar::Mean:
       default:
-        desc = new Ami::DescScalar(qPrintable(v),"mean", Ami::DescScalar::Mean,
-                                   _weightB->isChecked() ? qPrintable(_vweight->entry()) : "",
-                                   _vTime->pts(),
-                                   _vTime->dpt());
+        desc = new Ami::DescScalar(v.c_str(),"mean", Ami::DescScalar::Mean,
+                                   w.c_str(),_vTime->pts(),_vTime->dpt());
         break; }
       break; }
   case ScalarPlotDesc::vF:
@@ -257,7 +254,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       desc = new Ami::DescProf(qPrintable(vy),
 			       qPrintable(vx),"mean",
 			       _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean",
-			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+			       w.c_str());
       break; }
   case ScalarPlotDesc::vF2:
     { QString vy = _ynorm->isChecked() ? QString("(%1)/(%2)").arg(_vFeature2->yexpr()).arg(_vnorm->entry()) : _vFeature2->yexpr();
@@ -268,7 +265,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
                                  _vFeature2->xbins(),_vFeature2->xlo(),_vFeature2->xhi(),
                                  _vFeature2->ybins(),_vFeature2->ylo(),_vFeature2->yhi(),
                                  "mean",
-                                 _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+                                 w.c_str());
       break; }
   case ScalarPlotDesc::vS:
     { QString vy = _ynorm->isChecked() ? vn : qtitle;
@@ -276,7 +273,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       desc = new Ami::DescScan(qPrintable(vy),
 			       qPrintable(_vScan->expr()),title,
 			       _vScan->bins(),
-			       _weightB->isChecked() ? qPrintable(_vweight->entry()) : "");
+			       w.c_str());
     }
     break;
   case ScalarPlotDesc::TH2F:
