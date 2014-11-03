@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+enum { MaxScalars=6 };
+
 static const char* _scalar_name[] = { "AMPL",
 				      "FLTPOS",
 				      "FLTPOS_PS",
@@ -39,9 +41,9 @@ void   Ami::TimeToolHandler::_configure(Pds::TypeId id, const void* payload, con
 	*reinterpret_cast<const Pds::TimeTool::ConfigV1*>(payload);
 
       char buffer[64];
-      for(unsigned i=0; i<MaxScalars; i++) {
+      for(unsigned i=0; _scalar_name[i]!=NULL; i++) {
 	sprintf(buffer,"%s:%s",c.base_name(),_scalar_name[i]);
-	_index[i] = _add_to_cache(buffer);
+	_add_to_cache(buffer);
       }
     } break;
   default:
@@ -51,37 +53,25 @@ void   Ami::TimeToolHandler::_configure(Pds::TypeId id, const void* payload, con
 
 void   Ami::TimeToolHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
+  int index=_index;
   switch(id.version()) {
   case 1:
     { const Pds::TimeTool::DataV1& d = 
 	*reinterpret_cast<const Pds::TimeTool::DataV1*>(payload);
-
-      _cache.cache(_index[0],d.amplitude());
-      _cache.cache(_index[1],d.position_pixel());
-      _cache.cache(_index[2],d.position_time());
-      _cache.cache(_index[3],d.position_fwhm());
-      _cache.cache(_index[4],d.nxt_amplitude());
-      _cache.cache(_index[5],d.ref_amplitude());
+      
+      _cache.cache(index++,d.amplitude());
+      _cache.cache(index++,d.position_pixel());
+      _cache.cache(index++,d.position_time());
+      _cache.cache(index++,d.position_fwhm());
+      _cache.cache(index++,d.nxt_amplitude());
+      _cache.cache(index++,d.ref_amplitude());
     } break;
   default:
     break;
   }
 }
 
-void   Ami::TimeToolHandler::_damaged  ()
-{
-  for(unsigned i=0; i<MaxScalars; i++)
-    if (_index[i]>=0)
-      _cache.cache(_index[i], 0, true);
-}
-
 //  No Entry data
 unsigned          Ami::TimeToolHandler::nentries() const { return 0; }
 const Ami::Entry* Ami::TimeToolHandler::entry   (unsigned) const { return 0; }
-void              Ami::TimeToolHandler::reset   () 
-{
-  EventHandlerF::reset();
-  for(unsigned i=0; i<MaxScalars; i++)
-    _index[i] = -1;
-}
 void              Ami::TimeToolHandler::rename(const char*) {}

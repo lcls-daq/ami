@@ -22,12 +22,6 @@ Gsc16aiHandler::~Gsc16aiHandler()
 {
 }
 
-void   Gsc16aiHandler::reset     ()
-{
-  EventHandlerF::reset();
-  _index=-1;
-}
-
 void   Gsc16aiHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   Gsc16aiHandler::_configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
@@ -60,7 +54,7 @@ void   Gsc16aiHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   for (ii = _config.firstChan(); ii <= _config.lastChan(); ii++) {
     sprintf(cc, ":Ch%02d", ii);
     if (ii == _config.firstChan()) {
-      _index = _add_to_cache(buffer);
+      _add_to_cache(buffer);
     } else {
       (void) _add_to_cache(buffer);
     }
@@ -81,11 +75,6 @@ void   Gsc16aiHandler::_event    (Pds::TypeId, const void* payload, const Pds::C
       _cache.cache(_index+ii, _voltsPerCount * (int16_t)d.channelValue(_config)[ii]);
     }
   }
-}
-
-void   Gsc16aiHandler::_damaged  ()
-{
-  _cache.cache(_index, 0, true);
 }
 
 //  No Entry data

@@ -3,31 +3,12 @@
 
 #include "ami/event/FrameHandler.hh"
 
-
-
-
-
-
-
-
-
-
-
-
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/psddl/camera.ddl.h"
 #include "pdsdata/psddl/opal1k.ddl.h"
 
 #include <string.h>
-
-
-
-
-
-
-
-
 
 namespace Ami {
   class PhasicsHandler : public FrameHandler {

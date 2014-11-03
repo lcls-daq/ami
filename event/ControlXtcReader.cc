@@ -12,11 +12,11 @@
 using namespace Ami;
 
 ControlXtcReader::ControlXtcReader(FeatureCache& f)  : 
-  EventHandler(Pds::ProcInfo(Pds::Level::Control,0,unsigned(-1UL)),
-	       Pds::TypeId::NumberOf,
-	       Pds::TypeId::Id_ControlConfig),
+  EventHandlerF(Pds::ProcInfo(Pds::Level::Control,0,unsigned(-1UL)),
+		Pds::TypeId::NumberOf,
+		Pds::TypeId::Id_ControlConfig,
+		f),
   _cache(f),
-  _index(-1),
   _values(0)
 {
 }
@@ -30,6 +30,7 @@ void   ControlXtcReader::_calibrate(Pds::TypeId id, const void* payload, const P
 
 void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
+  char nbuf[FeatureCache::FEATURE_NAMELEN];
   _index = -1;
   _values.resize(0);
 
@@ -38,20 +39,14 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       *reinterpret_cast<const Pds::ControlData::ConfigV1*>(payload);
 
     //  Add the PVControl variables
-    char nbuf[FeatureCache::FEATURE_NAMELEN];
     for(unsigned k=0; k<c.npvControls(); k++) {
       const Pds::ControlData::PVControl& pv = c.pvControls()[k];
-      int index;
-      if (pv.array()) {
+      if (pv.array())
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
-        index = _cache.add(nbuf);
-      }
-      else {
+      else
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
-        index = _cache.add(nbuf);
-      }
+      int index = _add_to_cache(nbuf);
       _cache.cache(index,pv.value());
-      if (_index<0) _index = index;
       _values.push_back(pv.value());
     }
   }
@@ -60,20 +55,14 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       *reinterpret_cast<const Pds::ControlData::ConfigV2*>(payload);
 
     //  Add the PVControl variables
-    char nbuf[FeatureCache::FEATURE_NAMELEN];
     for(unsigned k=0; k<c.npvControls(); k++) {
       const Pds::ControlData::PVControl& pv = c.pvControls()[k];
-      int index;
-      if (pv.array()) {
+      if (pv.array())
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
-        index = _cache.add(nbuf);
-      }
-      else {
+      else
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
-        index = _cache.add(nbuf);
-      }
+      int index = _add_to_cache(nbuf);
       _cache.cache(index,pv.value());
-      if (_index<0) _index = index;
       _values.push_back(pv.value());
     }
   }
@@ -82,20 +71,14 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       *reinterpret_cast<const Pds::ControlData::ConfigV3*>(payload);
 
     //  Add the PVControl variables
-    char nbuf[FeatureCache::FEATURE_NAMELEN];
     for(unsigned k=0; k<c.npvControls(); k++) {
       const Pds::ControlData::PVControl& pv = c.pvControls()[k];
-      int index;
-      if (pv.array()) {
+      if (pv.array())
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
-        index = _cache.add(nbuf);
-      }
-      else {
+      else
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
-        index = _cache.add(nbuf);
-      }
+      int index = _add_to_cache(nbuf);
       _cache.cache(index,pv.value());
-      if (_index<0) _index = index;
       _values.push_back(pv.value());
     }
   }
@@ -104,10 +87,9 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
   //  Add an alias for each variable
   //
   unsigned nv=_values.size();
-  char nbuf[FeatureCache::FEATURE_NAMELEN];
   for(unsigned i=0; i<nv; i++) {
     snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "XSCAN[%d]", i);
-    _cache.add(nbuf);
+    _add_to_cache(nbuf);
     _values.push_back(_values[i]);
   }
 }
@@ -124,5 +106,4 @@ void   ControlXtcReader::_damaged  () {}
 //  No Entry data
 unsigned     ControlXtcReader::nentries() const { return 0; }
 const Entry* ControlXtcReader::entry   (unsigned) const { return 0; }
-void         ControlXtcReader::reset   () { _index=-1; }
 void         ControlXtcReader::rename  (const char*) {}

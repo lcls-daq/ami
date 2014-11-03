@@ -3,6 +3,8 @@
 
 #include "ami/event/EventHandler.hh"
 
+#include <vector>
+
 /**
  *   EventHandler with features.  Provides common support for lookup
  *   of scalars contributed per event.
@@ -63,10 +65,12 @@ namespace Ami {
   public:
     int  _add_to_cache(const char*);
     void _rename_cache(int index,const char*);
+    void _damaged     ();
   protected:
-    FeatureCache&          _cache;
-    std::list<std::string> _features;
-    std::list<int>         _indices;
+    FeatureCache&            _cache;
+    std::list  <std::string> _features;
+    std::vector<int>         _indices;
+    int                      _index;
   };
 };
 

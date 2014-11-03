@@ -22,12 +22,6 @@ EncoderHandler::~EncoderHandler()
 {
 }
 
-void   EncoderHandler::reset () 
-{
-  EventHandlerF::reset();
-  _index=-1; 
-}
-
 void   EncoderHandler::rename(const char* s)
 {
   if (_index<0) return;
@@ -47,12 +41,9 @@ void   EncoderHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),59);
   char* c = buffer+strlen(buffer);
 
-  sprintf(c,":CH0");
-  _index = _add_to_cache(buffer);
-  sprintf(c,":CH1");
-  _add_to_cache(buffer);
-  sprintf(c,":CH2");
-  _add_to_cache(buffer);
+  sprintf(c,":CH0");  _add_to_cache(buffer);
+  sprintf(c,":CH1");  _add_to_cache(buffer);
+  sprintf(c,":CH2");  _add_to_cache(buffer);
 }
 
 void   EncoderHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
@@ -61,11 +52,6 @@ void   EncoderHandler::_event    (Pds::TypeId, const void* payload, const Pds::C
   _cache.cache(_index+0, d.value(0));
   _cache.cache(_index+1, d.value(1));
   _cache.cache(_index+2, d.value(2));
-}
-
-void   EncoderHandler::_damaged  ()
-{
-  _cache.cache(_index, 0, true);
 }
 
 //  No Entry data

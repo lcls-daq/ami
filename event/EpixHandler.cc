@@ -16,6 +16,8 @@
 #include <string.h>
 #include <string>
 
+//#define DBUG
+
 using namespace Ami;
 
 static const unsigned offset=1<<16;
@@ -324,7 +326,7 @@ static double frameNoise(ndarray<const uint32_t,2> data,
     if ( int(i)+fnPeakBins<=fnPixelRange ) {
       unsigned s0 = 0;
       unsigned s1 = 0;
-      for(unsigned j=i-fnPeakBins-1; j<i+fnPeakBins; j++) {
+      for(unsigned j=i-fnPeakBins+1; j<i+fnPeakBins; j++) {
         s0 += hist[j];
         s1 += hist[j]*j;
       }
@@ -353,6 +355,24 @@ static double frameNoise(ndarray<const uint32_t,2> data,
     }
 //    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
   }
+
+#ifdef DBUG
+  { double x0=0, x1=0, x2=0;
+    const ndarray<const uint32_t,2>& d = data;
+    for(unsigned j=0; j<d.shape()[0]; j++) {
+      const uint32_t* data = &d[j][0];
+      for(unsigned i=0; i<d.shape()[1]; i++) {
+	double x = double(data[i]);
+	x0++;
+	x1 += x;
+	x2 += x*x;
+      }
+    }
+    printf("::median stat %f %f [%f]\n",
+	   x1/x0,sqrt((x2/x0-pow(x1/x0,2))*x0/(x0-1)),
+	   v-x1/x0+double(off));
+  }
+#endif
 
   return v;
 }

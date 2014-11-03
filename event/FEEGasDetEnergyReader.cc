@@ -14,9 +14,7 @@ FEEGasDetEnergyReader::FEEGasDetEnergyReader(FeatureCache& f)  :
   EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::FEEGasDetEnergy),
 		Pds::TypeId::Id_FEEGasDetEnergy,
 		Pds::TypeId::Id_FEEGasDetEnergy,
-		f),
-  _index(-1),
-  _version(-1)
+		f)
 {
 }
 
@@ -27,17 +25,11 @@ FEEGasDetEnergyReader::~FEEGasDetEnergyReader()
 void   FEEGasDetEnergyReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   FEEGasDetEnergyReader::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) 
 {
-  _version = id.version();
-  if (id.version() == 0) {
-    _index = _add_to_cache("BLD:FEE:GDET1:PMT1:ENRC");
-    _add_to_cache("BLD:FEE:GDET1:PMT2:ENRC");
-    _add_to_cache("BLD:FEE:GDET2:PMT1:ENRC");
-    _add_to_cache("BLD:FEE:GDET2:PMT2:ENRC");
-  } else if (id.version() == 1) {
-    _index = _add_to_cache("BLD:FEE:GDET1:PMT1:ENRC");
-    _add_to_cache("BLD:FEE:GDET1:PMT2:ENRC");
-    _add_to_cache("BLD:FEE:GDET2:PMT1:ENRC");
-    _add_to_cache("BLD:FEE:GDET2:PMT2:ENRC");
+  _add_to_cache("BLD:FEE:GDET1:PMT1:ENRC");
+  _add_to_cache("BLD:FEE:GDET1:PMT2:ENRC");
+  _add_to_cache("BLD:FEE:GDET2:PMT1:ENRC");
+  _add_to_cache("BLD:FEE:GDET2:PMT2:ENRC");
+  if (id.version() >= 1) {
     _add_to_cache("BLD:FEE:GDET2:PMT1:ENRC:SENSITIVE");
     _add_to_cache("BLD:FEE:GDET2:PMT2:ENRC:SENSITIVE");
   }
@@ -72,35 +64,7 @@ void   FEEGasDetEnergyReader::_event    (Pds::TypeId id, const void* payload, co
   }
 }
 
-void   FEEGasDetEnergyReader::_damaged  ()
-{
-  if (_index <= 0) 
-    return;
-
-  if (_version == 0) {
-    unsigned index = _index;
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-  } else if (_version == 1) {
-    unsigned index = _index;
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true); 
-    _cache.cache(index++,-1,true);     
-  }
-}
-
 //  No Entry data
 unsigned     FEEGasDetEnergyReader::nentries() const { return 0; }
 const Entry* FEEGasDetEnergyReader::entry   (unsigned) const { return 0; }
-void         FEEGasDetEnergyReader::reset   () 
-{
-  EventHandlerF::reset();
-  _index   = -1; 
-  _version = -1;
-}
 void         FEEGasDetEnergyReader::rename  (const char* s) {}

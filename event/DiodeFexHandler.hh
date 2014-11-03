@@ -25,9 +25,6 @@ namespace Ami {
     bool         used    () const { return true; }
   public:
     void         rename  (const char*);
-    void         reset   ();
-  private:
-    int                  _index;
   };
 
 };

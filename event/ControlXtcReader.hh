@@ -1,7 +1,7 @@
 #ifndef Ami_ControlXtcReader_hh
 #define Ami_ControlXtcReader_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include <vector>
 
@@ -11,7 +11,7 @@ namespace Pds {
 
 namespace Ami {
   class FeatureCache;
-  class ControlXtcReader : public EventHandler {
+  class ControlXtcReader : public EventHandlerF {
   public:
     ControlXtcReader(FeatureCache&);
     ~ControlXtcReader();
@@ -27,11 +27,9 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
   private:
     FeatureCache& _cache;
-    int _index;
     std::vector<double> _values;
   };
 

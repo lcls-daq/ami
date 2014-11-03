@@ -1,7 +1,7 @@
 #ifndef Ami_FrameFexHandler_hh
 #define Ami_FrameFexHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class DetInfo;
@@ -10,7 +10,7 @@ namespace Pds {
 namespace Ami {
   class FeatureCache;
 
-  class FrameFexHandler : public EventHandler {
+  class FrameFexHandler : public EventHandlerF {
   public:
     FrameFexHandler(const DetInfo&, FeatureCache&);
     ~FrameFexHandler();
@@ -18,16 +18,10 @@ namespace Ami {
     void   _calibrate(const void* payload, const Pds::ClockTime& t);
     void   _configure(const void* payload, const Pds::ClockTime& t);
     void   _event    (const void* payload, const Pds::ClockTime& t);
-    void   _damaged  ();
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
-  private:
-    FeatureCache&        _cache;
-    enum { Integral, XMean, YMean, Major, Minor, Tilt, NChannels=6 };
-    int                  _index[NChannels];
   };
 
 };

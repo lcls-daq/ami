@@ -28,34 +28,30 @@ void   IpmFexHandler::_configure(Pds::TypeId, const void* payload, const Pds::Cl
 {
   char buffer[64];
   char* iptr;
-  unsigned i=0;
 
   switch(info().level()) {
   case Level::Reporter:
     strncpy(buffer,Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info())),60);
     iptr = buffer+strlen(buffer);
-    sprintf(iptr,":FEX:CH0");  _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:CH1");  _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:CH2");  _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:CH3");  _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:SUM");  _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:XPOS"); _index[i] = _add_to_cache(buffer);  i++;
-    sprintf(iptr,":FEX:YPOS"); _index[i] = _add_to_cache(buffer);  i++;
+    sprintf(iptr,":FEX:CH0");  _add_to_cache(buffer);
+    sprintf(iptr,":FEX:CH1");  _add_to_cache(buffer);
+    sprintf(iptr,":FEX:CH2");  _add_to_cache(buffer);
+    sprintf(iptr,":FEX:CH3");  _add_to_cache(buffer);
+    sprintf(iptr,":FEX:SUM");  _add_to_cache(buffer);
+    sprintf(iptr,":FEX:XPOS"); _add_to_cache(buffer);
+    sprintf(iptr,":FEX:YPOS"); _add_to_cache(buffer);
     break;
   case Level::Source:
   default:
     strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
     iptr = buffer+strlen(buffer);
-    sprintf(iptr,":CH0"); _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":CH1"); _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":CH2"); _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":CH3"); _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":SUM");
-    _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":XPOS");
-    _index[i++] = _add_to_cache(buffer);
-    sprintf(iptr,":YPOS");
-    _index[i++] = _add_to_cache(buffer);
+    sprintf(iptr,":CH0"); _add_to_cache(buffer);
+    sprintf(iptr,":CH1"); _add_to_cache(buffer);
+    sprintf(iptr,":CH2"); _add_to_cache(buffer);
+    sprintf(iptr,":CH3"); _add_to_cache(buffer);
+    sprintf(iptr,":SUM"); _add_to_cache(buffer);
+    sprintf(iptr,":XPOS"); _add_to_cache(buffer);
+    sprintf(iptr,":YPOS"); _add_to_cache(buffer);
     break;
   }
 }
@@ -64,28 +60,13 @@ void   IpmFexHandler::_event    (Pds::TypeId, const void* payload, const Pds::Cl
 {
   const Pds::Lusi::IpmFexV1& d = *reinterpret_cast<const Pds::Lusi::IpmFexV1*>(payload);
 
-  unsigned i=0;
+  unsigned i=_index;
   ndarray<const float,1> ch = d.channel();
-  _cache.cache(_index[i], ch[i]); i++;
-  _cache.cache(_index[i], ch[i]); i++;
-  _cache.cache(_index[i], ch[i]); i++;
-  _cache.cache(_index[i], ch[i]); i++;
-  _cache.cache(_index[i], d.sum() ); i++;
-  _cache.cache(_index[i], d.xpos()); i++;
-  _cache.cache(_index[i], d.ypos()); i++;
-}
-
-void   IpmFexHandler::reset()
-{
-  EventHandlerF::reset();
-  for(unsigned i=0; i<NChannels; i++)
-    _index[i] = -1;
-}
-
-void   IpmFexHandler::_damaged  ()
-{
-  for(unsigned i=0; i<NChannels; i++)
-    _cache.cache(_index[i], 0, true);
+  for(unsigned j=0; j<4; j++)
+    _cache.cache(i++, ch[j]);
+  _cache.cache(i++, d.sum() );
+  _cache.cache(i++, d.xpos());
+  _cache.cache(i++, d.ypos());
 }
 
 //  No Entry data
@@ -96,31 +77,31 @@ void         IpmFexHandler::rename(const char* s)
 {
   char buffer[64];
   char* iptr;
-  unsigned i=0;
+  unsigned i=_index;
 
   switch(info().level()) {
   case Level::Reporter:
     strncpy(buffer,s,60);
     iptr = buffer+strlen(buffer);
-    sprintf(iptr,":FEX:CH0");  _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:CH1");  _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:CH2");  _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:CH3");  _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:SUM");  _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:XPOS"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":FEX:YPOS"); _rename_cache(_index[i],buffer); i++;
+    sprintf(iptr,":FEX:CH0");  _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:CH1");  _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:CH2");  _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:CH3");  _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:SUM");  _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:XPOS"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":FEX:YPOS"); _rename_cache(i++,buffer); 
     break;
   case Level::Source:
   default:
     strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
     iptr = buffer+strlen(buffer);
-    sprintf(iptr,":CH0"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":CH1"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":CH2"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":CH3"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":SUM"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":XPOS"); _rename_cache(_index[i],buffer); i++;
-    sprintf(iptr,":YPOS"); _rename_cache(_index[i],buffer); i++;
+    sprintf(iptr,":CH0"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":CH1"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":CH2"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":CH3"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":SUM"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":XPOS"); _rename_cache(i++,buffer); 
+    sprintf(iptr,":YPOS"); _rename_cache(i++,buffer); 
     break;
   }
 }

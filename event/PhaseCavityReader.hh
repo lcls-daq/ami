@@ -21,8 +21,6 @@ namespace Ami {
     const Entry* entry   (unsigned) const;
     void         rename  (const char*);
     void         reset   ();
-  private:
-    int           _index;
   };
 
 };

@@ -71,7 +71,6 @@ void BldSpectrometerHandler::rename(const char* s)
 void BldSpectrometerHandler::reset() {
   EventHandlerF::reset();
   _nentries=0;
-  _index=-1;
 }
 
 void BldSpectrometerHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -104,7 +103,7 @@ void BldSpectrometerHandler::_configure(Pds::TypeId id, const void* payload, con
       _entry[_nentries++] = new EntryWaveform(desc); 
       string sname = string(name) + ":";
       _npeaks = c.nPeaks();
-      _index  = _add_to_cache((sname+"comRaw")  .c_str());
+      _add_to_cache((sname+"comRaw")  .c_str());
       _add_to_cache((sname+"com")     .c_str());
       _add_to_cache((sname+"integral").c_str());
       for(unsigned i=0; i<c.nPeaks(); i++) {

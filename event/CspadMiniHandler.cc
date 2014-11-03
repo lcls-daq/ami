@@ -138,7 +138,7 @@ static double frameNoise(const int16_t*  data,
     if ( int(i)+fnPeakBins<=fnPixelRange ) {
       unsigned s0 = 0;
       unsigned s1 = 0;
-      for(unsigned j=i-fnPeakBins-1; j<i+fnPeakBins; j++) {
+      for(unsigned j=i-fnPeakBins+1; j<i+fnPeakBins; j++) {
         s0 += hist[j];
         s1 += hist[j]*j;
       }

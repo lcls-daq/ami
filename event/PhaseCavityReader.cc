@@ -14,8 +14,7 @@ PhaseCavityReader::PhaseCavityReader(FeatureCache& f)  :
   EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::PhaseCavity),
 		Pds::TypeId::Id_PhaseCavity,
 		Pds::TypeId::Id_PhaseCavity,
-		f),
-  _index(-1)
+		f)
 {
 }
 

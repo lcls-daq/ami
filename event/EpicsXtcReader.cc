@@ -70,7 +70,7 @@ void   Ami::EpicsXtcReader::_configure(Pds::TypeId, const void* payload, const P
     }
 
     if (ctrl.pvId() < MaxPvs) {
-      _index[ctrl.pvId()] = index;
+      _indexpv[ctrl.pvId()] = index;
     }
     else
       printf("PV %s truncated from list\n",ctrl.pvName());
@@ -96,7 +96,7 @@ void   Ami::EpicsXtcReader::_event    (Pds::TypeId, const void* payload, const P
     return;
 
   if (pvData.dbrType() < DBR_CTRL_STRING) {
-    int index = _index[pvData.pvId()];
+    int index = _indexpv[pvData.pvId()];
     if (index<0)
       return;
     switch(pvData.dbrType()) {
@@ -110,20 +110,7 @@ void   Ami::EpicsXtcReader::_event    (Pds::TypeId, const void* payload, const P
   }
 }
 
-void   Ami::EpicsXtcReader::_damaged  ()
-{
-  for(unsigned i=0; i<MaxPvs; i++)
-    if (_index[i]>=0)
-      _cache.cache(_index[i], 0, true);
-}
-
 //  No Entry data
 unsigned          Ami::EpicsXtcReader::nentries() const { return 0; }
 const Ami::Entry* Ami::EpicsXtcReader::entry   (unsigned) const { return 0; }
-void              Ami::EpicsXtcReader::reset   () 
-{
-  EventHandlerF::reset();
-  for(unsigned i=0; i<MaxPvs; i++)
-    _index[i] = -1;
-}
 void              Ami::EpicsXtcReader::rename(const char*) {}

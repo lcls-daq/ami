@@ -14,10 +14,7 @@ GMDReader::GMDReader(FeatureCache& f)  :
   EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::GMD),
                 Pds::TypeId::Id_GMD,
                 Pds::TypeId::Id_GMD,
-                f),
-  _cache(f),
-  _index(-1),
-  _version(-1)
+                f)
 {
 }
 
@@ -25,27 +22,17 @@ GMDReader::~GMDReader()
 {
 }
 
-void   GMDReader::reset()
-{
-  EventHandlerF::reset();
-  _index    = -1;
-  _version  = -1;
-}
-
 void   GMDReader::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   GMDReader::_configure(Pds::TypeId typeId, const void* payload, const Pds::ClockTime& t)
 {
-  _version = typeId.version();
   if (typeId.version() == 1) {
-    _index =
     _add_to_cache("BLD:GMD:MilliJoulesPerPulse");
     _add_to_cache("BLD:GMD:MilliJoulesAverage");
     _add_to_cache("BLD:GMD:CorrectedSumPerPulse");
     _add_to_cache("BLD:GMD:BgValuePerSample");
     _add_to_cache("BLD:GMD:RelativeEnergyPerPulse");
   } else if (typeId.version() == 2) {
-    _index =
-      _add_to_cache("BLD:GMD:MilliJoulesPerPulse");
+    _add_to_cache("BLD:GMD:MilliJoulesPerPulse");
     _add_to_cache("BLD:GMD:MilliJoulesAverage");
     _add_to_cache("BLD:GMD:SumAllPeaksFiltBkgd");
     _add_to_cache("BLD:GMD:RawAvgBkgd");
@@ -78,29 +65,6 @@ void   GMDReader::_event    (Pds::TypeId typeId, const void* payload, const Pds:
     _cache.cache(index++,bld.rawAvgBkgd());
     _cache.cache(index++,bld.relativeEnergyPerPulse());
     _cache.cache(index++,bld.sumAllPeaksRawBkgd());
-  }
-}
-
-void   GMDReader::_damaged  ()
-{
-  if (_index <=0)
-    return;
-
-  if (_version == 1) {
-    unsigned index = _index;
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-  } else if (_version == 2) {
-    unsigned index = _index;
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
-    _cache.cache(index++,-1,true);
   }
 }
 

@@ -14,9 +14,7 @@ EBeamReader::EBeamReader(FeatureCache& f)  :
   EventHandlerF(Pds::BldInfo(0,Pds::BldInfo::EBeam),
 		Pds::TypeId::Id_EBeam,
 		Pds::TypeId::Id_EBeam,
-		f),
-  _index(-1),
-  _nvars(0)
+		f)
 {
 }
 
@@ -33,7 +31,7 @@ void   EBeamReader::_configure(Pds::TypeId id,
                                const void* payload, 
                                const Pds::ClockTime& t) 
 {
-  _index = _add_to_cache("BLD:EBEAM:Q");
+  _add_to_cache("BLD:EBEAM:Q");
   _add_to_cache("BLD:EBEAM:L3E");
   _add_to_cache("BLD:EBEAM:LTUX");
   _add_to_cache("BLD:EBEAM:LTUY");
@@ -67,7 +65,6 @@ void   EBeamReader::_configure(Pds::TypeId id,
       }
     }
   }
-  _nvars = index-_index+1;
 }
 
 void   EBeamReader::_event    (Pds::TypeId id,
@@ -249,17 +246,7 @@ void   EBeamReader::_event    (Pds::TypeId id,
 #undef TEST
 }
 
-void   EBeamReader::_damaged  ()
-{
-  if (_index>=0) {
-    unsigned index = _index;
-    for(int i=0; i<_nvars; i++)
-      _cache.cache(index++,-1,true);
-  }
-}
-
 //  No Entry data
 unsigned     EBeamReader::nentries() const { return 0; }
 const Entry* EBeamReader::entry   (unsigned) const { return 0; }
 void         EBeamReader::rename(const char*) {}
-void         EBeamReader::reset   () { EventHandlerF::reset(); _index=-1; _nvars=0; }

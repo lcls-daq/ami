@@ -29,7 +29,6 @@ namespace Ami {
     unsigned       _nentries;    
     EntryWaveform* _entry[MaxEntries];
     unsigned       _npeaks;
-    int            _index;
   };
 };
 

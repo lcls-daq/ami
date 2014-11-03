@@ -13,11 +13,10 @@
 using namespace Ami;
 
 L3THandler::L3THandler(FeatureCache& f)  : 
-  EventHandler(Pds::ProcInfo(Pds::Level::Event,0,-1U),
-               Pds::TypeId::Id_L3TData,
-               Pds::TypeId::Id_L3TConfig),
-  _cache(f),
-  _index(-1)
+  EventHandlerF(Pds::ProcInfo(Pds::Level::Event,0,-1U),
+		Pds::TypeId::Id_L3TData,
+		Pds::TypeId::Id_L3TConfig,
+		f)
 {
 }
 
@@ -26,21 +25,21 @@ L3THandler::~L3THandler()
 }
 
 void   L3THandler::_calibrate(Pds::TypeId id,
-                               const void* payload, 
-                               const Pds::ClockTime& t) 
+			      const void* payload, 
+			      const Pds::ClockTime& t) 
 {}
 
 void   L3THandler::_configure(Pds::TypeId id,
-                               const void* payload, 
-                               const Pds::ClockTime& t) 
+			      const void* payload, 
+			      const Pds::ClockTime& t) 
 {
-  _index = _cache.add("DAQ:L3Accept");
+  _cache.add("DAQ:L3Accept");
   _cache.add("DAQ:L3Bias");
 }
 
 void   L3THandler::_event    (Pds::TypeId id,
-                               const void* payload, 
-                               const Pds::ClockTime& t)
+			      const void* payload, 
+			      const Pds::ClockTime& t)
 {
   if (_index>=0) {
     switch(id.version()) {
@@ -64,16 +63,7 @@ void   L3THandler::_event    (Pds::TypeId id,
   }
 }
 
-void   L3THandler::_damaged  ()
-{
-  if (_index>=0) {
-    _cache.cache(_index+0,-1,true);
-    _cache.cache(_index+1,-1,true);
-  }
-}
-
 //  No Entry data
 unsigned     L3THandler::nentries() const { return 0; }
 const Entry* L3THandler::entry   (unsigned) const { return 0; }
 void         L3THandler::rename(const char*) {}
-void         L3THandler::reset() { _index=-1; }

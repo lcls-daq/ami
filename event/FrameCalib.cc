@@ -8,8 +8,9 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <math.h>
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 
@@ -591,11 +592,12 @@ int FrameCalib::median(ndarray<const uint16_t,1> data,
   }
     
   unsigned i=1;
-  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  int s=data.size()/2-bins[0];
   while( s>0 )
     s -= bins[i++];
 
-  if (unsigned(-s) > bins[i-1]/2) i--;
+  i--;
+  //  if (unsigned(-s) > bins[i]/2) i--;
 
   delete[] bins;
 
@@ -652,14 +654,27 @@ int FrameCalib::median(ndarray<const uint32_t,1> data,
   }
     
   unsigned i=1;
-  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  int s=data.size()/2-bins[0];
   while( s>0 )
     s -= bins[i++];
 
-  if (unsigned(-s) > bins[i-1]/2) i--;
+  i--;
+  //  if (unsigned(-s) > bins[i]/2) i--;
 
   delete[] bins;
 
+#ifdef DBUG
+    double x0=data.size(), x1=0, x2=0;
+    for(unsigned i=0; i<data.size(); i++) {
+      double x = double(data[i]);
+      x1 += x;
+      x2 += x*x;
+    }
+    printf("::median stat %f %f [%f]\n",
+	   x1/x0,sqrt(x2/x0-pow(x1/x0,2)),
+	   double(iLo+i)-x1/x0);
+#endif
+  
   return (iLo+i);
 }
 
@@ -715,13 +730,30 @@ int FrameCalib::median(ndarray<const uint32_t,2> d,
   }
     
   unsigned i=1;
-  int s=(d.size()-bins[0]-bins[nbins-1])/2;
+  int s=d.size()/2-bins[0];
   while( s>0 )
     s -= bins[i++];
 
-  if (unsigned(-s) > bins[i-1]/2) i--;
+  i--;
+  //  if (-s > int(bins[i]/2)) i--;
 
   delete[] bins;
+
+#ifdef DBUG
+    double x0=0, x1=0, x2=0;
+    for(unsigned j=0; j<d.shape()[0]; j++) {
+      const uint32_t* data = &d[j][0];
+      for(unsigned i=0; i<d.shape()[1]; i++) {
+	double x = double(data[i]);
+	x0++;
+	x1 += x;
+	x2 += x*x;
+      }
+    }
+    printf("::median stat %f %f [%f]\n",
+	   x1/x0,sqrt(x2/x0-pow(x1/x0,2)),
+	   double(iLo+i)-x1/x0);
+#endif
 
   return (iLo+i);
 }
@@ -757,11 +789,13 @@ int FrameCalib::median(ndarray<const int32_t,1> data,
   }
     
   unsigned i=1;
-  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  //  int s=(data.size()-bins[0]-bins[nbins-1])/2;
+  int s=data.size()/2-bins[0];
   while( s>0 )
     s -= bins[i++];
 
-  if (unsigned(-s) > bins[i-1]/2) i--;
+  i--;
+  //  if (-s > int(bins[i]/2)) i--;
 
   return (iLo+i);
 }

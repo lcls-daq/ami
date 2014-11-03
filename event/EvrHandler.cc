@@ -40,7 +40,7 @@ void   EvrHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::
     sprintf(iptr,"Evt%d",code);			\
     int index = _add_to_cache(buffer);		\
     _cache.cache(index, 0);			\
-    _index[code] = index;			\
+    _indexcode[code] = index;			\
   }
 
 void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
@@ -109,24 +109,17 @@ void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::
 void   EvrHandler::_event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t) 
 {
   for(unsigned i=0; i<256; i++)
-    if (_index[i]>=0)
-      _cache.cache(_index[i],0);
+    if (_indexcode[i]>=0)
+      _cache.cache(_indexcode[i],0);
 
   if (type.version()==3) {
     const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
 
     for(unsigned i=0; i<d.numFifoEvents(); i++) {
-      int index = _index[d.fifoEvents()[i].eventCode()];
+      int index = _indexcode[d.fifoEvents()[i].eventCode()];
       if (index >=0) _cache.cache(index, 1);
     }
   }
-}
-
-void   EvrHandler::_damaged  () 
-{
-  for(unsigned i=0; i<256; i++)
-    if (_index[i]>=0)
-      _cache.cache(_index[i],0);
 }
 
 //  No Entry data
@@ -135,7 +128,7 @@ const Entry* EvrHandler::entry   (unsigned) const { return 0; }
 void         EvrHandler::reset   () 
 {
   EventHandlerF::reset();
-  memset(_index, -1, sizeof(_index)); 
+  memset(_indexcode, -1, sizeof(_indexcode)); 
 }
 void         EvrHandler::rename  (const char* s)
 {

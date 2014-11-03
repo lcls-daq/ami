@@ -1,7 +1,7 @@
 #ifndef Ami_L3THandler_hh
 #define Ami_L3THandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 namespace Pds {
   class Dgram;
@@ -9,7 +9,7 @@ namespace Pds {
 
 namespace Ami {
   class FeatureCache;
-  class L3THandler : public EventHandler {
+  class L3THandler : public EventHandlerF {
   public:
     L3THandler(FeatureCache&);
     ~L3THandler();
@@ -17,7 +17,6 @@ namespace Ami {
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void   _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
-    void   _damaged  ();
   protected:
     void   _calibrate(const void* payload, const Pds::ClockTime& t) {}
     void   _configure(const void* payload, const Pds::ClockTime& t) {}
@@ -25,12 +24,7 @@ namespace Ami {
   public:
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
-    void         reset   ();
     void         rename  (const char*);
-    bool         used    () const { return true; }
-  private:
-    FeatureCache& _cache;
-    int _index;
   };
 
 };

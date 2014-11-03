@@ -22,12 +22,6 @@ UsdUsbHandler::~UsdUsbHandler()
 {
 }
 
-void   UsdUsbHandler::reset () 
-{
-  EventHandlerF::reset();
-  _index=-1; 
-}
-
 void         UsdUsbHandler::rename  (const char* s)
 {
   if (_index<0) return;
@@ -62,7 +56,7 @@ void   UsdUsbHandler::_configure(Pds::TypeId id, const void* payload, const Pds:
   switch(id.version()) {
   case 1: {
     sprintf(c,":TS");
-    _index = _add_to_cache(buffer);
+    _add_to_cache(buffer);
     for(unsigned i=0; i<4; i++) {
       sprintf(c,":CH%d",i);
       _add_to_cache(buffer);
@@ -99,12 +93,6 @@ void   UsdUsbHandler::_event    (Pds::TypeId id, const void* payload, const Pds:
   default:
     break;
   }
-}
-
-void   UsdUsbHandler::_damaged  ()
-{
-  for(unsigned i=0; i<17; i++)
-    _cache.cache(_index+i,0,true);
 }
 
 //  No Entry data
