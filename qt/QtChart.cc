@@ -12,6 +12,8 @@
 #include "qwt_legend.h"
 #include "qwt_legend_item.h"
 
+#define DBUG
+
 namespace Ami {
   namespace Qt {
     class TimeScale : public QwtScaleDraw {
@@ -116,7 +118,14 @@ void           QtChart::update()
   }
 
   double n = entry.entries() - _cache.entries();
-  if (n>0) {
+  if (n<0) {
+    _cache.reset();
+    _current = 0;
+    _pts = 0;
+    n = entry.entries();
+  }
+
+  {
     const Pds::ClockTime& tv = entry.time();
     double time = double(tv.seconds()) + 1.e-9*double(tv.nanoseconds());
 

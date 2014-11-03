@@ -47,7 +47,8 @@ CursorPlot::CursorPlot(QWidget* parent,
 		       BinMath*         input) :
   QtPlot   (parent, name),
   _plot    (new QtEmpty),
-  _auto_range(0)
+  _auto_range(0),
+  _retry     (false)
 {
   _channel = channel;
   _input   = input;
@@ -61,7 +62,8 @@ CursorPlot::CursorPlot(QWidget* parent,
 		       const char*& p) :
   QtPlot   (parent),
   _plot    (new QtEmpty),
-  _auto_range(0)
+  _auto_range(0),
+  _retry     (false)
 {
   _input = 0;
   load(p);
@@ -110,7 +112,7 @@ void CursorPlot::setup_payload(Cds& cds)
   Ami::Entry* entry = cds.entry(_output_signature);
   if (entry) {
 
-    if (_plot && !_req.changed() && !_auto_range) {
+    if (_plot && !_req.changed() && !_auto_range && !_retry) {
       _plot->entry(*entry);
     }
     else {
@@ -158,6 +160,7 @@ void CursorPlot::setup_payload(Cds& cds)
       }
       _plot->attach(_frame);
       emit curve_changed();
+      _retry = false;
     }
   }
   else {
@@ -166,6 +169,7 @@ void CursorPlot::setup_payload(Cds& cds)
     if (_plot) {
       delete _plot;
       _plot = new QtEmpty;
+      _retry = true;
     }
   }
 }

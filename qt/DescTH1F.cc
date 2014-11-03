@@ -12,10 +12,11 @@ DescTH1F::DescTH1F(const char* name, bool autoRange, bool normalize) :
   _button(new QRadioButton(name)),
   _normalize(normalize ? new QCheckBox("Normalize area to unity") : 0)
 {
-  QVBoxLayout* l = static_cast<QVBoxLayout*>(layout());
-  l->addWidget(_normalize);
-  if (normalize)
+  if (normalize) {
+    QVBoxLayout* l = static_cast<QVBoxLayout*>(layout());
+    l->addWidget(_normalize);
     _normalize->setChecked(true);
+  }
 }
 
 QRadioButton* DescTH1F::button() { return _button; }

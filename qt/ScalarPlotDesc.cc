@@ -82,6 +82,15 @@ ScalarPlotDesc::ScalarPlotDesc(QWidget* parent, FeatureRegistry* registry, bool 
   _weightB = new QCheckBox;
   _vweight = new FeatureList(registry);
   _vweight->use_scan(false);
+  { QChar sigma(0x03A3);
+    QString tip = QString("Averaged entries are weighted by w:\n"	\
+			  " <avg> = (%1 w x)/(%2 w)\n"			\
+			  "For ratios (n/d) consider w=d:\n"		\
+			  " <avg> = (%3 n)/(%4 d)\n")
+      .arg(sigma).arg(sigma)
+      .arg(sigma).arg(sigma);
+    _weightB->setToolTip(tip);
+    _vweight->setToolTip(tip); }
 
   QVBoxLayout* layout1 = new QVBoxLayout;
   { QHBoxLayout* layout2 = new QHBoxLayout;
