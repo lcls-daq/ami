@@ -174,8 +174,7 @@ namespace Ami {
     char _xtitle[TitleSize];
     char _ytitle[TitleSize];
     char _zunits[TitleSize];
-    int16_t   _group;
-    mutable int16_t   _options;
+    mutable uint32_t   _options;
     uint16_t  _type;
     uint16_t  _size;
   };
