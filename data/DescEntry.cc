@@ -6,6 +6,10 @@
 using namespace Ami;
 using Pds::DetInfo;
 
+static const unsigned _weighted_mask = (1<<DescEntry::Scalar) |
+                                           (1<<DescEntry::Prof) | 
+                                               (1<<DescEntry::Scan);
+
 DescEntry::DescEntry(const char* name,
 		     const char* xtitle, 
 		     const char* ytitle, 
@@ -129,7 +133,7 @@ bool DescEntry::check_refresh  () const {return _options&(1<<CheckRefresh);}
 bool DescEntry::force_refresh  () const {return _options&(1<<ForceRefresh);}
 bool DescEntry::auto_refresh   () const {return _options&(1<<AutoRefresh);}
 bool DescEntry::countmode      () const {return _options&(1<<CountMode);}
-bool DescEntry::isweighted_type() const {return (_type==Scan);}
+bool DescEntry::isweighted_type() const {return ((1<<_type)&_weighted_mask);}
 bool DescEntry::hasPedCalib    () const {return _options&(1<<CalibMom0);}
 bool DescEntry::hasGainCalib   () const {return _options&(1<<CalibMom1);}
 bool DescEntry::hasRmsCalib    () const {return _options&(1<<CalibMom2);}

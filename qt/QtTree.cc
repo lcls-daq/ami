@@ -165,6 +165,7 @@ void QtTree::fill(const QStringList& names)
     root->insertRow( 0, new QStandardItem( QString("[Most Recent]")) );
   }
 
+  _view.reset();
   if (_use_scan && scan_names.size())
     set_entry(scan_names.at(0));
   else
@@ -224,6 +225,7 @@ void QtTree::clear()
 {
   QStandardItem* root = _model.invisibleRootItem();
   root->removeRows(0,root->rowCount());
+  _view.reset();
 }
 
 void QtTree::set_entry(const QModelIndex& e) { 
@@ -279,8 +281,8 @@ static bool has_child_named(const QStandardItem& root,
 
 void QtTree::show_tree()
 {
-  _model.invisibleRootItem()->takeRow(0);
-  _model.invisibleRootItem()->takeRow(0);
+  _model.invisibleRootItem()->removeRow(0);
+  _model.invisibleRootItem()->removeRow(0);
 
   QStandardItem& fav_root = *new QStandardItem( QString("[Favorites]"));
   _model.invisibleRootItem()->insertRow(0, &fav_root);

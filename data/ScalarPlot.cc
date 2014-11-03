@@ -13,6 +13,8 @@
 #include "ami/data/FeatureExpression.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
+#define DBUG
+
 using namespace Ami;
 
 ScalarPlot::ScalarPlot() :
@@ -75,6 +77,10 @@ bool ScalarPlot::_setup(const DescEntry& o,
       _weight = _process_expr(input,w.weight(),_weight_uses);
       if (!_weight) return false;
     }
+#ifdef DBUG    
+    printf("ScalarPlot[%p] weighted_type: weighted %c [%s] [%p]\n",
+           this, w.weighted()?'T':'F', o.name(), _weight);
+#endif
   }
 
   return true;
@@ -98,10 +104,17 @@ void ScalarPlot::_fill(Entry& entry,
     if (!_weight->valid()) return;
   }
 
+#ifdef DBUG
+  if (entry.desc().isweighted_type()) {
+    printf("ScalarPlot[%p] _fill %f, _w %f, _weight %p, uses %c\n",
+           this, v, _w, _weight, _weight_uses?'T':'F');
+  }
+#endif
+
   switch(entry.desc().type()) {
   case DescEntry::Scalar: 
     { EntryScalar& en = static_cast<EntryScalar&>(entry);
-      en.addcontent(v);    
+      en.addcontent(v,_w);    
       break; }
   case DescEntry::ScalarRange: 
     { EntryScalarRange& en = static_cast<EntryScalarRange&>(entry);

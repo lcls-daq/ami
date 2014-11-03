@@ -38,10 +38,6 @@ unsigned FeatureCache::add(const char* name)
     if (sname==_names[k])
       return k;
 
-#ifdef DBUG
-  printf("FeatureCache::add %s\n",name);
-#endif
-
   _sem.take();
   _update=true;
   _names.push_back(sname);
@@ -52,6 +48,11 @@ unsigned FeatureCache::add(const char* name)
   _damaged[index>>5] |= 1<<(index&0x1f);
   _used.resize((len+0x1f)>>5);
   _sem.give();
+
+#ifdef DBUG
+  printf("FeatureCache::add[%p] [%d] %s\n",this,index,name);
+#endif
+
   return index;
 }
 
@@ -94,6 +95,9 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
       _damaged[index>>5] |= mask;
     else
       _damaged[index>>5] &= ~mask;
+#ifdef DBUG
+    printf("FeatureCache::%s[%p] [%d] %s\n",damaged?"dmg":"val",this,index,_names[index].c_str());
+#endif
   }
 }
 
