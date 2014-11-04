@@ -16,7 +16,7 @@
 #include <string.h>
 #include <string>
 
-//#define DBUG
+#define DBUG
 
 using namespace Ami;
 
@@ -356,33 +356,16 @@ static double frameNoise(ndarray<const uint32_t,2> data,
 //    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
   }
 
-#ifdef DBUG
-  { double x0=0, x1=0, x2=0;
-    const ndarray<const uint32_t,2>& d = data;
-    for(unsigned j=0; j<d.shape()[0]; j++) {
-      const uint32_t* data = &d[j][0];
-      for(unsigned i=0; i<d.shape()[1]; i++) {
-	double x = double(data[i]);
-	x0++;
-	x1 += x;
-	x2 += x*x;
-      }
-    }
-    printf("::median stat %f %f [%f]\n",
-	   x1/x0,sqrt((x2/x0-pow(x1/x0,2))*x0/(x0-1)),
-	   v-x1/x0+double(off));
-  }
-#endif
-
   return v;
 }
 
 static int frameNoise(ndarray<const uint32_t,1> data,
+                      ndarray<const uint32_t,1> status,
 		      unsigned off)
 {
   unsigned lo = off-100;
   unsigned hi = off+100;
-  return FrameCalib::median(data,lo,hi)-int(off);
+  return FrameCalib::median(data,status,lo,hi)-int(off);
 }
 
 
@@ -745,11 +728,12 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         shape[1] = e.shape()[1]/4;
         for(unsigned m=0; m<4; m++) {
           for(unsigned y=0; y<shape[0]; y++) {
-            ndarray<uint32_t,1> s(&e[y][m*shape[1]],&shape[1]);
-            int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+            ndarray<const uint32_t,1> s(&e  [y][m*shape[1]],&shape[1]);
+            ndarray<const uint32_t,1> t(&sta[y][m*shape[1]],&shape[1]);
+            int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
             if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
               _cache.cache(_feature[(y%16)+index],double(fn));
-            uint32_t* v = &s[0];
+            uint32_t* v = const_cast<uint32_t*>(&s[0]);
             for(unsigned x=0; x<shape[1]; x++)
               v[x] -= fn;
           }
@@ -788,9 +772,11 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
 	for(unsigned x=0; x<e.shape()[1]; x++) {
-	  ndarray<uint32_t,1> s(&e[0][x],e.shape());
+	  ndarray<uint32_t,1> s(&e  [0][x],e.shape());
 	  s.strides(e.strides());
-	  int fn = int(frameNoise(s,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          ndarray<const uint32_t,1> t(&sta[0][x],e.shape());
+	  t.strides(e.strides());
+	  int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
 	  //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
 	  //  _cache.cache(_feature[(y%16)+index],double(fn));
 	  for(unsigned y=0; y<e.shape()[0]; y++)
@@ -858,28 +844,29 @@ void EpixHandler::_load_pedestals()
   EntryImage* p = _pentry;
   ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"sta");
   if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-
-    printf("Loaded status %d x %d [%d x %d]\n",
-           p->content().shape()[0],
-           p->content().shape()[1],
-           _status.shape()[0],
-           _status.shape()[1]);
-
     unsigned nskip = (_status.shape()[0]-pb.shape()[0])/2;
     for(unsigned *a=pb.begin(), *b=&_status[nskip][0]; a!=pb.end(); *b++=*a++) ;
+    DescImage& d = _entry->desc();
+    _load_one_asic(pb, d.nbinsy(), _status);
+    ImageMask mask(d.nbinsy(),d.nbinsx());
+    mask.fill();
+    for(unsigned i=0; i<d.nbinsy(); i++)
+      for(unsigned j=0; j<d.nbinsx(); j++)
+        if (_status[nskip+i][j]) mask.clear(i,j);
+    mask.update();
+    d.set_mask(mask);
 
-    { 
-      const DescImage& d = _entry->desc();
-      unsigned nskip = (_config_cache->numberOfRows()-d.nbinsy())/_config_cache->numberOfAsicsPerColumn();
-      ImageMask mask(d.nbinsy(),d.nbinsx());
-      mask.fill();
-      for(unsigned i=0; i<d.nbinsy(); i++)
-	for(unsigned j=0; j<d.nbinsx(); j++)
-	  if (_status[nskip+i][j])
-	    mask.clear(i,j);
-      mask.update();
-      _entry->desc().set_mask(mask);
-    }
+  }
+  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    DescImage& d = _entry->desc();
+    _load_one_asic(pb, d.nbinsy(), _status);
+    ImageMask mask(d.nbinsy(),d.nbinsx());
+    mask.fill();
+    for(unsigned i=0; i<d.nbinsy(); i++)
+      for(unsigned j=0; j<d.nbinsx(); j++)
+        if (_status[i][j]) mask.clear(i,j);
+    mask.update();
+    d.set_mask(mask);
   }
   else
     for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
@@ -891,6 +878,8 @@ void EpixHandler::_load_pedestals()
   }
   else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
     _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
+    for(unsigned* p=_pedestals.begin(); p!=_pedestals.end(); p++)
+      *p = offset-*p;
   }
   else
     for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
@@ -902,6 +891,8 @@ void EpixHandler::_load_pedestals()
   }
   else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
     _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
+    for(unsigned* p=_pedestals_lo.begin(); p!=_pedestals_lo.end(); p++)
+      *p = offset-*p;
   }
   else
     for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
@@ -948,7 +939,7 @@ void _load_one_asic(ndarray<unsigned,2>& pb,
 		    unsigned ny,
 		    ndarray<unsigned,2>& pedestals)
 {
-  printf("_load_one_asic pb [%ux%u] pedestals [%ux%u] ny %u\n",
+  printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
 	 pb.shape()[0],pb.shape()[1],
 	 pedestals.shape()[0],pedestals.shape()[1],
 	 ny);
@@ -961,7 +952,7 @@ void _load_one_asic(ndarray<unsigned,2>& pb,
     unsigned* b0 = &pedestals[nskip+i   ][0];
     unsigned* b1 = &pedestals[nskip+i+ny][0];
     for(unsigned j=0; j<pb.shape()[1]; j++) {
-	unsigned v = offset-a[j];
+	unsigned v = a[j];
 	b0[j   ] = v;
 	b0[j+nx] = v;
 	b1[j   ] = v;
@@ -974,6 +965,11 @@ void _load_one_asic(ndarray<double,2>& pb,
 		    unsigned ny,
 		    ndarray<double,2>& pedestals)
 {
+  printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
+	 pb.shape()[0],pb.shape()[1],
+	 pedestals.shape()[0],pedestals.shape()[1],
+	 ny);
+
   unsigned nskip = (ny-pb.shape()[0])/2;
   unsigned nx = pb.shape()[1];
   for(unsigned i=0; i<pb.shape()[0]; i++) {
@@ -996,5 +992,4 @@ double _tps_temp(const uint16_t q)
   const double t0 = -489.28;
   return double(q)*degCperADU + t0;
 }
-
 

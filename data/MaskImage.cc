@@ -4,6 +4,7 @@
 #include "ami/data/Entry.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryFactory.hh"
+#include "ami/data/ImageMask.hh"
 #include "ami/data/valgnd.hh"
 
 #include <string.h>
@@ -23,9 +24,20 @@ MaskImage::MaskImage(const char*& p, const DescEntry& e) :
 {
   _extract(p,_path, PATH_LEN);
 
-  DescImage desc(*static_cast<const DescImage*>(&e), _path);
+  const DescImage& d = static_cast<const DescImage&>(e);
+
+  ImageMask* m = new ImageMask(d.nbinsy(), d.nbinsx(), 
+                               d.nframes(), &d.frame(0), 
+                               _path);
+  if (d.mask())
+    *m &= *d.mask();
+
+  DescImage desc(d);
+  desc.set_mask(*m);
 
   _output = EntryFactory::entry(desc);
+
+  delete m;
 }
 
 MaskImage::~MaskImage()

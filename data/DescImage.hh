@@ -43,6 +43,8 @@ namespace Ami {
               bool isnormalized=true);
 
     DescImage(const DescImage&);
+
+    ///  Adds (replaces) a mask to the image
     DescImage(const DescImage&, const char*);
 
     ~DescImage();

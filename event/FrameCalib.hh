@@ -14,6 +14,7 @@ namespace Ami {
   public:
     static unsigned    option_no_pedestal        ();
     static unsigned    option_reload_pedestal    ();
+    static unsigned    option_suppress_bad_pixels();
     static unsigned    option_correct_gain       ();
     static unsigned    option_correct_common_mode();
     static unsigned    option_correct_common_mode2();
@@ -45,6 +46,13 @@ namespace Ami {
     static int median(ndarray<const int32_t,1> data,
 		      int& iLo, int& iHi,
 		      unsigned*&);
+
+    static int median(ndarray<const uint16_t,1> data,
+                      ndarray<const uint16_t,1> status,
+		      unsigned& iLo, unsigned& iHi);
+    static int median(ndarray<const uint32_t,1> data,
+                      ndarray<const uint32_t,1> status,
+		      unsigned& iLo, unsigned& iHi);
   };
 };
 

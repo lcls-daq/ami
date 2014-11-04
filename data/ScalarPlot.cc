@@ -13,7 +13,7 @@
 #include "ami/data/FeatureExpression.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
-#define DBUG
+//#define DBUG
 
 using namespace Ami;
 

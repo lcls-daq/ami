@@ -20,10 +20,12 @@ static const unsigned _option_correct_common_mode = 0x04;
 static const unsigned _option_correct_common_mode2= 0x08;
 static const unsigned _option_correct_common_mode3= 0x10;
 static const unsigned _option_correct_gain        = 0x20;
+static const unsigned _option_suppress_bad_pixels = 0x40;
 
 unsigned FrameCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned FrameCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned FrameCalib::option_correct_common_mode() { return _option_correct_common_mode; }
+unsigned FrameCalib::option_suppress_bad_pixels () { return _option_suppress_bad_pixels; }
 unsigned FrameCalib::option_correct_common_mode2() { return _option_correct_common_mode2; }
 unsigned FrameCalib::option_correct_common_mode3() { return _option_correct_common_mode3; }
 unsigned FrameCalib::option_correct_gain        () { return _option_correct_gain; }
@@ -604,6 +606,75 @@ int FrameCalib::median(ndarray<const uint16_t,1> data,
   return (iLo+i);
 }
 
+int FrameCalib::median(ndarray<const uint16_t,1> data,
+                       ndarray<const uint16_t,1> status,
+		       unsigned& iLo, unsigned& iHi)
+{
+  unsigned* bins = 0;
+  unsigned nbins = 0;
+  unsigned dsize = 0;
+
+  while(1) {
+    if (bins) delete[] bins;
+
+    if (iLo>iHi) {
+      printf("Warning: FrameCalib::median iLo,iHi arguments reversed [%d,%d]\n",
+             iLo,iHi);
+      unsigned v=iLo; iLo=iHi; iHi=v;
+    }
+
+    nbins = iHi-iLo+1;
+
+    if (nbins>10000) {
+      printf("Warning: FrameCalib::median too many bins [%d]\n",nbins);
+      return -1;
+    }
+
+    bins  = new unsigned[nbins];
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    dsize=0;
+    for(unsigned i=0; i<data.size(); i++) {
+      if (status[i] > 0)
+        continue;
+      
+      dsize++;
+      if (data[i] < iLo)
+	bins[0]++;
+      else if (data[i] >= iHi)
+	bins[nbins-1]++;
+      else
+	bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > dsize/2)
+      if (iLo > nbins/4)
+	iLo -= nbins/4;
+      else if (iLo > 0)
+	iLo = 0;
+      else {
+	delete[] bins;
+	return iLo;
+      }
+    else if (bins[nbins-1] > dsize/2)
+      iHi += nbins/4;
+    else
+      break;
+  }
+    
+  unsigned i=1;
+  int s=dsize/2-bins[0];
+  while( s>0 )
+    s -= bins[i++];
+
+  i--;
+  //  if (unsigned(-s) > bins[i]/2) i--;
+
+  delete[] bins;
+
+  return (iLo+i);
+}
+
 int FrameCalib::median(ndarray<const uint32_t,1> data,
 		       unsigned& iLo, unsigned& iHi)
 {
@@ -675,6 +746,75 @@ int FrameCalib::median(ndarray<const uint32_t,1> data,
 	   double(iLo+i)-x1/x0);
 #endif
   
+  return (iLo+i);
+}
+
+int FrameCalib::median(ndarray<const uint32_t,1> data,
+                       ndarray<const uint32_t,1> status,
+		       unsigned& iLo, unsigned& iHi)
+{
+  unsigned* bins = 0;
+  unsigned nbins = 0;
+  unsigned dsize = 0;
+
+  while(1) {
+    if (bins) delete[] bins;
+
+    if (iLo>iHi) {
+      printf("Warning: FrameCalib::median iLo,iHi arguments reversed [%d,%d]\n",
+             iLo,iHi);
+      unsigned v=iLo; iLo=iHi; iHi=v;
+    }
+
+    nbins = iHi-iLo+1;
+
+    if (nbins>10000) {
+      printf("Warning: FrameCalib::median too many bins [%d]\n",nbins);
+      return -1;
+    }
+
+    bins  = new unsigned[nbins];
+    memset(bins,0,nbins*sizeof(unsigned));
+
+    dsize=0;
+    for(unsigned i=0; i<data.size(); i++) {
+      if (status[i] > 0)
+        continue;
+
+      dsize++;
+      if (data[i] < iLo)
+	bins[0]++;
+      else if (data[i] >= iHi)
+	bins[nbins-1]++;
+      else
+	bins[data[i]-iLo]++;
+    }
+    
+    if (bins[0] > dsize/2)
+      if (iLo > nbins/4)
+	iLo -= nbins/4;
+      else if (iLo > 0)
+	iLo = 0;
+      else {
+	delete[] bins;
+	return iLo;
+      }
+    else if (bins[nbins-1] > dsize/2)
+      iHi += nbins/4;
+    else
+      break;
+  }
+    
+  unsigned i=1;
+  int s=dsize/2-bins[0];
+  while( s>0 )
+    s -= bins[i++];
+
+  i--;
+  //  if (unsigned(-s) > bins[i]/2) i--;
+
+  delete[] bins;
+
   return (iLo+i);
 }
 

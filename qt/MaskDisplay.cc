@@ -507,13 +507,7 @@ void MaskDisplay::save_mask()
       QMessageBox::warning(this, "Save data",
                            QString("Error opening %1 for writing").arg(fname));
     else {
-      ndarray<unsigned,2> ma = _mask->all_mask();
-      for(unsigned j=0; j<_mask->rows(); j++) {
-	unsigned* mr = &ma[j][0];
-        for(unsigned i=0; i<ma.shape()[1]; i++)
-          fprintf(f,"%08x ",mr[i]);
-        fprintf(f,"\n");
-      }        
+      _mask->write(f);
       fclose(f);
     }
   }

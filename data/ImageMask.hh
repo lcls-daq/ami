@@ -38,6 +38,7 @@ namespace Ami {
     void clear(unsigned,unsigned);
     void fill (unsigned,unsigned);
     void update();
+    void write(FILE*) const;
     void dump() const;
   private:
     unsigned _rowsz() const;
