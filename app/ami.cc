@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   std::vector<char *> module_names;
   bool parseValid=true;
 
-  while ((c = getopt(argc, argv, "?hfDQR:E:p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDQ:RE:p:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
