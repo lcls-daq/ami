@@ -173,6 +173,7 @@ int main(int argc, char* argv[]) {
       break;
     case 'R':
       Ami::EventHandler::enable_full_resolution(true);
+      break;
     case 'Q':
       { unsigned arg;
         parse_valid &= CmdLineTools::parseUInt(optarg,arg);
