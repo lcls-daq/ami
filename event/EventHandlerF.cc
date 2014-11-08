@@ -49,7 +49,7 @@ int EventHandlerF::_add_to_cache(const char* name)
   int i = _cache.add(name);
   _indices .push_back(i);
   _features.push_back(std::string(name));
-  if (_index<0) _index=i;
+  if (_index<0 || i<_index) _index=i;
   return i;
 }
 

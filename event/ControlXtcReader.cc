@@ -32,6 +32,7 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
 {
   char nbuf[FeatureCache::FEATURE_NAMELEN];
   _index = -1;
+  _pv    .resize(0);
   _values.resize(0);
 
   if (id.version()==Pds::ControlData::ConfigV1::Version) {
@@ -77,8 +78,8 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
       else
         snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
-      int index = _add_to_cache(nbuf);
-      _cache.cache(index,pv.value());
+      _pv.push_back(_add_to_cache(nbuf));
+      _cache.cache(_pv[k],pv.value());
       _values.push_back(pv.value());
     }
   }
@@ -89,7 +90,7 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
   unsigned nv=_values.size();
   for(unsigned i=0; i<nv; i++) {
     snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "XSCAN[%d]", i);
-    _add_to_cache(nbuf);
+    _pv    .push_back(_add_to_cache(nbuf));
     _values.push_back(_values[i]);
   }
 }
@@ -97,8 +98,8 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
 //  no L1 data will appear from Control
 void   ControlXtcReader::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t) 
 {
-  for(unsigned i=0, index=_index; i<_values.size(); i++,index++)
-    _cache.cache(index,_values[i]);
+  for(unsigned i=0; i<_values.size(); i++)
+    _cache.cache(_pv[i],_values[i]);
 }
 
 void   ControlXtcReader::_damaged  () {}

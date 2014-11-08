@@ -30,6 +30,7 @@ namespace Ami {
     void         rename  (const char*);
   private:
     FeatureCache& _cache;
+    std::vector<int>    _pv;
     std::vector<double> _values;
   };
 

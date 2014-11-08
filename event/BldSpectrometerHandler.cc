@@ -15,6 +15,8 @@ using std::string;
 
 using namespace Ami;
 
+static const unsigned MIN_PEAKS = 5;
+
 BldSpectrometerHandler::BldSpectrometerHandler(const Pds::BldInfo& info, 
                                                FeatureCache& cache) : 
   EventHandlerF(info, 
@@ -78,7 +80,7 @@ void BldSpectrometerHandler::_calibrate(Pds::TypeId, const void* payload, const 
 void BldSpectrometerHandler::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
   _nentries = 0;
-  _npeaks   = 0;
+  _npeaks   = MIN_PEAKS;
   _index    = -1;
   const char* name = BldInfo::name(static_cast<const BldInfo&>(info()));
   const DetInfo& dInfo = static_cast<const DetInfo&>(info());
@@ -102,7 +104,8 @@ void BldSpectrometerHandler::_configure(Pds::TypeId id, const void* payload, con
                         "Pixel","Sum", c.width(), 0., float(c.width()));
       _entry[_nentries++] = new EntryWaveform(desc); 
       string sname = string(name) + ":";
-      _npeaks = c.nPeaks();
+      if (c.nPeaks()>_npeaks)
+	_npeaks = c.nPeaks();
       _add_to_cache((sname+"comRaw")  .c_str());
       _add_to_cache((sname+"com")     .c_str());
       _add_to_cache((sname+"integral").c_str());
