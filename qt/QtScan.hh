@@ -11,6 +11,7 @@ class QColor;
 namespace Ami {
   class EntryScan;
   class AbsTransform;
+  class AbsEval;
   namespace Qt {
     class QtScan : public QtBase {
       enum { DefaultSymbolSize=5 };
@@ -39,7 +40,8 @@ namespace Ami {
       double*          _x;
       double*          _y;
       double*          _xa;
-      AxisInfo*     _xinfo;
+      AxisInfo*        _xinfo;
+      AbsEval*         _eval;
     };
   };
 };

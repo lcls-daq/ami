@@ -227,10 +227,17 @@ unsigned Cds::payload(iovec* iov, EntryList request)
 
 void Cds::refresh()
 {
+#ifdef DBUG
+  printf("Cds[%p]::refresh\n",this);
+#endif
   unsigned i=0;
   for (EnList::const_iterator it=_entries.begin(); it!=_entries.end(); it++,i++)
-    if ((*it)->desc().auto_refresh())
+    if ((*it)->desc().auto_refresh()) {
       (*it)->reset();
+#ifdef DBUG
+      printf("\treset [%s]\n",(*it)->desc().name());
+#endif
+    }
 }
 
 void Cds::invalidate_payload()

@@ -9,6 +9,7 @@
 #include "ami/qt/FrameClient.hh"
 #include "ami/qt/PnccdClient.hh"
 #include "ami/qt/EnvClient.hh"
+#include "ami/qt/LineFitClient.hh"
 #include "ami/qt/TdcClient.hh"
 #include "ami/qt/SummaryClient.hh"
 //#include "ami/qt/ScriptClient.hh"
@@ -49,9 +50,9 @@
 
 using namespace Ami::Qt;
 
-static const Pds::DetInfo envInfo   (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::Evr,0);
 static const Pds::DetInfo noInfo    (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
-static const Pds::DetInfo scriptInfo(0,Pds::DetInfo::NoDetector,1,Pds::DetInfo::NoDevice,1);
+static const Pds::DetInfo envInfo   (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,1);
+static const Pds::DetInfo fitInfo   (0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,2);
 
 static const int MaxConfigSize = 0x100000;
 static const int BufferSize = 0x8000;
@@ -148,21 +149,18 @@ DetectorSelect::DetectorSelect(const QString& label,
     connect(_filter_export, SIGNAL(changed()), this, SLOT(l3t_export()));
 
     layout->addWidget(_detList = new QListWidget(this),2,0,1,2);
-#if 1
     //
     //  The EnvClient is needed at all times to request the PostAnalysis variable set and generate those plots
     //
     { DetectorListItem* ditem = new DetectorListItem(_detList, "Env"    , envInfo, 1);
       const char* p=0;
       _create_client(ditem->info,ditem->channel,ditem->text(),p);
-      // _create_client(ditem->info,ditem->channel,ditem->text(),p)->hide();
     }
-#else
-    *new DetectorListItem(_detList, "Env", envInfo, 1);
-#endif
-    //    *new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
-    //    *new DetectorListItem(_detList, "Summary", noInfo , 0);
-    //    *new DetectorListItem(_detList, "Script", scriptInfo , 0);
+    { DetectorListItem* ditem = new DetectorListItem(_detList, "LineFit", fitInfo, 2);
+      const char* p=0;
+      _create_client(ditem->info,ditem->channel,ditem->text(),p)->hide();
+    }
+
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)),
       this, SLOT(show_detector(QListWidgetItem*)));
 
@@ -421,11 +419,12 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
   if (info.level()==Pds::Level::Source) {
     switch(info.device()) {
     case Pds::DetInfo::NoDevice :
-      { switch(info.devId()) {
-  case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
-    //  case 1: client = new Ami::Qt::ScriptClient (this, info , channel); break;
-  default: break; } } break;
-    case Pds::DetInfo::Evr      : client = new Ami::Qt::EnvClient     (this, info, channel, name); break;
+      switch(info.devId()) {
+      case 0: client = new Ami::Qt::SummaryClient(this, info , channel, "Summary", ConfigureRequest::Summary); break;
+      case 1: client = new Ami::Qt::EnvClient    (this, info, channel, name); break;
+      case 2: client = new Ami::Qt::LineFitClient(this, info, channel, name); break;
+      default: break; }
+      break;
     case Pds::DetInfo::OceanOptics :
     case Pds::DetInfo::Imp      :
     case Pds::DetInfo::EpixSampler:
@@ -606,9 +605,7 @@ void DetectorSelect::change_detectors(const char* c)
     _detList->clear();
 
     new DetectorListItem(_detList, "Env"    , envInfo, 1);
-    //    new DetectorListItem(_detList, "PostAnalysis", envInfo, 1);
-    //    new DetectorListItem(_detList, "Summary", noInfo , 0);
-    //    new DetectorListItem(_detList, "Script", scriptInfo, 0);
+    new DetectorListItem(_detList, "LineFit", fitInfo, 2);
 
     const Ami::DescEntry* n = 0;
     const Ami::DescEntry* rx_entries = rx.entries();

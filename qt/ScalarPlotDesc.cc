@@ -263,7 +263,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
       desc = new Ami::DescProf(qPrintable(vy),
 			       qPrintable(vx),"mean",
 			       _vFeature->bins(),_vFeature->lo(),_vFeature->hi(),"mean",
-			       w.c_str());
+			       DescEntry::Mean,w.c_str());
       break; }
   case ScalarPlotDesc::vF2:
     { QString vy = _ynorm->isChecked() ? QString("(%1)/(%2)").arg(_vFeature2->yexpr()).arg(_vnorm->entry()) : _vFeature2->yexpr();
@@ -274,7 +274,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
                                  _vFeature2->xbins(),_vFeature2->xlo(),_vFeature2->xhi(),
                                  _vFeature2->ybins(),_vFeature2->ylo(),_vFeature2->yhi(),
                                  "mean",
-                                 w.c_str());
+                                 DescEntry::Mean,w.c_str());
       break; }
   case ScalarPlotDesc::vS:
     { QString vy = _ynorm->isChecked() ? vn : qtitle;

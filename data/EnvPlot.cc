@@ -19,7 +19,6 @@ using namespace Ami;
 
 EnvPlot::EnvPlot(const DescEntry& output) :
   AbsOperator(AbsOperator::EnvPlot),
-  _cache     (0),
   _entry     (0),
   _input     (0),
   _v         (true)
@@ -29,10 +28,8 @@ EnvPlot::EnvPlot(const DescEntry& output) :
 
 EnvPlot::EnvPlot(const char*&  p, 
 		 FeatureCache& input, 
-		 FeatureCache& output, 
-		 const Cds&    cds) :
+		 FeatureCache& output) :
   AbsOperator(AbsOperator::EnvPlot),
-  _cache     (&input),
   _input     (0),
   _v         (true)
 {

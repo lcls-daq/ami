@@ -74,7 +74,7 @@ void QtPWidget::load(const char*& p)
   if (v) {
     move  (r);
     resize(s);
-    printf("QtP load %d,%d %d,%d %c\n",r.x(),r.y(),s.width(),s.height(),v?'t':'f');
+    //    printf("QtP load %d,%d %d,%d %c\n",r.x(),r.y(),s.width(),s.height(),v?'t':'f');
   }
 
   setVisible(v);

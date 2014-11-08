@@ -27,8 +27,8 @@ namespace Ami {
     bool _setup(const DescEntry&, FeatureCache& input);
     void _use  ();
     void _fill (Entry&, double, const Pds::ClockTime&,
-                bool initial=true) const;
-  private:
+		bool initial=true) const;
+  protected:
     Term*         _xterm;
     Term*         _yterm;
     Term*         _weight;

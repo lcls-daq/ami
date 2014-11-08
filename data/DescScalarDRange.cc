@@ -13,7 +13,7 @@ DescScalarDRange::DescScalarDRange(const char* name,
                                    double      extent_y,
                                    unsigned    nbins_y,
                                    bool        lnormalize) :
-  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), lnormalize),
+  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), Mean, lnormalize),
   _nsamples  (nsamples),
   _nbins_x   (nbins_x),
   _nbins_y   (nbins_y)
@@ -34,7 +34,7 @@ DescScalarDRange::DescScalarDRange(const char* name,
                                    double      ylo,
                                    double      yhi,
                                    bool        lnormalize) :
-  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), lnormalize),
+  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), Mean, lnormalize),
   _nsamples  (nsamples),
   _nbins_x   (nbins_x),
   _nbins_y   (nbins_y)
@@ -56,7 +56,7 @@ DescScalarDRange::DescScalarDRange(const char* name,
                                    double      extent_y,
                                    unsigned    nbins_y,
                                    bool        lnormalize) :
-  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), lnormalize),
+  DescEntry(name, xtitle, ytitle, ScalarDRange, sizeof(DescScalarDRange), Mean, lnormalize),
   _nsamples  (nsamples),
   _nbins_x   (nbins_x),
   _nbins_y   (nbins_y)

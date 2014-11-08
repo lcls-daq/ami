@@ -41,10 +41,7 @@ EnvPlot::EnvPlot(QWidget*         parent,
                  Ami::ScalarSet   set,
                  SharedData*      shared) :
   QtPlot   (parent, name),
-  _filter  (filter.clone()),
-  _desc    (desc),
-  _set     (set),
-  _output_signature  (0),
+  EnvOp    (filter, desc, set),
   _plot    (new QtEmpty),
   _auto_range(0),
   _retry     (false),
@@ -59,9 +56,6 @@ EnvPlot::EnvPlot(QWidget*         parent,
 EnvPlot::EnvPlot(QWidget*     parent,
 		 const char*& p) :
   QtPlot   (parent),
-  _filter  (0),
-  _set     (Ami::PreAnalysis),
-  _output_signature(0),
   _plot    (new QtEmpty),
   _auto_range(0),
   _shared  (0)
@@ -70,31 +64,8 @@ EnvPlot::EnvPlot(QWidget*     parent,
     
     if (tag.element == "QtPlot")
       QtPlot::load(p);
-    else if (tag.name == "_filter") {
-      Ami::FilterFactory factory;
-      const char* b = (const char*)QtPersistent::extract_op(p);
-      _filter = factory.deserialize(b);
-    }
-    else if (tag.name == "_desc") {
-      DescEntry* desc = (DescEntry*)QtPersistent::extract_op(p);
-
-#define CASEENTRY(type) case DescEntry::type: _desc = new Desc##type(*static_cast<Desc##type*>(desc)); break;
-
-      switch(desc->type()) {
-        CASEENTRY(TH1F)
-          CASEENTRY(Prof)
-          CASEENTRY(Prof2D)
-          CASEENTRY(Scan)
-          CASEENTRY(Scalar)
-          CASEENTRY(ScalarDRange)
-          CASEENTRY(TH2F)
-          default: break;
-      }
-    }
-    else if (tag.name == "_set") {
-      _set = Ami::ScalarSet(QtPersistent::extract_i(p));
-    }
-
+    else if (EnvOp::load(tag,p))
+      ;
   XML_iterate_close(EnvPlot,tag);
 
   _plot->attach(_frame);
@@ -103,8 +74,6 @@ EnvPlot::EnvPlot(QWidget*     parent,
 
 EnvPlot::~EnvPlot()
 {
-  if (_filter  ) delete _filter;
-  delete _desc;
   { QtBase* plot = _plot;
     _plot = 0;
     delete plot; }
@@ -113,12 +82,8 @@ EnvPlot::~EnvPlot()
 
 void EnvPlot::save(char*& p) const
 {
-  char* buff = new char[8*1024];
   XML_insert( p, "QtPlot", "self", QtPlot::save(p) );
-  XML_insert( p, "AbsFilter", "_filter", QtPersistent::insert(p, buff, (char*)_filter->serialize(buff)-buff) );
-  XML_insert( p, "DescEntry", "_desc", QtPersistent::insert(p, _desc, _desc->size()) );
-  XML_insert( p, "ScalarSet", "_set" , QtPersistent::insert(p, int(_set)) );
-  delete[] buff;
+  EnvOp::save(p);
 }
 
 
@@ -170,10 +135,6 @@ void EnvPlot::setup_payload(Cds& cds)
         _plot = 0;
         return;
       case Ami::DescEntry::Scalar:  // create a chart from a scalar
-        //       { const DescChart& d = *reinterpret_cast<const DescChart*>(_desc);
-        // 	_plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
-        // 			    d.pts(),QColor(0,0,0));
-        // 	break; }
         _plot = new QtChart(_name,*static_cast<const Ami::EntryScalar*>(entry),
                             QColor(0,0,0));
         edit_xrange(false);
@@ -205,24 +166,17 @@ void EnvPlot::setup_payload(Cds& cds)
   }
 }
 
-void EnvPlot::configure(char*& p, unsigned input, unsigned& output)
+void EnvPlot::configure(char*& p, unsigned input, unsigned& output,
+			const AbsOperator& op)
 {
-  Ami::EnvPlot op(*_desc);
-  
-  ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Discovery,
-						  input,
-						  -1,
-						  *_filter, op, _set);
-  p += r.size();
-  _req.request(r, output, _plot==0);
-  _output_signature = r.output();
+  EnvOp::configure(p,input,output,op,_plot==0);
 }
 
 void EnvPlot::update()
 {
   if (_plot) {
     _plot->update();
+    update_fit(_plot->entry());
     emit counts_changed(_plot->normalization());
     emit redraw();
   }

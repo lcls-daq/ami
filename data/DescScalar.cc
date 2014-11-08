@@ -8,11 +8,10 @@ DescScalar::DescScalar(const char* name,
 		       const char* weight,
                        unsigned    npts,
                        unsigned    pscal) :
-  DescEntryW(name, "", ytitle, weight, Scalar, sizeof(DescScalar), true),
+  DescEntryW(name, "", ytitle, weight, Scalar, sizeof(DescScalar), stat, true),
   _npoints (npts),
   _prescale(pscal)
 {
-  options(unsigned(stat));
 }
 
 DescScalar::DescScalar(const Pds::DetInfo& info,
@@ -22,9 +21,8 @@ DescScalar::DescScalar(const Pds::DetInfo& info,
                        Stat        stat,
                        unsigned    npts,
                        unsigned    pscal) :
-  DescEntryW(info, channel, name, "", ytitle, "", Scalar, sizeof(DescScalar), true),
+  DescEntryW(info, channel, name, "", ytitle, "", Scalar, sizeof(DescScalar), stat, true),
   _npoints (npts),
   _prescale(pscal)
 {
-  options(unsigned(stat));
 }

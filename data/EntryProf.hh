@@ -21,6 +21,8 @@ namespace Ami {
 
     double ymean(unsigned bin) const;
     double sigma(unsigned bin) const;
+    double slope(unsigned bin) const;
+    double intercept(unsigned bin) const;
 
     double ysum(unsigned bin) const;
     void ysum(double y, unsigned bin);
@@ -34,6 +36,8 @@ namespace Ami {
     const double* entries() const;
     const double* ysum   () const;
     const double* y2sum  () const;
+
+    void content(unsigned, const double*);
 
     void addy(double y, unsigned bin, double w=1);
     void addy(double y, double x, double w=1);
@@ -127,6 +131,9 @@ namespace Ami {
   inline const double* EntryProf::ysum   () const { return _ysum; }
   inline const double* EntryProf::y2sum  () const { return _y2sum; }
 
+  inline void   EntryProf::content(unsigned bin, const double* y) { _nentries[bin]=y[0]; _ysum[bin]=y[1]; _y2sum[bin]=y[2]; }
+  inline double EntryProf::slope    (unsigned bin) const { return _nentries[bin] ? _ysum[bin]/_nentries[bin]:0; }
+  inline double EntryProf::intercept(unsigned bin) const { return _nentries[bin] ? _y2sum[bin]/_nentries[bin]:0; }
 };
 
 #endif

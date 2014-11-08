@@ -4,22 +4,16 @@
 
 using namespace Ami::Qt;
 
-RateCalculator::RateCalculator() : QLabel("0"), _entry(0)
+RateCalculator::RateCalculator() 
 {
-  clock_gettime(CLOCK_REALTIME,&_last);
-  connect(this, SIGNAL(changed(QString)), this, SLOT(change(QString)));
 }
 
 RateCalculator::~RateCalculator() {}
 
-bool RateCalculator::set_entry(Ami::Entry* entry) {
-  _entries = 0;
-  bool result = (entry!=0);
-  if (result)
-    _entry = static_cast<Ami::EntryScalar*>(entry);
-  else
-    _entry = 0;
-  return result;
+void RateCalculator::reset()
+{
+  _entries=0;
+  clock_gettime(CLOCK_REALTIME,&_last);
 }
 
 void RateCalculator::update() {
@@ -34,9 +28,4 @@ void RateCalculator::update() {
   } else {
     emit changed(QString("."));
   }
-}
-
-void RateCalculator::change(QString text)
-{
-  setText(text);
 }

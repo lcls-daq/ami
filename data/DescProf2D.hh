@@ -11,6 +11,7 @@ namespace Ami {
                unsigned nxbins, float xlow, float xup, 
                unsigned nybins, float ylow, float yup, 
                const char* names,
+	       Stat        stat=Mean,
                const char* weight="");
 
     DescProf2D(const Pds::DetInfo& info,
@@ -18,7 +19,7 @@ namespace Ami {
                const char* name, const char* xtitle, const char* ytitle, 
                unsigned nxbins, float xlow, float xup, 
                unsigned nybins, float ylow, float yup, 
-               const char* names);
+               const char* names, Stat stat=Mean);
 
     //  Special constructor for centering outer bins
     //    on xlow,xup.
@@ -28,6 +29,7 @@ namespace Ami {
                unsigned nxbins, float xlow, float xup, 
                unsigned nybins, float ylow, float yup, 
                const char* names,
+	       Stat        stat=Mean,
                const char* weight="");
 
 

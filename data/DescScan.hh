@@ -13,12 +13,12 @@ namespace Ami {
   class DescScan : public DescEntryW {
   public:
     DescScan(const char* name, const char* xtitle, const char* ytitle, unsigned nbins,
-	     const char* weight="", bool scatter=true);
+	     const char* weight="", Stat stat=Mean, bool scatter=true);
 
     DescScan(const Pds::DetInfo& info,
  	     unsigned channel,
  	     const char* name, const char* xtitle, const char* ytitle, unsigned nbins,
-             bool scatter=true);
+	     Stat stat=Mean, bool scatter=true);
 
     unsigned nbins() const;
 

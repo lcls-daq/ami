@@ -11,11 +11,11 @@ namespace Ami {
   class DescEntryW : public DescEntry {
   public:
     DescEntryW(const char* name, const char* xtitle, const char* ytitle, const char* weight,
-	       Type type, unsigned short size, bool isnormalized=true, bool aggregate=true);
+	       Type type, unsigned short size, Stat stat=Mean, bool isnormalized=true, bool aggregate=true);
 
     DescEntryW(const Pds::DetInfo& info, unsigned channel,
 	       const char* name, const char* xtitle, const char* ytitle, const char* weight,
-	       Type type, unsigned short size, bool isnormalized=true, bool aggregate=true);
+	       Type type, unsigned short size, Stat stat=Mean, bool isnormalized=true, bool aggregate=true);
 
     bool        weighted() const;
     const char* weight  () const;
@@ -26,14 +26,16 @@ namespace Ami {
   };
 
   inline     DescEntryW::DescEntryW(const char* name, const char* xtitle, const char* ytitle, const char* weight,
-				    Type type, unsigned short size, bool isnormalized, bool aggregate) :
-    DescEntry(name, xtitle, ytitle, type, size, isnormalized, aggregate) 
+				    Type type, unsigned short size, 
+				    Stat stat, bool isnormalized, bool aggregate) :
+    DescEntry(name, xtitle, ytitle, type, size, stat, isnormalized, aggregate) 
   { strncpy_val(_weight,weight,WeightSize); }
 
   inline DescEntryW::DescEntryW(const Pds::DetInfo& info, unsigned channel,
 				const char* name, const char* xtitle, const char* ytitle, const char* weight,
-				Type type, unsigned short size, bool isnormalized, bool aggregate) :
-    DescEntry(info, channel, name, xtitle, ytitle, type, size, isnormalized, aggregate) 
+				Type type, unsigned short size, 
+				Stat stat, bool isnormalized, bool aggregate) :
+    DescEntry(info, channel, name, xtitle, ytitle, type, size, stat, isnormalized, aggregate) 
   { strncpy_val(_weight,weight,WeightSize); }
   
   inline bool        DescEntryW::weighted() const { return _weight[0]!=0; }

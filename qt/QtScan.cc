@@ -2,6 +2,7 @@
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/Defaults.hh"
 
+#include "ami/data/AbsEval.hh"
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryScan.hh"
 
@@ -9,6 +10,7 @@
 #include "qwt_symbol.h"
 
 using namespace Ami::Qt;
+
 
 QtScan::QtScan(const QString&   title,
 	       const Ami::EntryScan& entry,
@@ -20,7 +22,8 @@ QtScan::QtScan(const QString&   title,
   QtBase(title,entry),
   _xscale(x),
   _yscale(y),
-  _curve(entry.desc().name())
+  _curve(entry.desc().name()),
+  _eval (AbsEval::lookup(entry.desc().stat()))
 {
   if (entry.desc().scatter()) {
     _curve.setStyle(QwtPlotCurve::Dots);
@@ -43,11 +46,12 @@ QtScan::QtScan(const QString&   title,
   _y  = new double[nb];
   unsigned b=0;
   unsigned i=0;
+
   while(b<nb) {
     _xa[b] = _xscale(entry.xbin(b));
     if (entry.nentries(b)) {
       _x[i] = _xscale(entry.xbin(b));
-      _y[i] = entry.ymean(b);
+      _y[i] = _eval->evaluate(entry,b);
       i++;
     }
     b++;
@@ -64,6 +68,7 @@ QtScan::~QtScan()
   delete[] _xa;
   delete[] _x;
   delete[] _y;
+  delete   _eval;
 }
 
 void           QtScan::dump  (FILE* f) const
@@ -103,7 +108,7 @@ void           QtScan::update()
   for(unsigned b=0; b<nb; b++)
     if (_entry.nentries(b)) {
       _x[i] = _xscale(_entry.xbin(b));
-      _y[i] = _entry.ymean(b);
+      _y[i] = _eval->evaluate(_entry,b);
       i++;
     }
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint

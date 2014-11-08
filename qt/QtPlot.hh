@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/QtPlotStyle.hh"
+#include "ami/qt/QLineFit.hh"
 
 #include "ami/data/DescEntry.hh"
 
@@ -20,7 +21,7 @@ namespace Ami {
     class AxisControl;
     class QtOverlay;
     class QtPlotSelector;
-    class QtPlot : public QtPWidget {
+    class QtPlot : public QtPWidget, public QLineFit {
       Q_OBJECT
     public:
       explicit QtPlot(QWidget*       parent,
@@ -85,6 +86,7 @@ namespace Ami {
       std::list<QtOverlay*> _ovls;
       QAction* _show_ref;
       QwtPlotCurve* _ref;
+      QLineFitMenu* _linefit;
     };
   };
 };

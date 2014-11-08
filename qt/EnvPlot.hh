@@ -2,22 +2,19 @@
 #define AmiQt_EnvPlot_hh
 
 #include "ami/qt/QtPlot.hh"
-#include <QtCore/QString>
+#include "ami/qt/EnvOp.hh"
 
-#include "ami/data/ConfigureRequest.hh"
-#include "ami/data/ConfigureRequestor.hh"
+#include <QtCore/QString>
 
 #include <list>
 
 namespace Ami {
-  class AbsFilter;
   class Cds;
-  class DescEntry;
   class EntryAutoRange;
   namespace Qt {
     class QtBase;
     class SharedData;
-    class EnvPlot : public QtPlot {
+    class EnvPlot : public QtPlot, public EnvOp {
       Q_OBJECT
     public:
       EnvPlot(QWidget*,
@@ -32,21 +29,15 @@ namespace Ami {
       void save(char*&) const;
       void load(const char*&);
     public:
-      void configure(char*& p, unsigned input, unsigned& output);
+      void configure(char*& p, unsigned input, unsigned& output,
+		     const AbsOperator&);
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
     signals:
       void changed();
     private:
-      Ami::AbsFilter* _filter;
-      DescEntry* _desc;
-      Ami::ScalarSet _set;
-
-      unsigned _output_signature;
-
       QtBase*  _plot;
-      ConfigureRequestor _req;
 
       EntryAutoRange*    _auto_range;
       bool               _retry;

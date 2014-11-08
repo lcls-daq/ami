@@ -24,11 +24,10 @@ namespace Ami {
     //    the BLD/PV, and any BLD/PV dependence for profiles.
     EnvPlot(const DescEntry& output);
     //  Reconstituted from the input serial stream, the BldState and PvState
-    //    accessors, and the Cds input entry accessor.
+    //    accessors
     EnvPlot(const char*&, 
 	    FeatureCache& input, 
-	    FeatureCache& output, 
-	    const Cds&);
+	    FeatureCache& output);
     ~EnvPlot();
   public:
     void use();
@@ -42,7 +41,6 @@ namespace Ami {
     enum { DESC_LEN = 1024 };
     uint32_t      _desc_buffer[DESC_LEN/sizeof(uint32_t)];
 
-    FeatureCache* _cache;
     Entry*        _entry;
     Term*         _input;
     bool          _v;

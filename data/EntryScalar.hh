@@ -21,8 +21,11 @@ namespace Ami {
     double sqsum  () const;
     double mean   () const;
     double rms    () const;
+    double slope  () const;
+    double intercept() const;
     void   addcontent(double y);
     void   addcontent(double y,double w);
+    void   content   (const double*);
 
     void setto(const EntryScalar& entry);
     void setto(const EntryScalar& curr, const EntryScalar& prev);
@@ -50,8 +53,11 @@ namespace Ami {
   inline double EntryScalar::sqsum  () const { return _y[2]; }
   inline double EntryScalar::mean   () const { return _y[0] ? _y[1]/_y[0] : 0; }
   inline double EntryScalar::rms    () const { return _y[0] ? sqrt((_y[2] - _y[1]*_y[1]/_y[0])/_y[0]) : 0; }
+  inline double EntryScalar::slope    () const { return mean(); }
+  inline double EntryScalar::intercept() const { return _y[0] ? _y[2]/_y[0] : 0; }
   inline void   EntryScalar::addcontent(double y) { _y[0]++; _y[1]+=y; _y[2]+=y*y; }
   inline void   EntryScalar::addcontent(double y,double w) { _y[0]+=w; _y[1]+=w*y; _y[2]+=w*y*y; }
+  inline void   EntryScalar::content(const double* y) { _y[0]=y[0]; _y[1]=y[1]; _y[2]=y[2]; }
 };
 
 #endif

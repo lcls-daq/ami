@@ -33,10 +33,15 @@ namespace Ami {
     double nentries(unsigned bin) const;
     void nentries(double nent, unsigned bin);
 
-    double xbin(unsigned) const;
-    void   xbin(double, unsigned bin);
+    double slope    (unsigned bin) const;
+    double intercept(unsigned bin) const;
 
-    void addy(double y, unsigned bin, double w=1);
+    double   xbin(unsigned) const;
+    void     xbin(double, unsigned bin);
+    unsigned bin(double);
+    void     content(unsigned bin, const double*);
+
+    void addy(double y, unsigned bin, double w=1, double t=0);
     void addy(double y, double x, double w=1, double t=0);
 
     enum Info { Current, Normalization, InfoSize };
@@ -109,16 +114,26 @@ namespace Ami {
 
   inline double EntryScan::nentries(unsigned bin) const {return _p[bin]._nentries;}
   inline void EntryScan::nentries(double nent, unsigned bin) {_p[bin]._nentries=nent;}
+  inline double EntryScan::slope    (unsigned bin) const { return _p[bin]._nentries ? _p[bin]._ysum / _p[bin]._nentries : 0; }
+  inline double EntryScan::intercept(unsigned bin) const { return _p[bin]._nentries ? _p[bin]._y2sum / _p[bin]._nentries : 0; }
 
-  inline void EntryScan::addy(double y, unsigned bin, double w) 
+  inline void EntryScan::addy(double y, unsigned bin, double w, double t) 
   {
     _p[bin]._nentries += w;
     _p[bin]._ysum     += y*w;
     _p[bin]._y2sum    += y*y*w;
+    _p[bin]._t         = t;
   }
 
   inline double EntryScan::xbin(unsigned bin) const {return _p[bin]._x;}
   inline void   EntryScan::xbin(double v, unsigned bin) {_p[bin]._x=v;}
+
+  inline void   EntryScan::content(unsigned bin, const double* y) { 
+    _p[bin]._nentries = y[0];
+    _p[bin]._ysum     = y[1];
+    _p[bin]._y2sum    = y[2];
+    _p[bin]._t        = y[3];
+  }
 
   inline double EntryScan::info(Info i) const { return reinterpret_cast<double*>(_p+_desc.nbins())[i]; }
   inline void   EntryScan::info(double y,Info i) { reinterpret_cast<double*>(_p+_desc.nbins())[i]=y; }

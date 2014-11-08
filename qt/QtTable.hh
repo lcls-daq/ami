@@ -6,6 +6,7 @@
 class QLabel;
 
 namespace Ami {
+  class AbsEval;
   class EntryScalar;
   namespace Qt {
 
@@ -28,6 +29,7 @@ namespace Ami {
       EntryScalar*       _cache;
       QLabel*            _label;
       QLabel*            _value;
+      AbsEval*           _eval;
     };
   };
 };

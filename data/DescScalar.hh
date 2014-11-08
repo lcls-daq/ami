@@ -7,7 +7,6 @@ namespace Ami {
 
   class DescScalar : public DescEntryW {
   public:
-    enum Stat { Mean, StdDev };
     DescScalar(const char* name, 
 	       const char* ytitle,
                Stat        stat=Mean,
@@ -23,7 +22,6 @@ namespace Ami {
                unsigned    npts=400,
                unsigned    pscal=1);
   public:
-    inline Stat     stat    () const;
     inline unsigned npoints () const;
     inline unsigned prescale() const;
   private:
@@ -31,11 +29,6 @@ namespace Ami {
     uint32_t _prescale;
   };
 };
-
-Ami::DescScalar::Stat Ami::DescScalar::stat() const
-{
-  return Ami::DescScalar::Stat(options()); 
-}
 
 unsigned Ami::DescScalar::npoints() const { return _npoints; }
 

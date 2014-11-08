@@ -2,6 +2,7 @@
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/Defaults.hh"
 
+#include "ami/data/AbsEval.hh"
 #include "ami/data/EntryScalar.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -11,8 +12,6 @@
 #include "qwt_scale_draw.h"
 #include "qwt_legend.h"
 #include "qwt_legend_item.h"
-
-#define DBUG
 
 namespace Ami {
   namespace Qt {
@@ -44,7 +43,8 @@ QtChart::QtChart(const QString&          title,
   _skip   (0),
   _current(0),
   _curve  (entry.desc().name()),
-  _pts    (0)
+  _pts    (0),
+  _eval   (Ami::AbsEval::lookup(entry.desc().stat()))
 {
   _curve.setStyle(QwtPlotCurve::Steps);
 
@@ -77,6 +77,7 @@ QtChart::~QtChart()
   delete[] _x;
   delete[] _y;
   delete &_cache;
+  delete _eval;
 }
 
 void           QtChart::dump  (FILE* f) const
@@ -111,9 +112,6 @@ void           QtChart::update()
   _skip = entry.desc().prescale()-1;
 
   if (!entry.valid()) {
-#ifdef DBUG
-    printf("QtChart::update invalid\n");
-#endif
     return;
   }
 
@@ -139,23 +137,7 @@ void           QtChart::update()
     _x[_current+0 ] = time;
     _x[_current+_n] = time;
     
-    // calculate y
-    double y;
-    if (n>0) {
-      switch(entry.desc().stat()) {
-      case Ami::DescScalar::StdDev:
-        y = (entry.sum() - _cache.sum());
-        y = (entry.sqsum() - _cache.sqsum() - y*y/n)/n;
-        y = (y>0) ? sqrt(y) : 0;
-        break;
-      case Ami::DescScalar::Mean:
-      default:
-        y = (entry.sum() - _cache.sum())/n;
-        break;
-      }
-    }
-    else
-      y = 0;
+    double y = (n>0) ? _eval->evaluate(entry,_cache,n) : 0;
 
     _cache.setto(entry);
     _y[_current]    = y;

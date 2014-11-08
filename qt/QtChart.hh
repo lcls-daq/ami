@@ -13,6 +13,7 @@ class QwtPlot;
 class QColor;
 
 namespace Ami {
+  class AbsEval;
   class EntryChart;
   namespace Qt {
     class QtChart : public QtBase {
@@ -40,7 +41,8 @@ namespace Ami {
       unsigned         _pts; // accumulate # of pts
       double*          _x;
       double*          _y;
-      AxisInfo*     _xinfo;
+      AxisInfo*        _xinfo;
+      AbsEval*         _eval;
     };
   };
 };

@@ -17,7 +17,7 @@ namespace Ami {
       void save(char*&) const;
       void load(const char*&);
     public:
-      DescChart(const char* name);
+      DescChart(const char* name, bool lstat=true);
     public:
       QRadioButton* button();
       Ami::DescScalar::Stat stat() const;

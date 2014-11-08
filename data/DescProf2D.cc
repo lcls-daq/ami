@@ -12,8 +12,9 @@ DescProf2D::DescProf2D(const char* name,
                        float ylow, 
                        float yup, 
                        const char* names,
+		       Stat stat,
                        const char* weight) :
-  DescEntryW(name, xtitle, ytitle, weight, Prof2D, sizeof(DescProf2D), false),
+  DescEntryW(name, xtitle, ytitle, weight, Prof2D, sizeof(DescProf2D), stat, false),
   _nxbins(nxbins ? nxbins : 1),
   _xlow(xlow),
   _xup(xup),
@@ -47,8 +48,9 @@ DescProf2D::DescProf2D(InitOpt,
                        float ylow, 
                        float yup, 
                        const char* names,
+		       Stat        stat,
                        const char* weight) :
-  DescEntryW(name, xtitle, ytitle, weight, Prof2D, sizeof(DescProf2D), false),
+  DescEntryW(name, xtitle, ytitle, weight, Prof2D, sizeof(DescProf2D), stat, false),
   _nxbins(nxbins ? nxbins : 1),
   _nybins(nybins ? nybins : 1)
 {
@@ -80,8 +82,9 @@ DescProf2D::DescProf2D(const Pds::DetInfo& info,
                        unsigned nybins, 
                        float ylow, 
                        float yup, 
-                       const char* names) :
-  DescEntryW(info, channel, name, xtitle, ytitle, "", Prof2D, sizeof(DescProf2D), false),
+                       const char* names,
+		       Stat        stat) :
+  DescEntryW(info, channel, name, xtitle, ytitle, "", Prof2D, sizeof(DescProf2D), stat, false),
   _nxbins(nxbins ? nxbins : 1),
   _xlow(xlow),
   _xup (xup),

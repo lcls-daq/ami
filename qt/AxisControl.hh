@@ -20,7 +20,8 @@ namespace Ami {
       void save(char*& p) const;
       void load(const char*& p);
     public:
-      void update(const AxisInfo&);
+      void update (const AxisInfo&);
+      void refresh();
     public:
       bool   isLog () const;
       bool   isAuto() const;

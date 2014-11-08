@@ -10,6 +10,7 @@ class QColor;
 
 namespace Ami {
   class EntryProf;
+  class AbsEval;
   class AbsTransform;
   namespace Qt {
     class QtProf : public QtBase {
@@ -36,7 +37,8 @@ namespace Ami {
       double*          _x;
       double*          _y;
       double*          _xa;
-      AxisInfo*     _xinfo;
+      AxisInfo*        _xinfo;
+      AbsEval*         _eval;
     };
   };
 };

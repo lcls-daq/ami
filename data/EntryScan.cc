@@ -58,6 +58,26 @@ void EntryScan::build(unsigned nbins)
 const DescScan& EntryScan::desc() const {return _desc;}
 DescScan& EntryScan::desc() {return _desc;}
 
+unsigned EntryScan::bin(double x)
+{
+  unsigned b = unsigned(info(Current));
+  if (x != _p[b]._x) {
+    if (_p[b]._nentries!=0)
+      b++;
+    if (b == _desc.nbins())
+      b = 0;
+
+    _p[b]._x        = x;
+    _p[b]._nentries = 0;
+    _p[b]._ysum     = 0;
+    _p[b]._y2sum    = 0;
+    _p[b]._t        = 0;
+
+    info(b,Current);
+  }
+  return b;
+}
+
 void EntryScan::addy(double y, double x, double w, double t) 
 {
   unsigned bin = unsigned(info(Current));
@@ -75,7 +95,7 @@ void EntryScan::addy(double y, double x, double w, double t)
     info(bin,Current);
   }
   else
-    addy(y,bin,w);
+    addy(y,bin,w,t);
 }
 
 void EntryScan::setto(const EntryScan& entry) 

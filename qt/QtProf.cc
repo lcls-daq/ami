@@ -2,6 +2,7 @@
 #include "ami/qt/AxisArray.hh"
 #include "ami/qt/Defaults.hh"
 
+#include "ami/data/AbsEval.hh"
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryProf.hh"
 
@@ -18,7 +19,8 @@ QtProf::QtProf(const QString&   title,
   QtBase(title,entry),
   _xscale(x),
   _yscale(y),
-  _curve(entry.desc().name())
+  _curve(entry.desc().name()),
+  _eval (Ami::AbsEval::lookup(entry.desc().stat()))
 {
   //  _curve.setStyle(QwtPlotCurve::Dots);
   _curve.setStyle(QwtPlotCurve::Lines);
@@ -41,7 +43,7 @@ QtProf::QtProf(const QString&   title,
     _xa[b] = _xscale(x0 + double(b)*dx);
     if (entry.nentries(b)) {
       _x[i] = _xscale(x0 + double(b)*dx);
-      _y[i] = entry.ymean(b);
+      _y[i] = _eval->evaluate(entry,b);
       i++;
     }
     b++;
@@ -58,6 +60,7 @@ QtProf::~QtProf()
   delete[] _xa;
   delete[] _x;
   delete[] _y;
+  delete _eval;
 }
 
 void           QtProf::dump  (FILE* f) const
@@ -101,7 +104,7 @@ void           QtProf::update()
   for(unsigned b=0; b<nb; b++)
     if (_entry.nentries(b)) {
       _x[i] = _xscale(x0 + double(b)*dx);
-      _y[i] = _entry.ymean(b);
+      _y[i] = _eval->evaluate(_entry,b);
       i++;
     }
   _curve.setRawData(_x,_y,i);  // QwtPlotCurve wants the x-endpoint

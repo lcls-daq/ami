@@ -3,6 +3,7 @@
 #include "ami/qt/ImageColorControl.hh"
 #include "ami/qt/Defaults.hh"
 
+#include "ami/data/AbsEval.hh"
 #include "ami/data/AbsTransform.hh"
 #include "ami/data/EntryProf2D.hh"
 
@@ -17,7 +18,8 @@ namespace Ami {
   namespace Qt {
     class QtProf2D::DataCache : public QwtRasterData {
     public:
-      DataCache(const QtBase& base) : _base(base) 
+      DataCache(const QtBase& base,
+		AbsEval*      eval) : _base(base), _eval(eval)
       {
         const DescProf2D& desc = static_cast<const EntryProf2D&>(base.entry()).desc();
         _idx = double(desc.nxbins())/(desc.xup()-desc.xlow());
@@ -37,7 +39,7 @@ namespace Ami {
         int iy = int((y-e.desc().ylow())*_idy-0.5);
         if (ix>=0 && ix<int(e.desc().nxbins()) &&
             iy>=0 && iy<int(e.desc().nybins()))
-          return e.zmean(ix,iy);
+	  return _eval->evaluate(e,ix,iy);
         else
           return 0;
       }
@@ -61,7 +63,7 @@ namespace Ami {
           for(unsigned j=0; j<d.nxbins(); j++) {
             double n = e.nentries(j,i);
             if (n) {
-              double z = e.zsum(j,i)/n;
+              double z = _eval->evaluate(e,j,i);
               if (linit) {
                 _vlo = _vhi = z;
                 linit = false;
@@ -77,6 +79,7 @@ namespace Ami {
       double _idx, _idy;
       double _vlo, _vhi;
       const QtBase& _base;
+      const AbsEval* _eval;
     };
   };
 };
@@ -84,13 +87,14 @@ namespace Ami {
 using namespace Ami::Qt;
 
 QtProf2D::QtProf2D(const QString&   title,
-	       const Ami::EntryProf2D& entry,
-               const AbsTransform&,
-               const AbsTransform&,
-               const QColor&) :
+		   const Ami::EntryProf2D& entry,
+		   const AbsTransform&,
+		   const AbsTransform&,
+		   const QColor&) :
   QtBase(title,entry),
   _curve(entry.desc().name()),
-  _z    (new DataCache(*this))
+  _eval (Ami::AbsEval::lookup(entry.desc().stat())),
+  _z    (new DataCache(*this,_eval))
 {
   _curve.setData    (*_z);
 
@@ -123,6 +127,7 @@ QtProf2D::QtProf2D(const QString&   title,
 QtProf2D::~QtProf2D()
 {
   _curve.attach(NULL);
+  delete _eval;
 }
 
 void           QtProf2D::dump  (FILE* f) const
@@ -137,7 +142,7 @@ void           QtProf2D::dump  (FILE* f) const
           prec,_desc.yup());
   for(unsigned iy=0; iy<_desc.nybins(); iy++) {
     for(unsigned ix=0; ix<_desc.nxbins(); ix++)
-      fprintf(f,"%.*g ",prec,_e.zmean(ix,iy));
+      fprintf(f,"%.*g ",prec,_eval->evaluate(_e,ix,iy));
     fprintf(f,"\n");
   }
 }

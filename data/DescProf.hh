@@ -9,12 +9,14 @@ namespace Ami {
   public:
     DescProf(const char* name, const char* xtitle, const char* ytitle, 
 	     unsigned nbins, float xlow, float xup, const char* names,
+	     Stat stat=Mean,
 	     const char* weight="");
 
     DescProf(const Pds::DetInfo& info,
 	     unsigned channel,
 	     const char* name, const char* xtitle, const char* ytitle, 
-	     unsigned nbins, float xlow, float xup, const char* names);
+	     unsigned nbins, float xlow, float xup, const char* names,
+	     Stat stat=Mean);
 
     //  Special constructor for centering outer bins
     //    on xlow,xup.
@@ -22,6 +24,7 @@ namespace Ami {
     DescProf(InitOpt,
              const char* name, const char* xtitle, const char* ytitle, 
 	     unsigned nbins, float xlow, float xup, const char* names,
+	     Stat stat=Mean,
 	     const char* weight="");
 
 

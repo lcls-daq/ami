@@ -26,6 +26,7 @@
 #include "ami/data/FIR.hh"
 #include "ami/data/Droplet.hh"
 #include "ami/data/VAPlot.hh"
+#include "ami/data/LineFit.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -66,7 +67,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::ContourProjection: o = new ContourProjection(p,input); break;
-  case AbsOperator::EnvPlot   : o = new EnvPlot(p,_input,_output,output_cds); break;
+  case AbsOperator::EnvPlot   : o = new EnvPlot(p,_input,_output); break;
   case AbsOperator::TdcPlot   : o = new TdcPlot(p,input); break;
   case AbsOperator::FFT       : o = new FFT    (p,input); break;
   case AbsOperator::Zoom      : o = new Zoom   (p,input); break;
@@ -77,6 +78,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::FIR       : o = new FIR       (p,input); break;
   case AbsOperator::Droplet   : o = new Droplet   (p,input,_output); break;
   case AbsOperator::VAPlot    : o = new VAPlot    (p,input); break;
+  case AbsOperator::LineFit   : o = new LineFit   (p,_input); break;
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
   if (next)

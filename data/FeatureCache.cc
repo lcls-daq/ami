@@ -181,7 +181,8 @@ void   FeatureCache::dump() const
 {
   printf("FeatureCache entries %d\n",(int) _names.size());
   for(unsigned k=0; k<_names.size(); k++) {
-    printf("  %s\n",_names[k].c_str());
+    printf("  %s [%f] %c\n",_names[k].c_str(), _cache[k], 
+	   ((_damaged[k>>5]>>(k&0x1f)) & 1) ? 'D':' ');
   }
 }
 

@@ -119,6 +119,8 @@ QtPlot::QtPlot(QWidget* parent,
   _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_frame);
 
+  attach(_frame);
+
   _layout();
 }
 
@@ -181,6 +183,7 @@ void QtPlot::_layout()
       _show_ref->setEnabled(false);
       connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
       menu_bar->addMenu(m); }
+    menu_bar->addMenu(_linefit = new QLineFitMenu(*this));
     l->addWidget(menu_bar);
     l->addStretch();
     l->addWidget(_runnum); 
@@ -224,6 +227,7 @@ void QtPlot::load(const char*& p)
       _name  = QtPersistent::extract_s(p);
       _frame = new QwtLPlot(_name);
       _grid->attach(_frame);
+      attach(_frame);
     }
     else if (tag.name == "_frame_title")
       _frame->setTitle(QtPersistent::extract_s(p));
@@ -317,11 +321,13 @@ void QtPlot::toggle_minor_grid()
 void QtPlot::edit_xrange(bool v)
 {
   _xrange->setVisible(v);
+  _xrange->refresh();
 }
 
 void QtPlot::edit_yrange(bool v)
 {
   _yrange->setVisible(v);
+  _xrange->refresh();
 }
 
 void QtPlot::xrange_change()
@@ -433,6 +439,16 @@ void QtPlot::setPlotType(Ami::DescEntry::Type t)
   _plots         .push_back(this);
 
   _style.setPlotType(t);
+
+  switch(t) {
+  case DescEntry::Scan:
+  case DescEntry::Prof:
+    _linefit->setEnabled(true);
+    break;
+  default:
+    _linefit->setEnabled(false);
+    break;
+  }
 }
 
 void QtPlot::set_reference()
@@ -457,6 +473,8 @@ void QtPlot::set_reference()
     if (!ok) return;
     index = titles.indexOf(text);
   }
+
+  if (index>=curves.size()) return;
 
   QwtPlotCurve* c = curves[index];
   QwtPlotCurve* curve = new QwtPlotCurve( c->title().text()+"(Ref)");

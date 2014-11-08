@@ -3,20 +3,17 @@
 
 #include <QtCore/QObject>
 
-#include "ami/data/ConfigureRequest.hh"
-#include "ami/data/ConfigureRequestor.hh"
+#include "ami/qt/EnvOp.hh"
 
-#include <list>
+#include "ami/data/DescScalar.hh"
 
 class QWidget;
 
 namespace Ami {
-  class AbsFilter;
   class Cds;
-  class DescScalar;
   namespace Qt {
     class QtTable;
-    class EnvTable : public QObject {
+    class EnvTable : public QObject, public EnvOp {
       Q_OBJECT
     public:
       EnvTable(QWidget*,
@@ -26,27 +23,18 @@ namespace Ami {
       EnvTable(QWidget*,const char*&);
       ~EnvTable();
     public:
-      void save(char*&) const;
       void load(const char*&);
     public:
-      void configure(char*& p, unsigned input, unsigned& output);
       void setup_payload(Cds&);
       void update();
     public:
-      const DescScalar& desc() const { return *_desc; }
+      const DescScalar& desc() const { return *static_cast<const DescScalar*>(_desc); }
     public slots:
       void remove();
     signals:
       void update_plot();
       void remove(QObject*);
     private:
-      Ami::AbsFilter* _filter;
-      DescScalar*     _desc;
-      Ami::ScalarSet  _set;
-
-      unsigned _output_signature;
-
-      ConfigureRequestor _req;
       QtTable*           _plot;
     };
   };

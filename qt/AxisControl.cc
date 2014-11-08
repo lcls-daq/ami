@@ -142,6 +142,11 @@ void AxisControl::log_scale(bool l)
   emit windowChanged();
 }
 
+void AxisControl::refresh()
+{
+  emit windowChanged();
+}
+
 void AxisControl::updateInfo()
 {
   if (isAuto()) {

@@ -12,6 +12,7 @@ class QwtScaleWidget;
 
 namespace Ami {
   class EntryProf2D;
+  class AbsEval;
   class AbsTransform;
   namespace Qt {
     class QtProf2D : public QObject, public QtBase {
@@ -37,6 +38,7 @@ namespace Ami {
       void        color_changed();
     private:
       QwtPlotSpectrogram _curve;
+      AbsEval*           _eval;
       class DataCache;
       DataCache*         _z;
       QwtScaleWidget*    _colorBar;

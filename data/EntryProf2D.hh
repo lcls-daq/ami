@@ -34,12 +34,17 @@ namespace Ami {
     double nentries(unsigned xbin, unsigned ybin) const;
     void nentries(double nent, unsigned xbin, unsigned ybin);
 
+    double slope    (unsigned xbin, unsigned ybin) const;
+    double intercept(unsigned xbin, unsigned ybin) const;
+
     const ndarray<double,2>& entries() const;
     const ndarray<double,2>& zsum   () const;
     const ndarray<double,2>& z2sum  () const;
 
     void addz(double z, unsigned xbin, unsigned ybin, double w=1);
     void addz(double z, double x, double y, double w=1);
+
+    void content(unsigned xbin, unsigned ybin, const double* y);
 
     enum Info { XUnderflow, XOverflow, YUnderflow, YOverflow, Normalization, InfoSize };
     double info(Info) const;
@@ -119,7 +124,10 @@ namespace Ami {
   inline const ndarray<double,2>& EntryProf2D::entries() const { return _nentries; }
   inline const ndarray<double,2>& EntryProf2D::zsum   () const { return _zsum; }
   inline const ndarray<double,2>& EntryProf2D::z2sum  () const { return _z2sum; }
+  inline void EntryProf2D::content(unsigned xbin, unsigned ybin, const double* y) { _nentries[ybin][xbin]=y[0]; _zsum[ybin][xbin]=y[1]; _z2sum[ybin][xbin]=y[2]; }
 
+  inline double EntryProf2D::slope    (unsigned xbin,unsigned ybin) const { return _nentries[ybin][xbin] ? _zsum[ybin][xbin]/_nentries[ybin][xbin]:0; }
+  inline double EntryProf2D::intercept(unsigned xbin,unsigned ybin) const { return _nentries[ybin][xbin] ? _z2sum[ybin][xbin]/_nentries[ybin][xbin]:0; }
 };
 
 #endif

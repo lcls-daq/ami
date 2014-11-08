@@ -24,6 +24,8 @@ namespace Ami {
     Type type() const;
     static const char* type_str(Type);
 
+    enum Stat {Mean, StdDev, Slope, Intercept};
+
     ///  Returns an object identifying the source of the data it describes
     const Pds::DetInfo& info()    const;
     unsigned            channel() const;
@@ -42,6 +44,8 @@ namespace Ami {
     bool isnormalized() const;
     ///  Indicates whether the data content is to be merged with data from other events
     bool aggregate   () const;
+    ///
+    Stat stat        () const;
     ///  Indicates whether the data content is to be periodically refreshed
     bool check_refresh() const;
     ///  Indicates whether the data content is to be refreshed now
@@ -108,7 +112,8 @@ namespace Ami {
      *   @param[in]  options       Set mask for remaining options
      */
     DescEntry(const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=true,
+	      Type type, unsigned short size, Stat stat=Mean, 
+	      bool isnormalized=true, bool aggregate=true,
               unsigned options=0);
 
     /**
@@ -127,7 +132,8 @@ namespace Ami {
      */
     DescEntry(const Pds::DetInfo& info, unsigned channel,
 	      const char* name, const char* xtitle, const char* ytitle, 
-	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=false,
+	      Type type, unsigned short size, 
+	      Stat stat=Mean, bool isnormalized=true, bool aggregate=false,
               unsigned options=0);
 
     /**
@@ -150,7 +156,8 @@ namespace Ami {
      */
     DescEntry(const Pds::DetInfo& info, unsigned channel,
 	      const char* name, const char* xtitle, const char* ytitle, const char* zunits,
-	      Type type, unsigned short size, bool isnormalized=true, bool aggregate=false,
+	      Type type, unsigned short size, 
+	      Stat stat=Mean, bool isnormalized=true, bool aggregate=false,
               bool hasPedCalib=false, bool hasGainCalib=false, bool hasRmsCalib=false,
               unsigned options=0);
 
@@ -169,7 +176,8 @@ namespace Ami {
   private:
     Pds::DetInfo _info;
     uint32_t     _channel;
-    uint32_t     _reserved;
+    uint16_t     _stat;
+    uint16_t     _reserved;
     enum {TitleSize=64};
     char _xtitle[TitleSize];
     char _ytitle[TitleSize];

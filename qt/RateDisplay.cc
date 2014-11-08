@@ -1,5 +1,6 @@
 #include "ami/qt/RateDisplay.hh"
 #include "ami/qt/RateCalculator.hh"
+#include "ami/qt/CpuCalculator.hh"
 #include "ami/qt/RecvCalculator.hh"
 #include "ami/qt/RunMaster.hh"
 #include "ami/client/ClientManager.hh"
@@ -37,6 +38,7 @@ RateDisplay::RateDisplay(ConnectionManager& conn,
   _iovload         (new iovec[_niovload]),
   _inputCalc       (new RateCalculator),
   _acceptCalc      (new RateCalculator),
+  _cpuCalc         (new CpuCalculator),
   _netCalc         (new RecvCalculator(conn)),
   _task            (new Task(TaskObject("rattmr"))),
   _ready           (false)
@@ -53,6 +55,7 @@ RateDisplay::~RateDisplay()
   delete _manager;
   delete _inputCalc;
   delete _acceptCalc;
+  delete _cpuCalc;
   delete _netCalc;
   delete[] _iovload;
   delete[] _description;
@@ -70,13 +73,16 @@ void RateDisplay::expired()
 
 void RateDisplay::addLayout(QVBoxLayout* l)
 {
-  QGroupBox* rate_box  = new QGroupBox("Rates");
+  QGroupBox* rate_box  = new QGroupBox("Load");
   QHBoxLayout* layout = new QHBoxLayout;    
   layout->addWidget(new QLabel("Input:"));
   layout->addWidget(_inputCalc);
   layout->addStretch();
   layout->addWidget(new QLabel("Filtered:"));
   layout->addWidget(_acceptCalc);
+  layout->addStretch();
+  layout->addWidget(new QLabel("CPU:"));
+  layout->addWidget(_cpuCalc);
   layout->addStretch();
   layout->addWidget(new QLabel("Network:"));
   layout->addWidget(_netCalc);
@@ -165,7 +171,8 @@ void RateDisplay::read_description(Socket& s,int len) {
 
   _ready = 
     _inputCalc ->set_entry(_cds.entry(InputRateSignature)) &&
-    _acceptCalc->set_entry(_cds.entry(AcceptRateSignature));
+    _acceptCalc->set_entry(_cds.entry(AcceptRateSignature)) &&
+    _cpuCalc   ->set_entry(_cds.entry(InputRateSignature));
 
   RunMaster::instance()->set_entry(_cds.entry(RunNumberSignature));
 }
@@ -177,6 +184,7 @@ int RateDisplay::read_payload    (Socket& s,int) {
 void RateDisplay::process         () {
   _inputCalc ->update();
   _acceptCalc->update();
+  _cpuCalc   ->update();
   RunMaster::instance()->update();
   _ready = true;
 }

@@ -1,5 +1,6 @@
 #include "ami/qt/QtTable.hh"
 #include "ami/qt/QtTableDisplay.hh"
+#include "ami/data/AbsEval.hh"
 #include "ami/data/EntryScalar.hh"
 
 #include <QtCore/QString>
@@ -12,7 +13,7 @@
 
 using namespace Ami::Qt;
 
-QtTable::QtTable() : _entry(0), _cache(0)
+QtTable::QtTable() : _entry(0), _cache(0), _eval(0)
 {
   _label = new QLabel("-");
   _value = new QLabel("-");
@@ -41,6 +42,8 @@ QtTable::~QtTable()
   _entry = 0;
   if (_cache)
     delete _cache;
+  if (_eval)
+    delete _eval;
 }
 
 void QtTable::entry (const EntryScalar* e)
@@ -52,6 +55,10 @@ void QtTable::entry (const EntryScalar* e)
       delete _cache;
     _cache = new EntryScalar(e->desc());
     _cache->setto(*e);
+
+    if (_eval)
+      delete _eval;
+    _eval = Ami::AbsEval::lookup(e->desc().stat());
   }
 }
 
@@ -69,7 +76,7 @@ void QtTable::update()
   if (_entry->valid()) {
     double n = _entry->entries() - _cache->entries();
     if (n > 0) {
-      double v = (_entry->sum() - _cache->sum())/n;
+      double v = _eval->evaluate(*_entry, *_cache, n);
       _value->setText(QString::number(v));
       _value->setPalette(QPalette());
       _cache->setto(*_entry);

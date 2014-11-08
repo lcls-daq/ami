@@ -13,16 +13,18 @@
 
 using namespace Ami::Qt;
 
-DescChart::DescChart(const char* name) :
+DescChart::DescChart(const char* name, bool lstat) :
   QWidget(0), 
   _button(new QRadioButton("v Time")), 
-  _stat  (new QComboBox),
+  _stat  (lstat ? new QComboBox : 0),
   _pts(new QLineEdit("100")), 
   _dpt(new QLineEdit("1"))
 {
-  _stat->addItem("Mean");
-  _stat->addItem("StdDev");
-  _stat->setCurrentIndex(0);
+  if (_stat) {
+    _stat->addItem("Mean");
+    _stat->addItem("StdDev");
+    _stat->setCurrentIndex(0);
+  }
 
   _pts->setMaximumWidth(60);
   new QIntValidator   (_pts);
@@ -30,8 +32,10 @@ DescChart::DescChart(const char* name) :
   new QIntValidator   (1,((1<<16)-1),_dpt);
   QHBoxLayout* layout = new QHBoxLayout;
 //   layout->addWidget(_button);
-  layout->addWidget(_stat);
-  layout->addWidget(new QLabel(name));
+  if (_stat) {
+    layout->addWidget(_stat);
+    layout->addWidget(new QLabel(name));
+  }
   layout->addStretch();
   { QVBoxLayout* vl = new QVBoxLayout;
     { QHBoxLayout* l = new QHBoxLayout;
@@ -52,7 +56,7 @@ QRadioButton* DescChart::button() { return _button; }
 
 Ami::DescScalar::Stat DescChart::stat() const
 {
-  return Ami::DescScalar::Stat(_stat->currentIndex());
+  return Ami::DescScalar::Stat(_stat ? _stat->currentIndex():0);
 }
 
 unsigned DescChart::pts() const { return _pts->text().toInt(); }

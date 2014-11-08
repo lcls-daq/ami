@@ -17,8 +17,8 @@
 
 using namespace Ami;
 
-static const int BufferSize = 0x2000000;
-//static const int BufferSize = 0x2000;
+//static const int BufferSize = 0x2000000;
+static const int BufferSize = 0x2000;
 
 static const char* State[] = { "Init", "Connecting", "Connected",
                                "Discovering", "Discovered", 
@@ -133,10 +133,10 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
   }
   else if ( _n > 1 ) {
 
-    if (len > BufferSize) {
-      printf("Aggregator::read_description too large to buffer (%d)\n",len);
-      return nbytes;
-    }
+//     if (len > BufferSize) {
+//       printf("Aggregator::read_description too large to buffer (%d)\n",len);
+//       return nbytes;
+//     }
 
     if (_state == Discovering) {
       //      printf("[%p]   ...discovering .. abort\n",this);

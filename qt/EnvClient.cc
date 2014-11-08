@@ -24,6 +24,7 @@
 #include "ami/data/DescCache.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EnvPlot.hh"
 #include "ami/data/RawFilter.hh"
 
 #include "ami/service/Socket.hh"
@@ -250,15 +251,7 @@ void EnvClient::save_plots(const QString& p) const
 
 void EnvClient::reset_plots() 
 { 
-#if 0
-  _input++;
-  iovec iov;
-  configure(&iov);
-
-  _input--;
-#else
   _reset=true;
-#endif
   update_configuration(); 
 }
 
@@ -305,13 +298,13 @@ int  EnvClient::configure       (iovec* iov)
   else {
     _list_sem.take();
     for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
-      (*it)->configure(p,_input,_output_signature);
+      (*it)->configure(p,_input,_output_signature,Ami::EnvPlot((*it)->desc()));
     for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
-      (*it)->configure(p,_input,_output_signature);
+      (*it)->configure(p,_input,_output_signature,Ami::EnvPlot((*it)->desc()));
     for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
-      (*it)->configure(p,_input,_output_signature);
+      (*it)->configure(p,_input,_output_signature,Ami::EnvPlot((*it)->desc()));
     for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
-      (*it)->configure(p,_input,_output_signature);
+      (*it)->configure(p,_input,_output_signature,Ami::EnvPlot((*it)->desc()));
     _list_sem.give();
   }
   if (p > _request+BufferSize) {

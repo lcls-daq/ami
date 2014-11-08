@@ -16,6 +16,7 @@ namespace Ami {
   namespace Qt {
     class RateCalculator;
     class RecvCalculator;
+    class CpuCalculator;
     class RateDisplay : public Timer {
     public:
       RateDisplay(ConnectionManager&,ClientManager*);
@@ -41,6 +42,7 @@ namespace Ami {
       iovec*          _iovload;
       RateCalculator* _inputCalc;
       RateCalculator* _acceptCalc;
+      CpuCalculator*  _cpuCalc;
       RecvCalculator* _netCalc;
       Task*           _task;
       volatile bool   _ready;
