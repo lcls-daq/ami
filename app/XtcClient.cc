@@ -158,7 +158,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
       }
     }
     //
-    //  Time the processing
+    //  Time the processing (ProcTimes, ProcLatency refer to previous event)
     //
     cache.start();
     timespec tq;
