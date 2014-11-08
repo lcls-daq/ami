@@ -12,6 +12,7 @@
 #include "ami/service/Ins.hh"
 #include "ami/service/Port.hh"
 #include "ami/service/Poll.hh"
+#include "ami/service/Loopback.hh"
 #include "ami/service/Task.hh"
 #include "ami/service/ConnectionManager.hh"
 
@@ -45,30 +46,39 @@ namespace Ami {
     ServerConnect(ClientManager& mgr,
 		  Socket*        skt) :
       _task(new Task(TaskObject("cmco"))),
-      _mgr(mgr), _skt(skt), _found(false) 
+      _mgr(mgr), _skt(skt), _loopback(new Loopback), _found(false)
     {
       _task->call(this); 
     }
     ~ServerConnect() {
+      Message msg(0,Message::Disconnect);
+      _loopback->write(&msg,sizeof(msg));
       _task->destroy_b();
       delete _skt;
+      delete _loopback;
     }
   public:
     void routine()
     {
-      pollfd fds[1];
+      pollfd fds[2];
       fds[0].fd = _skt->socket();
       fds[0].events = POLLIN | POLLERR;
+      fds[1].fd = _loopback->socket();
+      fds[1].events = POLLIN | POLLERR;
 
-      if (poll(fds, 1, 1000)>0) {
+      if (poll(fds, 2, 1000)>0) {
         Message msg(0,Message::NoOp);
-        if (_skt->read(&msg,sizeof(msg))==sizeof(msg))
-          if (msg.type()==Message::Hello) {
+	if (fds[0].revents&(POLLIN|POLLERR)) {
+	  if (_skt->read(&msg,sizeof(msg))==sizeof(msg) &&
+	      msg.type()==Message::Hello) {
 #ifdef DBUG
 	    printf("Hello from socket %d\n", _skt->socket());
 #endif
-            _found = true;
-          }
+	    _found = true;
+	  }
+	}
+	if (fds[1].revents&(POLLIN|POLLERR))
+	  return;
       }
       else if (_found) {
         _found = false;
@@ -80,6 +90,7 @@ namespace Ami {
     Task*          _task;
     ClientManager& _mgr;
     Socket*        _skt;
+    Loopback*      _loopback;
     bool           _found;
   };
 
