@@ -322,7 +322,9 @@ int Client::pget()
   pthread_mutex_lock(&_payload_mutex);
   while(1) {
     if (_payload_avail) { result=0; break; }
-    if (ETIMEDOUT==pthread_cond_timedwait(&_payload_cond_avail, &_payload_mutex, &tmo)) break;
+    if (ETIMEDOUT==pthread_cond_timedwait(&_payload_cond_avail, &_payload_mutex, &tmo)) {
+      break;
+    }
   }
   pthread_mutex_unlock(&_payload_mutex);
 

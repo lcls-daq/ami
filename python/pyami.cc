@@ -374,8 +374,10 @@ static PyObject* _getentrylist(Ami::Python::Client* client, bool push)
     }
     result = o_list;
   }
-  else
+  else {
+    sleep(2);
     PyErr_SetString(PyExc_RuntimeError,"get timedout");
+  }
 
   if (push) client->pnext();
 
@@ -812,6 +814,24 @@ pyami_connect(PyObject *self, PyObject *args)
 }
 
 static PyObject*
+pyami_list_env(PyObject *self, PyObject *args)
+{
+  const Ami::DiscoveryRx& rx = _discovery->rx();
+
+  PyObject* o_list = PyList_New(0);
+
+  std::vector<std::string> features = rx.features(Ami::PostAnalysis);
+  for(std::vector<std::string>::iterator it=features.begin();
+      it!=features.end(); it++) {
+    PyObject* o = PyDict_New();
+    PyDict_SetItemString(o,"name",PyString_FromString(it->c_str()));
+    PyList_Append(o_list,o); 
+  }
+
+  return o_list;
+}
+
+static PyObject*
 pyami_discovery(PyObject *self, PyObject *args)
 {
   PyObject* o_list = PyList_New(0);
@@ -1121,7 +1141,8 @@ pyami_set_handler_options(PyObject *self, PyObject *args, PyObject* kwds)
 
 static PyMethodDef PyamiMethods[] = {
     {"connect"  , pyami_connect  , METH_VARARGS, "Connect to servers."},
-    {"discovery", pyami_discovery, METH_VARARGS, "Discover analysis inputs."},
+    {"discovery", pyami_discovery, METH_VARARGS, "Discover analysis detectors."},
+    {"list_env" , pyami_list_env , METH_VARARGS, "Discover analysis variables."},
     {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
     {"set_l3t"  , pyami_set_l3t  , METH_VARARGS, "Set L3 trigger expression."},
     {"clear_l3t", pyami_clear_l3t, METH_VARARGS, "Clear L3 trigger expression."},
