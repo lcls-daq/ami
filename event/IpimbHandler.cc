@@ -97,18 +97,17 @@ void         IpimbHandler::rename  (const char* s)
 
   switch(info().level()) {
   case Level::Reporter:
-    strncpy(buffer,Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info())),60);
     strcpy (dtitle ,":DATA[%d]");
     strcpy (pstitle,":PS:DATA[%d]");
     break;
   case Level::Source:
   default:
-    strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
     strcpy (dtitle ,"-Ch%d");
     strcpy (pstitle,"-Ch%d:PS");
     break;
   }
 
+  strncpy(buffer,s,60);
   char* iptr = buffer+strlen(buffer);
   int index=_index;
   for(unsigned i=0; i<NChannels; i++) {

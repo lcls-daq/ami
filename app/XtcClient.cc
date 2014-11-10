@@ -194,6 +194,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //  Cleanup previous entries
     _factory.discovery().reset();
     _factory.hidden   ().reset();
+#if 0
     for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++) {
       EventHandler* handler = *hit;
       handler->reset();
@@ -206,6 +207,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         }
       }
     }
+#else
+    for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++)
+      delete *hit;
+    _handlers.clear();
+#endif
 
     _filter.reset();
     _filter.configure(dg);
@@ -484,7 +490,6 @@ int XtcClient::process(Pds::Xtc* xtc)
       if (!h) {
         if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
             xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
-            xtc->contains.id()==Pds::TypeId::Id_AliasConfig  ||
             xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
             xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
           ;

@@ -103,6 +103,8 @@ unsigned     SharedIpimbReader::nentries() const { return 0; }
 const Entry* SharedIpimbReader::entry   (unsigned) const { return 0; }
 void         SharedIpimbReader::rename  (const char* s)
 {
+  if (_index<0) return;
+
   char buffer[64];
   strncpy(buffer,s,60);
   char* iptr = buffer+strlen(buffer);

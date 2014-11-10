@@ -75,14 +75,15 @@ const Entry* IpmFexHandler::entry   (unsigned) const { return 0; }
 
 void         IpmFexHandler::rename(const char* s)
 {
-  char buffer[64];
-  char* iptr;
+  if (_index<0) return;
+
   unsigned i=_index;
+  char buffer[64];
+  strncpy(buffer,s,60);
+  char* iptr = buffer+strlen(buffer);
 
   switch(info().level()) {
   case Level::Reporter:
-    strncpy(buffer,s,60);
-    iptr = buffer+strlen(buffer);
     sprintf(iptr,":FEX:CH0");  _rename_cache(i++,buffer); 
     sprintf(iptr,":FEX:CH1");  _rename_cache(i++,buffer); 
     sprintf(iptr,":FEX:CH2");  _rename_cache(i++,buffer); 
@@ -93,8 +94,6 @@ void         IpmFexHandler::rename(const char* s)
     break;
   case Level::Source:
   default:
-    strncpy(buffer,Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(info())),60);
-    iptr = buffer+strlen(buffer);
     sprintf(iptr,":CH0"); _rename_cache(i++,buffer); 
     sprintf(iptr,":CH1"); _rename_cache(i++,buffer); 
     sprintf(iptr,":CH2"); _rename_cache(i++,buffer); 

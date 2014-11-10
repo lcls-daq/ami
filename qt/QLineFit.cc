@@ -51,8 +51,12 @@ void QLineFitEntry::fit(const Entry& p)
   _y[0]= slope*x0+intercept; 
   _y[1]= slope*x1+intercept; 
 
-  _curve.setTitle( QString("%1[%2,%3]")
-		   .arg(_name.c_str()).arg(slope).arg(intercept) );
+  const QChar delta(0x394);
+  const QChar subzero(0x2080);
+  _curve.setTitle( QString("%1[%2y/%3x=%4,y%5=%6]")
+		   .arg(_name.c_str())
+		   .arg(delta).arg(delta).arg(slope)
+		   .arg(subzero).arg(intercept) );
 }
 
 QLineFit::QLineFit() : _frame(0) 
