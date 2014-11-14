@@ -68,3 +68,9 @@ void XtcClientT::processDgram(Pds::Dgram* dg)
     _task->call(new AmiT::EventRoutine(*this,ndg,_tsem));
   }
 }
+
+void XtcClientT::wait()
+{
+  sem_wait(_tsem);
+  sem_post(_tsem);
+}

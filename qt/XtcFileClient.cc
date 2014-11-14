@@ -811,8 +811,10 @@ void XtcFileClient::do_configure(QString runName)
   setStatus("Configuring run " + runName);
   for(unsigned i=0; i<_client.size(); i++)
     _client[i]->processDgram(dg);
-  for(unsigned i=0; i<_client.size(); i++)
+  for(unsigned i=0; i<_client.size(); i++) {
+    _client[i]->wait();
     _client[i]->discover_wait();
+  }
 
   setStatus("Finished configuring run " + runName + ".");
   _runValid = true;

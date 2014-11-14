@@ -18,6 +18,7 @@ namespace Ami {
     ~XtcClientT();
   public:
     void processDgram(Pds::Dgram*);
+    void wait();
   private:
     Task*  _task;
     sem_t* _tsem;
