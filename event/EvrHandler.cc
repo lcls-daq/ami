@@ -45,6 +45,8 @@ void   EvrHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::
 
 void   EvrHandler::_configure(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
+  reset();
+
   char buffer[64];
   sprintf(buffer,"DAQ:EVR%d:",static_cast<const Pds::DetInfo&>(info()).devId());
   char* iptr = buffer+strlen(buffer);

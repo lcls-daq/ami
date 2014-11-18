@@ -91,10 +91,10 @@ Entry&     EnvPlot::_operate(const Entry& e) const
     double y = _input->evaluate();
 
 #ifdef DBUG
-    printf("EnvPlot::operate %s %s y %f  dmg %c\n", 
+    printf("EnvPlot::operate %s %s y %f  valid %c\n", 
 	   _entry->desc().name(), 
 	   _entry->desc().xtitle(), 
-	   y, Feature::damage() ? 't':'f');
+	   y, _input->valid() ? 't':'f');
 #endif
 
     if (_input->valid()) {

@@ -362,6 +362,9 @@ int XtcClient::process(Pds::Xtc* xtc)
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
 
+	  //
+	  //  Fix: the "used" test should be done once (after all configures) and cached
+	  //
     if (h->used()) {
 
       const std::list<Pds::TypeId::Type>& types = h->data_types();

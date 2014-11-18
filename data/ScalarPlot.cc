@@ -91,6 +91,11 @@ void ScalarPlot::_fill(Entry& entry,
                        const Pds::ClockTime& t,
                        bool initial) const
 {
+#ifdef DBUG
+  printf("ScalarPlot[%p][%s] _fill %f _xterm %p\n",
+	 this, entry.desc().name(), v, _xterm);
+#endif
+
   if ( (initial || _xterm_uses) && _xterm ) {
     _x = _xterm->evaluate();
     if (!_xterm->valid()) return;

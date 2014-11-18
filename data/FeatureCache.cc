@@ -103,26 +103,15 @@ void        FeatureCache::cache  (int index, double v, bool damaged)
 
 void        FeatureCache::cache  (const FeatureCache& c)
 {
-  for(unsigned i=0,j=0; i<c._cache.size(); i++,j++) {
-    unsigned k=j;
-    while(1) {
-      if (k>=_cache.size()) {
-#ifdef DBUG
-        //
-        //  There is some condition by which c._names[i] may not be 
-        //  found within _names.
-        //
-        printf("FC::cache[%d] missed [%d]%s\n", j,i,c._names[i].c_str());
-#endif
+  unsigned j=0;
+  for(unsigned i=0; i<c._cache.size(); i++) {
+    const std::string& name = c._names[i];
+    for(unsigned k=j; k<_cache.size(); k++)
+      if (_names[k]==name) {
+        cache(j=k, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
+	j++;
         break;
       }
-      if (_names[k]==c._names[i]) {
-        cache(k, c._cache[i], (c._damaged[i>>5] & (1<<(i&0x1f))));
-        j=k;
-        break;
-      }
-      ++k;
-    }
   }
 }
 
@@ -139,22 +128,35 @@ void   FeatureCache::use(int index)
 {
   _used[index>>5] |= 1<<(index&0x1f);
 #ifdef DBUG
-  printf("FeatureCache[%p]::use [%d] : %08x\n",this,index,_used[index>>5]);
+  printf("FeatureCache[%p]::use [%d][%s] : %08x\n",
+	 this,index,_names[index].c_str(),_used[index>>5]);
 #endif
 }
 
 void   FeatureCache::use (const FeatureCache& c)
 {
-  for(unsigned i=0; i<c._used.size(); i++)
-    _used[i] |= c._used[i];
+  unsigned j=0;
+  for(unsigned i=0; i<c._names.size(); i++) {
+    if (c.used(i)) {
+      const std::string& name = c._names[i];
+      for(unsigned k=j; k<_names.size(); k++)
+	if (_names[k]==name) {
+	  use(j=k);
+	  j++;
+	  break;
+	}
+    }
+  }
 }
 
 bool   FeatureCache::used(int index) const
 {
+  bool v = index>=0 && (_used[index>>5] & (1<<(index&0x1f)));
 #ifdef DBUG
-  printf("FeatureCache[%p]::used[%d] : %08x\n",this,index,_used[index>>5]);
+  printf("FeatureCache[%p]::used[%d][%s=%c] : %08x\n",
+	 this,index,_names[index].c_str(),v?'T':'F',_used[index>>5]);
 #endif
-  return index>=0 && (_used[index>>5] & (1<<(index&0x1f)));
+  return v;
 }
 
 char*  FeatureCache::serialize(int& len) const
