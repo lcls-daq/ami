@@ -96,6 +96,7 @@ static QStringList*         _plot_names[] = { &_scalar_plots,  // Scalar [Chart]
                                               &_no_plots };    // cant overlap Prof2D
 static QtPlotSelector*      _selector=0;
 static QColor ref_color( 64,  64,  64);
+static const unsigned Base=(Base);
 
 QtPlot::QtPlot(QWidget* parent,
 	       const QString&   name) :
@@ -107,6 +108,8 @@ QtPlot::QtPlot(QWidget* parent,
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid),
+  _omask   (Base),
+  _omasku  (Base),
   _ref     (0)
 {
   PWidgetManager::add(this, _name);
@@ -131,6 +134,8 @@ QtPlot::QtPlot(QWidget* parent) :
   _xrange  (new AxisControl(this,"X")),
   _yrange  (new AxisControl(this,"Y")),
   _grid    (new QwtPlotGrid),
+  _omask   (Base),
+  _omasku  (Base),
   _ref     (0)
 {
   _grid->setMajPen(QPen(QColor(0xa0a0a0)));
@@ -144,7 +149,7 @@ QtPlot::~QtPlot()
 
   if (_grid) delete _grid;
 
-  for(std::list<QtOverlay*>::iterator it=_ovls.begin();
+  for(std::vector<QtOverlay*>::iterator it=_ovls.begin();
       it != _ovls.end(); it++) {
     QtOverlay* o = *it;
     delete o;
@@ -267,7 +272,7 @@ void QtPlot::save_data()
   FILE* f = Path::saveDataFile(this);
   if (f) {
     dump(f);
-    for(std::list<QtOverlay*>::iterator it=_ovls.begin();
+    for(std::vector<QtOverlay*>::iterator it=_ovls.begin();
         it != _ovls.end(); it++)
       (*it)->dump(f);
     fclose(f);
@@ -439,7 +444,33 @@ void QtPlot::mousePressEvent(QMouseEvent* e)
 
 void QtPlot::add_overlay(QtOverlay* o)
 {
+  connect(o, SIGNAL(updated()), this, SLOT(update_overlay()));
+  _omask |= (1<<_ovls.size());
   _ovls.push_back(o);
+  _omasku = _omask;
+}
+
+void QtPlot::update_overlay()
+{
+  QtOverlay* o = static_cast<QtOverlay*>(QObject::sender());
+  for(unsigned i=0; i<_ovls.size(); i++)
+    if (o==_ovls[i]) {
+      _omasku &= ~(1<<i);
+      if (_omasku == 0) {
+	emit redraw();
+	_omasku = _omask;
+      }
+      break;
+    }
+}
+
+void QtPlot::updated()
+{
+  _omasku &= ~(Base);
+  if (_omasku == 0) {
+    emit redraw();
+    _omasku = _omask;
+  }
 }
 
 void QtPlot::setPlotType(Ami::DescEntry::Type t)

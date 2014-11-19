@@ -194,7 +194,7 @@ void EnvPlot::update()
     _plot->update();
     update_fit(_plot->entry());
     emit counts_changed(_plot->normalization());
-    emit redraw();
+    updated();
   }
   if (_auto_range) {
     double v = _auto_range->entries();

@@ -85,8 +85,13 @@ namespace Ami {
       Ami::DescEntry::Type _type;
     public:
       void add_overlay(QtOverlay*);
+    public slots:
+      void update_overlay();
+    protected:
+      void updated();
     private:
-      std::list<QtOverlay*> _ovls;
+      unsigned _omask, _omasku;
+      std::vector<QtOverlay*> _ovls;
       QAction* _show_ref;
       QwtPlotCurve* _ref;
       QFitMenu*     _fit;

@@ -191,6 +191,7 @@ void EnvOverlay::update()
     }
 
     _plot->update();
+    emit updated();
   }
 
   if (_auto_range) {

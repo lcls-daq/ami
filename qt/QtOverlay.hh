@@ -20,6 +20,7 @@ namespace Ami {
       void attach(QtPlot&);
     signals:
       void changed();
+      void updated();
     private:
       OverlayParent&     _parent;
     };
