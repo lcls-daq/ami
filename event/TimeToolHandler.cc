@@ -46,6 +46,16 @@ void   Ami::TimeToolHandler::_configure(Pds::TypeId id, const void* payload, con
 	_add_to_cache(buffer);
       }
     } break;
+  case 2:
+    { const Pds::TimeTool::ConfigV2& c = 
+	*reinterpret_cast<const Pds::TimeTool::ConfigV2*>(payload);
+
+      char buffer[64];
+      for(unsigned i=0; _scalar_name[i]!=NULL; i++) {
+	sprintf(buffer,"%s:%s",c.base_name(),_scalar_name[i]);
+	_add_to_cache(buffer);
+      }
+    } break;
   default:
     break;
   };
@@ -58,6 +68,17 @@ void   Ami::TimeToolHandler::_event    (Pds::TypeId id, const void* payload, con
   case 1:
     { const Pds::TimeTool::DataV1& d = 
 	*reinterpret_cast<const Pds::TimeTool::DataV1*>(payload);
+      
+      _cache.cache(index++,d.amplitude());
+      _cache.cache(index++,d.position_pixel());
+      _cache.cache(index++,d.position_time());
+      _cache.cache(index++,d.position_fwhm());
+      _cache.cache(index++,d.nxt_amplitude());
+      _cache.cache(index++,d.ref_amplitude());
+    } break;
+  case 2:
+    { const Pds::TimeTool::DataV2& d = 
+	*reinterpret_cast<const Pds::TimeTool::DataV2*>(payload);
       
       _cache.cache(index++,d.amplitude());
       _cache.cache(index++,d.position_pixel());
