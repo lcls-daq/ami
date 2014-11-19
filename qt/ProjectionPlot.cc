@@ -4,6 +4,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/CursorsX.hh"
 #include "ami/qt/Filter.hh"
+#include "ami/qt/Fit.hh"
 #include "ami/qt/PeakFit.hh"
 #include "ami/qt/PlotFactory.hh"
 #include "ami/qt/Path.hh"
@@ -63,6 +64,7 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
+  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame);
 
   _layout();
   
@@ -83,6 +85,7 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 	
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
+  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame);
 
   load(p);
 
@@ -97,6 +100,7 @@ ProjectionPlot::~ProjectionPlot()
     delete _channels[i];
   delete _cursors;
   delete _peakfit;
+  delete _fit;
 
   PWidgetManager::remove(this);
   delete _proj;
@@ -140,6 +144,9 @@ void ProjectionPlot::_layout()
     { QPushButton* peakFitB = new QPushButton("Peak");
       layout3->addWidget(peakFitB);
       connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(front())); }
+    { QPushButton* fitB = new QPushButton("Fit");
+      layout3->addWidget(fitB);
+      connect(fitB, SIGNAL(clicked()), _fit, SLOT(front())); }
     layout3->addStretch();
     layout->addLayout(_chrome_layout=layout3); }
   layout->addWidget(_frame);
@@ -147,6 +154,7 @@ void ProjectionPlot::_layout()
 
   connect(_cursors, SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_peakfit, SIGNAL(changed()), this, SLOT(update_configuration()));
+  connect(_fit    , SIGNAL(changed()), this, SLOT(update_configuration()));
   connect(_frame  , SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
 
   show();
@@ -177,6 +185,8 @@ void ProjectionPlot::save(char*& p) const
               _cursors->save(p) );
   XML_insert( p, "PeakFit", "_peakfit",
               _peakfit->save(p) );
+  XML_insert( p, "Fit", "_fit",
+              _fit->save(p) );
 
   delete[] buff;
 }
@@ -219,6 +229,8 @@ void ProjectionPlot::load(const char*& p)
       _cursors->load(p);
     else if (tag.name == "_peakfit")
       _peakfit->load(p);
+    else if (tag.name == "_fit")
+      _fit->load(p);
   XML_iterate_close(ProjectionPlot,tag);
 }
 
@@ -227,6 +239,7 @@ void ProjectionPlot::save_plots(const QString& p) const
   _frame  ->save_plots(p);
   _cursors->save_plots(p+"_cursor");
   _peakfit->save_plots(p+"_peakfit");
+  _fit    ->save_plots(p+"_fit");
 }
 
 void ProjectionPlot::update_configuration()
@@ -253,6 +266,7 @@ void ProjectionPlot::setup_payload(Cds& cds)
 
   _cursors->setup_payload(cds);
   _peakfit->setup_payload(cds);
+  _fit    ->setup_payload(cds);
 }
 
 void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
@@ -298,11 +312,16 @@ void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
   _peakfit->configure(p,input,output,
 		      _channels,signatures,NCHANNELS,
 		      ConfigureRequest::Analysis);
+  _fit    ->configure(p,input,output,
+		      _channels,signatures,NCHANNELS,
+                      ConfigureRequest::Analysis);
 }
 
 void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output,
 			       ChannelDefinition* input_channels[], int* input_signatures, unsigned input_nchannels)
 {
+  printf("ProjectionPlot::configure %p  input %d  output %d\n",p,input,output);
+
   ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                     ConfigureRequest::Analysis,
                                                     input_signatures[_input],
@@ -345,6 +364,9 @@ void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output,
   _peakfit->configure(p,input,output,
 		      _channels,signatures,NCHANNELS,
 		      ConfigureRequest::Analysis);
+  _fit    ->configure(p,input,output,
+		      _channels,signatures,NCHANNELS,
+                      ConfigureRequest::Analysis);
 }
 
 void ProjectionPlot::update()
@@ -352,6 +374,7 @@ void ProjectionPlot::update()
   _frame  ->update();
   _cursors->update();
   _peakfit->update();
+  _fit    ->update();
 
   if (_auto_range) {
     double v = _auto_range->entries() - double(_auto_range->desc().nsamples());

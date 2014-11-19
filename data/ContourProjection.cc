@@ -31,8 +31,7 @@ ContourProjection::ContourProjection(const DescEntry& output,
   _offset_len(0),
   _offset    (0)
 {
-  memcpy(_desc_buffer, &output, output.size());
-  memset(_desc_buffer+output.size(), 0, DESC_LEN-output.size());
+  memcpy_val(_desc_buffer, &output, output.size(), DESC_LEN);
 }
 
 ContourProjection::ContourProjection(const char*& p, const DescEntry& input) :

@@ -8,6 +8,8 @@
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/QtOverlay.hh"
 #include "ami/qt/QtBase.hh"
+#include "ami/qt/QLineFit.hh"
+#include "ami/qt/QFit.hh"
 
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QMenuBar>
@@ -119,8 +121,6 @@ QtPlot::QtPlot(QWidget* parent,
   _grid->setMinPen(QPen(QColor(0xc0c0c0)));
   _grid->attach(_frame);
 
-  attach(_frame);
-
   _layout();
 }
 
@@ -183,7 +183,8 @@ void QtPlot::_layout()
       _show_ref->setEnabled(false);
       connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
       menu_bar->addMenu(m); }
-    menu_bar->addMenu(_linefit = new QLineFitMenu(*this));
+    menu_bar->addMenu(_linefit = new QLineFitMenu);
+    menu_bar->addMenu(_fit     = new QFitMenu("Fit"));
     l->addWidget(menu_bar);
     l->addStretch();
     l->addWidget(_runnum); 
@@ -195,6 +196,10 @@ void QtPlot::_layout()
   layout->addWidget(_xrange,0,::Qt::AlignCenter);
   layout->addWidget(_yrange,0,::Qt::AlignCenter);
   setLayout(layout);
+
+
+  _linefit->attach(_frame);
+  _fit    ->attach(_frame);
   
   show();
   connect(this, SIGNAL(redraw()), _frame, SLOT(replot()));
@@ -227,7 +232,6 @@ void QtPlot::load(const char*& p)
       _name  = QtPersistent::extract_s(p);
       _frame = new QwtLPlot(_name);
       _grid->attach(_frame);
-      attach(_frame);
     }
     else if (tag.name == "_frame_title")
       _frame->setTitle(QtPersistent::extract_s(p));
@@ -362,6 +366,12 @@ void QtPlot::update_counts(double n)
   _counts->setText(QString("Np %1").arg(n));
 }
 
+void QtPlot::update_fit(const Ami::Entry& e)
+{
+  _linefit->update_fit(e);
+  _fit    ->update_fit(e);
+}
+
 void QtPlot::query_style()
 {
   _style.query(this);
@@ -440,15 +450,13 @@ void QtPlot::setPlotType(Ami::DescEntry::Type t)
 
   _style.setPlotType(t);
 
-  switch(t) {
-  case DescEntry::Scan:
-  case DescEntry::Prof:
-    _linefit->setEnabled(true);
-    break;
-  default:
-    _linefit->setEnabled(false);
-    break;
-  }
+  bool llinefit=(t==DescEntry::Scan || t==DescEntry::Prof);
+  _linefit->setVisible(llinefit);
+  _linefit->setEnabled(llinefit);
+
+  bool lfit=(t==DescEntry::TH1F);
+  _fit->setVisible(lfit);
+  _fit->setVisible(lfit);
 }
 
 void QtPlot::set_reference()

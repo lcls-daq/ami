@@ -23,17 +23,24 @@ namespace Ami {
 	      DescEntry*      desc,
               Ami::ScalarSet  set,
               SharedData*     shared=0);
+      EnvPlot(QWidget*,
+	      const QString&  name,
+	      const Ami::AbsFilter& filter,
+	      DescEntry*      desc,
+              AbsOperator*    op,
+              unsigned        channel,
+              SharedData*     shared=0);
       EnvPlot(QWidget*,const char*&);
       ~EnvPlot();
     public:
       void save(char*&) const;
       void load(const char*&);
     public:
-      void configure(char*& p, unsigned input, unsigned& output,
-		     const AbsOperator&);
       void setup_payload(Cds&);
       void update();
       void dump(FILE*) const;
+    private:
+      bool _forceRequest() const;
     signals:
       void changed();
     private:

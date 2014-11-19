@@ -35,7 +35,7 @@ namespace Ami {
   private:
     void _event    (Pds::TypeId, const char*, size_t, const Pds::ClockTime&);
     void _create_entry(const CspadGeometry::ConfigCache& cfg,
-                       FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
+                       FILE* f, FILE* s, FILE* g, FILE* rms,
                        CspadGeometry::Detector*& detector,
                        EntryImage*& entry, 
                        unsigned max_pixels); 

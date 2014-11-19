@@ -27,6 +27,7 @@
 #include "ami/data/Droplet.hh"
 #include "ami/data/VAPlot.hh"
 #include "ami/data/LineFit.hh"
+#include "ami/data/Fit.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/Entry.hh"
 
@@ -79,6 +80,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::Droplet   : o = new Droplet   (p,input,_output); break;
   case AbsOperator::VAPlot    : o = new VAPlot    (p,input); break;
   case AbsOperator::LineFit   : o = new LineFit   (p,_input); break;
+  case AbsOperator::Fit       : o = new Fit       (p,_input,_output); break;
   default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
   }
   if (next)
@@ -110,4 +112,24 @@ AbsOperator* OperatorFactory::deserialize(const char*& p,
     o = _extract(p,input.desc(),output_cds);
     return o;
   }
+}
+
+AbsOperator* OperatorFactory::deserialize(const char*& p)
+{
+  uint32_t type = (AbsOperator::Type)*reinterpret_cast<const uint32_t*>(p);
+  p+=sizeof(uint32_t);
+
+  uint32_t next = *reinterpret_cast<const uint32_t*>(p);
+  p+=sizeof(next);
+
+  AbsOperator* o = 0;
+  switch(type) {
+  case AbsOperator::EnvPlot   : o = new EnvPlot(p); break;
+  case AbsOperator::LineFit   : o = new LineFit(p); break;
+  case AbsOperator::Fit       : o = new Fit    (p); break;
+  default: printf("OperatorFactory:_extract unknown type %d\n",type); break;
+  }
+  if (next)
+    o->next(deserialize(p));
+  return o;
 }

@@ -34,8 +34,9 @@ void DescTH1F::load(const char*& p)
   XML_iterate_open(p,tag)
     if      (tag.element == "DescBinning")
       DescBinning::load(p);
-    else if (tag.name == "_normalize")
+    else if (tag.name == "_normalize") {
       if (_normalize) 
 	_normalize->setChecked(QtPersistent::extract_b(p));
+    }
   XML_iterate_close(DescTH1F,tag);
 }

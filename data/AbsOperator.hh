@@ -31,7 +31,7 @@ namespace Ami {
 		Reference, EntryMath, BinMath, EdgeFinder, PeakFinder, 
 		EnvPlot, PeakFitPlot, FFT, ContourProjection, TdcPlot, 
                 XYHistogram, Zoom, EntryRefOp, Variance, CurveFit, MaskImage,
-                BlobFinder, RectROI, FIR, Droplet, VAPlot, LineFit };
+                BlobFinder, RectROI, FIR, Droplet, VAPlot, LineFit, Fit };
     ///  Title of subclass operations
     static const char* type_str(Type);
 

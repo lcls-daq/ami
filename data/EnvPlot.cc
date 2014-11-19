@@ -26,6 +26,14 @@ EnvPlot::EnvPlot(const DescEntry& output) :
   memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
+EnvPlot::EnvPlot(const char*&  p) :
+  AbsOperator(AbsOperator::EnvPlot),
+  _input     (0),
+  _v         (true)
+{
+  _extract(p, _desc_buffer, DESC_LEN);
+}
+
 EnvPlot::EnvPlot(const char*&  p, 
 		 FeatureCache& input, 
 		 FeatureCache& output) :

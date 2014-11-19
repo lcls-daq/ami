@@ -83,12 +83,13 @@ void   Cursor::value(double v)
 
 void Cursor::set_value()
 {
-  if (_measure==Horizontal)
-    _marker->setXValue(value());
-  else
-    _marker->setYValue(value());
-
   double v = _input->text().toDouble();
+
+  if (_measure==Horizontal)
+    _marker->setXValue(v);
+  else
+    _marker->setYValue(v);
+
   if (_v != v) {
     _v = v;
     _showB->setChecked(true);

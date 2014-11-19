@@ -190,3 +190,4 @@ double QtTH2F::normalization() const
 {
   return static_cast<const EntryTH2F&>(entry()).info(EntryTH2F::Normalization);
 }
+

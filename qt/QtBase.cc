@@ -17,3 +17,5 @@ const QColor& Ami::Qt::QtBase::color(unsigned i)
 {
   return _colors[ i%NCOLORS ];
 }
+
+QColor Ami::Qt::QtBase::get_color() const { return color(0); }

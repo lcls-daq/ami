@@ -19,8 +19,7 @@ void AmendedRegistry::translate(char* p) const
   for(unsigned i=0; int(i)<_additions.size(); i++) {
     v.replace( QString("_%1").arg(_additions[i]), QString("[%1]").arg(i) );
   }
-  const char* q = qPrintable(v);
-  strcpy(p, q);
+  strcpy(p, v.toAscii().constData());
 }
 
 void AmendedRegistry::change()

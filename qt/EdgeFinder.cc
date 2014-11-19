@@ -143,6 +143,9 @@ void EdgeFinder::save(char*& p) const
     XML_insert(p, "EdgeFinderConfig", "_configs", _configs[i]->save(p));
   }
 
+  XML_insert(p, "QLineEdit", "_title", QtPersistent::insert(p,_title->text()));
+  XML_insert(p, "VectorArrayDesc", "_analysis_plot", _analysis_plot->save(p));
+
   for(unsigned i=0; i<_apps.size(); i++) {
     XML_insert(p, "VAConfigApp", "_apps", _apps[i]->save(p));
   }
@@ -165,7 +168,7 @@ void EdgeFinder::load(const char*& p)
     if      (tag.element == "QtPWidget")
       QtPWidget::load(p);
     else if (tag.name == "_channel")
-      _channel = QtPersistent::extract_i(p);
+      _channelBox->setCurrentIndex(QtPersistent::extract_i(p));
     else if (tag.name == "_config")
       _config->load(p);
     else if (tag.name == "_configs") {
@@ -174,6 +177,10 @@ void EdgeFinder::load(const char*& p)
       _setBox->addItem(QString("Set%1").arg(_configs.size()));
       _configs.push_back(c);
     }
+    else if (tag.name == "_title")
+      _title->setText(QtPersistent::extract_s(p));
+    else if (tag.name == "_analysis_plot")
+      _analysis_plot->load(p);
     else if (tag.name == "_apps") {
       EdgeFinderConfigApp* app = new EdgeFinderConfigApp(this, _configs, p);
       _apps.push_back(app);

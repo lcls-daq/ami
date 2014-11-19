@@ -26,6 +26,7 @@ namespace Ami {
       void        xscale_update() ;
       void        yscale_update() ;
       const AxisInfo* xinfo() const;
+      QColor      get_color() const;
     private:
       const AbsTransform&   _xscale;
       const AbsTransform&   _yscale;

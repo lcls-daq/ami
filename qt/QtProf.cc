@@ -141,3 +141,5 @@ void QtProf::set_color(unsigned c)
   symbol.setBrush(QBrush(color(c)));
   _curve.setSymbol(symbol);
 }
+
+QColor QtProf::get_color() const { return _curve.pen().color(); }

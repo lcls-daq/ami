@@ -6,9 +6,10 @@
 #include "ami/qt/Transform.hh"
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/Path.hh"
-#include "ami/qt/PlotFrame.hh"
+#include "ami/qt/PlotFrameF.hh"
 #include "ami/qt/PrintAction.hh"
 #include "ami/qt/Defaults.hh"
+#include "ami/qt/QFit.hh"
 #include "ami/qt/QtUtils.hh"
 
 #include "ami/data/DescEntry.hh"
@@ -49,7 +50,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
   _sem   (Ami::Semaphore::FULL),
   _ref   (0)
 {
-  _plot = new PlotFrame(this);
+  _plot = new PlotFrameF(this);
   _plot->setAxisScaleEngine(QwtPlot::xBottom, new QwtLinearScaleEngine);
   _plot->setAxisScaleEngine(QwtPlot::yLeft  , new QwtLinearScaleEngine);
 
@@ -94,6 +95,7 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
     _show_ref->setEnabled(false);
     connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
     menu_bar->addMenu(m); }
+  menu_bar->addMenu(_fit = new QChFitMenu("Fit"));
 
   _chrome_is_visible = true;
   _chrome_action = menu_bar->addAction("Hide chrome"    , this, SLOT(toggle_chrome()));
@@ -117,6 +119,8 @@ Ami::Qt::WaveformDisplay::WaveformDisplay() :
     layout->addLayout(layout2); }
   //  layout->addStretch();
   setLayout(layout);
+
+  _fit->attach(_plot);
 
   connect(this   , SIGNAL(redraw()) , _plot      , SLOT(replot()));
   connect(_xrange, SIGNAL(windowChanged()), this , SLOT(xrange_change()));
@@ -347,6 +351,8 @@ void WaveformDisplay::add   (QtBase* b, Cds& cds, bool show)
 {
   subscribe(cds);
 
+  _fit->add(b,show);
+
   if (show) {
     _xrange->update(*_xinfo);
     _sem.take();
@@ -372,6 +378,7 @@ void WaveformDisplay::show(QtBase* b)
       _sem.take();
       _hidden.remove(b);
       _curves.push_back(b);
+      _fit->add(b,true);
       _sem.give();
 
       b->xscale_update();
@@ -391,6 +398,7 @@ void WaveformDisplay::hide(QtBase* b)
     if ((*it)==b) {
       _curves.remove(b);
       _hidden.push_back(b);
+      _fit->add(b,false);
       
       b->attach((QwtPlot*)NULL);
       
@@ -413,6 +421,7 @@ void WaveformDisplay::reset()
     delete c;
   }
   _sem.give();
+  _fit->clear();
 }
 
 void WaveformDisplay::update()
@@ -421,6 +430,7 @@ void WaveformDisplay::update()
   for(std::list<QtBase*>::iterator it=_curves.begin(); it!=_curves.end(); it++)
     (*it)->update();
   _sem.give();
+  _fit->update();
 
   emit redraw();
 }

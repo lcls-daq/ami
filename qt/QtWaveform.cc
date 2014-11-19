@@ -103,3 +103,5 @@ const AxisInfo* QtWaveform::xinfo() const
 {
   return _xinfo;
 }
+
+QColor QtWaveform::get_color() const { return _curve.pen().color(); }

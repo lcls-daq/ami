@@ -16,6 +16,7 @@ namespace Ami {
 			     const Entry& input,
 			     Cds&         output_cds, 
 			     unsigned     output_signature) const;
+    static AbsOperator* deserialize(const char*&);
   private:
     AbsOperator* _extract(const char*&     p, 
 			  const DescEntry& input,

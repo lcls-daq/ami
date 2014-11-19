@@ -1015,7 +1015,6 @@ namespace CspadGeometry {
              FILE* s,    // status
              FILE* g,    // gain
              FILE* rms,  // noise
-             FILE* gm,   // geometry
              unsigned max_pixels,
              bool     full_resolution,
 	     const CspadTemp& therm) :
@@ -1035,9 +1034,24 @@ namespace CspadGeometry {
 
       const Ami::Cspad::QuadAlignment* qalign = qalign_def;
       Rotation qrot[] = { D0, D90, D180, D270 };
-      if (gm) {
-        qalign = Ami::Cspad::QuadAlignment::load(gm);
 
+      bool offl_type=false;
+      FILE *gm = Calib::fopen(static_cast<const Pds::DetInfo&>(src),
+                              "geo", "geometry", false,
+                              &offl_type);
+      if (gm) {
+        qalign = Ami::Cspad::QuadAlignment::load(gm,offl_type);
+        { for(unsigned j=0; j<4; j++) {
+            printf("Quad %d\n",j);
+            for(unsigned k=0; k<4; k++) {
+              const Ami::Cspad::TwoByTwoAlignment t(qalign[j].twobytwo(k));
+              printf("  2x2[%d]: %f %f\n", k, t.xOrigin, t.yOrigin);
+              for(unsigned m=0; m<4; m++)
+                printf("    %f %f\n", t.xAsicOrigin[m], t.yAsicOrigin[m]);
+            }
+          }
+        }
+        
         size_t sz=256;
         char* linep = (char *)malloc(sz);
         //  Get optional global rotation
@@ -1390,16 +1404,12 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
   FILE *rms = Calib::fopen_dual(oname1, oname2, "noise");
 
-  sprintf(oname1,"geo.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
-  FILE *gm = Calib::fopen_dual(oname1, oname2, "geometry");
-
   CspadGeometry::ConfigCache cfg(type,payload);
 
-  _create_entry( cfg,f,s,g,rms,gm, 
+  _create_entry( cfg,f,s,g,rms,
                  _detector, _entry, resolution());
 #ifndef UNBINNED
-  _create_entry( cfg,f,s,g,rms,gm, 
+  _create_entry( cfg,f,s,g,rms,
                  _unbinned_detector, _unbinned_entry, 1<<12);
 #endif
 
@@ -1410,11 +1420,10 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   if (s ) fclose(s);
   if (g ) fclose(g);
   if (rms) fclose(rms);
-  if (gm) fclose(gm);
 }
 
 void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
-                                 FILE* f, FILE* s, FILE* g, FILE* rms, FILE* gm,
+                                 FILE* f, FILE* s, FILE* g, FILE* rms, 
                                  CspadGeometry::Detector*& detector,
                                  EntryImage*& entry, 
                                  unsigned max_pixels) 
@@ -1423,12 +1432,11 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (s ) rewind(s);
   if (g ) rewind(g);
   if (rms) rewind(rms);
-  if (gm) rewind(gm);
 
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,gm,max_pixels,_full_resolution(),_therm);
+  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,max_pixels,_full_resolution(),_therm);
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());

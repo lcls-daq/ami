@@ -3,6 +3,7 @@
 #include "ami/qt/AmendedRegistry.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
 #include "ami/data/DescEntry.hh"
+#include "ami/data/XML.hh"
 
 #include <QtCore/QStringList>
 #include <QtGui/QComboBox>
@@ -10,6 +11,7 @@
 #include <QtGui/QVBoxLayout>
 #include <QtGui/QLabel>
 
+using Ami::XML::QtPersistent;
 using namespace Ami::Qt;
 
 VectorArrayDesc::VectorArrayDesc(QWidget* p,
@@ -52,4 +54,20 @@ Ami::DescEntry* VectorArrayDesc::desc(const char* title) const {
   _registry->translate(const_cast<char*>(d->xtitle()));
   _registry->translate(const_cast<char*>(d->ytitle()));
   return d;
+}
+
+void VectorArrayDesc::save(char*& p) const
+{
+  XML_insert(p, "QComboBox", "_parameter", QtPersistent::insert(p, _parameter->currentIndex()));
+  XML_insert(p, "ScalarPlotDesc", "_desc", _desc->save(p));
+}
+
+void VectorArrayDesc::load(const char*& p)
+{
+  XML_iterate_open(p,tag)
+    if      (tag.name == "_parameter")
+      _parameter->setCurrentIndex( QtPersistent::extract_i(p) );
+    else if (tag.name == "_desc")
+      _desc->load(p);
+  XML_iterate_close(Droplet,tag);
 }

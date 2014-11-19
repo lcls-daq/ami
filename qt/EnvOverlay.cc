@@ -45,6 +45,25 @@ EnvOverlay::EnvOverlay(OverlayParent&   parent,
   if (shared) shared->signup();
 }
 
+EnvOverlay::EnvOverlay(OverlayParent&   parent,
+                       QtPlot&          frame,
+                       const Ami::AbsFilter&  filter,
+                       DescEntry*       desc,
+                       AbsOperator*     op,
+                       unsigned         channel,
+                       SharedData*      shared) :
+  QtOverlay(parent),
+  EnvOp    (filter, desc, op, channel),
+  _frame   (&frame),
+  _frame_name(frame._name),
+  _plot    (0),
+  _auto_range(0),
+  _order   (-1),
+  _shared  (shared)
+{
+  if (shared) shared->signup();
+}
+
 EnvOverlay::EnvOverlay(OverlayParent& parent,
                        const char*& p) :
   QtOverlay(parent),
@@ -160,11 +179,7 @@ void EnvOverlay::setup_payload(Cds& cds)
   }
 }
 
-void EnvOverlay::configure(char*& p, unsigned input, unsigned& output,
-			   const AbsOperator& op)
-{
-  EnvOp::configure(p,input,output,op,_plot==0);
-}
+bool EnvOverlay::_forceRequest() const { return _plot==0; }
 
 void EnvOverlay::update()
 {

@@ -129,3 +129,4 @@ void QtTH1F::set_color(unsigned c)
   _curve.setPen(pen);
 }
 
+QColor QtTH1F::get_color() const { return _curve.pen().color(); }

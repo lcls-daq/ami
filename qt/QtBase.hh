@@ -2,8 +2,8 @@
 #define Ami_QtBase_hh
 
 #include <QtCore/QString>
+#include <QtGui/QColor>
 
-class QColor;
 class QwtPlot;
 
 #include <stdio.h>
@@ -30,6 +30,7 @@ namespace Ami {
       virtual const AxisInfo* yinfo() const { return 0; }
       virtual double      normalization() const { return 0; }
       virtual void        set_color(unsigned) {}
+      virtual QColor      get_color() const;
     public:
       const QString& title() const { return _title; }
       const Ami::Entry& entry() const { return *_entry; }

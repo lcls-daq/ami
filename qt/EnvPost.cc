@@ -13,6 +13,14 @@ EnvPost::EnvPost(const Ami::AbsFilter& filter,
 {
 }
 
+EnvPost::EnvPost(const Ami::AbsFilter& filter,
+                 DescEntry*            desc,
+                 AbsOperator*          op,
+                 unsigned              channel) :
+  EnvOp(filter,desc,op,channel)
+{
+}
+
 EnvPost::EnvPost(const char*& p)
 {
   XML_iterate_open(p,tag)

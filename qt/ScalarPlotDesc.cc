@@ -218,14 +218,15 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
   switch(_plot_grp->currentIndex()) {
   case ScalarPlotDesc::TH1F:
     { QString v = _xnorm->isChecked() ? vn : qtitle;
+      std::string sv(qPrintable(v));
       switch(_hist->method()) {
       case DescBinning::Fixed:
-        desc = new Ami::DescTH1F(qPrintable(v),qPrintable(v),"events",
+        desc = new Ami::DescTH1F(sv.c_str(),sv.c_str(),"events",
                                  _hist->bins(),_hist->lo(),_hist->hi(),
 				 _hist->normalize()); 
         break;
       case DescBinning::Auto1:
-        desc = new Ami::DescScalarRange(qPrintable(v),"events",
+        desc = new Ami::DescScalarRange(sv.c_str(),"events",
                                         DescScalarRange::MeanSigma,
                                         _hist->sigma(),
                                         _hist->nsamples(),
@@ -233,7 +234,7 @@ Ami::DescEntry* ScalarPlotDesc::desc(const char* title) const
 					_hist->normalize());
         break;
       case DescBinning::Auto2:
-        desc = new Ami::DescScalarRange(qPrintable(v),"events",
+        desc = new Ami::DescScalarRange(sv.c_str(),"events",
                                         DescScalarRange::MinMax,
                                         _hist->extent(),
                                         _hist->nsamples(),

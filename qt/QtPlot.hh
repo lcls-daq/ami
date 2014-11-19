@@ -3,7 +3,6 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/QtPlotStyle.hh"
-#include "ami/qt/QLineFit.hh"
 
 #include "ami/data/DescEntry.hh"
 
@@ -17,11 +16,14 @@ class QwtLegend;
 class QAction;
 
 namespace Ami {
+  class Entry;
   namespace Qt {
     class AxisControl;
+    class QFitMenu;
+    class QLineFitMenu;
     class QtOverlay;
     class QtPlotSelector;
-    class QtPlot : public QtPWidget, public QLineFit {
+    class QtPlot : public QtPWidget {
       Q_OBJECT
     public:
       explicit QtPlot(QWidget*       parent,
@@ -51,6 +53,7 @@ namespace Ami {
       void xrange_change();
       void yrange_change();
       void update_counts(double);
+      void update_fit(const Ami::Entry&);
       void query_style();
 
       void set_reference();
@@ -86,6 +89,7 @@ namespace Ami {
       std::list<QtOverlay*> _ovls;
       QAction* _show_ref;
       QwtPlotCurve* _ref;
+      QFitMenu*     _fit;
       QLineFitMenu* _linefit;
     };
   };

@@ -103,11 +103,11 @@ void QLineFit::update_fit(const Entry& p)
   }
 }
 
-QLineFitMenu::QLineFitMenu(QLineFit& host) :
+QLineFitMenu::QLineFitMenu() :
   QMenu("LineFit")
 {
   for(unsigned i=0; i<LineFit::NumberOf; i++)
-    addAction(new QLineFitAction(host,LineFit::Method(i)));
+    addAction(new QLineFitAction(*this,LineFit::Method(i)));
 }
 
 QLineFitMenu::~QLineFitMenu() {}

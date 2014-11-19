@@ -140,3 +140,5 @@ void QtScan::set_color(unsigned c)
   symbol.setBrush(QBrush(color(c)));
   _curve.setSymbol(symbol);
 }
+
+QColor QtScan::get_color() const { return _curve.pen().color(); }

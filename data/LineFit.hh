@@ -34,6 +34,7 @@ namespace Ami {
     //    accessors.
     LineFit(const char*&, 
 	    FeatureCache& input);
+    LineFit(const char*&);
     ~LineFit();
   public:
     void use();

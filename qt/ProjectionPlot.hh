@@ -25,6 +25,7 @@ namespace Ami {
   namespace Qt {
     class ChannelDefinition;
     class CursorsX;
+    class Fit;
     class PeakFit;
     class WaveformDisplay;
 
@@ -76,6 +77,7 @@ namespace Ami {
       const DescEntry*   _input_entry;
       CursorsX*          _cursors;
       PeakFit*           _peakfit;
+      Fit*               _fit;
 
       unsigned           _showMask;
       ConfigureRequestor _req;

@@ -53,6 +53,26 @@ EnvPlot::EnvPlot(QWidget*         parent,
   setPlotType(_desc->type());
 }
 
+EnvPlot::EnvPlot(QWidget*         parent,
+		 const QString&   name,
+		 const Ami::AbsFilter&  filter,
+		 DescEntry*       desc,
+		 AbsOperator*     op,
+                 unsigned         channel,
+                 SharedData*      shared) :
+  QtPlot   (parent, name),
+  EnvOp    (filter, desc, op, channel),
+  _plot    (new QtEmpty),
+  _auto_range(0),
+  _retry     (false),
+  _shared  (shared)
+{
+  if (shared) shared->signup();
+  _plot->attach(_frame);
+
+  setPlotType(_desc->type());
+}
+
 EnvPlot::EnvPlot(QWidget*     parent,
 		 const char*& p) :
   QtPlot   (parent),
@@ -166,11 +186,7 @@ void EnvPlot::setup_payload(Cds& cds)
   }
 }
 
-void EnvPlot::configure(char*& p, unsigned input, unsigned& output,
-			const AbsOperator& op)
-{
-  EnvOp::configure(p,input,output,op,_plot==0);
-}
+bool EnvPlot::_forceRequest() const { return _plot==0; }
 
 void EnvPlot::update()
 {

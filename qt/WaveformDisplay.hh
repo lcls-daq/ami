@@ -21,6 +21,7 @@ namespace Ami {
     class AxisControl;
     class Transform;
     class PlotFrame;
+    class QChFitMenu;
     class WaveformDisplay : public QWidget,
 			    public Display,
 			    public Cdu {
@@ -90,6 +91,9 @@ namespace Ami {
       bool     _chrome_is_visible;
       QAction* _chrome_action;
       QLayout* _chrome_layout;
+
+    private:
+      QChFitMenu* _fit;
     };
   };
 };

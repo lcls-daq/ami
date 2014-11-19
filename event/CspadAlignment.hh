@@ -28,7 +28,7 @@ namespace Ami {
 	struct { double x,y; } _pad;
       } _twobyone[8];
     public:
-      static QuadAlignment* load(FILE*);
+      static QuadAlignment* load(FILE*, bool offline=false);
     };
   }
 }

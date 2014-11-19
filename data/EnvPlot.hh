@@ -28,6 +28,7 @@ namespace Ami {
     EnvPlot(const char*&, 
 	    FeatureCache& input, 
 	    FeatureCache& output);
+    EnvPlot(const char*&);
     ~EnvPlot();
   public:
     void use();

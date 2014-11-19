@@ -131,6 +131,8 @@ void AnalysisFactory::discover(bool waitForConfigure)
   _features[PostAnalysis]->update();  // clear the update flag
   _srv.discover(); 
   pthread_mutex_unlock(&_mutex);
+
+  printf("AnalysisFactory::discover(%c) complete\n",waitForConfigure?'T':'F');
 }
 
 void AnalysisFactory::discover_wait()
@@ -147,6 +149,7 @@ void AnalysisFactory::discover_wait()
     printf("AnalysisFactory: done waiting for configuration.\n");
   }
   pthread_mutex_unlock(&_mutex);
+  printf("AnalysisFactory::discover_wait complete\n");
 }
 
 void AnalysisFactory::configure(unsigned       id,

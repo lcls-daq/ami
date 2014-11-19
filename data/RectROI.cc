@@ -5,6 +5,7 @@
 #include "ami/data/ImageMask.hh"
 
 #include "ami/data/Cds.hh"
+#include "ami/data/valgnd.hh"
 
 #include <stdio.h>
 #include <string.h>
@@ -17,7 +18,7 @@ RectROI::RectROI(const DescImage& output) :
   AbsOperator(AbsOperator::RectROI),
   _output    (0)
 {
-  memcpy(_desc_buffer, &output, DESC_LEN);
+  memcpy_val(_desc_buffer, &output, output.size(), DESC_LEN);
 }
 
 RectROI::RectROI(const char*& p, const DescEntry& input) :

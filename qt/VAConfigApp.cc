@@ -163,7 +163,7 @@ void VAConfigApp::configure(char*& p, unsigned input, unsigned& output,
 
   if (smp_prohibit && !_zplots.size()) return;
 
-  Ami::AbsOperator* o = _op(qPrintable(_name));
+  Ami::AbsOperator* o = _op(_name.toAscii().constData());
   
   ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                     ConfigureRequest::Analysis,

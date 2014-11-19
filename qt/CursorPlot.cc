@@ -178,6 +178,7 @@ void CursorPlot::update()
 {
   if (_plot) {
     _plot->update();
+    update_fit(_plot->entry());
     emit counts_changed(_plot->normalization());
     emit redraw();
   }

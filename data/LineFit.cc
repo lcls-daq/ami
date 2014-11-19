@@ -41,6 +41,17 @@ LineFit::LineFit(const DescEntry& output, Method method) :
   memcpy_val (_desc_buffer, &output, output.size(),DESC_LEN);
 }
 
+LineFit::LineFit(const char*&  p) :
+  AbsOperator(AbsOperator::LineFit),
+  _cache     (0),
+  _xline     (0),
+  _yline     (0),
+  _v         (true)
+{
+  _extract(p, _desc_buffer, DESC_LEN);
+  _extract(p, &_method, sizeof(_method));
+}
+
 LineFit::LineFit(const char*&  p, 
 		 FeatureCache& input) :
   AbsOperator(AbsOperator::LineFit),
@@ -105,8 +116,8 @@ LineFit::~LineFit()
 
 void LineFit::use() 
 {
-  if (_xterm ) _xterm ->use();
-  if (_yterm ) _yterm ->use();
+  if (_xline ) _xline ->use();
+  if (_yline ) _yline ->use();
   _use();
 }
 

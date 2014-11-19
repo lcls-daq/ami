@@ -59,9 +59,9 @@ namespace Ami {
       Ami::LineFit::Method _method;
     };
 
-    class QLineFitMenu : public QMenu {
+    class QLineFitMenu : public QMenu, public QLineFit {
     public:
-      QLineFitMenu(QLineFit&);
+      QLineFitMenu();
       ~QLineFitMenu();
     };
   };

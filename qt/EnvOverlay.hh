@@ -24,6 +24,13 @@ namespace Ami {
                  Ami::ScalarSet   set,
                  SharedData*      shared=0);
       EnvOverlay(OverlayParent&   parent,
+                 QtPlot&          frame,
+                 const AbsFilter& filter,
+                 DescEntry*       desc,
+                 AbsOperator*     op,
+                 unsigned         channel,
+                 SharedData*      shared=0);
+      EnvOverlay(OverlayParent&   parent,
                  const char*&    p);
       ~EnvOverlay();
     public:
@@ -32,12 +39,11 @@ namespace Ami {
       void dump(FILE*) const;
       const QtBase* base() const;
     public:
-      void configure(char*& p, unsigned input, unsigned& output,
-		     const AbsOperator&);
       void setup_payload(Cds&);
       void update();
     private:
       void _attach();
+      bool _forceRequest() const;
     private:
       QtPlot*            _frame;
       QString            _frame_name;

@@ -72,8 +72,10 @@ void CurveFitPost::load(const char*& p)
       title = QtPersistent::extract_s(p);
   XML_iterate_close(CurveFitPost,tag);
 
-  const char *_title = qPrintable(title);
-  Ami::DescCache* desc = new Ami::DescCache(_title, _title, Ami::PostAnalysis);
+  std::string _title(qPrintable(title));
+  Ami::DescCache* desc = new Ami::DescCache(_title.c_str(), 
+                                            _title.c_str(),
+                                            Ami::PostAnalysis);
   _input = new Ami::CurveFit(qPrintable(name), op, *desc, qPrintable(norm));
   delete desc;
 }
