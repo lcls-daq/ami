@@ -33,7 +33,7 @@ using std::string;
 
 typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
 typedef Pds::EvrData::DataV3 EvrDataType;
-typedef Pds::TimeTool::ConfigV1 TimeToolConfigType;
+typedef Pds::TimeTool::ConfigV2 TimeToolConfigType;
 
 static const int   cols  = Pds::Opal1k::ConfigV1::Column_Pixels;
 
@@ -74,8 +74,9 @@ namespace Ami {
     {
       dump(cfg); 
       memcpy(_config_buffer, &cfg, cfg._sizeof());
+      reset_data();
     }
-    ~FexM() { clear(_cds); }
+    ~FexM() { clear(_cds); delete[] _config_buffer; }
   public:
     void _monitor_raw_sig(const ndarray<const double,1>& wf)
     {
@@ -108,13 +109,12 @@ namespace Ami {
       cache.add(base_name()+":AMI:REFAMPL"); 
       return _cache_index;
     }
-    void configure() {
+    void reset_data() {
+      //  Reset pointer references
       _data = 0;
       _frame = 0;
       _evrdata = 0;
       _ipmdata = 0;
-    }
-    void configure(const Pds::Epics::EpicsPvCtrlHeader& pv) {
     }
     void event(const Pds::DetInfo&   src,
                const Pds::TypeId&    type,
@@ -122,7 +122,7 @@ namespace Ami {
       switch(type.id()) {
       case Pds::TypeId::Id_TimeToolData:
         if (src.phy()==_src.phy())
-	  _data = reinterpret_cast<Pds::TimeTool::DataV1*>(payload);
+	  _data = reinterpret_cast<Pds::TimeTool::DataV2*>(payload);
         break;
       case Pds::TypeId::Id_Frame:
         if (src.phy()==_src.phy()) {
@@ -177,17 +177,23 @@ namespace Ami {
       init_plots();
     }
     void analyze(const Pds::ClockTime& _clk) {
-      const Pds::TimeTool::ConfigV1& c = 
-        *reinterpret_cast<const Pds::TimeTool::ConfigV1*>(_config_buffer);
+      const TimeToolConfigType& c = 
+        *reinterpret_cast<const TimeToolConfigType*>(_config_buffer);
       if ((_data && _data->projected_signal(c).size()) ||
           (_evrdata && _frame)) {
 
 	reset();
 
         if (_data && _data->projected_signal(c).size()) {
-          TimeTool::Fex::analyze(_data->event_type(),
-                                 _data->projected_signal(c),
-                                 _data->projected_sideband(c));
+	  if (c.use_reference_roi())
+	    TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+				   _data->projected_signal(c),
+				   _data->projected_sideband(c),
+				   _data->projected_reference(c));
+	  else
+	    TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+				   _data->projected_signal(c),
+				   _data->projected_sideband(c));
         }
         else {
           TimeTool::Fex::analyze(_frame->data16(),
@@ -216,11 +222,7 @@ namespace Ami {
         _flt_signal->valid(_clk);
       }
 
-      //  Reset pointer references
-      _data = 0;
-      _frame = 0;
-      _evrdata = 0;
-      _ipmdata = 0;
+      reset_data();
     }
   private:
     EntryTH1F* _ref_signal;
@@ -234,7 +236,7 @@ namespace Ami {
     boost::shared_ptr<Pds::Xtc> _pXtc;
 
     char* _config_buffer;
-    Pds::TimeTool::DataV1* _data;
+    Pds::TimeTool::DataV2* _data;
     Pds::Camera::FrameV1*  _frame;
     Pds::EvrData::DataV3*  _evrdata;
     Pds::Lusi::IpmFexV1*   _ipmdata;
@@ -287,13 +289,6 @@ void TimeToolD::configure(const Pds::DetInfo&   src,
     if (_cache)
       f->cache(*_cache);
     _fex.push_back(f);
-  }
-  else if (type.id()==Pds::TypeId::Id_Epics) {
-    for(unsigned i=0; i<_fex.size(); i++) {
-      FexM& fex = *_fex[i];
-      if (src.phy() == fex.src().phy())
-        fex.configure(*reinterpret_cast<const Pds::Epics::EpicsPvCtrlHeader*>(payload));
-    }
   }
 }
 
