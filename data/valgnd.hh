@@ -9,6 +9,8 @@
 #ifndef Ami_valgnd_hh
 #define Ami_valgnd_hh
 
+#include <string.h>
+
 //#ifdef VALGND
 #if 1
 #define strncpy_val(dst,src,sz) {		\

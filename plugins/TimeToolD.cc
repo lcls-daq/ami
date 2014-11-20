@@ -35,8 +35,6 @@ typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
 typedef Pds::EvrData::DataV3 EvrDataType;
 typedef Pds::TimeTool::ConfigV2 TimeToolConfigType;
 
-static const int   cols  = Pds::Opal1k::ConfigV1::Column_Pixels;
-
 static const char* op_name[] = { "OR", "AND", "OR_NOT", "AND_NOT", NULL };
 
 static void dump_logic(const ndarray<const Pds::TimeTool::EventLogic,1>& logic)
@@ -69,7 +67,7 @@ namespace Ami {
   public:
     FexM(const Pds::Src& src,
 	 const TimeToolConfigType& cfg) : 
-      Fex(src,cfg), _cds(0), _cache(0),
+      Fex(src,cfg), _cols(0), _cds(0), _cache(0),
       _config_buffer(new char[cfg._sizeof()]) 
     {
       dump(cfg); 
@@ -161,18 +159,25 @@ namespace Ami {
     }
     void create(Cds& cds, unsigned column) {
       char buff[128];
+      const int   pdim  = m_projectX ? 1:0;
+      const int   ilo   = m_sig_roi_lo[pdim];
+      const int   ihi   = m_sig_roi_hi[pdim];
+      const int   cols  = ihi-ilo+1;
+      const float lo(ilo);
+      const float hi(ihi);
       sprintf(buff,"Ref Signal#Signal#0#%d#0",column);
-      _ref_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _ref_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Raw Signal#Signal#0#%d#c0",column);
-      _raw_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _raw_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Sub Signal#Signal#1#%d#c0",column);
-      _sub_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _sub_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Flt Signal#Signal#1#%d#c00000",column);
-      _flt_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _flt_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       cds.add(_ref_signal);
       cds.add(_raw_signal);
       cds.add(_sub_signal);
       cds.add(_flt_signal);
+      _cols= cols;
       _cds = &cds;
       init_plots();
     }
@@ -212,7 +217,7 @@ namespace Ami {
 
         if (status()) {
           int ix = int(filtered_position()+_indicator_offset);
-          if (ix>=0 && ix<cols)
+          if (ix>=0 && ix<_cols)
             _sub_signal->content(1.,ix);
         }
 
@@ -230,6 +235,7 @@ namespace Ami {
     EntryTH1F* _sub_signal;
     EntryTH1F* _flt_signal;
 
+    int                  _cols;
     Cds*                 _cds;
     Ami::FeatureCache*   _cache;
     int                  _cache_index;
