@@ -18,19 +18,9 @@
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
 
-namespace Ami {
-  namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-  };
-};
-
 using namespace Ami::Qt;
 
-static NullTransform noTransform;
+static Ami::AbsTransform& noTransform = Ami::AbsTransform::null();
 
 TdcPlot::TdcPlot(QWidget*         parent,
 		 const QString&   name,
@@ -103,6 +93,7 @@ void TdcPlot::setup_payload(Cds& cds)
 
     if (_plot && !_req.changed()) {
       _plot->entry(*entry);
+      attach(_plot,cds);
     }
     else {
       if (_plot)
@@ -113,6 +104,7 @@ void TdcPlot::setup_payload(Cds& cds)
                                 noTransform,noTransform,QColor(0,0,0),
 				cds.lock());
       _plot->attach(_frame);
+      attach(_plot,cds);
       emit curve_changed();
     }
   }

@@ -1,6 +1,9 @@
 #include "ami/qt/QFit.hh"
+#include "ami/qt/QFitEntry.hh"
+#include "ami/qt/QLineFitEntry.hh"
 #include "ami/qt/QtBase.hh"
 #include "ami/data/FitEntry.hh"
+#include "ami/data/LineFitEntry.hh"
 #include "ami/data/EntryTH1F.hh"
 #include "ami/data/EntryProf.hh"
 
@@ -10,81 +13,40 @@ using Ami::Fit;
 using Ami::FitEntry;
 using namespace Ami::Qt;
 
-static QColor _color[]  = { QColor(129  , 0, 0),
-			    QColor(255, 129, 0),
-			    QColor(129, 129, 0) };
+static const unsigned NumberOf = Ami::Fit::NumberOf + Ami::LineFit::NumberOf;
 
-QFitEntry::QFitEntry(Fit::Function m,
-                     QwtPlot* frame,
-                     const QColor& c) :
-  _name (Fit::function_str(m)),
-  _fit  (FitEntry::instance(m)),
-  _curve(QString(_name.c_str()))
+QFit::QFit() : _frame(0), _fits(NumberOf)
 {
-  _curve.attach(frame);
-  _curve.setStyle(QwtPlotCurve::Lines);
-  _curve.setPen  (QPen(c));
-  _curve.setCurveAttribute(QwtPlotCurve::Inverted,true);
-}
-
-void QFitEntry::attach(QwtPlot* f) { _curve.attach(f); }
-
-void QFitEntry::fit(const Entry& p)
-{
-  switch(p.desc().type()) {
-  case DescEntry::TH1F: 
-    _fit->fit(static_cast<const EntryTH1F&>(p));
-    break;
-  case DescEntry::Prof: 
-    _fit->fit(static_cast<const EntryProf&>(p));
-    break;
-  default:
-    return;
-  }
-
-  _curve.setRawData(_fit->x().data(), _fit->y().data(), _fit->x().size());
-
-  QString v;
-  std::vector<QString> names = _fit->names();
-  std::vector<double> params = _fit->params();
-  for(unsigned i=0; i<params.size(); i++) {
-    v += QString("%1%2=%3")
-      .arg(i==0 ? '[':',')
-      .arg(names[i])
-      .arg(params[i]);
-  }
-  if (params.size()) v += QString("]");
-  _curve.setTitle( QString("%1%2").arg(_name.c_str()).arg(v) );
-}
-
-QFit::QFit() : _frame(0) 
-{
-  for(unsigned i=0; i<Fit::NumberOf; i++)
-    _fits[Fit::Function(i)] = 0;
+  for(unsigned i=0; i<_fits.size(); i++)
+    _fits[i] = 0;
 }
 
 QFit::~QFit() 
 {
-  for(unsigned i=0; i<Fit::NumberOf; i++)
-    if (_fits[Fit::Function(i)])
-      delete _fits[Fit::Function(i)];
+  for(unsigned i=0; i<_fits.size(); i++)
+    if (_fits[i])
+      delete _fits[i];
 }
 
 void QFit::attach(QwtPlot* frame) 
 {
   _frame=frame; 
-  for(unsigned i=0; i<Fit::NumberOf; i++) {
-    QFitEntry* e = _fits[Fit::Function(i)];
+  for(unsigned i=0; i<_fits.size(); i++) {
+    QAbsFitEntry* e = _fits[i];
     if (e) e->attach(frame);
   }
 }
 
-void QFit::show_fit(Fit::Function m, bool show, const QColor& c) 
+void QFit::show_fit(unsigned m, bool show, const QColor& c) 
 { 
-  QFitEntry* e = _fits[m];
+  QAbsFitEntry* e = _fits[m];
   if (show) {
-    if (e==0)
-      _fits[m] = new QFitEntry(m, _frame, c);
+    if (e==0) {
+      if (m < LineFit::NumberOf)
+	_fits[m] = new QLineFitEntry(LineFit::Method(m), _frame, c);
+      else
+	_fits[m] = new QFitEntry(Fit::Function(m-LineFit::NumberOf), _frame, c);
+    }
   }
   else if (e) {
     delete e;
@@ -94,33 +56,37 @@ void QFit::show_fit(Fit::Function m, bool show, const QColor& c)
 
 void QFit::update_fit(const Entry& p)
 {
-  for(unsigned i=0; i<Fit::NumberOf; i++) {
-    QFitEntry* e = _fits[Fit::Function(i)];
+  for(unsigned i=0; i<_fits.size(); i++) {
+    QAbsFitEntry* e = _fits[i];
     if (e && _frame)
       e->fit(p);
   }
 }
 
-QFitMenu::QFitMenu(const QString& title) :
+QFitMenu::QFitMenu(const QString& title, 
+		   const QColor&  c,
+		   Ami::DescEntry::Type t) :
   QMenu(title)
 {
-  for(unsigned i=0; i<Fit::NumberOf; i++)
-    addAction(new QFitAction(*this,Fit::Function(i),_color[i]));
-}
-
-QFitMenu::QFitMenu(const QString& title, const QColor& c) :
-  QMenu(title)
-{
-  for(unsigned i=0; i<Fit::NumberOf; i++)
-    addAction(new QFitAction(*this,Fit::Function(i),c));
+  if (t==Ami::DescEntry::Prof || t==Ami::DescEntry::Scan)
+    for(unsigned i=0; i<LineFit::NumberOf; i++)
+      addAction(new QFitAction(*this,
+			       LineFit::method_str(LineFit::Method(i)),
+			       i,c));
+  if (t==Ami::DescEntry::TH1F)
+    for(unsigned i=0,k=LineFit::NumberOf; i<Fit::NumberOf; i++,k++)
+      addAction(new QFitAction(*this,
+			       Fit::function_str(Fit::Function(i)),
+			       k,c));
 }
 
 QFitMenu::~QFitMenu() {}
 
-QFitAction::QFitAction(QFit&       host,
-                       Fit::Function m,
-                       const QColor& c) :
-  QAction(Fit::function_str(m),0),
+QFitAction::QFitAction(QFit&          host,
+		       const QString& title,
+		       unsigned       m,
+                       const QColor&  c) :
+  QAction(title,0),
   _host  (host),
   _function(m),
   _color   (c)
@@ -137,12 +103,30 @@ void QFitAction::show_fit()
 }
 
 
+QChEntry::QChEntry(const QtBase& o, Cds& cds, QChFitMenu& m) :
+  _o(o), _m(m) { m.add(&_o, true); subscribe(cds); m.subscribe(*this); }
+
+QChEntry::~QChEntry() { _m.unsubscribe(*this); }
+
+void QChEntry::clear_payload()
+{
+  _m.add(&_o, false);
+  delete this; 
+}
+
+
 QChFitMenu::QChFitMenu(const QString& s) : 
-  QMenu(s), _frame(0) {}
+  QMenu(s), _type(Ami::DescEntry::Ref), _frame(0) {}
 
-QChFitMenu::~QChFitMenu() {}
+QChFitMenu::~QChFitMenu() 
+{
+  std::list<QChEntry*> entries(_entries);
+  for(std::list<QChEntry*>::iterator it=entries.begin();
+      it!=entries.end(); it++)
+    delete (*it);
+}
 
-void QChFitMenu::add   (QtBase* b, bool show)
+void QChFitMenu::add   (const QtBase* b, bool show)
 {
   QFitMenu* m;
   QString t(b->title());
@@ -152,14 +136,26 @@ void QChFitMenu::add   (QtBase* b, bool show)
         m = _save[t];
       }
       else {
-        _save[t] = m = new QFitMenu(t,b->get_color());
+        _save[t] = m = new QFitMenu(t,b->get_color(),_type);
       }
-      addMenu(m);
+      //  Sort the menus by name
+      QList<QAction*> l = actions();
+      int i=0;
+      while (i<l.size()) {
+	if (QString::localeAwareCompare(t,l.at(i)->text())<0) {
+	  insertMenu(l.at(i),m);
+	  break;
+	}
+	i++;
+      }
+      if (i==l.size())
+	addMenu(m);
       m->attach(_frame);
       _fits[b] = m;
     }
   }
   else if (!show && _fits.find(b)!=_fits.end()) {
+    removeAction(_fits[b]->menuAction());
     _fits.erase(b);
   }
 }
@@ -167,22 +163,28 @@ void QChFitMenu::add   (QtBase* b, bool show)
 void QChFitMenu::attach(QwtPlot* frame)
 {
   _frame=frame;
-  for(std::map<QtBase*,QFitMenu*>::iterator it=_fits.begin();
+  for(std::map<const QtBase*,QFitMenu*>::iterator it=_fits.begin();
       it!=_fits.end(); it++)
     it->second->attach(frame);
 }
 
 void QChFitMenu::update()
 {
-  for(std::map<QtBase*,QFitMenu*>::iterator it=_fits.begin();
+  for(std::map<const QtBase*,QFitMenu*>::iterator it=_fits.begin();
       it!=_fits.end(); it++)
     it->second->update_fit(it->first->entry());
 }
 
 void QChFitMenu::clear()
 {
-  for(std::map<QtBase*,QFitMenu*>::iterator it=_fits.begin();
+  for(std::map<const QtBase*,QFitMenu*>::iterator it=_fits.begin();
       it!=_fits.end(); it++)
     removeAction(it->second->menuAction());
   _fits.clear();
 }
+
+void QChFitMenu::setPlotType(Ami::DescEntry::Type t) { _type=t; }
+
+void QChFitMenu::subscribe(QChEntry& e) { _entries.push_back(&e); }
+
+void QChFitMenu::unsubscribe(QChEntry& e) { _entries.remove(&e); }

@@ -122,6 +122,7 @@ void EnvPlot::setup_payload(Cds& cds)
     
     if (_plot && !_req.changed() && !_auto_range && !_retry) {
       _plot->entry(*entry);
+      attach(_plot,cds);
     }
 
     else {
@@ -171,6 +172,7 @@ void EnvPlot::setup_payload(Cds& cds)
         _plot = new QtEmpty;
       }
       _plot->attach(_frame);
+      attach(_plot,cds);
       emit curve_changed();
       _retry = false;
     }
@@ -192,7 +194,6 @@ void EnvPlot::update()
 {
   if (_plot) {
     _plot->update();
-    update_fit(_plot->entry());
     emit counts_changed(_plot->normalization());
     updated();
   }

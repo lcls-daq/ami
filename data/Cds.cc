@@ -71,8 +71,9 @@ void Cds::remove(Entry* entry)
 
 void Cds::reset()
 {
-  for (UList::iterator it=_users.begin(); it!=_users.end(); it++)
-    (*it)->clear_payload();
+  { UList users(_users);
+    for (UList::iterator it=users.begin(); it!=users.end(); it++)
+      (*it)->clear_payload(); }
   _users.clear();
 
   for (EnList::iterator it=_entries.begin(); it!=_entries.end(); it++) {

@@ -4,11 +4,13 @@
 #include <QtGui/QAction>
 #include <QtGui/QMenu>
 
-#include "ami/data/Fit.hh"
+#include "ami/qt/QAbsFitEntry.hh"
+
+#include "ami/data/Cdu.hh"
+#include "ami/data/DescEntry.hh"
 
 #include <map>
-
-#include "qwt_plot_curve.h"
+#include <vector>
 
 class QwtPlot;
 class QColor;
@@ -20,66 +22,73 @@ namespace Ami {
   class FitEntry;
   namespace Qt {
     class QtBase;
-    class QFitEntry {
-    public:
-      QFitEntry(Ami::Fit::Function, QwtPlot*, const QColor&);
-    public:
-      void attach(QwtPlot*);
-      void fit   (const Entry&);
-    private:
-      std::string   _name;
-      FitEntry* _fit;
-      QwtPlotCurve  _curve;
-    };
 
     class QFit {
     public:
       QFit();
       ~QFit();
     public:
-      void show_fit(Ami::Fit::Function,bool,const QColor&);
+      void show_fit(unsigned,bool,const QColor&);
     public:
       void update_fit(const Entry&);
     public:
       void attach(QwtPlot*);
     private:
       QwtPlot* _frame;
-      std::map< Ami::Fit::Function,QFitEntry* > _fits;
+      std::vector< QAbsFitEntry* > _fits;
     };
 
     class QFitAction : public QAction {
       Q_OBJECT
     public:
-      QFitAction(QFit&, Ami::Fit::Function, const QColor&);
+      QFitAction(QFit&, const QString&, unsigned, const QColor&);
       ~QFitAction();
     public slots:
       void show_fit();
     private:
       QFit& _host;
-      Ami::Fit::Function _function;
+      unsigned _function;
       QColor _color;
     };
 
     class QFitMenu : public QMenu, public QFit {
     public:
-      QFitMenu(const QString&);
-      QFitMenu(const QString&, const QColor&);
+      QFitMenu(const QString&, const QColor&, Ami::DescEntry::Type);
       ~QFitMenu();
     };
+
+    class QChEntry;
 
     class QChFitMenu : public QMenu {
     public:
       QChFitMenu(const QString&);
       ~QChFitMenu();
     public:
-      void add   (QtBase*, bool);
+      void add   (const QtBase*, bool);
       void clear ();
       void update();
       void attach(QwtPlot*);
+      void setPlotType(Ami::DescEntry::Type);
+    public:
+      void subscribe  (QChEntry&);
+      void unsubscribe(QChEntry&);
     private:
+      Ami::DescEntry::Type _type;
       QwtPlot* _frame;
-      std::map<QtBase*,QFitMenu*> _fits;
+      std::map<const QtBase*,QFitMenu*> _fits;
       std::map<QString,QFitMenu*> _save;
+      std::list<QChEntry*> _entries;
+    };
+
+    class QChEntry : public Cdu {
+    public:
+      QChEntry(const QtBase&, Cds&, QChFitMenu& m);
+      ~QChEntry();
+    public:
+      void clear_payload();
+    private:
+      const QtBase& _o;
+      QChFitMenu&   _m;
     };
   };
 };

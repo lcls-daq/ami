@@ -18,7 +18,6 @@ QtEmpty::QtEmpty() :
   _xinfo = new AxisBins(0,1,1);
 }
   
-  
 QtEmpty::~QtEmpty()
 {
   _curve.attach(NULL);

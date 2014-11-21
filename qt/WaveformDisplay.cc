@@ -345,6 +345,8 @@ void WaveformDisplay::prototype(const Ami::DescEntry* e)
   }
 
   _xrange->update(*_xinfo);
+
+  _fit->setPlotType(e->type());
 }
 
 void WaveformDisplay::add   (QtBase* b, Cds& cds, bool show) 
@@ -413,6 +415,7 @@ void WaveformDisplay::clear_payload() { reset(); }
 
 void WaveformDisplay::reset()
 {
+  _fit->clear();
   _sem.take();
   _curves.merge(_hidden);
   while(!_curves.empty()) {
@@ -421,7 +424,6 @@ void WaveformDisplay::reset()
     delete c;
   }
   _sem.give();
-  _fit->clear();
 }
 
 void WaveformDisplay::update()

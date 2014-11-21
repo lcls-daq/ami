@@ -16,11 +16,12 @@ class QwtLegend;
 class QAction;
 
 namespace Ami {
+  class Cds;
   class Entry;
   namespace Qt {
     class AxisControl;
-    class QFitMenu;
-    class QLineFitMenu;
+    class QChFitMenu;
+    class QtBase;
     class QtOverlay;
     class QtPlotSelector;
     class QtPlot : public QtPWidget {
@@ -53,7 +54,6 @@ namespace Ami {
       void xrange_change();
       void yrange_change();
       void update_counts(double);
-      void update_fit(const Ami::Entry&);
       void query_style();
 
       void set_reference();
@@ -84,18 +84,21 @@ namespace Ami {
       void mousePressEvent  (QMouseEvent* e);
       Ami::DescEntry::Type _type;
     public:
+      void attach(QtBase*,Cds&);
       void add_overlay(QtOverlay*);
+      void del_overlay(QtOverlay*);
     public slots:
       void update_overlay();
     protected:
       void updated();
+    protected:
+      QtBase*  _plot;
     private:
       unsigned _omask, _omasku;
       std::vector<QtOverlay*> _ovls;
       QAction* _show_ref;
       QwtPlotCurve* _ref;
-      QFitMenu*     _fit;
-      QLineFitMenu* _linefit;
+      QChFitMenu*   _fit;
     };
   };
 };

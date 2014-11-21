@@ -8,7 +8,6 @@
 #include "ami/qt/Cursors.hh"
 #include "ami/qt/Path.hh"
 #include "ami/qt/ImageFrame.hh"
-#include "ami/qt/NullTransform.hh"
 #include "ami/qt/Defaults.hh"
 //#include "ami/qt/PrintAction.hh"
 #include "ami/qt/RunMaster.hh"
@@ -38,7 +37,6 @@
 using namespace Ami::Qt;
 
 static const double no_scale[] = {0, 1000};
-static NullTransform nullTransform;
 static bool _enable_movie_option = false;
 
 Ami::Qt::ImageDisplay::ImageDisplay(bool grab) :
@@ -330,7 +328,7 @@ void Ami::Qt::ImageDisplay::update()
   emit redraw();
 }
 
-const Ami::AbsTransform& Ami::Qt::ImageDisplay::xtransform() const { return nullTransform; }
+const Ami::AbsTransform& Ami::Qt::ImageDisplay::xtransform() const { return Ami::AbsTransform::null(); }
 
 ImageFrame* Ami::Qt::ImageDisplay::plot() const { return _plot; }
 

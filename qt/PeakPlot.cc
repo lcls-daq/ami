@@ -4,7 +4,6 @@
 #include "ami/qt/ImageDisplay.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Filter.hh"
-#include "ami/qt/NullTransform.hh"
 #include "ami/qt/ImageXYProjection.hh"
 #include "ami/qt/ImageRPhiProjection.hh"
 #include "ami/qt/ImageContourProjection.hh"
@@ -31,7 +30,6 @@
 
 using namespace Ami::Qt;
 
-static NullTransform _noTransform;
 static QColor _noColor;
 
 static QColor  color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };

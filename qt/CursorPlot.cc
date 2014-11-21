@@ -26,20 +26,7 @@
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
 
-namespace Ami {
-  namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-  };
-};
-
 using namespace Ami::Qt;
-
-static NullTransform noTransform;
-
 
 CursorPlot::CursorPlot(QWidget* parent,
 		       const QString&   name,
@@ -127,7 +114,7 @@ void CursorPlot::setup_payload(Cds& cds)
 #define CASE_ENTRY(t) \
       case Ami::DescEntry::t:                                         \
         _plot = new Qt##t(_name,*static_cast<const Ami::Entry##t*>(entry), \
-                          noTransform,noTransform,QColor(0,0,0));       \
+                          Ami::AbsTransform::null(),Ami::AbsTransform::null(),QColor(0,0,0)); \
       break;
 
       switch(entry->desc().type()) {
@@ -150,7 +137,7 @@ void CursorPlot::setup_payload(Cds& cds)
         return;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),
+                           Ami::AbsTransform::null(),Ami::AbsTransform::null(),QColor(0,0,0),
                            _style.symbol_size());
         break;
       default:
@@ -178,7 +165,7 @@ void CursorPlot::update()
 {
   if (_plot) {
     _plot->update();
-    update_fit(_plot->entry());
+    ///    update_fit(_plot->entry());
     emit counts_changed(_plot->normalization());
     emit redraw();
   }

@@ -31,19 +31,7 @@
 #include <QtGui/QLabel>
 #include "qwt_plot.h"
 
-namespace Ami {
-  namespace Qt {
-    class NullTransform : public Ami::AbsTransform {
-    public:
-      ~NullTransform() {}
-      double operator()(double x) const { return x; }
-    };
-  };
-};
-
 using namespace Ami::Qt;
-
-static NullTransform noTransform;
 
 PeakFitPlot::PeakFitPlot(QWidget* parent,
 			 const QString&    name,
@@ -115,6 +103,7 @@ void PeakFitPlot::setup_payload(Cds& cds)
   if (entry) {
     if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
+      attach(_plot,cds);
     }
     else {
       if (_plot)
@@ -128,7 +117,7 @@ void PeakFitPlot::setup_payload(Cds& cds)
 #define CASE_ENTRY(t) \
       case Ami::DescEntry::t:                                         \
         _plot = new Qt##t(_name,*static_cast<const Ami::Entry##t*>(entry), \
-                          noTransform,noTransform,QColor(0,0,0));       \
+                          Ami::AbsTransform::null(),Ami::AbsTransform::null(),QColor(0,0,0));       \
       break;
 
       switch(entry->desc().type()) {
@@ -143,7 +132,7 @@ void PeakFitPlot::setup_payload(Cds& cds)
         break;
       case Ami::DescEntry::Scan: 
         _plot = new QtScan(_name,*static_cast<const Ami::EntryScan*>(entry),
-                           noTransform,noTransform,QColor(0,0,0),
+                           Ami::AbsTransform::null(),Ami::AbsTransform::null(),QColor(0,0,0),
                            _style.symbol_size());
         break;
       case Ami::DescEntry::ScalarRange:
@@ -157,8 +146,10 @@ void PeakFitPlot::setup_payload(Cds& cds)
       default:
         printf("PeakFitPlot type %d not implemented yet\n",entry->desc().type()); 
         _plot = new QtEmpty;
+	return;
       }
       _plot->attach(_frame);
+      attach(_plot,cds);
       emit curve_changed();
     }
   }

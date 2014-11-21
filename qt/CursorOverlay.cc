@@ -94,6 +94,7 @@ void CursorOverlay::setup_payload(Cds& cds)
 
     if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
+      attach(*_frame,cds);
     }
     else {
       if (_plot)
@@ -130,10 +131,10 @@ void CursorOverlay::setup_payload(Cds& cds)
       }
 
       if (_frame)
-        _attach();
+        _attach(cds);
     }
     if (!_frame && (_frame = QtPlot::lookup(_frame_name)))
-      _attach();
+      _attach(cds);
   }
   else {
     if (_output_signature>=0)
@@ -147,15 +148,8 @@ void CursorOverlay::setup_payload(Cds& cds)
 
 void CursorOverlay::update()
 {
-  if (_plot) {
-    //  This may be unnecessary
-    if (!_frame && (_frame = QtPlot::lookup(_frame_name))) {
-      printf("Late EnvOverlay attach to %s\n",qPrintable(_frame_name));
-      _attach();
-    }
-
+  if (_plot)
     _plot->update();
-  }
 
   if (_auto_range) {
     double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
@@ -167,16 +161,16 @@ void CursorOverlay::update()
   }
 }
 
-void CursorOverlay::_attach()
+void CursorOverlay::_attach(Cds& cds)
 {
   if (_order<0) {
     _order = _frame->_frame->itemList().size();
-    attach(*_frame);
   }
 
   _plot->set_color(_order-1);
   _plot->attach(_frame->_frame);
   _frame->set_style();
+  attach(*_frame,cds);
 }
 
 const QtBase* CursorOverlay::base() const { return _plot; }

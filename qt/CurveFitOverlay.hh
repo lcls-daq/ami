@@ -43,7 +43,7 @@ namespace Ami {
       void savefit(char*& p) const;
       Ami::CurveFit *loadfit(const char*& p);
     private:
-      void _attach();
+      void _attach(Cds&);
     private:
       QtPlot*            _frame;
       QString            _frame_name;

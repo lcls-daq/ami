@@ -8,7 +8,6 @@
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/QtOverlay.hh"
 #include "ami/qt/QtBase.hh"
-#include "ami/qt/QLineFit.hh"
 #include "ami/qt/QFit.hh"
 
 #include <QtGui/QVBoxLayout>
@@ -159,6 +158,8 @@ QtPlot::~QtPlot()
     _ref->attach(NULL);
     delete _ref;
   }
+
+  delete _fit;
 }
 
 void QtPlot::_layout()
@@ -188,8 +189,7 @@ void QtPlot::_layout()
       _show_ref->setEnabled(false);
       connect(_show_ref, SIGNAL(triggered()), this, SLOT(show_reference()));
       menu_bar->addMenu(m); }
-    menu_bar->addMenu(_linefit = new QLineFitMenu);
-    menu_bar->addMenu(_fit     = new QFitMenu("Fit"));
+    menu_bar->addMenu(_fit = new QChFitMenu("Fit"));
     l->addWidget(menu_bar);
     l->addStretch();
     l->addWidget(_runnum); 
@@ -203,7 +203,6 @@ void QtPlot::_layout()
   setLayout(layout);
 
 
-  _linefit->attach(_frame);
   _fit    ->attach(_frame);
   
   show();
@@ -371,12 +370,6 @@ void QtPlot::update_counts(double n)
   _counts->setText(QString("Np %1").arg(n));
 }
 
-void QtPlot::update_fit(const Ami::Entry& e)
-{
-  _linefit->update_fit(e);
-  _fit    ->update_fit(e);
-}
-
 void QtPlot::query_style()
 {
   _style.query(this);
@@ -445,10 +438,32 @@ void QtPlot::mousePressEvent(QMouseEvent* e)
 void QtPlot::add_overlay(QtOverlay* o)
 {
   connect(o, SIGNAL(updated()), this, SLOT(update_overlay()));
-  _omask |= (1<<_ovls.size());
-  _ovls.push_back(o);
+  unsigned i=0;
+  while(i<_ovls.size()) {
+    if (_ovls[i]==o) break;
+    i++;
+  }
+  if (i==_ovls.size())
+    _ovls.push_back(o);
+  _omask |= (1<<i);
   _omasku = _omask;
+  _fit->add(o->base(),true);
 }
+
+void QtPlot::del_overlay(QtOverlay* o)
+{
+  disconnect(o, SIGNAL(updated()), this, SLOT(update_overlay()));
+  for(unsigned i=0; i<_ovls.size(); i++)
+    if (_ovls[i]==o) {
+      _omask  &= ~(1<<i);
+      _omasku &= ~(1<<i);
+      _fit->add(o->base(),false);
+      break;
+    }
+}
+
+void QtPlot::attach(QtBase* b,Cds& cds)
+{ new QChEntry(*b,cds,*_fit); }
 
 void QtPlot::update_overlay()
 {
@@ -457,6 +472,7 @@ void QtPlot::update_overlay()
     if (o==_ovls[i]) {
       _omasku &= ~(1<<i);
       if (_omasku == 0) {
+	_fit->update();
 	emit redraw();
 	_omasku = _omask;
       }
@@ -468,6 +484,7 @@ void QtPlot::updated()
 {
   _omasku &= ~(Base);
   if (_omasku == 0) {
+    _fit->update();
     emit redraw();
     _omasku = _omask;
   }
@@ -480,14 +497,7 @@ void QtPlot::setPlotType(Ami::DescEntry::Type t)
   _plots         .push_back(this);
 
   _style.setPlotType(t);
-
-  bool llinefit=(t==DescEntry::Scan || t==DescEntry::Prof);
-  _linefit->setVisible(llinefit);
-  _linefit->setEnabled(llinefit);
-
-  bool lfit=(t==DescEntry::TH1F);
-  _fit->setVisible(lfit);
-  _fit->setVisible(lfit);
+  _fit ->setPlotType(t);
 }
 
 void QtPlot::set_reference()

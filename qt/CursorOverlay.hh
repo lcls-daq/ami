@@ -32,7 +32,7 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
     private:
-      void _attach();
+      void _attach(Cds&);
     private:
       QtPlot*            _frame;
       QString            _frame_name;
