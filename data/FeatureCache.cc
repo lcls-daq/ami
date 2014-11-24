@@ -182,9 +182,12 @@ bool   FeatureCache::update()
 void   FeatureCache::dump() const
 {
   printf("FeatureCache entries %d\n",(int) _names.size());
+  printf("%20.20s\t%10.10s\t%5.5s\t%5.5s\n",
+	 "Name","Value","Dmg","Use");
   for(unsigned k=0; k<_names.size(); k++) {
-    printf("  %s [%f] %c\n",_names[k].c_str(), _cache[k], 
-	   ((_damaged[k>>5]>>(k&0x1f)) & 1) ? 'D':' ');
+    printf("%20.20s\t%f\t%c\t%c\n",_names[k].c_str(), _cache[k], 
+	   ((_damaged[k>>5]>>(k&0x1f)) & 1) ? 'D':' ',
+	   ((_used   [k>>5]>>(k&0x1f)) & 1) ? 'U':' ');
   }
 }
 

@@ -13,7 +13,7 @@ namespace Ami {
 
     class L3TClient : public Ami::AbsClient {
     public:
-      L3TClient(AbsFilter*);
+      L3TClient(AbsFilter*, const char* fname);
       virtual ~L3TClient();
     public:
       enum { Success, TimedOut };
@@ -30,6 +30,7 @@ namespace Ami {
       void process         ();
     private:
       AbsFilter*      _filter;
+      const char*     _fname;
       char*           _request;
       ClientManager*  _manager;
       sem_t           _initial_sem;

@@ -1029,11 +1029,12 @@ pyami_set_l3t(PyObject *self, PyObject *args)
   if (_discovery) {
 
     const char* filter_str = 0;
+    const char* file_str = 0;
 
-    if (!PyArg_ParseTuple(args,"s",&filter_str))
+    if (!PyArg_ParseTuple(args,"s|s",&filter_str,&file_str))
       return NULL;
 
-    Ami::Python::L3TClient cl(parse_filter(filter_str));
+    Ami::Python::L3TClient cl(parse_filter(filter_str),file_str);
     int result = cl.initialize(*_discovery->allocate(cl));
 
     if (result == Ami::Python::L3TClient::Success) {
@@ -1055,7 +1056,7 @@ pyami_clear_l3t(PyObject *self, PyObject *args)
 {
   if (_discovery) {
 
-    Ami::Python::L3TClient cl(new Ami::RawFilter);
+    Ami::Python::L3TClient cl(new Ami::RawFilter,0);
 
     int result = cl.initialize(*_discovery->allocate(cl));
 

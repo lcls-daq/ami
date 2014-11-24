@@ -15,6 +15,7 @@ namespace Pds {
 
 namespace Ami {
   class Entry;
+  class FeatureCache;
 
   /**
    *  A base class for generating plottable data (Entry objects) from received
@@ -128,6 +129,8 @@ namespace Ami {
     static int  display_ppbin(unsigned xpixels, unsigned ypixels, unsigned margin=0);
     static void post_diagnostics(bool);
     static bool post_diagnostics();
+  public:
+    static EventHandler* lookup(Pds::TypeId::Type, const Pds::Src&, FeatureCache&);
   protected:
     bool _full_resolution() const;
   private:

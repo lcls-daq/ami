@@ -5,47 +5,6 @@
 #include "ami/app/NameService.hh"
 
 #include "ami/event/EventHandler.hh"
-#include "ami/event/EvrHandler.hh"
-#include "ami/event/FEEGasDetEnergyReader.hh"
-#include "ami/event/EBeamReader.hh"
-#include "ami/event/PhaseCavityReader.hh"
-#include "ami/event/GMDReader.hh"
-#include "ami/event/EpicsXtcReader.hh"
-#include "ami/event/SharedIpimbReader.hh"
-#include "ami/event/SharedPimHandler.hh"
-#include "ami/event/ControlXtcReader.hh"
-#include "ami/event/L3THandler.hh"
-#include "ami/event/IpimbHandler.hh"
-#include "ami/event/EncoderHandler.hh"
-#include "ami/event/UsdUsbHandler.hh"
-#include "ami/event/Gsc16aiHandler.hh"
-#include "ami/event/Opal1kHandler.hh"
-#include "ami/event/OrcaHandler.hh"
-#include "ami/event/QuartzHandler.hh"
-//#include "ami/event/PhasicsHandler.hh"
-#include "ami/event/TimepixHandler.hh"
-#include "ami/event/RayonixHandler.hh"
-#include "ami/event/TM6740Handler.hh"
-#include "ami/event/FccdHandler.hh"
-#include "ami/event/Fccd960Handler.hh"
-#include "ami/event/PnccdHandler.hh"
-#include "ami/event/CspadHandler.hh"
-#include "ami/event/CspadMiniHandler.hh"
-#include "ami/event/PrincetonHandler.hh"
-#include "ami/event/AcqWaveformHandler.hh"
-#include "ami/event/AcqTdcHandler.hh"
-#include "ami/event/DiodeFexHandler.hh"
-#include "ami/event/IpmFexHandler.hh"
-#include "ami/event/OceanOpticsHandler.hh"
-#include "ami/event/FliHandler.hh"
-#include "ami/event/AndorHandler.hh"
-#include "ami/event/PimaxHandler.hh"
-#include "ami/event/ImpWaveformHandler.hh"
-#include "ami/event/EpixWaveformHandler.hh"
-#include "ami/event/EpixHandler.hh"
-#include "ami/event/EpixHandlerT.hh"
-#include "ami/event/TimeToolHandler.hh"
-#include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryScalar.hh"
@@ -82,7 +41,7 @@ using namespace Ami;
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
                      Factory&      factory,
                      EventFilter&  filter,
-         bool          sync) :
+		     bool          sync) :
   _cache   (cache),
   _factory (factory),
   _filter  (filter),
@@ -419,82 +378,28 @@ int XtcClient::process(Pds::Xtc* xtc)
     }
     //  Wasn't handled
     if (_seq->service()==Pds::TransitionId::Configure &&
-  xtc->damage.value()==0) {
+	xtc->damage.value()==0) {
       const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       FeatureCache& cache = *_cache[PreAnalysis];
-      EventHandler* h = 0;
-
-      switch(xtc->contains.id()) {
-      case Pds::TypeId::Any:                 h = new EpixHandlerT      (info); break;
-      case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
-      case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
-      case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
-      case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
-      case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
-      case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
-      case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
-        //      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
-      case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
-      case Pds::TypeId::Id_RayonixConfig:    h = new RayonixHandler    (info); break;
-      case Pds::TypeId::Id_FccdConfig  :
-        if (info.device()==DetInfo::Fccd960) h = new Fccd960Handler    (info, cache);
-        else                                 h = new FccdHandler       (info);
-        break;
-      case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
-      case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
-      case Pds::TypeId::Id_CspadConfig:
-        if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
-        else                                 h = new CspadMiniHandler  (info,cache);
-        break;
-      case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;
-      case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
-      case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
-      case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
-      case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
-      case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
-      case Pds::TypeId::Id_L3TConfig:        h = new L3THandler        (cache); break;
-      case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
-      case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
-      case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
-      case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
-      case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
-      case Pds::TypeId::Id_Spectrometer:     h = new BldSpectrometerHandler(bldInfo,cache); break;
-      case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
-      case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
-      case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
-      case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
-      case Pds::TypeId::Id_EvsConfig:
-      case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
-      case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
-      case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
-      case Pds::TypeId::Id_GenericPgpConfig:
-      case Pds::TypeId::Id_Epix10kConfig:
-      case Pds::TypeId::Id_Epix100aConfig:
-      case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
-      case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
-      case Pds::TypeId::Id_TimeToolConfig:   h = new TimeToolHandler  (info,cache); break;
-      case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
-      case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
-      case Pds::TypeId::Id_AliasConfig:
-  /*  Apply new name service to discovered data */
-        if (!_name_service)
-          _name_service = new NameService;
-        _name_service->append(*xtc);
-        for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-          const char* name = _name_service->name((*it)->info());
-          if (name) {
-            (*it)->rename(name);
-          }
-        }
-        break;
-      default: break;
-      }
+      EventHandler* h = EventHandler::lookup(xtc->contains.id(), xtc->src, cache);
       if (!h) {
-        if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
-            xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
-            xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
-            xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
+	if (xtc->contains.id()==Pds::TypeId::Id_AliasConfig) {
+	  /*  Apply new name service to discovered data */
+	  if (!_name_service)
+	    _name_service = new NameService;
+	  _name_service->append(*xtc);
+	  for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+	    const char* name = _name_service->name((*it)->info());
+	    if (name) {
+	      (*it)->rename(name);
+	    }
+	  }
+	}
+        else if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
+		 xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
+		 xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
+		 xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
           ;
         else
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());

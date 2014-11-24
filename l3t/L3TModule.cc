@@ -7,44 +7,6 @@
 #include "ami/app/NameService.hh"
 
 #include "ami/event/EventHandler.hh"
-#include "ami/event/EvrHandler.hh"
-#include "ami/event/FEEGasDetEnergyReader.hh"
-#include "ami/event/EBeamReader.hh"
-#include "ami/event/PhaseCavityReader.hh"
-#include "ami/event/GMDReader.hh"
-#include "ami/event/EpicsXtcReader.hh"
-#include "ami/event/SharedIpimbReader.hh"
-#include "ami/event/SharedPimHandler.hh"
-#include "ami/event/ControlXtcReader.hh"
-#include "ami/event/IpimbHandler.hh"
-#include "ami/event/EncoderHandler.hh"
-#include "ami/event/UsdUsbHandler.hh"
-#include "ami/event/Gsc16aiHandler.hh"
-#include "ami/event/Opal1kHandler.hh"
-#include "ami/event/OrcaHandler.hh"
-#include "ami/event/QuartzHandler.hh"
-//#include "ami/event/PhasicsHandler.hh"
-#include "ami/event/TimepixHandler.hh"
-#include "ami/event/RayonixHandler.hh"
-#include "ami/event/TM6740Handler.hh"
-#include "ami/event/FccdHandler.hh"
-#include "ami/event/Fccd960Handler.hh"
-#include "ami/event/PnccdHandler.hh"
-#include "ami/event/CspadHandler.hh"
-#include "ami/event/CspadMiniHandler.hh"
-#include "ami/event/PrincetonHandler.hh"
-#include "ami/event/AcqWaveformHandler.hh"
-#include "ami/event/AcqTdcHandler.hh"
-#include "ami/event/DiodeFexHandler.hh"
-#include "ami/event/IpmFexHandler.hh"
-#include "ami/event/OceanOpticsHandler.hh"
-#include "ami/event/FliHandler.hh"
-#include "ami/event/AndorHandler.hh"
-#include "ami/event/PimaxHandler.hh"
-#include "ami/event/ImpWaveformHandler.hh"
-#include "ami/event/EpixWaveformHandler.hh"
-#include "ami/event/EpixHandler.hh"
-#include "ami/event/EpixHandlerT.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/Analysis.hh"
 #include "ami/data/FeatureCache.hh"
@@ -164,16 +126,16 @@ bool L3TModule::post_configure()
     for(unsigned k=0; k<(*it)->nentries(); k++,sit++) {
       const Entry* e = (*it)->entry(k);
       if (e) {
-  unsigned signature = (*sit)>>16;
-  unsigned options   = (*sit)&0xffff;
+	unsigned signature = (*sit)>>16;
+	unsigned options   = (*sit)&0xffff;
 #ifdef DBUG
-  printf("Assigning signature %d options %x to %s\n",
-         signature, options, e->desc().name());
+	printf("Assigning signature %d options %x to %s\n",
+	       signature, options, e->desc().name());
 #endif
         /// Assign the correct (fixed) signature
         _discovery.add   (const_cast<Entry*>(e),signature);
-  /// Assign any special options that were in effect
-  _discovery.entry(signature)->desc().options(options);
+	/// Assign any special options that were in effect
+	_discovery.entry(signature)->desc().options(options);
       }
     }
   }
@@ -197,13 +159,13 @@ bool L3TModule::post_configure()
 
   _import->parse_filter  (*this);
 
+  _features[PreAnalysis]->use(*_features[PostAnalysis]);
+
 #ifdef DBUG
   for(std::map<int,Cds*>::iterator it=_cds.begin();
       it!=_cds.end(); it++)
     it->second->showentries();
-  const std::vector<std::string>& n = _features[PostAnalysis]->names();
-  for(unsigned i=0; i<n.size(); i++)
-    printf("\t%s\n",n[i].c_str());
+  _features[PostAnalysis]->dump();
 #endif
 
   return _import->status();
@@ -382,60 +344,11 @@ void L3TModule::handler (const Pds::Src& src,
                          const std::list<Pds::TypeId::Type>& types,
                          const std::list<int>& signatures)
 {
-  const DetInfo& info    = reinterpret_cast<const DetInfo&>(src);
-  const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(src);
   FeatureCache& cache = *_features[PreAnalysis];
-  EventHandler* h = 0;
 
   for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
       it!=types.end(); it++) {
-    switch(*it) {
-    case Pds::TypeId::Any:                 h = new EpixHandlerT      (info); break;
-    case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
-    case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
-    case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
-    case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
-    case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
-    case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;
-    case Pds::TypeId::Id_QuartzConfig:     h = new QuartzHandler     (info); break;
-      //      case Pds::TypeId::Id_PhasicsConfig:    h = new PhasicsHandler    (info); break;
-    case Pds::TypeId::Id_TimepixConfig:    h = new TimepixHandler    (info); break;
-    case Pds::TypeId::Id_RayonixConfig:    h = new RayonixHandler    (info); break;
-    case Pds::TypeId::Id_FccdConfig  :
-      if (info.device()==DetInfo::Fccd960) h = new Fccd960Handler    (info, cache);
-      else                                 h = new FccdHandler       (info);
-      break;
-    case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
-    case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
-    case Pds::TypeId::Id_CspadConfig:
-      if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
-      else                                 h = new CspadMiniHandler  (info,cache);
-      break;
-    case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;
-    case Pds::TypeId::Id_OceanOpticsConfig:h = new OceanOpticsHandler(info);     break;
-    case Pds::TypeId::Id_FliConfig:        h = new FliHandler        (info,cache); break;
-    case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
-    case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
-    case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
-    case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
-    case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
-    case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
-    case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;
-    case Pds::TypeId::Id_GMD:              h = new GMDReader            (cache); break;
-    case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
-    case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
-    case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
-    case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
-    case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
-    case Pds::TypeId::Id_DiodeFexConfig:   h = new DiodeFexHandler (info,cache); break;
-    case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
-    case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
-    case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
-    case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
-    case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
-    default: break;
-    }
-
+    EventHandler* h = EventHandler::lookup(*it, src, cache);
     if (h) {
       _handlers.push_back(h);
       _signatures[h->info().phy()] = signatures;
@@ -496,6 +409,7 @@ void L3TModule::filter  (const AbsFilter& filter)
   const char* p = buffer;
   FilterFactory filters(*_features[PostAnalysis]);
   _filter = filters.deserialize(p);
+  _filter->use();
 
   delete[] buffer;
 }

@@ -16,8 +16,10 @@ static const int BufferSize = 0x8000;
 //
 //  
 //
-L3TClient::L3TClient(AbsFilter* f) :
+L3TClient::L3TClient(AbsFilter* f,
+		     const char* fname) :
   _filter          (f),
+  _fname           (fname),
   _request         (new char[BufferSize]),
   _manager         (0)
 {
@@ -50,7 +52,8 @@ int  L3TClient::configure       (iovec* iov)
   ConfigureRequest& r = 
     *new(p) ConfigureRequest(ConfigureRequest::Filter,
                              (1<<31),
-                             *_filter);
+                             *_filter,
+			     _fname);
   p += r.size();
 
   iov[0].iov_base = _request;

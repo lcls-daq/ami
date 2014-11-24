@@ -78,6 +78,14 @@ FilterImport::FilterImport(const std::string& input) :
               const char* o = (const char*)QtPersistent::extract_op(p);
               _filter = fact.deserialize(o);
             }
+	    else if (stag.name == "_text") {
+#ifdef DBUG
+	      QString s = QtPersistent::extract_s(p);
+	      printf("FilterImport expr %s\n",qPrintable(s));
+#else
+	      QtPersistent::extract_s(p);
+#endif
+	    }
           XML_iterate_close(AbsFilter,stag);
         }
         else if (rtag.name == "_handlers")
@@ -235,18 +243,19 @@ FilterExport::~FilterExport() {}
 
 void FilterExport::write(const char* fname) const
 {
-  if (fname==0)
-    fname = _default_fname;
+  std::stringstream o;
+  if (fname==0 || strlen(fname)==0) {
+    char* home = getenv("HOME");
+    if (home)
+      o << home << '/';
+    o << _default_fname;
+  }
+  else
+    o << fname;
 
   //
   //  Obtain a lock or silently fail
   //
-  std::stringstream o;
-//   char* home = getenv("HOME");
-//   if (home)
-//     o << home << '/';
-  o << fname;
-
   if (_lock(o.str())) {
     FILE* f = fopen(o.str().c_str(),"w");
     if (f) {

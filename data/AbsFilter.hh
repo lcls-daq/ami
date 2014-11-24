@@ -29,6 +29,8 @@ namespace Ami {
   public:
     Type  type() const { return (Type)_type; }
   public:
+    ///  Mark the inputs used by this operation
+    virtual void use   () const {}
     ///  Returns status of whether inputs are complete
     virtual bool  valid() const = 0;
     ///  Returns decision of whether to process the event

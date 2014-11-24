@@ -65,6 +65,8 @@ void EventFilter::configure   (Dgram* dg)
 
   _seq = &dg->seq;
   iterate(&dg->xtc);
+
+  _f->use();
 }
 
 bool Ami::EventFilter::accept(Dgram* dg)

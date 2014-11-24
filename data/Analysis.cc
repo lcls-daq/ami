@@ -56,6 +56,7 @@ void   Analysis::use()
 {
   _input.desc().used(true);
   _op->use();
+  _filter->use();
 }
 
 void   Analysis::analyze()

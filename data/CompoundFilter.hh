@@ -15,6 +15,7 @@ namespace Ami {
   public:
     const AbsFilter& a() const { return _a; }    
     const AbsFilter& b() const { return _b; }
+    void  use   () const { _a.use(); _b.use(); }
   private:
     void* _serialize(void* p) const { return _b.serialize(_a.serialize(p)); }
   protected:
