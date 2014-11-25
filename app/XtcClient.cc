@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "XtcClient.hh"
 
 #include "ami/app/EventFilter.hh"
@@ -41,7 +43,7 @@ using namespace Ami;
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
                      Factory&      factory,
                      EventFilter&  filter,
-		     bool          sync) :
+                     bool          sync) :
   _cache   (cache),
   _factory (factory),
   _filter  (filter),
@@ -321,9 +323,9 @@ int XtcClient::process(Pds::Xtc* xtc)
            h->info().phy  () == xtc->src.phy())) {
         if (_seq->isEvent()) {
 
-	  //
-	  //  Fix: the "used" test should be done once (after all configures) and cached
-	  //
+          //
+          //  Fix: the "used" test should be done once (after all configures) and cached
+          //
     if (h->used()) {
 
       const std::list<Pds::TypeId::Type>& types = h->data_types();
@@ -378,28 +380,28 @@ int XtcClient::process(Pds::Xtc* xtc)
     }
     //  Wasn't handled
     if (_seq->service()==Pds::TransitionId::Configure &&
-	xtc->damage.value()==0) {
+        xtc->damage.value()==0) {
       const DetInfo& info    = reinterpret_cast<const DetInfo&>(xtc->src);
       const BldInfo& bldInfo = reinterpret_cast<const BldInfo&>(xtc->src);
       FeatureCache& cache = *_cache[PreAnalysis];
       EventHandler* h = EventHandler::lookup(xtc->contains.id(), xtc->src, cache);
       if (!h) {
-	if (xtc->contains.id()==Pds::TypeId::Id_AliasConfig) {
-	  /*  Apply new name service to discovered data */
-	  if (!_name_service)
-	    _name_service = new NameService;
-	  _name_service->append(*xtc);
-	  for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
-	    const char* name = _name_service->name((*it)->info());
-	    if (name) {
-	      (*it)->rename(name);
-	    }
-	  }
-	}
+        if (xtc->contains.id()==Pds::TypeId::Id_AliasConfig) {
+          /*  Apply new name service to discovered data */
+          if (!_name_service)
+            _name_service = new NameService;
+          _name_service->append(*xtc);
+          for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
+            const char* name = _name_service->name((*it)->info());
+            if (name) {
+              (*it)->rename(name);
+            }
+          }
+        }
         else if (xtc->contains.id()==Pds::TypeId::Id_TM6740Config ||
-		 xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
-		 xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
-		 xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
+                 xtc->contains.id()==Pds::TypeId::Id_EpicsConfig  ||
+                 xtc->contains.id()==Pds::TypeId::Id_EvrIOConfig  ||
+                 xtc->contains.id()==Pds::TypeId::Id_PartitionConfig)
           ;
         else
           printf("XtcClient::process cannot handle type %d\n",xtc->contains.id());
