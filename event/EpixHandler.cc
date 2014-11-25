@@ -386,7 +386,7 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
 
 EpixHandler::~EpixHandler()
 {
-  delete &_config_cache;
+  delete _config_cache;
   reset();
 }
 

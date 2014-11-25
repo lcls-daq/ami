@@ -128,7 +128,10 @@ void CurveFitOverlay::setup_payload(Cds& cds)
   if (entry) {
     if (_plot && !_req.changed()) {
       _plot->entry(*entry);
-      attach(*_frame,cds);
+      if (!_frame && (_frame = QtPlot::lookup(_frame_name)))
+        _attach(cds);
+      else if (_frame)
+        attach(*_frame,cds);
     }
     else {
       if (_plot)

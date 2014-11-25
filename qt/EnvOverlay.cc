@@ -109,7 +109,10 @@ void EnvOverlay::setup_payload(Cds& cds)
     
     if (_plot && !_req.changed() && !_auto_range) {
       _plot->entry(*entry);
-      attach(*_frame,cds);
+      if (!_frame && (_frame = QtPlot::lookup(_frame_name)))
+        _attach(cds);
+      else if (_frame)
+        attach(*_frame,cds);
     }
 
     else {
