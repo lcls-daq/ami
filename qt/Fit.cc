@@ -4,6 +4,7 @@
 #include "ami/qt/EnvPlot.hh"
 #include "ami/qt/EnvPost.hh"
 #include "ami/qt/EnvOverlay.hh"
+#include "ami/qt/PlotFrame.hh"
 #include "ami/qt/PostAnalysis.hh"
 #include "ami/qt/QtPlotSelector.hh"
 #include "ami/qt/ScalarPlotDesc.hh"
@@ -20,7 +21,9 @@
 #include <QtGui/QGroupBox>
 #include <QtGui/QHBoxLayout>
 #include <QtGui/QLabel>
+#include <QtGui/QLineEdit>
 #include <QtGui/QPushButton>
+#include <QtGui/QValidator>
 #include <QtGui/QVBoxLayout>
 
 #include <string>
@@ -40,12 +43,14 @@ static Ami::Fit _fit_op(const Ami::AbsOperator& op, const Ami::DescEntry& o)
 Fit::Fit(QWidget* parent, 
          ChannelDefinition* channels[], 
          unsigned nchannels, 
-         WaveformDisplay& frame) :
+         WaveformDisplay& frame,
+         QtPWidget* frameParent) :
   QtPWidget (parent),
   _channels (channels),
   _nchannels(nchannels),
   _channel  (0),
   _frame    (frame),
+  _frameParent(frameParent),
   _list_sem (Semaphore::FULL)
 {
   setWindowTitle("Fit");
@@ -65,9 +70,17 @@ Fit::Fit(QWidget* parent,
   
   _scalar_desc = new ScalarPlotDesc(0, &FeatureRegistry::instance(), false);
 
+  (_xlo = new QLineEdit)->setMaximumWidth(60);
+  (_xhi = new QLineEdit)->setMaximumWidth(60);
+
+  new QDoubleValidator(_xlo);
+  new QDoubleValidator(_xhi);
+
   QPushButton* plotB  = new QPushButton("Plot");
   QPushButton* ovlyB  = new QPushButton("Overlay");
   QPushButton* closeB = new QPushButton("Close");
+  QPushButton* grabB  = new QPushButton("Grab");
+  QPushButton* resetB = new QPushButton("Reset");
 
   QVBoxLayout* layout = new QVBoxLayout;
   { QGroupBox* channel_box = new QGroupBox("Source Channel");
@@ -75,6 +88,11 @@ Fit::Fit(QWidget* parent,
     layout1->addWidget(new QLabel("Channel"));
     layout1->addWidget(channelBox);
     layout1->addStretch();
+    layout1->addWidget(new QLabel("Range"));
+    layout1->addWidget(_xlo);
+    layout1->addWidget(_xhi);
+    layout1->addWidget(grabB);
+    layout1->addWidget(resetB);
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
@@ -100,6 +118,8 @@ Fit::Fit(QWidget* parent,
   connect(ovlyB     , SIGNAL(clicked()),      this, SLOT(overlay()));
   connect(closeB    , SIGNAL(clicked()),      this, SLOT(hide()));
   connect(closeB    , SIGNAL(clicked()),      this, SIGNAL(closed()));
+  connect(grabB     , SIGNAL(clicked()),      this, SLOT(grabRange()));
+  connect(resetB    , SIGNAL(clicked()),      this, SLOT(resetRange()));
   connect(_functionBox, SIGNAL(currentIndexChanged(int)), this, SLOT(set_function(int)));
 
   _plotB = plotB;
@@ -270,7 +290,9 @@ void Fit::plot          ()
                                 desc,
                                 new Ami::Fit(*desc, 
                                              Ami::Fit::Function(_functionBox->currentIndex()),
-                                             _parameterBox->currentIndex()),
+                                             _parameterBox->currentIndex(),
+                                             _xlo->text().toDouble(),
+                                             _xhi->text().toDouble()),
                                 _channel);
 
     _list_sem.take();
@@ -352,11 +374,11 @@ void Fit::add_overlay   (DescEntry* desc, QtPlot* plot, SharedData*)
   _list_sem.take();
   _ovls.push_back(ovl);
   _list_sem.give();
-
+  
   connect(ovl, SIGNAL(changed()), this, SIGNAL(changed()));
   emit changed();
 }
-
+ 
 void Fit::remove_overlay(QtOverlay* obj)
 {
   EnvOverlay* ovl = static_cast<EnvOverlay*>(obj);
@@ -365,3 +387,32 @@ void Fit::remove_overlay(QtOverlay* obj)
   _list_sem.give();
 }
 
+void Fit::mousePressEvent(double x, double)
+{
+  _xlo->setText(QString::number(x));
+}
+
+void Fit::mouseMoveEvent(double,double) {}
+
+void Fit::mouseReleaseEvent(double x, double)
+{
+  double xlo = _xlo->text().toDouble();
+  if (x < xlo) {
+    _xlo->setText(QString::number(x));
+    _xhi->setText(QString::number(xlo));
+  }
+  else
+    _xhi->setText(QString::number(x));
+}
+ 
+void Fit::grabRange()
+{
+  _frame.plot()->set_cursor_input(this);
+  if (_frameParent) _frameParent->front();
+}
+
+void Fit::resetRange()
+{
+  _xlo->setText(QString());
+  _xhi->setText(QString());
+}

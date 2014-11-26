@@ -153,7 +153,7 @@ namespace Ami {
     }
     void analyze(const Pds::ClockTime& _clk) {
       if (_evrdata && _frame) {
-
+        m_pedestal = _frame->offset();
         TimeTool::Fex::analyze(_frame->data16(),
                                _evrdata->fifoEvents(),
                                _ipmdata);

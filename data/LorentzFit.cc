@@ -157,7 +157,7 @@ LorentzFit::~LorentzFit()
 {
 }
 
-void LorentzFit::fit(const EntryTH1F& e)
+void LorentzFit::fit(const EntryTH1F& e, double xlo, double xhi)
 {
   Stat s;
 
@@ -166,10 +166,15 @@ void LorentzFit::fit(const EntryTH1F& e)
   std::vector<double> vs;
 
   const DescTH1F& desc = e.desc();
+  if (xlo==0 && xhi==0) {
+    xlo = desc.xlow();
+    xhi = desc.xup ();
+  }
   double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
   double xo = desc.xlow()+0.5*dx;
   for(unsigned i=0; i<desc.nbins(); i++) {
     double x = xo+double(i)*dx;
+    if (x < xlo || x > xhi) continue;
     double y = e.content(i);
     if (y > ErrMin) {
       vx.push_back(x);
@@ -194,19 +199,13 @@ void LorentzFit::fit(const EntryTH1F& e)
   if (e.desc().isnormalized())
     a /= e.info(EntryTH1F::Normalization);
 
-  unsigned n = desc.nbins();
-  unsigned n0,n1;
-  for(n0=0  ; n0<n  && e.content(n0)<ErrMin; n0++) ;
-  for(n1=n-1; n1>=0 && e.content(n1)<ErrMin; n1--) ;
+  if (vx.size()<2) return;
 
-  if (n0>=n1) return;
-
-  n = 2*(n1-n0+1)+1;
-
+  unsigned n = 2*unsigned((vx.back()-vx.front())/dx+1.5)+1;
   _x.resize(n);
   _y.resize(n);
-  xo  = desc.xlow()+dx*double(n0);
   dx *= 0.5;
+  xo = vx.front()-dx;
   for(unsigned i=0; i<n; i++) {
     double x = xo+double(i)*dx;
     _x[i] = x;
@@ -215,7 +214,7 @@ void LorentzFit::fit(const EntryTH1F& e)
   }
 }
 
-void LorentzFit::fit(const EntryProf& e)
+void LorentzFit::fit(const EntryProf& e,double xlo,double xhi)
 {
   Stat s;
 
@@ -224,10 +223,15 @@ void LorentzFit::fit(const EntryProf& e)
   std::vector<double> vs;
 
   const DescProf& desc = e.desc();
+  if (xlo==0 && xhi==0) {
+    xlo = desc.xlow();
+    xhi = desc.xup ();
+  }
   double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
   double xo = desc.xlow()+0.5*dx;
   for(unsigned i=0; i<desc.nbins(); i++) {
     double x = xo+double(i)*dx;
+    if (x < xlo || x > xhi) continue;
     double y = e.ymean(i);
     vx.push_back(x);
     vy.push_back(y);
@@ -249,12 +253,14 @@ void LorentzFit::fit(const EntryProf& e)
   double gamd2sq = gamd2*gamd2;
   double a = (_params[0]/M_PI)*gamd2;
 
-  unsigned n = 2*desc.nbins()+1;
+  if (vx.size()<2) return;
+
+  unsigned n = 2*unsigned((vx.back()-vx.front())/dx+1.5)+1;
 
   _x.resize(n);
   _y.resize(n);
-  xo  = desc.xlow();
   dx *= 0.5;
+  xo  = vx.front()-dx;
   for(unsigned i=0; i<n; i++) {
     double x = xo+double(i)*dx;
     _x[i] = x;

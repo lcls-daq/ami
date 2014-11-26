@@ -201,6 +201,7 @@ namespace Ami {
 				   _data->projected_sideband(c));
         }
         else {
+          m_pedestal = _frame->offset();
           TimeTool::Fex::analyze(_frame->data16(),
                                  _evrdata->fifoEvents(),
                                  _ipmdata);

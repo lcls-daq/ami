@@ -11,8 +11,8 @@ namespace Ami {
     GaussFit();
     ~GaussFit();
   public:
-    virtual void fit(const EntryTH1F&);
-    virtual void fit(const EntryProf&);
+    virtual void fit(const EntryTH1F&,double,double);
+    virtual void fit(const EntryProf&,double,double);
   public:
     std::vector<double>  params() const;  // Display result
     std::vector<QString> names () const;  // Display result

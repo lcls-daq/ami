@@ -177,7 +177,7 @@ namespace Ami {
       if (_evrdata && _frame) {
 
 	reset();
-
+        m_pedestal = _frame->offset();
         TimeTool::Fex::analyze(_frame->data16(),
                                _evrdata->fifoEvents(),
                                _ipmdata);

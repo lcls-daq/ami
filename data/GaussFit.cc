@@ -38,7 +38,7 @@ GaussFit::~GaussFit()
 {
 }
 
-void GaussFit::fit(const EntryTH1F& e)
+void GaussFit::fit(const EntryTH1F& e,double,double)
 {
   GaussFitStats s;
   const DescTH1F& d = e.desc();
@@ -68,7 +68,7 @@ void GaussFit::fit(const EntryTH1F& e)
   }
 }
 
-void GaussFit::fit(const EntryProf& e)
+void GaussFit::fit(const EntryProf& e,double,double)
 {
   GaussFitStats s;
   const DescProf& d = e.desc();

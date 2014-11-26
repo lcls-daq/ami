@@ -73,6 +73,8 @@ namespace Ami {
       void subscribe  (QChEntry&);
       void unsubscribe(QChEntry&);
     private:
+      void _insert    (QFitMenu*, const QString&);
+    private:
       Ami::DescEntry::Type _type;
       QwtPlot* _frame;
       std::map<const QtBase*,QFitMenu*> _fits;

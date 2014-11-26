@@ -28,10 +28,10 @@ void QFitEntry::fit(const Entry& p)
 {
   switch(p.desc().type()) {
   case DescEntry::TH1F: 
-    _fit->fit(static_cast<const EntryTH1F&>(p));
+    _fit->fit(static_cast<const EntryTH1F&>(p),0,0);
     break;
   case DescEntry::Prof: 
-    _fit->fit(static_cast<const EntryProf&>(p));
+    _fit->fit(static_cast<const EntryProf&>(p),0,0);
     break;
   default:
     return;

@@ -138,19 +138,7 @@ void QChFitMenu::add   (const QtBase* b, bool show)
       else {
         _save[t] = m = new QFitMenu(t,b->get_color(),_type);
       }
-      //  Sort the menus by name
-      QList<QAction*> l = actions();
-      int i=0;
-      while (i<l.size()) {
-	if (QString::localeAwareCompare(t,l.at(i)->text())<0) {
-	  insertMenu(l.at(i),m);
-	  break;
-	}
-	i++;
-      }
-      if (i==l.size())
-	addMenu(m);
-      m->attach(_frame);
+      _insert(m,t);
       _fits[b] = m;
     }
   }
@@ -183,8 +171,42 @@ void QChFitMenu::clear()
   _fits.clear();
 }
 
-void QChFitMenu::setPlotType(Ami::DescEntry::Type t) { _type=t; }
+void QChFitMenu::setPlotType(Ami::DescEntry::Type typ)
+{
+  _type=typ; 
+
+  for(std::map<const QtBase*,QFitMenu*>::iterator it=_fits.begin();
+      it!=_fits.end(); it++) {
+    if (it->second->actions().size()==0) {
+      removeAction(it->second->menuAction());
+  
+      const QtBase* b = it->first;
+      QString t(b->title());
+      QFitMenu* m = new QFitMenu(t, b->get_color(), _type);
+      _save[t] = m;
+      _insert(m,t);
+      it->second = m;
+    }
+  }
+}
 
 void QChFitMenu::subscribe(QChEntry& e) { _entries.push_back(&e); }
 
 void QChFitMenu::unsubscribe(QChEntry& e) { _entries.remove(&e); }
+
+void QChFitMenu::_insert(QFitMenu* m, const QString& t)
+{
+  //  Sort the menus by name
+  QList<QAction*> l = actions();
+  int i=0;
+  while (i<l.size()) {
+    if (QString::localeAwareCompare(t,l.at(i)->text())<0) {
+      insertMenu(l.at(i),m);
+      break;
+    }
+    i++;
+  }
+  if (i==l.size())
+    addMenu(m);
+  m->attach(_frame);
+}

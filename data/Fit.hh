@@ -21,7 +21,7 @@ namespace Ami {
     static const char* function_str(Function);
     static Function    function(const char*);
 
-    Fit(const DescEntry& output, Function, unsigned parameter);
+    Fit(const DescEntry& output, Function, unsigned parameter, double xlo=0, double xhi=0);
     Fit(const char*&, FeatureCache& input, FeatureCache& output);
     Fit(const char*&);
     ~Fit();
@@ -43,6 +43,8 @@ namespace Ami {
     uint32_t      _desc_buffer[DESC_LEN/sizeof(uint32_t)];
     Function      _function;
     unsigned      _parameter;
+    double        _xlo;
+    double        _xhi;
 
     FeatureCache* _cache;
     Entry*        _entry;

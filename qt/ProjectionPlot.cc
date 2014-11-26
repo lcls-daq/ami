@@ -64,7 +64,7 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
-  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame);
+  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame, this);
 
   _layout();
   
@@ -85,7 +85,7 @@ ProjectionPlot::ProjectionPlot(QWidget*          parent,
 	
   _cursors = new CursorsX(this,_channels,NCHANNELS,*_frame, this);
   _peakfit = new PeakFit (this,_channels,NCHANNELS,*_frame, this);
-  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame);
+  _fit     = new Fit     (this,_channels,NCHANNELS,*_frame, this);
 
   load(p);
 
@@ -143,7 +143,7 @@ void ProjectionPlot::_layout()
       connect(cursorsB, SIGNAL(clicked()), _cursors, SLOT(front())); }
     { QPushButton* peakFitB = new QPushButton("Peak");
       layout3->addWidget(peakFitB);
-      connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(front())); }
+      connect(peakFitB, SIGNAL(clicked()), _peakfit, SLOT(front())); } 
     { QPushButton* fitB = new QPushButton("Fit");
       layout3->addWidget(fitB);
       connect(fitB, SIGNAL(clicked()), _fit, SLOT(front())); }

@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/qt/OverlayParent.hh"
+#include "ami/qt/Cursors.hh"
 #include "ami/service/Semaphore.hh"
 #include "ami/data/ConfigureRequest.hh"
 
@@ -11,6 +12,7 @@
 
 class QComboBox;
 class QLabel;
+class QLineEdit;
 class QPushButton;
 
 #include <list>
@@ -31,10 +33,12 @@ namespace Ami {
     class EnvOverlay;
 
     class Fit : public QtPWidget,
-                public OverlayParent {
+                public OverlayParent,
+                public Cursors {
       Q_OBJECT
     public:
-      Fit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, WaveformDisplay&);
+      Fit(QWidget* parent, ChannelDefinition* channels[], unsigned nchannels, 
+          WaveformDisplay&, QtPWidget*);
       ~Fit();
     public:
       void save(char*& p) const;
@@ -47,6 +51,10 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
       void initialize(const Ami::DescEntry&);
+    public:
+      void mousePressEvent  (double,double);
+      void mouseMoveEvent   (double,double);
+      void mouseReleaseEvent(double,double);
     public slots:
       void set_channel   (int); // set the source
       void set_function  (int); // 
@@ -56,6 +64,8 @@ namespace Ami {
       void add_post      ();
       void add_overlay   (DescEntry*, QtPlot*, SharedData*);
       void remove_overlay(QtOverlay*);
+      void grabRange     ();
+      void resetRange    ();
     signals:
       void changed();
     private:
@@ -65,10 +75,14 @@ namespace Ami {
       unsigned _nchannels;
       unsigned _channel;
       WaveformDisplay&  _frame;
+      QtPWidget*        _frameParent;
       QComboBox*        _functionBox;
       QComboBox*        _parameterBox;
       ScalarPlotDesc*   _scalar_desc;
       
+      QLineEdit*   _xlo;
+      QLineEdit*   _xhi;
+
       QPushButton* _plotB;
       QPushButton* _ovlyB;
 
