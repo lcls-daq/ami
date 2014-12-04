@@ -285,7 +285,7 @@ std::string offl_path(std::string basepath,
       Ami::CalibFile f(std::string(g.gl_pathv[i]));
       calfiles.push_back(f);
     } 
-    catch (std::string& ex) {}
+    catch (const std::exception& ex) {}
   }
   globfree(&g);
 
