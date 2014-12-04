@@ -157,8 +157,6 @@ namespace Ami {
       cds.add(_flt_signal);
       _cols=cols;
       _cds=&cds;
-      if (m_verbosity)
-        printf("Created 1dh [%f,%f]\n",lo,hi);
     }
     void analyze(const Pds::ClockTime& _clk) {
       printf("analyze[%08x] evrdata %p  frame %p\n",

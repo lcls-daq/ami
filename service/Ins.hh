@@ -52,6 +52,7 @@ class Ins
 
     static unsigned       parse_ip(const char*);
     static unsigned       parse_interface(const char*);
+    static unsigned       default_interface();
 
     int operator==(const Ins& that)  const;
 

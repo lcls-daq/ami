@@ -17,17 +17,19 @@
 
 static void usage(char* p)
 {
-  printf("Usage: %s -I <interface> [-i <interface>] -s <address> [-n <addresses>] [-f <path> -F <path> -C <int>]\n"
-         "arguments: <interface> = IP address (dot notation) or ethX\n"
+  printf("Usage: %s  -s <address> [options]\n"
+         "arguments: <interface> = IP address (dot notation) or ethX, defaults to primary interface\n"
          "           <address>   = IP address (dot notation)\n"
          "           <path>      = full file path\n"
-         "-p <platform>  : DAQ platform number\n"
+         "  Options:\n"
+         "-I <interface> : point-to-point interface (cds subnet)\n"
          "-i <interface> : multicast interface (fez subnet), reqd if -s is multicast group\n"
          "-s <address>   : server multicast group or proxy address\n"
          "-n <addresses> : comma-separated list of monshmserver node addresses:\n"
          "                   Connect to the shared memory servers in this list and manage their mapping\n"
          "                   to the DSS node data. The user can dynamically change that mapping from the GUI.\n"
          "                   Note that only one process may control the servers.\n"
+         "-p <platform>  : DAQ platform number.  Used in conjunction with -n option above.\n"
          "-f <path>      : default path for load/save operations\n"
          "-A             : attach dialogs rather than popup\n"
          "-F <path>      : file to load initial configuration\n"
@@ -60,13 +62,15 @@ static void QtAssertHandler(QtMsgType type,
 
 int main(int argc, char **argv) 
 {
-  unsigned ppinterface = 0x7f000001;
-  unsigned interface   = 0x7f000001;
+  unsigned ppinterface;
+  unsigned interface  ;
   unsigned serverGroup = 0xefff2000;
   const char* loadfile = 0;
   unsigned platform = 0;
   const char* nodes = 0;
   bool parse_valid = true;
+
+  ppinterface = interface = Ami::Ins::default_interface();
 
   qInstallMsgHandler(QtAssertHandler);
 

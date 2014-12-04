@@ -2,6 +2,7 @@
 
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <netdb.h>
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -45,3 +46,15 @@ unsigned Ins::parse_interface(const char* interfaceString) {
   return interface;
 }
 
+unsigned Ins::default_interface()
+{
+  size_t hlen=64;
+  char hname[hlen];
+  if (gethostname(hname,hlen)<0) {
+    printf("Default interface lookup failed\n");
+    return 0x7f000001;
+  }
+  struct hostent* h = gethostbyname(hname);
+  unsigned v = ntohl( *(uint32_t*)h->h_addr_list[0] );
+  return v;
+}
