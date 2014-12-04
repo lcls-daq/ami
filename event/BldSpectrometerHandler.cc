@@ -104,12 +104,12 @@ void BldSpectrometerHandler::_configure(Pds::TypeId id, const void* payload, con
                         "Pixel","Sum", c.width(), 0., float(c.width()));
       _entry[_nentries++] = new EntryWaveform(desc); 
       string sname = string(name) + ":";
-      if (c.nPeaks()>_npeaks)
-	_npeaks = c.nPeaks();
+//       if (c.nPeaks()>_npeaks)
+// 	_npeaks = c.nPeaks();
       _add_to_cache((sname+"comRaw")  .c_str());
       _add_to_cache((sname+"com")     .c_str());
       _add_to_cache((sname+"integral").c_str());
-      for(unsigned i=0; i<c.nPeaks(); i++) {
+      for(unsigned i=0; i<_npeaks; i++) {
         string pname;
         { ostringstream o; o << sname << "peak" << i << ":"; pname=o.str(); }
         _add_to_cache((pname+"pos" ).c_str());
