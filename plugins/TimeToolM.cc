@@ -33,8 +33,6 @@ using std::string;
 typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
 typedef Pds::EvrData::DataV3 EvrDataType;
 
-static const int   cols  = Pds::Opal1k::ConfigV1::Column_Pixels;
-
 //
 //  Create all plot entries
 //
@@ -123,7 +121,7 @@ namespace Ami {
                type.id  ()==Pds::TypeId::Id_IpmFex)
         _ipmdata = reinterpret_cast<Pds::Lusi::IpmFexV1*>(payload);
     }
-    void clear(Cds* _cds) {
+    void clear(Cds* cds) {
       if (_cds) {
         _cds->remove(_ref_signal);
         _cds->remove(_raw_signal);
@@ -134,24 +132,37 @@ namespace Ami {
         delete _sub_signal;
         delete _flt_signal;
       }
+      _cds=0;
       TimeTool::Fex::configure();
     }
     void create(Cds& cds, unsigned column) {
       char buff[128];
+      const int   pdim  = m_projectX ? 1:0;
+      const int   ilo   = m_sig_roi_lo[pdim];
+      const int   ihi   = m_sig_roi_hi[pdim];
+      const int   cols  = ihi-ilo+1;
+      const float lo(ilo);
+      const float hi(ihi);
       sprintf(buff,"Ref Signal#Signal#0#%d#0",column);
-      _ref_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _ref_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Raw Signal#Signal#0#%d#c0",column);
-      _raw_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _raw_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Sub Signal#Signal#1#%d#c0",column);
-      _sub_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _sub_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       sprintf(buff,"Flt Signal#Signal#1#%d#c00000",column);
-      _flt_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,0.,double(cols)));
+      _flt_signal  = one_evt(DescTH1F(buff,"ADU","Bin",cols,lo,hi));
       cds.add(_ref_signal);
       cds.add(_raw_signal);
       cds.add(_sub_signal);
       cds.add(_flt_signal);
+      _cols=cols;
+      _cds=&cds;
+      if (m_verbosity)
+        printf("Created 1dh [%f,%f]\n",lo,hi);
     }
     void analyze(const Pds::ClockTime& _clk) {
+      printf("analyze[%08x] evrdata %p  frame %p\n",
+             _src.phy(), _evrdata, _frame);
       if (_evrdata && _frame) {
         m_pedestal = _frame->offset();
         TimeTool::Fex::analyze(_frame->data16(),
@@ -169,7 +180,7 @@ namespace Ami {
 
         if (status()) {
           int ix = int(filtered_position()+_indicator_offset);
-          if (ix>=0 && ix<cols)
+          if (ix>=0 && ix<_cols)
             _sub_signal->content(1.,ix);
         }
 
@@ -193,6 +204,9 @@ namespace Ami {
     Pds::Camera::FrameV1* _frame;
     Pds::EvrData::DataV3* _evrdata;
     Pds::Lusi::IpmFexV1*  _ipmdata;
+
+    int         _cols;
+    Cds*        _cds;
 
     Ami::FeatureCache*   _cache;
     int                  _cache_index;

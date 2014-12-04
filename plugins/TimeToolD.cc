@@ -144,7 +144,7 @@ namespace Ami {
         break;
       }
     }
-    void clear(Cds* _cds) {
+    void clear(Cds* cds) {
       if (_cds) {
         _cds->remove(_ref_signal);
         _cds->remove(_raw_signal);
