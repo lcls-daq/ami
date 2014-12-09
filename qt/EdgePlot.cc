@@ -239,5 +239,5 @@ void EdgePlot::update()
       }
   }
   if (have_change)
-    emit redraw();
+    updated();
 }

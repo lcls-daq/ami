@@ -16,11 +16,11 @@ namespace Ami {
       int    ticks   () const { return _n; }
       int    tick    (double p ) const;
       int    tick_u  (double p ) const;
-      double position(int    i) const { return (_xlo*double(_n-i) + _xhi*double(i))/double(_n); }
+      double position(int    i) const;
     public:
       void update(double xlo, double xhi, int n) { _xlo=xlo; _xhi=xhi; _n=n; }
       void update(const AxisBins& a) { _xlo=a._xlo; _xhi=a._xhi; _n=a._n; }
-    private:
+    protected:
       double        _xlo, _xhi;
       int           _n;
     };

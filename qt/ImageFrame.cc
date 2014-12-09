@@ -125,7 +125,7 @@ void ImageFrame::render_pixmap(QImage& output)
 void ImageFrame::mousePressEvent(QMouseEvent* e)
 {
   QPoint p2 = _canvas->pos();
-
+  // canvas coordinates
   unsigned ix = e->x() - p2.x();
   unsigned iy = e->y() - p2.y();
   if (_c && _engine.qimage())

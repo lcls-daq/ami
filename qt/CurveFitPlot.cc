@@ -198,6 +198,6 @@ void CurveFitPlot::update()
   if (_plot) {
     _plot->update();
     emit counts_changed(_plot->normalization());
-    emit redraw();
+    updated();
   }
 }

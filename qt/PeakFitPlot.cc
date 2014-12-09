@@ -186,7 +186,7 @@ void PeakFitPlot::update()
   if (_plot) {
     _plot->update();
     emit counts_changed(_plot->normalization());
-    emit redraw();
+    updated();
   }
   if (_auto_range) {
     double v = _auto_range->entries();

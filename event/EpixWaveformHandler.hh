@@ -1,7 +1,7 @@
 #ifndef Ami_EpixWaveformHandler_hh
 #define Ami_EpixWaveformHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 
 #include "ndarray/ndarray.h"
 
@@ -9,7 +9,7 @@ namespace Ami {
   class EntryWaveform;
   class EntryRef;
   class FeatureCache;
-  class EpixWaveformHandler : public EventHandler {
+  class EpixWaveformHandler : public EventHandlerF {
   public:
     EpixWaveformHandler(const Pds::Src&     info, 
 			FeatureCache&       cache);
@@ -26,18 +26,16 @@ namespace Ami {
     const Entry* entry            (unsigned) const;
     //  Cleanup existing entries
     void         reset   ();
-    bool         used    () const;
   public:
     void  rename(const char*);
   private:
-    FeatureCache&       _cache;
     char*               _config_buffer;
     enum { EntriesPerRef=4, MaxEntries=16 };
     unsigned            _nentries;
     unsigned            _nref;
     EntryWaveform*      _entry[MaxEntries];
     EntryRef*           _ref[MaxEntries/EntriesPerRef];
-    int                 _features[MaxEntries];
+    ndarray<int,1>      _feature;
     ndarray<double,1>   _filter;
     ndarray<double,1>   _gain;
     unsigned            _first_sample;

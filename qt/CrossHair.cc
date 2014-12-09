@@ -113,7 +113,7 @@ void CrossHair::grab_cursor()
   _frame.set_cursor_input(this);
 }
 
-void CrossHair::mousePressEvent  (double x, double y) 
+void CrossHair::mousePressEvent  (double x, double y)
 {
   _column_edit->setText(QString::number(x*_scalex));
   _column_edit->setCursorPosition(0);
@@ -127,15 +127,16 @@ void CrossHair::update_value(QString v) { _value->setText(v); }
 
 void CrossHair::draw(QImage& img) 
 {
-  double x = _column_edit->value()/_scalex;
+  double x = _column_edit->value()/_scalex;  // detector pixel
   double y = _row_edit   ->value()/_scaley;
   
   const AxisInfo& xinfo = *_frame.xinfo();
   const AxisInfo& yinfo = *_frame.yinfo();
   
-  unsigned jct = unsigned(xinfo.tick(x+0));
+  unsigned jct = unsigned(xinfo.tick(x+0));  // canvas pixel
   unsigned kct = unsigned(yinfo.tick(y+0));
-  emit value_updated(QString::number(_frame.value(jct,kct)));
+  emit value_updated(QString::number(_frame.value(xinfo.ftick(x+0),
+						  yinfo.ftick(y+0))));
 
   if (!_visible) return;
 

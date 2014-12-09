@@ -17,14 +17,11 @@ static double getTemp(unsigned v);
 
 EpixWaveformHandler::EpixWaveformHandler(const Pds::Src& info,
 					 FeatureCache&   cache) : 
-  EventHandler(info, Pds::TypeId::Id_EpixSamplerElement, Pds::TypeId::Id_EpixSamplerConfig),
-  _cache   (cache),
+  EventHandlerF(info, Pds::TypeId::Id_EpixSamplerElement, Pds::TypeId::Id_EpixSamplerConfig, cache),
   _config_buffer(0),
   _nentries(0),
   _nref    (0)
 {
-  for(unsigned i=0; i<MaxEntries; i++)
-    _features[i] = -1;
 }
 
 EpixWaveformHandler::~EpixWaveformHandler()
@@ -59,8 +56,6 @@ void EpixWaveformHandler::rename(const char* s)
 void EpixWaveformHandler::reset() {
   _nentries = 0;
   _nref     = 0;
-  for(unsigned i=0; i<MaxEntries; i++)
-    _features[i] = -1;
 }
 
 void EpixWaveformHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -149,15 +144,17 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
     mask <<= EntriesPerRef;
   }
 
+  _feature = make_ndarray<int>(c.numberOfChannels());
   char buff[64];
   for(unsigned i=0; i<c.numberOfChannels(); i++) {
     sprintf(buff,"%s:Temp_Ch[%d]",DetInfo::name(det),i);
-    _features[i] = _cache.add(buff);
+    _feature[i] = _add_to_cache(buff);
   }
 }
 
 void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
+  printf("EpixWF event\n");
   const Pds::EpixSampler::ElementV1& d = *reinterpret_cast<const Pds::EpixSampler::ElementV1*>(payload);
   const Pds::EpixSampler::ConfigV1& _config = *new(_config_buffer) Pds::EpixSampler::ConfigV1;
 
@@ -195,7 +192,7 @@ void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds
 
   ndarray<const uint16_t,1> temps = d.temperatures(_config);
   for (unsigned i=0; i<n; i++) {
-    _cache.cache(_features[i],getTemp(temps[i]));
+    _cache.cache(_feature[i],getTemp(temps[i]));
   }
 }
 
@@ -206,17 +203,6 @@ void EpixWaveformHandler::_damaged()
 
   for(unsigned i=0; i<_nref; i++)
     if (_ref[i]) _ref[i]->invalid();
-}
-
-bool EpixWaveformHandler::used() const
-{
-  for(unsigned i=0; i<_nref; i++)
-    if (_ref[i] && _ref[i]->desc().used()) 
-      return true;
-  for(unsigned i=0; i<MaxEntries; i++)
-    if (_cache.used(_features[i]))
-      return true;
-  return false;
 }
 
 double getTemp(unsigned v)

@@ -1,5 +1,6 @@
 #include "QtImage.hh"
 #include "ami/qt/AxisPixels.hh"
+#include "ami/qt/AxisPixelsR.hh"
 #include "ami/qt/ImageFrame.hh"
 #include "ami/qt/ImageGrid.hh"
 #include "ami/qt/ImageColorControl.hh"
@@ -38,8 +39,14 @@ QtImage::QtImage(const QString&   title,
   }
   _mimage = (1<<NBUFFERS)-1;
 
-  _xinfo = new AxisPixels(d.xlow(),d.xup(),d.ndispx());
-  _yinfo = new AxisPixels(d.ylow(),d.yup(),d.ndispy());
+  if (d.xup()-d.xlow() >= float(d.ndispx())) {
+    _xinfo = new AxisPixels(d.xlow(),d.xup(),d.ndispx());
+    _yinfo = new AxisPixels(d.ylow(),d.yup(),d.ndispy());
+  }
+  else {
+    _xinfo = new AxisPixelsR(d.xlow(),d.xup(),d.ndispx());
+    _yinfo = new AxisPixelsR(d.ylow(),d.yup(),d.ndispy());
+  }
 
   _scalexy = false;
   _xgrid = new ImageGrid(ImageGrid::X, ImageGrid::TopLeft, 
