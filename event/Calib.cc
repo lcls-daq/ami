@@ -33,37 +33,27 @@ void Ami::Calib::use_test   (bool v) { _use_test=v; }
 bool Ami::Calib::use_test   () { return _use_test; }
 
 
-static const char* onlCalibClass[] = { NULL,                // NoDevice
-                                       NULL,                // EVR
-                                       "acqcalib",          // Acqiris
-                                       "calib",             // Opal1k
-                                       "calib",             // TM6740
-                                       "pnccdcalib",        // pnCCD
-                                       "calib",             // Princeton
-                                       "fccdcalib",         // FCCD
-                                       NULL,
-                                       NULL,
-                                       "cspadcalib",        // Cspad
-                                       NULL,                // AcqTDC
-                                       NULL,                // Xamps
-                                       "cspadcalib",        // Cspad2x2
-                                       NULL };
+static const char* onlCalibClass = "calib";
 
-static const char* offCalibClass[] = { NULL,                // NoDevice
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       "PNCCD::CalibV1",
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       "CsPad::CalibV1",
-                                       NULL,
-                                       NULL,
-                                       "CsPad2x2::CalibV1",
-                                       NULL };
+struct off_lookup {
+  Pds::DetInfo::Device t;
+  std::string          value;
+};
+
+static struct off_lookup _off_lookup[] = { {Pds::DetInfo::pnCCD,    "PNCCD::CalibV1"},
+                                           {Pds::DetInfo::Cspad,    "CsPad::CalibV1"},
+                                           {Pds::DetInfo::Cspad2x2, "CsPad2x2::CalibV1"},
+                                           {Pds::DetInfo::Epix10k,  "Epix10k::CalibV1"},
+                                           {Pds::DetInfo::Epix100a, "Epix100a::CalibV1"},
+                                           {Pds::DetInfo::Fccd960,  "Camera::CalibV1"} };
+
+static const char* offCalibClass(Pds::DetInfo::Device t)
+{
+  for(unsigned i=0; i<sizeof(_off_lookup)/sizeof(struct off_lookup); i++)
+    if (_off_lookup[i].t == t)
+      return _off_lookup[i].value.c_str();
+  return "";
+}
 
 static FILE* _fopen(const char* fname, bool no_cache)
 {
@@ -105,14 +95,14 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
     path1 = o.str(); }
 
   std::string path2;
-  if (onlCalibClass[info.device()]) {
+  {
     std::ostringstream o;
-    o << onlRoot << onlCalibClass[info.device()] << "/" << path1;
+    o << onlRoot << onlCalibClass << "/" << path1;
     path2 = o.str(); 
   }
 
   std::string path3;
-  if (!_expt.empty() && offCalibClass[info.device()]) {
+  if (!_expt.empty() && offCalibClass(info.device())) {
     std::string hutch = _expt.substr(0,3);
     for(unsigned i=0; i<hutch.size(); i++)
       hutch[i] = toupper(hutch[i]);
@@ -123,7 +113,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   }
 
   std::string path4;
-  if (!_expt.empty() && offCalibClass[info.device()]) {
+  if (!_expt.empty() && offCalibClass(info.device())) {
     path4 = offl_path(std::string("./"),info,off_calib_type);
   }
 
@@ -267,7 +257,7 @@ std::string offl_path(std::string basepath,
 {
   std::ostringstream o;
   o << basepath
-    << offCalibClass[info.device()] << "/"
+    << offCalibClass(info.device()) << "/"
     << Pds::DetInfo::name(info.detector()) << "." << info.detId() << ":" 
     << Pds::DetInfo::name(info.device  ()) << "." << info.devId()
     << "/" << off_calib_type << "/*";
@@ -286,6 +276,7 @@ std::string offl_path(std::string basepath,
       calfiles.push_back(f);
     } 
     catch (const std::exception& ex) {}
+    catch (const std::string& ex) {}
   }
   globfree(&g);
 

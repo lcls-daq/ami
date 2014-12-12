@@ -24,6 +24,7 @@ namespace Ami {
 				      const char* prefix="ped");
     static bool        load_pedestals(EntryImage*,unsigned,
 				      const char* prefix="ped");
+    static bool        load_pedestals(EntryImage*,unsigned,FILE*);
 
     static std::string       save(ndarray<const double,3>,
 				  const DescImage&,
@@ -31,6 +32,7 @@ namespace Ami {
 				  const char* prefix="gain");
     static ndarray<double,3> load(const DescImage&,
 				  const char* prefix="gain");
+    static ndarray<double,3> load(const DescImage&,FILE*);
 
     static ndarray<unsigned,2> load_array(const DescImage&,
 					  const char* prefix="gain");

@@ -146,8 +146,9 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
     ndarray<unsigned,2> e = make_ndarray<unsigned>(a.shape()[0],a.shape()[1]);
     { const uint16_t* pa=a.begin();
       const unsigned* pp=p.begin();
+      static const unsigned shift[] = { 0, 2, 0, 3 }; // { gain8, gain2, xx, gain1 };
       for(unsigned* pe=e.begin(); pe!=e.end(); pe++,pa++,pp++)
-        *pe = (*pa&0x1fff)+*pp;
+        *pe = (unsigned(*pa&0x1fff)<<shift[*pa>>14])+*pp;
     }
 #ifdef DBUG
     clock_gettime(CLOCK_REALTIME,&tv_e);
@@ -284,11 +285,13 @@ void Fccd960Handler::_load_pedestals()
   for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
   EntryImage* p = _pentry;
-  if (FrameCalib::load_pedestals(p,offset,"ped")) {
+  FILE* f = Calib::fopen(static_cast<const DetInfo&>(info()), "ped", "pedestals");
+  if (f && FrameCalib::load_pedestals(p,offset,f)) {
     for(unsigned *a=_pedestals.begin(), *b=p->contents(); a!=_pedestals.end(); *a++=*b++) ;
   }
   else
     for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
+  if (f) fclose(f);
 }
 
 void Fccd960Handler::_load_gains()
@@ -298,8 +301,12 @@ void Fccd960Handler::_load_gains()
 
   for(double* a=_no_gain.begin(); a!=_no_gain.end(); *a++=1.) ;
 
-  EntryImage* p = _pentry;
-  ndarray<double,3> ap = FrameCalib::load(p->desc(),"gain");
+  ndarray<double,3> ap;
+  FILE* f = Calib::fopen(static_cast<const DetInfo&>(info()), "gain", "gain");
+  if (f) {
+    ap = FrameCalib::load(_pentry->desc(),f);
+    fclose(f);
+  }
   if (ap.size())
     for(double *a=_gain.begin(), *b=ap.begin(); a!=_gain.end(); *a++=*b++) ;
   else

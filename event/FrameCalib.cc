@@ -12,6 +12,33 @@
 
 //#define DBUG
 
+namespace Ami {
+  class CalibIO {
+  public:
+    CalibIO(FILE& f) : _f(f), _sz(8*1024), _linep((char*)malloc(_sz)) { memset(_linep, 0, _sz); }
+    ~CalibIO() { free(_linep); }
+  public:
+    bool next_line() {
+      while(1) {
+        if (getline(&_linep, &_sz, &_f)<0)
+          return false;
+        if (_linep[0]=='#' || _linep[0]=='\n') continue;
+        _pEnd=_linep;
+        break;
+      }
+      return true;
+    }
+    char*       line()  { return _linep; }
+    unsigned    getul() { return strtoul(_pEnd,&_pEnd,0); }
+    double      getdb() { return strtod (_pEnd,&_pEnd); }
+  private:
+    FILE&  _f;
+    size_t _sz;
+    char*  _linep;
+    char*  _pEnd;
+  };
+};
+
 using namespace Ami;
 
 static const unsigned _option_no_pedestal         = 0x01;
@@ -95,34 +122,26 @@ std::string FrameCalib::save_pedestals(Entry* e,
     
     if (f) {
 
-      //  read pedestals
-      size_t sz = 8 * 1024;
-      char* linep = (char *)malloc(sz);
-      char* pEnd;
+      CalibIO fio(*f);
 
       if (nframes) {
 	for(unsigned s=0; s<nframes; s++) {
 	  const SubFrame& fr = desc.frame(s);
 	  unsigned* off = _off[s];
-	  for (int row=0; row < fr.ny*desc.ppybin(); row++) {
-	    getline(&linep, &sz, f);
-	    *off++ = strtoul(linep,&pEnd,0);
-	    for(int col=1; col<fr.nx*desc.ppxbin(); col++) 
-	      *off++ = strtoul(pEnd, &pEnd,0);
-	  }
+	  for (int row=0; row < fr.ny*desc.ppybin(); row++)
+            if (fio.next_line())
+              for(int col=0; col<fr.nx*desc.ppxbin(); col++) 
+                *off++ = fio.getul();
 	}    
       }
       else {
 	unsigned* off = _off[0];
-	for (unsigned row=0; row < desc.nbinsy()*desc.ppybin(); row++) {
-	  getline(&linep, &sz, f);
-	  *off++ = strtoul(linep,&pEnd,0);
-	  for(unsigned col=1; col<desc.nbinsx()*desc.ppxbin(); col++) 
-	    *off++ = strtoul(pEnd, &pEnd,0);
-	}
+	for (unsigned row=0; row < desc.nbinsy()*desc.ppybin(); row++)
+          if (fio.next_line())
+            for(unsigned col=0; col<desc.nbinsx()*desc.ppxbin(); col++) 
+              *off++ = fio.getul();
       }
-      
-      free(linep);
+
       fclose(f);
     }
   }
@@ -229,56 +248,62 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
-    size_t sz = 8 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
-
-    const unsigned ppb  = d.ppxbin();
-
-    c->reset();
-
-    if (d.nframes()) {
-      for(unsigned i=0; i<d.nframes(); i++) {
-	const SubFrame& frame = d.frame(i);
-	
-	unsigned x = frame.x;
-	unsigned y = frame.y;
-	for(unsigned row=0; row < frame.ny*ppb; row++) {
-	  getline(&linep, &sz, f);
-	  char* p = linep;
-	  unsigned col=0;
-	  while(1) {
-	    int v = int(strtod(p,&pEnd));
-	    if (pEnd == p) break;
-	    c->addcontent(offset-v,x+col/ppb,y+row/ppb);
-	    if (++col >= frame.nx*ppb) break;
-	    p = pEnd+1;
-	  }
-	}
-      }
-    }
-    else {
-      for(unsigned row=0; row < d.nbinsy()*ppb; row++) {
-	getline(&linep, &sz, f);
-	char* p = linep;
-	unsigned col=0;
-	while(1) {
-	  int v = int(strtod(p,&pEnd));
-	  if (pEnd == p) break;
-	  c->addcontent(offset-v,col/ppb,row/ppb);
-	  if (++col >= d.nbinsx()*ppb) break;
-	  p = pEnd+1;
-	}
-      }
-    }
-    
-    free(linep);
+    bool result=load_pedestals(c,offset,f);
     fclose(f);
-    return true;
+    return result;
   }
+  else
+    return false;
+}
 
-  return false;
+bool FrameCalib::load_pedestals(EntryImage* c,
+                                unsigned offset,
+                                FILE* f)
+{
+  CalibIO fio(*f);
+
+  const DescImage& d = c->desc();
+  const unsigned ppb  = d.ppxbin();
+
+  c->reset();
+
+  if (d.nframes()) {
+    for(unsigned i=0; i<d.nframes(); i++) {
+      const SubFrame& frame = d.frame(i);
+	
+      unsigned x = frame.x;
+      unsigned y = frame.y;
+      for(unsigned row=0; row < frame.ny*ppb; row++)
+        if (fio.next_line()) {
+          char* p = fio.line();
+          unsigned col=0;
+          while(1) {
+            char* pEnd;
+            int v = int(strtod(p,&pEnd));
+            if (pEnd == p) break;
+            c->addcontent(offset-v,x+col/ppb,y+row/ppb);
+            if (++col >= frame.nx*ppb) break;
+            p = pEnd+1;
+          }
+        }
+    }
+  }
+  else {
+    for(unsigned row=0; row < d.nbinsy()*ppb; row++)
+      if (fio.next_line()) {
+        char* p = fio.line();
+        unsigned col=0;
+        while(1) {
+          char* pEnd;
+          int v = int(strtod(p,&pEnd));
+          if (pEnd == p) break;
+          c->addcontent(offset-v,col/ppb,row/ppb);
+          if (++col >= d.nbinsx()*ppb) break;
+          p = pEnd+1;
+        }
+      }
+  }
+  return true;
 }
 
 std::string FrameCalib::save(ndarray<const double,3> a,
@@ -356,9 +381,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
 ndarray<double,3> FrameCalib::load(const DescImage& d,
 				   const char*      prefix)
 {
-  ndarray<double,3> a = d.nframes() ?
-    make_ndarray<double>(d.nframes(),d.frame(0).ny,d.frame(0).nx) :
-    make_ndarray<double>(1,d.nbinsy(),d.nbinsx());
+  ndarray<double,3> a;
 
   //
   //  Load calibration from a file
@@ -371,51 +394,59 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
-    size_t sz = 16 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
-
-    const unsigned ppb  = d.ppxbin();
-
-    if (d.nframes()) {
-      for(unsigned i=0; i<d.nframes(); i++) {
-	const SubFrame& frame = d.frame(i);
-	for(unsigned row=0; row < frame.ny*ppb; row++) {
-	  getline(&linep, &sz, f);
-	  char* p = linep;
-	  unsigned col=0;
-	  while(1) {
-	    double v = strtod(p,&pEnd);
-	    if (pEnd == p) break;
-	    //  when binned, simply take last read value for that bin
-	    a[i][row/ppb][col/ppb] = v;
-	    col++;
-	    p = pEnd+1;
-	  }
-	}
-      }
-    }
-    else {
-      for(unsigned row=0; row < d.nbinsy()*ppb; row++) {
-	getline(&linep, &sz, f);
-	char* p = linep;
-	unsigned col=0;
-	while(1) {
-	  double v = strtod(p,&pEnd);
-	  if (pEnd == p) break;
-	  a[0][row/ppb][col/ppb] = v;
-	  col++;
-	  p = pEnd+1;
-	}
-      }
-    }
-    
-    free(linep);
+    a = load(d,f);
     fclose(f);
   }
   else
     a = make_ndarray<double>(0U,0,0);
+  return a;
+}
+
+ndarray<double,3> FrameCalib::load(const DescImage& d,
+                                   FILE*            f)
+{
+  ndarray<double,3> a = d.nframes() ?
+    make_ndarray<double>(d.nframes(),d.frame(0).ny,d.frame(0).nx) :
+    make_ndarray<double>(1,d.nbinsy(),d.nbinsx());
+
+  CalibIO fio(*f);
+
+  const unsigned ppb  = d.ppxbin();
+
+  if (d.nframes()) {
+    for(unsigned i=0; i<d.nframes(); i++) {
+      const SubFrame& frame = d.frame(i);
+      for(unsigned row=0; row < frame.ny*ppb; row++)
+        if (fio.next_line()) {
+          char* p = fio.line();
+          unsigned col=0;
+          while(1) {
+            char* pEnd;
+            double v = strtod(p,&pEnd);
+            if (pEnd == p) break;
+            //  when binned, simply take last read value for that bin
+            a[i][row/ppb][col/ppb] = v;
+            col++;
+            p = pEnd+1;
+          }
+        }
+    }
+  }
+  else {
+    for(unsigned row=0; row < d.nbinsy()*ppb; row++)
+      if (fio.next_line()) {
+        char* p = fio.line();
+        unsigned col=0;
+        while(1) {
+          char* pEnd;
+          double v = strtod(p,&pEnd);
+          if (pEnd == p) break;
+          a[0][row/ppb][col/ppb] = v;
+          col++;
+          p = pEnd+1;
+        }
+      }
+  }
   
   return a;
 }
@@ -439,20 +470,18 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
-    size_t sz = 16 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
+    CalibIO fio(*f);
 
     const unsigned ppb  = d.ppxbin();
 
     unsigned maxc = 0;
     unsigned row = 0;
     do {
-      if (getline(&linep, &sz, f)<0) break;
-      char* p = linep;
+      if (!fio.next_line()) break;
+      char* p = fio.line();
       unsigned col=0;
       while(col < max_columns) {
+        char* pEnd;
 	double v = strtod(p,&pEnd);
 	if (pEnd == p) break;
 	a[row/ppb][col/ppb] = v;
@@ -462,7 +491,6 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
       if (col > maxc) maxc=col;
     } while (++row < max_rows);
     
-    free(linep);
     fclose(f);
 
     if (maxc != max_columns ||
@@ -501,20 +529,18 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
-    size_t sz = 16 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
+    CalibIO fio(*f);
 
     const unsigned ppb  = d.ppxbin();
 
     unsigned maxc = 0;
     unsigned row = 0;
     do {
-      if (getline(&linep, &sz, f)<0) break;
-      char* p = linep;
+      if (!fio.next_line()) break;
+      char* p = fio.line();
       unsigned col=0;
       while(col < max_columns) {
+        char* pEnd;
 	unsigned v = strtoul(p,&pEnd,0);
 	if (pEnd == p) break;
 	a[row/ppb][col/ppb] = v;
@@ -524,7 +550,6 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
       if (col > maxc) maxc=col;
     } while (++row < max_rows);
     
-    free(linep);
     fclose(f);
 
     if (maxc != max_columns ||
