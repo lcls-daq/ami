@@ -72,7 +72,7 @@ int Discovery::read_payload    (Socket& s,int) {
 }
 
 bool Discovery::svc             () const {
-  return false;
+  return true;  // needed to make Post: variables available to list_env
 }
 
 void Discovery::process         () {
