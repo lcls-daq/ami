@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <libgen.h>
+#include <string.h>
 #include <iomanip>
 #include <vector>
 
