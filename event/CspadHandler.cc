@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
+#include <limits.h>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -808,28 +809,6 @@ namespace CspadGeometry {
     TwoByTwo* element[4];
   };
 
-#if 0
-        for(unsigned i=0; i<4; i++) {                                   \
-          const ndarray<const uint16_t,2>& gm = c.quads(i).gm().gainMap(); \
-          for(unsigned j=0; j<CsPad::ColumnsPerASIC; j++) {             \
-            ndarray<uint16_t,2>& ogm = _gainMap[i];                     \
-            uint16_t* p = &ogm[j][0];                                   \
-            for(unsigned k=0; k<CsPad::MaxRowsPerASIC; k++)             \
-              *p++ = gm[j][k];                                          \
-          }                                                             \
-        }                                                               \
-
-          for(unsigned i=0; i<4; i++) {                                   
-            const ndarray<const uint16_t,2>& gm = c.quads(i).gm().gainMap(); 
-            for(unsigned j=0; j<CsPad::ColumnsPerASIC; j++) {             
-              uint16_t* v = &_gainMap[i][j][0];                              
-              for(unsigned k=0; k<CsPad::MaxRowsPerASIC; k++)             
-                *v++ = gm[j][k];                                       
-            }                                                             
-          }                                                               
-
-#endif
-
   class ConfigCache {
   public:
     ConfigCache(Pds::TypeId type, const void* payload) : 
@@ -1052,35 +1031,38 @@ namespace CspadGeometry {
           }
         }
         
-        size_t sz=256;
-        char* linep = (char *)malloc(sz);
-        //  Get optional global rotation
-        while(1) {
-          if (getline(&linep, &sz, gm)==-1) break;
-          if (linep[0]=='#') continue;
-          unsigned irot = strtoul(linep,0,0);
-          for(unsigned j=0; j<NPHI; j++)
-            qrot[j] = Rotation((irot+j)%NPHI);
-          break;
+        if (!offl_type) {
+          size_t sz=256;
+          char* linep = (char *)malloc(sz);
+          //  Get optional global rotation
+          while(1) {
+            if (getline(&linep, &sz, gm)==-1) break;
+            if (linep[0]=='#') continue;
+            unsigned irot = strtoul(linep,0,0);
+            for(unsigned j=0; j<NPHI; j++)
+              qrot[j] = Rotation((irot+j)%NPHI);
+            break;
+          }
+          //  Get optional quad relocations
+          unsigned j=0;
+          while(j<NPHI) {
+            if (getline(&linep, &sz, gm)==-1) break;
+            if (linep[0]=='#') continue;
+            unsigned irot = strtoul(linep,0,0);
+            qrot[j++] = Rotation(irot%NPHI);
+          }
+          free(linep);
         }
-        //  Get optional quad relocations
-        unsigned j=0;
-        while(j<NPHI) {
-          if (getline(&linep, &sz, gm)==-1) break;
-          if (linep[0]=='#') continue;
-          unsigned irot = strtoul(linep,0,0);
-          qrot[j++] = Rotation(irot%NPHI);
-        }
-        free(linep);
       }
       //
       //  Create a default layout
       //
       _pixels = 2048-256;
       _ppb = 4;
-      { const double frame = double(_pixels)*pixel_size;
+      { 
+        const double frame = double(_pixels)*pixel_size;
         x =  0.5*frame;
-        y = -0.5*frame;
+        y =  -0.5*frame;
       }
       for(unsigned j=0; j<4; j++)
         quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],_config.gainMap(j));
@@ -1088,7 +1070,7 @@ namespace CspadGeometry {
       //
       //  Test extremes and narrow the focus
       //
-      unsigned xmin(_pixels), xmax(0), ymin(_pixels), ymax(0);
+      unsigned xmin(INT_MAX), xmax(0), ymin(INT_MAX), ymax(0);
       for(unsigned i=0; i<32; i++) {
         if (smask&(1<<i)) {
           unsigned x0,x1,y0,y1;
