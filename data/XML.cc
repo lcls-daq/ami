@@ -107,7 +107,7 @@ void QtPersistent::insert(char*& p, const QString& s)
   int sz = s.size();
   for(int i=0; i<sz; i++) {
     const char c = s[i].toAscii();
-    if (c && c!='<')
+    if (c && c!='<' && c!='&')
       *p++ = c;
     else
       p += sprintf(p,"&#x%04x",s[i].unicode());
