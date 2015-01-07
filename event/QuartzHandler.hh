@@ -7,6 +7,8 @@ namespace Ami {
   class QuartzHandler : public FrameHandler {
   public:
     QuartzHandler(const Pds::DetInfo& info);
+  public:
+    void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
   };
 };
 
