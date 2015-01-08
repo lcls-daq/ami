@@ -25,19 +25,42 @@ void QuartzHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::
 {
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_QuartzConfig) {
-    const Pds::Quartz::ConfigV1& c = *reinterpret_cast<const Pds::Quartz::ConfigV1*>(payload);
-    switch(c.horizontal_binning()) {
-    case Pds::Quartz::ConfigV1::x1: _defColumns = Pds::Quartz::ConfigV1::Column_Pixels  ; break;
-    case Pds::Quartz::ConfigV1::x2: _defColumns = Pds::Quartz::ConfigV1::Column_Pixels/2; break;
-    case Pds::Quartz::ConfigV1::x4: _defColumns = Pds::Quartz::ConfigV1::Column_Pixels/4; break;
-    default: break;
+    unsigned columns = Pds::Quartz::ConfigV1::Column_Pixels;
+    unsigned rows    = Pds::Quartz::ConfigV1::Row_Pixels;
+    switch(tid.version()) {
+    case 1:
+      { const Pds::Quartz::ConfigV1& c = *reinterpret_cast<const Pds::Quartz::ConfigV1*>(payload);
+        switch(c.horizontal_binning()) {
+        case Pds::Quartz::ConfigV1::x2: columns/=2; break;
+        case Pds::Quartz::ConfigV1::x4: columns/=4; break;
+        default: break;
+        }
+        switch(c.vertical_binning()) {
+        case Pds::Quartz::ConfigV1::x2: rows/=2; break;
+        case Pds::Quartz::ConfigV1::x4: rows/=4; break;
+        default: break;
+        }
+      } break;
+    case 2:
+      { const Pds::Quartz::ConfigV2& c = *reinterpret_cast<const Pds::Quartz::ConfigV2*>(payload);
+        if (c.use_hardware_roi()) {
+          columns = c.roi_hi().column()-c.roi_lo().column()+1;
+          rows    = c.roi_hi().row   ()-c.roi_lo().row   ()+1;
+        }
+        switch(c.horizontal_binning()) {
+        case Pds::Quartz::ConfigV1::x2: columns/=2; break;
+        case Pds::Quartz::ConfigV1::x4: columns/=4; break;
+        default: break;
+        }
+        switch(c.vertical_binning()) {
+        case Pds::Quartz::ConfigV1::x2: rows/=2; break;
+        case Pds::Quartz::ConfigV1::x4: rows/=4; break;
+        default: break;
+        }
+      } break;
     }
-    switch(c.vertical_binning()) {
-    case Pds::Quartz::ConfigV1::x1: _defRows = Pds::Quartz::ConfigV1::Row_Pixels  ; break;
-    case Pds::Quartz::ConfigV1::x2: _defRows = Pds::Quartz::ConfigV1::Row_Pixels/2; break;
-    case Pds::Quartz::ConfigV1::x4: _defRows = Pds::Quartz::ConfigV1::Row_Pixels/4; break;
-    default: break;
-    }
+    _defColumns = columns;
+    _defRows    = rows;
   }
   else {
     FrameHandler::_configure(tid,payload,t);
