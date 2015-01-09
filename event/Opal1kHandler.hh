@@ -7,6 +7,8 @@ namespace Ami {
   class Opal1kHandler : public FrameHandler {
   public:
     Opal1kHandler(const Pds::DetInfo& info);
+  public:
+    void _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
   };
 };
 
