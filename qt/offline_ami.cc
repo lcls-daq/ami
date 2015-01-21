@@ -13,6 +13,7 @@
 #include "ami/qt/Path.hh"
 #include "ami/qt/XtcFileClient.hh"
 #include "ami/qt/QtPStack.hh"
+#include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/event/Calib.hh"
 #include "ami/server/AnalysisServerManager.hh"
@@ -38,6 +39,7 @@ static void usage(char* progname) {
 	  "          [-o <filename for debugging messages>]\n"
 	  "          [-l (live read mode)]\n"
 	  "          [-t (calib test mode)]\n"
+	  "          [-a <include|only> (EPICS aliases include|only)]\n"
           "          [-A (attach dialogs rather than popup)]\n"
           "          [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "          [-D (post detector diagnostics)]\n"
@@ -130,10 +132,13 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "p:f:o:e:r:AC:L:N:lDERQ:StTWYZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "a:p:f:o:e:r:AC:L:N:lDERQ:StTWYZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
+      break;
+    case 'a':
+      Ami::EpicsXtcReader::use_alias(strcmp(optarg,"only")==0);
       break;
     case 'A':
       Ami::Qt::QtPStack::attach(true);

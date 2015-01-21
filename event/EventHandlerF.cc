@@ -53,6 +53,21 @@ int EventHandlerF::_add_to_cache(const char* name)
   return i;
 }
 
+int EventHandlerF::_add_array_to_cache(const char* name,
+                                       int len)
+{
+  int index=-1;
+  char buffer[64];
+  strncpy(buffer,name,64);
+  char* iptr = buffer+strlen(buffer);
+  for(unsigned i=0; i<unsigned(len); i++) {
+    sprintf(iptr,"[%d]",i);
+    index = _add_to_cache(buffer);
+  }
+  index -= len-1;
+  return index;
+}
+
 void EventHandlerF::_rename_cache(int index, const char* name)
 {
   if (index<0) return;

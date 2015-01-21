@@ -216,7 +216,8 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
   case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
   case Pds::TypeId::Id_L3TConfig:        h = new L3THandler        (cache); break;
-  case Pds::TypeId::Id_Epics:            h = new EpicsXtcReader    (info,cache); break;
+  case Pds::TypeId::Id_Epics:            
+  case Pds::TypeId::Id_EpicsConfig:      h = new EpicsXtcReader    (info,cache); break;
   case Pds::TypeId::Id_FEEGasDetEnergy:  h = new FEEGasDetEnergyReader(cache); break;
   case Pds::TypeId::Id_EBeam:            h = new EBeamReader          (cache); break;
   case Pds::TypeId::Id_PhaseCavity:      h = new PhaseCavityReader    (cache); break;

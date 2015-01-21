@@ -5,6 +5,8 @@
 
 #include "ami/data/FeatureCache.hh"
 
+#include <vector>
+
 namespace Pds {
   class Dgram;
 };
@@ -23,9 +25,12 @@ namespace Ami {
     unsigned     nentries() const;
     const Entry* entry   (unsigned) const;
     void         rename  (const char*);
+  public:
+    static void use_alias(bool only);
   private:
-    enum { MaxPvs=1024 };
-    int           _indexpv[MaxPvs];
+    std::vector<int>         _indexpv;
+    std::vector<std::string> _alias;
+    std::vector<int>         _indexalias;
   };
 
 };

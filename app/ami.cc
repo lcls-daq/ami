@@ -1,6 +1,7 @@
 #include "ami/app/AmiApp.hh"
 #include "ami/app/CmdLineTools.hh"
 #include "ami/service/Ins.hh"
+#include "ami/event/EpicsXtcReader.hh"
 #include "ami/event/EventHandler.hh"
 #include "ami/event/Calib.hh"
 
@@ -21,6 +22,7 @@ static void usage(char* progname) {
           "          [-Q <pixels>] (set resolution)\n"
           "          [-R] (set full resolution)\n"
           "          [-E <expt name>] (set experiment for offline calib access)\n"
+          "          [-a <include|only>] (include EPICS aliases [only])\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -34,7 +36,7 @@ int main(int argc, char* argv[]) {
   std::vector<char *> module_names;
   bool parseValid=true;
 
-  while ((c = getopt(argc, argv, "?hfDQ:RE:p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDa:Q:RE:p:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -68,6 +70,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'D':
       Ami::EventHandler::post_diagnostics(true);
+      break;
+    case 'a':
+      Ami::EpicsXtcReader::use_alias(strcmp(optarg,"only")==0);
       break;
     case '?':
     case 'h':

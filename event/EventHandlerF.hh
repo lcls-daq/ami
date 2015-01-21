@@ -64,6 +64,7 @@ namespace Ami {
     virtual bool  used() const;
   public:
     int  _add_to_cache(const char*);
+    int  _add_array_to_cache(const char*,int);
     void _rename_cache(int index,const char*);
     void _damaged     ();
   protected:
