@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <string.h>
+
 #include "ami/event/EventHandlerF.hh"
 
 #include "ami/data/FeatureCache.hh"
