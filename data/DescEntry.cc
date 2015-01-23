@@ -137,6 +137,7 @@ DescEntry::Stat     DescEntry::stat() const {return Stat(_stat); }
 
 bool DescEntry::isnormalized   () const {return _options&(1<<Normalized);}
 bool DescEntry::aggregate      () const {return _options&(1<<Aggregate);}
+bool DescEntry::isfixed        () const {return _options&(1<<Fixed);}
 bool DescEntry::check_refresh  () const {return _options&(1<<CheckRefresh);}
 bool DescEntry::force_refresh  () const {return _options&(1<<ForceRefresh);}
 bool DescEntry::auto_refresh   () const {return _options&(1<<AutoRefresh);}
@@ -156,6 +157,7 @@ void DescEntry::_set_opt(bool v,Option opt)
 
 void DescEntry::normalize    (bool v) { _set_opt(v,Normalized); }
 void DescEntry::aggregate    (bool v) { _set_opt(v,Aggregate); }
+void DescEntry::fix          (bool v) { _set_opt(v,Fixed); }
 void DescEntry::check_refresh(bool v) { _set_opt(v,CheckRefresh); }
 void DescEntry::force_refresh(bool v) { _set_opt(v,ForceRefresh); }
 void DescEntry::auto_refresh (bool v) { _set_opt(v,AutoRefresh); }

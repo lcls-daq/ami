@@ -37,8 +37,10 @@ void Entry::payload(iovec& iov) const
 
 void Entry::reset()
 {
-  memset(_payload, 0, _payloadsize);
-  invalid();
+  if (!desc().isfixed()) {
+    memset(_payload, 0, _payloadsize);
+    invalid();
+  }
 }
 
 void* Entry::allocate(unsigned size)

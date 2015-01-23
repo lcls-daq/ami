@@ -72,6 +72,7 @@ Reference::Reference(const char*& p, const DescEntry& e) :
       Pds::DetInfo info(0,Pds::DetInfo::NoDetector,0,Pds::DetInfo::NoDevice,0);
       DescWaveform *dwf =
           new (_buffer) DescWaveform(info, -1, "Reference", "xtitle", "ytitle", i, tf, tl);
+      dwf->fix(true);
       _entry = EntryFactory::entry(*dwf);
       while (--i >= 0) {
           ((EntryWaveform *)_entry)->content(_data[i], i);
@@ -91,6 +92,7 @@ Reference::Reference(const char*& p, const DescEntry& e) :
   _entry->payload(iov);
   READ_SIZE(iov.iov_base,iov.iov_len,f);
   fclose(f);
+  _entry->desc().fix(true);
 }
 
 Reference::~Reference()

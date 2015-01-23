@@ -44,6 +44,8 @@ namespace Ami {
     bool isnormalized() const;
     ///  Indicates whether the data content is to be merged with data from other events
     bool aggregate   () const;
+    ///  Indicates whether the data content is fixed - don't reset
+    bool isfixed     () const;
     ///
     Stat stat        () const;
     ///  Indicates whether the data content is to be periodically refreshed
@@ -77,6 +79,8 @@ namespace Ami {
 
     /// merge distributed data = sum contents and normalization, else just keep latest set
     void aggregate(bool);  
+    /// data is fixed content - don't reset
+    void fix(bool);
     /// periodically refresh
     void check_refresh(bool);  
     /// refresh now
@@ -165,7 +169,7 @@ namespace Ami {
 
   private:
     ///  Enumeration of options in a bit mask
-    enum Option {Normalized, Aggregate, 
+    enum Option {Normalized, Aggregate, Fixed, 
                  CheckRefresh, ForceRefresh, 
                  AutoRefresh,
                  CountMode, 
