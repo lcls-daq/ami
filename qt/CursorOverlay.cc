@@ -151,8 +151,10 @@ void CursorOverlay::setup_payload(Cds& cds)
 
 void CursorOverlay::update()
 {
-  if (_plot)
+  if (_plot) {
     _plot->update();
+    emit updated();
+  }
 
   if (_auto_range) {
     double v = _auto_range->entries() - double(_auto_range->desc().nsamples());
