@@ -1,0 +1,104 @@
+#include "Single.hh"
+
+#include "ami/data/DescEntry.hh"
+#include "ami/data/Entry.hh"
+#include "ami/data/EntryTH1F.hh"
+#include "ami/data/EntryTH2F.hh"
+#include "ami/data/EntryProf.hh"
+#include "ami/data/EntryImage.hh"
+#include "ami/data/EntryWaveform.hh"
+#include "ami/data/EntryFactory.hh"
+#include "ami/data/SelfExpression.hh"
+#include "ami/data/valgnd.hh"
+
+#include <stdio.h>
+
+//#define DBUG
+
+using namespace Ami;
+
+Single::Single(const char* scale) : 
+  AbsOperator(AbsOperator::Single),
+  _entry     (0),
+  _input     (0),
+  _term      (0)
+{
+  strncpy_val(_scale_buffer,scale,SCALE_LEN);
+}
+
+Single::Single(const char*& p, const DescEntry& e, FeatureCache& features) :
+  AbsOperator(AbsOperator::Single),
+  _input(0)
+{
+#ifdef DBUG
+  printf("Single %s agg %c\n",
+	 e.name(), e.aggregate() ? 't':'f');
+#endif
+
+  _extract(p,_scale_buffer, SCALE_LEN);
+
+  _entry = EntryFactory::entry(e);
+  _entry->desc().aggregate(e.aggregate());
+  _entry->desc().normalize(e.isnormalized());
+
+  if (_scale_buffer[0]) {
+    QString expr(_scale_buffer);
+    SelfExpression parser;
+    _term = parser.evaluate(features,expr,_input,_entry->desc());
+    if (!_term)
+      printf("BinMath failed to parse f %s\n",qPrintable(expr));
+  }
+  else
+    _term = 0;
+}
+
+Single::~Single()
+{
+  if (_entry) delete _entry;
+  if (_term ) delete _term;
+}
+
+void Single::use() { if (_term) _term->use(); }
+
+const DescEntry& Single::_routput   () const { return _entry->desc(); }
+
+void*      Single::_serialize(void* p) const
+{
+  _insert(p, _scale_buffer , SCALE_LEN);
+  return p;
+}
+
+#define SET_CASE(type) { \
+  case DescEntry::type: \
+    { Entry##type& entry = *reinterpret_cast<Entry##type*>(_entry); \
+      entry.setto(reinterpret_cast<const Entry##type&>(e));         \
+      entry.info (entry.info(Entry##type::Normalization)*v, Entry##type::Normalization); \
+      break; } }
+
+Entry&     Single::_operate(const Entry& e) const
+{
+  if (!e.valid())
+    return *_entry;
+
+  _input = &e;
+  double v = _term ? _term->evaluate() : 1;
+
+  switch(e.desc().type()) {
+    SET_CASE(TH1F);
+    SET_CASE(TH2F);
+    SET_CASE(Prof);
+    SET_CASE(Image);
+    SET_CASE(Waveform);
+  default:
+    break;
+  }
+  _entry->valid(e.time());
+
+  return *_entry;
+}
+
+#undef SET_CASE
+
+void Single::_invalid() { _entry->invalid(); }
+
+std::string Single::_text() const { return std::string("Single"); }

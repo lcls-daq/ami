@@ -1,0 +1,41 @@
+#ifndef AmiQt_QtWaveform_hh
+#define AmiQt_QtWaveform_hh
+
+#include "ami/qt/QtBase.hh"
+#include "ami/qt/QtPlotCurve.hh"
+
+class QwtPlot;
+class QColor;
+
+namespace Ami {
+  class EntryWaveform;
+  class AbsTransform;
+  namespace Qt {
+    class QtWaveform : public QtBase {
+    public:
+      QtWaveform(const QString&   title,
+		 const EntryWaveform&, 
+		 const AbsTransform& x, 
+		 const AbsTransform& y,
+		 const QColor& c);
+      ~QtWaveform();
+    public:
+      void        dump  (FILE*) const;
+      void        attach(QwtPlot*);
+      void        update()        ;
+      void        xscale_update() ;
+      void        yscale_update() ;
+      const AxisInfo* xinfo() const;
+      QColor      get_color() const;
+    private:
+      const AbsTransform&   _xscale;
+      const AbsTransform&   _yscale;
+      QtPlotCurve    _curve;
+      double*        _x;
+      double*        _y;
+      AxisInfo*      _xinfo;
+    };
+  };
+};
+
+#endif

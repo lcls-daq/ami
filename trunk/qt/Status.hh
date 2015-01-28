@@ -1,0 +1,40 @@
+#ifndef AmiQt_Status_hh
+#define AmiQt_Status_hh
+
+#include <QtGui/QWidget>
+
+class QLabel;
+
+namespace Ami {
+  namespace Qt {
+    class Status : public QWidget {
+      Q_OBJECT
+    public:
+      Status();
+      ~Status();
+    public:
+      enum State { Disconnected, 
+		   Connected, 
+		   Discovered, 
+		   Configured,
+		   Described,
+		   Requested,
+		   Received,
+		   Processed,
+                   Throttled };
+      void set_state(State, unsigned=0);
+      State state() const;
+    public slots:
+      void update_state();
+    signals:
+      void state_changed();
+    private:
+      State   _state;
+      QLabel* _label;
+      unsigned _requested;
+      unsigned _received;
+    };
+  };
+};
+
+#endif

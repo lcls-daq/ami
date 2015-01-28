@@ -1,0 +1,63 @@
+#ifndef Pds_ENTRYScalar_HH
+#define Pds_ENTRYScalar_HH
+
+#include "ami/data/Entry.hh"
+#include "ami/data/DescScalar.hh"
+
+#include <math.h>
+
+namespace Ami {
+
+  class EntryScalar : public Entry {
+  public:
+    EntryScalar(const Pds::DetInfo& info, unsigned channel, const char* name, const char* ytitle);
+    EntryScalar(const DescScalar& desc);
+
+    virtual ~EntryScalar();
+
+    //  The contents are organized as 
+    double entries() const;
+    double sum    () const;
+    double sqsum  () const;
+    double mean   () const;
+    double rms    () const;
+    double slope  () const;
+    double intercept() const;
+    void   addcontent(double y);
+    void   addcontent(double y,double w);
+    void   content   (const double*);
+
+    void setto(const EntryScalar& entry);
+    void setto(const EntryScalar& curr, const EntryScalar& prev);
+    void add  (const EntryScalar& entry);
+
+    // Implements Entry
+    virtual const DescScalar& desc() const;
+    virtual DescScalar& desc();
+
+  private:
+    virtual void _merge(char*) const;
+
+  private:
+    DescScalar _desc;
+
+  private:
+    double* _y;
+
+  public:
+    static const char* input_entry();
+  };
+
+  inline double EntryScalar::entries() const { return _y[0]; }
+  inline double EntryScalar::sum    () const { return _y[1]; }
+  inline double EntryScalar::sqsum  () const { return _y[2]; }
+  inline double EntryScalar::mean   () const { return _y[0] ? _y[1]/_y[0] : 0; }
+  inline double EntryScalar::rms    () const { return _y[0] ? sqrt((_y[2] - _y[1]*_y[1]/_y[0])/_y[0]) : 0; }
+  inline double EntryScalar::slope    () const { return mean(); }
+  inline double EntryScalar::intercept() const { return _y[0] ? _y[2]/_y[0] : 0; }
+  inline void   EntryScalar::addcontent(double y) { _y[0]++; _y[1]+=y; _y[2]+=y*y; }
+  inline void   EntryScalar::addcontent(double y,double w) { _y[0]+=w; _y[1]+=w*y; _y[2]+=w*y*y; }
+  inline void   EntryScalar::content(const double* y) { _y[0]=y[0]; _y[1]=y[1]; _y[2]=y[2]; }
+};
+
+#endif
