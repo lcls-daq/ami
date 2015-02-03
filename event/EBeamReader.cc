@@ -213,6 +213,7 @@ void   EBeamReader::_event    (Pds::TypeId id,
         break;
       }
     case 6:
+    case 7:
       {
         const Pds::Bld::BldDataEBeamV6& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV6*>(payload);
