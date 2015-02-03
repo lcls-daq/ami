@@ -213,10 +213,35 @@ void   EBeamReader::_event    (Pds::TypeId id,
         break;
       }
     case 6:
-    case 7:
       {
         const Pds::Bld::BldDataEBeamV6& bld = 
           *reinterpret_cast<const Pds::Bld::BldDataEBeamV6*>(payload);
+        TEST(Charge);
+        TEST(L3Energy);
+        TEST(LTUPosX);
+        TEST(LTUPosY);
+        TEST(LTUAngX);
+        TEST(LTUAngY);
+        TEST(PkCurrBC2);
+        TEST(EnergyBC2);
+        TEST(PkCurrBC1);
+        TEST(EnergyBC1);
+        TEST(UndPosX);
+        TEST(UndPosY);
+        TEST(UndAngX);
+        TEST(UndAngY);
+        TEST(XTCAVAmpl);
+        TEST(XTCAVPhase);
+        TEST(DumpCharge);
+        TEST(PhotonEnergy);
+        TESTLTU(LTU250);
+        TESTLTU(LTU450);
+        break;
+      }
+    case 7:
+      {
+        const Pds::Bld::BldDataEBeamV7& bld = 
+          *reinterpret_cast<const Pds::Bld::BldDataEBeamV7*>(payload);
         TEST(Charge);
         TEST(L3Energy);
         TEST(LTUPosX);
