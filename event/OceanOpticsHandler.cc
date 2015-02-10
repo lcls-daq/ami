@@ -68,7 +68,17 @@ void OceanOpticsHandler::_configure(Pds::TypeId typeId, const void* payload, con
     const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(payload);
     memcpy(_configBuffer, &c, sizeof(Pds::OceanOptics::ConfigV2));
     _iConfigVer = 2;
-    iNumPixels  = (c.deviceType() == 0 ? (int)Pds::OceanOptics::DataV1::iNumPixels : (int)Pds::OceanOptics::DataV2::iNumPixels);
+    switch (c.deviceType()) {
+    case 0:
+      iNumPixels = (int)Pds::OceanOptics::DataV1::iNumPixels;
+      break;
+    case 1:
+      iNumPixels = (int)Pds::OceanOptics::DataV2::iNumPixels;
+      break;
+    case 2:
+      iNumPixels = (int)Pds::OceanOptics::DataV3::iNumPixels;
+      break;
+    }
     p           = c.waveLenCalib();
   }
   else
@@ -112,6 +122,13 @@ void OceanOpticsHandler::_event    (Pds::TypeId typeId, const void* payload, con
     const Pds::OceanOptics::DataV2*   d = (Pds::OceanOptics::DataV2*)payload;
     const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(_configBuffer);
     for (int j=0;j<Pds::OceanOptics::DataV2::iNumPixels;j++)
+      entry->content( d->nonlinerCorrected(c, j),j);
+  }
+  else if (typeId.version() == 3)
+  {
+    const Pds::OceanOptics::DataV3*   d = (Pds::OceanOptics::DataV3*)payload;
+    const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(_configBuffer);
+    for (int j=0;j<Pds::OceanOptics::DataV3::iNumPixels;j++)
       entry->content( d->nonlinerCorrected(c, j),j);
   }
   else
