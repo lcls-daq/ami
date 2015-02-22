@@ -38,6 +38,9 @@ namespace Ami {
 					  const char* prefix="gain");
     static ndarray<double,2>   load_darray(const DescImage&,
 					   const char* prefix="gain");
+    static ndarray<double,2>   load_darray(const DescImage&,
+					   const char* prefix,
+                                           const char* offl_type);
     
     static int median(ndarray<const uint16_t,1> data,
 		      unsigned& iLo, unsigned& iHi);

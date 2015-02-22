@@ -569,6 +569,61 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
   return a;
 }
 
+ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
+                                          const char*      prefix,
+                                          const char*      offl_type)
+{
+  unsigned max_rows    = d.nbinsy();
+  unsigned max_columns = d.nbinsx();
+  ndarray<double,2> a = 
+    make_ndarray<double>(max_rows, max_columns);
+
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  FILE* f = Calib::fopen(d.info(), prefix, offl_type);
+  if (f) {
+    CalibIO fio(*f);
+
+    const unsigned ppb  = d.ppxbin();
+
+    unsigned maxc = 0;
+    unsigned row = 0;
+    do {
+      if (!fio.next_line()) break;
+      char* p = fio.line();
+      unsigned col=0;
+      while(col < max_columns) {
+        char* pEnd;
+	double v = strtod(p,&pEnd);
+	if (pEnd == p) break;
+	a[row/ppb][col/ppb] = v;
+	col++;
+	p = pEnd+1;
+      }
+      if (col > maxc) maxc=col;
+    } while (++row < max_rows);
+    
+    fclose(f);
+
+    if (maxc != max_columns ||
+	row  != max_rows) {
+      ndarray<double,2> b = make_ndarray<double>(row,maxc);
+      for(unsigned i=0; i<row; i++) {
+	double* p = &b[i][0];
+	for(unsigned j=0; j<maxc; j++)
+	  p[j] = a[i][j];
+      }
+      a = b;
+    }
+  }
+  else
+    a = make_ndarray<double>(0U,0);
+  
+  return a;
+}
+
 int FrameCalib::median(ndarray<const uint16_t,1> data,
 		       unsigned& iLo, unsigned& iHi)
 {
