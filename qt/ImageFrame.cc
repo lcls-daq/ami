@@ -8,6 +8,7 @@
 #include "ami/qt/ImageMarker.hh"
 #include "ami/qt/QtImage.hh"
 #include "ami/data/Entry.hh"
+#include "ami/data/EntryImage.hh"
 #include "ami/service/Semaphore.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
@@ -62,7 +63,12 @@ void ImageFrame::attach(QtImage* image)
     image->set_color_table(_engine.control().color_table());
 
     if (image->scalexy()) {
-      const unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
+      unsigned sz = CanvasSizeDefault + CanvasSizeIncrease;
+      const DescImage& d = reinterpret_cast<const EntryImage&>(image->entry()).desc();
+      unsigned xp=d.nbinsx();
+      unsigned yp=d.nbinsy();
+      if (sz < xp) sz=xp;
+      if (sz < yp) sz=yp;
       _canvas->setMinimumSize(sz,sz);
     }
 
