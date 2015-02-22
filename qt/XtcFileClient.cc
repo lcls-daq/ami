@@ -251,6 +251,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClientT*>& clie
   _runCombo(new QComboBox),
   _runName(""),
 
+  _updateButton(new QPushButton("Update")),
   _runButton(new QPushButton("Run")),
   _pauseButton(new QPushButton("Pause")),
   _stopButton(new QPushButton("Stop")),
@@ -311,6 +312,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClientT*>& clie
   QHBoxLayout* hboxA = new QHBoxLayout;
   hboxA->addWidget(_dirLabel);
   hboxA->addWidget(_dirSelect);
+  hboxA->addWidget(_updateButton);
   l->addLayout(hboxA);
   updateDirLabel();
 
@@ -403,6 +405,7 @@ XtcFileClient::XtcFileClient(QGroupBox* groupBox, std::vector<XtcClientT*>& clie
   }
 
   _connect(_dirSelect, SIGNAL(clicked()), this, SLOT(selectDir()));
+  _connect(_updateButton, SIGNAL(clicked()), this, SLOT(updateDir()));
   _connect(_runButton, SIGNAL(clicked()), this, SLOT(runClicked()));
   _connect(_pauseButton, SIGNAL(clicked()), this, SLOT(pauseClicked()));
   _connect(_stopButton, SIGNAL(clicked()), this, SLOT(stopClicked()));
@@ -513,6 +516,8 @@ void XtcFileClient::setDir(QString dir)
   _curdir.append(dir);
   emit _updateDirLabel();
 
+  _stopped = true;
+
   Ami::Calib::use_offline   (true);
   Ami::Calib::set_experiment(basename(std::string(qPrintable(_curdir)).c_str()));
 
@@ -545,6 +550,8 @@ void XtcFileClient::setDir(QString dir)
     emit _updateRun();
   }
 }
+
+void XtcFileClient::updateDir() { setDir(_curdir); }
 
 void XtcFileClient::runClicked()
 {

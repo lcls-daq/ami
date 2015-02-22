@@ -40,6 +40,7 @@ namespace Ami {
       void configure();
     private slots:
       void selectDir();
+      void updateDir();
       void selectRun(int);
       void runClicked();
       void pauseClicked();
@@ -91,10 +92,11 @@ namespace Ami {
       Task* _task;  // thread for Qt
       QPushButton* _dirSelect;
       QLabel* _dirLabel;
-      QComboBox* _runCombo;
+      QComboBox*   _runCombo;
       QStringList _runList;
       QString _runName;
 
+      QPushButton* _updateButton;
       QPushButton* _runButton;
       QPushButton* _pauseButton;
       QPushButton* _stopButton;
