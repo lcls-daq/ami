@@ -28,6 +28,7 @@ EnvPlot::EnvPlot(const DescEntry& output) :
 
 EnvPlot::EnvPlot(const char*&  p) :
   AbsOperator(AbsOperator::EnvPlot),
+  _entry     (0),
   _input     (0),
   _v         (true)
 {
