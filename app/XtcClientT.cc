@@ -58,6 +58,7 @@ void XtcClientT::processDgram(Pds::Dgram* dg)
       for(unsigned i=0; i<_depth; i++)
         sem_wait(_sem);
       sem_destroy(_sem);
+      delete _sem;
       _sem = 0;
     }
     if (id==TransitionId::Enable) {
