@@ -22,6 +22,7 @@ namespace Ami {
     static Function    function(const char*);
 
     Fit(const DescEntry& output, Function, unsigned parameter, double xlo=0, double xhi=0);
+    Fit(const DescEntry& output, const Fit&);
     Fit(const char*&, FeatureCache& input, FeatureCache& output);
     Fit(const char*&);
     ~Fit();

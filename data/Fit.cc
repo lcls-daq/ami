@@ -44,6 +44,20 @@ Fit::Fit(const DescEntry& output,
   memcpy_val (_desc_buffer, &output, output.size(), DESC_LEN);
 }
 
+Fit::Fit(const DescEntry& output, 
+         const Fit&       fit) :
+  AbsOperator(AbsOperator::Fit),
+  _function  (fit._function),
+  _parameter (fit._parameter),
+  _xlo       (fit._xlo),
+  _xhi       (fit._xhi),
+  _cache     (0),
+  _entry     (0),
+  _fit       (0)
+{
+  memcpy_val (_desc_buffer, &output, output.size(), DESC_LEN);
+}
+
 Fit::Fit(const char*&  p,
          FeatureCache& input, 
          FeatureCache& output) :

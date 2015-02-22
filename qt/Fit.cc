@@ -37,7 +37,7 @@ using namespace Ami::Qt;
 static Ami::Fit _fit_op(const Ami::AbsOperator& op, const Ami::DescEntry& o)
 {
   const Ami::Fit& fit = static_cast<const Ami::Fit&>(op);
-  return Ami::Fit(o, fit.function(), fit.parameter());
+  return Ami::Fit(o, fit);
 }
 
 Fit::Fit(QWidget* parent, 
@@ -346,7 +346,9 @@ QString Fit::_add_post()
                               desc, 
                               new Ami::Fit(*desc, 
                                            Ami::Fit::Function(_functionBox->currentIndex()),
-                                           _parameterBox->currentIndex()),
+                                           _parameterBox->currentIndex(),
+                                           _xlo->text().toDouble(),
+                                           _xhi->text().toDouble()),
                               _channel);
 
   _list_sem.take();

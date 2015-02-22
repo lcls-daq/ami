@@ -46,7 +46,8 @@ LineFit::LineFit(const char*&  p) :
   _cache     (0),
   _xline     (0),
   _yline     (0),
-  _v         (true)
+  _v         (true),
+  _acc       (0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_method, sizeof(_method));
@@ -90,15 +91,21 @@ LineFit::LineFit(const char*&  p,
 
     QStringList terms = expr.split(_delim);
 
-    _xline = parser.evaluate(input,terms[0]);
-    if (!_xline) {
-      printf("LineFit failed to parse x %s\n",qPrintable(terms[0]));
-      _v = false;
+    if (terms.size()==2) {
+      _xline = parser.evaluate(input,terms[0]);
+      if (!_xline) {
+        printf("LineFit failed to parse x %s\n",qPrintable(terms[0]));
+        _v = false;
+      }
+      
+      _yline = parser.evaluate(input,terms[1]);
+      if (!_yline) {
+        printf("LineFit failed to parse y %s\n",qPrintable(terms[1]));
+        _v = false;
+      }
     }
-
-    _yline = parser.evaluate(input,terms[1]);
-    if (!_yline) {
-      printf("LineFit failed to parse y %s\n",qPrintable(terms[1]));
+    else {
+      printf("Failed to parse two terms from %s\n",o.name());
       _v = false;
     }
   }

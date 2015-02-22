@@ -38,13 +38,22 @@ GaussFit::~GaussFit()
 {
 }
 
-void GaussFit::fit(const EntryTH1F& e,double,double)
+void GaussFit::fit(const EntryTH1F& e,double x0,double x1)
 {
   GaussFitStats s;
   const DescTH1F& d = e.desc();
   double dx = (d.xup()-d.xlow())/double(d.nbins());
   double xo = d.xlow()+0.5*dx;
-  for(unsigned i=0; i<d.nbins(); i++) {
+  unsigned i0 = x0<xo ? 0 : unsigned((x0-xo)/dx);
+  unsigned i1 = x1<xo ? 0 : unsigned((x1-xo)/dx);
+  if (i1 >= d.nbins()) i1=d.nbins()-1;
+
+  if (x0==0 && x1==0) {
+    i0 = 0;
+    i1 = d.nbins()-1;
+  }
+
+  for(unsigned i=i0; i<=i1; i++) {
     double x = xo+double(i)*dx;
     s.accum( x, e.content(i) );
   }
@@ -55,11 +64,14 @@ void GaussFit::fit(const EntryTH1F& e,double,double)
   if (e.desc().isnormalized())
     a /= e.info(EntryTH1F::Normalization);
 
-  unsigned n = 2*d.nbins()+1;
+  i0 *= 2;
+  i1 *= 2;
+  unsigned n = i1-i0+1;
   _x.resize(n);
   _y.resize(n);
   xo  = d.xlow();
   dx *= 0.5;
+  xo += dx*double(i0);
   for(unsigned i=0; i<n; i++) {
     double x = xo+double(i)*dx;
     _x[i] = x;
@@ -68,13 +80,22 @@ void GaussFit::fit(const EntryTH1F& e,double,double)
   }
 }
 
-void GaussFit::fit(const EntryProf& e,double,double)
+void GaussFit::fit(const EntryProf& e,double x0,double x1)
 {
   GaussFitStats s;
   const DescProf& d = e.desc();
   double dx = (d.xup()-d.xlow())/double(d.nbins());
   double xo = d.xlow()+0.5*dx;
-  for(unsigned i=0; i<d.nbins(); i++) {
+  unsigned i0 = x0<xo ? 0 : unsigned((x0-xo)/dx);
+  unsigned i1 = x1<xo ? 0 : unsigned((x1-xo)/dx);
+  if (i1 >= d.nbins()) i1=d.nbins()-1;
+
+  if (x0==0 && x1==0) {
+    i0 = 0;
+    i1 = d.nbins()-1;
+  }
+
+  for(unsigned i=i0; i<=i1; i++) {
     double x = xo+double(i)*dx;
     s.accum( x, e.ymean(i) );
   }
@@ -83,11 +104,14 @@ void GaussFit::fit(const EntryProf& e,double,double)
 
   double a = _params[0]/(sqrt(2*M_PI)*_params[2]);
 
-  unsigned n = 2*d.nbins()+1;
+  i0 *= 2;
+  i1 *= 2;
+  unsigned n = i1-i0+1;
   _x.resize(n);
   _y.resize(n);
   xo  = d.xlow();
   dx *= 0.5;
+  xo += dx*double(i0);
   for(unsigned i=0; i<n; i++) {
     double x = xo+double(i)*dx;
     _x[i] = x;
