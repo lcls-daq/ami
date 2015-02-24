@@ -133,6 +133,7 @@ namespace Ami {
             _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
         } break;
       case Pds::TypeId::Id_EvrData:
+        // Pds::EvrData::DataV3 can be used for both V3 and V4
         _evrdata = reinterpret_cast<Pds::EvrData::DataV3*>(payload);
         break;
       case Pds::TypeId::Id_IpmFex:

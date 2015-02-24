@@ -136,6 +136,7 @@ namespace Ami {
         }
       }
       else if (type.id()==Pds::TypeId::Id_EvrData) {
+        // Pds::EvrData::DataV3 can be used for both V3 and V4
         _evrdata = reinterpret_cast<Pds::EvrData::DataV3*>(payload);
       }
       else if (src.level()==m_ipm_get_key.level() && 
