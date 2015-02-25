@@ -115,7 +115,7 @@ void   EvrHandler::_event    (Pds::TypeId type, const void* payload, const Pds::
       _cache.cache(_indexcode[i],0);
 
   if ((type.version()==3) || (type.version()==4)) {
-    // Pds::EvrData::DataV3 can be used for both V3 and V4 */
+    // Pds::EvrData::DataV3 can be used for both V3 and V4
     const Pds::EvrData::DataV3& d = *reinterpret_cast<const Pds::EvrData::DataV3*>(payload);
 
     for(unsigned i=0; i<d.numFifoEvents(); i++) {
