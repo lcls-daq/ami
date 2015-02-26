@@ -326,7 +326,8 @@ EdgeFinderConfigApp::EdgeFinderConfigApp(QWidget* parent,
 					 unsigned icfg,
 					 unsigned ichan) :
   VAConfigApp(parent,QString("EF_%1_%2").arg(icfg).arg(ichan),ichan),
-  _config    (cfgs)
+  _config    (cfgs),
+  _icfg      (icfg)
 {
 }
 
