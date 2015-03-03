@@ -79,12 +79,8 @@ FilterImport::FilterImport(const std::string& input) :
               _filter = fact.deserialize(o);
             }
 	    else if (stag.name == "_text") {
-#ifdef DBUG
 	      QString s = QtPersistent::extract_s(p);
-	      printf("FilterImport expr %s\n",qPrintable(s));
-#else
-	      QtPersistent::extract_s(p);
-#endif
+	      printf("Ami::FilterImport expr %s\n",qPrintable(s));
 	    }
           XML_iterate_close(AbsFilter,stag);
         }
