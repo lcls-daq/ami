@@ -46,7 +46,7 @@ namespace Ami {
 
   class FexM : public TimeTool::Fex {
   public:
-    FexM(const char* fname) : Fex(fname) {}
+    FexM(const char* fname) : Fex(fname), _cds(0) {}
     ~FexM() {}
   public:
     void _monitor_raw_sig(const ndarray<const double,1>& wf)
