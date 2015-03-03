@@ -412,6 +412,10 @@ void ClientManager::_flush_socket(ClientSocket& socket,
   while(remaining) {
     int sz = socket.read(_buffer,remaining < BufferSize ? 
                          remaining : BufferSize);
+    if (sz < 0) {
+      perror("ClientManager::_flush_socket failed");
+      break;
+    }
     remaining -= sz;
   } 
 }
