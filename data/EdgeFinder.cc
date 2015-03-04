@@ -132,7 +132,7 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
   return *_entry;
 }
 
-void EdgeFinder::_invalid() {}
+void EdgeFinder::_invalid() { _entry->invalid(); }
 
 void EdgeFinderConfig::load(const char*& p)
 {

@@ -9,6 +9,8 @@
 #include "ami/data/FilterFactory.hh"
 #include "ami/data/OperatorFactory.hh"
 
+//#define DBUG
+
 using namespace Ami;
 
 Analysis::Analysis(unsigned      id, 
@@ -61,6 +63,13 @@ void   Analysis::use()
 
 void   Analysis::analyze()
 {
+#ifdef DBUG
+  printf("Analysis::analyze filter(%s)[%s] input(%s)[%s] op(%s)\n",
+         _filter->text().c_str(), _filter->accept() ? "Acc":"Rej",
+         _input.desc().name(), _input.valid()?"Valid":"Invalid",
+         _op->type_str(_op->type()));
+#endif
+
   if (_input.valid() && _filter->accept())
     (*_op)(_input);
   else
