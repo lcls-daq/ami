@@ -59,8 +59,8 @@ Ami::Qt::Client::Client(QWidget*            parent,
   _input           (0),
   _title           (name),
   _output_signature(0), 
-  _request         (new char[BufferSize]),
-  _description     (new char[BufferSize]),
+  _request         (BufferSize),
+  _description     (BufferSize),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -167,8 +167,6 @@ Ami::Qt::Client::~Client()
 {
   if (_manager) delete _manager;
   delete[] _iovload;
-  delete[] _description;
-  delete[] _request; 
   delete _sem;
 }
 
@@ -285,14 +283,14 @@ int  Ami::Qt::Client::configure       (iovec* iov)
     for(int i=0; i<NCHANNELS; i++)
       signatures[i] = -1;
 
-    char* p = _request;
+    char* p = _request.reset();
 
     if (_reset) {
       _reset = false;
       ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Reset,
 							ConfigureRequest::Analysis,
 							_input);
-      p += req.size();
+      p = _request.extend(req.size());
     }
     else {
       //
@@ -314,21 +312,19 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 	}
       } while(lAdded);
 
-      char* hp = p;
+      char* hp = p = _request.extend(p-_request.base());
 
       _configure(p,_input,_output_signature,
 		 _channels,signatures,NCHANNELS);
 
-      if (p > _request+BufferSize) {
-	printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
+      if (p==hp && !isVisible()) {  // nothing to show
 	return 0;
       }
-      else if (p==hp && !isVisible()) {  // nothing to show
-	return 0;
-      }
+
+      _request.extend(p-hp);
     }
-    iov[0].iov_base = _request;
-    iov[0].iov_len  = p - _request;
+    iov[0].iov_base = _request.base();
+    iov[0].iov_len  = _request.extent();
     return 1;
   }
 }
@@ -347,19 +343,16 @@ int  Ami::Qt::Client::configured      ()
 //
 int Ami::Qt::Client::read_description(Socket& socket, int len)
 {
-  //  printf("%s Described so\n",qPrintable(_title));
-  int size = socket.read(_description,len);
+  _description.reset  ();
+  _description.reserve(len);
+  int size = socket.read(_description.base(),len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
     return 0;
   }
 
-  if (size>BufferSize) {
-    printf("Buffer overflow [%d/%d] in Ami::Qt::Client::read_description.  Dying...\n",
-	   size,BufferSize);
-    abort();
-  }
+  _description.extend(size);
 
   //  printf("emit description\n");
   emit description_changed(size);
@@ -376,7 +369,7 @@ void Ami::Qt::Client::_read_description(int size)
 
   _cds.reset();
 
-  const char* payload = _description;
+  const char* payload   = _description.base();
   const char* const end = payload + size;
   //  dump(payload, size);
 

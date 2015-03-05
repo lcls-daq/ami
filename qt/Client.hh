@@ -15,6 +15,7 @@
 
 #include "ami/qt/QtPStack.hh"
 #include "ami/data/Cds.hh"
+#include "ami/service/Pool.hh"
 
 #include <QtGui/QHBoxLayout>
 
@@ -95,8 +96,8 @@ namespace Ami {
     private:
       QString     _title;
       unsigned    _output_signature;
-      char*       _request;
-      char*       _description;
+      Pool        _request;
+      Pool        _description;
 
     protected:
       Control*    _control;

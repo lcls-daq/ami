@@ -287,6 +287,9 @@ void ClientManager::request_payload(const EntryList& req)
     _poll->bcast_out(reinterpret_cast<const char*>(&_request),
 		     sizeof(_request));
   }
+  else {
+    printf("Ami::ClientManager::request_payload denied while Disconnected\n");
+  }
 }
 
 void ClientManager::request_stop()

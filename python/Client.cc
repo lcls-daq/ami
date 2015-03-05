@@ -21,7 +21,7 @@
 
 using namespace Ami::Python;
 
-static const int BufferSize = 0x8000;
+static const int BufferSize = 0x8000; // 32 kB
 
 static const Pds::DetInfo envInfo(0,
 				  Pds::DetInfo::NoDetector,0,
@@ -34,9 +34,8 @@ Client::Client(const std::vector<ClientArgs>& args) :
   _args            (args),
   _input           (args.size()),
   _output          (args.size()),
-  _request         (new char[BufferSize]),
-  _description     (new char[BufferSize]),
-  _description_size(BufferSize),
+  _request         (BufferSize),
+  _description     (BufferSize),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -67,8 +66,6 @@ Client::~Client()
   if (_manager) delete _manager;
 
   delete[] _iovload;
-  delete[] _description;
-  delete[] _request;
 
   for(unsigned i=0; i<_args.size(); i++) {
     delete _args[i].filter;
@@ -135,7 +132,7 @@ void Client::discovered(const DiscoveryRx& rx)
 
 int  Client::configure       (iovec* iov) 
 {
-  char* p = _request;
+  char* p = _request.reset();
 
   //
   //  Configure the analyses based upon the source either 
@@ -149,22 +146,17 @@ int  Client::configure       (iovec* iov)
                                                     _output[i] = ++output,
                                                     *_args[i].filter, *_args[i].op,
                                                     Ami::PostAnalysis);
-    p += r.size();
+    p = _request.extend(r.size());
+
 #ifdef DBUG
     printf("[%p] input/output[%d] = %d/%d\n",this,i,_input[i],_output[i]);
 #endif
   }
 
 
-  if (p > _request+BufferSize) {
-    printf("Client request overflow: size = 0x%lx\n", p-_request);
-    return 0;
-  }
-  else {
-    iov[0].iov_base = _request;
-    iov[0].iov_len  = p - _request;
-    return 1;
-  }
+  iov[0].iov_base = _request.base();
+  iov[0].iov_len  = _request.extent();
+  return 1;
 }
 
 int  Client::configured      () 
@@ -174,23 +166,17 @@ int  Client::configured      ()
 
 int  Client::read_description(Socket& socket,int len)
 {
-  if (unsigned(len) > _description_size) {
-    delete[] _description;
-    _description = new char[_description_size = unsigned(len)+BufferSize];
-  }
+  _description.reset();
+  _description.reserve(len);
   
-  int size = socket.read(_description,len);
+  int size = socket.read(_description.base(),len);
 
   if (size<0) {
     printf("Read error in Ami::Python::Client::read_description.\n");
     return 0;
   }
 
-  if (unsigned(size)>=_description_size) {
-    printf("Buffer overflow [%d/%d] in Ami::Qt::Client::read_description.  Dying...\n",
-	   size,_description_size);
-    abort();
-  }
+  _description.extend(size);
 
 #ifdef DBUG
   printf("[%p] read_description payload size %d\n",this,size);
@@ -198,7 +184,7 @@ int  Client::read_description(Socket& socket,int len)
 
   _cds.reset();
 
-  const char* payload = _description;
+  const char* payload   = _description.base();
   const char* const end = payload + size;
   //  dump(payload, size);
 
@@ -305,18 +291,18 @@ int  Client::initialize(ClientManager& mgr)
   return Success;
 }
 
-int Client::request_payload()
+int Client::request_payload(int tmo_sec)
 {
   _payload_avail=false;
   _manager->request_payload();
-  return pget();
+  return pget(tmo_sec);
 }
 
-int Client::pget()
+int Client::pget(int tmo_sec)
 {
   timespec tmo;
   clock_gettime(CLOCK_REALTIME, &tmo);
-  tmo.tv_sec+=2;
+  tmo.tv_sec+=tmo_sec;
 
   int result=1;
   pthread_mutex_lock(&_payload_mutex);

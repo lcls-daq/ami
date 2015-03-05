@@ -60,6 +60,19 @@ static PyObject* AmiError;
 
 static Ami::Python::Discovery* _discovery;
 
+static bool Parse_Int(PyObject* o, int& v)
+{
+  if (PyInt_Check(o))
+    v = PyInt_AsLong(o);
+  else if (PyFloat_Check(o))
+    v = int(PyFloat_AsDouble(o));
+  else if (PyTuple_Check(o))
+    return Parse_Int(PyTuple_GetItem(o,0),v);
+  else
+    return false;
+  return true;
+}
+
 static Ami::AbsFilter* parse_filter(std::string str)
 {
   if (str[0]!='(') {
@@ -222,10 +235,16 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
   return 0;
 }
 
-static PyObject* _getentrylist(Ami::Python::Client* client, bool push)
+static PyObject* _getentrylist(Ami::Python::Client* client, PyObject* args, bool push)
 {
   PyObject* result = NULL;
-  int sts = push ? client->pget() : client->request_payload();
+
+  int sts, tmo;
+  if (Parse_Int(args,tmo))
+    sts = push ? client->pget(tmo) : client->request_payload(tmo);
+  else
+    sts = push ? client->pget() : client->request_payload();
+
   if (sts==0) {
     std::vector<const Ami::Entry*> entries = client->payload();
     PyObject* o_list = PyList_New(entries.size());
@@ -441,7 +460,7 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
 static PyObject* amientry_get(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
-  PyObject* o = _getentrylist(e->client,false);
+  PyObject* o = _getentrylist(e->client,args,false);
   if (o && PyList_Check(o)) {
     PyObject* p = PyList_GetItem(o,0);
     Py_INCREF(p);
@@ -462,7 +481,7 @@ static PyObject* amientry_clear(PyObject* self, PyObject* args)
 static PyObject* amientry_pget(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
-  PyObject* o = _getentrylist(e->client,true);
+  PyObject* o = _getentrylist(e->client,args,true);
   if (o && PyList_Check(o)) {
     PyObject* p = PyList_GetItem(o,0);
     Py_INCREF(p);
@@ -620,7 +639,7 @@ static int amientrylist_init(amientrylist* self, PyObject* argstuple, PyObject* 
 static PyObject* amientrylist_get(PyObject* self, PyObject* args)
 {
   amientrylist* e = reinterpret_cast<amientrylist*>(self);
-  return _getentrylist(e->client,false);
+  return _getentrylist(e->client,args,false);
 }
 
 static PyObject* amientrylist_clear(PyObject* self, PyObject* args)
@@ -634,7 +653,7 @@ static PyObject* amientrylist_clear(PyObject* self, PyObject* args)
 static PyObject* amientrylist_pget(PyObject* self, PyObject* args)
 {
   amientrylist* e = reinterpret_cast<amientrylist*>(self);
-  return _getentrylist(e->client,true);
+  return _getentrylist(e->client,args,true);
 }
 
 static PyObject* amientrylist_pstart(PyObject* self, PyObject* args)
@@ -895,17 +914,6 @@ static unsigned colormap_jet[] = { 0x80, 0x84, 0x89, 0x8d, 0x92, 0x96, 0x9b, 0x9
                                    0xff5900, 0xff5500, 0xff5100, 0xff4e00, 0xff4a00, 0xff4600, 0xff4300, 0xff3f00, 0xff3b00, 0xff3700, 0xff3400, 0xff3000, 0xff2c00, 0xff2900, 0xff2500, 0xff2100,
                                    0xff1d00, 0xff1a00, 0xff1600, 0xff1200, 0xfb0f00, 0xf60b00, 0xf20700, 0xed0300, 0xe80000, 0xe40000, 0xdf0000, 0xdb0000, 0xd60000, 0xd20000, 0xcd0000, 0xc90000,
                                    0xc40000, 0xbf0000, 0xbb0000, 0xb60000, 0xb20000, 0xad0000, 0xa90000, 0xa40000, 0x9f0000, 0x9b0000, 0x960000, 0x920000, 0x8d0000, 0x890000, 0x840000, 0x800000 };
-
-static bool Parse_Int(PyObject* o, int& v)
-{
-  if (PyInt_Check(o))
-    v = PyInt_AsLong(o);
-  else if (PyFloat_Check(o))
-    v = int(PyFloat_AsDouble(o));
-  else
-    return false;
-  return true;
-}
 
 static PyObject*
 pyami_map_image(PyObject *self, PyObject *args)
