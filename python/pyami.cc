@@ -1,5 +1,6 @@
 #include <Python.h>
 #include <structmember.h>
+#include <sstream>
 
 #define MyArg_ParseTupleAndKeywords(args,kwds,fmt,kwlist,...) PyArg_ParseTupleAndKeywords(args,kwds,fmt,const_cast<char**>(kwlist),__VA_ARGS__)
 
@@ -62,6 +63,9 @@ static Ami::Python::Discovery* _discovery;
 
 static bool Parse_Int(PyObject* o, int& v)
 {
+  if (!o)
+    return false;
+
   if (PyInt_Check(o))
     v = PyInt_AsLong(o);
   else if (PyFloat_Check(o))
@@ -747,10 +751,25 @@ static PyTypeObject amientrylist_type = {
 static PyObject*
 pyami_connect(PyObject *self, PyObject *args)
 {
+  const char* host = 0;
   unsigned ppinterface(0), mcinterface(0), servergroup;
+  std::ostringstream str;
 
-  if (!PyArg_ParseTuple(args, "I|II", &servergroup,
-                        &ppinterface, &mcinterface))
+  if (PyArg_ParseTuple(args, "s|II", &host,
+		       &ppinterface, &mcinterface)) {
+    hostent* entries = gethostbyname(host);
+    if (entries)
+      servergroup = htonl(*(in_addr_t*)entries->h_addr_list[0]);
+    else {
+      str << "failed to lookup address for host " << host;
+      PyErr_SetString(PyExc_RuntimeError, str.str().c_str());
+      return NULL;
+    }
+  }
+  else if (PyArg_ParseTuple(args, "I|II", &servergroup,
+			    &ppinterface, &mcinterface))
+    ;
+  else
     return NULL;
 
   if (ppinterface==0 || mcinterface==0) {
@@ -759,7 +778,7 @@ pyami_connect(PyObject *self, PyObject *args)
     //
     int fd;  
     if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-      PyErr_SetString(PyExc_RuntimeError,"failed to lookup host interface");
+      PyErr_SetString(PyExc_RuntimeError,"failed to open local socket");
       return NULL;
     }
 
