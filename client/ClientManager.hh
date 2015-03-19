@@ -7,6 +7,7 @@
 #include "ami/service/Ins.hh"
 #include "ami/service/DumpSource.hh"
 #include "ami/service/Semaphore.hh"
+#include "ami/service/Pool.hh"
 
 #include <list>
 using std::list;
@@ -96,10 +97,8 @@ namespace Ami {
     State           _state;
     Message         _request;
     iovec*          _iovs;
-    unsigned        _buffer_size;
-    char*           _buffer;
-    unsigned        _discovery_size;
-    char*           _discovery;
+    Pool            _buffer;
+    Pool            _discovery;
     
     Socket*         _connect;
     Ins             _server;

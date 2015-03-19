@@ -4,6 +4,7 @@
 #include "ami/qt/QtPWidget.hh"
 #include "ami/client/AbsClient.hh"
 #include "ami/service/DumpCollector.hh"
+#include "ami/service/Pool.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 
@@ -87,7 +88,7 @@ namespace Ami {
       ConnectionManager* _connect_mgr;
       ClientManager* _manager;
       FilterSetup*   _filters;
-      char*          _request;
+      Pool           _request;
       std::list<QtTopWidget*> _client;
       QListWidget*   _detList;
       QPrinter*      _printer;

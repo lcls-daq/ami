@@ -48,8 +48,8 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _title           (name),
   _input_signature (0),
   _output_signature(0),
-  _request         (new char[BufferSize]),
-  _description     (new char[BufferSize]),
+  _request         (BufferSize),
+  _description     (BufferSize),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -132,8 +132,6 @@ TdcClient::~TdcClient()
 {
   if (_manager) delete _manager;
   delete[] _iovload;
-  delete[] _description;
-  delete[] _request;
   delete _filter;
 }
 
@@ -291,38 +289,36 @@ int  TdcClient::configure       (iovec* iov)
   _status->set_state(Status::Configured);
   printf("Configure\n");
 
-  char* p = _request;
+  char* p = _request.reset();
 
   if (_reset) {
     _reset=false;
     ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Reset,
 						      ConfigureRequest::Analysis,
 						      _input_signature);
-    p += req.size();
+    p = _request.extend(req.size());
   }
   else {
     _list_sem.take();
 
-    for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
       (*it)->configure(p,_input_signature,_output_signature);
-
-    for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+      _request.extend(p);
+    }
+    for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
       (*it)->configure(p,_input_signature,_output_signature);
-
-    for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
+      _request.extend(p);
+    }
+    for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++) {
       (*it)->configure(p,_input_signature,_output_signature);
-
+      _request.extend(p);
+    }
     _list_sem.give();
   }
-  if (p > _request+BufferSize) {
-    printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
-    return 0;
-  }
-  else {
-    iov[0].iov_base = _request;
-    iov[0].iov_len  = p - _request;
-    return 1;
-  }
+
+  iov[0].iov_base = _request.base();
+  iov[0].iov_len  = _request.extent();
+  return 1;
 }
 
 int  TdcClient::configured      () 
@@ -333,20 +329,17 @@ int  TdcClient::configured      ()
 
 int  TdcClient::read_description(Socket& socket,int len)
 {
-  printf("Tdc Described so\n");
-  int size = socket.read(_description,len);
+  _description.reset();
+  _description.reserve(len);
+  int size = socket.read(_description.base(),len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
     return 0;
   }
 
-  if (size==BufferSize) {
-    printf("Buffer overflow in Ami::Qt::Client::read_description.  Dying...\n");
-    abort();
-  }
+  _description.extend(size);
 
-  //  printf("emit description\n");
   emit description_changed(size);
 
   _sem->take();
@@ -356,11 +349,9 @@ int  TdcClient::read_description(Socket& socket,int len)
 
 void TdcClient::_read_description(int size)
 {
-  printf("Tdc Described si\n");
-
   _cds.reset();
 
-  const char* payload = _description;
+  const char* payload = _description.base();
   const char* const end = payload + size;
   //  dump(payload, size);
 

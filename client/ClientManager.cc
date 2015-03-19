@@ -72,7 +72,7 @@ namespace Ami {
 	  if (_skt->read(&msg,sizeof(msg))==sizeof(msg) &&
 	      msg.type()==Message::Hello) {
 #ifdef DBUG
-	    printf("Hello from socket %d\n", _skt->socket());
+	    printf("ServerConnect::routine Hello from socket %d\n", _skt->socket());
 #endif
 	    _found = true;
 	  }
@@ -139,7 +139,7 @@ namespace Ami {
           if (len==sizeof(msg)) {
             if (msg.type()==Message::Hello) {
 #ifdef DBUG
-              printf("Hello from socket %d\n",
+              printf("ProxyConnect::routine Hello from socket %d\n",
                      _skt->socket());
 #endif
               _found = true;
@@ -207,10 +207,8 @@ ClientManager::ClientManager(unsigned   interface,
   _state      (Disconnected),
   _request    (0,Message::NoOp),
   _iovs       (new iovec[Step]),
-  _buffer_size(BufferSize),
-  _buffer     (new char[BufferSize]),
-  _discovery_size(BufferSize),
-  _discovery  (new char[BufferSize]),
+  _buffer     (BufferSize),
+  _discovery  (BufferSize),
   _server     (serverGroup, Port::serverPort()),
   _connect_mgr(connect_mgr),
   _connect_id (-1),
@@ -259,8 +257,6 @@ ClientManager::~ClientManager()
   disconnect();
   delete _poll;
   delete[] _iovs;
-  delete[] _buffer;
-  delete[] _discovery;
   if (_reconn ) delete _reconn ;
   if (_connect) delete _connect;
   //  delete &_client;
@@ -412,8 +408,10 @@ void ClientManager::_flush_sockets(const Message& reply,
 void ClientManager::_flush_socket(ClientSocket& socket,
                                   int           remaining)
 {
+  _buffer.reset();
   while(remaining) {
-    int sz = socket.read(_buffer,remaining < BufferSize ? 
+    int sz = socket.read(_buffer.base(),
+			 remaining < BufferSize ? 
                          remaining : BufferSize);
     if (sz < 0) {
       perror("ClientManager::_flush_socket failed");
@@ -446,13 +444,11 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     printf("CM discover when expecting request %s %d\n",
            _request.type_str(),_request.id());
 #endif
-    if (_discovery_size < reply.payload()) {
-      delete[] _discovery;
-      _discovery = new char[_discovery_size=reply.payload()];
-    }
-    size = socket.read(_discovery,reply.payload());
+    _discovery.reset();
+    _discovery.reserve(reply.payload());
+    size = socket.read(_discovery.base(),reply.payload());
     //    dump(_discovery,size);
-    DiscoveryRx rx(_discovery, size);
+    DiscoveryRx rx(_discovery.base(), size);
     _client.discovered(rx, reply.id());
   }
   else if (reply.id() == _request.id()) {   // solicited message

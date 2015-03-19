@@ -53,8 +53,8 @@ EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   _input           (0),
   _set             (Ami::ScalarSet(channel)),
   _output_signature(0),
-  _request         (new char[BufferSize]),
-  _description     (new char[BufferSize]),
+  _request         (BufferSize),
+  _description     (BufferSize),
   _cds             ("Client"),
   _manager         (0),
   _niovload        (5),
@@ -142,8 +142,6 @@ EnvClient::~EnvClient()
 
   if (_manager) delete _manager;
   delete[] _iovload;
-  delete[] _description;
-  delete[] _request;
   delete _filter;
 }
 
@@ -286,37 +284,40 @@ int  EnvClient::configure       (iovec* iov)
 {
   _status->set_state(Status::Configured);
 
-  char* p = _request;
+  char* p = _request.reset();
 
   if (_reset) {
     _reset=false;
     ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Reset,
 						      ConfigureRequest::Analysis,
 						      _input);
-    p += req.size();
+    p = _request.extend(req.size());
   }
   else {
     ConfigureRequest::Source s(ConfigureRequest::Discovery);
     _list_sem.take();
-    for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {
       (*it)->configure(p,_input,_output_signature,s,Ami::EnvPlot((*it)->desc()));
-    for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++)
+      _request.extend(p);
+    }
+    for(std::list<EnvPost*>::const_iterator it=_posts.begin(); it!=_posts.end(); it++) {
       (*it)->configure(p,_input,_output_signature,s,Ami::EnvPlot((*it)->desc()));
-    for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++)
+      _request.extend(p);
+    }
+    for(std::list<EnvOverlay*>::const_iterator it=_ovls.begin(); it!=_ovls.end(); it++) {
       (*it)->configure(p,_input,_output_signature,s,Ami::EnvPlot((*it)->desc()));
-    for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++)
+      _request.extend(p);
+    }
+    for(std::list<EnvTable*>::const_iterator it=_tabls.begin(); it!=_tabls.end(); it++) {
       (*it)->configure(p,_input,_output_signature,s,Ami::EnvPlot((*it)->desc()));
+      _request.extend(p);
+    }
     _list_sem.give();
   }
-  if (p > _request+BufferSize) {
-    printf("Client request overflow: size = 0x%x\n", (unsigned) (p-_request));
-    return 0;
-  }
-  else {
-    iov[0].iov_base = _request;
-    iov[0].iov_len  = p - _request;
-    return 1;
-  }
+
+  iov[0].iov_base = _request.base();
+  iov[0].iov_len  = _request.extent();
+  return 1;
 }
 
 int  EnvClient::configured      () 
@@ -326,17 +327,16 @@ int  EnvClient::configured      ()
 
 int  EnvClient::read_description(Socket& socket,int len)
 {
-  int size = socket.read(_description,len);
+  _description.reset  ();
+  _description.reserve(len);
+  int size = socket.read(_description.base(),len);
 
   if (size<0) {
     printf("Read error in Ami::Qt::Client::read_description.\n");
     return 0;
   }
 
-  if (size==BufferSize) {
-    printf("Buffer overflow in Ami::Qt::Client::read_description.  Dying...\n");
-    abort();
-  }
+  _description.extend(size);
 
   //  printf("emit description\n");
   emit description_changed(size);
@@ -350,7 +350,7 @@ void EnvClient::_read_description(int size)
 {
   _cds.reset();
 
-  const char* payload = _description;
+  const char* payload = _description.base();
   const char* const end = payload + size;
   //  dump(payload, size);
 

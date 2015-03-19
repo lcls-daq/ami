@@ -7,6 +7,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/service/Semaphore.hh"
+#include "ami/service/Pool.hh"
 
 #include <list>
 
@@ -80,8 +81,8 @@ namespace Ami {
       Ami::ScalarSet _set;
 
       unsigned    _output_signature;
-      char*       _request;
-      char*       _description;
+      Pool        _request;
+      Pool        _description;
 
       Control*    _control;
       Status*     _status;

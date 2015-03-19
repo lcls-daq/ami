@@ -90,7 +90,7 @@ DetectorSelect::DetectorSelect(const QString& label,
                                  *_connect_mgr,
                                  *this)),
   _filters    (new FilterSetup(*_manager)),
-  _request    (new char[BufferSize]),
+  _request    (BufferSize),
   _rate_display(new RateDisplay(*_connect_mgr,
                                 _manager)),
   _discovered(false),
@@ -235,7 +235,6 @@ DetectorSelect::~DetectorSelect()
   delete _filters;
   delete _filter_export;
   delete _manager;
-  delete[] _request;
 }
 
 int DetectorSelect::get_setup(char* buffer) const
@@ -455,6 +454,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Epix     :
     case Pds::DetInfo::Epix100a :
     case Pds::DetInfo::Epix10k  :
+    case Pds::DetInfo::EpixS    :
       if (channel==0)
 	client = new Ami::Qt::EpixClient    (this, info, channel, name);
       else
@@ -536,12 +536,12 @@ void DetectorSelect::connected       ()
 
 int  DetectorSelect::configure       (iovec* iov)
 {
-  char* p = _request;
+  char* p = _request.reset();
   { ConfigureRequest& r =
       *new(p) ConfigureRequest(ConfigureRequest::Filter,
                                _filters->selected(),
 			       _filters->filter());
-    p += r.size(); }
+    p = _request.extend(r.size()); }
 
   if (_l3t_export) {
     _l3t_export=false;
@@ -555,15 +555,16 @@ int  DetectorSelect::configure       (iovec* iov)
 				   (1<<31),
 				   *_filter_export->filter(),
 				   qPrintable(ofiles[0]));
-	p += r.size();
+	p = _request.extend(r.size());
       }
     }
   }
 
   _rate_display->configure(p);
+  _request.extend(p);
 
-  iov[0].iov_base = _request;
-  iov[0].iov_len  = p-_request;
+  iov[0].iov_base = _request.base();
+  iov[0].iov_len  = _request.extent();
   return 1;
 }
 
