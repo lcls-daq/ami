@@ -12,6 +12,7 @@ namespace Ami {
   public:
     char* reset  () { return _current=_buffer; }
     char* extend (int);
+    char* extend (char* p) { return extend(p-_current); }
     void  reserve(int);
   private:
     void  _resize(int);

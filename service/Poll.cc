@@ -231,8 +231,14 @@ int Poll::poll()
   if (::poll(_pfd, _nfds, _timeout) > 0) {
     if (_pfd[0].revents & (POLLIN | POLLERR)) {
       LMsg lmsg;
-      if (_loopback->read(&lmsg,sizeof(lmsg))<int(sizeof(LMsg)))
-	printf("Error reading loopback\n");
+      int sz;
+      if ((sz=_loopback->read(&lmsg,sizeof(lmsg)))<int(sizeof(LMsg))) {
+	printf("Error reading loopback:");
+	uint32_t* p = reinterpret_cast<uint32_t*>(&lmsg);
+	while(sz>0) { printf(" %08x",*p++); sz-=sizeof(uint32_t); }
+	printf(". Ignored.\n");
+	return result;
+      }
       else if (lmsg.cmd()==Shutdown)
 	result = 0;
       else {
