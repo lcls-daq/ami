@@ -244,14 +244,17 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
 
   char channel_name [128]; 
   strcpy(channel_name ,qPrintable(_title));
-  if ((_input_entry = rx.entry(channel_name))) {
+  if ((_input_entry = rx.entry(channel_name)) &&
+      (_input_entry->info()    == this->info) &&
+      (_input_entry->channel() == this->channel)) {
     _input = _input_entry->signature();
     //    setWindowModified(!_input_entry->recorded());
     _frame->prototype(_input_entry);
     _prototype(*_input_entry);
+    setWindowTitle(QString("%1[*]").arg(_title));
   }
-
-  if (_input_entry==0) {
+  else {
+    _input_entry=0;
     printf("%s [%08x.%08x.%d] not found\n", channel_name, info.phy(), info.log(), channel);
 
     for(  const DescEntry* e = rx.entries(); e < rx.end(); 
@@ -259,6 +262,7 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
             (reinterpret_cast<const char*>(e) + e->size())) {
       printf("  [%d] %s\n",e->signature(),e->name());
     }
+    setWindowTitle(QString("%1 (invalid)[*]").arg(_title));
   }
 #ifdef DBUG
   else if (_throttled) {
