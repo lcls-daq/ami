@@ -7,6 +7,7 @@
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/Discovery.hh"
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/DescScan.hh"
 #include "ami/data/EntryFactory.hh"
 #include "ami/data/EnvPlot.hh"
 #include "ami/data/RawFilter.hh"
@@ -113,7 +114,7 @@ int  RateDisplay::configure       (char*& p)
                                                       RawFilter(), op);
       p += r.size(); }
 
-    { Ami::EnvPlot op(Ami::DescScalar("RunNumber","mean"));
+    { Ami::EnvPlot op(Ami::DescScan("RunNumber","RunNumber","RunNumber",1));
       ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
                                                       ConfigureRequest::Discovery,
                                                       _input,

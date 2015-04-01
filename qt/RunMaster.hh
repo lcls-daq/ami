@@ -5,7 +5,7 @@
 
 namespace Ami {
   class Entry;
-  class EntryScalar;
+  class EntryScan;
 
   namespace Qt {
     class RunMaster {
@@ -22,8 +22,7 @@ namespace Ami {
       ~RunMaster();
     private:
       QString _run_title;
-      Ami::EntryScalar*  _entry;
-      double _prev_s, _prev_n;
+      Ami::EntryScan*  _entry;
     };
   };
 };

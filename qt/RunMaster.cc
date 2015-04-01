@@ -1,5 +1,5 @@
 #include "ami/qt/RunMaster.hh"
-#include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScan.hh"
 
 using namespace Ami::Qt;
 
@@ -14,7 +14,7 @@ RunMaster* RunMaster::instance()
 
 void RunMaster::set_entry(Ami::Entry* e)
 {
-  _entry = static_cast<Ami::EntryScalar*>(e);
+  _entry = static_cast<Ami::EntryScan*>(e);
 }
 
 void RunMaster::reset()
@@ -25,16 +25,11 @@ void RunMaster::reset()
 void RunMaster::update   ()
 {
   if (_entry && _entry->valid()) {
-    double n = _entry->entries()-_prev_n;
-    if (n > 0) {
-      double v = (_entry->sum() - _prev_s)/n;
-      if (v>0 && v<100000)
-        _run_title = QString("Run %1").arg(_entry->mean(),0);
-      else
-        _run_title.clear();
-    }
-    _prev_n = _entry->entries();
-    _prev_s = _entry->sum();
+    double v = _entry->ymean(0);
+    if (v>0 && v<100000)
+      _run_title = QString("Run %1").arg(v,0);
+    else
+      _run_title.clear();
   }
 }
 
@@ -45,9 +40,7 @@ QString RunMaster::run_title() const
 
 RunMaster::RunMaster() :
   _run_title(""),
-  _entry    (0),
-  _prev_s   (0),
-  _prev_n   (0)
+  _entry    (0)
 {
 }
 
