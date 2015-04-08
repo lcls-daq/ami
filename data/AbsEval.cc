@@ -29,7 +29,7 @@ public:
 public:
   double evaluate(const EntryScalar& e, const EntryScalar& b, double n) const 
   { double m = (e.sum()-b.sum())/n;
-    double v = (e.sqsum()-b.sqsum() - m*m/n)/n;
+    double v = (e.sqsum()-b.sqsum())/n - m*m;
     return (v>0) ? sqrt(v) : 0; }
   double evaluate(const EntryScan&   e, unsigned b) const
   { return e.sigma(b); }
