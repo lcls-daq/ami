@@ -29,13 +29,15 @@ namespace Ami {
       return true;
     }
     char*       line()  { return _linep; }
-    unsigned    getul() { return strtoul(_pEnd,&_pEnd,0); }
-    double      getdb() { return strtod (_pEnd,&_pEnd); }
+    unsigned    getul() { _ppEnd=_pEnd; return strtoul(_pEnd,&_pEnd,0); }
+    double      getdb() { _ppEnd=_pEnd; return strtod (_pEnd,&_pEnd); }
+    bool        get_failed() const { return _pEnd==_ppEnd; }
   private:
     FILE&  _f;
     size_t _sz;
     char*  _linep;
     char*  _pEnd;
+    char*  _ppEnd;
   };
 };
 
@@ -621,6 +623,72 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
   else
     a = make_ndarray<double>(0U,0);
   
+  return a;
+}
+
+ndarray<unsigned,2> FrameCalib::load_array(FILE* f)
+{
+  unsigned ncols=0;
+  unsigned nrows=1;
+  { CalibIO fio(*f);
+
+    if (!fio.next_line())
+      return make_ndarray<unsigned>(0U,0);
+
+    while(1) {
+      fio.getul();
+      if (fio.get_failed()) break;
+      ncols++;
+    }
+
+    while(fio.next_line()) {
+      nrows++;
+    }
+  }
+
+  ndarray<unsigned,2> a = make_ndarray<unsigned>(nrows, ncols);
+  rewind(f);
+  
+  CalibIO fio(*f);
+  for(unsigned i=0; i<nrows; i++) {
+    fio.next_line();
+    for(unsigned j=0; j<ncols; j++)
+      a[i][j] = fio.getul();
+  }
+
+  return a;
+}
+
+ndarray<double,2> FrameCalib::load_darray(FILE* f)
+{
+  unsigned ncols=0;
+  unsigned nrows=1;
+  { CalibIO fio(*f);
+
+    if (!fio.next_line())
+      return make_ndarray<double>(0U,0);
+
+    while(1) {
+      fio.getdb();
+      if (fio.get_failed()) break;
+      ncols++;
+    }
+
+    while(fio.next_line()) {
+      nrows++;
+    }
+  }
+
+  ndarray<double,2> a = make_ndarray<double>(nrows, ncols);
+  rewind(f);
+  
+  CalibIO fio(*f);
+  for(unsigned i=0; i<nrows; i++) {
+    fio.next_line();
+    for(unsigned j=0; j<ncols; j++)
+      a[i][j] = fio.getdb();
+  }
+
   return a;
 }
 

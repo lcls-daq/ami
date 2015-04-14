@@ -115,12 +115,12 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
 
   std::string path4;
   if (!_expt.empty() && offCalibClass(info.device())) {
-    path4 = offl_path(std::string("./"),info,off_calib_type);
+    path4 = offl_path(std::string("./calib/"),info,off_calib_type);
   }
 
 #ifdef DBUG
-  printf("Trying paths [%s] [%s] [%s] [%s] (%s)\n",
-         path1.c_str(), path2.c_str(), path3.c_str(), path4.c_str(), _expt.c_str());
+  printf("Trying paths [%s] [%s] [%s] [%s] (%s) (%s)\n",
+         path1.c_str(), path2.c_str(), path3.c_str(), path4.c_str(), _expt.c_str(), offCalibClass(info.device()));
 #endif
 
   //  Try to get NFS client cache coherency
@@ -180,16 +180,13 @@ FILE* Ami::Calib::fopen_dual(const char *path1, const char * path2,
     int rst=fstat(fd, &st);
     printf("Loaded %s from %s [%s (%d)]\n", description, path1,ctime(&st.st_mtime),rst);
   } else {
-    snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path1);
-    perror(errmsg);
-
     fd = ::open(path2, flags);
     if (fd >= 0) {
       f = ::fdopen(fd, "r");
       int rst=fstat(fd, &st);
       printf("Loaded %s from %s [%s (%d)]\n", description, path2,ctime(&st.st_mtime),rst);
     } else {
-      snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s", description, path2);
+      snprintf(errmsg, ErrMsgSize, "fopen: Failed to load %s from %s or %s", description, path1, path2);
       perror(errmsg);
     }
   }

@@ -841,61 +841,144 @@ void EpixHandler::_load_pedestals()
   _offset       = make_ndarray<unsigned>(rows,cols);
   for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
-  EntryImage* p = _pentry;
-  ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"sta");
-  if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-    unsigned nskip = (_status.shape()[0]-pb.shape()[0])/2;
-    for(unsigned *a=pb.begin(), *b=&_status[nskip][0]; a!=pb.end(); *b++=*a++) ;
-    DescImage& d = _entry->desc();
-    _load_one_asic(pb, d.nbinsy(), _status);
-    ImageMask mask(d.nbinsy(),d.nbinsx());
-    mask.fill();
-    for(unsigned i=0; i<d.nbinsy(); i++)
-      for(unsigned j=0; j<d.nbinsx(); j++)
-        if (_status[nskip+i][j]) mask.clear(i,j);
-    mask.update();
-    d.set_mask(mask);
+  bool loffl=false;
+  FILE* f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
+                              "sta", "pixel_status", true, &loffl);
+  if (f) {
+    ndarray<unsigned,2>  pb = FrameCalib::load_array(f);
+    if (loffl && pb.shape()[0]) {
+      if (aMask&(aMask-1)==0) {
+        switch(aMask) {
+        case 1: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _status[i][j] = pb[i+rows/2][j+cols/2];
+        } break;
+        case 2: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _status[i][j] = pb[i][j+cols/2];
+        } break;
+        case 4: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _status[i][j] = pb[i][j];
+        } break;
+        case 8: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _status[i][j] = pb[i+rows/2][j];
+        } break;
+        default: break;
+        }
+      }
+      else {
+        for(unsigned* a=_status.begin(), *b=pb.begin(); a!=_status.end(); a++,b++)
+          *a = *b;
+      }
+    }
+    fclose(f);
+  }
+  else {
+    EntryImage* p = _pentry;
+    ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"sta");
+    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+      unsigned nskip = (_status.shape()[0]-pb.shape()[0])/2;
+      for(unsigned *a=pb.begin(), *b=&_status[nskip][0]; a!=pb.end(); *b++=*a++) ;
+      DescImage& d = _entry->desc();
+      _load_one_asic(pb, d.nbinsy(), _status);
+      ImageMask mask(d.nbinsy(),d.nbinsx());
+      mask.fill();
+      for(unsigned i=0; i<d.nbinsy(); i++)
+        for(unsigned j=0; j<d.nbinsx(); j++)
+          if (_status[nskip+i][j]) mask.clear(i,j);
+      mask.update();
+      d.set_mask(mask);
 
+    }
+    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+      DescImage& d = _entry->desc();
+      _load_one_asic(pb, d.nbinsy(), _status);
+      ImageMask mask(d.nbinsy(),d.nbinsx());
+      mask.fill();
+      for(unsigned i=0; i<d.nbinsy(); i++)
+        for(unsigned j=0; j<d.nbinsx(); j++)
+          if (_status[i][j]) mask.clear(i,j);
+      mask.update();
+      d.set_mask(mask);
+    }
+    else
+      for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
   }
-  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
-    DescImage& d = _entry->desc();
-    _load_one_asic(pb, d.nbinsy(), _status);
-    ImageMask mask(d.nbinsy(),d.nbinsx());
-    mask.fill();
-    for(unsigned i=0; i<d.nbinsy(); i++)
-      for(unsigned j=0; j<d.nbinsx(); j++)
-        if (_status[i][j]) mask.clear(i,j);
-    mask.update();
-    d.set_mask(mask);
-  }
-  else
-    for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
 
-  pb = FrameCalib::load_array(p->desc(),"ped");
-  if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-    unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
-    for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
+  f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
+                        "ped", "pedestals", true, &loffl);
+  if (f) {
+    ndarray<double,2>  pb = FrameCalib::load_darray(f);
+    if (loffl) {
+      printf("aMask %x  rows %u cols %u  shape %u %u\n",
+             aMask, rows, cols, pb.shape()[0], pb.shape()[1]);
+      if (aMask&(aMask-1)==0 && pb.shape()[0]) {
+        switch(aMask) {
+        case 1: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _pedestals[i][j] = offset-unsigned(pb[i+rows/2][j+cols/2]+0.5);
+        } break;
+        case 2: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _pedestals[i][j] = offset-unsigned(pb[i][j+cols/2]+0.5);
+        } break;
+        case 4: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _pedestals[i][j] = offset-unsigned(pb[i][j]+0.5);
+        } break;
+        case 8: {
+          for(unsigned i=0; i<rows/2; i++)
+            for(unsigned j=0; j<cols/2; j++)
+              _pedestals[i][j] = offset-unsigned(pb[i+rows/2][j]+0.5);
+        } break;
+        default: break;
+        }
+      }
+      else {
+        double* b = pb.begin();
+        for(unsigned* a=_pedestals.begin(); a!=_status.end(); a++,b++)
+          *a = offset-unsigned(*b+0.5);
+      }
+    }
+    fclose(f);
   }
-  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
-    _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
-    for(unsigned* p=_pedestals.begin(); p!=_pedestals.end(); p++)
-      *p = offset-*p;
-  }
-  else
-    for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
+  else {
+    EntryImage* p = _pentry;
+    ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"ped");
+    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+      unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
+      for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
+    }
+    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+      _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
+      for(unsigned* p=_pedestals.begin(); p!=_pedestals.end(); p++)
+        *p = offset-*p;
+    }
+    else
+      for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
 
-  pb = FrameCalib::load_array(p->desc(),"ped_lo");
-  if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-    unsigned nskip = (_pedestals_lo.shape()[0]-pb.shape()[0])/2;
-    for(unsigned *a=pb.begin(), *b=&_pedestals_lo[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
+    pb = FrameCalib::load_array(p->desc(),"ped_lo");
+    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+      unsigned nskip = (_pedestals_lo.shape()[0]-pb.shape()[0])/2;
+      for(unsigned *a=pb.begin(), *b=&_pedestals_lo[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
+    }
+    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+      _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
+      for(unsigned* p=_pedestals_lo.begin(); p!=_pedestals_lo.end(); p++)
+        *p = offset-*p;
+    }
+    else
+      for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
   }
-  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
-    _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
-    for(unsigned* p=_pedestals_lo.begin(); p!=_pedestals_lo.end(); p++)
-      *p = offset-*p;
-  }
-  else
-    for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
 }
 
 void EpixHandler::_load_gains()
