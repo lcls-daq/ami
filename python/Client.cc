@@ -339,8 +339,11 @@ std::vector<const Ami::Entry*> Client::payload() const
 void Client::reset()
 {
   _described = false;
-  if (_manager)
+  if (_manager) {
+    while (sem_trywait(&_initial_sem)==0) ;
     _manager->configure();
+    sem_wait(&_initial_sem);
+  }
 }
 
 void Client::pstart()
