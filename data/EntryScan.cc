@@ -152,8 +152,8 @@ void EntryScan::_sum(const BinV* a,
   const double* i_b = reinterpret_cast<const double*>(&p_b[nb]);
 
   int fb = nb;
-  int cb_a = int(i_a[Current]), last_a = (cb_a+1)%nb;    // Start, End in cicular array
-  int cb_b = int(i_b[Current]), last_b = (cb_b+1)%nb;
+  int cb_a = int(i_a[Current])%nb, last_a = (cb_a+1)%nb;    // Start, End in circular array
+  int cb_b = int(i_b[Current])%nb, last_b = (cb_b+1)%nb;
   bool done_a = false, done_b = false;
   //
   //  Step through both entries arrays and add contents starting with the most recent (Current)
