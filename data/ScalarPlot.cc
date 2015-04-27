@@ -105,7 +105,7 @@ void ScalarPlot::_fill(Entry& entry,
     if (!_yterm->valid()) return;
   }
   if ( (initial || _weight_uses) && _weight ) {
-    _w = _weight->evaluate();
+    if ((_w = _weight->evaluate())<=0) return;
     if (!_weight->valid()) return;
   }
 
