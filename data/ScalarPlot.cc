@@ -106,7 +106,14 @@ void ScalarPlot::_fill(Entry& entry,
   }
   if ( (initial || _weight_uses) && _weight ) {
     if ((_w = _weight->evaluate())<=0) return;
-    if (!_weight->valid()) return;
+    if (_w<0) _w=0;
+    if (!_weight->valid()) {
+#ifdef DBUG
+      const DescEntryW& w = static_cast<const DescEntryW&>(entry.desc());
+      printf("%s weight[%s] is invalid\n",entry.desc().name(),w.weight());
+#endif
+      return;
+    }
   }
 
 #ifdef DBUG
