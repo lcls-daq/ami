@@ -63,14 +63,11 @@ static Ami::Python::Discovery* _discovery;
 
 static bool Parse_Int(PyObject* o, int& v)
 {
-  if (!o)
-    return false;
-
   if (PyInt_Check(o))
     v = PyInt_AsLong(o);
   else if (PyFloat_Check(o))
     v = int(PyFloat_AsDouble(o));
-  else if (PyTuple_Check(o))
+  else if (PyTuple_Check(o) && PyTuple_Size(o)>0)
     return Parse_Int(PyTuple_GetItem(o,0),v);
   else
     return false;
