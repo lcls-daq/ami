@@ -180,6 +180,7 @@ std::list<std::string> EventHandler::features() const
 #include "ami/event/EpixHandlerT.hh"
 #include "ami/event/TimeToolHandler.hh"
 #include "ami/event/BldSpectrometerHandler.hh"
+#include "ami/event/AnalogInputHandler.hh"
 #include "ami/data/FeatureCache.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
@@ -239,6 +240,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_TimeToolConfig:   h = new TimeToolHandler  (info,cache); break;
   case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
   case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
+  case Pds::TypeId::Id_AnalogInput:      h = new AnalogInputHandler   (bldInfo,cache); break;
   default: break;
   }
   return h;
