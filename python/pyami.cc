@@ -462,7 +462,7 @@ static PyObject* amientry_get(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
   PyObject* o = _getentrylist(e->client,args,false);
-  if (o && PyList_Check(o)) {
+  if (o && PyList_Check(o) && PyList_Size(o)>0) {
     PyObject* p = PyList_GetItem(o,0);
     Py_INCREF(p);
     Py_DECREF(o);
@@ -483,7 +483,7 @@ static PyObject* amientry_pget(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
   PyObject* o = _getentrylist(e->client,args,true);
-  if (o && PyList_Check(o)) {
+  if (o && PyList_Check(o) && PyList_Size(o)>0) {
     PyObject* p = PyList_GetItem(o,0);
     Py_INCREF(p);
     Py_DECREF(o);
@@ -601,6 +601,9 @@ static PyObject* amientrylist_new(PyTypeObject* type, PyObject* args, PyObject* 
 
 static int amientrylist_init(amientrylist* self, PyObject* argstuple, PyObject* kwds)
 {
+  if (!PyTuple_Size(argstuple))
+    return -1;
+
   PyObject* argslist = PyTuple_GetItem(argstuple,0);
 
   if (!PyList_Check(argslist)) {
@@ -768,6 +771,8 @@ pyami_connect(PyObject *self, PyObject *args)
     ;
   else
     return NULL;
+
+  PyErr_Clear();
 
   if (ppinterface==0 || mcinterface==0) {
     //
@@ -965,6 +970,11 @@ pyami_map_image(PyObject *self, PyObject *args)
 
   if (!PyTuple_Check(shape)) {
     PyErr_SetString(PyExc_RuntimeError,"Shape is not a tuple");
+    return NULL;
+  }
+  
+  if (PyTuple_Size(shape)!=2) {
+    PyErr_SetString(PyExc_RuntimeError,"Length of Shape is not 2");
     return NULL;
   }
   
