@@ -21,8 +21,8 @@ static const char* _scalar_name[] = { "AMPL",
 
 Ami::TimeToolHandler::TimeToolHandler(const Pds::Src& info, Ami::FeatureCache& f)  : 
   Ami::EventHandlerF(info,
-		     Pds::TypeId::Id_TimeToolConfig,
 		     Pds::TypeId::Id_TimeToolData,
+		     Pds::TypeId::Id_TimeToolConfig,
 		     f)
 {
   reset();
