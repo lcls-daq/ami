@@ -25,7 +25,8 @@ AnalogInputHandler::~AnalogInputHandler()
 void   AnalogInputHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
 void   AnalogInputHandler::_configure(Pds::TypeId id, const void* payload, const Pds::ClockTime& t) 
 {
-  const char* name = Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info()));
+  //  const char* name = Pds::BldInfo::name(static_cast<const Pds::BldInfo&>(info()));
+  const char* name = "AI";
   char* buffer = new char[strlen(name)+8];
   strcpy(buffer,name);
   char* iptr = buffer+strlen(buffer);
@@ -73,7 +74,7 @@ void         AnalogInputHandler::rename  (const char* name)
 
   for(unsigned i=0; i<_indices.size(); i++) {
     sprintf(iptr,":CH%d",i);
-    _rename_cache(_indices[i],iptr);
+    _rename_cache(_indices[i],buffer);
   }
 
   delete[] buffer;
