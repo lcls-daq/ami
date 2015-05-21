@@ -1382,9 +1382,7 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
   FILE *g = Calib::fopen_dual(oname1, oname2, "gain map");
 
-  sprintf(oname1,"res.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
-  FILE *rms = Calib::fopen_dual(oname1, oname2, "noise");
+  FILE *rms = Calib::fopen(dInfo, "res", "pixel_rms");
 
   CspadGeometry::ConfigCache cfg(type,payload);
 

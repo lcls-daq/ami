@@ -1001,9 +1001,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
   ndarray<double,3> g = get_calib(Calib::fopen_dual(oname1, oname2, "gain map"));
 
-  sprintf(oname1,"res.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/res.%08x.dat",info().phy());
-  ndarray<double,3> rms = get_calib(Calib::fopen_dual(oname1, oname2, "noise"));
+  ndarray<double,3> rms = get_calib(Calib::fopen(dInfo, "res", "pixel_rms"));
 
   sprintf(oname1,"geo.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
