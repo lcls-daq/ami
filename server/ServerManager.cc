@@ -139,7 +139,8 @@ void ServerManager::unmanage(Fd& fd)
   for(unsigned key=0; key<_key_servers.size(); key++)
     _key_servers[key].remove(srv);
 
-  _servers.remove(srv);
+  _servers .remove(srv);
+  _uservers.remove(srv);
 
   if (static_cast<EventFd*>(&fd) == _event)
     _event = 0;
@@ -177,7 +178,9 @@ int ServerManager::processIo()
 
     Server* srv = new_server(s, request);
     if (request.post_service())
-      _servers.push_back(srv);
+      _servers .push_back(srv);
+    else
+      _uservers.push_back(srv);
 
     manage(*srv);
 
@@ -215,7 +218,9 @@ int ServerManager::processIo()
 
       Server* srv = new_server(s,request);
       if (request.post_service())
-        _servers.push_back(srv);
+        _servers .push_back(srv);
+      else
+        _uservers.push_back(srv);
 
       manage(*srv);
 
@@ -252,6 +257,8 @@ std::string ServerManager::dump() const
   std::ostringstream s;
   s << "ServerManager" << std::endl;
   for(SvList::const_iterator it=_servers.begin(); it!=_servers.end(); it++)
+    s << (*it)->dump();
+  for(SvList::const_iterator it=_uservers.begin(); it!=_uservers.end(); it++)
     s << (*it)->dump();
   return s.str();
 }

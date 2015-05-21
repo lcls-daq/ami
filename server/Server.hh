@@ -6,6 +6,7 @@
 
 #include "ami/data/Message.hh"
 
+#include <list>
 #include <string>
 
 class iovec;
@@ -31,6 +32,7 @@ namespace Ami {
     iovec*          _iov;
     int             _iovcnt;
     Message         _reply;
+    std::list<Message> _history;
     char*           _buffer;
     bool            _described;
   };

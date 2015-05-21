@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <iomanip>
 #include <sstream>
 
 //#define DBUG
@@ -18,6 +19,7 @@
 using namespace Ami;
 
 static const int BufferSize = 32*1024;
+static const unsigned HistorySize = 5;
 
 Server::Server(Socket*         socket) :
   _socket(socket),
@@ -31,6 +33,9 @@ Server::Server(Socket*         socket) :
 
   _iov[0].iov_base = &_reply;
   _iov[0].iov_len  = sizeof(_reply);
+
+  for(unsigned i=0; i<HistorySize; i++)
+    _history.push_back(_reply);
 }
 
 Server::~Server()
@@ -59,6 +64,9 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
   _reply.type(type);
   _reply.payload(_iov+1,cnt-1);
 
+  _history.push_front(_reply);
+  _history.pop_back();
+
 #ifdef DBUG
   printf("S reply %d:%d %x  skt %d\n",
  	 _reply.id(), _reply.type(),_reply.payload(), _socket->socket());
@@ -76,8 +84,14 @@ void Server::reply(unsigned id, Message::Type type, unsigned cnt)
 std::string Server::dump() const
 {
   std::ostringstream s;
-  s << "Server : socket " << _socket->socket()
-    << " : reply " << _reply.type_str()
-    << "." << _reply.id() << std::endl;
+  std::list<Message>::const_iterator it=_history.begin();
+  s << "Server : socket " << std::setw(2) << _socket->socket()
+    << " : reply " << it->type_str()
+    << "." << it->id() << std::endl;
+  while(++it != _history.end())
+    s << "                           " 
+      << it->type_str()
+      << "." << it->id() 
+      << std::endl;
   return s.str();
 }

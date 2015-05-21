@@ -19,6 +19,7 @@ using namespace Ami;
 
 //static const int BufferSize = 0x2000000;
 static const int BufferSize = 0x2000;
+static const unsigned HistorySize = 20;
 
 static const char* State[] = { "Init", "Connecting", "Connected",
                                "Discovering", "Discovered", 
@@ -44,6 +45,8 @@ Aggregator::Aggregator(AbsClient& client) :
   _tag             (-1),
   _request         (EntryList::Full)
 {
+  for(unsigned i=0; i<HistorySize; i++)
+    _history.push_back(_latest);
 }
 
 Aggregator::~Aggregator()
@@ -96,6 +99,9 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
 {
   _checkState("dcov",id);
   _latest = id;
+  
+  _history.push_front(_latest);
+  _history.pop_back();
 
   if (_state != Discovering || id != _tag) {
     _state = Discovering;
@@ -124,6 +130,9 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
   _checkState("desc",id);
   _latest = id;
   _allocated = 0;
+
+  _history.push_front(_latest);
+  _history.pop_back();
 
   int nbytes = 0;
   if (_n == 1) {
@@ -218,6 +227,9 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
 {
   //  _checkState("payl");
   _latest = id;
+
+  _history.push_front(_latest);
+  _history.pop_back();
 
   int nbytes = 0;
   if (_state != Described) {
@@ -357,7 +369,13 @@ std::string Aggregator::dump() const
     << " : current " << _current 
     << " : latest " << _latest
     << " : nprocess " << _nprocess
-    << " : tmo " << _tmo << std::endl;
+    << " : tmo " << _tmo << std::endl
+    << " : history ";
+  for(std::list<unsigned>::const_iterator it=_history.begin();
+      it!=_history.end(); it++)
+    s << *it << ",";
+  s << std::endl;
+
   if (_n > 1)
     s << _cds.dump();
   return s.str();

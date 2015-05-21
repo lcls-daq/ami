@@ -55,6 +55,7 @@ namespace Ami {
     unsigned           _ppinterface;
     Socket*            _socket;
     SvList             _servers;
+    SvList             _uservers;
     Semaphore*         _connect_sem;
     typedef std::list<Fd*> FdList;
     typedef std::vector< FdList > KeyList;

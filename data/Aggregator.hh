@@ -5,6 +5,7 @@
 #include "ami/data/Cds.hh"
 #include "ami/data/EntryList.hh"
 
+#include <list>
 #include <string>
 
 class iovec;
@@ -52,6 +53,7 @@ namespace Ami {
            Discovering, Discovered, Configured, 
            Describing, Described, Processing } _state;
     unsigned   _latest;
+    std::list<unsigned> _history;
     unsigned   _current;
     unsigned   _nprocess;
     unsigned   _tmo;
