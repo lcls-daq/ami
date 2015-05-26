@@ -847,7 +847,7 @@ void EpixHandler::_load_pedestals()
   if (f) {
     ndarray<unsigned,2>  pb = FrameCalib::load_array(f);
     if (loffl && pb.shape()[0]) {
-      if (aMask&(aMask-1)==0) {
+      if ((aMask&(aMask-1))==0) {
         switch(aMask) {
         case 1: {
           for(unsigned i=0; i<rows/2; i++)
@@ -918,7 +918,7 @@ void EpixHandler::_load_pedestals()
     if (loffl) {
       printf("aMask %x  rows %u cols %u  shape %u %u\n",
              aMask, rows, cols, pb.shape()[0], pb.shape()[1]);
-      if (aMask&(aMask-1)==0 && pb.shape()[0]) {
+      if ((aMask&(aMask-1))==0 && pb.shape()[0]) {
         switch(aMask) {
         case 1: {
           for(unsigned i=0; i<rows/2; i++)
