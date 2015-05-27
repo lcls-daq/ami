@@ -146,7 +146,7 @@ void BldSpectrometerHandler::_event    (Pds::TypeId id, const void* payload, con
     { const Pds::Bld::BldDataSpectrometerV1& d = 
         *reinterpret_cast<const Pds::Bld::BldDataSpectrometerV1*>(payload);
 
-      const ndarray<const uint32_t,1> h = d.hproj();
+      const ndarray<const int32_t,1> h = d.hproj();
       for(unsigned i=0; i<h.size(); i++)
         _entry[0]->content(double(h[i]),i);
       _entry[0]->info(1,EntryWaveform::Normalization);
