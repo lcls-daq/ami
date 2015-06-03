@@ -100,39 +100,36 @@ void OceanOpticsHandler::_event    (Pds::TypeId typeId, const void* payload, con
   if (_iConfigVer==-1)
     return;
 
+#define PLOT_CORR(cfg,dat) {                                            \
+    const Pds::OceanOptics::dat* d = (Pds::OceanOptics::dat*)payload;   \
+    const Pds::OceanOptics::cfg& c = *reinterpret_cast<const Pds::OceanOptics::cfg*>(_configBuffer); \
+    if (c.nonlinCorrect()[0]==0) {                                      \
+      ndarray<const uint16_t,1> a = d->data();                          \
+      for (int j=0;j<Pds::OceanOptics::dat::iNumPixels;j++)             \
+        entry->content( a[j],j);                                        \
+    }                                                                   \
+    else {                                                              \
+      for (int j=0;j<Pds::OceanOptics::DataV3::iNumPixels;j++)          \
+        entry->content( d->nonlinerCorrected(c, j),j);                  \
+    }                                                                   \
+  }
+
   EntryWaveform* entry  = _entry[0];
   if (typeId.version() == 1)
   {
-    const Pds::OceanOptics::DataV1* d = (Pds::OceanOptics::DataV1*)payload;
     if (_iConfigVer==1)
-    {
-      const Pds::OceanOptics::ConfigV1& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV1*>(_configBuffer);
-      for (int j=0;j<Pds::OceanOptics::DataV1::iNumPixels;j++)
-        entry->content( d->nonlinerCorrected(c, j),j);
-    }
+      PLOT_CORR(ConfigV1,DataV1)
     else if (_iConfigVer==2)
-    {
-      const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(_configBuffer);
-      for (int j=0;j<Pds::OceanOptics::DataV1::iNumPixels;j++)
-        entry->content( d->nonlinerCorrected(c, j),j);
-    }
+      PLOT_CORR(ConfigV2,DataV1)
   }
   else if (typeId.version() == 2)
-  {
-    const Pds::OceanOptics::DataV2*   d = (Pds::OceanOptics::DataV2*)payload;
-    const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(_configBuffer);
-    for (int j=0;j<Pds::OceanOptics::DataV2::iNumPixels;j++)
-      entry->content( d->nonlinerCorrected(c, j),j);
-  }
+    PLOT_CORR(ConfigV2,DataV2)
   else if (typeId.version() == 3)
-  {
-    const Pds::OceanOptics::DataV3*   d = (Pds::OceanOptics::DataV3*)payload;
-    const Pds::OceanOptics::ConfigV2& c = *reinterpret_cast<const Pds::OceanOptics::ConfigV2*>(_configBuffer);
-    for (int j=0;j<Pds::OceanOptics::DataV3::iNumPixels;j++)
-      entry->content( d->nonlinerCorrected(c, j),j);
-  }
+    PLOT_CORR(ConfigV2,DataV3)
   else
     return;
+
+#undef PLOT_CORR
 
   entry->info(1,EntryWaveform::Normalization);
   entry->valid(t);
