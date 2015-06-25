@@ -126,10 +126,19 @@ namespace EpixAmi {
 	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1);
 	  env = f.excludedRows(c); } break;
       case Pds::TypeId::Id_Epix100aConfig: 
-	{ PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2);
-	  env = f.environmentalRows(c); 
-	  cal = f.calibrationRows(c); } break;
-      default:
+	switch (_id.version()) {
+	case 1:
+	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2);
+	    env = f.environmentalRows(c); 
+	    cal = f.calibrationRows(c); } break;
+	case 2:
+	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV2);
+	    env = f.environmentalRows(c); 
+	    cal = f.calibrationRows(c); } break;
+	default:
+	  break;
+	}
+	default:
 	break;
       }
 #undef PARSE_CONFIG
@@ -202,14 +211,28 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows;
-      _monitorData = (c.lastRowExclusions()); } break;
+      _monitorData = (c.lastRowExclusions()); 
+    } break;
   case Pds::TypeId::Id_Epix100aConfig: 
-    { PARSE_CONFIG(Pds::Epix::Config100aV1);
-      _rowsRead        = c.numberOfReadableRows();
-      _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
-      _rowsCal         = c.numberOfCalibrationRows();
-      _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
-      _monitorData = true; } break;
+    switch(_id.version()) {
+    case 1:
+      { PARSE_CONFIG(Pds::Epix::Config100aV1);
+	_rowsRead        = c.numberOfReadableRows();
+	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
+	_rowsCal         = c.numberOfCalibrationRows();
+	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
+	_monitorData = true; } break;
+    case 2:
+      { PARSE_CONFIG(Pds::Epix::Config100aV2);
+	_rowsRead        = c.numberOfReadableRows();
+	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
+	_rowsCal         = c.numberOfCalibrationRows();
+	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
+	_monitorData = true; } break;
+    default:
+      printf("Epix100aConfig version %d unknown\n",_id.version());
+      break;
+    }
   default:
     printf("EpixHandler::ConfigCache unrecognized configuration type %08x\n",
 	   _id.value());
