@@ -7,6 +7,7 @@
 #include "ami/service/Ins.hh"
 #include "ami/service/DataLock.hh"
 #include "ami/qt/QOnline.hh"
+#include "ami/event/EpicsXtcReader.hh"
 
 #include <QtGui/QApplication>
 
@@ -37,6 +38,7 @@ static void usage(char* p)
          "-E             : expert mode/movie option\n"
 	 "-Y             : disable synchronous image locking\n"
 	 "-Z             : disable image render offload\n"
+	 "-a             : <include|only> (EPICS aliases include|only)]\n"
 	 ,p);
 }
 
@@ -104,6 +106,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-Z")==0) {
       Ami::Qt::OffloadEngine::disable();
+    }
+    else if (strcmp(argv[i],"-a")==0) {
+      Ami::EpicsXtcReader::use_alias(strcmp(optarg,"only")==0);
     }
     else if (strcmp(argv[i],"-p")==0) {
       char* endptr;
