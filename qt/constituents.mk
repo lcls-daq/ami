@@ -21,7 +21,7 @@ qt_libs += qwt/qwt
 # Note that <lib> is the name of the library, not of the file: i.e.
 # <lib> for 'libc.so' is 'c'. Low level first.
 tgtlibs_online_ami := pdsdata/xtcdata pdsdata/psddl_pdsdata
-tgtlibs_online_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt
+tgtlibs_online_ami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/amiqt ami/event
 tgtlibs_online_ami += $(qt_libs)
 tgtlibs_online_ami += psalg/psalg
 tgtlibs_online_ami += gsl/gsl gsl/gslcblas
