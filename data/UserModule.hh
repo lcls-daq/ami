@@ -40,6 +40,9 @@ namespace Ami {
 			   const Pds::TypeId&    type,
 			   const Pds::Damage&    damage,
 			   void*                 payload) = 0;
+    virtual bool uses     (const Pds::DetInfo&   src) { return true; }
+    virtual bool uses     (const Pds::BldInfo&   src) { return true; }
+    virtual bool uses     (const Pds::ProcInfo&  src) { return true; }
   public:
     virtual const char* name() const = 0;
     virtual bool accept () { return true; }

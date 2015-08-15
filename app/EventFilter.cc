@@ -1,5 +1,6 @@
 #include "ami/app/EventFilter.hh"
 #include "ami/app/FilterExport.hh"
+#include "ami/app/XtcCache.hh"
 
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/FeatureCache.hh"
@@ -96,7 +97,7 @@ bool Ami::EventFilter::accept()
   return _f->accept();
 }
 
-int Ami::EventFilter::process(Xtc* xtc)
+int Ami::EventFilter::process(Xtc* xtc, XtcCache& cache)
 {
   if (xtc->extent < sizeof(Xtc) ||
       xtc->contains.id() >= TypeId::NumberOf)
@@ -109,22 +110,31 @@ int Ami::EventFilter::process(Xtc* xtc)
         it!=_filters.end(); it++)
       switch(xtc->src.level()) {
       case Level::Source:
-        (*it)-> event(static_cast<const Pds::DetInfo&>(xtc->src),
-                      xtc->contains,
-                      xtc->damage,
-                      xtc->payload());
+        if ((*it)->uses(static_cast<const Pds::DetInfo&>(xtc->src))) {
+          boost::shared_ptr<Xtc> pxtc = cache.cache(xtc);
+          (*it)-> event(static_cast<const Pds::DetInfo&>(pxtc->src),
+                        pxtc->contains,
+                        pxtc->damage,
+                        pxtc->payload());
+        }
         break;
       case Level::Reporter:
-        (*it)-> event(static_cast<const Pds::BldInfo&>(xtc->src),
-                      xtc->contains,
-                      xtc->damage,
-                      xtc->payload());
+        if ((*it)->uses(static_cast<const Pds::BldInfo&>(xtc->src))) {
+          boost::shared_ptr<Xtc> pxtc = cache.cache(xtc);
+          (*it)-> event(static_cast<const Pds::BldInfo&>(pxtc->src),
+                        pxtc->contains,
+                        pxtc->damage,
+                        pxtc->payload());
+        }
         break;
       default:
-        (*it)-> event(static_cast<const Pds::ProcInfo&>(xtc->src),
-                      xtc->contains,
-                      xtc->damage,
-                      xtc->payload());
+        if ((*it)->uses(static_cast<const Pds::ProcInfo&>(xtc->src))) {
+          boost::shared_ptr<Xtc> pxtc = cache.cache(xtc);
+          (*it)-> event(static_cast<const Pds::ProcInfo&>(pxtc->src),
+                        pxtc->contains,
+                        pxtc->damage,
+                        pxtc->payload());
+        }
         break;
       }
   }

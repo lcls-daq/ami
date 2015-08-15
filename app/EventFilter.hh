@@ -13,6 +13,7 @@ namespace Ami {
   class AbsFilter;
   class ConfigureRequest;
   class FeatureCache;
+  class XtcCache;
 
   class Analysis;
   class EventHandler;
@@ -28,7 +29,7 @@ namespace Ami {
 		      const std::list<const Analysis*>&,
 		      const std::list<const EventHandler*>&);
     void configure   (Dgram*);
-    bool accept      (Dgram*);
+    bool accept      (Dgram*,XtcCache&);
     bool accept      ();
   public:
     const std::list<UserModule*>& modules() const { return _filters; }
