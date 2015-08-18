@@ -87,9 +87,9 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _seq = &dg->seq;
     _nevents++;
 
-    XtcCache umap;
+    _umap = new XtcCache;
 
-    if (_filter.accept(dg,umap)) {
+    if (_filter.accept(dg,*_umap)) {
 
       cache.cache(_runno_index,_runno_value);
       cache.cache(_event_index,_seq->stamp().vector());
@@ -117,6 +117,8 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         _factory.analyze();
       }
     }
+
+    delete _umap;
 
     //
     //  Time the processing (ProcTimes, ProcLatency refer to previous event)
@@ -326,35 +328,35 @@ int XtcClient::process(Pds::Xtc* xtc)
           //
           //  Fix: the "used" test should be done once (after all configures) and cached
           //
-    if (h->used()) {
+          if (h->used()) {
 
-      const std::list<Pds::TypeId::Type>& types = h->data_types();
+            const std::list<Pds::TypeId::Type>& types = h->data_types();
 
-      Pds::TypeId::Type type = xtc->contains.id();
-      for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-          it != types.end(); it++) {
-        if (*it == type) {
+            Pds::TypeId::Type type = xtc->contains.id();
+            for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+                it != types.end(); it++) {
+              if (*it == type) {
 #ifdef DBUG
-          printf("Src %08x.%08x  Type %08x handled by %p\n",
-                 xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
+                printf("Src %08x.%08x  Type %08x handled by %p\n",
+                       xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
-          boost::shared_ptr<Xtc> pxtc = umap.cache(xtc);
-          h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
-          return 1;
-        }
-        else
-    continue;
-      }
+                boost::shared_ptr<Xtc> pxtc = _umap->cache(xtc);
+                h->_event(pxtc->contains,pxtc->payload(),_seq->clock(),pxtc->damage);
+                return 1;
+              }
+              else
+                continue;
+            }
           }
 #ifdef DBUG
-    else {
-      const std::list<Pds::TypeId::Type>& types = h->data_types();
-      printf("Handler %p not used [",h);
-      for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
-    it != types.end(); it++)
-        printf("%s,",TypeId::name(*it));
-      printf("]\n");
-    }
+          else {
+            const std::list<Pds::TypeId::Type>& types = h->data_types();
+            printf("Handler %p not used [",h);
+            for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
+                it != types.end(); it++)
+              printf("%s,",TypeId::name(*it));
+            printf("]\n");
+          }
 #endif
         }
         else {

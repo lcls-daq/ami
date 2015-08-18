@@ -70,7 +70,7 @@ void EventFilter::configure   (Dgram* dg)
   _f->use();
 }
 
-bool Ami::EventFilter::accept(Dgram* dg)
+bool Ami::EventFilter::accept(Dgram* dg, XtcCache& xcache)
 {
   if (_filters.empty())
     return true;
@@ -79,7 +79,8 @@ bool Ami::EventFilter::accept(Dgram* dg)
       it!=_filters.end(); it++)
     (*it)-> clock(dg->seq.clock());
 
-  _seq = &dg->seq;
+  _seq    = &dg->seq;
+  _xcache = &xcache;
   iterate(&dg->xtc);
 
   bool result=true;
@@ -97,7 +98,7 @@ bool Ami::EventFilter::accept()
   return _f->accept();
 }
 
-int Ami::EventFilter::process(Xtc* xtc, XtcCache& cache)
+int Ami::EventFilter::process(Xtc* xtc)
 {
   if (xtc->extent < sizeof(Xtc) ||
       xtc->contains.id() >= TypeId::NumberOf)
@@ -106,6 +107,7 @@ int Ami::EventFilter::process(Xtc* xtc, XtcCache& cache)
   if (xtc->contains.id()==TypeId::Id_Xtc)
     iterate(xtc);
   else if (_seq->service()==TransitionId::L1Accept) {
+    XtcCache& cache = *_xcache;
     for(list<Ami::UserModule*>::iterator it=_filters.begin();
         it!=_filters.end(); it++)
       switch(xtc->src.level()) {

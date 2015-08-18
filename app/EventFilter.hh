@@ -41,6 +41,7 @@ namespace Ami {
     const AbsFilter*        _f;
     unsigned                _enable;
     const Pds::Sequence*    _seq;
+    XtcCache*               _xcache;
   };
 };
 

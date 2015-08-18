@@ -24,6 +24,7 @@ namespace Ami {
   class EventFilter;
   class Entry;
   class NameService;
+  class XtcCache;
 
   class XtcClient : private XtcIterator,
 		    public DumpSource {
@@ -69,6 +70,7 @@ namespace Ami {
     unsigned  _nevents;
     bool      _recorded;
     NameService* _name_service;
+    XtcCache*    _umap;
   };
 }
 

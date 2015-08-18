@@ -3,6 +3,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <map>
+
 namespace Pds { class Xtc; }
 
 namespace Ami {
@@ -11,9 +13,9 @@ namespace Ami {
     XtcCache();
     ~XtcCache();
   public:
-    boost::shared_ptr<Xtc> cache(Xtc*);
+    boost::shared_ptr<Pds::Xtc> cache(Pds::Xtc*);
   private:
-    std::map<Xtc*,boost::shared_ptr<Xtc> > _umap;
+    std::map<Pds::Xtc*,boost::shared_ptr<Pds::Xtc> > _umap;
   };
 };
 
