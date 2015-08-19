@@ -47,6 +47,7 @@
 #include <QtCore/QTimer>
 
 #include <errno.h>
+#include <time.h>
 
 using namespace Ami::Qt;
 
@@ -690,6 +691,15 @@ void DetectorSelect::autosave()
 
   int len = get_setup(buffer);
   _save(QString("%1/AUTOSAVE.ami").arg(Path::base()),buffer,len);
+  
+  if (Path::archive()) {
+    char time_buffer[32];
+    time_t seq_tm = time(NULL);
+    strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
+    _save(QString("%1/%2.ami").arg(*Path::archive(),
+                                   time_buffer),
+          buffer,len);
+  }
 
   char* p = buffer;
   XML_insert(p, "Defaults", "Defaults", Defaults::instance()->save(p));

@@ -11,8 +11,10 @@ namespace Ami {
   namespace Qt {
     class Path {
     public:
-      static void    setBase(const QString&);
-      static const QString& base();
+      static void    setBase   (const QString&);
+      static void    setArchive(const QString&);
+      static const QString& base   ();
+      static const QString* archive();
       static FILE*   helpFile();
       static FILE*   saveDataFile(QWidget*);
       static FILE*   saveReferenceFile(QWidget*,const QString&);      

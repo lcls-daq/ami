@@ -9,7 +9,8 @@
 
 using namespace Ami::Qt;
 
-static QString _base("ami");
+static QString  _base("ami");
+static QString* _archive = 0;
 
 void Path::setBase(const QString& p) {
   _base=p; 
@@ -17,7 +18,13 @@ void Path::setBase(const QString& p) {
   mkdir(qPrintable(p),m);
 }
 
-const QString& Path::base() { return _base; }
+void Path::setArchive(const QString& p) {
+  if (_archive) delete _archive;
+  _archive = new QString(p);
+}
+
+const QString& Path::base   () { return _base; }
+const QString* Path::archive() { return _archive; }
 
 FILE* Path::helpFile()
 {

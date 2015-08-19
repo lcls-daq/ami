@@ -36,6 +36,7 @@ static void usage(char* p)
          "-F <path>      : file to load initial configuration\n"
          "-C <int>       : color palette choice (0-jette, 1-radiation)\n"
          "-E             : expert mode/movie option\n"
+         "-X <path>      : archive path for configuration saves\n"
 	 "-Y             : disable synchronous image locking\n"
 	 "-Z             : disable image render offload\n"
 	 "-a             : <include|only> (EPICS aliases include|only)]\n"
@@ -117,6 +118,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-n")==0) {
       nodes = argv[++i];
+    }
+    else if (strcmp(argv[i],"-X")==0) {
+      Ami::Qt::Path::setArchive(argv[++i]);
     }
 //     else if (strcmp(argv[i],"-h")==0 ||
 //              strcmp(argv[i],"-?")==0) {

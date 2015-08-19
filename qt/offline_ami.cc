@@ -50,6 +50,7 @@ static void usage(char* progname) {
           "          [-R (set full resolution)\n"
           "          [-S (use scroll bars)]\n"
 	  "          [-T (test mode)]\n"
+          "          [-X <path> (archive path for configuration saves)]\n"
 	  "          [-Y (disable synchronous image locking)]\n"
           "          [-Z (disable image render offload)]\n",
           progname,
@@ -132,7 +133,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "a:p:f:o:e:r:AC:L:N:lDERQ:StTWYZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "a:p:f:o:e:r:AC:L:N:lDERQ:StTWX:YZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -194,6 +195,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'W':
       separateWindowMode = true;
+      break;
+    case 'X':
+      Ami::Qt::Path::setArchive(optarg);
       break;
     case 'Y':
       Ami::DataLock::disable();
