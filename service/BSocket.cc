@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 using namespace Ami;
 
@@ -23,7 +24,7 @@ int BSocket::readv(const iovec* iov, int iovcnt)
   char* end  = _buffer + _size;
   for(int i=0; i<iovcnt; i++) {
     if (data + iov[i].iov_len > end) {
-      printf("BSocket::readv truncated at %d/%d item %d/%d [%d]\n",
+      printf("BSocket::readv truncated at %d/%d item %d/%d [%zu]\n",
 	     (int) (data-_buffer), (int) (end-_buffer), i, iovcnt, iov[i].iov_len);
       abort();
       //      break;
