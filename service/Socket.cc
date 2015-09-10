@@ -5,10 +5,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Socket.hh"
+#include "ami/service/Socket.hh"
+#include "ami/service/BSocket.hh"
 #include "ami/service/Ins.hh"
 
 using namespace Ami;
+
+static BSocket* _flush = new BSocket(0);
+
 
 Socket::Socket(int socket) : 
   _socket(socket)
@@ -113,6 +117,15 @@ int Socket::getrcvbuf()
     return -1;
   }
   return size;
+}
+
+int Socket::flush(unsigned sz)
+{
+  if (sz > _flush->size()) {
+    delete _flush;
+    _flush = new BSocket(sz);
+  }
+  return read(_flush->data(),sz);
 }
 
 int Socket::close()

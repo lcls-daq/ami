@@ -149,7 +149,11 @@ void XtcClient::processDgram(Pds::Dgram* dg)
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 #ifdef DBUG
-    printf("XtcClient configure\n");
+    printf("XtcClient configure  %u.%09u  dmg %x  extent %x\n",
+           dg->seq.clock().seconds(),
+           dg->seq.clock().nanoseconds(),
+           dg->xtc.damage.value(),
+           dg->xtc.extent);
 #endif
     _cache[ PreAnalysis]->clear();
     _cache[PostAnalysis]->clear();
@@ -301,6 +305,16 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
 
 int XtcClient::process(Pds::Xtc* xtc)
 {
+#ifdef DBUG
+  if (_seq->service()==Pds::TransitionId::Configure) {
+    printf("Xtc %p  Type %s  Src %08x.%08x  Extent %x\n",
+           xtc,
+           TypeId::name(xtc->contains.id()),
+           xtc->src.phy(),xtc->src.log(),
+           xtc->extent);
+  }
+#endif
+
   if (xtc->extent < sizeof(Xtc) ||
       xtc->contains.id() >= TypeId::NumberOf)
     return 0;
@@ -311,13 +325,6 @@ int XtcClient::process(Pds::Xtc* xtc)
     iterate(xtc);
   }
   else {
-#ifdef DBUG
-    if (_seq->service()==Pds::TransitionId::Configure) {
-      printf("Type %s  Src %08x.%08x\n",
-       TypeId::name(xtc->contains.id()),
-       xtc->src.phy(),xtc->src.log());
-    }
-#endif
     for(HList::iterator it = _handlers.begin(); it != _handlers.end(); it++) {
       EventHandler* h = *it;
       if (h->info().level() == xtc->src.level() &&

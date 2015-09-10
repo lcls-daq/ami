@@ -33,7 +33,8 @@ namespace Ami {
     int getrcvbuf();
     
     int close();
-    
+
+    int flush(unsigned);
   protected:
     int _socket;
     struct msghdr _hdr;

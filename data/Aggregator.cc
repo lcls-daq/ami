@@ -157,6 +157,7 @@ int Aggregator::read_description(Socket& socket, int len, unsigned id)
       _cds.reset();
     
       if (len > int(_buffer->size())) {
+        //        printf("Raising buffer size %d->%d\n",_buffer->size(),len+BufferSize);
 	delete _buffer;
 	_buffer = new BSocket(len+BufferSize);
       }
@@ -245,12 +246,19 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
   }
   else if ( _n > 1 ) {
 
+#ifdef DBUG
+    printf("Agg[%p] _remaining %x  id %d  _current %d  sz %d\n",
+           this, _remaining, id, _current, sz);
+#endif
+
     if (_remaining==0 || id > _current) {  // simply copy
       _current = id;
       if (sz > int(_buffer->size())) {
+        printf("Raising buffer size %d->%d\n",_buffer->size(),sz+BufferSize);
 	delete _buffer;
 	_buffer = new BSocket(sz+BufferSize);
       }
+
       nbytes = s.read(_buffer->data(),sz);
       _remaining = _n-1;
 
@@ -279,24 +287,36 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       }
 #endif
     }
-    else {  // aggregate
+    else if (id==_current) {  // aggregate
       _allocated |= 1ULL<<s.socket();
 
       int niov = _cds.payload(_iovload,_request);
-      _cds.description(_iovdesc,_request);
-      nbytes = s.readv(_iovload,niov);
-      iovec* iovl = _iovload;
-      iovec* iovd = _iovdesc+1;
-      char* payload = _buffer->data();
-      while(niov--) {
-	DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
-	_cds.entry(desc->signature())->merge(payload);
-	payload += iovl->iov_len;
-	iovl++;
-	iovd++;
+      unsigned psz=0;
+      for(unsigned i=0; i<niov; i++)
+        psz += _iovload[i].iov_len;
+
+      // Validate the payload before merging (or attempting to read)
+      if (psz == sz) {
+        _cds.description(_iovdesc,_request);
+        nbytes = s.readv(_iovload,niov);
+        iovec* iovl = _iovload;
+        iovec* iovd = _iovdesc+1;
+        char* payload = _buffer->data();
+        while(niov--) {
+          if (payload > _buffer->data()+_buffer->size()) break;
+          DescEntry* desc = reinterpret_cast<DescEntry*>(iovd->iov_base);
+          _cds.entry(desc->signature())->merge(payload);
+          payload += iovl->iov_len;
+          iovl++;
+          iovd++;
+        }
+      }
+      else {  // flush the payload
+        if (sz)
+          nbytes = s.flush(sz);
       }
       if (--_remaining == 0) {
-	_client.read_payload(*_buffer,sz);
+        _client.read_payload(*_buffer,psz);
       }
     }
   }
