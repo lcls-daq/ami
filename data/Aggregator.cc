@@ -291,8 +291,8 @@ int  Aggregator::read_payload    (Socket& s, int sz, unsigned id)
       _allocated |= 1ULL<<s.socket();
 
       int niov = _cds.payload(_iovload,_request);
-      unsigned psz=0;
-      for(unsigned i=0; i<niov; i++)
+      int psz=0;
+      for(int i=0; i<niov; i++)
         psz += _iovload[i].iov_len;
 
       // Validate the payload before merging (or attempting to read)
