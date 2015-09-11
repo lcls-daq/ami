@@ -124,7 +124,7 @@ int TSocket::readv(const iovec* iov, int iovcnt)
 
     int _iovcnt = 0;
     for(int i=0, b=bytes; i<iovcnt; i++) {
-      if (b < iov[i].iov_len) {
+      if (b < int(iov[i].iov_len)) {
         _iov[_iovcnt].iov_base = (char*)iov[i].iov_base+b;
         _iov[_iovcnt].iov_len  = iov[i].iov_len-b;
         b = 0;
