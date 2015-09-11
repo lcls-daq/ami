@@ -16,6 +16,7 @@
 #include "ami/server/ServerManager.hh"
 
 #include <sstream>
+#include <stdlib.h>
 
 //#define DBUG
 
