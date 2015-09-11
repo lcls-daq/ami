@@ -25,18 +25,23 @@ double BinMathC::EntryWaveformTerm::evaluate() const
 { double sum=0;
   unsigned lo=_lo, hi=_hi;
   const EntryWaveform* e = static_cast<const EntryWaveform*>(_entry);
-  unsigned offset = 0;
   const DescWaveform& desc = e->desc();
   /*
    * xlow is 0.0 for all regular waveforms.  However, for references read from a .dat file,
    * the X values are the *middle* of the bins, and do not start at 0.0!  (Because of this,
    * we use floor below instead of round in calculating the offset.)
    */
+  /*
+  **  
+  **  This snippet is erroneous.  The lo,hi values represent index positions into the 
+  **  data array, not x-axis values.
+  **
   if (desc.xlow() != 0.0) {
-    offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
+    unsigned offset = (int) floor(desc.xlow() * (desc.nbins() - 1) / (desc.xup() - desc.xlow()));
     lo -= offset;
     hi -= offset;
   }
+  */
 
   double dx = (desc.xup()-desc.xlow())/double(desc.nbins());
   double x0 = desc.xlow()+(double(lo)+0.5)*dx;
