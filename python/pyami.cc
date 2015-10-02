@@ -241,10 +241,16 @@ static PyObject* _getentrylist(Ami::Python::Client* client, PyObject* args, bool
   PyObject* result = NULL;
 
   int sts, tmo;
-  if (Parse_Int(args,tmo))
+  if (Parse_Int(args,tmo)) {
+    Py_BEGIN_ALLOW_THREADS
     sts = push ? client->pget(tmo) : client->request_payload(tmo);
-  else
+    Py_END_ALLOW_THREADS
+  }
+  else {
+    Py_BEGIN_ALLOW_THREADS
     sts = push ? client->pget() : client->request_payload();
+    Py_END_ALLOW_THREADS
+  }
 
   if (sts==0) {
     std::vector<const Ami::Entry*> entries = client->payload();
@@ -399,7 +405,11 @@ static PyObject* _getentrylist(Ami::Python::Client* client, PyObject* args, bool
     PyErr_SetString(PyExc_RuntimeError,"get timedout");
   }
 
-  if (push) client->pnext();
+  if (push) {
+    Py_BEGIN_ALLOW_THREADS
+    client->pnext();
+    Py_END_ALLOW_THREADS
+  }
 
   return result;
 }
@@ -443,7 +453,10 @@ static int amientry_init(amientry* self, PyObject* args, PyObject* kwds)
 
   Ami::Python::Client* cl = new Ami::Python::Client(cl_argslist);
 
-  int result = cl->initialize(*_discovery->allocate(*cl));
+  int result;
+  Py_BEGIN_ALLOW_THREADS
+  result = cl->initialize(*_discovery->allocate(*cl));
+  Py_END_ALLOW_THREADS
 
   if (result == Ami::Python::Client::Success) {
     self->client = cl;
@@ -474,7 +487,9 @@ static PyObject* amientry_get(PyObject* self, PyObject* args)
 static PyObject* amientry_clear(PyObject* self, PyObject* args)
 {
   amientry* e = reinterpret_cast<amientry*>(self);
+  Py_BEGIN_ALLOW_THREADS
   e->client->reset();
+  Py_END_ALLOW_THREADS
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -625,7 +640,10 @@ static int amientrylist_init(amientrylist* self, PyObject* argstuple, PyObject* 
 
   Ami::Python::Client* cl = new Ami::Python::Client(cl_argslist);
 
-  int result = cl->initialize(*_discovery->allocate(*cl));
+  int result;
+  Py_BEGIN_ALLOW_THREADS
+  result = cl->initialize(*_discovery->allocate(*cl));
+  Py_END_ALLOW_THREADS
 
   if (result == Ami::Python::Client::Success) {
     self->client = cl;
@@ -649,7 +667,9 @@ static PyObject* amientrylist_get(PyObject* self, PyObject* args)
 static PyObject* amientrylist_clear(PyObject* self, PyObject* args)
 {
   amientrylist* e = reinterpret_cast<amientrylist*>(self);
+  Py_BEGIN_ALLOW_THREADS
   e->client->reset();
+  Py_END_ALLOW_THREADS
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -846,9 +866,12 @@ pyami_connect(PyObject *self, PyObject *args)
   if (_discovery)
     delete _discovery;
 
+  Py_BEGIN_ALLOW_THREADS
   _discovery = new Ami::Python::Discovery(ppinterface,
 					  mcinterface,
 					  servergroup);
+  Py_END_ALLOW_THREADS
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -1068,8 +1091,11 @@ pyami_set_l3t(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args,"s|s",&filter_str,&file_str))
       return NULL;
 
+    int result;
+    Py_BEGIN_ALLOW_THREADS
     Ami::Python::L3TClient cl(parse_filter(filter_str),file_str);
-    int result = cl.initialize(*_discovery->allocate(cl));
+    result = cl.initialize(*_discovery->allocate(cl));
+    Py_END_ALLOW_THREADS
 
     if (result == Ami::Python::L3TClient::Success) {
       return Py_None;
@@ -1090,9 +1116,12 @@ pyami_clear_l3t(PyObject *self, PyObject *args)
 {
   if (_discovery) {
 
-    Ami::Python::L3TClient cl(new Ami::RawFilter,0);
+    int result;
 
-    int result = cl.initialize(*_discovery->allocate(cl));
+    Py_BEGIN_ALLOW_THREADS
+    Ami::Python::L3TClient cl(new Ami::RawFilter,0);
+    result = cl.initialize(*_discovery->allocate(cl));
+    Py_END_ALLOW_THREADS
 
     if (result == Ami::Python::L3TClient::Success) {
       return Py_None;
@@ -1154,7 +1183,10 @@ pyami_set_handler_options(PyObject *self, PyObject *args, PyObject* kwds)
 				    &phy, &options)) {
       Ami::Python::Handler cl(Info_pyami(phy),options);
 
-      int result = cl.initialize(*_discovery->allocate(cl));
+      int result;
+      Py_BEGIN_ALLOW_THREADS
+      result = cl.initialize(*_discovery->allocate(cl));
+      Py_END_ALLOW_THREADS
 
       if (result == Ami::Python::Handler::Success) {
 	return Py_None;

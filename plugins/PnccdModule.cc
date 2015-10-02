@@ -466,20 +466,17 @@ void Ami::PnccdModule::ModulePlots::reset()
 {
   // lookup pedestal
   DescImage pdsc(_info,unsigned(0),"peds",cols,rows);
-  EntryImage* correct = new EntryImage(pdsc);
-  PnccdCalib::load_pedestals(correct,Ami::D0,false);
-  ndarray<const unsigned,2> ped = correct->content();
+  ndarray<double,2> ped = PnccdCalib::load_pedestals(pdsc,Ami::D0,false);
 
   for(unsigned i=0; i<4; i++)
     _ped[i] = make_ndarray<uint16_t>(rows,cols);
   for(unsigned i=0; i<rows_segment; i++)
     for(unsigned j=0; j<cols_segment; j++) {
-      _ped[0][i][j] = ped[i][j];
-      _ped[1][i][j] = ped[rows-1-i][cols_segment-1-j];
-      _ped[2][i][j] = ped[rows-1-i][cols-1-j];
-      _ped[3][i][j] = ped[i][j+cols_segment];
+      _ped[0][i][j] = uint16_t(ped[i][j]);
+      _ped[1][i][j] = uint16_t(ped[rows-1-i][cols_segment-1-j]);
+      _ped[2][i][j] = uint16_t(ped[rows-1-i][cols-1-j]);
+      _ped[3][i][j] = uint16_t(ped[i][j+cols_segment]);
     }
-  delete correct;
 
   for(unsigned i=0; i<4; i++)
     _ped_calib[i].reset();

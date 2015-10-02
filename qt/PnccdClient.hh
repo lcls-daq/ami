@@ -7,6 +7,8 @@ class QCheckBox;
 
 namespace Ami {
   namespace Qt {
+    class PnccdCalibrator;
+
     class PnccdClient : public ImageClient {
       Q_OBJECT
     public:
@@ -22,13 +24,17 @@ namespace Ami {
 		      ChannelDefinition* ch[], 
 		      int* signatures, 
 		      unsigned nchannels);
-    public slots:
-      void write_pedestals();
+      void _setup_payload(Cds&);
+      void _update();
     private:
       //  Specialization widgets
+      PnccdCalibrator* _calibrator;
       QCheckBox* _fnBox;
       QCheckBox* _npBox;
+      QCheckBox* _roBox;
       bool _reloadPedestals;
+
+      friend class PnccdCalibrator;
     };
   };
 };

@@ -124,7 +124,9 @@ int main(int argc, char* argv[]) {
   char* errorFile = NULL;
   char* userModulesArg = NULL;
   bool parse_valid = true;
-  
+
+  Ami::Calib::use_offline(true);
+
   qInstallMsgHandler(QtAssertHandler);
 
   QApplication::setStyle("plastique");
@@ -154,7 +156,7 @@ int main(int argc, char* argv[]) {
       Ami::EventHandler::post_diagnostics(true);
       break;
     case 't':
-      Ami::Calib::use_test(true);
+      Ami::Calib::use_offline(false);
       break;
     case 'E':
       Ami::Qt::ImageDisplay::enable_movie_option();

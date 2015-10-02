@@ -43,6 +43,8 @@ Aggregator::Aggregator(AbsClient& client) :
   _nprocess        (0),
   _tmo             (0),
   _tag             (-1),
+  _begin_run       (-1),
+  _end_run         (-1),
   _request         (EntryList::Full)
 {
   for(unsigned i=0; i<HistorySize; i++)
@@ -120,6 +122,18 @@ void Aggregator::discovered      (const DiscoveryRx& rx, unsigned id)
     _state = Discovered;
     _client.discovered(rx);
   }
+}
+
+void Aggregator::beginRun(unsigned run)
+{
+  if (run != _begin_run)
+    _client.beginRun(_begin_run=run);
+}
+
+void Aggregator::endRun(unsigned run)
+{
+  if (run != _end_run)
+    _client.endRun(_end_run=run);
 }
 
 //

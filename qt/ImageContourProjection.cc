@@ -187,6 +187,12 @@ void ImageContourProjection::load(const char*& p)
   _list_sem.give();
 }
 
+void ImageContourProjection::snapshot(const QString& p) const
+{
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void ImageContourProjection::save_plots(const QString& p) const
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)

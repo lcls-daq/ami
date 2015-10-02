@@ -99,6 +99,19 @@ void Ami::Qt::ImageClient::load(const char*& p)
   update_configuration();
 }
 
+void Ami::Qt::ImageClient::snapshot(const QString& dir) const
+{
+  _snapshot(QString("%1/%2.png").arg(dir).arg(title()));
+
+  QString p = QString("%1/%2").arg(dir).arg(title());
+  _xyproj ->snapshot(p+"_xyproj");
+  _rfproj ->snapshot(p+"_rfproj");
+  _cntproj->snapshot(p+"_cntproj");
+  _hit    ->snapshot(p+"_hits");
+  _blob   ->snapshot(p+"_blob");
+  _droplet->snapshot(p+"_droplet");
+}
+
 void Ami::Qt::ImageClient::save_plots(const QString& p) const
 {
   const ImageDisplay& id = static_cast<const ImageDisplay&>(display());

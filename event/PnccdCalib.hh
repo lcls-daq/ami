@@ -2,6 +2,8 @@
 #define Ami_PnccdCalib_hh
 
 #include "ami/data/DescImage.hh"
+#include "ndarray/ndarray.h"
+
 #include <string>
 
 namespace Ami {
@@ -12,8 +14,11 @@ namespace Ami {
     static unsigned    option_no_pedestal();
     static unsigned    option_reload_pedestal();
     static unsigned    option_correct_common_mode();
-    static std::string save_pedestals(Entry*,bool corrected,bool prod);
-    static void        load_pedestals(EntryImage*,Rotation, bool no_cache);
+    static unsigned    option_rotate();
+    static std::string save_pedestals(const Entry*,bool rotated,bool prod);
+    static std::string save_cmth     (const Entry*,bool rotated,bool prod,double factor=1);
+    static ndarray<double,2> load_pedestals(const DescImage&,Rotation, bool no_cache);
+    static ndarray<double,2> load_cmth     (const DescImage&,Rotation, bool no_cache);
   };
 };
 

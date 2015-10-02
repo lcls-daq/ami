@@ -16,7 +16,7 @@ endif
 # <project>/<incdir>. Note that the top level release directory is
 # already in the search path.
 libincs_calib := ndarray/include boost/include  pdsdata/include
-libincs_event := ndarray/include boost/include  pdsdata/include 
+libincs_event := ndarray/include boost/include  pdsdata/include psalg/include
 
 # List system include directories (if any) needed by lib_a as <incdir>.
 # libsinc_lib_a := /usr/include

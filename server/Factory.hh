@@ -21,6 +21,8 @@ namespace Ami {
     virtual void refresh  (unsigned id, const Message&, const char*, Cds&) = 0;
     virtual void analyze  () = 0;
     virtual void discover (bool waitForConfigure) = 0;
+    virtual void beginRun (unsigned) = 0;
+    virtual void endRun   (unsigned) = 0;
     virtual void remove   (unsigned id) = 0;
   };
 

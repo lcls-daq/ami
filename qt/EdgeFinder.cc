@@ -197,6 +197,14 @@ void EdgeFinder::save_plots(const QString& p) const
   }
 }
 
+void EdgeFinder::snapshot(const QString& p) const
+{
+  for(unsigned i=0; i<_apps.size(); i++) {
+    QString q = QString("%1_Set%2_%3").arg(p).arg(i/4).arg(i%4);
+    _apps[i]->snapshot(q);
+  }
+}
+
 void EdgeFinder::configure(char*& p, unsigned input, unsigned& output,
 			   ChannelDefinition* channels[], int* signatures, unsigned nchannels)
 {

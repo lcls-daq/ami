@@ -173,6 +173,9 @@ void ImageXYProjection::load(const char*& p)
   update_range();
 }
 
+void ImageXYProjection::snapshot(const QString& p) const
+{ _rect->snapshot(p); }
+
 void ImageXYProjection::save_plots(const QString& p) const
 { _rect->save_plots(p); }
 

@@ -17,6 +17,7 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      void snapshot(const QString&) const;
       void save_plots(const QString&) const;
     private:
       void _configure(char*& p, 

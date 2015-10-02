@@ -1,6 +1,7 @@
 #include "ami/qt/PnccdClient.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
+#include "ami/qt/PnccdCalibrator.hh"
 #include "ami/event/PnccdCalib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
@@ -17,15 +18,20 @@ PnccdClient::PnccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
-  { QPushButton* pedB = new QPushButton("Write Pedestals");
-    addWidget(pedB);
-    connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }
-
+  { QPushButton* calB = new QPushButton("Calibrate");
+    addWidget(calB);
+    _calibrator = new PnccdCalibrator(this);
+    _stack->add(calB,_calibrator);
+    addWidget(calB);
+    connect(_calibrator, SIGNAL(changed()), this, SIGNAL(changed())); }
+  
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
+  addWidget(_roBox = new QCheckBox("Rotate\nDisplay"));
 
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_roBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 PnccdClient::~PnccdClient() {}
@@ -35,6 +41,7 @@ void PnccdClient::save(char*& p) const
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_roBox", QtPersistent::insert(p,_roBox->isChecked()) );
 }
 
 void PnccdClient::load(const char*& p)
@@ -46,6 +53,8 @@ void PnccdClient::load(const char*& p)
       _fnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_roBox")
+      _roBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(PnccdClient,tag);
 }
 
@@ -59,6 +68,7 @@ void PnccdClient::_configure(char*& p,
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= PnccdCalib::option_correct_common_mode();
   if (_npBox->isChecked()) o |= PnccdCalib::option_no_pedestal();
+  if (_roBox->isChecked()) o |= PnccdCalib::option_rotate();
   if (_reloadPedestals) {
     o |= PnccdCalib::option_reload_pedestal();
     _reloadPedestals = false;
@@ -66,54 +76,18 @@ void PnccdClient::_configure(char*& p,
   ConfigureRequest& req = *new(p) ConfigureRequest(input,o);
   p += req.size();
 
+  _calibrator->configure (p,input,output,ch,signatures,nchannels);
   ImageClient::_configure(p,input,output,ch,signatures,nchannels);
 }
 
-void PnccdClient::write_pedestals()
+void PnccdClient::_setup_payload(Cds& cds)
 {
-  QString name;
-  unsigned signature=-1U;
+  _calibrator->setup_payload(cds);
+  ImageClient::_setup_payload(cds);
+}
 
-  for(int i=0; i<NCHANNELS; i++)
-    if (_channels[i]->is_shown()) {
-      name = _channels[i]->name();
-      signature = _channels[i]->output_signature();
-    }
-
-  QString msg = QString("Write a new pedestal file \nwith the offsets in %1?").arg(name);
-
-  QMessageBox box;
-  box.setWindowTitle("Write Pedestals");
-  box.setText(msg);
-  box.addButton(QMessageBox::Cancel);
-
-  QPushButton* writeB = new QPushButton("Write");
-
-  bool lProd = QString(getenv("HOME")).endsWith("opr");
-
-  box.addButton(writeB,QMessageBox::AcceptRole);
-
-  if (box.exec()==QMessageBox::Cancel)
-    ;
-  else {
-
-    _control->pause();
-
-    std::string smsg(PnccdCalib::save_pedestals(_cds.entry(signature),
-                                               !_npBox->isChecked(),
-                                               lProd));
-    if (smsg.empty()) {
-      _reloadPedestals = true;
-      emit changed();
-    }
-    else {
-      QString msg(smsg.c_str());
-      QMessageBox::warning(this, 
-                           "Write Pedestals", 
-                           msg,
-                           QMessageBox::Ok);
-    }
-
-    _control->resume();
-  }
+void PnccdClient::_update()
+{
+  _calibrator->update();
+  ImageClient::_update();
 }

@@ -93,6 +93,20 @@ void ServerManager::discover_post()
   post(reinterpret_cast<const char*>(&msg),sizeof(msg));
 }
 
+void ServerManager::beginRun(unsigned v)
+{
+  Message msg(0,Message::BeginRunReq,v);
+  bcast_in(reinterpret_cast<const char*>(&msg),sizeof(msg));
+}
+
+
+void ServerManager::endRun(unsigned v)
+{
+  Message msg(0,Message::EndRunReq,v);
+  bcast_in(reinterpret_cast<const char*>(&msg),sizeof(msg));
+}
+
+
 void ServerManager::register_key(unsigned key, int fd)
 {
   int n = nfds()+1;

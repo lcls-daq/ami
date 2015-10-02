@@ -108,6 +108,16 @@ void CollectionServer::discovered      (const DiscoveryRx& rx)
   _iov[1].iov_len  = rx.payload_size();
   reply(rx.tag(), Message::Discover, 2);
 }
+void CollectionServer::beginRun(unsigned v)
+{
+  Message m(0,Message::BeginRunReq,v);
+  _socket->write(&m,sizeof(m));
+}
+void CollectionServer::endRun  (unsigned v)
+{
+  Message m(0,Message::EndRunReq,v);
+  _socket->write(&m,sizeof(m));
+}
 int  CollectionServer::read_description(Socket& s,int len)
 {
   _reply(Message::Description, s, len);

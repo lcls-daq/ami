@@ -195,6 +195,12 @@ void CurveFit::load(const char*& p)
   emit changed();
 }
 
+void CurveFit::snapshot(const QString& p) const
+{
+  for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void CurveFit::save_plots(const QString& p) const
 {
   for(std::list<CurveFitPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {

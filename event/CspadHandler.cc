@@ -35,12 +35,10 @@ typedef Pds::CsPad::ElementV2 CspadElement;
 
 static const unsigned Offset = 0x4000;
 static const double  dOffset = double(Offset);
-static const double pixel_size = 110e-6;
+static const double pixel_size = 110;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
 static const double RDIV = 20000;
-
-static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
 //
 //  Much of the "template" code which follows is meant to 
@@ -589,6 +587,8 @@ namespace CspadGeometry {
     void boundary(unsigned& dx0, unsigned& dx1,                         \
                   unsigned& dy0, unsigned& dy1) const {                 \
       FRAME_BOUNDS;                                                     \
+      printf("Boundary [%u[%u,%u],%u[%u,%u]]\n",                        \
+             column,x0,x1,row,y0,y1);                                   \
       dx0=x0; dx1=x1; dy0=y0; dy1=y1; }                                 \
     void fill(Ami::DescImage& image) const {                            \
       FRAME_BOUNDS;                                                     \
@@ -679,18 +679,18 @@ namespace CspadGeometry {
 
   class TwoByTwo {
   public:
-    TwoByTwo(double x, double y, unsigned ppb, Rotation r, 
-             const Ami::Cspad::TwoByTwoAlignment& a,
+    TwoByTwo(double x, double y, unsigned ppb, 
+             const Ami::Cspad::TwoByOneAlignment* a,
              FILE* f, FILE* s, FILE* g, FILE* rms,
              const ndarray<const uint16_t,2>& gmap, unsigned imap) 
     {
       for(unsigned i=0; i<2; i++, imap+=2) {
-        double tx(x), ty(y);
-        _transform(tx,ty,a.xAsicOrigin[i<<1],a.yAsicOrigin[i<<1],r);
+        double tx = a[i]._pad.x + x;
+        double ty = a[i]._pad.y + y;
         //
         //  We may acquire pedestals between configurations
         //
-        switch(r) {
+        switch(a[i]._rot) {
         case D0: 
           switch(ppb) {
           case 1:       asic[i] = new  AsicD0B1P(tx,ty,f,s,g,rms,gmap,imap); break;
@@ -753,20 +753,13 @@ namespace CspadGeometry {
 
   class Quad {
   public:
-    Quad(double x, double y, unsigned ppb, Rotation r, 
+    Quad(double x, double y, unsigned ppb, 
          const Ami::Cspad::QuadAlignment& align,
          const ndarray<const uint16_t,2>& gmap,
          FILE* pedFile=0, FILE* staFile=0, FILE* gainFile=0, FILE* rmsFile=0)
     {
-      static Rotation _tr[] = {  D0  , D90 , D180, D90 ,
-         D90 , D180, D270, D180,
-         D180, D270, D0  , D270,
-         D270, D0  , D90 , D0 };
       for(unsigned i=0; i<4; i++) {
-        Ami::Cspad::TwoByTwoAlignment ta(align.twobytwo(i));
-        double tx(x), ty(y);
-        _transform(tx,ty,ta.xOrigin,ta.yOrigin,r);
-        element[i] = new TwoByTwo( tx, ty, ppb, _tr[r*NPHI+i], ta, 
+        element[i] = new TwoByTwo( x, y, ppb, &align._twobyone[i*2], 
                                    pedFile, staFile, gainFile, rmsFile, gmap, i*4 );
       }
     }
@@ -1012,48 +1005,25 @@ namespace CspadGeometry {
       double x,y;
 
       const Ami::Cspad::QuadAlignment* qalign = qalign_def;
-      Rotation qrot[] = { D0, D90, D180, D270 };
 
       bool offl_type=false;
       FILE *gm = Calib::fopen(static_cast<const Pds::DetInfo&>(src),
                               "geo", "geometry", false,
                               &offl_type);
-      if (gm) {
+      if (gm && offl_type) {
         qalign = Ami::Cspad::QuadAlignment::load(gm,offl_type);
         { for(unsigned j=0; j<4; j++) {
-            printf("Quad %d\n",j);
-            for(unsigned k=0; k<4; k++) {
-              const Ami::Cspad::TwoByTwoAlignment t(qalign[j].twobytwo(k));
-              printf("  2x2[%d]: %f %f\n", k, t.xOrigin, t.yOrigin);
-              for(unsigned m=0; m<4; m++)
-                printf("    %f %f\n", t.xAsicOrigin[m], t.yAsicOrigin[m]);
-            }
+            printf("Quad %d:\n", j);
+            for(unsigned k=0; k<8; k++)
+                printf("  2x1[%d]: %f %f %d\n", 
+                       k,
+                       qalign[j]._twobyone[k]._pad.x,
+                       qalign[j]._twobyone[k]._pad.y,
+                       qalign[j]._twobyone[k]._rot);
           }
-        }
-        
-        if (!offl_type) {
-          size_t sz=256;
-          char* linep = (char *)malloc(sz);
-          //  Get optional global rotation
-          while(1) {
-            if (getline(&linep, &sz, gm)==-1) break;
-            if (linep[0]=='#') continue;
-            unsigned irot = strtoul(linep,0,0);
-            for(unsigned j=0; j<NPHI; j++)
-              qrot[j] = Rotation((irot+j)%NPHI);
-            break;
-          }
-          //  Get optional quad relocations
-          unsigned j=0;
-          while(j<NPHI) {
-            if (getline(&linep, &sz, gm)==-1) break;
-            if (linep[0]=='#') continue;
-            unsigned irot = strtoul(linep,0,0);
-            qrot[j++] = Rotation(irot%NPHI);
-          }
-          free(linep);
         }
       }
+
       //
       //  Create a default layout
       //
@@ -1061,11 +1031,11 @@ namespace CspadGeometry {
       _ppb = 4;
       { 
         const double frame = double(_pixels)*pixel_size;
-        x =  0.5*frame;
-        y =  -0.5*frame;
+        x =   1.0*frame;
+        y =  -1.0*frame;
       }
       for(unsigned j=0; j<4; j++)
-        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],_config.gainMap(j));
+        quad[j] = new Quad(x,y,_ppb,qalign[j],_config.gainMap(j));
 
       //
       //  Test extremes and narrow the focus
@@ -1081,6 +1051,9 @@ namespace CspadGeometry {
           if (y1>ymax) ymax=y1;
         }
       }
+
+      printf("Cspad geometry range (%f,%f) [%u,%u] [%u,%u]\n",
+             x,y,xmin,xmax,ymin,ymax);
 
       for(int i=0; i<4; i++)
         delete quad[i];
@@ -1102,9 +1075,9 @@ namespace CspadGeometry {
       _pixels = pixels*4 + 2*bin0*_ppb;
 
       for(unsigned j=0; j<4; j++)
-        quad[j] = new Quad(x,y,_ppb,qrot[j],qalign[j],_config.gainMap(j),f,s,g,rms);
+        quad[j] = new Quad(x,y,_ppb,qalign[j],_config.gainMap(j),f,s,g,rms);
 
-      if (gm)
+      if (gm && offl_type)
         delete[] qalign;
     }
     ~Detector() { for(unsigned i=0; i<4; i++) delete quad[i]; }
@@ -1423,7 +1396,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   DescImage desc(det, (unsigned)0, ChannelID::name(det,0),
                  detector->xpixels()/ppb, detector->ypixels()/ppb, 
                  ppb, ppb);
-  desc.set_scale(pixel_size*1e3,pixel_size*1e3);
+  desc.set_scale(pixel_size*1e-3,pixel_size*1e-3);
     
   detector->fill(desc);
 
@@ -1492,13 +1465,3 @@ void CspadHandler::_damaged()
     _unbinned_entry->invalid(); 
 }
 
-void _transform(double& x,double& y,double dx,double dy,Rotation r)
-{
-  switch(r) {
-  case D0  :    x += dx; y += dy; break;
-  case D90 :    x += dy; y -= dx; break;
-  case D180:    x -= dx; y -= dy; break;
-  case D270:    x -= dy; y += dx; break;
-  default:                        break;
-  }
-}

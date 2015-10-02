@@ -136,6 +136,12 @@ void AnalysisFactory::discover(bool waitForConfigure)
   printf("AnalysisFactory::discover(%c) complete\n",waitForConfigure?'T':'F');
 }
 
+void AnalysisFactory::beginRun(unsigned v)
+{ _srv.beginRun(v); }
+
+void AnalysisFactory::endRun(unsigned v)
+{ _srv.endRun(v); }
+
 void AnalysisFactory::discover_wait()
 {
   pthread_mutex_lock(&_mutex);

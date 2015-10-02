@@ -32,6 +32,8 @@ namespace Ami {
     ///  The data stream discovery has completed and its result is passed here to the client
     virtual void discovered      (const DiscoveryRx&) = 0;
     ///  The plottable data description of size bytes is ready to be read from socket.
+    virtual void beginRun(unsigned) {}
+    virtual void endRun  (unsigned) {}
     virtual int  read_description(Socket& socket,int size) = 0;
     ///  The plottable data payload of size bytes is ready to be read from socket.
     virtual int  read_payload    (Socket& socket,int size) = 0;

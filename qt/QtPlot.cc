@@ -266,6 +266,11 @@ void QtPlot::load(const char*& p)
   _layout();
 }
 
+void QtPlot::snapshot(const QString& dir) const
+{
+  _snapshot(QString("%1/%2.png").arg(dir).arg(_name));
+}
+
 void QtPlot::save_data()
 {
   FILE* f = Path::saveDataFile(this);

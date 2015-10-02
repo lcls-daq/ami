@@ -17,6 +17,8 @@ namespace Ami {
     public:
       virtual void save(char*& p) const;
       virtual void load(const char*& p);
+      virtual void snapshot(const QString&) const;
+      void _snapshot(const QString&) const;
     public slots:
       void front();
     protected:

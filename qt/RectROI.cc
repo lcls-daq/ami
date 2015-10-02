@@ -128,6 +128,14 @@ void RectROI::load(const char*& p)
   _list_sem.give();
 }
 
+void RectROI::snapshot(const QString& p) const
+{
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void RectROI::save_plots(const QString& p) const
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)

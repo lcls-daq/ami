@@ -114,6 +114,14 @@ void RectROIDesc::load(const char*& p)
   update_range();
 }
 
+void RectROIDesc::snapshot(const QString& p) const
+{
+  for(unsigned i=0; i<_rois.size(); i++) {
+    QString q = QString("%1_ROI%2_%3").arg(p).arg(i/4).arg(i%4);
+    _rois[i]->snapshot(q);
+  }
+}
+
 void RectROIDesc::save_plots(const QString& p) const
 {
   for(unsigned i=0; i<_rois.size(); i++) {

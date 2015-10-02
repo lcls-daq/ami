@@ -48,6 +48,7 @@
 
 #include <errno.h>
 #include <time.h>
+#include <sys/stat.h>
 
 using namespace Ami::Qt;
 
@@ -213,6 +214,12 @@ DetectorSelect::DetectorSelect(const QString& label,
   _autosave_timer = new QTimer(this);
   _autosave_timer->setSingleShot(true);
   connect(_autosave_timer, SIGNAL(timeout()), this, SLOT(autosave()));
+
+  _snapshot_timer = new QTimer(this);
+  _snapshot_timer->setSingleShot(false);
+  connect(_snapshot_timer, SIGNAL(timeout()), this, SLOT(run_snapshot()));
+
+  _snapshot_timer->start(900000); // 15 minutes
 
   _l3t_export_file = new QFileDialog(_filter_export);
   _l3t_export_file->setFileMode(QFileDialog::AnyFile);
@@ -596,6 +603,9 @@ void DetectorSelect::discovered      (const DiscoveryRx& rx)
   _manager->configure();
 }
 
+void DetectorSelect::beginRun(unsigned v) { printf("BeginRun %u\n",v); }
+void DetectorSelect::endRun  (unsigned v) { printf("EndRun %u\n",v); }
+
 void DetectorSelect::change_detectors(const char* c)
 {
   const DiscoveryRx& rx = *reinterpret_cast<const DiscoveryRx*>(c);
@@ -714,6 +724,21 @@ void DetectorSelect::autoload()
 {
   QString fname = QString("%1/AUTOSAVE.ami").arg(Path::base());
   load_setup(qPrintable(fname));
+}
+
+void DetectorSelect::run_snapshot()
+{
+  if (Path::archive()) {
+    char time_buffer[32];
+    time_t seq_tm = time(NULL);
+    strftime(time_buffer,32,"%Y%m%d_%H%M%S",localtime(&seq_tm));
+    QString dir = QString("%1/%2/").arg(*Path::archive()).arg(time_buffer);
+    mkdir(qPrintable(dir), S_IRUSR|S_IWUSR|S_IXUSR|S_IRGRP);
+    for(std::list<QtTopWidget*>::const_iterator it = _client.begin();
+        it != _client.end(); it++)
+      if (*it)
+        (*it)->snapshot(dir);
+  }
 }
 
 void DetectorSelect::disconnected()

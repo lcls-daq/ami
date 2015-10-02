@@ -87,6 +87,22 @@ void WaveformClient::load(const char*& p)
   update_configuration();
 }
 
+void WaveformClient::snapshot(const QString& dir) const
+{
+  QString fname = QString("%1/%2.png").arg(dir).arg(title());
+  QPixmap pixmap(QWidget::size());
+  WaveformClient* cthis = const_cast<WaveformClient*>(this);
+  cthis->render(&pixmap);
+  pixmap.toImage().save(fname);
+  printf("snapshot %s\n",qPrintable(fname));
+
+  QString p = QString("%1/%2").arg(dir).arg(title());
+  _edges  ->snapshot(p+"_edge");
+  _cursors->snapshot(p+"_cursor");
+  _fits   ->snapshot(p+"_fit");
+  _fft    ->snapshot(p+"_fft");
+}
+
 void WaveformClient::save_plots(const QString& p) const
 {
   const WaveformDisplay& wd = static_cast<const WaveformDisplay&>(display());

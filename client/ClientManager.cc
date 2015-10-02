@@ -451,6 +451,12 @@ int ClientManager::handle_client_io(ClientSocket& socket)
     DiscoveryRx rx(_discovery.base(), size);
     _client.discovered(rx, reply.id());
   }
+  else if (reply.type() == Message::BeginRunReq) {
+    _client.beginRun(reply.payload());
+  }
+  else if (reply.type() == Message::EndRunReq) {
+    _client.endRun  (reply.payload());
+  }
   else if (reply.id() == _request.id()) {   // solicited message
   //  else if (1) { // solicited message
     switch (reply.type()) {

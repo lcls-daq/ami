@@ -4,6 +4,7 @@
 #include <QtGui/QCloseEvent>
 #include <QtGui/QStackedWidget>
 #include <QtGui/QVBoxLayout>
+#include <QtGui/QPixmap>
 
 #include <stdio.h>
 
@@ -79,6 +80,19 @@ void QtPWidget::load(const char*& p)
 
   setVisible(v);
   _initial_hide = !v;
+}
+
+void QtPWidget::snapshot(const QString& dir) const
+{
+}
+
+void QtPWidget::_snapshot(const QString& fname) const
+{
+  QPixmap pixmap(QWidget::size());
+  QtPWidget* cthis = const_cast<QtPWidget*>(this);
+  cthis->render(&pixmap);
+  pixmap.toImage().save(fname);
+  printf("snapshot %s\n",qPrintable(fname));
 }
 
 void QtPWidget::front()

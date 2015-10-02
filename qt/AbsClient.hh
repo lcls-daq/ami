@@ -17,6 +17,9 @@ namespace Ami {
 		const Pds::DetInfo& src, 
 		unsigned            channel);
       virtual ~AbsClient();
+    public:
+      void beginRun(unsigned);
+      void endRun  (unsigned);
     signals:
       void changed();
     };

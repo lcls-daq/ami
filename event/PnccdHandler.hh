@@ -34,16 +34,13 @@ namespace Ami {
   private:
     const FeatureCache&  _cache;
     Pds::PNCCD::ConfigV1 _config;
-    EntryImage*          _correct;
-    EntryImage*          _ncorrect;
     PixelCalibration*    _calib;
-    bool                 _collect;
-    unsigned             _ncollect;
     EntryImage*          _entry;
     EntryImage*          _common;
     unsigned             _options;
-    unsigned             _common_lo;
-    unsigned             _common_hi;
+
+    ndarray<double,2>  _ped;
+    ndarray<double,2>  _cmth;
   };
 };
 

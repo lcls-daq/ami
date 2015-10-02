@@ -164,6 +164,10 @@ int AnalysisServer::processIo(const char* msg,int size)
       tx.serialize(_iov+1);
       reply(request.id(), Message::Discover, n); }
     break;
+  case Message::BeginRunReq:
+  case Message::EndRunReq:
+    _socket->write(&request,sizeof(request));
+    break;
   default:
     break;
   }

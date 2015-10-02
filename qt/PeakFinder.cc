@@ -187,6 +187,14 @@ void PeakFinder::load(const char*& p)
   update_agg();
 }
 
+void PeakFinder::snapshot(const QString& p) const
+{
+  for(std::list<PeakPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg("hitfinder"));
+  for(std::list<ZoomPlot*>::const_iterator it=_zplots.begin(); it!=_zplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg("zoom"));
+}
+
 void PeakFinder::save_plots(const QString& p) const
 {
 }

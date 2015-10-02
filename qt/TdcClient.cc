@@ -212,6 +212,17 @@ void TdcClient::load(const char*& p)
   update_configuration();
 }
 
+void TdcClient::snapshot(const QString& p) const
+{
+  int i=1;
+  for(std::list<TdcPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg(i++));
+  for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+  for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void TdcClient::save_plots(const QString& p) const
 {
   int i=1;

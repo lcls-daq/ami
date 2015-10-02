@@ -66,6 +66,8 @@ static const char* sType[] = {
   "ConfigReq",
   "DescriptionReq", 
   "Description", 
+  "BeginRunReq",
+  "EndRunReq",
   "RefreshReq", 
   "PayloadReq", 
   "Payload",

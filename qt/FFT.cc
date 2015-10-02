@@ -113,6 +113,12 @@ void FFT::load(const char*& p)
   emit changed();
 }
 
+void FFT::snapshot(const QString& p) const
+{
+  for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void FFT::save_plots(const QString& p) const
 {
   for(std::list<ProjectionPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {

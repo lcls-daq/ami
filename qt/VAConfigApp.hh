@@ -55,6 +55,7 @@ namespace Ami {
       void setup_payload(Cds&);
       void update();
       void save(char*&) const;
+      void snapshot(const QString&) const;
       void save_plots(const QString&) const;
     public slots:
       void remove_plot(QObject*);

@@ -24,6 +24,8 @@ namespace Ami {
     int  configure       (iovec*) ;
     int  configured      () ;
     void discovered      (const DiscoveryRx&,unsigned) ;
+    void beginRun        (unsigned);
+    void endRun          (unsigned);
     int  read_description(Socket&,int,unsigned) ;
     int  read_payload    (Socket&,int,unsigned) ;
     bool svc             () const;
@@ -58,6 +60,8 @@ namespace Ami {
     unsigned   _nprocess;
     unsigned   _tmo;
     unsigned   _tag;
+    unsigned   _begin_run;
+    unsigned   _end_run;
     EntryList  _request;
   };
 };

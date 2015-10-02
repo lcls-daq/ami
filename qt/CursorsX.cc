@@ -253,6 +253,12 @@ void CursorsX::load(const char*& p)
   emit changed();
 }
 
+void CursorsX::snapshot(const QString& p) const
+{
+  for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void CursorsX::save_plots(const QString& p) const
 {
   for(std::list<CursorPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {

@@ -34,6 +34,7 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+      virtual void snapshot(const QString&) const;
       virtual void dump(FILE*) const=0;
     public:
       void edit_xrange(bool);

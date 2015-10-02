@@ -18,6 +18,7 @@ namespace Ami {
       virtual void load_setup(const char*& p) { load(p); }
       virtual void save_plots(const QString&) const = 0;
       virtual void reset_plots() = 0;
+      virtual void snapshot(const QString& dir) const {}
     public:
       const Pds::DetInfo info;
       unsigned           channel;

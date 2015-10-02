@@ -21,6 +21,8 @@ namespace Ami {
 	      ConfigReq,
 	      DescriptionReq, 
 	      Description, 
+              BeginRunReq,
+              EndRunReq,
               RefreshReq,
 	      PayloadReq, 
 	      Payload,

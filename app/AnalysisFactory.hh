@@ -35,6 +35,8 @@ namespace Ami {
     void discover (bool waitForConfigure);
     void discover_wait();
     void configure(unsigned, const Message&, const char*, Cds&, bool post_svc);
+    void beginRun (unsigned);
+    void endRun   (unsigned);
     void refresh  (unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void remove   (unsigned);

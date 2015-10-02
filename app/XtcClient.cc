@@ -146,6 +146,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     _runno_value = dg->env.value();
     _runtim      = dg->seq.clock();
     _nevents     = 0;
+    _factory.beginRun(unsigned(_runno_value));
+  }
+  else if (dg->seq.service() == Pds::TransitionId::EndRun) {
+    _factory.endRun(unsigned(_runno_value));
   }
   else if (dg->seq.service() == Pds::TransitionId::Configure) {
 #ifdef DBUG

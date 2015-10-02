@@ -518,7 +518,6 @@ void XtcFileClient::setDir(QString dir)
 
   _stopped = true;
 
-  Ami::Calib::use_offline   (true);
   Ami::Calib::set_experiment(basename(std::string(qPrintable(_curdir)).c_str()));
 
   // Collect all the runs in this dir.

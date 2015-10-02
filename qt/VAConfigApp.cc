@@ -128,6 +128,12 @@ void VAConfigApp::save(char*& p) const
   }
 }
 
+void VAConfigApp::snapshot(const QString& p) const
+{
+  for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++)
+    (*it)->_snapshot(QString("%1_%2.png").arg(p).arg((*it)->_name));
+}
+
 void VAConfigApp::save_plots(const QString& p) const
 {
   for(std::list<CursorPlot*>::const_iterator it=_cplots.begin(); it!=_cplots.end(); it++) {

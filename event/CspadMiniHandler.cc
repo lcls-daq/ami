@@ -37,14 +37,12 @@ typedef Pds::CsPad2x2::ElementV1 MiniElement;
 
 static const unsigned Offset = 0x4000;
 static const double  dOffset = double(Offset);
-static const double pixel_size = 110e-6;
+static const double pixel_size = 110;
 static const unsigned Columns = CsPad2x2::ColumnsPerASIC;
 static const unsigned Rows    = CsPad2x2::MaxRowsPerASIC*2;
 static const float HI_GAIN_F = 1.;
 static const float LO_GAIN_F = 7.;
 static const double RDIV = 20000;
-
-static void _transform(double& x,double& y,double dx,double dy,Ami::Rotation);
 
 static inline unsigned sum1(const int16_t*& data,
                             const int16_t*& off,
@@ -439,25 +437,17 @@ namespace CspadMiniGeometry {
 
   class TwoByTwo {
   public:
-    TwoByTwo(double x, double y, unsigned ppb, Rotation r[3], 
-	     const Ami::Cspad::TwoByTwoAlignment& a,
+    TwoByTwo(double x, double y, unsigned ppb,
+	     const Ami::Cspad::TwoByOneAlignment* a,
              const ndarray<const uint16_t,2>& gmap, 
              double* f=0, double* s=0, double* g=0, double* rms=0) 
     {
       for(unsigned i=0,imap=0; i<2; i++,imap+=2) {
         //  rotate in place
-        double dx(-0.5*pixel_size*double(Columns));
-        double dy(-0.5*pixel_size*double(Rows));
-        double xOrigin(a.xAsicOrigin[i<<1]-dx);
-        double yOrigin(a.yAsicOrigin[i<<1]-dy);
-        _transform(xOrigin,yOrigin,dx,dy,r[i+1]);
+	double tx = a[i]._pad.x + x;
+	double ty = a[i]._pad.y + y;
 
-        //  rotate globally (around some detector axis)
-	double tx(x), ty(y);
-	_transform(tx,ty,xOrigin,yOrigin,r[0]);
-
-        unsigned qr = (r[0]+r[i+1])%NPHI;
-        switch(qr) {
+        switch(a[i]._rot) {
         case D0  : asic[i] = new  AsicD0B1P  (tx,ty,f,s,g,rms,gmap,imap); break;
         case D90 : asic[i] = new  AsicD90B1P (tx,ty,f,s,g,rms,gmap,imap); break;
         case D180: asic[i] = new  AsicD180B1P(tx,ty,f,s,g,rms,gmap,imap); break;
@@ -679,23 +669,15 @@ namespace CspadMiniGeometry {
       //  Determine layout : binning, origin
       double x,y;
 
-      Ami::Cspad::TwoByTwoAlignment qalign = qalign_def[0].twobytwo(0);
-      Rotation qrot[3] = { D0, D0, D0 };
+      const Ami::Cspad::QuadAlignment* qalign = qalign_def;
       if (gm) {
-        { Ami::Cspad::QuadAlignment* ta = Ami::Cspad::QuadAlignment::load(gm);
-          qalign = ta->twobytwo(0);
-          delete[] ta; }
-
-        size_t sz=256;
-        char* linep = (char *)malloc(sz);
-        unsigned i=0;
-        while(1) {
-          if (getline(&linep, &sz, gm)==-1) break;
-          if (linep[0]=='#') continue;
-          qrot[i++] = Rotation(strtoul(linep,0,0));
-          if (i==3) break;
-        }
-        free(linep);
+         qalign = Ami::Cspad::QuadAlignment::load(gm,true);
+         for(unsigned k=0; k<2; k++)
+           printf("  2x1[%d]: %f %f %d\n", 
+                  k,
+                  qalign[0]._twobyone[k]._pad.x,
+                  qalign[0]._twobyone[k]._pad.y,
+                  qalign[0]._twobyone[k]._rot);
       }
       //
       //  Create a default layout
@@ -706,7 +688,7 @@ namespace CspadMiniGeometry {
 	x =  0.5*frame;
 	y = -0.5*frame;
       }
-      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap());
+      mini = new TwoByTwo(x,y,_ppb,&qalign[0]._twobyone[0],_config.gainMap());
 
       //
       //  Test extremes and narrow the focus
@@ -734,7 +716,7 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,qrot,qalign,_config.gainMap(),
+      mini = new TwoByTwo(x,y,_ppb,&qalign[0]._twobyone[0],_config.gainMap(),
                           f,s,g,rms);
     }
     ~Detector() { delete mini; }
@@ -1003,9 +985,16 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
 
   ndarray<double,3> rms = get_calib(Calib::fopen(dInfo, "res", "pixel_rms"));
 
+  bool offl_type=false;
   sprintf(oname1,"geo.%08x.dat",info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
-  FILE* gm = Calib::fopen_dual(oname1, oname2, "geometry");
+  FILE* gm = Calib::fopen(dInfo,
+                          "geo", "geometry", false,
+                          &offl_type);
+  if (!offl_type) {
+    fclose(gm);
+    gm=0;
+  }
 
   CspadMiniGeometry::ConfigCache cfg(type,payload);
 
@@ -1036,6 +1025,7 @@ void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
     delete detector;
 
   detector = new CspadMiniGeometry::Detector(info(),cfg,f,s,g,rms,gm,max_pixels,_therm);
+  if (gm) { fclose(gm); }
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());
@@ -1043,7 +1033,7 @@ void CspadMiniHandler::_create_entry(const CspadMiniGeometry::ConfigCache& cfg,
                  detector->xpixels()/ppb, detector->ypixels()/ppb, 
                  ppb, ppb, 
                  f!=0, g!=0, false);
-  desc.set_scale(pixel_size*1e3,pixel_size*1e3);
+  desc.set_scale(pixel_size*1e-3,pixel_size*1e-3);
     
   detector->fill(desc,_cache);
 
@@ -1096,13 +1086,3 @@ void CspadMiniHandler::_damaged()
     _entry->invalid(); 
 }
 
-void _transform(double& x,double& y,double dx,double dy,Rotation r)
-{
-  switch(r) {
-  case D0  :    x += dx; y += dy; break;
-  case D90 :    x += dy; y -= dx; break;
-  case D180:    x -= dx; y -= dy; break;
-  case D270:    x -= dy; y += dx; break;
-  default:                        break;
-  }
-}

@@ -44,6 +44,8 @@ namespace Ami {
       int  configure       (iovec*) ;
       int  configured      () ;
       void discovered      (const DiscoveryRx&) ;
+      void beginRun        (unsigned);
+      void endRun          (unsigned);
       int  read_description(Socket&,int) ;
       int  read_payload    (Socket&,int) ;
       bool svc             () const;
@@ -64,6 +66,7 @@ namespace Ami {
       void queue_autosave();
       void autosave();
       void autoload();
+      void run_snapshot();
 
       void set_filters();
       void l3t_export();
@@ -93,6 +96,7 @@ namespace Ami {
       QListWidget*   _detList;
       QPrinter*      _printer;
       QTimer*        _autosave_timer;
+      QTimer*        _snapshot_timer;
       RateDisplay*   _rate_display;
       pthread_mutex_t _mutex;
       pthread_cond_t _condition;

@@ -235,6 +235,12 @@ void EnvClient::load(const char*& p)
   update_configuration();
 }
 
+void EnvClient::snapshot(const QString& dir) const 
+{
+  for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++)
+    (*it)->snapshot(dir);
+}
+
 void EnvClient::save_plots(const QString& p) const 
 {
   for(std::list<EnvPlot*>::const_iterator it=_plots.begin(); it!=_plots.end(); it++) {

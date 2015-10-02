@@ -37,6 +37,7 @@ namespace Ami {
       const QString& title() const;
       virtual void save(char*&) const;
       virtual void load(const char*&);
+      void snapshot(const QString&) const;
       void save_plots(const QString&) const;
       void reset_plots();
     public:

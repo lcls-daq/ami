@@ -33,6 +33,8 @@ namespace Ami {
   public:
     void discover  ();
     void discover_post();
+    void beginRun  (unsigned);
+    void endRun    (unsigned);
   public:
     void register_key(unsigned, int);
     void discover_key(unsigned);
