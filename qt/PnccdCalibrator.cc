@@ -128,8 +128,12 @@ void PnccdCalibrator::acquire()
 void PnccdCalibrator::writecal()
 {
   bool lProd = QString(getenv("HOME")).endsWith("opr");
-  PnccdCalib::save_pedestals(_ped  .entry(),_parent->_roBox->isChecked(),lProd);
-  PnccdCalib::save_cmth     (_noise.entry(),_parent->_roBox->isChecked(),lProd,
+  PnccdCalib::save_pedestals(_ped  .entry(),
+                             _parent->rotation(),
+                             lProd);
+  PnccdCalib::save_cmth     (_noise.entry(),
+                             _parent->rotation(),
+                             lProd,
                              _factor->text().toDouble());
   _ped  .hide();
   _noise.hide();

@@ -3,7 +3,10 @@
 
 #include "ami/qt/ImageClient.hh"
 
+#include "ami/data/DescImage.hh"
+
 class QCheckBox;
+class QComboBox;
 
 namespace Ami {
   namespace Qt {
@@ -26,12 +29,14 @@ namespace Ami {
 		      unsigned nchannels);
       void _setup_payload(Cds&);
       void _update();
+    protected:
+      Rotation rotation() const;
     private:
       //  Specialization widgets
       PnccdCalibrator* _calibrator;
       QCheckBox* _fnBox;
       QCheckBox* _npBox;
-      QCheckBox* _roBox;
+      QComboBox* _roBox;
       bool _reloadPedestals;
 
       friend class PnccdCalibrator;

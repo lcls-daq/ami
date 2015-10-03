@@ -9,8 +9,10 @@
 #include "ami/data/DescEntry.hh"
 
 #include <QtGui/QCheckBox>
+#include <QtGui/QComboBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
+#include <QtGui/QLabel>
 
 using namespace Ami::Qt;
 
@@ -27,11 +29,23 @@ PnccdClient::PnccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
-  addWidget(_roBox = new QCheckBox("Rotate\nDisplay"));
 
+  { QChar degree(0x00B0);
+    _roBox = new QComboBox;
+    _roBox->addItem(QString("  0"));
+    _roBox->addItem(QString(" 90%1").arg(degree));
+    _roBox->addItem(QString("180%1").arg(degree));
+    _roBox->addItem(QString("270%1").arg(degree));
+    QWidget* w = new QWidget;
+    QHBoxLayout* hl = new QHBoxLayout;
+    hl->addWidget(_roBox);
+    hl->addWidget(new QLabel("Rotate\nDisplay"));
+    w->setLayout(hl);
+    addWidget(w); }
+    
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
-  connect(_roBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_roBox, SIGNAL(currentIndexChanged(int)), this, SIGNAL(changed()));
 }
 
 PnccdClient::~PnccdClient() {}
@@ -41,7 +55,7 @@ void PnccdClient::save(char*& p) const
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
-  XML_insert(p, "QCheckBox", "_roBox", QtPersistent::insert(p,_roBox->isChecked()) );
+  XML_insert(p, "QComboBox", "_roBox", QtPersistent::insert(p,_roBox->currentIndex()) );
 }
 
 void PnccdClient::load(const char*& p)
@@ -54,7 +68,7 @@ void PnccdClient::load(const char*& p)
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_roBox")
-      _roBox->setChecked(QtPersistent::extract_b(p));
+      _roBox->setCurrentIndex(QtPersistent::extract_i(p));
   XML_iterate_close(PnccdClient,tag);
 }
 
@@ -68,7 +82,7 @@ void PnccdClient::_configure(char*& p,
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= PnccdCalib::option_correct_common_mode();
   if (_npBox->isChecked()) o |= PnccdCalib::option_no_pedestal();
-  if (_roBox->isChecked()) o |= PnccdCalib::option_rotate();
+  o |= PnccdCalib::option_rotate(rotation());
   if (_reloadPedestals) {
     o |= PnccdCalib::option_reload_pedestal();
     _reloadPedestals = false;
@@ -91,3 +105,5 @@ void PnccdClient::_update()
   _calibrator->update();
   ImageClient::_update();
 }
+
+Ami::Rotation PnccdClient::rotation() const { return Rotation(_roBox->currentIndex()); }

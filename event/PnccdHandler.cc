@@ -112,20 +112,6 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
 
   Ami::Rotation r(D0);
 
-  /*
-  char oname1[256];
-  char oname2[256];
-  sprintf(oname1,"rot.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/pnccdcalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"rotation");
-  if (f) {
-    r = Ami::D0;
-    fclose(f);
-  }
-  else
-    r = Ami::D90;
-  */
-
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		 cols / PixelsPerBin,
@@ -221,32 +207,69 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
           mrow[i] -= cm;
       }
 
+    Ami::Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
-      unsigned iy = (j+y)>>1;
-      if ((_entry->desc().options() & PnccdCalib::option_rotate())==0) {
-        for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+      switch (r) {
+      case D0:
+        { unsigned iy = (y+j)>>1;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],ix>>1,iy);
+            else
+              _entry->   content(row[i],ix>>1,iy);
+        } break;
+      case D90:
+        { unsigned iy = (y+j)>>1;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],iy,ix>>1);
+            else
+              _entry->   content(row[i],iy,ix>>1);
+        } break;
+      case D180:
+        { unsigned iy = (1023-y-j)>>1;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
           if ((i&1) || (j&1))
             _entry->addcontent(row[i],ix>>1,iy);
           else
             _entry->   content(row[i],ix>>1,iy);
-      }
-      else {
-        for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
+        } break;
+      case D270:
+        { unsigned iy = (1023-y-j)>>1;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
           if ((i&1) || (j&1))
             _entry->addcontent(row[i],iy,ix>>1);
           else
             _entry->   content(row[i],iy,ix>>1);
+        } break;
+      default:
+        break;
       }
     }
     else {
-      unsigned iy = y+j;
-      if ((_entry->desc().options() & PnccdCalib::option_rotate())==0) {
-        for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
-          _entry->content(row[i],ix,iy);
-      }
-      else {
-        for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
-          _entry->content(row[i],iy,ix);
+      switch(r) {
+      case D0:
+        { unsigned iy = y+j;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+            _entry->content(row[i],ix,iy);
+        } break;
+      case D90:
+        { unsigned iy = y+j;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
+            _entry->content(row[i],iy,ix);
+        } break;
+      case D180:
+        { unsigned iy = (1023-y-j);
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
+            _entry->content(row[i],ix,iy);
+        } break;
+      case D270:
+        { unsigned iy = (1023-y-j);
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+            _entry->content(row[i],iy,ix);
+        } break;
+      default:
+        break;
       }
     }
   }
@@ -281,32 +304,69 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
           mrow[i] -= cm;
       }
 
+    Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
-      unsigned iy = (y-j)>>1;
-      if ((_entry->desc().options() & PnccdCalib::option_rotate())==0) {
-        for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
-          if ((i&1) || (j&1))
-            _entry->addcontent(row[i],ix>>1,iy);
-          else
-            _entry->   content(row[i],ix>>1,iy);
-      }
-      else {
-        for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
-          if ((i&1) || (j&1))
-            _entry->addcontent(row[i],iy,ix>>1);
-          else
-            _entry->   content(row[i],iy,ix>>1);
+      switch(r) {
+      case D0:
+        { unsigned iy = (y-j)>>1;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],ix>>1,iy);
+            else
+              _entry->   content(row[i],ix>>1,iy);
+        } break;
+      case D90:
+        { unsigned iy = (y-j)>>1;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],iy,ix>>1);
+            else
+              _entry->   content(row[i],iy,ix>>1);
+        } break;
+      case D180:
+        { unsigned iy = j>>1;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],ix>>1,iy);
+            else
+              _entry->   content(row[i],ix>>1,iy);
+        } break;
+      case D270:
+        { unsigned iy = j>>1;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+            if ((i&1) || (j&1))
+              _entry->addcontent(row[i],iy,ix>>1);
+            else
+              _entry->   content(row[i],iy,ix>>1);
+        } break;
+      default:
+        break;
       }
     }
     else {
-      unsigned iy = y-j;
-      if ((_entry->desc().options() & PnccdCalib::option_rotate())==0) {
-        for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+      switch(r) {
+      case D0:
+        { unsigned iy = y-j;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
           _entry->content(row[i],ix,iy);
-      }
-      else {
-        for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
+        } break;
+      case D90:
+        { unsigned iy = y-j;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
           _entry->content(row[i],iy,ix);
+        } break;
+      case D180:
+        { unsigned iy = j;
+          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
+            _entry->   content(row[i],ix,iy);
+        } break;
+      case D270:
+        { unsigned iy = j;
+          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+            _entry->   content(row[i],iy,ix);
+        } break;
+      default:
+        break;
       }
     }
   }

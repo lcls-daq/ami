@@ -15,16 +15,17 @@ using namespace Ami;
 static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
 static const unsigned _option_correct_common_mode = 0x04;
-static const unsigned _option_rotate              = 0x08;
+static const unsigned _option_rotate              = 0x18;
 
 unsigned PnccdCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned PnccdCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned PnccdCalib::option_correct_common_mode() { return _option_correct_common_mode; }
-unsigned PnccdCalib::option_rotate             () { return _option_rotate; }
+unsigned PnccdCalib::option_rotate             (Rotation r) { return (r&3)<<3; }
+Rotation PnccdCalib::option_rotate             (unsigned r) { return Rotation((r>>3)&3); }
 
 std::string PnccdCalib::save_pedestals(const Entry* entry,
-                                       bool   lrotated,
-                                       bool   prod)
+                                       Rotation     r,
+                                       bool         prod)
 {
   const EntryImage& image = *static_cast<const EntryImage*>(entry);
   const DescImage&  desc  = image.desc();
@@ -68,10 +69,22 @@ std::string PnccdCalib::save_pedestals(const Entry* entry,
     unsigned ny = desc.nbinsy()*ppb;
     for(unsigned i=0; i<ny; i++) {
       for(unsigned j=0; j<nx; j++) {
-        if (!lrotated)
+        switch(r) {
+        case D0:
           fprintf(fn,"%f ",pedestals[i][j]);
-        else
+          break;
+        case D90:
           fprintf(fn,"%f ",pedestals[nx-j-1][i]);
+          break;
+        case D180:
+          fprintf(fn,"%f ",pedestals[ny-i-1][nx-j-1]);
+          break;
+        case D270:
+          fprintf(fn,"%f ",pedestals[j][ny-i-1]);
+          break;
+        default:
+          break;
+        }
       }
       fprintf(fn,"\n");
     }
@@ -146,112 +159,10 @@ ndarray<double,2> PnccdCalib::load_pedestals(const DescImage& d,
   return ndarray<double,2>();
 }
 
-/**
- **  Need to move offline calib loading to routine above
- **
-void PnccdCalib::load_pedestals(EntryImage* correct,
-                                Rotation r,
-                                bool no_cache) 
-{
-  //
-  //  Load calibration from a file
-  //    Always read and write values for each pixel (even when binned)
-  //
-  const DescImage& d = correct->desc();
-  bool offl_type;
-  FILE* f = Calib::fopen(d.info(),"ped","pedestals",no_cache,&offl_type);
-  if (f) {
-    const unsigned ppb  = d.ppxbin();
-    ndarray<double,2> pedestals = make_ndarray<double>(1024,1024);
-
-    if (offl_type) {
-    size_t sz = 8 * 1024;
-    char* linep = (char *)malloc(sz);
-    memset(linep, 0, sz);
-    char* pEnd = linep;
-
-      for(unsigned i=0; i<512; i++) {
-        double* p = &pedestals[i][0];
-        getline(&linep, &sz, f);
-        *p++ = strtod(linep,&pEnd);
-        for(unsigned j=1; j<512; j++)
-          *p++ = strtod(pEnd,&pEnd);
-      }
-      for(unsigned i=1023; i>=512; i--) {
-        double* p = &pedestals[i][511];
-        getline(&linep, &sz, f);
-        *p-- = strtod(linep,&pEnd);
-        for(unsigned j=1; j<512; j++)
-          *p-- = strtod(pEnd,&pEnd);
-      }
-      for(unsigned i=1023; i>=512; i--) {
-        double* p = &pedestals[i][1023];
-        getline(&linep, &sz, f);
-        *p-- = strtod(linep,&pEnd);
-        for(unsigned j=1; j<512; j++)
-          *p-- = strtod(pEnd,&pEnd);
-      }
-      for(unsigned i=0; i<512; i++) {
-        double* p = &pedestals[i][512];
-        getline(&linep, &sz, f);
-        *p++ = strtod(linep,&pEnd);
-        for(unsigned j=1; j<512; j++)
-          *p++ = strtod(pEnd,&pEnd);
-      }
-    }
-    else {
-      for(unsigned i=0; i<1024; i++) {
-        double* p = &pedestals[i][0];
-        getline(&linep, &sz, f);
-        *p++ = strtod(linep,&pEnd);
-        for(unsigned j=1; j<1024; j++)
-          *p++ = strtod(pEnd,&pEnd);
-      }
-    }
-    
-    free(linep);
-    fclose(f);
-
-    if (offl_type)
-      r = Rotation((r+NPHI-1)%NPHI);
-
-    for(unsigned iy=0; iy<d.nbinsy(); iy++)
-      for(unsigned ix=0; ix<d.nbinsx(); ix++) {
-        unsigned v = 0;
-        for(unsigned i=0; i<ppb; i++)
-          for(unsigned j=0; j<ppb; j++)
-            v += unsigned(pedestals[iy*ppb + i][ix*ppb + j]);
-        //
-        //  Rotate the pedestal correction here rather 
-        //  than in the PnncdHandler::event method
-        //
-        switch(r) {
-        case D0:
-          correct->content(v,ix,iy);
-          break;
-        case D90:
-          correct->content(v,d.nbinsy()-1-iy,ix);
-          break;
-        case D180:
-          correct->content(v,d.nbinsx()-1-ix,d.nbinsy()-1-iy);
-          break;
-        case D270:
-          correct->content(v,iy,d.nbinsx()-1-ix);
-          break;
-        default:
-          break;
-        }
-      }
-  }
-  else
-    memset(correct->contents(), 0, d.nbinsx()*d.nbinsy()*sizeof(unsigned)); 
-}
-**/
-
 std::string PnccdCalib::save_cmth(const Entry* entry,
-                                  bool   lrotated,
-                                  bool   prod,
-                                  double factor)
+                                  Rotation     r,
+                                  bool         prod,
+                                  double       factor)
 {
   const EntryImage& image = *static_cast<const EntryImage*>(entry);
   const DescImage&  desc  = image.desc();
@@ -261,24 +172,24 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
 
   const ndarray<const uint32_t,2> cont = image.content();
   ndarray<uint32_t,2> a;  // unrotated data
-
-  if (!lrotated) {
+  
+  switch(r) {
+  case D0:
     a = make_ndarray<uint32_t>(cont.shape()[0]*ppb,cont.shape()[1]*ppb);
     for(unsigned i=0; i<cont.shape()[0]; i++)
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
             a[i*ppb+i1][j*ppb+j1] = cont[i][j];
-  }
-  else {
+    break;
+  case D90:
     a = make_ndarray<uint32_t>(cont.shape()[1]*ppb,cont.shape()[0]*ppb);
     for(unsigned i=0; i<cont.shape()[0]; i++)
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
             a[i*ppb+i1][j*ppb+j1] = cont[nx-j][i];
-  }
-  /**
+    break;
   case D180:      
     a = make_ndarray<uint32_t>(cont.shape()[0]*ppb,cont.shape()[1]*ppb);
     for(unsigned i=0; i<cont.shape()[0]; i++)
@@ -298,7 +209,6 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
   default:
     break;
   }
-  **/
 
   ndarray<double,2> cmth = make_ndarray<double>(a.shape()[0],8);
 
@@ -315,19 +225,19 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
   char tbuf[64];
   sprintf(tbuf,"%08x.dat",desc.info().phy());
   std::string oname;
-    
+
   if (prod)
     oname = std::string("/reg/g/pcds/pds/pnccdcalib/cmth.") + tbuf;
   else
     oname = std::string("cmth.") + tbuf;
-    
+
   //  rename current pedestal file
   time_t t = time(0);
   strftime(tbuf,32,"%Y%m%d_%H%M%S",localtime(&t));
-  
+
   std::string nname = oname + "." + tbuf;
   rename(oname.c_str(),nname.c_str());
-  
+
   FILE* fn = fopen(oname.c_str(),"w");
   if (!fn) {
     rename(nname.c_str(),oname.c_str());
@@ -355,12 +265,12 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
   }
 }
 
-ndarray<double,2> PnccdCalib::load_cmth(const DescImage& d,
-                                          Rotation,
-                                          bool no_cache) 
-{
-  //
-  //  Load calibration from a file
+ ndarray<double,2> PnccdCalib::load_cmth(const DescImage& d,
+                                           Rotation,
+                                           bool no_cache) 
+ {
+   //
+   //  Load calibration from a file
   //    Always read and write values for each pixel (even when binned)
   //
   bool offl_type;
