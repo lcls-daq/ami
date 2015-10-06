@@ -5,6 +5,7 @@
 #include "ami/service/DumpCollector.hh"
 
 #include <stdlib.h>
+#include <getopt.h>
 
 using Ami::AmiApp;
 
