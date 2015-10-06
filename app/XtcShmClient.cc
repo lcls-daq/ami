@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "ami/app/XtcShmClient.hh"
 #include "ami/app/XtcClient.hh"
