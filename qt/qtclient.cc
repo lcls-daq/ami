@@ -15,6 +15,7 @@
 #include <QtGui/QPushButton>
 
 #include <stdio.h>
+#include <getopt.h>
 
 static void usage(char* p)
 {
