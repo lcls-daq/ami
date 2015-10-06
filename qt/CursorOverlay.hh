@@ -37,7 +37,7 @@ namespace Ami {
       QtPlot*            _frame;
       QString            _frame_name;
       QtBase*            _plot;
-      EntryScalarRange*  _auto_range;
+      const EntryScalarRange*  _auto_range;
       int                _order;
     };
   };

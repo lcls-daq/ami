@@ -82,7 +82,7 @@ namespace Ami {
       unsigned           _showMask;
       ConfigureRequestor _req;
 
-      EntryScalarRange*  _auto_range;
+      const EntryScalarRange*  _auto_range;
 
     public slots:
       void set_chrome_visible(bool);

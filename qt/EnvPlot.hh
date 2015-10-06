@@ -46,7 +46,7 @@ namespace Ami {
     private:
       QtBase*  _plot;
 
-      EntryAutoRange*    _auto_range;
+      const EntryAutoRange*    _auto_range;
       bool               _retry;
 
       SharedData*        _shared;
