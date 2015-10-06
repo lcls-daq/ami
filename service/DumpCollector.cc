@@ -4,6 +4,7 @@
 #include "ami/service/TSocket.hh"
 
 #include <poll.h>
+#include <unistd.h>
 
 #include <sstream>
 
