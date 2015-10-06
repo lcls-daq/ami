@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <stdio.h>
+#include <getopt.h>
 
 #include <fstream>
 #include <sstream>
