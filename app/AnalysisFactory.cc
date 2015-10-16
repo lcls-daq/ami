@@ -261,8 +261,6 @@ void AnalysisFactory::configure(unsigned       id,
         printf("AnalysisFactory::configure failed (null input) for ConfigureRequest::%s\n", reqType);
         printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
         input_cds.showentries();
-        if (req.input()>0)
-          abort();
       }
       else if (req.state()==ConfigureRequest::Create) {
         //
