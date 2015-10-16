@@ -61,7 +61,16 @@ libnames += PnccdModule
 libsrcs_PnccdModule := PnccdModule.cc
 libincs_PnccdModule := pdsdata/include ndarray/include boost/include
 
-#libnames += AmiEpics
-libsrcs_AmiEpics := AmiEpics.cc CspadTHandler.cc CspadMiniTHandler.cc PrincetonTHandler.cc
+libnames += AmiEpics
+libsrcs_AmiEpics := EpicsCA.cc AmiEpics.cc
+#libsrcs_AmiEpics := EpicsCA.cc AmiEpics.cc CspadTHandler.cc CspadMiniTHandler.cc PrincetonTHandler.cc
 libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_AmiEpics := epics/ca
+
+libnames += IpmSumEScan
+libsrcs_IpmSumEScan := IpmSumEScan.cc
+libincs_IpmSumEScan := pdsdata/include ndarray/include boost/include
+
+libnames += XPPIpmLODCM
+libsrcs_XPPIpmLODCM := XPPIpmLODCM.cc
+libincs_XPPIpmLODCM := pdsdata/include ndarray/include boost/include

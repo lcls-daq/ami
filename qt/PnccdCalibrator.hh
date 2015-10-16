@@ -37,6 +37,7 @@ namespace Ami {
     public slots:
       void acquire ();
       void writecal();   // configure the plot
+      void reload  ();   // reload the calibrations
     signals:
       void changed();
     private:

@@ -49,10 +49,14 @@ PnccdCalibrator::PnccdCalibrator(PnccdClient* parent) :
     hl->addWidget(_factor);
     layout->addLayout(hl); }
   layout->addWidget(_saveB);
+
+  QPushButton* reloadB = new QPushButton("Reload Calibration");
+  layout->addWidget(reloadB);
   setLayout(layout);
 
-  connect(_acqB , SIGNAL(clicked()), this, SLOT(acquire()));
-  connect(_saveB, SIGNAL(clicked()), this, SLOT(writecal()));
+  connect(_acqB  , SIGNAL(clicked()), this, SLOT(acquire ()));
+  connect(_saveB , SIGNAL(clicked()), this, SLOT(writecal()));
+  connect(reloadB, SIGNAL(clicked()), this, SLOT(reload  ()));
 }
 
 PnccdCalibrator::~PnccdCalibrator()
@@ -137,6 +141,12 @@ void PnccdCalibrator::writecal()
                              _factor->text().toDouble());
   _ped  .hide();
   _noise.hide();
+  _parent->_reloadPedestals=true;
+  emit changed();
+}
+
+void PnccdCalibrator::reload()
+{
   _parent->_reloadPedestals=true;
   emit changed();
 }
