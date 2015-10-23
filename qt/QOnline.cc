@@ -17,6 +17,7 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/errno.h>
+#include <unistd.h>
 
 static FILE* open_pref(const char* title, unsigned platform, const char* mode)
 {

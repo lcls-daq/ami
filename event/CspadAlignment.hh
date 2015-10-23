@@ -20,9 +20,12 @@ namespace Ami {
 
     class QuadAlignment {
     public:
+      //      QuadAlignment();
+    public:
       struct TwoByOneAlignment _twobyone[8];
     public:
-      static QuadAlignment* load(FILE*, bool offline=false);
+      static QuadAlignment* load   (FILE*, bool offline=false);
+      static QuadAlignment* load2x2(FILE*, bool offline=false);
     };
   }
 }

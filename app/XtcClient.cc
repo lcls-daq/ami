@@ -438,7 +438,7 @@ int XtcClient::process(Pds::Xtc* xtc)
           nentries = h->nentries();
           if (nentries > 0) {
             fprintf(stderr, "XtcClient::process: nentries=%d for new handler %p info %s type %s!\n", nentries, h, infoName, typeName);
-            *((char *) nentries) = 0; // force segfault for debugging
+            abort();
           }
         }
 #endif

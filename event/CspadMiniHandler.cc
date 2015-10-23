@@ -671,7 +671,7 @@ namespace CspadMiniGeometry {
 
       const Ami::Cspad::QuadAlignment* qalign = qalign_def;
       if (gm) {
-         qalign = Ami::Cspad::QuadAlignment::load(gm,true);
+         qalign = Ami::Cspad::QuadAlignment::load2x2(gm,true);
          for(unsigned k=0; k<2; k++)
            printf("  2x1[%d]: %f %f %d\n", 
                   k,
@@ -991,10 +991,6 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   FILE* gm = Calib::fopen(dInfo,
                           "geo", "geometry", false,
                           &offl_type);
-  if (!offl_type) {
-    fclose(gm);
-    gm=0;
-  }
 
   CspadMiniGeometry::ConfigCache cfg(type,payload);
 

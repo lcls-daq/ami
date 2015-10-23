@@ -1010,7 +1010,7 @@ namespace CspadGeometry {
       FILE *gm = Calib::fopen(static_cast<const Pds::DetInfo&>(src),
                               "geo", "geometry", false,
                               &offl_type);
-      if (gm && offl_type) {
+      if (gm) {
         qalign = Ami::Cspad::QuadAlignment::load(gm,offl_type);
         { for(unsigned j=0; j<4; j++) {
             printf("Quad %d:\n", j);
