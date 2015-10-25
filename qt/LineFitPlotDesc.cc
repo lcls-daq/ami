@@ -113,9 +113,9 @@ Ami::DescEntry* LineFitPlotDesc::desc(const char* title) const
   Ami::DescEntry::Stat stat;
   std::string          stat_name;
   switch(_stat->currentIndex()) {
-  case Slope    : stat=Ami::DescEntry::Slope; stat_name="slope"; break;
   case Intercept: stat=Ami::DescEntry::Intercept; stat_name="intercept"; break;
-  default: break;
+  case Slope    :
+  default:        stat=Ami::DescEntry::Slope; stat_name="slope"; break;
   }
 
   const char* method_str = Ami::LineFit::method_str(Ami::LineFit::Method(_method->currentIndex()));
