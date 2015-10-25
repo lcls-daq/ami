@@ -986,8 +986,6 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   ndarray<double,3> rms = get_calib(Calib::fopen(dInfo, "res", "pixel_rms"));
 
   bool offl_type=false;
-  sprintf(oname1,"geo.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/geo.%08x.dat",info().phy());
   FILE* gm = Calib::fopen(dInfo,
                           "geo", "geometry", false,
                           &offl_type);

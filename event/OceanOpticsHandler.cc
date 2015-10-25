@@ -101,7 +101,7 @@ void OceanOpticsHandler::_event    (Pds::TypeId typeId, const void* payload, con
     return;
 
 #define PLOT_CORR(cfg,dat) {                                            \
-    const Pds::OceanOptics::dat* d = (Pds::OceanOptics::dat*)payload;   \
+    const Pds::OceanOptics::dat* d = reinterpret_cast<const Pds::OceanOptics::dat*>(payload); \
     const Pds::OceanOptics::cfg& c = *reinterpret_cast<const Pds::OceanOptics::cfg*>(_configBuffer); \
     if (c.nonlinCorrect()[0]==0) {                                      \
       ndarray<const uint16_t,1> a = d->data();                          \

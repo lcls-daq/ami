@@ -28,7 +28,7 @@ namespace Ami {
     //OceanOpticsHandler(const Pds::DetInfo& info,
     //       const Pds::OceanOptics::ConfigV1& config);
   private:
-    uint32_t _configBuffer[sizeof(Pds::OceanOptics::ConfigV2)/sizeof(uint32_t)];
+    char _configBuffer[sizeof(Pds::OceanOptics::ConfigV2)];
     int  _iConfigVer;
     enum { MaxEntries=32 };
     unsigned       _nentries;
