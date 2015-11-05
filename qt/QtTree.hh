@@ -14,7 +14,7 @@ namespace Ami {
     class QtTree : public QPushButton {
       Q_OBJECT
     public:
-      QtTree(const QString& separator);
+      QtTree(const QString& separator="[]");
       QtTree(const QStringList&, const QStringList&, const QColor&,
              const QString& separator,
              const QStringList& pnames=QStringList());

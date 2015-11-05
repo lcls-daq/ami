@@ -5,7 +5,7 @@
 using namespace Ami::Qt;
 
 FeatureTree::FeatureTree(FeatureRegistry* r) :
-  QtTree     (":"),
+  QtTree     ("[:_]"),
   _registry  (r ? r : &FeatureRegistry::instance(Ami::PreAnalysis))
 {
   fill(_registry->names());
@@ -17,7 +17,7 @@ FeatureTree::FeatureTree(FeatureRegistry* r) :
 }
 
 FeatureTree::FeatureTree(const QStringList& names, const QStringList& help, const QColor& color) :
-  QtTree     (names,help,color,":"),
+  QtTree     (names,help,color,"[:_]"),
   _registry  (0)
 {
 }

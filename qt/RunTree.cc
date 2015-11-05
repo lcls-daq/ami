@@ -2,8 +2,7 @@
 
 using namespace Ami::Qt;
 
-RunTree::RunTree() :
-  QtTree("")
+RunTree::RunTree()
 {
   connect(this, SIGNAL(activated(const QString&)), this, SLOT(changeIndex(const QString&)));
 }

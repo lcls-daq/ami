@@ -6,6 +6,8 @@
 
 #include <stdio.h>
 
+//#define DBUG
+
 using namespace Ami::Qt;
 
 static QStringList _most_recent;
@@ -13,13 +15,47 @@ const int MOST_RECENT_DISPLAY = 8;
 const int MOST_RECENT_SIZE    = 10;
 static QStringList _favorites;
 
+//
+//  Split 'str' at occurrences of 'sep'.  Keep 'sep' at trail of pieces.
+//
+static QStringList split(const QString& str,
+                         const QString& sepstr,
+                         int            level,
+                         int            length=-1)
+{
+  QRegExp sep(sepstr);
+  QStringList l = str.split(sep,QString::SkipEmptyParts).mid(level,length);
+  int pos=0;
+  for(int i=0; i<l.size(); i++) {
+    QString& s = l[i];
+    pos = str.indexOf(s, pos) + s.size();
+    if (pos < str.size())
+      s.append(str.at(pos));
+  }
+  return l;
+}
+
+#ifdef DBUG
+static void dump_list(const char* ttl,
+                      const QString& name,
+                      const QStringList& name_f)
+{ 
+  printf("%s [%s]:", ttl, qPrintable(name));
+  for(int i=0; i<name_f.size(); i++)
+    printf(" [%s]", qPrintable(name_f[i]));
+  printf("\n"); 
+}
+#endif
+
 static void push(QStandardItem& root, 
                  const QString& name, 
                  int level,
                  const QString& separator)
 {
-  QStringList name_f = name.split(separator,QString::SkipEmptyParts).mid(level);
-
+  QStringList name_f = split(name,separator,level);
+#ifdef DBUG
+  dump_list("push",name,name_f);
+#endif
   if (name_f.size()==0) {
     root.insertRow(0, new QStandardItem(name) );
     return;
@@ -27,8 +63,10 @@ static void push(QStandardItem& root,
 
   for(int i=0; i<root.rowCount(); i++) {
     QStandardItem& row = *root.child(i);
-    QStringList row_f = row.text().split(separator,QString::SkipEmptyParts).mid(level);
-
+    QStringList row_f = split(row.text(),separator,level);
+#ifdef DBUG
+    dump_list("push row",row.text(),row_f);
+#endif    
     //  If they share any leading fields:
     if (name_f.size() && row_f.size() && 
         name_f[0]==row_f[0] &&
@@ -50,13 +88,23 @@ static void push(QStandardItem& root,
       }
       else {
         //  Create a new root with these two children
-        QStringList common = name.split(separator,QString::SkipEmptyParts).mid(0,level);
+        QStringList common = split(name,separator,0,level);
+#ifdef DBUG
+        dump_list("push common in",name,common);
+#endif
         //        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
         while( name_f.size()>1 && row_f.size() && name_f[0] == row_f[0] ) {
           common.append( name_f.takeFirst() );
           row_f.takeFirst();
         }
-        QStandardItem* branch = new QStandardItem( common.join(separator) );
+        //        QStandardItem* branch = new QStandardItem( common.join(separator) );
+        QString common_branch = common.join("");
+#ifdef DBUG
+        printf("common_branch [%s]\n",qPrintable(common_branch));
+        dump_list("common name",name,name_f);
+        dump_list("common row ",row.text(),row_f);
+#endif
+        QStandardItem* branch = new QStandardItem( common_branch );
         root.takeRow(i);
         root.insertRow( i, branch );
         branch->appendRow( &row );
