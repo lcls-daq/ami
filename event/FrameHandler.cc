@@ -2,6 +2,8 @@
 
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
+#include "ami/event/FrameCalib.hh"
+#include "ami/event/Calib.hh"
 #include "pdsdata/psddl/camera.ddl.h"
 #include "pdsdata/psddl/opal1k.ddl.h"
 
@@ -77,6 +79,7 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
 		   columns, rows, ppb, ppb);
     _entry = new EntryImage(desc);
     _entry->invalid();
+    _load_pedestals();
   }
 }
 
@@ -92,15 +95,92 @@ void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
 
   const DescImage& desc = _entry->desc();
 
+  unsigned o = desc.options();
+  if (_options != o) {
+    printf("FrameHandler options %x -> %x\n",_options,o);
+    _options = desc.options();
+  }
+  
+  if (desc.options() & FrameCalib::option_reload_pedestal()) {
+    _load_pedestals();
+    _entry->desc().options( desc.options()&~FrameCalib::option_reload_pedestal() );
+  }
+  
   const Pds::Camera::FrameV1& f = *reinterpret_cast<const Pds::Camera::FrameV1*>(payload);
-  if (f.depth()>8)
-    _entry->content(f.data16());
-  else
-    _entry->content(f.data8());
-
+  if (f.depth()>8) {
+    if (_pedestals.size() && 
+        (desc.options()&FrameCalib::option_no_pedestal())==0) {
+      ndarray<const uint16_t,2> fr = f.data16();
+      ndarray<uint16_t,2> fc = make_ndarray<uint16_t>(fr.shape()[0],
+                                                      fr.shape()[1]);
+      for(unsigned i=0; i<fr.shape()[0]; i++) {
+        uint16_t*       pc = &fc[i][0];
+        const uint16_t* pf = &fr[i][0];
+        const int*      pp = &_pedestals[i][0];
+        for(unsigned j=0; j<fr.shape()[1]; j++)
+          pc[j] = pf[j]-pp[j];
+      }
+      _entry->content(fc);
+    }
+    else
+      _entry->content(f.data16());
+  }
+  else {
+    if (_pedestals.size() &&
+        (desc.options()&FrameCalib::option_no_pedestal())==0) {
+      ndarray<const uint8_t,2> fr = f.data8();
+      ndarray<uint8_t,2> fc = make_ndarray<uint8_t>(fr.shape()[0],
+                                                    fr.shape()[1]);
+      for(unsigned i=0; i<fr.shape()[0]; i++) {
+        uint8_t*      pc = &fc[i][0];
+        const uint8_t* pf = &fr[i][0];
+        const int*     pp = &_pedestals[i][0];
+        for(unsigned j=0; j<fr.shape()[1]; j++)
+          pc[j] = pf[j]-pp[j];
+      }
+      _entry->content(fc);
+    }
+    else
+      _entry->content(f.data8());
+  }
   _entry->info(f.offset()*desc.ppxbin()*desc.ppybin(),EntryImage::Pedestal);
   _entry->info(1,EntryImage::Normalization);
   _entry->valid(t);
 }
 
 void FrameHandler::_damaged() { if (_entry) _entry->invalid(); }
+
+void FrameHandler::_load_pedestals()
+{
+  //
+  //  Load pedestals.  The dimensions must match the readout configuration.
+  //
+  _pedestals = make_ndarray<int>(0U,0U);
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+  FILE* fp = Calib::fopen(det, "ped", "pedestals");
+  if (fp) {
+    ndarray<double,2> pedestals = FrameCalib::load_darray(fp);
+    const DescImage& desc = _entry->desc();
+    unsigned rows    = desc.nbinsy()*desc.ppybin();
+    unsigned columns = desc.nbinsx()*desc.ppxbin();
+    if (pedestals.size()) {
+      if (pedestals.shape()[0]!=rows ||
+          pedestals.shape()[1]!=columns) {
+        printf("FrameHandler[%s] retrieved pedestals of size [%d,%d] != image size [%d,%d]\n",
+               DetInfo::name(static_cast<const DetInfo&>(info())),
+               pedestals.shape()[0],pedestals.shape()[1],
+               rows,columns);
+      }
+      else {
+        printf("FrameHandler[%s] retrieved pedestals (%d,%d)\n",
+               DetInfo::name(static_cast<const DetInfo&>(info())),
+               rows,columns);
+        _pedestals = make_ndarray<int>(rows,columns);
+        const double* pp = pedestals.data();
+        for(int* p = _pedestals.begin(); p!=_pedestals.end(); p++, pp++)
+          *p = int(*pp+0.5);
+      }
+    }
+    fclose(fp);
+  }        
+}

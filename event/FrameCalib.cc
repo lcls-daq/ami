@@ -611,10 +611,10 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
 
     if (maxc != max_columns ||
 	row  != max_rows) {
-      ndarray<double,2> b = make_ndarray<double>(row,maxc);
-      for(unsigned i=0; i<row; i++) {
+      ndarray<double,2> b = make_ndarray<double>(row/ppb,maxc/ppb);
+      for(unsigned i=0; i<row/ppb; i++) {
 	double* p = &b[i][0];
-	for(unsigned j=0; j<maxc; j++)
+	for(unsigned j=0; j<maxc/ppb; j++)
 	  p[j] = a[i][j];
       }
       a = b;

@@ -64,6 +64,10 @@ void FrameClient::_configure(char*& p,
   ImageClient::_configure(p,input,output,ch,signatures,nchannels);
 }
 
+void FrameClient::retain_pedestals(bool v)
+{
+}
+
 void FrameClient::write_pedestals()
 {
   QString name;

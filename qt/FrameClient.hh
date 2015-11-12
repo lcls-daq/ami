@@ -23,6 +23,7 @@ namespace Ami {
 		      int* signatures, 
 		      unsigned nchannels);
     public slots:
+      void retain_pedestals(bool);
       void write_pedestals();
     private:
       //  Specialization widgets

@@ -437,22 +437,22 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::EpixSampler:
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel, name); break;
+    case Pds::DetInfo::Timepix  :
+    case Pds::DetInfo::Princeton:
+    case Pds::DetInfo::Fli      :
+    case Pds::DetInfo::Pimax    :
+      client = new Ami::Qt::ImageClient   (this, info, channel, name);
+      break;
+    case Pds::DetInfo::Andor    :
     case Pds::DetInfo::Opal1000 :
     case Pds::DetInfo::Opal2000 :
     case Pds::DetInfo::Opal4000 :
     case Pds::DetInfo::Opal8000 :
-    case Pds::DetInfo::Quartz4A150 :
+    case Pds::DetInfo::OrcaFl40 :
     case Pds::DetInfo::Phasics  :
-    case Pds::DetInfo::Timepix  :
+    case Pds::DetInfo::Quartz4A150 :
     case Pds::DetInfo::Rayonix  :
     case Pds::DetInfo::TM6740   :
-    case Pds::DetInfo::Princeton:
-    case Pds::DetInfo::Fli      :
-    case Pds::DetInfo::Pimax    :
-    case Pds::DetInfo::OrcaFl40 :
-      client = new Ami::Qt::ImageClient   (this, info, channel, name);
-      break;
-    case Pds::DetInfo::Andor    :
       client = new Ami::Qt::FrameClient   (this, info, channel, name);
       break;
     case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel, name); break;

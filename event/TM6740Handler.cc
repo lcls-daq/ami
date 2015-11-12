@@ -26,15 +26,31 @@ static std::list<Pds::TypeId::Type> config_type_list()
 
 
 template <class T>
-void _rfill(const Pds::Camera::FrameV1& f, EntryImage& entry)
+void _rfill(const Pds::Camera::FrameV1& f, 
+            const ndarray<int,2>&       p,
+            EntryImage&                 entry)
 {
   const DescImage& desc = entry.desc();
+
+  const T* d = reinterpret_cast<const T*>(&f+1);
+
+  ndarray<T,2> fc;
+  if (p.size()) {
+    fc = make_ndarray<T>(p.shape()[0],
+                         p.shape()[1]);
+    for(unsigned i=0; i<fc.shape()[0]; i++) {
+      T*         pc = &fc[i][0];
+      const int* pp = &p[i][0];
+      for(unsigned j=0; j<fc.shape()[1]; j++)
+        pc[j] = *d++ - pp[j];
+    }
+    d = fc.data();
+  }
 
 #ifndef OPTROT
   //
   //  Functional, but poor use of L1 cache
   //
-  const T* d = reinterpret_cast<const T*>(&f+1);
   for(unsigned j=0; j<f.height(); j++) {
 #ifdef CLKWISE
     unsigned ix = desc.nbinsx()-1 - (desc.ppxbin()==2 ? j>>1 : j);
@@ -156,9 +172,9 @@ void TM6740Handler::_event    (Pds::TypeId, const void* payload, const Pds::Cloc
   memset(_entry->contents(),0,_entry->desc().nbinsx()*_entry->desc().nbinsy()*sizeof(unsigned));
 
   if (f.depth()>8)
-    _rfill<uint16_t>(f,*_entry);
+    _rfill<uint16_t>(f,_pedestals,*_entry);
   else
-    _rfill<uint8_t >(f,*_entry);
+    _rfill<uint8_t >(f,_pedestals,*_entry);
 
   _entry->valid(t);
 }

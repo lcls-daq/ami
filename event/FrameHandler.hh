@@ -3,6 +3,7 @@
 
 #include "ami/event/EventHandler.hh"
 #include "pdsdata/xtc/DetInfo.hh"
+#include "ndarray/ndarray.h"
 
 namespace Ami {
   class EntryImage;
@@ -29,10 +30,14 @@ namespace Ami {
     void _event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t);
     void _damaged  ();
   protected:
+    void _load_pedestals();
+  protected:
     FrameHandler(const Pds::DetInfo& info, const EntryImage*);
     EntryImage* _entry;
     unsigned    _defColumns;
     unsigned    _defRows;
+    ndarray<int,2> _pedestals;
+    unsigned       _options;
   };
 };
 
