@@ -170,7 +170,8 @@ double BinMathC::EntryImageTerm::evaluate() const {
     for(unsigned fn=0; fn<d.nframes(); fn++) {
       int xlo(_xlo), xhi(_xhi), ylo(_ylo), yhi(_yhi);
       if (d.xy_bounds(xlo, xhi, ylo, yhi, fn)) {
-        unsigned bounds[][2] = { {ylo, yhi}, {xlo, xhi} };
+        unsigned bounds[][2] = { {unsigned(ylo), unsigned(yhi)}, 
+                                 {unsigned(xlo), unsigned(xhi)} };
         ndarray<double,1> fm = psalg::moments(a, p, bounds);
         for(unsigned j=0; j<5; j++)
           m[j] += fm[j];

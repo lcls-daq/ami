@@ -24,6 +24,7 @@
 #include "ami/data/BlobFinder.hh"
 #include "ami/data/RectROI.hh"
 #include "ami/data/FIR.hh"
+#include "ami/data/RotateImage.hh"
 #include "ami/data/Droplet.hh"
 #include "ami/data/VAPlot.hh"
 #include "ami/data/LineFit.hh"
@@ -68,6 +69,7 @@ AbsOperator* OperatorFactory::_extract(const char*&     p,
   case AbsOperator::XYProjection  : o = new XYProjection  (p,input); break;
   case AbsOperator::RPhiProjection: o = new RPhiProjection(p,input); break;
   case AbsOperator::ContourProjection: o = new ContourProjection(p,input); break;
+  case AbsOperator::RotateImage   : o = new RotateImage       (p,input); break;
   case AbsOperator::EnvPlot   : o = new EnvPlot(p,_input,_output); break;
   case AbsOperator::TdcPlot   : o = new TdcPlot(p,input); break;
   case AbsOperator::FFT       : o = new FFT    (p,input); break;

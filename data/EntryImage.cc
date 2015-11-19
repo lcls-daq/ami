@@ -122,7 +122,7 @@ ndarray<uint32_t,2> EntryImage::contents(unsigned fn)
   unsigned shape[] = {f.ny,f.nx};
   ndarray<uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
 
-  int strides[] = {_desc.nbinsx(),1};
+  int strides[] = {int(_desc.nbinsx()),1};
   result.strides(strides);
 
   return result;
@@ -134,7 +134,7 @@ const ndarray<const uint32_t,2> EntryImage::contents(unsigned fn) const
   unsigned shape[] = {f.ny,f.nx};
   ndarray<const uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
 
-  int strides[] = {_desc.nbinsx(),1};
+  int strides[] = {int(_desc.nbinsx()),1};
   result.strides(strides);
 
   return result;
@@ -145,7 +145,7 @@ ndarray<uint32_t,2> EntryImage::contents(const SubFrame& f)
   unsigned shape[] = {f.ny,f.nx};
   ndarray<uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
 
-  int strides[] = {_desc.nbinsx(),1};
+  int strides[] = {int(_desc.nbinsx()),1};
   result.strides(strides);
 
   return result;
@@ -156,7 +156,7 @@ const ndarray<const uint32_t,2> EntryImage::contents(const SubFrame& f) const
   unsigned shape[] = {f.ny,f.nx};
   ndarray<const uint32_t,2> result(_y+f.x+f.y*_desc.nbinsx(),shape);
 
-  int strides[] = {_desc.nbinsx(),1};
+  int strides[] = {int(_desc.nbinsx()),1};
   result.strides(strides);
 
   return result;

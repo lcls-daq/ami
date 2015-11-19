@@ -18,6 +18,8 @@
 #include <errno.h>
 
 //#define DBUG
+#define Py_BEGIN_ALLOW_THREADS
+#define Py_END_ALLOW_THREADS
 
 using namespace Ami::Python;
 

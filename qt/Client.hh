@@ -15,6 +15,7 @@
 
 #include "ami/qt/QtPStack.hh"
 #include "ami/data/Cds.hh"
+#include "ami/data/ConfigureRequest.hh"
 #include "ami/service/Pool.hh"
 
 #include <QtGui/QHBoxLayout>
@@ -73,6 +74,10 @@ namespace Ami {
       Ami::Qt::Display& display  ();
       const Ami::Qt::Display& display  () const;
     protected:
+      virtual unsigned _preconfigure(char*&    p,
+                                     unsigned  input,
+                                     unsigned& output,
+                                     ConfigureRequest::Source&);
       virtual void _configure(char*& p, 
 			      unsigned input, 
 			      unsigned& output,
@@ -92,6 +97,7 @@ namespace Ami {
       Display*           _frame;
       const DescEntry*   _input_entry;
       unsigned           _input;
+      ConfigureRequest::Source _input_source;
 
     private:
       QString     _title;

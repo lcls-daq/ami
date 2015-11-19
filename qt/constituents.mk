@@ -157,6 +157,7 @@ libsrcs_amiqt += Rect.cc RectROI.cc RectROI_moc.cc
 libsrcs_amiqt += RectROIDesc.cc RectROIDesc_moc.cc
 libsrcs_amiqt += RectangleCursors.cc RectangleCursors_moc.cc
 libsrcs_amiqt += AnnulusCursors.cc AnnulusCursors_moc.cc
+libsrcs_amiqt += Rotator.cc
 libsrcs_amiqt += ImageIntegral.cc ImageContrast.cc
 libsrcs_amiqt += ImageFunctions.cc ImageFunctions_moc.cc
 libsrcs_amiqt += ImageContourProjection.cc ImageContourProjection_moc.cc

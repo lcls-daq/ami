@@ -119,6 +119,7 @@ static void* _alloc(Dgram& dg, unsigned size) {
   return dg.xtc.alloc(size);
 }
 
+#if 0
 static void _dump(const char* title, const Sequence& seq)
 {
   printf("%s %08x.%08x:%05x [%s]\n",
@@ -128,6 +129,7 @@ static void _dump(const char* title, const Sequence& seq)
          seq.stamp().fiducials(),
          TransitionId::name(seq.service()));
 }
+#endif
 
 Ami::Qt::XtcRun::XtcRun() : 
   _daqInit(false), 

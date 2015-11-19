@@ -92,7 +92,7 @@ void CspadClient::_configure(char*& p,
     o |= CspadCalib::option_reload_pedestal();
     _reloadPedestals=false;
   }
-  ConfigureRequest& req = *new(p) ConfigureRequest(input,o);
+  ConfigureRequest& req = *new(p) ConfigureRequest(_input,o);
   p += req.size();
 
   ImageClient::_configure(p,input,output,ch,signatures,nchannels);

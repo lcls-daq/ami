@@ -83,11 +83,12 @@ void PnccdCalibrator::save_plots(const QString& p) const
 {}
 
 void PnccdCalibrator::configure(char*& p, unsigned input, unsigned& output,
-                                ChannelDefinition* channels[], int* signatures, unsigned nchannels)
+                                ChannelDefinition* channels[], int* signatures, unsigned nchannels,
+                                ConfigureRequest::Source source)
 {
   if (_acquiring) {
-    _ped  .configure(p,input,output);
-    _noise.configure(p,input,output);
+    _ped  .configure(p,input,output,source);
+    _noise.configure(p,input,output,source);
   }
 }
 
@@ -157,7 +158,8 @@ PnccdCalibrator::Param::Param(QWidget* parent, QString title, AbsOperator* op) :
   _op       (op),
   _signature(0),
   _entry    (0),
-  _result   (0)
+  _result   (0),
+  _reconfig (false)
 {
   _plot->hide();
 }
@@ -168,25 +170,30 @@ PnccdCalibrator::Param::~Param()
   if (_result) delete _result;
 }
 
-void PnccdCalibrator::Param::configure(char*& p, unsigned input, unsigned& output)
+void PnccdCalibrator::Param::configure(char*& p, unsigned input, unsigned& output,
+                                       ConfigureRequest::Source source)
 {
   ConfigureRequest& r = *new(p) ConfigureRequest(ConfigureRequest::Create,
-                                                 ConfigureRequest::Discovery,
+                                                 source,
                                                  input,
                                                  -1,
                                                  _noFilter,
                                                  *_op);
   p += r.size();
-  _req.request(r, output, false);
+  _req.request(r, output, _reconfig);
   _signature = r.output();
-
+  _reconfig  = false;
   _plot->configure(p,_signature,output);
+
+  printf("Calibrator configured for signature %d\n",_signature);
 }
 
 void PnccdCalibrator::Param::setup_payload(Ami::Cds& cds)
 {
   _entry = static_cast<const EntryImage*>(cds.entry(_signature));
   _plot->setup_payload(cds);
+  
+  printf("Calibrator setup for entry %p signature %d\n",_entry,_signature);
 }
 
 void PnccdCalibrator::Param::update()
@@ -197,6 +204,7 @@ void PnccdCalibrator::Param::update()
 void PnccdCalibrator::Param::acquire(bool v)
 {
   if (v) {
+    _reconfig=true;
     _plot->show();
   }
   else {

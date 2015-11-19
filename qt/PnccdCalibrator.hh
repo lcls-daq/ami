@@ -3,6 +3,7 @@
 
 #include "ami/qt/QtPWidget.hh"
 #include "ami/data/ConfigureRequestor.hh"
+#include "ami/data/ConfigureRequest.hh"
 
 class QPushButton;
 class QLineEdit;
@@ -31,7 +32,8 @@ namespace Ami {
       void save_plots(const QString&) const;
     public:
       void configure(char*& p, unsigned input, unsigned& output,
-		     ChannelDefinition* ch[], int* signatures, unsigned nchannels);
+		     ChannelDefinition* ch[], int* signatures, unsigned nchannels,
+                     ConfigureRequest::Source input_source);
       void setup_payload(Cds&);
       void update();
     public slots:
@@ -48,7 +50,7 @@ namespace Ami {
         Param(QWidget*, QString, AbsOperator*);
         ~Param();
       public:
-        void configure    (char*& p, unsigned, unsigned&);
+        void configure    (char*& p, unsigned, unsigned&, ConfigureRequest::Source);
         void setup_payload(Ami::Cds& cds);
         void update       ();
         void acquire      (bool);
@@ -61,6 +63,7 @@ namespace Ami {
         unsigned           _signature;
         const EntryImage*  _entry;
         EntryImage*        _result;
+        bool               _reconfig;
       };
 
       Param         _ped;

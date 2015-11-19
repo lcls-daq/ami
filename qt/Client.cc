@@ -273,6 +273,14 @@ void Ami::Qt::Client::discovered(const DiscoveryRx& rx)
   _manager->configure();
 }
 
+unsigned Ami::Qt::Client::_preconfigure(char*&    p,
+                                        unsigned  input,
+                                        unsigned& output,
+                                        ConfigureRequest::Source& source)
+{
+  return input;
+}
+
 int  Ami::Qt::Client::configure       (iovec* iov) 
 {
   _status->set_state(Status::Configured);
@@ -297,6 +305,8 @@ int  Ami::Qt::Client::configure       (iovec* iov)
       p = _request.extend(req.size());
     }
     else {
+      _input_source = ConfigureRequest::Discovery;
+      unsigned input = _preconfigure(p,_input,_output_signature, _input_source);
       //
       //  Configure channels which depend upon others
       //
@@ -305,8 +315,8 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 	lAdded=false;
 	for(unsigned i=0; i<NCHANNELS; i++) {
 	  if (signatures[i]<0) {
-	    int sig = _channels[i]->configure(p,_input,_output_signature,
-					      _channels,signatures,NCHANNELS);
+	    int sig = _channels[i]->configure(p,input,_output_signature,
+					      _channels,signatures,NCHANNELS,_input_source);
 	    if (sig >= 0) {
 	      signatures[i] = sig;
 	      lAdded = true;
@@ -318,7 +328,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 
       char* hp = p = _request.extend(p-_request.base());
 
-      _configure(p,_input,_output_signature,
+      _configure(p,input,_output_signature,
 		 _channels,signatures,NCHANNELS);
 
       if (p==hp && !isVisible()) {  // nothing to show
