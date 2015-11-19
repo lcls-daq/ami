@@ -175,8 +175,7 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load2x2(FILE* g, bool offline)
             break;
           }
         }
-        else if (oname == "QUAD:V1" ||
-                 oname == "QUAD:V2") {
+        else if (oname == "CSPAD2X2:V1") {
           if (oindex==0) {
             for(unsigned k=0; k<2; k++) {
               Rotation irot = Rotation(unsigned(rot_z/90.+0.5)%NPHI);
