@@ -179,6 +179,8 @@ void AnalysisFactory::configure(unsigned       id,
   extract_list(othList, id); // update "used"
   AnList oldList = extract_list(srcList, id);
 
+  bool input_error=false;
+
   // create
   const char* const end = payload + msg.payload();
   while(payload < end) {
@@ -260,7 +262,7 @@ void AnalysisFactory::configure(unsigned       id,
       else if (!input) {
         printf("AnalysisFactory::configure failed (null input) for ConfigureRequest::%s\n", reqType);
         printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
-        input_cds.showentries();
+        input_error=true;
       }
       else if (req.state()==ConfigureRequest::Create) {
         //
@@ -307,6 +309,11 @@ void AnalysisFactory::configure(unsigned       id,
       }
     }
     payload += req.size();
+  }
+
+  if (input_error) {
+    _cds.showentries();
+    cds.showentries();
   }
 
   //
