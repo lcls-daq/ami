@@ -13,13 +13,20 @@
 #include "pdsdata/psddl/cspad.ddl.h"
 #include "pdsdata/psddl/cspad2x2.ddl.h"
 #include "pdsdata/psddl/alias.ddl.h"
+#include "pdsdata/psddl/epics.ddl.h"
 
-using namespace Ami;
+// its preprocesser does ugly things....
+#include "ami/plugins/PVWriter.hh"
+
+#include <fstream>
+#include <sstream>
+#include <string>
 
 static const char* path = getenv("HOME");
 
+using namespace Ami;
 
-static unsigned countSaturatedPixels(const Pds::CsPad2x2::ElementV1& s, unsigned tripCountThreshold)
+/*static unsigned countSaturatedPixels(const Pds::CsPad2x2::ElementV1& s, int32_t tripCountThreshold)
 {
   unsigned saturatedPixels = 0;
   const unsigned COLS = Pds::CsPad2x2::ColumnsPerASIC;
@@ -32,9 +39,9 @@ static unsigned countSaturatedPixels(const Pds::CsPad2x2::ElementV1& s, unsigned
       }
     }
     return saturatedPixels;
-}
+}*/
 
-static unsigned countSaturatedPixels(const Pds::CsPad::ElementV2& s, const Pds::CsPad::ConfigV5& cfg, unsigned tripCountThreshold)
+static unsigned countSaturatedPixels(const Pds::CsPad::ElementV2& s, const Pds::CsPad::ConfigV5& cfg, int32_t tripCountThreshold)
 {
   //  unsigned pixelCount = 0;
   unsigned saturatedPixels = 0;
@@ -55,18 +62,87 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
   _cds(0),
   _detsFound(0),
   _lastTrip(Pds::ClockTime(0,0)),
+  _thres_epics(0),
+  _npixel_epics(0),
   _fname(name),
   _sname(short_name),
+  _thres_pv(0),
+  _npixel_pv(0),
+  _shutter_pv(0),
   _name_service(new NameService)
 {
-  _frame = 0;
-  _frame_140k = 0;
+  for (unsigned i=0;i<MaxDetsAllowed;i++) {
+    _frame[i]=0;
+    _config[i]=0;
+    _dets[i]=0;
+  }
+  _thres_epics = -1;
+  _npixel_epics = -1;
   //  printf("have called tripper constructor\n");
   //  sprintf(_nameBuffer, "CspadTripperTitleOfSomeSort");
+  char fpath[128];
+  sprintf(fpath,"CspadTripperPVs.lst");
+  std::string line;
+  std::ifstream file;
+  file.open(fpath);
+  if(!file.good()) {
+    printf("tripper::configure unable to open %s\n",fpath);
+    sprintf(fpath,"%s/CspadTripperPVs.lst",path);
+    file.open(fpath);
+  }
+  if(file.good()) {
+    while (std::getline(file, line)) {
+      if(line[0]!='#') {
+        std::stringstream ss(line);
+        std::string item;
+        unsigned count=0;
+        while (std::getline(ss, item, ' ')) {
+          switch(count) {
+            case 0:
+              _thres_pv = new char[item.length() + 1];
+              std::strcpy(_thres_pv, item.c_str());
+              break;
+            case 1:
+              _npixel_pv = new char[item.length() + 1];
+              std::strcpy(_npixel_pv, item.c_str());
+              break;
+            case 2:
+              _shutter_pv = new char[item.length() + 1];
+              std::strcpy(_shutter_pv, item.c_str());
+              break;
+          }
+          count++;
+        }
+        break;
+      }
+    }
+  } else {
+    printf("tripper::configure unable to open %s, use default values and disable shutter\n",fpath);
+  }
+  printf("PVs loaded from configuration file: thres - %s, npixels - %s, shutter - %s\n",_thres_pv,_npixel_pv,_shutter_pv);
+  if(_shutter_pv) {
+    _shutter = new Ami_Epics::PVWriter(_shutter_pv);
+  } else {
+    _shutter = 0;
+  }
+  file.close();
 }
-CspadTripper::~CspadTripper() {}
 
-void CspadTripper::reset    (FeatureCache& f) {_detsFound=0;}
+CspadTripper::~CspadTripper()
+{
+  if (_name_service) delete _name_service;
+  if (_shutter) delete _shutter;
+}
+
+void CspadTripper::reset    (FeatureCache& f)
+{
+  for (unsigned id=0; id<_detsFound; id++) {
+    _config[id]=0;
+    _dets[id]=0;
+    if(_cds) _cds->remove(_result[id]);
+  }
+  _detsFound=0;
+}
 void CspadTripper::clock    (const Pds::ClockTime& clk) { _clk=clk; }
 void CspadTripper::configure(const Pds::ProcInfo&    src,
                               const Pds::TypeId&    type,
@@ -79,47 +155,43 @@ void CspadTripper::configure(const Pds::DetInfo&    src,
                               void*                 payload) 
 {
   //  printf("tripper configure\n");
-  if (type.id()!=Pds::TypeId::Id_CspadConfig) return;
-  //  printf("*************************tripper configure found cspadconfigtype*****************************\n");
+  if (type.id()==Pds::TypeId::Id_CspadConfig) {
+    //  printf("*************************tripper configure found cspadconfigtype*****************************\n");
 
-  _nevt   = 0;
-  _config[_detsFound] = reinterpret_cast<const Pds::CsPad::ConfigV5*>(payload);
-  _dets[_detsFound] = src.phy();
-  //  printf("found config for det %d, id 0x%x\n", _detsFound,  _dets[_detsFound]);
+    _nevt   = 0;
+    _config[_detsFound] = reinterpret_cast<const Pds::CsPad::ConfigV5*>(payload);
+    _dets[_detsFound] = src.phy();
+    //  printf("found config for det %d, id 0x%x\n", _detsFound,  _dets[_detsFound]);
 
-  _nPixelsToTrip[_detsFound] = 0x100000;
-  _tripCountThreshold[_detsFound] = 0x4000;
-  char fpath[128];
-  sprintf(fpath,"CspadTripper.%08x.lst", _dets[_detsFound]);
-  FILE* f = fopen(fpath,"r");
-  if (!f) {
-    printf("tripper::configure unable to open %s\n",fpath);
-    char fpath[128];
-    sprintf(fpath,"%s/CspadTripper.%08x.lst",path,_dets[_detsFound]);
-    f = fopen(fpath,"r");
-    if (!f) {
-      printf("tripper::configure unable to open %s, use default values\n",fpath);
-      _detsFound++;
-      return;
+    _nPixelsToTrip[_detsFound] = 0x100000;
+    _tripCountThreshold[_detsFound] = 0x4000;
+    printf("have configured tripper with nPixelsToTrip %d, tripCountThreshold %d\n", _nPixelsToTrip[_detsFound], _tripCountThreshold[_detsFound]);
+    if(_cds) {
+      char title[80];
+      sprintf(title, "Pixels over threshold, det 0x%x#Tripper", _dets[_detsFound]);
+      _result[_detsFound] = new EntryScalar(DescScalar(title, title));
+      _cds->add(_result[_detsFound]);
+      _result[_detsFound]->valid(_clk);
+    }
+    _detsFound++;
+  } else if(type.id()==Pds::TypeId::Id_Epics) {
+    const Pds::Epics::ConfigV1* temp_pv = reinterpret_cast<const Pds::Epics::ConfigV1*>(payload);
+    Pds::Epics::PvConfigV1 pv_conf = temp_pv->getPvConfig()[0];
+    int16_t temp_id = (int16_t) temp_pv->numPv();
+    if(_thres_pv && strcmp(pv_conf.description(),_thres_pv)==0) {
+      printf("Found PV for configuring tripCountThreshold: %s\n", pv_conf.description());
+      _thres_config = temp_pv;
+      _thres_epics = temp_id;
+    } else if(_npixel_pv && strcmp(pv_conf.description(),_npixel_pv)==0) {
+      printf("Found PV for configuring nPixelsToTrip: %s\n", pv_conf.description());
+      _npixel_config = temp_pv;
+      _npixel_epics = temp_id;
     }
   }
-  //  printf("tripper::configure opened %s\n",fpath);
-  char line[1024];
-  char* lptr = &line[0];
-  size_t line_sz = 1024;
-  while(getline(&lptr,&line_sz,f)!=-1) {
-    if (line[0]!='#') {
-      _tripCountThreshold[_detsFound] = strtoul(lptr,&lptr,0);
-      _nPixelsToTrip[_detsFound] = strtoul(lptr,&lptr,0);
-      break;
-    }
-  }
-  printf("have configured tripper with nPixelsToTrip %d, tripCountThreshold %d\n", _nPixelsToTrip[_detsFound], _tripCountThreshold[_detsFound]);
-  _detsFound++;
 }
 
 const char* CspadTripper::name() const {
-  return "CspadTripperModule";//_nameBuffer;
+  return _fname;
 }
 
 
@@ -145,32 +217,38 @@ void CspadTripper::event    (const Pds::DetInfo&    src,
 {
   //  printf("tripper event, payload size 0x%x\n", sizeof(payload));
   //  printf("need this print statement for some reason\n");
-  _currentDet = -1;
   if (type.id()==Pds::TypeId::Id_CspadElement) {
     if ((dmg.value() & DMG_MASK) == 0) {
-      _frame = reinterpret_cast<const Pds::CsPad::DataV2*>(payload);
       for (unsigned id=0; id<_detsFound; id++) {
         //      printf("looking for 0x%x, check 0x%x at %d\n", src.phy(), _dets[id], id);
-        if (src.phy()==_dets[id]) _currentDet = id;
+        if (src.phy()==_dets[id]) _frame[id] = reinterpret_cast<const Pds::CsPad::DataV2*>(payload);
       }
-      //    printf("have decided on 0x%x = 0x%x at %d\n", src.phy(), _dets[_currentDet], _currentDet);
-      analyzeDetector();
     }
-  }
-  else if (type.id()==Pds::TypeId::Id_Cspad2x2Element) {
+  } else if (type.id()==Pds::TypeId::Id_Epics) {
     if ((dmg.value() & DMG_MASK) == 0) {
-      //    printf("probably out of date, skipping for now\n");
-      _frame_140k = reinterpret_cast<const Pds::CsPad2x2::ElementV1*>(payload);
-      for (unsigned id=0; id<_detsFound; id++) {
-        //      printf("looking for 0x%x, check 0x%x at %d\n", src.phy(), _dets[id], id);
-        if (src.phy()==_dets[id]) _currentDet = id;
+      const Pds::Epics::EpicsPvHeader* epics = reinterpret_cast<const Pds::Epics::EpicsPvHeader*>(payload);
+      if(epics->dbrType() == 19 /*Pds::Epics::DBR_TIME_LONG*/) {
+        if(epics->pvId() == _thres_epics || epics->pvId() == _npixel_epics) {
+          const Pds::Epics::EpicsPvTimeLong* pv = reinterpret_cast<const Pds::Epics::EpicsPvTimeLong*>(epics);
+          int32_t new_val = pv->value(0);
+          if(epics->pvId() == _thres_epics) {
+            for (unsigned id=0; id<_detsFound; id++) {
+              if(_tripCountThreshold[id] != new_val) {
+                printf("Updating trip count threshold value for det %d from %d to %d\n", id, _tripCountThreshold[id], new_val);
+                _tripCountThreshold[id] = new_val;
+              }
+            }
+          } else if(epics->pvId() == _npixel_epics) {
+            for (unsigned id=0; id<_detsFound; id++) {
+              if(_tripCountThreshold[id] != new_val) {
+                printf("Updating number of pixels for trip for det %d from %d to %d\n", id, _nPixelsToTrip[id], new_val);
+                _nPixelsToTrip[id] = (unsigned) pv->value(0);
+              }
+            }
+          }
+        }
       }
     }
-    //    printf("have decided on 0x%x = 0x%x at %d\n", src.phy(), _dets[_currentDet], _currentDet);
-    //    printf("but ignore for now\n");
-    //    analyzeDetector();
-    //  } else {
-    //    printf("did not recognize type %d, trouble\n", type.id());
   }
 }
 
@@ -209,45 +287,41 @@ void CspadTripper::create   (Cds& cds)
 //
 bool CspadTripper::accept  () 
 {
+  analyzeDetector();
   //  printf("have called fake accept, don't want to do anything here\n");
   return true;
 }
 
 void CspadTripper::analyzeDetector  () 
 {
-  //  printf("in analyze, look for cds\n");
-  if (!_cds) return;
   //  printf("in analyze, look for frame\n");
-  if (!_frame and !_frame_140k) return;
-  //  printf("in analyze, found frame\n");
+  for(unsigned currentDet=0;currentDet<_detsFound;currentDet++) {
+    if (!_frame) continue;
 
-  unsigned pixelCount = 0;
-  if (_frame_140k) {
-    pixelCount += countSaturatedPixels(*_frame_140k, _tripCountThreshold[_currentDet]);
-  } else {
-    for (uint quad=0; quad<_config[_currentDet]->numQuads(); quad++) {
-      pixelCount += countSaturatedPixels(_frame->quads(*_config[_currentDet], quad), *_config[_currentDet], _tripCountThreshold[_currentDet]);
-    }    
-  }
-  //  printf("pixel count is 0x%x for 0x%x (det %d)\n", pixelCount, _dets[_currentDet], _currentDet);
-  _result[_currentDet]->addcontent(pixelCount);
-  _result[_currentDet]->valid(_clk);
-  //  printf("Have counted %d pixels at event %d, decide whether to attempt to trip, shunt, or ignore beam",pixelCount, _nevt);
-
-  if (pixelCount>=_nPixelsToTrip[_currentDet]) {
-    float deltaT = _clk.seconds() - _lastTrip.seconds() + (_clk.nanoseconds()-_lastTrip.nanoseconds())/1000000000.;
-    if (deltaT>1.) {
-      _lastTrip = _clk;
-      printf("Have counted %d pixels (trip at %d) over %d at event %d, no trips in last %f seconds, attempt to trip, shunt, or ignore beam\n", pixelCount, _nPixelsToTrip[_currentDet], _tripCountThreshold[_currentDet], _nevt, deltaT);
-      //system("caput myPV");
-      system("/bin/env PATH=/reg/g/pcds/package/epics/3.14/base/current/bin/linux-x86_64 caput -c 'CXI:R48:EVR:41:CTRL.DG0P' 0");
+    int32_t pixelCount = 0;
+    for (uint quad=0; quad<_config[currentDet]->numQuads(); quad++) {
+      pixelCount += countSaturatedPixels(_frame[currentDet]->quads(*_config[currentDet], quad), *_config[currentDet], _tripCountThreshold[currentDet]);
     }
+    if (_cds) {
+      _result[currentDet]->addcontent(pixelCount);
+      _result[currentDet]->valid(_clk);
+    }
+    if (pixelCount>=_nPixelsToTrip[currentDet]) {
+      float deltaT = _clk.seconds() - _lastTrip.seconds() + (_clk.nanoseconds()-_lastTrip.nanoseconds())/1000000000.;
+      if (deltaT>1.) {
+        _lastTrip = _clk;
+        printf("Have counted %d pixels (trip at %d) over %d at event %d, no trips in last %f seconds, attempt to trip, shunt, or ignore beam\n", pixelCount, _nPixelsToTrip[currentDet], _tripCountThreshold[currentDet], _nevt, deltaT);
+        if(_shutter) {
+          *(double*) _shutter->data() = 0;
+          _shutter->put();
+        }
+      }
+    }
+
+    _frame[currentDet]=0;
   }
 
   _nevt++;
-  
-  //  Reset pointer references
-  _frame = 0;
 }
 
 //

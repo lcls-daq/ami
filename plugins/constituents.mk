@@ -67,6 +67,11 @@ libsrcs_AmiEpics := EpicsCA.cc AmiEpics.cc
 libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_AmiEpics := epics/ca
 
+libnames += CspadTripper
+libsrcs_CspadTripper := EpicsCA.cc CspadTripper.cc
+libincs_CspadTripper := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
+liblibs_CspadTripper := epics/ca
+
 libnames += IpmSumEScan
 libsrcs_IpmSumEScan := IpmSumEScan.cc
 libincs_IpmSumEScan := pdsdata/include ndarray/include boost/include

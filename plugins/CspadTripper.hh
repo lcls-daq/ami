@@ -12,8 +12,11 @@ static const unsigned MaxDetsAllowed = 3;
 namespace Pds {
   namespace CsPad { class DataV2; };
   namespace CsPad { class ConfigV5; };
-  namespace CsPad2x2 { class ElementV1; };
+  namespace Epics { class EpicsPvHeader; };
+  namespace Epics { class ConfigV1; };
 };
+
+namespace Ami_Epics { class PVWriter; };
 
 namespace Ami {
   class Cds;
@@ -26,7 +29,7 @@ namespace Ami {
   class CspadTripper : public UserModule {
   public:
     CspadTripper(const char* name="CSPadTrip",
-                 const char* short_name="CspadTrip");
+                 const char* short_name="CSPadTrip");
     virtual ~CspadTripper();
   public:  // Handler functions
     void reset    (FeatureCache&);
@@ -65,23 +68,30 @@ namespace Ami {
     EntryScalar* _result[MaxDetsAllowed];
 
     unsigned _nevt;
-    unsigned _nPixelsToTrip[MaxDetsAllowed];
-    unsigned _tripCountThreshold[MaxDetsAllowed];
+    int32_t _nPixelsToTrip[MaxDetsAllowed];
+    int32_t _tripCountThreshold[MaxDetsAllowed];
 
     const Pds::CsPad::ConfigV5* _config[MaxDetsAllowed];
     unsigned _dets[MaxDetsAllowed];
     unsigned _detsFound;
-    unsigned _currentDet;
 
     Pds::ClockTime _clk;
     Pds::ClockTime _lastTrip;
     const static uint DMG_MASK = 0xFFFFFFFF;
-    const Pds::CsPad::DataV2* _frame;
-    const Pds::CsPad2x2::ElementV1* _frame_140k;
+    const Pds::CsPad::DataV2* _frame[MaxDetsAllowed];
+    const Pds::Epics::ConfigV1* _thres_config;
+    int16_t _thres_epics;
+    const Pds::Epics::ConfigV1* _npixel_config;
+    int16_t _npixel_epics;
+
 
     const char*  _fname;
     const char*  _sname;
+    char*  _thres_pv;
+    char*  _npixel_pv;
+    char*  _shutter_pv;
     NameService* _name_service;
+    Ami_Epics::PVWriter* _shutter;
     //    static char _nameBuffer[128];
   };
 };
