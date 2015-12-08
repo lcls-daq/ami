@@ -58,7 +58,6 @@ namespace Ami {
     ndarray<double,2>   _no_gain;
 
     ndarray<int,1>      _feature;
-    CspadTemp           _therm;
 
     EpixAmi::ConfigCache* _config_cache;
   };

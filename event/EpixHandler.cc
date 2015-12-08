@@ -57,6 +57,8 @@ static void _load_one_asic(ndarray<double,2>& pb,
 			   ndarray<double,2>& pedestals);
 static double _tps_temp(const uint16_t q);
 
+static CspadTemp           _therm(RDIV);
+
 namespace EpixAmi {
   class MapElement {
   public:
@@ -76,16 +78,51 @@ namespace EpixAmi {
     unsigned rows   () const;
   };
 
+  class EnvData {
+  public:
+    virtual ~EnvData() {}
+    virtual void     addFeatures(const char*   name)=0;
+    virtual void     rename     (const char*   name)=0;
+    virtual void     fill       (FeatureCache& cache,
+                                 ndarray<const uint16_t,2>& env)=0;
+  };
+
+  class EnvData1 : public EnvData {
+  public:
+    EnvData1(EventHandlerF& h);
+  public:
+    void     addFeatures(const char* name);
+    void     rename     (const char* name);
+    void     fill       (FeatureCache& cache,
+                         ndarray<const uint16_t,2>& env);
+  private:
+    EventHandlerF& _handler;
+    ndarray<int,1> _index;
+  };
+
+  class EnvData2 : public EnvData {
+  public:
+    EnvData2(EventHandlerF& h);
+  public:
+    void     addFeatures(const char* name);
+    void     rename     (const char* name);
+    void     fill       (FeatureCache& cache,
+                         ndarray<const uint16_t,2>& env);
+  private:
+    EventHandlerF& _handler;
+    ndarray<int,1> _index;
+  };
+
   class ConfigCache {
   public:
     ConfigCache();
     ConfigCache(const ConfigCache&);
-    ConfigCache(Pds::TypeId, const void*);
+    ConfigCache(Pds::TypeId, const void*, EventHandlerF*);
     ~ConfigCache();
   public:
     unsigned numberOfAsics() const  { return _nAsics; }
     unsigned asicMask      () const { return _aMask; }
-    bool     hasMonitorData() const { return _monitorData; }
+    EnvData* envData       () const { return _envData; }
   public:
     // ASIC layout
     unsigned numberOfAsicsPerRow   () const { return _nchip_columns; }
@@ -160,7 +197,7 @@ namespace EpixAmi {
     unsigned _rowsReadPerAsic;
     unsigned _rowsCal;
     unsigned _rowsCalPerAsic;
-    bool     _monitorData;
+    EnvData* _envData;
   };
 };
 
@@ -170,7 +207,8 @@ EpixAmi::ConfigCache::ConfigCache() :
 {
 }
 
-EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(tid)
+EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
+                                  EventHandlerF* handler) : _id(tid)
 {
   _nchip_columns=1;
   _nchip_rows   =1;
@@ -180,7 +218,6 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
   _colsPerAsic = 0;
   _aMask = 0;
   _nAsics = 0;
-  _monitorData = true;
 
   if (tid.id()==Pds::TypeId::Id_GenericPgpConfig) {
     const Pds::GenericPgp::ConfigV1& c = *reinterpret_cast<const Pds::GenericPgp::ConfigV1*>(payload);
@@ -199,20 +236,18 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
   _rows = c.numberOfRows();						\
   _rowsPerAsic = c.numberOfRowsPerAsic();				\
   _aMask  = c.asicMask();						\
-  _nAsics = c.numberOfAsics();					       
+  _nAsics = c.numberOfAsics();                                          \
+  _envData = c.version() < 0xea020000 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
 
   switch(_id.id()) {
   case Pds::TypeId::Id_EpixConfig   : 
     { PARSE_CONFIG(Pds::Epix::ConfigV1);
       _rowsRead        = _rows;
-      _rowsReadPerAsic = _rows/_nchip_rows;
-      _monitorData = (c.lastRowExclusions()); } break;
+      _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kConfig:
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
       _rowsRead        = _rows;
-      _rowsReadPerAsic = _rows/_nchip_rows;
-      _monitorData = (c.lastRowExclusions()); 
-    } break;
+      _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix100aConfig: 
     switch(_id.version()) {
     case 1:
@@ -220,15 +255,13 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload) : _id(ti
 	_rowsRead        = c.numberOfReadableRows();
 	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
 	_rowsCal         = c.numberOfCalibrationRows();
-	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
-	_monitorData = true; } break;
+	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
     case 2:
       { PARSE_CONFIG(Pds::Epix::Config100aV2);
 	_rowsRead        = c.numberOfReadableRows();
 	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
 	_rowsCal         = c.numberOfCalibrationRows();
-	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn();
-	_monitorData = true; } break;
+	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
     default:
       printf("Epix100aConfig version %d unknown\n",_id.version());
       break;
@@ -254,8 +287,7 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   _rowsRead       (o._rowsRead),
   _rowsReadPerAsic(o._rowsReadPerAsic),
   _rowsCal        (o._rowsCal),
-  _rowsCalPerAsic (o._rowsCalPerAsic),
-  _monitorData    (o._monitorData)
+  _rowsCalPerAsic (o._rowsCalPerAsic)
 {
   unsigned sz=0;
 #define PARSE_CONFIG(typ) 						\
@@ -402,7 +434,6 @@ EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   _options      (0),
   _pedestals    (make_ndarray<unsigned>(1,1)),
   _pedestals_lo (make_ndarray<unsigned>(1,1)),
-  _therm        (RDIV),
   _config_cache (new EpixAmi::ConfigCache)
 {
 }
@@ -435,24 +466,15 @@ void EpixHandler::rename(const char* s)
 
     int index=0;
     unsigned nAsics       =_config_cache->numberOfAsics();
-    bool lastRowExclusions=_config_cache->hasMonitorData();
-
     for(unsigned a=0; a<nAsics; a++) {
       sprintf(buff,"%s:AsicMonitor%d",s,a);
       _rename_cache(_feature[index++],buff);
     }
-    if (lastRowExclusions) {
-      sprintf(buff,"%s:Epix:AVDD",s);
-      _rename_cache(_feature[index++],buff);
-      sprintf(buff,"%s:Epix:DVDD",s);
-      _rename_cache(_feature[index++],buff);
-      sprintf(buff,"%s:Epix:AnaCardT",s);
-      _rename_cache(_feature[index++],buff);
-      sprintf(buff,"%s:Epix:StrBackT",s);
-      _rename_cache(_feature[index++],buff);
-      sprintf(buff,"%s:Epix:Humidity",s);
-      _rename_cache(_feature[index++],buff);
-    }
+
+    EpixAmi::EnvData* envData =_config_cache->envData();
+    if (envData) 
+      envData->rename(s);
+
     if (Ami::EventHandler::post_diagnostics())
       for(unsigned a=0; a<16; a++) {
 	sprintf(buff,"%s:CommonMode%d",s,_channel_map[a]);
@@ -485,7 +507,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   const char* detname = Pds::DetInfo::name(det.detector());
 
   delete _config_cache;
-  _config_cache = new EpixAmi::ConfigCache(tid,payload);
+  _config_cache = new EpixAmi::ConfigCache(tid,payload,this);
   _config_cache->dump();
 
   unsigned rows    = _config_cache->numberOfRowsRead();
@@ -574,8 +596,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   }
 
   unsigned nFeatures = _config_cache->numberOfAsics();
-  if (_config_cache->hasMonitorData())
-    nFeatures += 5;
+
   if (Ami::EventHandler::post_diagnostics())
     nFeatures += 16;
   _feature = make_ndarray<int>(nFeatures);
@@ -586,18 +607,10 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     sprintf(buff,"%s:Epix:AsicMonitor:%d",detname,a);
     _feature[index++] = _add_to_cache(buff);
   }
-  if (_config_cache->hasMonitorData()) {
-    sprintf(buff,"%s:Epix:AVDD",detname);
-    _feature[index++] = _add_to_cache(buff);
-    sprintf(buff,"%s:Epix:DVDD",detname);
-    _feature[index++] = _add_to_cache(buff);
-    sprintf(buff,"%s:Epix:AnaCardT",detname);
-    _feature[index++] = _add_to_cache(buff);
-    sprintf(buff,"%s:Epix:StrBackT",detname);
-    _feature[index++] = _add_to_cache(buff);
-    sprintf(buff,"%s:Epix:Humidity",detname);
-    _feature[index++] = _add_to_cache(buff);
-  }
+
+  if (_config_cache->envData())
+    _config_cache->envData()->addFeatures(detname);
+
   if (Ami::EventHandler::post_diagnostics()) {
     for(unsigned a=0; a<16; a++) {
       sprintf(buff,"%s:Epix:CommonMode%d",detname,_channel_map[a]);
@@ -732,14 +745,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     index += 4;
 #endif
 
-    if (_config_cache->hasMonitorData()) {
-      const uint16_t* last = &env[env.shape()[0]-1][0];
-      _cache.cache(_feature[index++], double(last[2])*0.00183);
-      _cache.cache(_feature[index++], double(last[3])*0.00183);
-      _cache.cache(_feature[index++], double(last[4])*(-0.0194) + 78.393);
-      _cache.cache(_feature[index++], _therm.getTemp(last[6]));
-      _cache.cache(_feature[index++], double(last[7])*0.0291 - 23.8);
-    }
+    if (_config_cache->envData())
+      _config_cache->envData()->fill(_cache,env);
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
@@ -1099,3 +1106,109 @@ double _tps_temp(const uint16_t q)
   return double(q)*degCperADU + t0;
 }
 
+EpixAmi::EnvData1::EnvData1(EventHandlerF& h) : 
+  _handler(h), _index(make_ndarray<int>(5)) {}
+
+void     EpixAmi::EnvData1::addFeatures(const char* name)
+{
+#define ADDV(s) {                                      \
+    sprintf(buff,"%s:Epix:"#s,name);                   \
+    _index[index++] = _handler._add_to_cache(buff); }
+
+  char buff[64];
+  unsigned index=0;
+  ADDV(AVDD);
+  ADDV(DVDD);
+  ADDV(AnaCardT);
+  ADDV(StrBackT);
+  ADDV(Humidity);
+#undef ADDV
+}
+
+void     EpixAmi::EnvData1::rename     (const char* name)
+{
+#define ADDV(s) {                                               \
+    sprintf(buff,"%s:Epix:"#s,name);                            \
+    _handler._rename_cache(_index[index++],buff); }
+
+  char buff[64];
+  unsigned index=0;
+  ADDV(AVDD);
+  ADDV(DVDD);
+  ADDV(AnaCardT);
+  ADDV(StrBackT);
+  ADDV(Humidity);
+#undef ADDV
+}
+
+void      EpixAmi::EnvData1::fill      (FeatureCache& cache,
+                                        ndarray<const uint16_t,2>& env)
+{
+  const uint16_t* last = &env[env.shape()[0]-1][0];
+  unsigned index=0;
+  cache.cache(_index[index++], double(last[2])*0.00183);
+  cache.cache(_index[index++], double(last[3])*0.00183);
+  cache.cache(_index[index++], double(last[4])*(-0.0194) + 78.393);
+  cache.cache(_index[index++], _therm.getTemp(last[6]));
+  cache.cache(_index[index++], double(last[7])*0.0291 - 23.8);
+}
+
+EpixAmi::EnvData2::EnvData2(EventHandlerF& h) : 
+  _handler(h), _index(make_ndarray<int>(9)) {}
+
+void     EpixAmi::EnvData2::addFeatures(const char* name)
+{
+#define ADDV(s) {                                      \
+    sprintf(buff,"%s:Epix:"#s,name);                   \
+    _index[index++] = _handler._add_to_cache(buff); }
+
+  char buff[64];
+  unsigned index=0;
+  ADDV(Temp0);
+  ADDV(Temp1);
+  ADDV(Humidity);
+  ADDV(AnalogI);
+  ADDV(DigitalI);
+  ADDV(GuardI);
+  ADDV(BiasI);
+  ADDV(AnalogV);
+  ADDV(DigitalV);
+#undef ADDV
+}
+
+void     EpixAmi::EnvData2::rename     (const char* name)
+{
+#define ADDV(s) {                                               \
+    sprintf(buff,"%s:Epix:"#s,name);                            \
+    _handler._rename_cache(_index[index++],buff); }
+
+  char buff[64];
+  unsigned index=0;
+  ADDV(Temp0);
+  ADDV(Temp1);
+  ADDV(Humidity);
+  ADDV(AnalogI);
+  ADDV(DigitalI);
+  ADDV(GuardI);
+  ADDV(BiasI);
+  ADDV(AnalogV);
+  ADDV(DigitalV);
+#undef ADDV
+}
+
+void      EpixAmi::EnvData2::fill      (FeatureCache& cache,
+                                        ndarray<const uint16_t,2>& env)
+{
+  const uint16_t* last = &env[env.shape()[0]-1][0];
+  const int16_t* slast = reinterpret_cast<const int16_t*>(last);
+  unsigned index=0;
+  cache.cache(_index[index++], double(slast[0])*0.01);
+  cache.cache(_index[index++], double(slast[1])*0.01);
+  cache.cache(_index[index++], double(slast[2])*0.01);
+  cache.cache(_index[index++], double(last[3])*0.001);
+  cache.cache(_index[index++], double(last[4])*0.001);
+  cache.cache(_index[index++], double(last[5])*0.000001);
+  cache.cache(_index[index++], double(last[6])*0.000001);
+  cache.cache(_index[index++], double(last[7])*0.001);
+  cache.cache(_index[index++], double(last[8])*0.001);
+}
