@@ -83,6 +83,10 @@ namespace EpixAmi {
     virtual ~EnvData() {}
     virtual void     addFeatures(const char*   name)=0;
     virtual void     rename     (const char*   name)=0;
+    virtual void     fill       (FeatureCache& cache,
+				 ndarray<const uint16_t,2> env) = 0;
+    virtual void     fill       (FeatureCache& cache,
+				 ndarray<const uint32_t,2> env) = 0;
   };
 
   class EnvData1 : public EnvData {
@@ -92,7 +96,9 @@ namespace EpixAmi {
     void     addFeatures(const char* name);
     void     rename     (const char* name);
     void     fill       (FeatureCache& cache,
-                         ndarray<const uint16_t,2>& env);
+                         ndarray<const uint16_t,2> env);
+    void     fill       (FeatureCache& cache,
+                         ndarray<const uint32_t,2> env) {}
   private:
     EventHandlerF& _handler;
     ndarray<int,1> _index;
@@ -105,7 +111,9 @@ namespace EpixAmi {
     void     addFeatures(const char* name);
     void     rename     (const char* name);
     void     fill       (FeatureCache& cache,
-                         ndarray<const uint32_t,2>& env);
+                         ndarray<const uint16_t,2> env) {}
+    void     fill       (FeatureCache& cache,
+                         ndarray<const uint32_t,2> env);
   private:
     EventHandlerF& _handler;
     ndarray<int,1> _index;
@@ -152,22 +160,22 @@ namespace EpixAmi {
       const typ& c = *reinterpret_cast<const typ*>(_buffer);		\
       frame = f.frame(c);                                               \
       temps = f.temperatures(c);                                        \
-      static_cast<etyp*>(_envData)->fill(cache,f.excludedRows(c));
+      _envData->fill(cache,f.etyp(c));
 
       switch(_id.id()) {
       case Pds::TypeId::Id_EpixConfig   : 
-	{ PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, EnvData1) }
+	{ PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, excludedRows) }
         break;
       case Pds::TypeId::Id_Epix10kConfig: 
-	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, EnvData1); }
+	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, excludedRows); }
         break;
       case Pds::TypeId::Id_Epix100aConfig: 
 	switch (_id.version()) {
 	case 1:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, EnvData1);
+	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, environmentalRows);
 	    cal = f.calibrationRows(c); } break;
 	case 2:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV3, EnvData2);
+	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV3, environmentalRows);
 	    cal = f.calibrationRows(c); } break;
 	default:
 	  break;
@@ -639,7 +647,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     ndarray<const uint16_t,1> temps;
     ndarray<const uint16_t,2> cal;
 
-    _config_cache->event(payload, a, temps, cal, *_cache);
+    _config_cache->event(payload, a, temps, cal, _cache);
 
     _entry->reset();
     const DescImage& d = _entry->desc();
@@ -1135,7 +1143,7 @@ void     EpixAmi::EnvData1::rename     (const char* name)
 }
 
 void      EpixAmi::EnvData1::fill      (FeatureCache& cache,
-                                        ndarray<const uint16_t,2>& env)
+                                        ndarray<const uint16_t,2> env)
 {
   const uint16_t* last = &env[env.shape()[0]-1][0];
   unsigned index=0;
@@ -1190,7 +1198,7 @@ void     EpixAmi::EnvData2::rename     (const char* name)
 }
 
 void      EpixAmi::EnvData2::fill      (FeatureCache& cache,
-                                        ndarray<const uint32_t,2>& env)
+                                        ndarray<const uint32_t,2> env)
 {
   const uint32_t* data = &env[0][0];
   const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
