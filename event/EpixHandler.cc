@@ -83,8 +83,6 @@ namespace EpixAmi {
     virtual ~EnvData() {}
     virtual void     addFeatures(const char*   name)=0;
     virtual void     rename     (const char*   name)=0;
-    virtual void     fill       (FeatureCache& cache,
-                                 ndarray<const uint16_t,2>& env)=0;
   };
 
   class EnvData1 : public EnvData {
@@ -107,7 +105,7 @@ namespace EpixAmi {
     void     addFeatures(const char* name);
     void     rename     (const char* name);
     void     fill       (FeatureCache& cache,
-                         ndarray<const uint16_t,2>& env);
+                         ndarray<const uint32_t,2>& env);
   private:
     EventHandlerF& _handler;
     ndarray<int,1> _index;
@@ -147,30 +145,29 @@ namespace EpixAmi {
     void event(const void* payload, 
 	       ndarray<const uint16_t,2>& frame, 
 	       ndarray<const uint16_t,1>& temps,
-	       ndarray<const uint16_t,2>& env,
-	       ndarray<const uint16_t,2>& cal) {
-#define PARSE_CONFIG(typ,dtyp)  					\
+	       ndarray<const uint16_t,2>& cal,
+               FeatureCache&              cache) {
+#define PARSE_CONFIG(typ,dtyp,etyp)  					\
       const dtyp& f = *reinterpret_cast<const dtyp*>(payload);		\
       const typ& c = *reinterpret_cast<const typ*>(_buffer);		\
-      frame = f.frame(c);							\
-      temps = f.temperatures(c);
+      frame = f.frame(c);                                               \
+      temps = f.temperatures(c);                                        \
+      static_cast<etyp*>(_envData)->fill(cache,f.excludedRows(c));
 
       switch(_id.id()) {
       case Pds::TypeId::Id_EpixConfig   : 
-	{ PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1);
-	  env = f.excludedRows(c); } break;
+	{ PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, EnvData1) }
+        break;
       case Pds::TypeId::Id_Epix10kConfig: 
-	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1);
-	  env = f.excludedRows(c); } break;
+	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, EnvData1); }
+        break;
       case Pds::TypeId::Id_Epix100aConfig: 
 	switch (_id.version()) {
 	case 1:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2);
-	    env = f.environmentalRows(c); 
+	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, EnvData1);
 	    cal = f.calibrationRows(c); } break;
 	case 2:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV2);
-	    env = f.environmentalRows(c); 
+	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV3, EnvData2);
 	    cal = f.calibrationRows(c); } break;
 	default:
 	  break;
@@ -640,10 +637,9 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
     ndarray<const uint16_t,2> a;
     ndarray<const uint16_t,1> temps;
-    ndarray<const uint16_t,2> env;
     ndarray<const uint16_t,2> cal;
 
-    _config_cache->event(payload, a, temps, env, cal);
+    _config_cache->event(payload, a, temps, cal, *_cache);
 
     _entry->reset();
     const DescImage& d = _entry->desc();
@@ -744,9 +740,6 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       _cache.cache(_feature[index+3],_tps_temp(temps[3]));
     index += 4;
 #endif
-
-    if (_config_cache->envData())
-      _config_cache->envData()->fill(_cache,env);
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
       for(unsigned k=0; k<_desc.nframes(); k++) {
@@ -1197,18 +1190,18 @@ void     EpixAmi::EnvData2::rename     (const char* name)
 }
 
 void      EpixAmi::EnvData2::fill      (FeatureCache& cache,
-                                        ndarray<const uint16_t,2>& env)
+                                        ndarray<const uint32_t,2>& env)
 {
-  const uint16_t* last = &env[env.shape()[0]-1][0];
-  const int16_t* slast = reinterpret_cast<const int16_t*>(last);
+  const uint32_t* data = &env[0][0];
+  const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
   unsigned index=0;
-  cache.cache(_index[index++], double(slast[0])*0.01);
-  cache.cache(_index[index++], double(slast[1])*0.01);
-  cache.cache(_index[index++], double(slast[2])*0.01);
-  cache.cache(_index[index++], double(last[3])*0.001);
-  cache.cache(_index[index++], double(last[4])*0.001);
-  cache.cache(_index[index++], double(last[5])*0.000001);
-  cache.cache(_index[index++], double(last[6])*0.000001);
-  cache.cache(_index[index++], double(last[7])*0.001);
-  cache.cache(_index[index++], double(last[8])*0.001);
+  cache.cache(_index[index++], double(sdata[0])*0.01);
+  cache.cache(_index[index++], double(sdata[1])*0.01);
+  cache.cache(_index[index++], double(sdata[2])*0.01);
+  cache.cache(_index[index++], double(data[3])*0.001);
+  cache.cache(_index[index++], double(data[4])*0.001);
+  cache.cache(_index[index++], double(data[5])*0.000001);
+  cache.cache(_index[index++], double(data[6])*0.000001);
+  cache.cache(_index[index++], double(data[7])*0.001);
+  cache.cache(_index[index++], double(data[8])*0.001);
 }
