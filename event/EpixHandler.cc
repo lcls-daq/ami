@@ -944,9 +944,10 @@ void EpixHandler::_load_pedestals()
 
   f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
                         "ped", "pedestals", true, &loffl);
+  printf("f %p  loffl %c\n",f, loffl ? 't':'f');
   if (f) {
     ndarray<double,2>  pb = FrameCalib::load_darray(f);
-    if (loffl) {
+    //    if (loffl) {
       printf("aMask %x  rows %u cols %u  shape %u %u\n",
              aMask, rows, cols, pb.shape()[0], pb.shape()[1]);
       if ((aMask&(aMask-1))==0 && pb.shape()[0]) {
@@ -976,15 +977,16 @@ void EpixHandler::_load_pedestals()
       }
       else {
         double* b = pb.begin();
-        for(unsigned* a=_pedestals.begin(); a!=_status.end(); a++,b++)
+        for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); a++,b++)
           *a = offset-unsigned(*b+0.5);
       }
-    }
+      //    }
     fclose(f);
   }
   else {
     EntryImage* p = _pentry;
     ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"ped");
+    printf("pb size %d,%d\n",pb.shape()[0],pb.shape()[1]);
     if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
       unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
       for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
@@ -1200,7 +1202,7 @@ void     EpixAmi::EnvData2::rename     (const char* name)
 void      EpixAmi::EnvData2::fill      (FeatureCache& cache,
                                         ndarray<const uint32_t,2> env)
 {
-  const uint32_t* data = &env[0][0];
+  const uint32_t* data = &env[env.shape()[0]-1][0];
   const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
   unsigned index=0;
   cache.cache(_index[index++], double(sdata[0])*0.01);

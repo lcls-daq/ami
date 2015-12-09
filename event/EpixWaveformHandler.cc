@@ -147,14 +147,13 @@ void EpixWaveformHandler::_configure(Pds::TypeId, const void* payload, const Pds
   _feature = make_ndarray<int>(c.numberOfChannels());
   char buff[64];
   for(unsigned i=0; i<c.numberOfChannels(); i++) {
-    sprintf(buff,"%s:Temp_Ch[%d]",DetInfo::name(det),i);
+    sprintf(buff,"%s:WF:Temp_Ch[%d]",DetInfo::name(det),i);
     _feature[i] = _add_to_cache(buff);
   }
 }
 
 void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockTime& t)
 {
-  printf("EpixWF event\n");
   const Pds::EpixSampler::ElementV1& d = *reinterpret_cast<const Pds::EpixSampler::ElementV1*>(payload);
   const Pds::EpixSampler::ConfigV1& _config = *new(_config_buffer) Pds::EpixSampler::ConfigV1;
 
