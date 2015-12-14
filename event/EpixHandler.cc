@@ -15,6 +15,7 @@
 
 #include <string.h>
 #include <string>
+#include <sstream>
 
 #define DBUG
 
@@ -463,17 +464,18 @@ void EpixHandler::rename(const char* s)
   if (_entry) {
     _entry->desc().name(s);
  
-    char buff[64];
     if (_ref) {
-      sprintf(buff,"%s-Cal",s);
-      _ref->desc().name(buff);
+      std::ostringstream ostr;
+      ostr << s << "-Cal";
+      _ref->desc().name(ostr.str().c_str());
     }
 
     int index=0;
     unsigned nAsics       =_config_cache->numberOfAsics();
     for(unsigned a=0; a<nAsics; a++) {
-      sprintf(buff,"%s:AsicMonitor%d",s,a);
-      _rename_cache(_feature[index++],buff);
+      std::ostringstream ostr;
+      ostr << s << ":AsicMonitor" << a;
+      _rename_cache(_feature[index++],ostr.str().c_str());
     }
 
     EpixAmi::EnvData* envData =_config_cache->envData();
@@ -482,8 +484,9 @@ void EpixHandler::rename(const char* s)
 
     if (Ami::EventHandler::post_diagnostics())
       for(unsigned a=0; a<16; a++) {
-	sprintf(buff,"%s:CommonMode%d",s,_channel_map[a]);
-	_rename_cache(_feature[index++],buff);
+        std::ostringstream ostr;
+        ostr << s << ":CommonMode" << _channel_map[a];
+	_rename_cache(_feature[index++],ostr.str().c_str());
       }
   }
 }
@@ -606,11 +609,11 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     nFeatures += 16;
   _feature = make_ndarray<int>(nFeatures);
 
-  char buff[64];
   int index=0;
   for(unsigned a=0; a<_config_cache->numberOfAsics(); a++) {
-    sprintf(buff,"%s:Epix:AsicMonitor:%d",detname,a);
-    _feature[index++] = _add_to_cache(buff);
+    std::ostringstream ostr;
+    ostr << detname << ":Epix:AsicMonitor:" << a;
+    _feature[index++] = _add_to_cache(ostr.str().c_str());
   }
 
   if (_config_cache->envData())
@@ -618,8 +621,9 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 
   if (Ami::EventHandler::post_diagnostics()) {
     for(unsigned a=0; a<16; a++) {
-      sprintf(buff,"%s:Epix:CommonMode%d",detname,_channel_map[a]);
-      _feature[index++] = _add_to_cache(buff);
+      std::ostringstream ostr;
+      ostr << detname << ":Epix:CommonMode:" << _channel_map[a];
+      _feature[index++] = _add_to_cache(ostr.str().c_str());
     }
   }
 
@@ -1114,11 +1118,11 @@ EpixAmi::EnvData1::EnvData1(EventHandlerF& h) :
 
 void     EpixAmi::EnvData1::addFeatures(const char* name)
 {
-#define ADDV(s) {                                      \
-    sprintf(buff,"%s:Epix:"#s,name);                   \
-    _index[index++] = _handler._add_to_cache(buff); }
+#define ADDV(s) {                                               \
+    std::ostringstream ostr;                                    \
+    ostr << name << ":Epix:" << #s;                             \
+      _index[index++] = _handler._add_to_cache(ostr.str().c_str()); }
 
-  char buff[64];
   unsigned index=0;
   ADDV(AVDD);
   ADDV(DVDD);
@@ -1131,10 +1135,10 @@ void     EpixAmi::EnvData1::addFeatures(const char* name)
 void     EpixAmi::EnvData1::rename     (const char* name)
 {
 #define ADDV(s) {                                               \
-    sprintf(buff,"%s:Epix:"#s,name);                            \
-    _handler._rename_cache(_index[index++],buff); }
+    std::ostringstream ostr;                                    \
+    ostr << name << ":Epix:" << #s;                             \
+      _handler._rename_cache(_index[index++],ostr.str().c_str()); }
 
-  char buff[64];
   unsigned index=0;
   ADDV(AVDD);
   ADDV(DVDD);
@@ -1161,11 +1165,11 @@ EpixAmi::EnvData2::EnvData2(EventHandlerF& h) :
 
 void     EpixAmi::EnvData2::addFeatures(const char* name)
 {
-#define ADDV(s) {                                      \
-    sprintf(buff,"%s:Epix:"#s,name);                   \
-    _index[index++] = _handler._add_to_cache(buff); }
+#define ADDV(s) {                                               \
+    std::ostringstream ostr;                                    \
+    ostr << name << ":Epix:" << #s;                             \
+      _index[index++] = _handler._add_to_cache(ostr.str().c_str()); }
 
-  char buff[64];
   unsigned index=0;
   ADDV(Temp0);
   ADDV(Temp1);
@@ -1182,10 +1186,10 @@ void     EpixAmi::EnvData2::addFeatures(const char* name)
 void     EpixAmi::EnvData2::rename     (const char* name)
 {
 #define ADDV(s) {                                               \
-    sprintf(buff,"%s:Epix:"#s,name);                            \
-    _handler._rename_cache(_index[index++],buff); }
+    std::ostringstream ostr;                                    \
+    ostr << name << ":Epix:" << #s;                             \
+      _handler._rename_cache(_index[index++],ostr.str().c_str()); }
 
-  char buff[64];
   unsigned index=0;
   ADDV(Temp0);
   ADDV(Temp1);

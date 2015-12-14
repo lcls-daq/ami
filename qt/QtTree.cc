@@ -24,13 +24,15 @@ static QStringList split(const QString& str,
                          int            length=-1)
 {
   QRegExp sep(sepstr);
-  QStringList l = str.split(sep,QString::SkipEmptyParts).mid(level,length);
-  int pos=0;
-  for(int i=0; i<l.size(); i++) {
-    QString& s = l[i];
-    pos = str.indexOf(s, pos) + s.size();
-    if (pos < str.size())
-      s.append(str.at(pos));
+  QStringList q = str.split(sep,QString::SkipEmptyParts).mid(level,length);
+  QStringList l;
+  for(int i=level; i<(level+q.size()); i++) {
+    QString s=str.section(sep, i, i,
+                          QString::SectionSkipEmpty|
+                          QString::SectionIncludeTrailingSep);
+    if (str.isEmpty())
+      break;
+    l.append(s);
   }
   return l;
 }
