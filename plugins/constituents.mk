@@ -44,7 +44,7 @@ libincs_XPPOther := pdsdata/include ndarray/include boost/include
 liblibs_XPPOther := ami/xppbase
 
 libnames += phascav
-libsrcs_phascav := PhaseCavEBeam
+libsrcs_phascav := PhaseCavEBeam.cc
 libincs_phascav := pdsdata/include ndarray/include boost/include
 liblibs_phascav := ami/xppbase
 
@@ -75,7 +75,9 @@ liblibs_CspadTripper := epics/ca
 libnames += IpmSumEScan
 libsrcs_IpmSumEScan := IpmSumEScan.cc
 libincs_IpmSumEScan := pdsdata/include ndarray/include boost/include
+liblibs_IpmSumEScan := ami/xppbase
 
 libnames += XPPIpmLODCM
 libsrcs_XPPIpmLODCM := XPPIpmLODCM.cc
 libincs_XPPIpmLODCM := pdsdata/include ndarray/include boost/include
+liblibs_XPPIpmLODCM := ami/xppbase
