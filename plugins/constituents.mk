@@ -81,3 +81,7 @@ libnames += XPPIpmLODCM
 libsrcs_XPPIpmLODCM := XPPIpmLODCM.cc
 libincs_XPPIpmLODCM := pdsdata/include ndarray/include boost/include
 liblibs_XPPIpmLODCM := ami/xppbase
+
+libnames += CsPadTemp
+libsrcs_CsPadTemp := CsPadTemp.cc
+libincs_CsPadTemp := pdsdata/include ndarray/include boost/include
