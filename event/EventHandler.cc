@@ -138,6 +138,18 @@ std::list<std::string> EventHandler::features() const
   return std::list<std::string>();
 }
 
+Pds::DetInfo EventHandler::info_mask() const 
+{
+  if (_info.level()==Pds::Level::Source) {
+    Pds::DetInfo d(static_cast<const Pds::DetInfo&>(_info));
+    if (d.devId()&(1<<7))
+      return Pds::DetInfo(d.processId(),
+                          d.detector(), d.detId(),
+                          d.device()  , d.devId()&0x0f);
+    return d;
+  }
+  return Pds::DetInfo((const char*)NULL);
+}
 
 #include "ami/event/EvrHandler.hh"
 #include "ami/event/FEEGasDetEnergyReader.hh"
@@ -164,6 +176,7 @@ std::list<std::string> EventHandler::features() const
 #include "ami/event/Fccd960Handler.hh"
 #include "ami/event/PnccdHandler.hh"
 #include "ami/event/CspadHandler.hh"
+#include "ami/event/CspadQuadHandler.hh"
 #include "ami/event/CspadMiniHandler.hh"
 #include "ami/event/PrincetonHandler.hh"
 #include "ami/event/AcqWaveformHandler.hh"
@@ -207,7 +220,12 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_PrincetonConfig:  h = new PrincetonHandler  (info, cache); break;
   case Pds::TypeId::Id_pnCCDconfig:      h = new PnccdHandler      (info,cache); break;
   case Pds::TypeId::Id_CspadConfig:
-    if (info.device()==DetInfo::Cspad)   h = new CspadHandler      (info,cache);
+    if (info.device()==DetInfo::Cspad) {
+      if (info.detector()==DetInfo::MecTargetChamber)
+        h = new CspadQuadHandler  (info,cache);
+      else
+        h = new CspadHandler      (info,cache);
+    }
     else                                 h = new CspadMiniHandler  (info,cache);
     break;
   case Pds::TypeId::Id_Cspad2x2Config:   h = new CspadMiniHandler  (info,cache); break;

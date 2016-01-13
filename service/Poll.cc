@@ -44,12 +44,26 @@ public:
   int         size   () const { return _size; }
   char*       payload() const { return _payload; }
 public:
-  void        free   () { if (_size) delete[] _payload; }
+  void        free   ();
 private:
   int _hdr;
   int _size;
   char* _payload;
 };
+
+void LMsg::free()
+{
+  try {
+    if (_size) delete[] _payload;
+  }
+  catch (const std::exception& ex) {
+    printf("LMsg::free caught exception:\n");
+    printf("\tthis: %p\n",this);
+    printf("\t_hdr: %x\n",_hdr);
+    printf("\t_size: %x\n",_size);
+    printf("\t_payload: %p\n",_payload);
+  }
+}
 
 const int Step=32;
 const int BufferSize=sizeof(LMsg);

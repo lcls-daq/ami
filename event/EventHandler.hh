@@ -3,6 +3,7 @@
 
 #include "pdsdata/xtc/Src.hh"
 #include "pdsdata/xtc/Damage.hh"
+#include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/XtcIterator.hh"
 
@@ -116,11 +117,14 @@ namespace Ami {
     ///  Used for generating Filter module
     virtual std::list<std::string> features() const;
   public:
-    const Pds::Src&     info() const { return _info; }
+    const Pds::Src& info() const { return _info; }
     const Pds::TypeId::Type&  data_type() const { return _data_type.front(); }
     const std::list<Pds::TypeId::Type>& data_types() const { return _data_type; }
     const Pds::TypeId::Type&  config_type() const { return _config_type.front(); }
     const std::list<Pds::TypeId::Type>& config_types() const { return _config_type; }
+  public:
+    ///  Masked to give the original DetInfo (see Cspad[Quad]Handler.cc)
+    Pds::DetInfo info_mask() const;
   public:
     static void limit_resolution(unsigned);
     static unsigned resolution();

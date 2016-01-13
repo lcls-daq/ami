@@ -47,6 +47,7 @@ namespace Ami {
     CspadGeometry::Detector* _unbinned_detector;
     unsigned             _options;
     CspadTemp            _therm;
+    friend class CspadQuadHandler;
   };
 };
 

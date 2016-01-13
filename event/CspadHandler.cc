@@ -1347,12 +1347,12 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   char oname1[NameSize];
   char oname2[NameSize];
 
-  const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
+  DetInfo dInfo(info_mask());
   FILE *f = Calib::fopen(dInfo, "ped", "pedestals");
   FILE *s = Calib::fopen(dInfo, "sta", "pixel_status");
 
-  sprintf(oname1,"gain.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
+  sprintf(oname1,"gain.%08x.dat",dInfo.phy());
+  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",dInfo.phy());
   FILE *g = Calib::fopen_dual(oname1, oname2, "gain map");
 
   FILE *rms = Calib::fopen(dInfo, "res", "pixel_rms");
@@ -1389,7 +1389,7 @@ void CspadHandler::_create_entry(const CspadGeometry::ConfigCache& cfg,
   if (detector)
     delete detector;
 
-  detector = new CspadGeometry::Detector(*this,info(),cfg,f,s,g,rms,max_pixels,_full_resolution(),_therm);
+  detector = new CspadGeometry::Detector(*this,info_mask(),cfg,f,s,g,rms,max_pixels,_full_resolution(),_therm);
 
   const unsigned ppb = detector->ppb();
   const DetInfo& det = static_cast<const DetInfo&>(info());
@@ -1429,7 +1429,7 @@ void CspadHandler::_event    (TypeId contains, const char* payload, size_t sizeo
     }
 
     if (_entry->desc().options() & CspadCalib::option_reload_pedestal()) {
-      const DetInfo& dInfo = static_cast<const Pds::DetInfo&>(info());
+      DetInfo dInfo(info_mask());
       FILE *f = Calib::fopen(dInfo, "ped", "pedestals", true);
       if (f) {
 	_detector->set_pedestals(f);
