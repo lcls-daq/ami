@@ -1118,8 +1118,11 @@ pyami_clear_l3t(PyObject *self, PyObject *args)
 
     int result;
 
+    const char* file_str = 0;
+    PyArg_ParseTuple(args,"s",&file_str);
+    
     Py_BEGIN_ALLOW_THREADS
-    Ami::Python::L3TClient cl(new Ami::RawFilter,0);
+    Ami::Python::L3TClient cl(new Ami::RawFilter,file_str);
     result = cl.initialize(*_discovery->allocate(cl));
     Py_END_ALLOW_THREADS
 
