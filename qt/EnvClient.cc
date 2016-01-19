@@ -45,7 +45,7 @@
 
 using namespace Ami::Qt;
 
-static const int BufferSize = 0x8000;
+static const int BufferSize = 0x20000;
 
 EnvClient::EnvClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel, const QString& name) :
   Ami::Qt::AbsClient(parent,info,channel),
