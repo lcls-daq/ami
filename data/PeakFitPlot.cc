@@ -164,7 +164,7 @@ Entry&     PeakFitPlot::_operate(const Entry& e) const
     ndarray<unsigned,1> lpos = make_ndarray<unsigned>(_nbins);
     for(int i=0; i<_nbins; i++) {
       linput[i] = input[_bins[i]];
-      linput[i] = _bins[i];
+      lpos[i] = _bins[i];
     }
 
     if (norm.empty())
