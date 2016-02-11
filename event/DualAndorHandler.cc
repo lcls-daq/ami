@@ -26,6 +26,11 @@ static unsigned sensors(const Pds::Andor3d::ConfigV1& c)
   return c.numSensors();
 }
 
+static unsigned gap_size(const Pds::Andor3d::ConfigV1& c)
+{
+  return (sensor_gap + c.binX() - 1) / c.binX();
+}
+
 using namespace Ami;
 
 static std::list<Pds::TypeId::Type> data_type_list()
@@ -81,7 +86,7 @@ void DualAndorHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   unsigned srows   = height(_config);
   unsigned columns = scols * nsensor;
   unsigned rows    = srows;
-  unsigned gap     = sensor_gap;
+  unsigned gap     = gap_size(_config);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/1024 + 1;
   columns = (columns+ppb-1)/ppb;
