@@ -89,6 +89,9 @@ void DualAndorHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   unsigned gap     = gap_size(_config);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/1024 + 1;
+  // check that binning is an even divison 
+  if (columns % ppb || rows % ppb)
+    ppb = 1;
   columns = (columns+ppb-1)/ppb;
   rows    = (rows   +ppb-1)/ppb;
   scols   = (scols  +ppb-1)/ppb;
