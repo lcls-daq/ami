@@ -32,8 +32,8 @@ void AmendedRegistry::change()
     _help  << QString();
   }
   
-  //  printf("AmendedRegistry names [%d] -> [%d]\n",
-  //	 n, _names.size());
+  printf("AmendedRegistry names [%d] -> [%d]\n",
+	 n, _names.size());
 
   emit changed();
 }

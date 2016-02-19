@@ -42,7 +42,7 @@ namespace Ami {
       QStandardItemModel _model;
       QTreeView          _view;
       QString            _entry;
-      QString            _separator;
+      QStringList        _separators;
       bool               _use_scan;
     };
   };

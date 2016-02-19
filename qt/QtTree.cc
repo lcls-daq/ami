@@ -6,8 +6,6 @@
 
 #include <stdio.h>
 
-//#define DBUG
-
 using namespace Ami::Qt;
 
 static QStringList _most_recent;
@@ -15,49 +13,14 @@ const int MOST_RECENT_DISPLAY = 8;
 const int MOST_RECENT_SIZE    = 10;
 static QStringList _favorites;
 
-//
-//  Split 'str' at occurrences of 'sep'.  Keep 'sep' at trail of pieces.
-//
-static QStringList split(const QString& str,
-                         const QString& sepstr,
-                         int            level,
-                         int            length=-1)
-{
-  QRegExp sep(sepstr);
-  QStringList q = str.split(sep,QString::SkipEmptyParts).mid(level,length);
-  QStringList l;
-  for(int i=level; i<(level+q.size()); i++) {
-    QString s=str.section(sep, i, i,
-                          QString::SectionSkipEmpty|
-                          QString::SectionIncludeTrailingSep);
-    if (str.isEmpty())
-      break;
-    l.append(s);
-  }
-  return l;
-}
-
-#ifdef DBUG
-static void dump_list(const char* ttl,
-                      const QString& name,
-                      const QStringList& name_f)
-{ 
-  printf("%s [%s]:", ttl, qPrintable(name));
-  for(int i=0; i<name_f.size(); i++)
-    printf(" [%s]", qPrintable(name_f[i]));
-  printf("\n"); 
-}
-#endif
-
 static void push(QStandardItem& root, 
                  const QString& name, 
                  int level,
                  const QString& separator)
 {
-  QStringList name_f = split(name,separator,level);
-#ifdef DBUG
-  dump_list("push",name,name_f);
-#endif
+  QStringList name_tokens = name.split(separator,QString::SkipEmptyParts);
+  QStringList name_f = name_tokens.mid(level);
+
   if (name_f.size()==0) {
     root.insertRow(0, new QStandardItem(name) );
     return;
@@ -65,10 +28,8 @@ static void push(QStandardItem& root,
 
   for(int i=0; i<root.rowCount(); i++) {
     QStandardItem& row = *root.child(i);
-    QStringList row_f = split(row.text(),separator,level);
-#ifdef DBUG
-    dump_list("push row",row.text(),row_f);
-#endif    
+    QStringList row_f = row.text().split(separator,QString::SkipEmptyParts).mid(level);
+
     //  If they share any leading fields:
     if (name_f.size() && row_f.size() && 
         name_f[0]==row_f[0] &&
@@ -90,23 +51,15 @@ static void push(QStandardItem& root,
       }
       else {
         //  Create a new root with these two children
-        QStringList common = split(name,separator,0,level);
-#ifdef DBUG
-        dump_list("push common in",name,common);
-#endif
+        QStringList common = name_tokens.mid(0,level);
+
         //        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
         while( name_f.size()>1 && row_f.size() && name_f[0] == row_f[0] ) {
           common.append( name_f.takeFirst() );
           row_f.takeFirst();
         }
         //        QStandardItem* branch = new QStandardItem( common.join(separator) );
-        QString common_branch = common.join("");
-#ifdef DBUG
-        printf("common_branch [%s]\n",qPrintable(common_branch));
-        dump_list("common name",name,name_f);
-        dump_list("common row ",row.text(),row_f);
-#endif
-        QStandardItem* branch = new QStandardItem( common_branch );
+        QStandardItem* branch = new QStandardItem( common.join(separator) );
         root.takeRow(i);
         root.insertRow( i, branch );
         branch->appendRow( &row );
@@ -135,7 +88,7 @@ QtTree::QtTree(const QString& separator) :
   QPushButton(),
   _view      (this),
   _entry     (),
-  _separator (separator),
+  _separators(separator.split("",QString::SkipEmptyParts)),
   _use_scan  (true)
 {
   _view.setWindowFlags(::Qt::Dialog);
@@ -155,7 +108,7 @@ QtTree::QtTree(const QStringList& names,
   QPushButton(),
   _view      (this),
   _entry     (),
-  _separator (separator),
+  _separators(separator.split("",QString::SkipEmptyParts)),
   _use_scan  (true)
 {
 
@@ -193,9 +146,19 @@ void QtTree::fill(const QStringList& names)
       else if (lFirst) {
         lFirst=false;
         root->appendRow( new QStandardItem( n ) );
+      } 
+      else {
+        QString sep = "";
+        for(int i=0; i<_separators.size(); i++) {
+          sep = _separators.at(i);
+          if (n.contains(sep))
+            break;
+        }
+        if (sep.isEmpty())
+          root->insertRow(0, new QStandardItem(n));
+        else
+          push(*root,n,0,sep);
       }
-      else
-        push(*root,n,0,_separator);
     }
     for(int i=0; i<scan_names.size(); i++)
       root->insertRow(0, new QStandardItem(scan_names.at(i)));
