@@ -53,18 +53,16 @@ static void push(QStandardItem& root,
         //  Create a new root with these two children
         QStringList common = name_tokens.mid(0,level);
 
-        //        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
-        while( name_f.size()>1 && row_f.size() && name_f[0] == row_f[0] ) {
+        while( name_f.size() && row_f.size() && name_f[0] == row_f[0] ) {
           common.append( name_f.takeFirst() );
           row_f.takeFirst();
         }
-        //        QStandardItem* branch = new QStandardItem( common.join(separator) );
         QStandardItem* branch = new QStandardItem( common.join(separator) );
         root.takeRow(i);
         root.insertRow( i, branch );
         branch->appendRow( &row );
         QStandardItem* leaf = new QStandardItem( name );
-        if (name_f[0] < row_f[0]) {
+        if (!name_f.size() || name_f[0] < row_f[0]) {
           branch->insertRow(0, leaf);
         }
         else {
