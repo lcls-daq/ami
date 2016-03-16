@@ -645,6 +645,28 @@ void DetectorSelect::change_detectors(const char* c)
     _detList->sortItems();
   }
 
+  //
+  //  Remove clients not in detector list
+  //
+  std::list<QtTopWidget*> keepList;
+  for(std::list<QtTopWidget*>::iterator it = _client.begin(); it != _client.end(); it++) {
+    bool lFound=false;
+    for(int i=0; i<_detList->count(); i++) {
+      DetectorListItem* ditem = static_cast<DetectorListItem*>(_detList->item(i));
+      if (match((*it)->info,ditem->info) && 
+          (*it)->channel==ditem->channel &&
+          (*it)->title()==ditem->text()) {
+        lFound=true;
+        break;
+      }
+    }
+    if (lFound) 
+      keepList.push_back(*it);
+    else
+      delete (*it);
+  }
+  _client = keepList;
+
   //  Register filters
   _filters->update(rx);
 

@@ -52,6 +52,7 @@ Control::Control(Requestor& c, double request_rate, bool hLayout) :
 
 Control::~Control()
 {
+  cancel();
   _task->destroy();
 }
 
