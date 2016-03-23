@@ -241,7 +241,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   _colsPerAsic = c.numberOfPixelsPerAsicRow();				\
   _rows = c.numberOfRows();						\
   _rowsPerAsic = c.numberOfRowsPerAsic();				\
-  _aMask  = c.asicMask();						\
+  _aMask  = c.asicMask() ? c.asicMask() : 0xf;                          \
   _nAsics = c.numberOfAsics();                                          \
   _envData = c.version() < 0xea020000 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
 
