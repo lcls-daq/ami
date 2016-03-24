@@ -434,6 +434,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
       break;
     case Pds::DetInfo::OceanOptics :
     case Pds::DetInfo::Imp      :
+    case Pds::DetInfo::Wave8    :
     case Pds::DetInfo::EpixSampler:
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel, name); break;

@@ -196,6 +196,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/event/AnalogInputHandler.hh"
 #include "ami/data/FeatureCache.hh"
+#include "ami/event/Generic1DHandler.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
 {
@@ -207,6 +208,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_AcqConfig:        h = new AcqWaveformHandler(info); break;
   case Pds::TypeId::Id_AcqTdcConfig:     h = new AcqTdcHandler     (info); break;
   case Pds::TypeId::Id_ImpConfig:        h = new ImpWaveformHandler(info); break;
+  case Pds::TypeId::Id_Generic1DConfig:  h = new Generic1DHandler  (info); break;
   case Pds::TypeId::Id_TM6740Config:     h = new TM6740Handler     (info); break;
   case Pds::TypeId::Id_Opal1kConfig:     h = new Opal1kHandler     (info); break;
   case Pds::TypeId::Id_OrcaConfig  :     h = new OrcaHandler       (info); break;

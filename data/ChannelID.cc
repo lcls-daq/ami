@@ -33,7 +33,7 @@ static char _buffer[BSIZ];
 
 static void _default(char* b, const DetInfo& info, unsigned channel)
 {
-  if (info.device()==DetInfo::Acqiris) {
+  if (info.device()==DetInfo::Acqiris || info.device()==DetInfo::Wave8) {
     Ami::Channel ch(channel);
     if (!ch.is_mask())
       sprintf(b,"%s_%s_%d",
