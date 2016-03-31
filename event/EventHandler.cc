@@ -164,6 +164,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/IpimbHandler.hh"
 #include "ami/event/EncoderHandler.hh"
 #include "ami/event/UsdUsbHandler.hh"
+#include "ami/event/UsdUsbFexHandler.hh"
 #include "ami/event/Gsc16aiHandler.hh"
 #include "ami/event/Opal1kHandler.hh"
 #include "ami/event/OrcaHandler.hh"
@@ -249,6 +250,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_IpimbConfig:      h = new IpimbHandler    (info,cache); break;
   case Pds::TypeId::Id_EncoderConfig:    h = new EncoderHandler  (info,cache); break;
   case Pds::TypeId::Id_UsdUsbConfig:     h = new UsdUsbHandler   (info,cache); break;
+  case Pds::TypeId::Id_UsdUsbFexConfig:  h = new UsdUsbFexHandler(info,cache); break;
   case Pds::TypeId::Id_Gsc16aiConfig:    h = new Gsc16aiHandler  (info,cache); break;
   case Pds::TypeId::Id_EvsConfig:
   case Pds::TypeId::Id_EvrConfig:        h = new EvrHandler      (info,cache); break;
