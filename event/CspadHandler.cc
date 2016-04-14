@@ -464,7 +464,7 @@ namespace CspadGeometry {
       if (ped) {
         int16_t* off = _off;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, ped);
+          Ami::Calib::getline(&linep, &sz, ped);
           *off++ = Offset - int16_t(strtod(linep,&pEnd));
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));
@@ -481,7 +481,7 @@ namespace CspadGeometry {
         int16_t*  off = _off;
         int16_t** sta = _sta;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, status);
+          Ami::Calib::getline(&linep, &sz, status);
           if (strtoul(linep,&pEnd,0)) *sta++ = off;
           off++;
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++, off++)
@@ -495,7 +495,7 @@ namespace CspadGeometry {
       if (gain) {
         float* gn = _gn;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, gain);
+          Ami::Calib::getline(&linep, &sz, gain);
           *gn++ = strtod(linep,&pEnd);
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
             *gn++ = strtod(pEnd,&pEnd);
@@ -522,7 +522,7 @@ namespace CspadGeometry {
         float* r = _rms;
         float* g = _gn;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, rms);
+          Ami::Calib::getline(&linep, &sz, rms);
           *r++ = strtod(linep,&pEnd);
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
             *r++ = strtod(pEnd,&pEnd)*(*g++);
@@ -550,7 +550,7 @@ namespace CspadGeometry {
       if (ped) {
         int16_t* off = _off;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
-          getline(&linep, &sz, ped);
+          Ami::Calib::getline(&linep, &sz, ped);
           *off++ = Offset - int16_t(strtod(linep,&pEnd));
           for (unsigned row=1; row < 2*Pds::CsPad::MaxRowsPerASIC; row++)
             *off++ = Offset - int16_t(strtod(pEnd, &pEnd));

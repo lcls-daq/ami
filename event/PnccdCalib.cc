@@ -123,28 +123,28 @@ ndarray<double,2> PnccdCalib::load_pedestals(const DescImage& d,
       ndarray<double,2> pedestals = make_ndarray<double>(1024,1024);
       for(unsigned i=0; i<512; i++) {
         double* p = &pedestals[i][0];
-        getline(&linep, &sz, f);
+        Ami::Calib::getline(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p++ = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
         double* p = &pedestals[i][511];
-        getline(&linep, &sz, f);
+        Ami::Calib::getline(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
         double* p = &pedestals[i][1023];
-        getline(&linep, &sz, f);
+        Ami::Calib::getline(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=0; i<512; i++) {
         double* p = &pedestals[i][512];
-        getline(&linep, &sz, f);
+        Ami::Calib::getline(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p++ = strtod(pEnd,&pEnd);

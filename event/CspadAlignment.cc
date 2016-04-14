@@ -1,5 +1,6 @@
 #include "ami/event/CspadAlignment.hh"
 #include "ami/event/CspadAlignment_Commissioning.hh"
+#include "ami/event/Calib.hh"
 
 #include <string>
 #include <sstream>
@@ -50,7 +51,7 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g, bool offline)
   //  if (offline) {  // Read offline style file { RHS + relative coordinates + rotations }
 
     while(1) {
-      if (getline(&linep, &sz, g)<0) break;
+      if (Ami::Calib::getline(&linep, &sz, g)<0) break;
       if (strlen(linep)==0) continue;
       if (linep[0]=='#') continue;
 
@@ -134,7 +135,7 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load2x2(FILE* g, bool offline)
     //  if (offline) {  // Read offline style file { RHS + relative coordinates + rotations }
 
     while(1) {
-      if (getline(&linep, &sz, g)<0) break;
+      if (Ami::Calib::getline(&linep, &sz, g)<0) break;
       if (strlen(linep)==0) continue;
       if (linep[0]=='#') continue;
 
