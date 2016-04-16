@@ -58,7 +58,7 @@ std::string FccdCalib::save_pedestals(Entry* entry,
 
       double* p = pedestals;
       for(unsigned i=0; i<Rows; i++) {
-	Ami::Calib::getline(&linep, &sz, f);
+	Ami::Calib::get_line(&linep, &sz, f);
 	*p++ += strtod(linep,&pEnd);
 	for(unsigned j=1; j<Cols; j++)
 	  *p++ += strtod(pEnd,&pEnd);

@@ -943,7 +943,7 @@ static ndarray<double,3> get_calib(FILE* f)
     
     size_t sz = 8 * 1024;
     char* linep = (char *)malloc(sz);
-    Ami::Calib::getline(&linep, &sz, f);
+    Ami::Calib::get_line(&linep, &sz, f);
     double v;
     if (sscanf(linep,"%lf %lf %lf",&v,&v,&v)==2) {
       rewind(f);

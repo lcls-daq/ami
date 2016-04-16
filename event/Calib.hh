@@ -33,7 +33,7 @@ namespace Ami {
     static bool use_test();
     static void set_experiment(const char*);
     static void set_run(int);
-    static int  getline(char** p, size_t* n, FILE* f);
+    static int  get_line(char** p, size_t* n, FILE* f);
   };
 };
 

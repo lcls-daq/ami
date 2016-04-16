@@ -81,7 +81,7 @@ static void _stat64(const char* fname, struct stat64* s, bool no_cache)
     stat64(fname,s);
 }
 
-int Ami::Calib::getline(char** p, size_t* n, FILE* f) {
+int Ami::Calib::get_line(char** p, size_t* n, FILE* f) {
   int v=0;
   while( (v=getline(p, n, f))==0 || (*p)[0]=='#') ;
   return v;
