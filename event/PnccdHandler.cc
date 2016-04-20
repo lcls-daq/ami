@@ -129,6 +129,7 @@ void PnccdHandler::_configure(Pds::TypeId, const void* payload, const Pds::Clock
 
   _ped  = PnccdCalib::load_pedestals(_entry->desc(),r,false);
   _cmth = PnccdCalib::load_cmth     (_entry->desc(),r,false);
+  _gain = PnccdCalib::load_gains    (_entry->desc(),r,false);
 }
 
 void PnccdHandler::_calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t) {}
@@ -185,6 +186,8 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
   bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
   bool lcommon = (_options & PnccdCalib::option_correct_common_mode()) &&
     (_cmth.size()>0);
+  bool lgain   = (_options & PnccdCalib::option_correct_gain()) &&
+    (_gain.size()>0);
 
   const unsigned o = Offset;
   const unsigned cx = (x==0) ? 0 : 4;
@@ -192,10 +195,17 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
   int32_t row[cols_segment];
   for(unsigned j=0; j<rows_segment; j++) {
     for(unsigned i=0; i<cols_segment; i++) {
-      if (!lped)
-        row[i] = *d++ + o;
-      else
-        row[i] = *d++ + o - int32_t(_ped[y+j][x+i]);
+      if (!lped) {
+        if (!lgain)
+          row[i] = *d++ + o;
+        else
+          row[i] = int32_t(*d++ * _gain[y+j][x+i]) + o;
+      } else {
+        if (!lgain)
+          row[i] = int32_t(*d++ - _ped[y+j][x+i]) + o;
+        else
+          row[i] = int32_t((*d++ - _ped[y+j][x+i])* _gain[y+j][x+i]) + o;
+      }
     }        
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {
@@ -282,6 +292,8 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
   bool lped    = (_options & PnccdCalib::option_no_pedestal())==0;
   bool lcommon = (_options & PnccdCalib::option_correct_common_mode()) &&
     (_cmth.size()>0);
+  bool lgain   = (_options & PnccdCalib::option_correct_gain()) &&
+    (_gain.size()>0);
 
   const unsigned o = Offset;
   const unsigned cx = (x>cols_segment) ? 7 : 3;
@@ -289,10 +301,17 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
   int32_t row[cols_segment];
   for(unsigned j=0; j<rows_segment; j++) {
     for(unsigned i=0; i<cols_segment; i++) {
-      if (!lped)
-        row[i] = *d++ + o;
-      else
-        row[i] = *d++ + o - int32_t(_ped[y-j][x-i]);
+      if (!lped) {
+        if (!lgain)
+          row[i] = *d++ + o;
+        else
+          row[i] = int32_t(*d++ * _gain[y-j][x-i]) + o;
+      } else {
+        if (!lgain)
+          row[i] = int32_t(*d++ - _ped[y-j][x-i]) + o;
+        else
+          row[i] = int32_t((*d++ - _ped[y-j][x-i])* _gain[y-j][x-i]) + o;
+      }
     }        
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {

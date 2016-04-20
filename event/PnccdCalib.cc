@@ -16,10 +16,12 @@ static const unsigned _option_no_pedestal         = 0x01;
 static const unsigned _option_reload_pedestal     = 0x02;
 static const unsigned _option_correct_common_mode = 0x04;
 static const unsigned _option_rotate              = 0x18;
+static const unsigned _option_correct_gain        = 0x20;
 
 unsigned PnccdCalib::option_no_pedestal        () { return _option_no_pedestal; }
 unsigned PnccdCalib::option_reload_pedestal    () { return _option_reload_pedestal; }
 unsigned PnccdCalib::option_correct_common_mode() { return _option_correct_common_mode; }
+unsigned PnccdCalib::option_correct_gain       () { return _option_correct_gain; }
 unsigned PnccdCalib::option_rotate             (Rotation r) { return (r&3)<<3; }
 Rotation PnccdCalib::option_rotate             (unsigned r) { return Rotation((r>>3)&3); }
 
@@ -282,3 +284,58 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
   return ndarray<double,2>();
 }
 
+ndarray<double,2> PnccdCalib::load_gains(const DescImage& d,
+                                         Rotation,
+                                         bool no_cache)
+{
+  //
+  //  Load calibration from a file
+  //    Always read and write values for each pixel (even when binned)
+  //
+  bool offl_type;
+  FILE* f = Calib::fopen(d.info(),"gain","pixel_gain",no_cache,&offl_type);
+  if (f) {
+    if (offl_type) {
+      size_t sz = 8 * 1024;
+      char* linep = (char *)malloc(sz);
+      memset(linep, 0, sz);
+      char* pEnd = linep;
+
+      ndarray<double,2> gains = make_ndarray<double>(1024,1024);
+      for(unsigned i=0; i<512; i++) {
+        double* p = &gains[i][0];
+        Ami::Calib::get_line(&linep, &sz, f);
+        *p++ = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p++ = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=1023; i>=512; i--) {
+        double* p = &gains[i][511];
+        Ami::Calib::get_line(&linep, &sz, f);
+        *p-- = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p-- = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=1023; i>=512; i--) {
+        double* p = &gains[i][1023];
+        Ami::Calib::get_line(&linep, &sz, f);
+        *p-- = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p-- = strtod(pEnd,&pEnd);
+      }
+      for(unsigned i=0; i<512; i++) {
+        double* p = &gains[i][512];
+        Ami::Calib::get_line(&linep, &sz, f);
+        *p++ = strtod(linep,&pEnd);
+        for(unsigned j=1; j<512; j++)
+          *p++ = strtod(pEnd,&pEnd);
+      }
+      free(linep);
+      fclose(f);
+      return gains;
+    }
+    else
+      return FrameCalib::load_darray(f);
+  }
+  return ndarray<double,2>();
+}

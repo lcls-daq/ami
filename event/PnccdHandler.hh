@@ -31,6 +31,7 @@ namespace Ami {
     void _fillQuadrant (const uint16_t* d, unsigned x, unsigned y);
     void _fillQuadrantR(const uint16_t* d, unsigned x, unsigned y);
     void _load_pedestal();
+    void _load_gain();
   private:
     const FeatureCache&  _cache;
     Pds::PNCCD::ConfigV1 _config;
@@ -41,6 +42,7 @@ namespace Ami {
 
     ndarray<double,2>  _ped;
     ndarray<double,2>  _cmth;
+    ndarray<double,2>  _gain;
   };
 };
 

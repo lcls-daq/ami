@@ -40,6 +40,7 @@ namespace Ami {
       PnccdCalibrator* _calibrator;
       QCheckBox* _fnBox;
       QCheckBox* _npBox;
+      QCheckBox* _gnBox;
       Rotator*   _rotator;
       bool _reloadPedestals;
 

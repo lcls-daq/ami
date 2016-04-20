@@ -31,10 +31,12 @@ PnccdClient::PnccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   
   addWidget(_fnBox = new QCheckBox("Correct\nCommon Mode"));
   addWidget(_npBox = new QCheckBox("Retain\nPedestal"));
+  addWidget(_gnBox = new QCheckBox("Correct\nGain"));
   addWidget(_rotator->widget());
     
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_gnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_rotator->box(), SIGNAL(currentIndexChanged(int)), this, SIGNAL(changed()));
 }
 
@@ -45,6 +47,7 @@ void PnccdClient::save(char*& p) const
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_fnBox", QtPersistent::insert(p,_fnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_gnBox", QtPersistent::insert(p,_gnBox->isChecked()) );
   XML_insert(p, "Rotator"  , "_rotator", _rotator->save(p) );
 }
 
@@ -57,6 +60,8 @@ void PnccdClient::load(const char*& p)
       _fnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_gnBox")
+      _gnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_rotator")
       _rotator->load(p);
   XML_iterate_close(PnccdClient,tag);
@@ -86,6 +91,7 @@ void PnccdClient::_configure(char*& p,
   unsigned o = 0;
   if (_fnBox->isChecked()) o |= PnccdCalib::option_correct_common_mode();
   if (_npBox->isChecked()) o |= PnccdCalib::option_no_pedestal();
+  if (_gnBox->isChecked()) o |= PnccdCalib::option_correct_gain();
   //  o |= PnccdCalib::option_rotate(rotation());
   if (_reloadPedestals) {
     o |= PnccdCalib::option_reload_pedestal();
