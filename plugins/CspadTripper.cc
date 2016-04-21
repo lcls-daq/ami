@@ -62,22 +62,32 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
   _cds(0),
   _detsFound(0),
   _lastTrip(Pds::ClockTime(0,0)),
-  _thres_epics(0),
-  _npixel_epics(0),
+  _thres_epics(-1),
+  _npixel_epics(-1),
+  _enable_epics(-1),
+  _name_epics(-1),
   _fname(name),
   _sname(short_name),
   _thres_pv(0),
   _npixel_pv(0),
+  _status_pv(0),
+  _enable_pv(0),
+  _name_pv(0),
   _shutter_pv(0),
-  _name_service(new NameService)
+  _name_service(new NameService),
+  _status(0),
+  _shutter(0)
 {
+  SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
+           "cspadtripper calling ca_context_create" );
+
   for (unsigned i=0;i<MaxDetsAllowed;i++) {
     _frame[i]=0;
     _config[i]=0;
     _dets[i]=0;
   }
-  _thres_epics = -1;
-  _npixel_epics = -1;
+  _status_pv = new char[64];
+  _shutter_pv = new char[64];
   //  printf("have called tripper constructor\n");
   //  sprintf(_nameBuffer, "CspadTripperTitleOfSomeSort");
   char fpath[128];
@@ -93,45 +103,43 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
   if(file.good()) {
     while (std::getline(file, line)) {
       if(line[0]!='#') {
-        std::stringstream ss(line);
-        std::string item;
-        unsigned count=0;
-        while (std::getline(ss, item, ' ')) {
-          switch(count) {
-            case 0:
-              _thres_pv = new char[item.length() + 1];
-              std::strcpy(_thres_pv, item.c_str());
-              break;
-            case 1:
-              _npixel_pv = new char[item.length() + 1];
-              std::strcpy(_npixel_pv, item.c_str());
-              break;
-            case 2:
-              _shutter_pv = new char[item.length() + 1];
-              std::strcpy(_shutter_pv, item.c_str());
-              break;
-          }
-          count++;
-        }
+        _thres_pv = new char[line.length() + strlen(":ADU") + 1];
+        sprintf(_thres_pv, "%s:ADU", line.c_str());
+        _npixel_pv = new char[line.length() + strlen(":DPI") + 1];
+        sprintf(_npixel_pv, "%s:DPI", line.c_str());
+        _status_pv = new char[line.length() + strlen(":TRIPPED") + 1];
+        sprintf(_status_pv, "%s:TRIPPED", line.c_str());
+        _enable_pv = new char[line.length() + strlen(":ACTIVE") + 1];
+        sprintf(_enable_pv, "%s:ACTIVE", line.c_str());
+        _name_pv = new char[line.length() + strlen(":SHUTTER") + 1];
+        sprintf(_name_pv, "%s:SHUTTER", line.c_str());
         break;
       }
     }
+    printf("PVs loaded from configuration file: thres - %s, npixels - %s, status - %s, enable - %s, shutter_name - %s\n",
+           _thres_pv,_npixel_pv,_status_pv,_enable_pv,_name_pv);
   } else {
     printf("tripper::configure unable to open %s, use default values and disable shutter\n",fpath);
   }
-  printf("PVs loaded from configuration file: thres - %s, npixels - %s, shutter - %s\n",_thres_pv,_npixel_pv,_shutter_pv);
-  if(_shutter_pv) {
-    _shutter = new Ami_Epics::PVWriter(_shutter_pv);
-  } else {
-    _shutter = 0;
+  if(_status_pv && strlen(_status_pv)) {
+    _status = new Ami_Epics::PVWriter(_status_pv);
   }
   file.close();
 }
 
 CspadTripper::~CspadTripper()
 {
-  if (_name_service) delete _name_service;
-  if (_shutter) delete _shutter;
+  if (_name_service) delete   _name_service;
+  if (_status)      delete    _status;
+  if (_shutter)     delete    _shutter;
+  if (_thres_pv)    delete[]  _thres_pv;
+  if (_npixel_pv)   delete[]  _npixel_pv;
+  if (_status_pv)   delete[]  _status_pv;
+  if (_enable_pv)   delete[]  _enable_pv;
+  if (_name_pv)     delete[]  _name_pv;
+  if (_shutter_pv)  delete[]  _shutter_pv;
+
+  ca_context_destroy();
 }
 
 void CspadTripper::reset    (FeatureCache& f)
@@ -165,6 +173,7 @@ void CspadTripper::configure(const Pds::DetInfo&    src,
 
     _nPixelsToTrip[_detsFound] = 0x100000;
     _tripCountThreshold[_detsFound] = 0x4000;
+    _enableTrip[_detsFound] = false;
     printf("have configured tripper with nPixelsToTrip %d, tripCountThreshold %d\n", _nPixelsToTrip[_detsFound], _tripCountThreshold[_detsFound]);
     if(_cds) {
       char title[80];
@@ -186,6 +195,14 @@ void CspadTripper::configure(const Pds::DetInfo&    src,
       printf("Found PV for configuring nPixelsToTrip: %s\n", pv_conf.description());
       _npixel_config = temp_pv;
       _npixel_epics = temp_id;
+    } else if(_enable_pv && strcmp(pv_conf.description(),_enable_pv)==0) {
+      printf("Found PV for configuring enableTrip: %s\n", pv_conf.description());
+      _enable_config = temp_pv;
+      _enable_epics = temp_id;
+    } else if(_name_pv && strcmp(pv_conf.description(),_name_pv)==0) {
+      printf("Found PV for configuring shutterName: %s\n", pv_conf.description());
+      _name_config = temp_pv;
+      _name_epics = temp_id;
     }
   }
 }
@@ -240,10 +257,32 @@ void CspadTripper::event    (const Pds::DetInfo&    src,
             }
           } else if(epics->pvId() == _npixel_epics) {
             for (unsigned id=0; id<_detsFound; id++) {
-              if(_tripCountThreshold[id] != new_val) {
+              if(_nPixelsToTrip[id] != new_val) {
                 printf("Updating number of pixels for trip for det %d from %d to %d\n", id, _nPixelsToTrip[id], new_val);
                 _nPixelsToTrip[id] = (unsigned) pv->value(0);
               }
+            }
+          }
+        }
+      } else if(epics->dbrType() == 14 /*Pds::Epics::DBR_TIME_STRING*/) {
+        if(epics->pvId() == _name_epics) {
+          const Pds::Epics::EpicsPvTimeString* pv = reinterpret_cast<const Pds::Epics::EpicsPvTimeString*>(epics);
+          const char* new_val = pv->value(0);
+          if(strlen(new_val)>0 && strcmp(new_val,_shutter_pv)!=0) {
+            std::strcpy(_shutter_pv,new_val);
+            printf("Updating fast shutter pv to %s\n", _shutter_pv);
+            if (_shutter) delete _shutter;
+            _shutter = new Ami_Epics::PVWriter(_shutter_pv);
+          }
+        }
+      } else if(epics->dbrType() == 17 /*Pds::Epics::DBR_TIME_ENUM*/) {
+        if(epics->pvId() == _enable_epics) {
+          const Pds::Epics::EpicsPvTimeEnum* pv = reinterpret_cast<const Pds::Epics::EpicsPvTimeEnum*>(epics);
+          bool new_val = (pv->value(0) != 0);
+          for (unsigned id=0; id<_detsFound; id++) {
+            if(_enableTrip[id] != new_val) {
+              printf("Updating trip enabled state for det %d from %d to %d\n", id, _enableTrip[id], new_val);
+              _enableTrip[id] = new_val;
             }
           }
         }
@@ -288,7 +327,6 @@ void CspadTripper::create   (Cds& cds)
 bool CspadTripper::accept  () 
 {
   analyzeDetector();
-  //  printf("have called fake accept, don't want to do anything here\n");
   return true;
 }
 
@@ -296,7 +334,7 @@ void CspadTripper::analyzeDetector  ()
 {
   //  printf("in analyze, look for frame\n");
   for(unsigned currentDet=0;currentDet<_detsFound;currentDet++) {
-    if (!_frame) continue;
+    if (!_frame[currentDet]) continue;
 
     int32_t pixelCount = 0;
     for (uint quad=0; quad<_config[currentDet]->numQuads(); quad++) {
@@ -311,10 +349,21 @@ void CspadTripper::analyzeDetector  ()
       if (deltaT>1.) {
         _lastTrip = _clk;
         printf("Have counted %d pixels (trip at %d) over %d at event %d, no trips in last %f seconds, attempt to trip, shunt, or ignore beam\n", pixelCount, _nPixelsToTrip[currentDet], _tripCountThreshold[currentDet], _nevt, deltaT);
-        if(_shutter) {
-          *(double*) _shutter->data() = 0;
-          _shutter->put();
+        if(_enableTrip[currentDet]) {
+          if(_shutter) {
+            *(dbr_enum_t*) _shutter->data() = 0;
+            _shutter->put();
+          } else {
+            printf("No shutter pv configured, unable to close!\n");
+          }
+        } else {
+          printf("Trip disabled for detector %d, not closing shutter!\n", currentDet);
         }
+        if(_status) {
+          *(dbr_enum_t*) _status->data() = 1;
+          _status->put();
+        }
+        ca_flush_io();
       }
     }
 

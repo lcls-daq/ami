@@ -70,6 +70,7 @@ namespace Ami {
     unsigned _nevt;
     int32_t _nPixelsToTrip[MaxDetsAllowed];
     int32_t _tripCountThreshold[MaxDetsAllowed];
+    bool    _enableTrip[MaxDetsAllowed];
 
     const Pds::CsPad::ConfigV5* _config[MaxDetsAllowed];
     unsigned _dets[MaxDetsAllowed];
@@ -83,14 +84,21 @@ namespace Ami {
     int16_t _thres_epics;
     const Pds::Epics::ConfigV1* _npixel_config;
     int16_t _npixel_epics;
-
+    const Pds::Epics::ConfigV1* _enable_config;
+    int16_t _enable_epics;
+    const Pds::Epics::ConfigV1* _name_config;
+    int16_t _name_epics;
 
     const char*  _fname;
     const char*  _sname;
     char*  _thres_pv;
     char*  _npixel_pv;
+    char*  _status_pv;
+    char*  _enable_pv;
+    char*  _name_pv;
     char*  _shutter_pv;
     NameService* _name_service;
+    Ami_Epics::PVWriter* _status;
     Ami_Epics::PVWriter* _shutter;
     //    static char _nameBuffer[128];
   };
