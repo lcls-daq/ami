@@ -126,6 +126,8 @@ namespace Ami {
       ImageMask* _ptr;
       uint64_t   _field;
     } _mask;
+
+    friend class RotateImage;
   };
 
   inline unsigned DescImage::nbinsx() const {return _nbinsx;}

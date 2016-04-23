@@ -10,6 +10,8 @@
 
 using namespace Ami;
 
+#define SWAP(a,b) { int u=a; a=b; b=u; }
+
 RotateImage::RotateImage(const DescEntry& output, Rotation r) :
   AbsOperator(AbsOperator::RotateImage),
   _rotation  (r),
@@ -21,11 +23,11 @@ RotateImage::RotateImage(const DescEntry& output, Rotation r) :
   switch(_rotation) {
   case Ami::D90:
   case Ami::D270:
-    new(&o) DescImage(o.name(),
-                      o.nbinsy(), o.nbinsx(),
-                      o.ppybin(), o.ppxbin(),
-                      unsigned(o.ylow()+0.5), unsigned(o.xlow()+0.5),
-                      o.isnormalized());
+    SWAP(o._nbinsx,o._nbinsy);
+    SWAP(o._ppbx  ,o._ppby);
+    SWAP(o._dpbx  ,o._dpby);
+    SWAP(o._xp0   ,o._yp0);
+    { float u=o._mmppx; o._mmppx=o._mmppy; o._mmppy=u; }
     break;
   default:
     break;
@@ -114,6 +116,8 @@ Entry&     RotateImage::_operate(const Entry& e) const
         break;
       }
     }
+    for(unsigned i=0; i<EntryImage::InfoSize; i++)
+      output.info (_input->info((EntryImage::Info)i),(EntryImage::Info)i);
   }
 
   _output->valid(e.time());
