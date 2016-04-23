@@ -194,28 +194,30 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
   const unsigned len = cols_segment/4;
   int32_t row[cols_segment];
   for(unsigned j=0; j<rows_segment; j++) {
+    // Apply the pedestals
     for(unsigned i=0; i<cols_segment; i++) {
       if (!lped) {
-        if (!lgain)
-          row[i] = *d++ + o;
-        else
-          row[i] = int32_t(*d++ * _gain[y+j][x+i]) + o;
+        row[i] = *d++;
       } else {
-        if (!lgain)
-          row[i] = int32_t(*d++ - _ped[y+j][x+i]) + o;
-        else
-          row[i] = int32_t((*d++ - _ped[y+j][x+i])* _gain[y+j][x+i]) + o;
+        row[i] = int32_t(*d++ - _ped[y+j][x+i]);
       }
-    }        
+    }
+    // Apply the common mode correction
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {
-        int32_t cm, cmth = int32_t(_cmth[j+y][i0+cx])+o;
+        int32_t cm, cmth = int32_t(_cmth[j+y][i0+cx]);
         int32_t* mrow = &row[i0*len];
         psalg::commonMode((const int32_t*)mrow,0,len,cmth,cmth,cm);
-        cm -= o;
         for(unsigned i=0; i<len; i++)
           mrow[i] -= cm;
       }
+    // Finally apply the gain correction (and finally add the offset value)
+    for(unsigned i=0; i<cols_segment; i++) {
+      if (!lgain)
+        row[i] += o;
+      else
+        row[i] = int32_t(row[i] * _gain[y+j][x+i]) + o;
+    }
 
     Ami::Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
@@ -300,28 +302,30 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
   const unsigned len = cols_segment/4;
   int32_t row[cols_segment];
   for(unsigned j=0; j<rows_segment; j++) {
+    // Apply the pedestals
     for(unsigned i=0; i<cols_segment; i++) {
       if (!lped) {
-        if (!lgain)
-          row[i] = *d++ + o;
-        else
-          row[i] = int32_t(*d++ * _gain[y-j][x-i]) + o;
+        row[i] = *d++;
       } else {
-        if (!lgain)
-          row[i] = int32_t(*d++ - _ped[y-j][x-i]) + o;
-        else
-          row[i] = int32_t((*d++ - _ped[y-j][x-i])* _gain[y-j][x-i]) + o;
+        row[i] = int32_t(*d++ - _ped[y-j][x-i]);
       }
-    }        
+    }
+    // Apply the common mode correction
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {
-        int32_t cm, cmth = int32_t(_cmth[y-j][cx-i0])+o;
+        int32_t cm, cmth = int32_t(_cmth[y-j][cx-i0]);
         int32_t* mrow = &row[i0*len];
         psalg::commonMode((const int32_t*)mrow,0,len,cmth,cmth,cm);
-        cm -= o;
         for(unsigned i=0; i<len; i++)
           mrow[i] -= cm;
       }
+    // Finally apply the gain correction (and finally add the offset value)
+    for(unsigned i=0; i<cols_segment; i++) {
+      if (!lgain)
+        row[i] += o;
+      else
+        row[i] = int32_t(row[i] * _gain[y-j][x-i]) + o;
+    }
 
     Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
