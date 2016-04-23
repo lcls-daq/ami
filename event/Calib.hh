@@ -34,6 +34,7 @@ namespace Ami {
     static void set_experiment(const char*);
     static void set_run(int);
     static int  get_line(char** p, size_t* n, FILE* f);
+    static void skip_header(FILE* f);
   };
 };
 

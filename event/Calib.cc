@@ -83,8 +83,16 @@ static void _stat64(const char* fname, struct stat64* s, bool no_cache)
 
 int Ami::Calib::get_line(char** p, size_t* n, FILE* f) {
   int v=0;
-  while( (v=getline(p, n, f))==0 || (*p)[0]=='#') ;
+  while( (v=getline(p, n, f))==1 || (*p)[0]=='#') ;
   return v;
+}
+
+void Ami::Calib::skip_header(FILE* f) {
+  size_t sz=8*1024;
+  char* linep = new char[sz];
+  long v = get_line(&linep, &sz, f);
+  delete[] linep;
+  fseek(f, -v, SEEK_CUR);
 }
 
 FILE* Ami::Calib::fopen(const Pds::DetInfo& info,

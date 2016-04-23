@@ -947,6 +947,7 @@ static ndarray<double,3> get_calib(FILE* f)
     double v;
     if (sscanf(linep,"%lf %lf %lf",&v,&v,&v)==2) {
       rewind(f);
+      Ami::Calib::skip_header(f);
       double* p0 = &a[0][0][0];
       double* p1 = &a[1][0][0];
       while(p1 < a.end()) {
@@ -957,9 +958,11 @@ static ndarray<double,3> get_calib(FILE* f)
     }
     else {
       rewind(f);
+      Ami::Calib::skip_header(f);
       for(double* p=a.begin(); p<a.end(); p++)
         fscanf(f,"%lf",p);
     }
+
     free(linep);
     fclose(f);
   }
