@@ -219,70 +219,18 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
         row[i] = int32_t(row[i] * _gain[y+j][x+i]) + o;
     }
 
-    Ami::Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
-      switch (r) {
-      case D0:
-        { unsigned iy = (y+j)>>1;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],ix>>1,iy);
-            else
+      unsigned iy = (y+j)>>1;
+      for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+        if ((i&1) || (j&1))
+          _entry->addcontent(row[i],ix>>1,iy);
+        else
               _entry->   content(row[i],ix>>1,iy);
-        } break;
-      case D90:
-        { unsigned iy = (y+j)>>1;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],iy,ix>>1);
-            else
-              _entry->   content(row[i],iy,ix>>1);
-        } break;
-      case D180:
-        { unsigned iy = (1023-y-j)>>1;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
-          if ((i&1) || (j&1))
-            _entry->addcontent(row[i],ix>>1,iy);
-          else
-            _entry->   content(row[i],ix>>1,iy);
-        } break;
-      case D270:
-        { unsigned iy = (1023-y-j)>>1;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
-          if ((i&1) || (j&1))
-            _entry->addcontent(row[i],iy,ix>>1);
-          else
-            _entry->   content(row[i],iy,ix>>1);
-        } break;
-      default:
-        break;
-      }
     }
     else {
-      switch(r) {
-      case D0:
-        { unsigned iy = y+j;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
-            _entry->content(row[i],ix,iy);
-        } break;
-      case D90:
-        { unsigned iy = y+j;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
-            _entry->content(row[i],iy,ix);
-        } break;
-      case D180:
-        { unsigned iy = (1023-y-j);
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix--)
-            _entry->content(row[i],ix,iy);
-        } break;
-      case D270:
-        { unsigned iy = (1023-y-j);
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
-            _entry->content(row[i],iy,ix);
-        } break;
-      default:
-        break;
-      }
+      unsigned iy = y+j;
+      for(unsigned i=0, ix=x; i<rows_segment; i++, ix++)
+        _entry->content(row[i],ix,iy);
     }
   }
 }
@@ -327,70 +275,18 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
         row[i] = int32_t(row[i] * _gain[y-j][x-i]) + o;
     }
 
-    Rotation r = PnccdCalib::option_rotate(_entry->desc().options());
     if (ppb==2) {
-      switch(r) {
-      case D0:
-        { unsigned iy = (y-j)>>1;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],ix>>1,iy);
-            else
+      unsigned iy = (y-j)>>1;
+      for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+        if ((i&1) || (j&1))
+          _entry->addcontent(row[i],ix>>1,iy);
+        else
               _entry->   content(row[i],ix>>1,iy);
-        } break;
-      case D90:
-        { unsigned iy = (y-j)>>1;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],iy,ix>>1);
-            else
-              _entry->   content(row[i],iy,ix>>1);
-        } break;
-      case D180:
-        { unsigned iy = j>>1;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],ix>>1,iy);
-            else
-              _entry->   content(row[i],ix>>1,iy);
-        } break;
-      case D270:
-        { unsigned iy = j>>1;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
-            if ((i&1) || (j&1))
-              _entry->addcontent(row[i],iy,ix>>1);
-            else
-              _entry->   content(row[i],iy,ix>>1);
-        } break;
-      default:
-        break;
-      }
     }
     else {
-      switch(r) {
-      case D0:
-        { unsigned iy = y-j;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
-          _entry->content(row[i],ix,iy);
-        } break;
-      case D90:
-        { unsigned iy = y-j;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
-          _entry->content(row[i],iy,ix);
-        } break;
-      case D180:
-        { unsigned iy = j;
-          for(unsigned i=0, ix=1023-x; i<rows_segment; i++, ix++)
-            _entry->   content(row[i],ix,iy);
-        } break;
-      case D270:
-        { unsigned iy = j;
-          for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
-            _entry->   content(row[i],iy,ix);
-        } break;
-      default:
-        break;
-      }
+      unsigned iy = y-j;
+      for(unsigned i=0, ix=x; i<rows_segment; i++, ix--)
+        _entry->content(row[i],ix,iy);
     }
   }
 }
