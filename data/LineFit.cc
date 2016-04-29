@@ -59,7 +59,8 @@ LineFit::LineFit(const char*&  p,
   _cache     (&input),
   _xline     (0),
   _yline     (0),
-  _v         (true)
+  _v         (true),
+  _acc       (0)
 {
   _extract(p, _desc_buffer, DESC_LEN);
   _extract(p, &_method, sizeof(_method));
