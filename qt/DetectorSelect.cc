@@ -154,13 +154,13 @@ DetectorSelect::DetectorSelect(const QString& label,
     //
     //  The EnvClient is needed at all times to request the PostAnalysis variable set and generate those plots
     //
-    { DetectorListItem* ditem = new DetectorListItem(_detList, "Env"    , envInfo, 1);
-      const char* p=0;
-      _create_client(ditem->info,ditem->channel,ditem->text(),p);
-    }
     { DetectorListItem* ditem = new DetectorListItem(_detList, "LineFit", fitInfo, 2);
       const char* p=0;
       _create_client(ditem->info,ditem->channel,ditem->text(),p)->hide();
+    }
+    { DetectorListItem* ditem = new DetectorListItem(_detList, "Env"    , envInfo, 1);
+      const char* p=0;
+      _create_client(ditem->info,ditem->channel,ditem->text(),p);
     }
 
     connect(_detList, SIGNAL(itemClicked(QListWidgetItem*)),
