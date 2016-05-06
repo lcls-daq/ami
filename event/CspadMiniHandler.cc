@@ -992,6 +992,10 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   FILE* gm = Calib::fopen(dInfo,
                           "geo", "geometry", false,
                           &offl_type);
+  if (gm && offl_type==false) {
+    fclose(gm);
+    gm = 0;
+  }
 
   CspadMiniGeometry::ConfigCache cfg(type,payload);
 

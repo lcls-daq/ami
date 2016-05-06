@@ -98,6 +98,7 @@ DetectorSelect::DetectorSelect(const QString& label,
   _discovered(false),
   _filter_export(new Filter((QtPWidget*)0,"L3T Export", new L3Features)),
   _l3t_export(false),
+  _l3t_export_file(0),
   _dump(interface)
 {
   _dump.add(*_manager);
@@ -220,12 +221,6 @@ DetectorSelect::DetectorSelect(const QString& label,
   connect(_snapshot_timer, SIGNAL(timeout()), this, SLOT(run_snapshot()));
 
   _snapshot_timer->start(900000); // 15 minutes
-
-  _l3t_export_file = new QFileDialog(_filter_export);
-  _l3t_export_file->setFileMode(QFileDialog::AnyFile);
-  _l3t_export_file->setNameFilter("*.l3t");
-  _l3t_export_file->setDefaultSuffix("l3t");
-  _l3t_export_file->selectFile(QString("%1/ami.l3t").arg(getenv("HOME")));
 
   _manager->connect();
 }
@@ -555,6 +550,14 @@ int  DetectorSelect::configure       (iovec* iov)
 
   if (_l3t_export) {
     _l3t_export=false;
+
+    if (!_l3t_export_file) {
+      _l3t_export_file = new QFileDialog(_filter_export);
+      _l3t_export_file->setFileMode(QFileDialog::AnyFile);
+      _l3t_export_file->setNameFilter("*.l3t");
+      _l3t_export_file->setDefaultSuffix("l3t");
+      _l3t_export_file->selectFile(QString("%1/ami.l3t").arg(getenv("HOME")));
+    }
 
     if (_l3t_export_file->exec()) {
       QStringList ofiles = _l3t_export_file->selectedFiles();

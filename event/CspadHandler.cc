@@ -1011,15 +1011,21 @@ namespace CspadGeometry {
                               "geo", "geometry", false,
                               &offl_type);
       if (gm) {
-        qalign = Ami::Cspad::QuadAlignment::load(gm,offl_type);
-        { for(unsigned j=0; j<4; j++) {
-            printf("Quad %d:\n", j);
-            for(unsigned k=0; k<8; k++)
+        if (offl_type==false) {
+          fclose(gm);
+          gm = 0;
+        }
+        else {
+          qalign = Ami::Cspad::QuadAlignment::load(gm,offl_type);
+          { for(unsigned j=0; j<4; j++) {
+              printf("Quad %d:\n", j);
+              for(unsigned k=0; k<8; k++)
                 printf("  2x1[%d]: %f %f %d\n", 
                        k,
                        qalign[j]._twobyone[k]._pad.x,
                        qalign[j]._twobyone[k]._pad.y,
                        qalign[j]._twobyone[k]._rot);
+            }
           }
         }
       }
