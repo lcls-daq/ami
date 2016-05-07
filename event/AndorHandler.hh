@@ -28,7 +28,7 @@ namespace Ami {
     void _load_pedestals();
   private:
     //AndorHandler(const Pds::DetInfo& info, const EntryImage*);
-    Pds::Andor::ConfigV1  _config;
+    Xtc*                _configtc;
     FeatureCache&       _cache;
     int                 _iCacheIndexTemperature;
     EntryImage*         _entry;
