@@ -1,6 +1,5 @@
 #include "CspadHandler.hh"
 #include "CspadAlignment.hh"
-#include "CspadAlignment_Commissioning.hh"
 
 #include "ami/event/CspadCalib.hh"
 #include "ami/event/FrameCalib.hh"
@@ -1004,7 +1003,7 @@ namespace CspadGeometry {
       //  Determine layout : binning, origin
       double x,y;
 
-      const Ami::Cspad::QuadAlignment* qalign = qalign_def;
+      const Ami::Cspad::QuadAlignment* qalign = Ami::Cspad::QuadAlignment::qalign_def();
 
       bool offl_type=false;
       FILE *gm = Calib::fopen(static_cast<const Pds::DetInfo&>(src),

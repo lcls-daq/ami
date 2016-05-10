@@ -26,6 +26,7 @@ namespace Ami {
     public:
       static QuadAlignment* load   (FILE*, bool offline=false);
       static QuadAlignment* load2x2(FILE*, bool offline=false);
+      static const QuadAlignment* qalign_def();
     };
   }
 }

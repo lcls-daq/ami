@@ -1,6 +1,5 @@
 #include "CspadMiniHandler.hh"
 #include "CspadAlignment.hh"
-#include "CspadAlignment_Commissioning.hh"
 
 #include "ami/event/CspadTemp.hh"
 #include "ami/event/CspadCalib.hh"
@@ -669,15 +668,15 @@ namespace CspadMiniGeometry {
       //  Determine layout : binning, origin
       double x,y;
 
-      Ami::Cspad::QuadAlignment qalign = qalign_def[0];
+      Ami::Cspad::QuadAlignment qalign = Ami::Cspad::QuadAlignment::qalign_def()[0];
       if (gm) {
         Ami::Cspad::QuadAlignment* nq = Ami::Cspad::QuadAlignment::load2x2(gm,true);
         qalign = *nq;
         delete nq;
       }
       else {
-        for(unsigned i=0; i<8; i++)
-          qalign._twobyone[i]._rot = Ami::D90;
+        //        for(unsigned i=0; i<8; i++)
+        //qalign._twobyone[i]._rot = Ami::D90;
       }
       for(unsigned k=0; k<2; k++)
         printf("  2x1[%d]: %f %f %d\n", 

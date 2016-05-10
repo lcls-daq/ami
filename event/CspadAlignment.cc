@@ -1,5 +1,4 @@
 #include "ami/event/CspadAlignment.hh"
-#include "ami/event/CspadAlignment_Commissioning.hh"
 #include "ami/event/Calib.hh"
 
 #include <string>
@@ -15,6 +14,17 @@ using Ami::Cspad::TwoByOneAlignment;
 
 static const double asicWidth  = 110*194; // 20.335e-3 m
 static const double asicHeight = 110*185;
+
+static const Ami::Cspad::QuadAlignment qproto = {
+  {  { {   {21757, 33110}, {21757, 33110}, {21757, 33110}, {21757, 33110} }, {21757, 33110}, (Ami::Rotation)3 },
+     { {   {21769, 10457}, {21769, 10457}, {21769, 10457}, {21769, 10457} }, {21769, 10457}, (Ami::Rotation)3 },
+     { {   {33464, 68275}, {33464, 68275}, {33464, 68275}, {33464, 68275} }, {33464, 68275}, (Ami::Rotation)2 },
+     { {   {10769, 68299}, {10769, 68299}, {10769, 68299}, {10769, 68299} }, {10769, 68299}, (Ami::Rotation)2 },
+     { {   {68489, 56732}, {68489, 56732}, {68489, 56732}, {68489, 56732} }, {68489, 56732}, (Ami::Rotation)1 },
+     { {   {68561, 79628}, {68561, 79628}, {68561, 79628}, {68561, 79628} }, {68561, 79628}, (Ami::Rotation)1 },
+     { {   {77637, 21754}, {77637, 21754}, {77637, 21754}, {77637, 21754} }, {77637, 21754}, (Ami::Rotation)0 },
+     { {   {54810, 21558}, {54810, 21558}, {54810, 21558}, {54810, 21558} }, {54810, 21558}, (Ami::Rotation)0 } }
+};
 
 
 //
@@ -333,4 +343,41 @@ void _sort_and_store(Ami::Cspad::QuadAlignment* nq,
       ntwobyone._rot   = Rotation((4-otwobyone._rot)%NPHI);
     }
   }
+}
+
+static Ami::Cspad::QuadAlignment* _instance = 0;
+
+const Ami::Cspad::QuadAlignment* Ami::Cspad::QuadAlignment::qalign_def() 
+{
+  if (_instance)
+    return _instance;
+
+  Ami::Cspad::QuadAlignment q[4];
+  static const double _dx[] = { -4500, -3500, 5500, 4500 };
+  static const double _dy[] = { -2700, 5800, 4500, -4500 };
+  for(unsigned j=0; j<4; j++) {
+    q[j] = qproto;
+
+    Rotation irot = Rotation(unsigned(5-j)%NPHI);
+
+    for(unsigned k=0; k<8; k++) {
+      double dx = _dx[j];
+      double dy = _dy[j];
+      struct TwoByOneAlignment& twobyone = q[j]._twobyone[k];
+      _transform(dx,dy,
+                 twobyone._pad.x,
+                 twobyone._pad.y,
+                 irot);
+      for(unsigned c=0; c<4; c++) {
+        twobyone._corner[c].x = dx;
+        twobyone._corner[c].y = dy;
+      }
+      twobyone._pad.x = dx;
+      twobyone._pad.y = dy;
+      twobyone._rot   = Rotation(unsigned(irot+twobyone._rot)%NPHI);
+    }
+  }
+  _instance = new Ami::Cspad::QuadAlignment[4];
+  _sort_and_store(_instance, q);
+  return _instance;
 }
