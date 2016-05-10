@@ -44,6 +44,7 @@ namespace Ami {
       void load_mask();
       void save_mask();
       void save_gain_map();
+      void save_gain_map_2x2();
       void load_bkg ();
       void undo();
       void redo();

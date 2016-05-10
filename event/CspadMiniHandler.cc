@@ -669,16 +669,22 @@ namespace CspadMiniGeometry {
       //  Determine layout : binning, origin
       double x,y;
 
-      const Ami::Cspad::QuadAlignment* qalign = qalign_def;
+      Ami::Cspad::QuadAlignment qalign = qalign_def[0];
       if (gm) {
-         qalign = Ami::Cspad::QuadAlignment::load2x2(gm,true);
-         for(unsigned k=0; k<2; k++)
-           printf("  2x1[%d]: %f %f %d\n", 
-                  k,
-                  qalign[0]._twobyone[k]._pad.x,
-                  qalign[0]._twobyone[k]._pad.y,
-                  qalign[0]._twobyone[k]._rot);
+        Ami::Cspad::QuadAlignment* nq = Ami::Cspad::QuadAlignment::load2x2(gm,true);
+        qalign = *nq;
+        delete nq;
       }
+      else {
+        for(unsigned i=0; i<8; i++)
+          qalign._twobyone[i]._rot = Ami::D90;
+      }
+      for(unsigned k=0; k<2; k++)
+        printf("  2x1[%d]: %f %f %d\n", 
+               k,
+               qalign._twobyone[k]._pad.x,
+               qalign._twobyone[k]._pad.y,
+               qalign._twobyone[k]._rot);
       //
       //  Create a default layout
       //
@@ -688,7 +694,7 @@ namespace CspadMiniGeometry {
 	x =  0.5*frame;
 	y = -0.5*frame;
       }
-      mini = new TwoByTwo(x,y,_ppb,&qalign[0]._twobyone[0],_config.gainMap());
+      mini = new TwoByTwo(x,y,_ppb,&qalign._twobyone[0],_config.gainMap());
 
       //
       //  Test extremes and narrow the focus
@@ -716,7 +722,7 @@ namespace CspadMiniGeometry {
 
       _pixels = pixels + 2*bin0*_ppb;
 
-      mini = new TwoByTwo(x,y,_ppb,&qalign[0]._twobyone[0],_config.gainMap(),
+      mini = new TwoByTwo(x,y,_ppb,&qalign._twobyone[0],_config.gainMap(),
                           f,s,g,rms);
     }
     ~Detector() { delete mini; }
@@ -993,6 +999,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
                           "geo", "geometry", false,
                           &offl_type);
   if (gm && offl_type==false) {
+    printf("Ignoring old-style online geometry constants\n");
     fclose(gm);
     gm = 0;
   }

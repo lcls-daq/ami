@@ -1012,6 +1012,7 @@ namespace CspadGeometry {
                               &offl_type);
       if (gm) {
         if (offl_type==false) {
+          printf("Ignoring old-style online geometry constants\n");
           fclose(gm);
           gm = 0;
         }
