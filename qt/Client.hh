@@ -20,6 +20,8 @@
 
 #include <QtGui/QHBoxLayout>
 
+#define NCHANNELS _channels.size()
+
 class QLayout;
 class QVBoxLayout;
 
@@ -91,8 +93,8 @@ namespace Ami {
       virtual void showEvent(QShowEvent*);
       virtual void hideEvent(QHideEvent*);
     protected:
-      enum {NCHANNELS=4};
-      ChannelDefinition* _channels[NCHANNELS];
+      std::vector<ChannelDefinition*> _channels;
+      //enum {NCHANNELS=4};
       AggChannels*       _agg;
       Display*           _frame;
       const DescEntry*   _input_entry;

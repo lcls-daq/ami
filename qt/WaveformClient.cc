@@ -19,24 +19,25 @@ WaveformClient::WaveformClient(QWidget* parent,const Pds::DetInfo& info, unsigne
   WaveformDisplay& wd = static_cast<WaveformDisplay&>(display());
   connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
 
+ChannelDefinition **cha = _channels.data();
   { QPushButton* edgesB = new QPushButton("Edges");
     addWidget(edgesB);
-    _edges = new EdgeFinder(this,_channels,NCHANNELS,wd,this);
+    _edges = new EdgeFinder(this,cha,NCHANNELS,wd,this);
     _stack->add(edgesB,_edges);
     connect(_edges  , SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* cursorsB = new QPushButton("Cursors");
     addWidget(cursorsB);
-    _cursors = new CursorsX(this,_channels,NCHANNELS,wd, this);
+    _cursors = new CursorsX(this,cha,NCHANNELS,wd, this);
     _stack->add(cursorsB,_cursors);
     connect(_cursors, SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* fitB = new QPushButton("Waveform Fit");
     addWidget(fitB);
-    _fits = new CurveFit(this,_channels,NCHANNELS,wd);
+    _fits = new CurveFit(this,cha,NCHANNELS,wd);
     _stack->add(fitB,_fits);
     connect(_fits   , SIGNAL(changed()), this, SIGNAL(changed())); }
   { QPushButton* fftB = new QPushButton("Waveform FFT");
     addWidget(fftB);
-    _fft = new FFT(this,_channels,NCHANNELS);
+    _fft = new FFT(this,cha,NCHANNELS);
     _stack->add(fftB,_fft);
     connect(_fft    , SIGNAL(changed()), this, SIGNAL(changed())); }
 

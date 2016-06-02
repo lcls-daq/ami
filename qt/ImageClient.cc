@@ -26,39 +26,40 @@ Ami::Qt::ImageClient::ImageClient(QWidget* parent,const Pds::DetInfo& info, unsi
   ImageDisplay& wd = (ImageDisplay&)(display());
   connect(&wd, SIGNAL(set_chrome_visible(bool)), this, SLOT(set_chrome_visible(bool)));
 
+ChannelDefinition **cha = _channels.data();
   { QPushButton* rectB = new QPushButton("X / Y Selection");
     addWidget(rectB);
-    _xyproj = new ImageXYProjection(this,_channels,NCHANNELS,*wd.plot());
+    _xyproj = new ImageXYProjection(this,cha,NCHANNELS,*wd.plot());
     _stack->add(rectB,_xyproj);
     connect(_xyproj , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* cylB = new QPushButton(QString("%1 / %2 Selection").arg(QChar(0x03c1)).arg(QChar(0x03c6)));
     addWidget(cylB);
-    _rfproj = new ImageRPhiProjection(this,_channels,NCHANNELS,*wd.plot());
+    _rfproj = new ImageRPhiProjection(this,cha,NCHANNELS,*wd.plot());
     _stack->add(cylB,_rfproj);
     connect(_rfproj , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* cntB = new QPushButton("Contour Projection");
     addWidget(cntB);
-    _cntproj = new ImageContourProjection(this,_channels,NCHANNELS,*wd.plot());
+    _cntproj = new ImageContourProjection(this,cha,NCHANNELS,*wd.plot());
     _stack->add(cntB,_cntproj);
     connect(_cntproj, SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* hitB = new QPushButton("Hit Finder");
     addWidget(hitB);
-    _hit = new PeakFinder(this,_channels,NCHANNELS);
+    _hit = new PeakFinder(this,cha,NCHANNELS);
     _stack->add(hitB,_hit);
     connect(_hit    , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* blobB = new QPushButton("Blob Finder");
     addWidget(blobB);
-    _blob = new BlobFinder(this,_channels,NCHANNELS,*wd.plot());
+    _blob = new BlobFinder(this,cha,NCHANNELS,*wd.plot());
     _stack->add(blobB,_blob);
     connect(_blob   , SIGNAL(changed()), this, SIGNAL(changed())); }
 
   { QPushButton* dropB = new QPushButton("Droplet");
     addWidget(dropB);
-    _droplet = new Droplet(this,_channels,NCHANNELS,*wd.plot());
+    _droplet = new Droplet(this,cha,NCHANNELS,*wd.plot());
     _stack->add(dropB,_droplet);
     connect(_droplet, SIGNAL(changed()), this, SIGNAL(changed())); }
 }

@@ -87,16 +87,19 @@ Ami::Qt::Client::Client(QWidget*            parent,
   QButtonGroup* showPlotBoxes = new QButtonGroup;
   showPlotBoxes->setExclusive( !frame->canOverlay() );
 
-  QStringList names;
-  for(unsigned i=0; i<NCHANNELS; i++)
-    names << QString("%1_Ch%2").arg(_title).arg(char('A'+i));
+
 
   QStringList refnames;
   { std::vector<unsigned> ch(Channel(channel).channels());
     for(unsigned i=0; i<ch.size(); i++)
       refnames << QString("Chan %1").arg(ch[i]+1);
   }
-  
+
+_channels.resize(refnames.size()<4 ? 4:refnames.size());
+  QStringList names;
+
+  for(unsigned i=0; i<NCHANNELS; i++)
+    names << QString("%1_Ch%2").arg(_title).arg(char('A'+i));
   QHBoxLayout* layout = new QHBoxLayout;
   { QVBoxLayout* layout3 = new QVBoxLayout;
     { QGroupBox* ctrlBox = new QGroupBox("Control");
@@ -108,14 +111,23 @@ Ami::Qt::Client::Client(QWidget*            parent,
     { QGroupBox* chanBox = new QGroupBox("Channels");
       QVBoxLayout* layout1 = new QVBoxLayout;
       QPushButton* chanB[NCHANNELS];
-      QColor color[] = { QColor(0,0,255), QColor(255,0,0), QColor(0,255,0), QColor(255,0,255) };
-      for(int i=0; i<NCHANNELS; i++) {
-	bool init = i==0 || i<refnames.size();
+	unsigned i;
+	unsigned j;
+        QColor color;
+      for(i=0, j=0; i<NCHANNELS; i++) {
+
+        j = i*255/NCHANNELS;
+  	if (j<43) color = QColor(j*6,0,0);
+  	else if (j<129) color = QColor(255-(j-43)*3,(j-43)*3,0);
+  	else if (j<215) color = QColor(0,255-(j-129)*3,(j-129)*3);
+  	else if (j<255) color = QColor((j-215)*3,0,255-(j-215)*3);
+
+	bool init = i==0 || int(i)<refnames.size();
 	QString title = names[i];
-	_channels[i] = new ChannelDefinition(this,title, _channels, i, NCHANNELS,
-					     *_frame, color[i], init, refnames);
+	_channels[i] = new ChannelDefinition(this,title, _channels.data(), i, NCHANNELS,
+					     *_frame, color, init, refnames);
 	chanB[i] = new QPushButton(QString("Ch%1").arg(char('A'+i))); chanB[i]->setCheckable(false);
-	chanB[i]->setPalette(QPalette(color[i]));
+	chanB[i]->setPalette(QPalette(color));
 	{ QHBoxLayout* layout4 = new QHBoxLayout;
 	  QCheckBox* box = new QCheckBox("");
 	  showPlotBoxes->addButton(box);
@@ -292,7 +304,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
   else {
 
     int signatures[NCHANNELS];
-    for(int i=0; i<NCHANNELS; i++)
+    for(unsigned i=0; i<NCHANNELS; i++)
       signatures[i] = -1;
 
     char* p = _request.reset();
@@ -316,7 +328,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
 	for(unsigned i=0; i<NCHANNELS; i++) {
 	  if (signatures[i]<0) {
 	    int sig = _channels[i]->configure(p,input,_output_signature,
-					      _channels,signatures,NCHANNELS,_input_source);
+					      _channels.data(),signatures,NCHANNELS,_input_source);
 	    if (sig >= 0) {
 	      signatures[i] = sig;
 	      lAdded = true;
@@ -329,7 +341,7 @@ int  Ami::Qt::Client::configure       (iovec* iov)
       char* hp = p = _request.extend(p-_request.base());
 
       _configure(p,input,_output_signature,
-		 _channels,signatures,NCHANNELS);
+		 _channels.data(),signatures,NCHANNELS);
 
       if (p==hp && !isVisible()) {  // nothing to show
 	return 0;
