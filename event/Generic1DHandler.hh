@@ -31,9 +31,9 @@ namespace Ami {
   private:
     char* _cbuffer;
     Pds::Generic1D::ConfigV0* _config;
-    enum { NumberOfEntries=8 };
     unsigned       _nentries;    
-    EntryWaveform* _entry[2*NumberOfEntries];
+    std::vector<EntryWaveform*> _entry;
+    std::vector<EntryWaveform*> _entry2;
     std::vector<EntryRef*>      _ref;
     unsigned       _numberOfSamples;
   };

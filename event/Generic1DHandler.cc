@@ -48,7 +48,7 @@ void Generic1DHandler::rename(const char* s)
 {
 char buff[64];
 for(unsigned i=0; i<_ref.size(); i++) {
-    sprintf(buff,"%s_%d",s,i+1);
+    sprintf(buff,"%s%s",s,strchr(_ref[i]->desc().name(), '_'));
     _ref[i]->desc().name(buff);
   }
 }
@@ -69,6 +69,8 @@ void Generic1DHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   _config= new (_cbuffer) G1DCfg(c);
 
   _nentries = c.NChannels();
+  _entry.resize(_nentries);
+  _entry2.resize(_nentries);
   char s[128] = {""};
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
 
@@ -80,17 +82,51 @@ void Generic1DHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   }
 
 
-  if (NumberOfEntries > 1) {
+  if (_nentries > 1) {
 
-for(unsigned i=0; i<_nentries/4; i++){
-//uint32_t mask = 0xffff &~(1<<i);
-uint32_t mask = 0xf<<(4*i);
-//uint32_t mask = 0xffff;
-    Channel channelMask(mask, Channel::BitMask);
-    _ref.push_back(new EntryRef(DescRef(det, channelMask,
-                                ChannelID::name(det,channelMask)))); 
-    _ref[i]->set(&_entry[4*i]);
-  }
+	std::vector<double> freqlist;
+	freqlist.push_back(_config->Period()[0]);
+
+	for(unsigned i=0; i<_nentries; i++){
+        bool match= false;
+		for(unsigned y=0; y<freqlist.size(); y++){
+			if (freqlist[y] == _config->Period()[i]) {
+			match = true;
+			break;
+			}
+		}
+	if(!match){
+        freqlist.push_back(_config->Period()[i]);
+	}
+	}
+
+	int n2=0;
+	for(unsigned k=0; k<freqlist.size(); k++) {
+		unsigned mask=0;
+		int n20=n2;
+        	for(unsigned j=0; j<_nentries; j++) {
+			if(freqlist[k] == _config->Period()[j]){
+			mask |= 1<<j;	
+			_entry2[n2++]=_entry[j];
+			}						
+		}
+	Channel channelMask(mask, Channel::BitMask);
+        char name[100]; 
+        double f=1/freqlist[k];
+        double logf= log10(f);
+        int base= int (logf/3);
+ 	static const char* cbase[] = {"Hz", "KHz", "MHz", "GHz"};
+		if(base<0 || base>3){
+	        sprintf(name, "generic1d_%d", k);
+		}
+	else {
+        sprintf(name, "generic1d_%d_%s", int(f/(pow(10,3*base))), cbase[base]);
+	}
+        EntryRef* E = new EntryRef(DescRef(det, channelMask, name));
+        E->set(&_entry2[n20]);
+	_ref.push_back(E);
+	}
+ 
 }
   
 
