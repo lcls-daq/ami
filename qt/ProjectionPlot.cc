@@ -269,10 +269,10 @@ void ProjectionPlot::setup_payload(Cds& cds)
   _fit    ->setup_payload(cds);
 }
 
-void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output)
+void ProjectionPlot::configure(char*& p, unsigned input, unsigned& output, ConfigureRequest::Source s)
 {
   ConfigureRequest& req = *new (p) ConfigureRequest(ConfigureRequest::Create,
-                                                    ConfigureRequest::Analysis,
+                                                    s,
                                                     input,
                                                     -1,
                                                     RawFilter(),

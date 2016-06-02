@@ -261,7 +261,7 @@ void AnalysisFactory::configure(unsigned       id,
       }
       else if (!input) {
         printf("AnalysisFactory::configure failed (null input) for ConfigureRequest::%s\n", reqType);
-        printf("\tinp %d  out %d  size %d\n",req.input(),req.output(),req.size());
+        printf("\tinp %d  [src %d] out %d  size %d\n",req.input(),req.source(),req.output(),req.size());
         input_error=true;
       }
       else if (req.state()==ConfigureRequest::Create) {

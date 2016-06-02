@@ -238,10 +238,10 @@ void TwoDPlot::setup_payload(Cds& cds)
   //  static_cast<ImageDisplay&>(display()).grid_scale().setup_payload(cds);
 }
 
-void TwoDPlot::configure(char*& p, unsigned input, unsigned& output)
+void TwoDPlot::configure(char*& p, unsigned input, unsigned& output, ConfigureRequest::Source s)
 {
   ConfigureRequest& r = *new (p) ConfigureRequest(ConfigureRequest::Create,
-						  ConfigureRequest::Discovery,
+						  s,
                                                   input,
                                                   -1,
                                                   RawFilter(),

@@ -11,6 +11,7 @@
 //=========================================================
 
 #include "ami/qt/QtPWidget.hh"
+#include "ami/data/ConfigureRequest.hh"
 #include "ami/data/ConfigureRequestor.hh"
 
 #include <QtCore/QString>
@@ -47,7 +48,8 @@ namespace Ami {
     public:
       void configure(char*& p, 
 		     unsigned input, 
-		     unsigned& output);
+		     unsigned& output,
+                     ConfigureRequest::Source s=ConfigureRequest::Analysis);
       void configure(char*& p, 
 		     unsigned input, 
 		     unsigned& output,

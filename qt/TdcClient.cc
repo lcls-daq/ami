@@ -68,10 +68,10 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   //  QPushButton* filterB = new QPushButton("Filter");
   _filter = new Filter     (NULL,_title);
 
-  _source_edit    = new QLineEdit("");
+  _source_edit    = new QLineEdit("Chan1");
   _source_compose = new QPushButton("Select");
 
-  _vsource_edit    = new QLineEdit("");
+  _vsource_edit    = new QLineEdit("Chan1");
   _vsource_compose = new QPushButton("Select");
   QHBoxLayout* vsl = new QHBoxLayout;
   vsl->addWidget(new QLabel("vs"));
@@ -107,7 +107,10 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
     //    layout1->addWidget(filterB);
     channel_box->setLayout(layout1);
     layout->addWidget(channel_box); }
-  { layout->addWidget(_plot_desc_1d); }
+  { QHBoxLayout* layout1 = new QHBoxLayout;
+    layout1->addWidget(_plot_desc_1d->button());
+    layout1->addWidget(_plot_desc_1d); 
+    layout->addLayout(layout1); }
   { layout->addWidget(_plot_desc_2d); }
   { QHBoxLayout* layout1 = new QHBoxLayout;
     layout1->addStretch();
@@ -246,15 +249,7 @@ void TdcClient::save_plots(const QString& p) const
 
 void TdcClient::reset_plots()
 {
-#if 0
-  _input_signature++;
-  iovec iov;
-  configure(&iov);
-
-  _input_signature--;
-#else
   _reset=true;
-#endif
   update_configuration(); 
 }
 
@@ -270,15 +265,6 @@ void TdcClient::discovered(const DiscoveryRx& rx)
 {
   _status->set_state(Status::Discovered);
   printf("Tdc Discovered\n");
-
-  //  The EnvClient requests all variable sets
-#if 0
-  //  iterate through discovery and print
-  for(int i=0; i<Ami::NumberOfSets; i++) {
-    Ami::ScalarSet set((Ami::ScalarSet)i);
-    FeatureRegistry::instance(set).insert(rx.features(set));
-  }
-#endif
 
   char channel_name [128];
   strcpy(channel_name ,qPrintable(_title));
@@ -317,11 +303,11 @@ int  TdcClient::configure       (iovec* iov)
       _request.extend(p);
     }
     for(std::list<ProjectionPlot*>::const_iterator it=_pplots.begin(); it!=_pplots.end(); it++) {
-      (*it)->configure(p,_input_signature,_output_signature);
+      (*it)->configure(p,_input_signature,_output_signature, ConfigureRequest::Discovery);
       _request.extend(p);
     }
     for(std::list<TwoDPlot*>::const_iterator it=_tplots.begin(); it!=_tplots.end(); it++) {
-      (*it)->configure(p,_input_signature,_output_signature);
+      (*it)->configure(p,_input_signature,_output_signature, ConfigureRequest::Discovery);
       _request.extend(p);
     }
     _list_sem.give();
@@ -490,9 +476,7 @@ void TdcClient::plot()
                          _plot_desc_1d->hi(),
                          false);
       QString ptitle(expr);
-      for(unsigned i=0; i<6; i++)
-        expr.replace(QString("Chan%1").arg(i+1),
-                     QString("{%1}"  ).arg(i));
+
       Ami::TdcPlot* op = new Ami::TdcPlot(desc,qPrintable(expr));
       
       ProjectionPlot* plot = new ProjectionPlot(this,
@@ -519,13 +503,8 @@ void TdcClient::plot()
                                               _plot_desc_2d->ylo(),
                                               _plot_desc_2d->yhi(),
                                               false);
-      QString ptitle(expr);
-      for(unsigned i=0; i<6; i++)
-        expr.replace(QString("Chan%1").arg(i+1),
-                     QString("{%1}"  ).arg(i));
-      
       TdcPlot* plot = new TdcPlot(this,
-                                  ptitle,
+                                  expr,
                                   *_filter->filter(),
                                   desc,
                                   expr);
@@ -537,20 +516,15 @@ void TdcClient::plot()
 
       break; }
   case TdcClient::Image:
-    { QString iexpr = '(' + _source_edit->text() + Expression::subtract() + 
+    { QString iexpr = "((" + _source_edit->text() + ')' + Expression::subtract() + 
         Expression::constant(_plot_desc_2d->ylo()) + ')' +
         Expression::multiply() + Expression::constant(512./(_plot_desc_2d->yhi()-_plot_desc_2d->ylo()));
-      iexpr += "%(" + _vsource_edit->text() + Expression::subtract() + 
+      iexpr += "%((" + _vsource_edit->text() + ')' + Expression::subtract() + 
         Expression::constant(_plot_desc_2d->xlo()) + ')' +
         Expression::multiply() + Expression::constant(512./(_plot_desc_2d->xhi()-_plot_desc_2d->xlo()));
       
       expr += QString("%") + _vsource_edit->text();
       Ami::DescImage desc(qPrintable(expr), 512, 512, 1, 1, 0, 0, false);
-
-      for(unsigned i=0; i<6; i++)
-        iexpr.replace(QString("Chan%1").arg(i+1),
-                      QString("{%1}"  ).arg(i));
-      
       Ami::TdcPlot* op = new Ami::TdcPlot(desc,qPrintable(iexpr));
 
       TwoDPlot* plot = new TwoDPlot(this,

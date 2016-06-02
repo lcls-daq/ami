@@ -30,18 +30,35 @@ static const double TC890_Period = 50e-12;
 
 class TdcPlot::TdcVar : public Ami::Variable {
 public:
-  TdcVar(unsigned i) : _name(QString("{%1}").arg(i)) {}
+  TdcVar(unsigned i) : _name(QString("Chan%1").arg(i+1)) {}
   TdcVar(const TdcVar& c) : _name(c._name) {}
+  ~TdcVar() {}
 public:
   double evaluate() const { return _v; }
-  Variable* clone() const { return new TdcVar(*this); }
+  Variable* clone() const;
   const QString& name() const { return _name; }
 public:
-  void set(double v) { _v=v; }
+  void set(double v);
+  bool used() const { return !_clones.empty(); }
 private:
   QString _name;
   double  _v;
+  mutable std::list<TdcPlot::TdcVar*> _clones;
 };
+
+Variable* TdcPlot::TdcVar::clone() const
+{
+  TdcPlot::TdcVar* c = new TdcPlot::TdcVar(*this);
+  _clones.push_back(c); 
+  return c; 
+}
+
+void TdcPlot::TdcVar::set(double v)
+{
+  _v=v; 
+  for(std::list<TdcPlot::TdcVar*>::iterator it=_clones.begin(); it!=_clones.end(); it++)
+    (*it)->set(v);
+}
 
 TdcPlot::TdcPlot(const DescEntry& output, const char* expr) :
   AbsOperator(AbsOperator::TdcPlot),
@@ -71,29 +88,15 @@ TdcPlot::TdcPlot(const char*& p, const DescEntry& input) :
 
   printf("TdcPlot parsing %s\n",_expression);
 
-  QString expr(_expression);
-  QString new_expr;
-  // parse expression for channel indices
-  QRegExp match("\\{[0-9]+\\}");
-  int last=0;
-  int pos=0;
-  int mlen=0;
-  while( (pos=match.indexIn(expr,pos)) != -1) {
-    mlen = match.matchedLength();
-    QString use = expr.mid(pos+1,mlen-2);
-    unsigned ch = use.toInt();
-    Term* t = _chan[ch];
-    _mask |= (1<<ch);
-    new_expr.append(expr.mid(last,pos-last));
-    new_expr.append(QString("[%1]").arg((ulong)t,0,16));
-    pos += mlen;
-    last = pos;
-  }
-  new_expr.append(expr.mid(last));
+  std::list<Variable*> vars;
+  for(unsigned i=0; i<6; i++)
+    vars.push_back(_chan[i]);
 
-  std::list<Variable*> vars;  // empty
+  QString new_expr(_expression);
+
   Expression parser(vars);
   
+  int pos=0;
   if ((pos = new_expr.indexOf('%'))!=-1) {
     _yterm = parser.evaluate(new_expr.mid(0,pos));
     _xterm = parser.evaluate(new_expr.mid(pos+1));
@@ -106,6 +109,10 @@ TdcPlot::TdcPlot(const char*& p, const DescEntry& input) :
     printf("TdcPlot failed to parse %s\n",qPrintable(new_expr));
     _v = false;
   }
+
+  for(unsigned i=0; i<6; i++)
+    if (_chan[i]->used())
+      _mask |= 1<<i;
 }
 
 TdcPlot::TdcPlot(const char*& p) :
@@ -122,11 +129,11 @@ TdcPlot::TdcPlot(const char*& p) :
 TdcPlot::~TdcPlot()
 {
   if (_xterm   ) {
-    delete _xterm;
     for(unsigned i=0; i<6; i++)
       delete _chan[i];
     if (_yterm) 
       delete _yterm;
+    delete _xterm;
   }
   if (_output ) {
     delete _output;
