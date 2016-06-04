@@ -78,7 +78,7 @@ TdcClient::TdcClient(QWidget* parent, const Pds::DetInfo& info, unsigned channel
   vsl->addWidget(_vsource_edit);
   vsl->addWidget(_vsource_compose);
 
-  _plot_desc_1d = new DescTH1F("Hist1D");
+  _plot_desc_1d = new DescTH1F("Hist1D", true, true, true);
   _plot_desc_1d->button()->setEnabled(true);
 
   _plot_desc_2d = new DescTH2T(vsl);
@@ -474,7 +474,8 @@ void TdcClient::plot()
                          _plot_desc_1d->bins(),
                          _plot_desc_1d->lo(),
                          _plot_desc_1d->hi(),
-                         false);
+                         _plot_desc_1d->normalize(),
+                         _plot_desc_1d->aggregate());
       QString ptitle(expr);
 
       Ami::TdcPlot* op = new Ami::TdcPlot(desc,qPrintable(expr));

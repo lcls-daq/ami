@@ -23,7 +23,8 @@ namespace Ami {
 	     unsigned nbins, 
 	     float xlow, 
 	     float xup,
-	     bool normalize=true);
+	     bool normalize=true,
+             bool aggregate=true);
 
     //  Special constructor for centering outer bins
     //    on xlow,xup.
