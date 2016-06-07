@@ -917,7 +917,7 @@ void EpixHandler::_load_pedestals()
   else {
     EntryImage* p = _pentry;
     ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"sta");
-    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+    if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
       unsigned nskip = (_status.shape()[0]-pb.shape()[0])/2;
       for(unsigned *a=pb.begin(), *b=&_status[nskip][0]; a!=pb.end(); *b++=*a++) ;
       DescImage& d = _entry->desc();
@@ -931,7 +931,7 @@ void EpixHandler::_load_pedestals()
       d.set_mask(mask);
 
     }
-    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
       DescImage& d = _entry->desc();
       _load_one_asic(pb, d.nbinsy(), _status);
       ImageMask mask(d.nbinsy(),d.nbinsx());
@@ -951,7 +951,7 @@ void EpixHandler::_load_pedestals()
   printf("f %p  loffl %c\n",f, loffl ? 't':'f');
   if (f) {
     ndarray<double,2>  pb = FrameCalib::load_darray(f);
-    //    if (loffl) {
+    if (/*loffl && */pb.shape()[0]) {
       printf("aMask %x  rows %u cols %u  shape %u %u\n",
              aMask, rows, cols, pb.shape()[0], pb.shape()[1]);
       if ((aMask&(aMask-1))==0 && pb.shape()[0]) {
@@ -984,18 +984,22 @@ void EpixHandler::_load_pedestals()
         for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); a++,b++)
           *a = offset-unsigned(*b+0.5);
       }
-      //    }
+    }
+    else {
+      for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); a++)
+        *a = offset;
+    }
     fclose(f);
   }
   else {
     EntryImage* p = _pentry;
     ndarray<unsigned,2> pb = FrameCalib::load_array(p->desc(),"ped");
     printf("pb size %d,%d\n",pb.shape()[0],pb.shape()[1]);
-    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+    if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
       unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
       for(unsigned *a=pb.begin(), *b=&_pedestals[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
     }
-    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
       _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
       for(unsigned* p=_pedestals.begin(); p!=_pedestals.end(); p++)
         *p = offset-*p;
@@ -1004,11 +1008,11 @@ void EpixHandler::_load_pedestals()
       for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
 
     pb = FrameCalib::load_array(p->desc(),"ped_lo");
-    if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+    if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
       unsigned nskip = (_pedestals_lo.shape()[0]-pb.shape()[0])/2;
       for(unsigned *a=pb.begin(), *b=&_pedestals_lo[nskip][0]; a!=pb.end(); *b++=offset-*a++) ;
     }
-    else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+    else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
       _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
       for(unsigned* p=_pedestals_lo.begin(); p!=_pedestals_lo.end(); p++)
         *p = offset-*p;
@@ -1033,22 +1037,22 @@ void EpixHandler::_load_gains()
 
   EntryImage* p = _pentry;
   ndarray<double,2> pb = FrameCalib::load_darray(p->desc(),"gain");
-  if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+  if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
     unsigned nskip = (_gain.shape()[0]-pb.shape()[0])/2;
     for(double *a=pb.begin(), *b=&_gain[nskip][0]; a!=pb.end(); *a++=*b++) ;
   }
-  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+  else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
     _load_one_asic(pb, _entry->desc().nbinsy(), _gain);
   }
   else
     for(double* a=_gain.begin(); a!=_gain.end(); *a++=1.) ;
 
   pb = FrameCalib::load_darray(p->desc(),"gain_lo");
-  if (pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
+  if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
     unsigned nskip = (_gain_lo.shape()[0]-pb.shape()[0])/2;
     for(double *a=pb.begin(), *b=&_gain_lo[nskip][0]; a!=pb.end(); *a++=*b++) ;
   }
-  else if ((aMask&(aMask-1))==0 && pb.shape()[1]==_entry->desc().nbinsx()) {
+  else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
     _load_one_asic(pb, _entry->desc().nbinsy(), _gain_lo);
   }
   else
