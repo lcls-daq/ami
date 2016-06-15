@@ -196,6 +196,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/TimeToolHandler.hh"
 #include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/event/AnalogInputHandler.hh"
+#include "ami/event/EOrbitsHandler.hh"
 #include "ami/data/FeatureCache.hh"
 #include "ami/event/Generic1DHandler.hh"
 
@@ -265,6 +266,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
   case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
   case Pds::TypeId::Id_AnalogInput:      h = new AnalogInputHandler   (bldInfo,cache); break;
+  case Pds::TypeId::Id_EOrbits:          h = new EOrbitsHandler       (bldInfo,cache); break;
   default: break;
   }
   return h;
