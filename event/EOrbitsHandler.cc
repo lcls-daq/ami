@@ -3,6 +3,7 @@
 #include "pdsdata/xtc/BldInfo.hh"
 #include "pdsdata/psddl/bld.ddl.h"
 
+#include <math.h>
 #include <stdio.h>
 
 using namespace Ami;
@@ -58,9 +59,12 @@ void   EOrbitsHandler::_event    (Pds::TypeId id, const void* payload, const Pds
         ndarray<const double, 1> bpm_y    = d.fBPM_Y();
         ndarray<const double, 1> bpm_tmit = d.fBPM_TMIT();
         for(unsigned i=0; i<d.nBPMS(); i++) {
-          _cache.cache(index++,bpm_x[i]);
-          _cache.cache(index++,bpm_y[i]);
-          _cache.cache(index++,bpm_tmit[i]);
+          if(!isnan(bpm_x[i])) _cache.cache(index,bpm_x[i]);
+          index++;
+          if(!isnan(bpm_y[i])) _cache.cache(index,bpm_y[i]);
+          index++;
+          if(!isnan(bpm_tmit[i])) _cache.cache(index,bpm_tmit[i]);
+          index++;
         }
       } break;
     default:
