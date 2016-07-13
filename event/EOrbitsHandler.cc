@@ -49,6 +49,12 @@ void   EOrbitsHandler::_configure(Pds::TypeId id, const void* payload, const Pds
 
 void   EOrbitsHandler::_event    (Pds::TypeId id, const void* payload, const Pds::ClockTime& t)
 {
+#define TESTNAN(val) {                \
+  if (isnan(val))                     \
+    _cache.cache(index++,-1,true);    \
+  else                                \
+    _cache.cache(index++,val);        \
+  }
   if (_index>=0) {
     unsigned index = _index;
     switch(id.version()) {
@@ -59,18 +65,16 @@ void   EOrbitsHandler::_event    (Pds::TypeId id, const void* payload, const Pds
         ndarray<const double, 1> bpm_y    = d.fBPM_Y();
         ndarray<const double, 1> bpm_tmit = d.fBPM_TMIT();
         for(unsigned i=0; i<d.nBPMS(); i++) {
-          if(!isnan(bpm_x[i])) _cache.cache(index,bpm_x[i]);
-          index++;
-          if(!isnan(bpm_y[i])) _cache.cache(index,bpm_y[i]);
-          index++;
-          if(!isnan(bpm_tmit[i])) _cache.cache(index,bpm_tmit[i]);
-          index++;
+          TESTNAN(bpm_x[i]);
+          TESTNAN(bpm_y[i]);
+          TESTNAN(bpm_tmit[i]);
         }
       } break;
     default:
       break;
     }
   }
+#undef TESTNAN
 }
 
 //  No Entry data
