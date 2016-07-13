@@ -86,8 +86,6 @@ namespace Ami {
     int16_t _npixel_epics;
     const Pds::Epics::ConfigV1* _enable_config;
     int16_t _enable_epics;
-    const Pds::Epics::ConfigV1* _name_config;
-    int16_t _name_epics;
 
     const char*  _fname;
     const char*  _sname;
@@ -95,7 +93,6 @@ namespace Ami {
     char*  _npixel_pv;
     char*  _status_pv;
     char*  _enable_pv;
-    char*  _name_pv;
     char*  _shutter_pv;
     NameService* _name_service;
     Ami_Epics::PVWriter* _status;

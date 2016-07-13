@@ -65,14 +65,12 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
   _thres_epics(-1),
   _npixel_epics(-1),
   _enable_epics(-1),
-  _name_epics(-1),
   _fname(name),
   _sname(short_name),
   _thres_pv(0),
   _npixel_pv(0),
   _status_pv(0),
   _enable_pv(0),
-  _name_pv(0),
   _shutter_pv(0),
   _name_service(new NameService),
   _status(0),
@@ -111,18 +109,21 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
         sprintf(_status_pv, "%s:TRIPPED", line.c_str());
         _enable_pv = new char[line.length() + strlen(":ACTIVE") + 1];
         sprintf(_enable_pv, "%s:ACTIVE", line.c_str());
-        _name_pv = new char[line.length() + strlen(":SHUTTER") + 1];
-        sprintf(_name_pv, "%s:SHUTTER", line.c_str());
+        _shutter_pv = new char[line.length() + strlen(":CLOSE") + 1];
+        sprintf(_shutter_pv, "%s:CLOSE", line.c_str());
         break;
       }
     }
     printf("PVs loaded from configuration file: thres - %s, npixels - %s, status - %s, enable - %s, shutter_name - %s\n",
-           _thres_pv,_npixel_pv,_status_pv,_enable_pv,_name_pv);
+           _thres_pv,_npixel_pv,_status_pv,_enable_pv,_shutter_pv);
   } else {
     printf("tripper::configure unable to open %s, use default values and disable shutter\n",fpath);
   }
   if(_status_pv && strlen(_status_pv)) {
     _status = new Ami_Epics::PVWriter(_status_pv);
+  }
+  if(_shutter_pv && strlen(_shutter_pv)) {
+    _shutter = new Ami_Epics::PVWriter(_shutter_pv);
   }
   file.close();
 }
@@ -136,7 +137,6 @@ CspadTripper::~CspadTripper()
   if (_npixel_pv)   delete[]  _npixel_pv;
   if (_status_pv)   delete[]  _status_pv;
   if (_enable_pv)   delete[]  _enable_pv;
-  if (_name_pv)     delete[]  _name_pv;
   if (_shutter_pv)  delete[]  _shutter_pv;
 
   ca_context_destroy();
@@ -199,10 +199,6 @@ void CspadTripper::configure(const Pds::DetInfo&    src,
       printf("Found PV for configuring enableTrip: %s\n", pv_conf.description());
       _enable_config = temp_pv;
       _enable_epics = temp_id;
-    } else if(_name_pv && strcmp(pv_conf.description(),_name_pv)==0) {
-      printf("Found PV for configuring shutterName: %s\n", pv_conf.description());
-      _name_config = temp_pv;
-      _name_epics = temp_id;
     }
   }
 }
@@ -262,17 +258,6 @@ void CspadTripper::event    (const Pds::DetInfo&    src,
                 _nPixelsToTrip[id] = (unsigned) pv->value(0);
               }
             }
-          }
-        }
-      } else if(epics->dbrType() == 14 /*Pds::Epics::DBR_TIME_STRING*/) {
-        if(epics->pvId() == _name_epics) {
-          const Pds::Epics::EpicsPvTimeString* pv = reinterpret_cast<const Pds::Epics::EpicsPvTimeString*>(epics);
-          const char* new_val = pv->value(0);
-          if(strlen(new_val)>0 && strcmp(new_val,_shutter_pv)!=0) {
-            std::strcpy(_shutter_pv,new_val);
-            printf("Updating fast shutter pv to %s\n", _shutter_pv);
-            if (_shutter) delete _shutter;
-            _shutter = new Ami_Epics::PVWriter(_shutter_pv);
           }
         }
       } else if(epics->dbrType() == 17 /*Pds::Epics::DBR_TIME_ENUM*/) {
