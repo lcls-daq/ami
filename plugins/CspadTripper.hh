@@ -91,11 +91,9 @@ namespace Ami {
     const char*  _sname;
     char*  _thres_pv;
     char*  _npixel_pv;
-    char*  _status_pv;
     char*  _enable_pv;
     char*  _shutter_pv;
     NameService* _name_service;
-    Ami_Epics::PVWriter* _status;
     Ami_Epics::PVWriter* _shutter;
     //    static char _nameBuffer[128];
   };

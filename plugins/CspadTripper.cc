@@ -69,11 +69,9 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
   _sname(short_name),
   _thres_pv(0),
   _npixel_pv(0),
-  _status_pv(0),
   _enable_pv(0),
   _shutter_pv(0),
   _name_service(new NameService),
-  _status(0),
   _shutter(0)
 {
   SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
@@ -84,7 +82,6 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
     _config[i]=0;
     _dets[i]=0;
   }
-  _status_pv = new char[64];
   _shutter_pv = new char[64];
   //  printf("have called tripper constructor\n");
   //  sprintf(_nameBuffer, "CspadTripperTitleOfSomeSort");
@@ -105,22 +102,17 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
         sprintf(_thres_pv, "%s:ADU", line.c_str());
         _npixel_pv = new char[line.length() + strlen(":DPI") + 1];
         sprintf(_npixel_pv, "%s:DPI", line.c_str());
-        _status_pv = new char[line.length() + strlen(":TRIPPED") + 1];
-        sprintf(_status_pv, "%s:TRIPPED", line.c_str());
         _enable_pv = new char[line.length() + strlen(":ACTIVE") + 1];
         sprintf(_enable_pv, "%s:ACTIVE", line.c_str());
-        _shutter_pv = new char[line.length() + strlen(":CLOSE") + 1];
+        _shutter_pv = new char[line.length() + strlen(":TRIP") + 1];
         sprintf(_shutter_pv, "%s:CLOSE", line.c_str());
         break;
       }
     }
-    printf("PVs loaded from configuration file: thres - %s, npixels - %s, status - %s, enable - %s, shutter_name - %s\n",
-           _thres_pv,_npixel_pv,_status_pv,_enable_pv,_shutter_pv);
+    printf("PVs loaded from configuration file: thres - %s, npixels - %s, enable - %s, shutter_name - %s\n",
+           _thres_pv,_npixel_pv,_enable_pv,_shutter_pv);
   } else {
     printf("tripper::configure unable to open %s, use default values and disable shutter\n",fpath);
-  }
-  if(_status_pv && strlen(_status_pv)) {
-    _status = new Ami_Epics::PVWriter(_status_pv);
   }
   if(_shutter_pv && strlen(_shutter_pv)) {
     _shutter = new Ami_Epics::PVWriter(_shutter_pv);
@@ -131,11 +123,9 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
 CspadTripper::~CspadTripper()
 {
   if (_name_service) delete   _name_service;
-  if (_status)      delete    _status;
   if (_shutter)     delete    _shutter;
   if (_thres_pv)    delete[]  _thres_pv;
   if (_npixel_pv)   delete[]  _npixel_pv;
-  if (_status_pv)   delete[]  _status_pv;
   if (_enable_pv)   delete[]  _enable_pv;
   if (_shutter_pv)  delete[]  _shutter_pv;
 
@@ -343,10 +333,6 @@ void CspadTripper::analyzeDetector  ()
           }
         } else {
           printf("Trip disabled for detector %d, not closing shutter!\n", currentDet);
-        }
-        if(_status) {
-          *(dbr_enum_t*) _status->data() = 1;
-          _status->put();
         }
         ca_flush_io();
       }
