@@ -1,6 +1,7 @@
 #include "ami/qt/CspadClient.hh"
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
+#include "ami/qt/Rotator.hh"
 #include "ami/event/CspadCalib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
@@ -9,6 +10,7 @@
 #include "ami/service/Ins.hh"
 
 #include <QtGui/QCheckBox>
+#include <QtGui/QComboBox>
 #include <QtGui/QPushButton>
 #include <QtGui/QMessageBox>
 
@@ -20,6 +22,7 @@ using namespace Ami::Qt;
 
 CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QString& n) :
   ImageClient(w, i, u, n),
+  _rotator   (new Rotator(*this)),
   _reloadPedestals(false)
 {
   { QPushButton* pedB = new QPushButton("Write Pedestals");
@@ -32,6 +35,7 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   addWidget(_npBox = new QCheckBox("Retain Pedestal"));
   addWidget(_gnBox = new QCheckBox("Correct Gain"));
   addWidget(_piBox = new QCheckBox("Post Integral"));
+  addWidget(_rotator->widget());
 
   connect(_spBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_fnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
@@ -39,9 +43,10 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_gnBox, SIGNAL(clicked()), this, SIGNAL(changed()));
   connect(_piBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_rotator->box(), SIGNAL(currentIndexChanged(int)), this, SIGNAL(changed()));
 }
 
-CspadClient::~CspadClient() {}
+CspadClient::~CspadClient() { delete _rotator; }
 
 void CspadClient::save(char*& p) const
 {
@@ -52,6 +57,7 @@ void CspadClient::save(char*& p) const
   XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_gnBox", QtPersistent::insert(p,_gnBox->isChecked()) );
   XML_insert(p, "QCheckBox", "_piBox", QtPersistent::insert(p,_piBox->isChecked()) );
+  XML_insert(p, "Rotator"  , "_rotator", _rotator->save(p) );
 }
 
 void CspadClient::load(const char*& p)
@@ -71,7 +77,23 @@ void CspadClient::load(const char*& p)
       _gnBox->setChecked(QtPersistent::extract_b(p));
     else if (tag.name == "_piBox")
       _piBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_rotator")
+      _rotator->load(p);
   XML_iterate_close(CspadClient,tag);
+}
+
+void CspadClient::_prototype(const DescEntry& e)
+{
+  ImageClient::_prototype(e);
+  _rotator->prototype(e);
+}
+
+unsigned CspadClient::_preconfigure(char*&    p,
+                                    unsigned  input,
+                                    unsigned& output,
+                                    ConfigureRequest::Source& source)
+{
+  return _rotator->configure(p,input,output,source);
 }
 
 void CspadClient::_configure(char*& p, 
@@ -108,7 +130,7 @@ void CspadClient::write_pedestals()
   QString name;
   unsigned signature=-1U;
 
-  for(int i=0; i<NCHANNELS; i++)
+  for(unsigned i=0; i<NCHANNELS; i++)
     if (_channels[i]->is_shown()) {
       name = _channels[i]->name();
       signature = _channels[i]->output_signature();
@@ -162,3 +184,5 @@ void CspadClient::write_pedestals()
     _control->resume();
   }
 }
+
+Ami::Rotation CspadClient::rotation() const { return _rotator->rotation(); }

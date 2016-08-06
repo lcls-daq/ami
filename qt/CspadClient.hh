@@ -3,10 +3,13 @@
 
 #include "ami/qt/ImageClient.hh"
 
+#include "ami/data/DescImage.hh"
+
 class QCheckBox;
 
 namespace Ami {
   namespace Qt {
+    class Rotator;
     class CspadClient : public ImageClient {
       Q_OBJECT
     public:
@@ -15,7 +18,14 @@ namespace Ami {
     public:
       void save(char*& p) const;
       void load(const char*& p);
+    public:
+      Ami::Rotation rotation() const;
     protected:
+      void     _prototype   (const DescEntry&);
+      unsigned _preconfigure(char*&    p,
+          unsigned  input,
+          unsigned& output,
+          ConfigureRequest::Source&);
       void _configure(char*& p, 
 		      unsigned input, 
 		      unsigned& output,
@@ -33,6 +43,7 @@ namespace Ami {
       QCheckBox* _npBox;
       QCheckBox* _gnBox;
       QCheckBox* _piBox;
+      Rotator*   _rotator;
       bool _reloadPedestals;
     };
   };
