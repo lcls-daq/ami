@@ -68,7 +68,7 @@ void Opal1kHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::
       { const Pds::Opal1k::ConfigV1& c = *reinterpret_cast<const Pds::Opal1k::ConfigV1*>(payload);
         switch(c.vertical_binning()) {
         case Pds::Opal1k::ConfigV1::x2: rows/=2; break;
-        case Pds::Opal1k::ConfigV1::x4: rows/=2; break;
+        case Pds::Opal1k::ConfigV1::x4: rows/=4; break;
         case Pds::Opal1k::ConfigV1::x8: rows/=8; break;
         default: break;
         }
