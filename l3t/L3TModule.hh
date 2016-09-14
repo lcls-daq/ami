@@ -28,6 +28,7 @@ namespace Ami {
       L3TModule();
       ~L3TModule();
     public:
+      void set_experiment(const std::string&);
       void pre_configure(const std::string&);
       bool post_configure();
       void configure(const Pds::DetInfo&   src,
