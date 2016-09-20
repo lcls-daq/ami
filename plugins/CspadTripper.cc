@@ -524,7 +524,7 @@ void CspadTripper::analyzeDetector  ()
       } else if (_nevt==1) {
         _bh->updateGoodPix(data,s.quad(),currentDet);
       } else {
-        bool trip =_bh->floodFill(data,s.quad(),currentDet);
+        trip =_bh->floodFill(data,s.quad(),currentDet);
         if (trip) {
           bh_pixelCount = _bh->lasttrip_pixcount();
           break;
