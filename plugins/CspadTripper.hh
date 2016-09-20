@@ -22,6 +22,7 @@ namespace Ami {
   class Cds;
   class EntryScalar;
   class NameService;
+  class BlackHole;
 
   //
   //  Define our particular plug-in module
@@ -72,7 +73,8 @@ namespace Ami {
     int32_t _tripCountThreshold[MaxDetsAllowed];
     bool    _enableTrip[MaxDetsAllowed];
 
-    const Pds::CsPad::ConfigV5* _config[MaxDetsAllowed];
+    uint32_t _config_size[MaxDetsAllowed];
+    Pds::CsPad::ConfigV5* _config[MaxDetsAllowed];
     unsigned _dets[MaxDetsAllowed];
     unsigned _detsFound;
 
@@ -96,6 +98,7 @@ namespace Ami {
     NameService* _name_service;
     Ami_Epics::PVWriter* _shutter;
     //    static char _nameBuffer[128];
+    BlackHole* _bh;
   };
 };
 
