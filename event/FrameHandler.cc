@@ -61,14 +61,18 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
     const Pds::Camera::FrameFexConfigV1& c = *reinterpret_cast<const Pds::Camera::FrameFexConfigV1*>(payload);
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     unsigned columns,rows;
+    unsigned x0,y0;
     switch(c.forwarding()) {
     case Pds::Camera::FrameFexConfigV1::FullFrame:
       columns = _defColumns;
       rows    = _defRows;
+      x0 = y0 = 0;
       break;
     case Pds::Camera::FrameFexConfigV1::RegionOfInterest:
       columns = c.roiEnd().column()-c.roiBegin().column();
       rows    = c.roiEnd().row   ()-c.roiBegin().row   ();
+      x0      = c.roiBegin().column();
+      y0      = c.roiBegin().row   ();
       break;
     case Pds::Camera::FrameFexConfigV1::NoFrame:
     default:
@@ -76,7 +80,7 @@ void FrameHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::C
     }
     unsigned ppb = image_ppbin(columns,rows,0);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb);
+		   columns, rows, ppb, ppb, 1, 1, x0,y0);
     _entry = new EntryImage(desc);
     _entry->invalid();
     _load_pedestals();

@@ -34,7 +34,8 @@ namespace Ami {
 	      const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 
 	      int ppbx=1, int ppby=1,  // detector pixels per bin
-	      int dpbx=1, int dpby=1); // display pixels per bin
+	      int dpbx=1, int dpby=1,  // display pixels per bin
+              unsigned xp0=0, unsigned yp0=0);
 
     DescImage(const char* name,
 	      unsigned nbinsx, unsigned nbinsy, 

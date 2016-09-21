@@ -95,7 +95,7 @@ Ami::Qt::Client::Client(QWidget*            parent,
       refnames << QString("Chan %1").arg(ch[i]+1);
   }
 
-_channels.resize(refnames.size()<4 ? 4:refnames.size());
+  _channels.resize(refnames.size()<4 ? 4:refnames.size());
   QStringList names;
 
   for(unsigned i=0; i<NCHANNELS; i++)
