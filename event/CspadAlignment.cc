@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 using namespace Ami;
 using Ami::Cspad::QuadAlignment;
@@ -84,6 +85,11 @@ Ami::Cspad::QuadAlignment* QuadAlignment::load(FILE* g, bool offline)
 
       ss >> pname >> pindex >> oname >> oindex >> x0 >> y0 >> z0 
          >> rot_z >> rot_y >> rot_x >> tilt_z >> tilt_y >> tilt_x;
+
+      // handle case of psgeom files where some z-rotatations are
+      // expressed as a 180-degree rotation around x and a
+      // 180 degree rotation around y
+      if (fabs(rot_y-180)<25.0 && fabs(rot_x-180)<25.0) rot_z+=180;
 
       if (pname.size()) {
         if (oname == "SENS2X1:V1") {
