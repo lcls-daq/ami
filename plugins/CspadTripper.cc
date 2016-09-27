@@ -292,7 +292,7 @@ CspadTripper::CspadTripper(const char* name, const char* short_name) :
         _enable_pv = new char[line.length() + strlen(":ACTIVE") + 1];
         sprintf(_enable_pv, "%s:ACTIVE", line.c_str());
         _shutter_pv = new char[line.length() + strlen(":TRIP") + 1];
-        sprintf(_shutter_pv, "%s:CLOSE", line.c_str());
+        sprintf(_shutter_pv, "%s:TRIP", line.c_str());
         break;
       }
     }
