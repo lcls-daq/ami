@@ -91,6 +91,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_AndorConfig:
       h = new andorDataSpace(detInfo, Pds::TypeId::Id_AndorFrame,  Pds::TypeId::Id_AndorConfig, payload, "Andor");
       break;
+    case Pds::TypeId::Id_JungfrauConfig:
+      h = new jungfrauDataSpace(detInfo, Pds::TypeId::Id_JungfrauElement,  Pds::TypeId::Id_JungfrauConfig, payload, "Jungfrau");
+      break;
     case Pds::TypeId::Id_PimaxConfig:
       h = new pimaxDataSpace(detInfo, Pds::TypeId::Id_PimaxFrame,  Pds::TypeId::Id_PimaxConfig, payload, "Pimax");
       break;

@@ -26,6 +26,8 @@
 #include "pds/config/FliDataType.hh"
 #include "pds/config/AndorConfigType.hh"
 #include "pds/config/AndorDataType.hh"
+#include "pds/config/JungfrauConfigType.hh"
+#include "pds/config/JungfrauDataType.hh"
 #include "pds/config/TM6740ConfigType.hh"
 #include "pds/config/pnCCDConfigType.hh"
 #include "pds/config/FrameFccdConfigType.hh"
@@ -136,6 +138,7 @@ namespace Ami {
   typedef Ami::DataSpace <PrincetonConfigType,PrincetonDataType>         princetonDataSpace;
   typedef Ami::DataSpace <FliConfigType,      FliDataType>               fliDataSpace;
   typedef Ami::DataSpace <AndorConfigType,    AndorDataType>             andorDataSpace;
+  typedef Ami::DataSpace <JungfrauConfigType,    JungfrauDataType>       jungfrauDataSpace;
   typedef Ami::DataSpace <PimaxConfigType,    PimaxDataType>             pimaxDataSpace;
   typedef Ami::DataSpace <Pds::FCCD::FccdConfigV2, FrameType>            fccdDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataEBeamV3,  Pds::Bld::BldDataEBeamV3>     eBeamDataSpace;

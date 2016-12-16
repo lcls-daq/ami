@@ -108,6 +108,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Andor:
         sprintf(_buffer,"Andor.%d.%d",info.detId(),info.devId());
         break;
+      case DetInfo::Jungfrau:
+        sprintf(_buffer,"Jungfrau.%d.%d",info.detId(),info.devId());
+        break;
       case DetInfo::Pimax:
         sprintf(_buffer,"Pimax.%d.%d",info.detId(),info.devId());
         break;

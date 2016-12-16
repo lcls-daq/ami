@@ -245,6 +245,18 @@ namespace Ami {
     return ((double)val);
   }
 
+  template<> double jungfrauDataSpace::processData()
+  {
+    JungfrauConfigType& jungfrauConfig = detConfig;
+    JungfrauDataType*   jungfrauFrame  = detDataPtr;
+    const uint16_t* dataArray = jungfrauFrame->frame(jungfrauConfig).data();
+    unsigned totalPixels = jungfrauConfig.numPixels();
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
+
   template<> double pimaxDataSpace::processData()
   {
     PimaxConfigType& pimaxConfig = detConfig;

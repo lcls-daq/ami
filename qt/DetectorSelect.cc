@@ -441,6 +441,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
       break;
     case Pds::DetInfo::Andor    :
     case Pds::DetInfo::DualAndor:
+    case Pds::DetInfo::Jungfrau :
     case Pds::DetInfo::Opal1000 :
     case Pds::DetInfo::Opal2000 :
     case Pds::DetInfo::Opal4000 :
