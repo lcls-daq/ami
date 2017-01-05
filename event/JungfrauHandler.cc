@@ -10,6 +10,8 @@
 #include <stdio.h>
 
 static const unsigned offset=1<<16;
+static const unsigned gain_bits = 3<<14;
+static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
 
 static inline unsigned height(const Xtc* tc)
 {
@@ -166,7 +168,7 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     for(unsigned j=0; j<height(_configtc); j++) {
       const unsigned* p = &pa[j][0];
       for(unsigned k=0; k<width(_configtc); k++, d++, p++)
-        _entry->addcontent(*d + *p, k/ppbin, j/ppbin);
+        _entry->addcontent((*d & data_bits) + *p, k/ppbin, j/ppbin);
     }
 
     //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
