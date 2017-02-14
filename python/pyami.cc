@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <structmember.h>
 #include <sstream>
-
+#include "p3compat.h"
 #define MyArg_ParseTupleAndKeywords(args,kwds,fmt,kwlist,...) PyArg_ParseTupleAndKeywords(args,kwds,fmt,const_cast<char**>(kwlist),__VA_ARGS__)
 
 #include "ami/python/Handler.hh"
@@ -127,7 +127,7 @@ static int _parseargs(PyObject* args, PyObject* kwds, Ami::Python::ClientArgs& c
 {
   if (!PyTuple_Check(args)) {
     char buff[64];
-    sprintf(buff,"Ami Entry args type (%s) is not tuple",args->ob_type->tp_name);
+    sprintf(buff,"Ami Entry args type (%s) is not tuple",Py_TYPE(args)->tp_name);
     PyErr_SetString(PyExc_RuntimeError,buff);
     return -1;
   }
@@ -426,7 +426,7 @@ static void amientry_dealloc(amientry* self)
     self->client = 0;
   }
 
-  self->ob_type->tp_free((PyObject*)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject* amientry_new(PyTypeObject* type, PyObject* args, PyObject* kwds)
@@ -546,8 +546,7 @@ static PyMemberDef amientry_members[] = {
 };
 
 static PyTypeObject amientry_type = {
-  PyObject_HEAD_INIT(NULL)
-    0,                         /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "pyami.Entry",             /* tp_name */
     sizeof(amientry),          /* tp_basicsize */
     0,                         /* tp_itemsize */
@@ -555,7 +554,7 @@ static PyTypeObject amientry_type = {
     0,                         /*tp_print*/
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
-    0,                         /*tp_compare*/
+    0,                         /*tp_compare, or tp_as_async for P3 */
     0,                         /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
@@ -597,7 +596,7 @@ static void amientrylist_dealloc(amientrylist* self)
     self->client = 0;
   }
 
-  self->ob_type->tp_free((PyObject*)self);
+  Py_TYPE(self)->tp_free((PyObject*)self);
 }
 
 static PyObject* amientrylist_new(PyTypeObject* type, PyObject* args, PyObject* kwds) 
@@ -718,8 +717,7 @@ static PyMemberDef amientrylist_members[] = {
 };
 
 static PyTypeObject amientrylist_type = {
-  PyObject_HEAD_INIT(NULL)
-    0,                         /* ob_size */
+    PyVarObject_HEAD_INIT(NULL, 0)
     "pyami.EntryList",         /* tp_name */
     sizeof(amientrylist),      /* tp_basicsize */
     0,                         /* tp_itemsize */
@@ -972,7 +970,7 @@ pyami_map_image(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args,"OOIOs|O",&obuff,&shape,&stride,&slice,&map,&range)) 
     return NULL;
 
-  PyBufferProcs* p = obuff->ob_type->tp_as_buffer;
+  PyBufferProcs* p = Py_TYPE(obuff)->tp_as_buffer;
   if (p==NULL) {
     PyErr_SetString(PyExc_RuntimeError,"Argument 0 is not a buffer object");
     return NULL;
@@ -1034,7 +1032,8 @@ pyami_map_image(PyObject *self, PyObject *args)
   else {  // autorange
     int imin,jmin,imax,jmax;
     void* ptr;
-    (*p->bf_getreadbuffer)(obuff,0,&ptr);
+    Py_ssize_t ll;
+    PyObject_AsReadBuffer(obuff, const_cast<const void **>(&ptr), &ll);
     int8_t* cptr = reinterpret_cast<int8_t*>(ptr);
     for(int j=row0; j<row1; j++) {
       int32_t* rowptr = reinterpret_cast<int32_t*>(cptr);
@@ -1056,7 +1055,8 @@ pyami_map_image(PyObject *self, PyObject *args)
 
   PyObject* out = PyList_New(row1-row0);
   void* ptr;
-  (*p->bf_getreadbuffer)(obuff,0,&ptr);
+  Py_ssize_t ll;
+  PyObject_AsReadBuffer(obuff, const_cast<const void **>(&ptr), &ll);
   int8_t* cptr = reinterpret_cast<int8_t*>(ptr);
   for(int j=row0,jo=0; j<row1; j++,jo++) {
     PyObject* orow = PyList_New(col1-col0);
@@ -1216,28 +1216,45 @@ static PyMethodDef PyamiMethods[] = {
     {"map_image", pyami_map_image, METH_VARARGS, "map image data to RGB color scale."},
     {"set_l3t"  , pyami_set_l3t  , METH_VARARGS, "Set L3 trigger expression."},
     {"clear_l3t", pyami_clear_l3t, METH_VARARGS, "Clear L3 trigger expression."},
-    { "set_handler_options", (PyCFunction)pyami_set_handler_options, METH_KEYWORDS, "Set detector handler options."},
-    { "get_handler_options", (PyCFunction)pyami_get_handler_options, METH_KEYWORDS, "Get detector handler options."},
+    { "set_handler_options", (PyCFunction)pyami_set_handler_options, METH_VARARGS|METH_KEYWORDS, "Set detector handler options."},
+    { "get_handler_options", (PyCFunction)pyami_get_handler_options, METH_VARARGS|METH_KEYWORDS, "Get detector handler options."},
     {NULL, NULL, 0, NULL}        /* Sentinel */
 };
+
+#ifdef IS_PY3K
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "pyami",
+        NULL,
+        -1,
+        PyamiMethods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+#endif
 
 //
 //  Module initialization
 //
-PyMODINIT_FUNC
-initpyami(void)
+DECLARE_INIT(pyami)
 {
   if (PyType_Ready(&amientry_type) < 0) {
-    return; 
+    INITERROR; 
   }
 
   if (PyType_Ready(&amientrylist_type) < 0) {
-    return; 
+    INITERROR; 
   }
 
+#ifdef IS_PY3K
+  PyObject *m = PyModule_Create(&moduledef);
+#else
   PyObject *m = Py_InitModule("pyami", PyamiMethods);
+#endif
   if (m == NULL)
-    return;
+    INITERROR;
 
   _discovery = 0;
 
@@ -1250,5 +1267,9 @@ initpyami(void)
   AmiError = PyErr_NewException(const_cast<char*>("pyami.error"), NULL, NULL);
   Py_INCREF(AmiError);
   PyModule_AddObject(m, "error", AmiError);
+
+#ifdef IS_PY3K
+  return m;
+#endif
 }
 
