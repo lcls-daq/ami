@@ -23,7 +23,7 @@ static inline unsigned height(const Xtc* tc)
 
   switch(tc->contains.version()) {
     CASE_VSN(1);
-    //CASE_VSN(2);
+    CASE_VSN(2);
     default: break;
   }
 #undef CASE_VSN
@@ -39,7 +39,7 @@ static inline unsigned width(const Xtc* tc)
 
   switch(tc->contains.version()) {
     CASE_VSN(1);
-    //CASE_VSN(2);
+    CASE_VSN(2);
     default: break;
   }
 #undef CASE_VSN
@@ -56,7 +56,7 @@ static inline ndarray<const uint16_t,3> array(const Xtc* tc,
 
   switch(tc->contains.version()) {
     CASE_VSN(1);
-    //CASE_VSN(2);
+    CASE_VSN(2);
     default: break;
   }
 #undef CASE_VSN
