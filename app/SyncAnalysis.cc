@@ -245,6 +245,18 @@ namespace Ami {
     return ((double)val);
   }
 
+  template<> double zylaDataSpace::processData()
+  {
+    ZylaConfigType& zylaConfig = detConfig;
+    ZylaDataType*   zylaFrame  = detDataPtr;
+    const uint16_t* dataArray = zylaFrame->data(zylaConfig).data();
+    unsigned totalPixels = zylaConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
+
   template<> double jungfrauDataSpace::processData()
   {
     JungfrauConfigType& jungfrauConfig = detConfig;

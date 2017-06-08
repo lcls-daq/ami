@@ -91,6 +91,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_AndorConfig:
       h = new andorDataSpace(detInfo, Pds::TypeId::Id_AndorFrame,  Pds::TypeId::Id_AndorConfig, payload, "Andor");
       break;
+    case Pds::TypeId::Id_ZylaConfig:
+      h = new zylaDataSpace(detInfo, Pds::TypeId::Id_ZylaFrame,  Pds::TypeId::Id_ZylaConfig, payload, "Zyla");
+      break;
     case Pds::TypeId::Id_JungfrauConfig:
       h = new jungfrauDataSpace(detInfo, Pds::TypeId::Id_JungfrauElement,  Pds::TypeId::Id_JungfrauConfig, payload, "Jungfrau");
       break;
@@ -141,7 +144,8 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_PhaseCavity)     || (type.id() == Pds::TypeId::Id_GMD)   ||
           (type.id() == Pds::TypeId::Id_PrincetonFrame)  || (type.id() == Pds::TypeId::Id_FliFrame)  ||
           (type.id() == Pds::TypeId::Id_AndorFrame)      || (type.id() == Pds::TypeId::Id_PimaxFrame)||
-          (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData)  ) {
+          (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData) ||
+          (type.id() == Pds::TypeId::Id_Zylaframe)  ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
 #ifdef VERBOSE

@@ -201,6 +201,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/data/FeatureCache.hh"
 #include "ami/event/Generic1DHandler.hh"
 #include "ami/event/JungfrauHandler.hh"
+#include "ami/event/ZylaHandler.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
 {
@@ -271,6 +272,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_EOrbits:          h = new EOrbitsHandler       (bldInfo,cache); break;
   case Pds::TypeId::Id_BeamMonitorBldData: h = new BeamMonitorHandler (bldInfo,cache); break;
   case Pds::TypeId::Id_JungfrauConfig:   h = new JungfrauHandler   (info,cache); break;
+  case Pds::TypeId::Id_ZylaConfig:       h = new ZylaHandler       (info,cache); break;
   default: break;
   }
   return h;
