@@ -202,6 +202,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/Generic1DHandler.hh"
 #include "ami/event/JungfrauHandler.hh"
 #include "ami/event/ZylaHandler.hh"
+#include "ami/event/SharedUsdUsbHandler.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
 {
@@ -268,6 +269,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_TimeToolConfig:   h = new TimeToolHandler  (info,cache); break;
   case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
   case Pds::TypeId::Id_SharedPim:        h = new SharedPimHandler     (bldInfo); break;
+  case Pds::TypeId::Id_SharedUsdUsb:     h = new SharedUsdUsbHandler  (bldInfo,cache); break;
   case Pds::TypeId::Id_AnalogInput:      h = new AnalogInputHandler   (bldInfo,cache); break;
   case Pds::TypeId::Id_EOrbits:          h = new EOrbitsHandler       (bldInfo,cache); break;
   case Pds::TypeId::Id_BeamMonitorBldData: h = new BeamMonitorHandler (bldInfo,cache); break;
