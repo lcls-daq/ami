@@ -272,7 +272,7 @@ std::string offl_path(std::string basepath,
     << offCalibClass(info.device()) << "/"
     << Pds::DetInfo::name(info.detector()) << "." << info.detId() << ":" 
     << Pds::DetInfo::name(info.device  ()) << "." << info.devId()
-    << "/" << off_calib_type << "/*";
+    << "/" << off_calib_type << "/*.data";
 
   //
   //  Follow the CalibFileFinder.cpp prescription
