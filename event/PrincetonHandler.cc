@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+using namespace Pds;
+
 static inline unsigned height(const Xtc* tc)
 {
 #define CASE_VSN(v) case v:                                             \

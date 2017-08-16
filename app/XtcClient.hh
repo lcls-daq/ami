@@ -26,7 +26,7 @@ namespace Ami {
   class NameService;
   class XtcCache;
 
-  class XtcClient : private XtcIterator,
+  class XtcClient : private Pds::XtcIterator,
 		    public DumpSource {
   public:
     XtcClient(std::vector<FeatureCache*>& cache, 

@@ -12,7 +12,7 @@ namespace Ami {
 
   class EncoderHandler : public EventHandlerF {
   public:
-    EncoderHandler(const DetInfo&, FeatureCache&);
+    EncoderHandler(const Pds::DetInfo&, FeatureCache&);
     ~EncoderHandler();
   public:
     void   rename(const char*);

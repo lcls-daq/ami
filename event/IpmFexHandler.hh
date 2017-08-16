@@ -12,7 +12,7 @@ namespace Ami {
 
   class IpmFexHandler : public EventHandlerF {
   public:
-    IpmFexHandler(const DetInfo&, FeatureCache&);
+    IpmFexHandler(const Pds::DetInfo&, FeatureCache&);
     ~IpmFexHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

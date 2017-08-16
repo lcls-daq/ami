@@ -9,6 +9,7 @@
 #include <string.h>
 
 using namespace Ami;
+using namespace Pds;
 
 UsdUsbFexHandler::UsdUsbFexHandler(const Pds::DetInfo& info, FeatureCache& f) :
   EventHandlerF(info,

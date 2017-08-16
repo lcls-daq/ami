@@ -21,6 +21,7 @@
 typedef Pds::CsPad::ElementV2 CspadElement;
 
 using namespace Ami;
+using namespace Pds;
 
 static std::list<Pds::TypeId::Type> data_type_list()
 {

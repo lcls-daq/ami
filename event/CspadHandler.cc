@@ -29,6 +29,7 @@
 #define DO_PED_CORR
 
 using Ami::CspadCalib;
+using namespace Pds;
 
 typedef Pds::CsPad::ElementV2 CspadElement;
 

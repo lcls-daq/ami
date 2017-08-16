@@ -12,7 +12,7 @@ namespace Ami {
 
   class EvrHandler : public EventHandlerF {
   public:
-    EvrHandler(const DetInfo&, FeatureCache&);
+    EvrHandler(const Pds::DetInfo&, FeatureCache&);
     ~EvrHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

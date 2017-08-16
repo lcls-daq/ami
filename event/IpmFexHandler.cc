@@ -10,6 +10,7 @@
 #include <string.h>
 
 using namespace Ami;
+using namespace Pds;
 
 IpmFexHandler::IpmFexHandler(const Pds::DetInfo& info, FeatureCache& f) :
   EventHandlerF(info,

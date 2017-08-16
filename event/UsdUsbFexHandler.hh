@@ -12,7 +12,7 @@ namespace Ami {
 
   class UsdUsbFexHandler : public EventHandlerF {
   public:
-    UsdUsbFexHandler(const DetInfo&, FeatureCache&);
+    UsdUsbFexHandler(const Pds::DetInfo&, FeatureCache&);
     ~UsdUsbFexHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

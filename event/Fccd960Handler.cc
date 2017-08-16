@@ -17,6 +17,7 @@ static inline double tdiff(const timespec& tv_b,
 #endif
 
 using namespace Ami;
+using namespace Pds;
 
 static const unsigned offset=1<<16;
 static const double  doffset=double(offset);

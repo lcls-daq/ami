@@ -2,6 +2,8 @@
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/psddl/opal1k.ddl.h"
 
+using namespace Pds;
+
 static unsigned max_row_pixels   (const DetInfo& info)
 {
   switch(info.device()) {

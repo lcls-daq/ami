@@ -28,6 +28,7 @@ static const Pds::TypeId NoType(Pds::TypeId::Any,0);
 static const unsigned MaxConfigSize = 64*1024;
 
 using namespace Ami;
+using namespace Pds;
 using Ami::XML::QtPersistent;
 
 static bool _lock  (std::string);

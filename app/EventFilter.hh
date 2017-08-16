@@ -28,13 +28,13 @@ namespace Ami {
     void enable      (const ConfigureRequest&,
 		      const std::list<const Analysis*>&,
 		      const std::list<const EventHandler*>&);
-    void configure   (Dgram*);
-    bool accept      (Dgram*,XtcCache&);
+    void configure   (Pds::Dgram*);
+    bool accept      (Pds::Dgram*,XtcCache&);
     bool accept      ();
   public:
     const std::list<UserModule*>& modules() const { return _filters; }
   private:
-    int process(Xtc*);
+    int process(Pds::Xtc*);
   private:
     std::list<UserModule*>& _filters;
     FeatureCache&           _cache;

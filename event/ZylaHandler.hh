@@ -28,7 +28,7 @@ namespace Ami {
     void _load_pedestals();
   private:
     //ZylaHandler(const Pds::DetInfo& info, const EntryImage*);
-    Xtc*                _configtc;
+    Pds::Xtc*           _configtc;
     FeatureCache&       _cache;
     EntryImage*         _entry;
     EntryImage*         _pentry;

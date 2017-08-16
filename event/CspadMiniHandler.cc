@@ -31,6 +31,7 @@
 #define POST_INTEGRAL
 
 using Ami::CspadCalib;
+using namespace Pds;
 
 typedef Pds::CsPad2x2::ElementV1 MiniElement;
 

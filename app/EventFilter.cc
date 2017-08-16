@@ -14,6 +14,7 @@
 using std::string;
 using std::list;
 using namespace Ami;
+using namespace Pds;
 
 EventFilter::EventFilter(list<UserModule*>& filters,
                          FeatureCache& cache) :

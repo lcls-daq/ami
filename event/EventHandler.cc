@@ -8,6 +8,7 @@
 #include "pdsdata/xtc/Xtc.hh"
 
 using namespace Ami;
+using namespace Pds;
 
 EventHandler::EventHandler(const Pds::Src& info,
 			   Pds::TypeId::Type   data_type,

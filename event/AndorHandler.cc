@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+using namespace Pds;
+
 static const unsigned offset=1<<16;
 
 static inline unsigned height(const Xtc* tc)

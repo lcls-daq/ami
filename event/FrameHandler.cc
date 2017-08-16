@@ -10,6 +10,7 @@
 #include <string.h>
 
 using namespace Ami;
+using namespace Pds;
 
 FrameHandler::FrameHandler(const Pds::DetInfo& info,
 			   unsigned defColumns,

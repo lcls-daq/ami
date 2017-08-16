@@ -12,7 +12,7 @@ namespace Ami {
 
   class DiodeFexHandler : public EventHandlerF {
   public:
-    DiodeFexHandler(const DetInfo&, FeatureCache&);
+    DiodeFexHandler(const Pds::DetInfo&, FeatureCache&);
     ~DiodeFexHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

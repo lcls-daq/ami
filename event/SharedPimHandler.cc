@@ -5,6 +5,7 @@
 #include "pdsdata/psddl/camera.ddl.h"
 
 using namespace Ami;
+using namespace Pds;
 
 typedef Pds::Camera::FrameFexConfigV1 FexConfigType;
 static const FexConfigType _fexConfig(FexConfigType::FullFrame, 1,

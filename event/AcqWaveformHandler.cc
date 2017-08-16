@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 using namespace Ami;
+using namespace Pds;
 
 static Pds::Acqiris::VertV1 _default_vert[Pds::Acqiris::ConfigV1::MaxChan];
 

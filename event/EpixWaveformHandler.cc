@@ -12,6 +12,7 @@
 //#define DBUG
 
 using namespace Ami;
+using namespace Pds;
 
 static double getTemp(unsigned v);
 

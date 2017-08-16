@@ -27,6 +27,7 @@ namespace Ami {
 };
 
 using namespace Ami;
+using namespace Pds;
 
 XtcShmClient::XtcShmClient(XtcClient& client, char * tag, int id) :
   _client(client),

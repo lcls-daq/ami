@@ -12,7 +12,7 @@ namespace Ami {
 
   class FrameFexHandler : public EventHandlerF {
   public:
-    FrameFexHandler(const DetInfo&, FeatureCache&);
+    FrameFexHandler(const Pds::DetInfo&, FeatureCache&);
     ~FrameFexHandler();
   public:
     void   _calibrate(const void* payload, const Pds::ClockTime& t);

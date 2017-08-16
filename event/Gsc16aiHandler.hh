@@ -13,7 +13,7 @@ namespace Ami {
 
   class Gsc16aiHandler : public EventHandlerF {
   public:
-    Gsc16aiHandler(const DetInfo&, FeatureCache&);
+    Gsc16aiHandler(const Pds::DetInfo&, FeatureCache&);
     ~Gsc16aiHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

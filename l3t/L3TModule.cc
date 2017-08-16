@@ -29,6 +29,7 @@
 static void Destroy(void*) {}
 
 using namespace Ami::L3T;
+using namespace Pds;
 
 L3TModule::L3TModule() :
   _import       (0),

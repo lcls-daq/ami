@@ -6,6 +6,8 @@
 
 #include <stdio.h>
 
+using namespace Pds;
+
 static unsigned max_row_pixels   (const DetInfo& info)
 {
   unsigned rv = 0;

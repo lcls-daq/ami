@@ -36,6 +36,7 @@ static double clockTimeDiff(const Pds::ClockTime& a,
 }
 
 using namespace Ami;
+using namespace Pds;
 
 XtcClient::XtcClient(std::vector<FeatureCache*>& cache,
                      Factory&      factory,

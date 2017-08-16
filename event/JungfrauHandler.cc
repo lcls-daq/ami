@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+using namespace Pds;
+
 static const unsigned offset=1<<16;
 static const unsigned gain_bits = 3<<14;
 static const unsigned data_bits = ((1<<16) - 1) - gain_bits;

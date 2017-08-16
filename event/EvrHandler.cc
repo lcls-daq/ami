@@ -10,6 +10,7 @@
 #include <math.h>
 
 using namespace Ami;
+using namespace Pds;
 
 static std::list<Pds::TypeId::Type> config_type_list()
 {

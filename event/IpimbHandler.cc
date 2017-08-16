@@ -10,6 +10,7 @@
 #include <string.h>
 
 using namespace Ami;
+using namespace Pds;
 
 IpimbHandler::IpimbHandler(const Pds::DetInfo& info, FeatureCache& f) :
   EventHandlerF(info,

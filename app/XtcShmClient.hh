@@ -11,13 +11,13 @@ namespace Ami {
 
   class Task;
 
-  class XtcShmClient : public XtcMonitorClient,
+  class XtcShmClient : public Pds::XtcMonitorClient,
 		       public EventFd {
   public:
     XtcShmClient(XtcClient& client, char* partitionTag, int index=0);
     ~XtcShmClient() {};
   public:
-    int processDgram(Dgram*);
+    int processDgram(Pds::Dgram*);
     int fd() const;
     int processIo();
   private:

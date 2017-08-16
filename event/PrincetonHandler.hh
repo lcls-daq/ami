@@ -24,7 +24,7 @@ namespace Ami {
     virtual void _damaged  ();
   private:
     //PrincetonHandler(const Pds::DetInfo& info, const EntryImage*);
-    Xtc*                 _configtc;
+    Pds::Xtc*            _configtc;
     FeatureCache&        _cache;
     int                  _iCacheIndexTemperature;
     EntryImage*          _entry;

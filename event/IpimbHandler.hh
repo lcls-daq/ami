@@ -12,7 +12,7 @@ namespace Ami {
 
   class IpimbHandler : public EventHandlerF {
   public:
-    IpimbHandler(const DetInfo&, FeatureCache&);
+    IpimbHandler(const Pds::DetInfo&, FeatureCache&);
     ~IpimbHandler();
   public:
     void   _calibrate(Pds::TypeId, const void* payload, const Pds::ClockTime& t);

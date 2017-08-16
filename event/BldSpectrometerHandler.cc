@@ -14,6 +14,7 @@ using std::ostringstream;
 using std::string;
 
 using namespace Ami;
+using namespace Pds;
 
 static const unsigned MIN_PEAKS = 5;
 

@@ -27,6 +27,7 @@ namespace AmiT {
 };
 
 using namespace Ami;
+using namespace Pds;
 
 XtcClientT::XtcClientT(std::vector<FeatureCache*>& cache, 
                        Factory&      factory, 

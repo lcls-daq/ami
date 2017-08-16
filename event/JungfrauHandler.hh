@@ -27,7 +27,7 @@ namespace Ami {
   private:
     void _load_pedestals();
   private:
-    Xtc*                _configtc;
+    Pds::Xtc*           _configtc;
     FeatureCache&       _cache;
     EntryImage*         _entry;
     EntryImage*         _pentry;
