@@ -48,13 +48,14 @@ static inline unsigned width(const Xtc* tc)
   return 0;
 }
 
+template <class Element>
 static inline ndarray<const uint16_t,3> array(const Xtc* tc,
-                                              const Pds::Jungfrau::ElementV1& f)
+                                              const void* f)
 {
   #define CASE_VSN(v) case v:                                           \
   { const Pds::Jungfrau::ConfigV##v& c =                                   \
       *reinterpret_cast<const Pds::Jungfrau::ConfigV##v*>(tc->payload());  \
-    return f.frame(c); }
+    return reinterpret_cast<const Element*>(f)->frame(c); }
 
   switch(tc->contains.version()) {
     CASE_VSN(1);
@@ -145,7 +146,6 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 {
   if (type.id() == Pds::TypeId::Id_JungfrauElement)
   {
-    const Pds::Jungfrau::ElementV1& f = *reinterpret_cast<const Pds::Jungfrau::ElementV1*>(payload);
     if (!_entry) return;
 
     const DescImage& desc = _entry->desc();
@@ -166,7 +166,17 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 
     int ppbin = _entry->desc().ppxbin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    const uint16_t* d = reinterpret_cast<const uint16_t*>(array(_configtc, f).data());
+    const uint16_t* d = 0;
+    switch(type.version()) {
+      case 1:
+        d = reinterpret_cast<const uint16_t*>(array<Pds::Jungfrau::ElementV1>(_configtc, payload).data());
+        break;
+      case 2:
+        d = reinterpret_cast<const uint16_t*>(array<Pds::Jungfrau::ElementV2>(_configtc, payload).data());
+        break;
+      default:
+        return;
+    }
     for(unsigned j=0; j<height(_configtc); j++) {
       const unsigned* p = &pa[j][0];
       for(unsigned k=0; k<width(_configtc); k++, d++, p++)
