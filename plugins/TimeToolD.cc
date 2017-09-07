@@ -67,7 +67,7 @@ namespace Ami {
   public:
     FexM(const Pds::Src& src,
 	 const TimeToolConfigType& cfg) : 
-      Fex(src,cfg), _cols(0), _cds(0), _cache(0),
+      Fex(src,cfg,false), _cols(0), _cds(0), _cache(0),
       _config_buffer(new char[cfg._sizeof()]) 
     {
       dump(cfg); 

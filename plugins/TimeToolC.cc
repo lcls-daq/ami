@@ -69,7 +69,7 @@ namespace Ami {
   public:
     FexM(const Pds::Src& src,
 	 const TimeToolConfigType& cfg) : 
-      Fex(src,cfg), _cds(0), _cache(0)  { dump(cfg); }
+      Fex(src,cfg,false), _cds(0), _cache(0)  { dump(cfg); }
     ~FexM() { clear(_cds); }
   public:
     void _monitor_raw_sig(const ndarray<const double,1>& wf)
