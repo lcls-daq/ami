@@ -114,7 +114,7 @@ void EpixClient::write_pedestals()
   QString name;
   unsigned signature=-1U;
 
-  for(int i=0; i<NCHANNELS; i++)
+  for(unsigned i=0; i<NCHANNELS; i++)
     if (_channels[i]->is_shown()) {
       name = _channels[i]->name();
       signature = _channels[i]->output_signature();
