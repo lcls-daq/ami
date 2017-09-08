@@ -277,33 +277,65 @@ bool FrameCalib::load_pedestals(EntryImage* c,
       unsigned y = frame.y;
       for(unsigned row=0; row < frame.ny*ppb; row++)
         if (fio.next_line()) {
-          char* p = fio.line();
           unsigned col=0;
           while(1) {
-            char* pEnd;
-            int v = int(strtod(p,&pEnd));
-            if (pEnd == p) break;
+            int v = int(fio.getdb());
+            if (fio.get_failed()) {
+              // Aren't enough cols in the data
+              c->reset();
+              return false;
+            }
             c->addcontent(offset-v,x+col/ppb,y+row/ppb);
             if (++col >= frame.nx*ppb) break;
-            p = pEnd+1;
           }
+          // test if there are more columns in this row than expected
+          fio.getdb();
+          if (!fio.get_failed()) {
+            c->reset();
+            return false;
+          }
+        } else {
+          // Aren't enough rows in the data
+          c->reset();
+          return false;
         }
+      // test if there are more rows in the data than expected
+      if (fio.next_line()) {
+        c->reset();
+        return false;
+      }
     }
   }
   else {
     for(unsigned row=0; row < d.nbinsy()*ppb; row++)
       if (fio.next_line()) {
-        char* p = fio.line();
         unsigned col=0;
         while(1) {
-          char* pEnd;
-          int v = int(strtod(p,&pEnd));
-          if (pEnd == p) break;
+          int v = int(fio.getdb());
+          if (fio.get_failed()) {
+            // Aren't enough cols in the data
+            c->reset();
+            return false;
+          }
           c->addcontent(offset-v,col/ppb,row/ppb);
           if (++col >= d.nbinsx()*ppb) break;
-          p = pEnd+1;
         }
+        // test if there are more columns in this row than expected
+        fio.getdb();
+        if (!fio.get_failed()) {
+          c->reset();
+          return false;
+        }
+      } else {
+        // Aren't enough rows in the data
+        c->reset();
+        return false;  
       }
+    // test if there are more rows in the data than expected
+    if (fio.next_line()) {
+      c->reset();
+      return false;
+    }
   }
   return true;
 }
