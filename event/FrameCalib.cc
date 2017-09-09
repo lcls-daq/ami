@@ -1,5 +1,7 @@
 #include "FrameCalib.hh"
 
+#include "pdsdata/xtc/DetInfo.hh"
+
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 
@@ -235,8 +237,8 @@ std::string FrameCalib::save_pedestals(Entry* e,
 }
 
 bool FrameCalib::load_pedestals(EntryImage* c,
-				unsigned    offset,
-				const char* prefix)
+                                unsigned    offset,
+                                const char* prefix)
 {
   //
   //  Load calibration from a file
@@ -249,6 +251,26 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  if (f) {
+    bool result=load_pedestals(c,offset,f);
+    fclose(f);
+    return result;
+  }
+  else
+    return false;
+}
+
+bool  FrameCalib::load_pedestals_all(EntryImage* c,
+                                     unsigned offset,
+                                     const char* onl_prefix,
+                                     const char* off_prefix)
+{
+  //
+  //  Load calibration from a file (include offline too)
+  //    Always read and write values for each pixel (even when binned)
+  //
+  const DescImage& d = c->desc();
+  FILE* f = Calib::fopen(d.info(), onl_prefix, off_prefix);
   if (f) {
     bool result=load_pedestals(c,offset,f);
     fclose(f);
@@ -272,7 +294,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   if (d.nframes()) {
     for(unsigned i=0; i<d.nframes(); i++) {
       const SubFrame& frame = d.frame(i);
-	
+
       unsigned x = frame.x;
       unsigned y = frame.y;
       for(unsigned row=0; row < frame.ny*ppb; row++)
@@ -282,6 +304,10 @@ bool FrameCalib::load_pedestals(EntryImage* c,
             int v = int(fio.getdb());
             if (fio.get_failed()) {
               // Aren't enough cols in the data
+              printf("FrameCalib[%s] retrieved pedestal has [%d] columns which is rather than the expected [%d]!\n",
+                     Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+                     col,
+                     frame.nx*ppb);
               c->reset();
               return false;
             }
@@ -291,16 +317,26 @@ bool FrameCalib::load_pedestals(EntryImage* c,
           // test if there are more columns in this row than expected
           fio.getdb();
           if (!fio.get_failed()) {
+            printf("FrameCalib[%s] retrieved pedestal has more columns than the expected [%d]\n",
+                   Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+                   frame.nx*ppb);
             c->reset();
             return false;
           }
         } else {
           // Aren't enough rows in the data
+          printf("FrameCalib[%s] retrieved pedestal has only %d rows rather than the expected %d\n",
+                 Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+                 row,
+                 frame.ny*ppb);
           c->reset();
           return false;
         }
       // test if there are more rows in the data than expected
       if (fio.next_line()) {
+        printf("FrameCalib[%s] retrieved pedestal has more rows than the expected %d\n",
+               Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+               frame.ny*ppb);
         c->reset();
         return false;
       }
@@ -314,6 +350,10 @@ bool FrameCalib::load_pedestals(EntryImage* c,
           int v = int(fio.getdb());
           if (fio.get_failed()) {
             // Aren't enough cols in the data
+            printf("FrameCalib[%s] retrieved pedestal has %d columns rather than the expected %d\n",
+                   Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+                   col,
+                   d.nbinsx()*ppb);
             c->reset();
             return false;
           }
@@ -323,16 +363,26 @@ bool FrameCalib::load_pedestals(EntryImage* c,
         // test if there are more columns in this row than expected
         fio.getdb();
         if (!fio.get_failed()) {
+          printf("FrameCalib[%s] retrieved pedestal has more columns than the expected %d\n",
+                 Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+                 d.nbinsx()*ppb);
           c->reset();
           return false;
         }
       } else {
         // Aren't enough rows in the data
+        printf("FrameCalib[%s] retrieved pedestal has only %d rows rather than the expected %d\n",
+               Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+               row,
+               d.nbinsy()*ppb);
         c->reset();
         return false;  
       }
     // test if there are more rows in the data than expected
     if (fio.next_line()) {
+      printf("FrameCalib[%s] retrieved pedestal has more rows than the expected %d\n",
+             Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
+             d.nbinsy()*ppb);
       c->reset();
       return false;
     }
