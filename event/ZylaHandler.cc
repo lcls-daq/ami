@@ -189,7 +189,7 @@ void ZylaHandler::_load_pedestals()
   for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
 
   EntryImage* p = _pentry;
-  if (!FrameCalib::load_pedestals(p,offset)) {
+  if (!FrameCalib::load_pedestals_all(p,offset)) {
     ndarray<unsigned,2> pa = p->content();
     for(unsigned* a=pa.begin(); a!=pa.end(); *a++=offset) ;
   }
