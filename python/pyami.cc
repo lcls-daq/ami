@@ -76,33 +76,64 @@ static bool Parse_Int(PyObject* o, int& v)
 
 static Ami::AbsFilter* parse_filter(std::string str)
 {
-  if (str[0]!='(') {
+  if (str.find_first_of("()")==std::string::npos) {
     int m1 = str.find_first_of('<');
     int m2 = str.find_last_of ('<');
 
     printf("parse_filter %f < %s < %f\n",
-	   strtod(str.substr(0,m1).c_str(),0),
-	   str.substr(m1+1,m2-m1-1).c_str(),
-	   strtod(str.substr(m2+1).c_str(),0));
+           strtod(str.substr(0,m1).c_str(),0),
+           str.substr(m1+1,m2-m1-1).c_str(),
+           strtod(str.substr(m2+1).c_str(),0));
 
     return new Ami::FeatureRange(str.substr(m1+1,m2-m1-1).c_str(),
-				 strtod(str.substr(0,m1).c_str(),0),
-				 strtod(str.substr(m2+1).c_str(),0));
+                                 strtod(str.substr(0,m1).c_str(),0),
+                                 strtod(str.substr(m2+1).c_str(),0));
   }
   else {
     //  break into binary operator and its operands
     int level=0;
-    int pos=0;
-    while(level) {
+    size_t start=0;
+    size_t op = 0;
+    size_t op_len = 0;
+    size_t pos=0;
+    do {
       pos=str.find_first_of("()",pos);
-      if (str[pos++]=='(') 
-	level++;
-      else
-	level--;
-    }
-    Ami::AbsFilter* a = parse_filter(str.substr(0,pos));
-    Ami::AbsFilter* b = parse_filter(str.substr(pos+1));
-    if (str[pos]=='&')
+      if (pos != std::string::npos) {
+        if (str[pos++]=='(') {
+          if (level==0) start = pos;
+          level++;
+        } else {
+          level--;
+        }
+      } else {
+        printf("failed parsing filter: %s - unbalanced brackets!\n", str.c_str());
+        return new Ami::RawFilter;
+      }
+    } while(level);
+    Ami::AbsFilter* a = parse_filter(str.substr(start,pos-start-1));
+    op = pos;
+    do {
+      pos=str.find_first_of("()",pos);
+      if (pos != std::string::npos) {
+        if (str[pos++]=='(') {
+          if (level==0) {
+            start = pos;
+            op_len = pos-op-1;
+          }
+          level++;
+        } else {
+          level--;
+        }
+      } else if (level==0) {
+        // likely outer brackets - don't try to construct and/or
+        return a;
+      } else {
+        printf("failed parsing filter: %s - unbalanced brackets!\n", str.c_str());
+        return new Ami::RawFilter;
+      }
+    } while(level);
+    Ami::AbsFilter* b = parse_filter(str.substr(start,pos-start-1));
+    if (str.substr(op,op_len).find_first_of("&")!=std::string::npos)
       return new Ami::LogicAnd(*a,*b);
     else
       return new Ami::LogicOr (*a,*b);
