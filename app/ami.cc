@@ -19,11 +19,12 @@ static void usage(char* progname) {
 	  "          -i <interface>\n"
 	  "          -s <server mcast group>\n"
 	  "          -L <user module plug-in path>\n"
-          "          [-D (post detector diagnostics)]\n"
-          "          [-Q <pixels>] (set resolution)\n"
-          "          [-R] (set full resolution)\n"
-          "          [-E <expt name>] (set experiment for offline calib access)\n"
-          "          [-a <include|only>] (include EPICS aliases [only])\n"
+    "          [-D (post detector diagnostics)]\n"
+    "          [-Q <pixels>] (set resolution)\n"
+    "          [-R] (set full resolution)\n"
+    "          [-O] (disable legacy online pedestal corrections)\n"
+    "          [-E <expt name>] (set experiment for offline calib access)\n"
+    "          [-a <include|only>] (include EPICS aliases [only])\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
 
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
   std::vector<char *> module_names;
   bool parseValid=true;
 
-  while ((c = getopt(argc, argv, "?hfDa:Q:RE:p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDa:Q:ROE:p:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -59,6 +60,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'R':
       Ami::EventHandler::enable_full_resolution(true);
+      break;
+    case 'O':
+      Ami::Calib::use_online(false);
       break;
     case 'Q':
       { unsigned arg;

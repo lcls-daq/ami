@@ -19,7 +19,9 @@ static std::string offRoot("/reg/d/psdm/");
 static std::string _expt;
 static unsigned    _run =0x7fffffff;
 static bool        _use_offline=false;
+static bool        _use_online =true;
 static bool        _use_test   =false;
+static bool        _show_write_pedestals=false;
 
 static std::string offl_path(std::string basepath, 
                              const Pds::DetInfo& info,
@@ -29,9 +31,15 @@ void Ami::Calib::set_experiment(const char* e) { _expt = std::string(e); }
 void Ami::Calib::set_run       (int r)         { _run  = r; }
 
 void Ami::Calib::use_offline(bool v) { _use_offline=v; }
+void Ami::Calib::use_online (bool v) { _use_online=v; }
 void Ami::Calib::use_test   (bool v) { _use_test=v; }
 
+bool Ami::Calib::use_offline() { return _use_offline; }
+bool Ami::Calib::use_online () { return _use_online; }
 bool Ami::Calib::use_test   () { return _use_test; }
+
+void Ami::Calib::show_write_pedestals(bool v) { _show_write_pedestals=v; }
+bool Ami::Calib::show_write_pedestals() { return _show_write_pedestals; }
 
 
 static const char* onlCalibClass = "calib";
@@ -157,7 +165,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
     if (fname) *fname=path4;
     return _fopen(path4.c_str(),no_cache);
   }
-  if (st1.st_mtime > 0) {
+  if (_use_online && st1.st_mtime > 0) {
     if (offl_type) *offl_type=false;
     if (fname) *fname=path1;
     return _fopen(path1.c_str(),no_cache);
@@ -167,7 +175,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
     if (fname) *fname=path3;
     return _fopen(path3.c_str(),no_cache);
   }
-  if (st2.st_mtime > 0) {
+  if (_use_online && st2.st_mtime > 0) {
     if (offl_type) *offl_type=false;
     if (fname) *fname=path2;
     return _fopen(path2.c_str(),no_cache);

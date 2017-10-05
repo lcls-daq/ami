@@ -8,6 +8,7 @@
 #include "ami/service/DataLock.hh"
 #include "ami/qt/QOnline.hh"
 #include "ami/event/EpicsXtcReader.hh"
+#include "ami/event/Calib.hh"
 
 #include <QtGui/QApplication>
 
@@ -33,15 +34,16 @@ static void usage(char* p)
          "                   Note that only one process may control the servers.\n"
          "-p <platform>  : DAQ platform number.  Used in conjunction with -n option above.\n"
          "-f <path>      : default path for load/save operations\n"
+         "-w             : enable legacy online write pedestal feature\n"
          "-A             : attach dialogs rather than popup\n"
          "-F <path>      : file to load initial configuration\n"
          "-C <int>       : color palette choice (0-jette, 1-radiation)\n"
          "-E             : expert mode/movie option\n"
          "-X <path>      : archive path for configuration saves\n"
-	 "-Y             : disable synchronous image locking\n"
-	 "-Z             : disable image render offload\n"
-	 "-a             : <include|only> (EPICS aliases include|only)]\n"
-	 ,p);
+         "-Y             : disable synchronous image locking\n"
+         "-Z             : disable image render offload\n"
+         "-a             : <include|only> (EPICS aliases include|only)]\n"
+         ,p);
 }
 
 static void QtAssertHandler(QtMsgType type, 
@@ -102,6 +104,9 @@ int main(int argc, char **argv)
     }
     else if (strcmp(argv[i],"-E")==0) {
       Ami::Qt::ImageDisplay::enable_movie_option();
+    }
+    else if (strcmp(argv[i],"-w")==0) {
+      Ami::Calib::show_write_pedestals(true);
     }
     else if (strcmp(argv[i],"-Y")==0) {
       Ami::DataLock::disable();

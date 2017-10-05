@@ -25,6 +25,7 @@ CspadClient::CspadClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QSt
   _rotator   (new Rotator(*this)),
   _reloadPedestals(false)
 {
+  if (Ami::CspadCalib::show_write_pedestals())
   { QPushButton* pedB = new QPushButton("Write Pedestals");
     addWidget(pedB);
     connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }

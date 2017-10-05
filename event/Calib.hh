@@ -28,9 +28,14 @@ namespace Ami {
     static void load_integral_symm(ndarray<double,1>& a, 
 				   unsigned phy,
 				   const char* pfx, const char* dsc);
+    static void use_online(bool);
+    static bool use_online();
     static void use_offline(bool);
+    static bool use_offline();
     static void use_test(bool);
     static bool use_test();
+    static void show_write_pedestals(bool);
+    static bool show_write_pedestals();
     static void set_experiment(const char*);
     static void set_run(int);
     static int  get_line(char** p, size_t* n, FILE* f);

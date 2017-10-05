@@ -2,6 +2,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
 #include "ami/event/FccdCalib.hh"
+#include "ami/event/Calib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
@@ -17,6 +18,7 @@ FccdClient::FccdClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QStri
   ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
+  if (Ami::Calib::show_write_pedestals())
   { QPushButton* pedB = new QPushButton("Write Pedestals");
     addWidget(pedB);
     connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }
@@ -68,7 +70,7 @@ void FccdClient::write_pedestals()
   QString name;
   unsigned signature=-1U;
 
-  for(int i=0; i<NCHANNELS; i++)
+  for(unsigned i=0; i<NCHANNELS; i++)
     if (_channels[i]->is_shown()) {
       name = _channels[i]->name();
       signature = _channels[i]->output_signature();

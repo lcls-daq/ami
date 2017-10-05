@@ -15,6 +15,7 @@ namespace Ami {
     static unsigned    option_correct_gain       ();
     static unsigned    option_post_integral      ();
     static std::string save_pedestals(Entry*,bool prod, bool reqfull);
+    static bool show_write_pedestals();
   };
 };
 

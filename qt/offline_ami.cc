@@ -33,25 +33,27 @@ using namespace std;
 
 static void usage(char* progname) {
   fprintf(stderr,
-	  "Usage: %s [-p <xtc path>]\n"
-	  "          [-f <path for save/load files>]\n"
-	  "          [-e <filename for error messages>]\n"
-	  "          [-o <filename for debugging messages>]\n"
-	  "          [-l (live read mode)]\n"
-	  "          [-t (calib test mode)]\n"
-	  "          [-a <include|only> (EPICS aliases include|only)]\n"
+          "Usage: %s [-p <xtc path>]\n"
+          "          [-f <path for save/load files>]\n"
+          "          [-e <filename for error messages>]\n"
+          "          [-o <filename for debugging messages>]\n"
+          "          [-l (live read mode)]\n"
+          "          [-t (calib test mode)]\n"
+          "          [-a <include|only> (EPICS aliases include|only)]\n"
+          "          [-w (enable legacy online write pedestal feature)]\n"
           "          [-A (attach dialogs rather than popup)]\n"
           "          [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "          [-D (post detector diagnostics)]\n"
           "          [-E (expert mode/movie option)]\n"
-	  "          [-L <user plug-in path>]\n"
+          "          [-L <user plug-in path>]\n"
           "          [-N <threads> (set parallel processing threads, default=1)]\n"
-          "          [-Q <pixels> (set resolution)\n"
-          "          [-R (set full resolution)\n"
+          "          [-O (disable legacy online pedestal corrections)]\n"
+          "          [-Q <pixels> (set resolution)]\n"
+          "          [-R (set full resolution)]\n"
           "          [-S (use scroll bars)]\n"
-	  "          [-T (test mode)]\n"
+          "          [-T (test mode)]\n"
           "          [-X <path> (archive path for configuration saves)]\n"
-	  "          [-Y (disable synchronous image locking)]\n"
+          "          [-Y (disable synchronous image locking)]\n"
           "          [-Z (disable image render offload)]\n",
           progname,
           Ami::Qt::ImageColorControl::palette_set().c_str());
@@ -135,7 +137,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "a:p:f:o:e:r:AC:L:N:lDERQ:StTWX:YZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "a:p:f:o:e:r:wAC:L:N:OlDERQ:StTWX:YZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -167,6 +169,9 @@ int main(int argc, char* argv[]) {
     case 'N':
       nclients = atoi(optarg);
       break;
+    case 'O':
+      Ami::Calib::use_online(false);
+      break;
     case 'f':
       Ami::Qt::Path::setBase(optarg); // XXX for ami save files?
       break;
@@ -178,6 +183,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'l':
       liveReadMode = true;
+      break;
+    case 'w':
+      Ami::Calib::show_write_pedestals(true);
       break;
     case 'R':
       Ami::EventHandler::enable_full_resolution(true);

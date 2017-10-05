@@ -23,6 +23,7 @@ EpixClient::EpixClient(QWidget* w,const Pds::DetInfo& i, unsigned u, const QStri
   ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
+  if (Ami::Calib::show_write_pedestals())
   { QPushButton* pedB = new QPushButton("Write Pedestals");
     addWidget(pedB);
     connect(pedB, SIGNAL(clicked()), this, SLOT(write_pedestals())); }

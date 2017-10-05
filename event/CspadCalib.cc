@@ -30,6 +30,7 @@ unsigned CspadCalib::option_suppress_bad_pixels() { return _option_suppress_bad_
 unsigned CspadCalib::option_correct_gain       () { return _option_correct_gain; }
 unsigned CspadCalib::option_post_integral      () { return _option_post_integral; }
 unsigned CspadCalib::option_correct_unbonded   () { return _option_correct_unbonded; }
+bool     CspadCalib::show_write_pedestals      () { return Ami::Calib::show_write_pedestals(); }
 
 std::string CspadCalib::save_pedestals(Entry* e,
                                        bool   prod,
