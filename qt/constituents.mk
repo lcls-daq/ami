@@ -48,7 +48,7 @@ tgtlibs_blviewer += gsl/gsl gsl/gslcblas
 # already in the search path.
 qt_incs := $(qtincdir) $(qwtincs) qwt/include
 
-tgtincs_online_ami  := $(qt_incs) pdsdata/include ndarray/include
+tgtincs_online_ami  := $(qt_incs) pdsdata/include ndarray/include boost/include
 tgtincs_offline_ami := $(qt_incs) pdsdata/include ndarray/include boost/include
 tgtincs_blviewer    := $(qt_incs) pdsdata/include
 
