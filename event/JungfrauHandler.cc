@@ -15,13 +15,12 @@ static const unsigned offset=1<<16;
 static const unsigned gain_bits = 3<<14;
 static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
 
-static inline unsigned height(const Xtc* tc)
+static inline unsigned num_modules(const Xtc* tc)
 {
-  /* For now all the modules will be displayed in memory order. Need a geometry... */
 #define CASE_VSN(v) case v:                                             \
   { const Pds::Jungfrau::ConfigV##v& c =                                   \
       *reinterpret_cast<const Pds::Jungfrau::ConfigV##v*>(tc->payload());  \
-      return c.numberOfRowsPerModule()*c.numberOfModules(); }
+      return c.numberOfModules(); }
 
   switch(tc->contains.version()) {
     CASE_VSN(1);
@@ -32,7 +31,23 @@ static inline unsigned height(const Xtc* tc)
   return 0;
 }
 
-static inline unsigned width(const Xtc* tc)
+static inline unsigned num_rows(const Xtc* tc)
+{
+#define CASE_VSN(v) case v:                                             \
+  { const Pds::Jungfrau::ConfigV##v& c =                                   \
+      *reinterpret_cast<const Pds::Jungfrau::ConfigV##v*>(tc->payload());  \
+      return c.numberOfRowsPerModule(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1);
+    CASE_VSN(2);
+    default: break;
+  }
+#undef CASE_VSN
+  return 0;
+}
+
+static inline unsigned num_columns(const Xtc* tc)
 {
 #define CASE_VSN(v) case v:                                             \
   { const Pds::Jungfrau::ConfigV##v& c =                                   \
@@ -46,6 +61,17 @@ static inline unsigned width(const Xtc* tc)
   }
 #undef CASE_VSN
   return 0;
+}
+
+static inline unsigned height(const Xtc* tc)
+{
+  /* For now all the modules will be displayed in memory order. Need a geometry... */
+  return num_rows(tc) * num_modules(tc);
+}
+
+static inline unsigned width(const Xtc* tc)
+{
+  return num_columns(tc);
 }
 
 template <class Element>
@@ -164,6 +190,8 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
       desc.options()&FrameCalib::option_no_pedestal() ?
       _offset : _pentry->content();
 
+    unsigned columns = num_columns(_configtc);
+    unsigned rows    = num_rows(_configtc);
     int ppbin = _entry->desc().ppxbin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
     const uint16_t* d = 0;
@@ -179,8 +207,8 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     }
     for(unsigned j=0; j<height(_configtc); j++) {
       const unsigned* p = &pa[j][0];
-      for(unsigned k=0; k<width(_configtc); k++, d++, p++)
-        _entry->addcontent((*d & data_bits) + *p, k/ppbin, j/ppbin);
+      for(unsigned k=0; k<width(_configtc); k++, p++)
+        _entry->addcontent((d[rows*columns*(j/rows) + columns*(rows - (j%rows) - 1) + k] & data_bits) + *p, k/ppbin, j/ppbin);
     }
 
     //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
