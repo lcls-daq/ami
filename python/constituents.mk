@@ -13,7 +13,7 @@ liblibs_pyami += ami/amisvc ami/amidata ami/server ami/client ami/calib ami/even
 liblibs_pyami += qt/QtCore
 libslib_pyami := $(USRLIBDIR)/rt gomp
 
-libsrcs_py3ami := pyami.cc
+libsrcs_py3ami := py3ami.cc
 libsrcs_py3ami += Discovery.cc
 libsrcs_py3ami += Handler.cc Client.cc L3TClient.cc
 libincs_py3ami := python3/include/python3.6m
