@@ -36,6 +36,8 @@
 #include "pds/config/IpimbDataType.hh"
 #include "pds/config/PimaxConfigType.hh"
 #include "pds/config/PimaxDataType.hh"
+#include "pds/config/EpicsCamConfigType.hh"
+#include "pds/config/EpicsCamDataType.hh"
 
 typedef Pds::Camera::FrameV1 FrameType;
 
@@ -148,6 +150,7 @@ namespace Ami {
   typedef Ami::DataSpace <Pds::Bld::BldDataPhaseCavity,     Pds::Bld::BldDataPhaseCavity>      phaseCavityDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataFEEGasDetEnergy, Pds::Bld::BldDataFEEGasDetEnergy>  gasDetectorDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataGMDV2,     Pds::Bld::BldDataGMDV2>          gmdDataSpace;
+  typedef Ami::DataSpace <EpicsCamConfigType, EpicsCamDataType>          epicsCamDataSpace;
 
   template <class CONFIG, class DATA>
   class DataSpace : public SyncAnalysis {

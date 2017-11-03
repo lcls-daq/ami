@@ -57,6 +57,7 @@ namespace Ami {
     void processIpimbData(SyncAnalysis* syncPtr);
     void processFccdData(SyncAnalysis* syncPtr);
     void processPulnixData(SyncAnalysis* syncPtr);
+    void processEpicsCamData(SyncAnalysis* syncPtr);
     void autoOffByOneDetection(SyncAnalysis* syncPtr);
     void findMinMaxRange(SyncAnalysis* syncPtr, unsigned points);
     void fillPlots(SyncAnalysis* syncPtr, EntryTH1F* summaryLiteEntry, EntryTH1F* summaryDarkEntry);

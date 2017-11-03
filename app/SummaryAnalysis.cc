@@ -118,6 +118,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_GMD:
       h = new gmdDataSpace(detInfo, Pds::TypeId::Id_GMD,    Pds::TypeId::Id_GMD,     payload, "GMD");
       break;
+    case Pds::TypeId::Id_ControlsCameraConfig:
+      h = new epicsCamDataSpace(detInfo, Pds::TypeId::Id_Frame, Pds::TypeId::Id_ControlsCameraConfig, payload, "EpicsCam");
+      break;
 
     default: break;
   }

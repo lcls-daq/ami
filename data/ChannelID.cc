@@ -117,6 +117,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Pimax:
         sprintf(_buffer,"Pimax.%d.%d",info.detId(),info.devId());
         break;
+      case DetInfo::ControlsCamera:
+        sprintf(_buffer,"EpicsCam.%d.%d",info.detId(),info.devId());
+        break;
       default: _default(_buffer,info,channel); break;
       }
       break;

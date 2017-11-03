@@ -317,4 +317,18 @@ namespace Ami {
     double val = fabs(gmdData->milliJoulesPerPulse()) + fabs(gmdData->milliJoulesAverage());
     return val;
   }
+
+  template<> double epicsCamDataSpace::processData()
+  {
+    Pds::Camera::FrameV1* epicsCamFrame = detDataPtr;
+    const uint16_t* dataArray = epicsCamFrame->data16().data();
+    unsigned totalPixels = epicsCamFrame->width()*epicsCamFrame->height();
+    unsigned offset = epicsCamFrame->offset();
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)  {
+      if (*(dataArray+i) > offset)
+        val = val + (*(dataArray+i) );             // opal data with Pedestal/Offset adjustment
+    }
+    return ((double) val);
+  }
 };
