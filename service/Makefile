@@ -25,7 +25,8 @@ include $(RELEASE_DIR)/make/sw/package.mk
 
 BUILDTIME := \"`date | sed -e 's/\ /_/g'`\"
 #BUILDTIME := \"`date`\"
-BUILDTAG  := \"`svnversion ..`\"
+#BUILDTAG  := \"`svnversion ..`\"
+BUILDTAG	:= \"`git show -s --pretty=format:%h`\"
 
 $(objdir)/BuildStamp.o: BuildStamp.cc
 	@echo "[TX] Compiling $< $@"
