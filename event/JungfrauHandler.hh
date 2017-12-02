@@ -25,13 +25,14 @@ namespace Ami {
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _damaged  ();
   private:
-    void _load_pedestals();
+    void _load_pedestals(unsigned modules, unsigned rows, unsigned columns);
   private:
     Pds::Xtc*           _configtc;
     FeatureCache&       _cache;
     EntryImage*         _entry;
-    EntryImage*         _pentry;
-    ndarray<unsigned,2> _offset;
+    ndarray<double,4>   _offset;
+    ndarray<double,4>   _pedestal;
+    ndarray<double,4>   _gain_cor;
     unsigned            _options;
   };
 };

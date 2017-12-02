@@ -11,6 +11,7 @@
 
 using namespace Pds;
 
+static const unsigned num_gains = 3;
 static const unsigned offset=1<<16;
 static const unsigned gain_bits = 3<<14;
 static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
@@ -110,16 +111,15 @@ JungfrauHandler::JungfrauHandler(const Pds::DetInfo& info, FeatureCache& cache) 
   _configtc(0),
   _cache(cache),
   _entry        (0),
-  _pentry       (0),
-  _offset       (make_ndarray<unsigned>(1,1)),
+  _offset       (make_ndarray<double>(0U,0,0,0)),
+  _pedestal     (make_ndarray<double>(0U,0,0,0)),
+  _gain_cor     (make_ndarray<double>(0U,0,0,0)),
   _options      (0)
 {
 }
 
 JungfrauHandler::~JungfrauHandler()
 {
-  if (_pentry)
-    delete _pentry;
   if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
 }
 
@@ -135,10 +135,6 @@ void JungfrauHandler::rename(const char* s)
 void JungfrauHandler::reset() 
 {
   _entry = 0; 
-  if (_pentry) { 
-    delete _pentry; 
-    _pentry=0; 
-  }
 }
 
 void JungfrauHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
@@ -147,28 +143,23 @@ void JungfrauHandler::_configure(Pds::TypeId type,const void* payload, const Pds
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
   
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   unsigned columns = width (_configtc);
   unsigned rows    = height(_configtc);
   unsigned pixels  = (columns > rows) ? columns : rows;
   unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
+
+
   columns = (columns+ppb-1)/ppb;
   rows    = (rows   +ppb-1)/ppb;
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  { DescImage desc(det, (unsigned)0, ChannelID::name(det),
-                   columns, rows, ppb, ppb);
-    _entry  = new EntryImage(desc); }
-    
-  { DescImage desc(det, (unsigned)0, ChannelID::name(det),
-                   columns*ppb, rows*ppb, 1, 1);
-    _pentry = new EntryImage(desc);
-    _pentry->invalid(); }
 
-  _load_pedestals();
+  DescImage desc(det, (unsigned)0, ChannelID::name(det),
+                 columns, rows, ppb, ppb);
+  _entry = new EntryImage(desc);
+  _entry->invalid();
 
-  /*
-   * Setup temperature variable
-   */
-}
+  _load_pedestals(num_modules(_configtc), num_rows(_configtc), num_columns(_configtc));
+}   
 
 void JungfrauHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t) {}
 
@@ -185,37 +176,50 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
       _options = desc.options();
     }
     
+    unsigned modules = num_modules(_configtc);
+    unsigned columns = num_columns(_configtc);
+    unsigned rows    = num_rows(_configtc);
+
     if (desc.options() & FrameCalib::option_reload_pedestal()) {
-      _load_pedestals();
+      _load_pedestals(modules, rows, columns);
       _entry->desc().options( desc.options()&~FrameCalib::option_reload_pedestal() );
     }
 
-    const ndarray<const unsigned,2>& pa =
-      desc.options()&FrameCalib::option_no_pedestal() ?
-      _offset : _pentry->content();
-
-    unsigned columns = num_columns(_configtc);
-    unsigned rows    = num_rows(_configtc);
     int ppbin = _entry->desc().ppxbin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    const uint16_t* d = 0;
+    ndarray<const uint16_t, 3> d;
     switch(type.version()) {
       case 1:
-        d = reinterpret_cast<const uint16_t*>(array<Pds::Jungfrau::ElementV1>(_configtc, payload).data());
+        d = array<Pds::Jungfrau::ElementV1>(_configtc, payload);
         break;
       case 2:
-        d = reinterpret_cast<const uint16_t*>(array<Pds::Jungfrau::ElementV2>(_configtc, payload).data());
+        d = array<Pds::Jungfrau::ElementV2>(_configtc, payload);
         break;
       default:
         return;
     }
-    for(unsigned j=0; j<height(_configtc); j++) {
-      const unsigned* p = &pa[j][0];
-      for(unsigned k=0; k<width(_configtc); k++, p++)
-        _entry->addcontent((d[rows*columns*(j/rows) + columns*(rows - (j%rows) - 1) + k] & data_bits) + *p, k/ppbin, j/ppbin);
+
+    for(unsigned i=0; i<modules; i++) {
+      for(unsigned j=0,j_flip=rows-1; j<rows; j++,j_flip--) {
+        for(unsigned k=0; k<columns; k++) {
+          unsigned gain_val = (d(i,j,k) & gain_bits) >> 14;
+          // The gain index to use is the highest of the set bits
+          //unsigned gain_idx = 0;
+          //for (unsigned n = 0; n<num_gains; n++) {
+          //  if ((1<<n) & gain_val) gain_idx = n;
+          //}
+          unsigned gain_idx = gain_val;
+          if (gain_val>2) gain_idx = 2;
+          unsigned pixel_val = d(i,j,k) & data_bits;
+          unsigned row_bin = (rows * i) + (rows - 1 - j);
+          if (!(desc.options()&FrameCalib::option_no_pedestal())) {
+            pixel_val = (unsigned) ((pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k))/_gain_cor(gain_idx,i,j,k));
+          }
+          _entry->addcontent(pixel_val + offset, k/ppbin, row_bin/ppbin);
+        }
+      }
     }
 
-    //  _entry->info(f.offset()*ppbx*ppby,EntryImage::Pedestal);
     _entry->info(double(offset*ppbin*ppbin),EntryImage::Pedestal);
     _entry->info(1,EntryImage::Normalization);
     _entry->valid(t);
@@ -224,16 +228,10 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 
 void JungfrauHandler::_damaged() { if (_entry) _entry->invalid(); }
 
-void JungfrauHandler::_load_pedestals()
+void JungfrauHandler::_load_pedestals(unsigned modules, unsigned rows, unsigned columns)
 {
-  const DescImage& d = _pentry->desc();
-
-  _offset    = make_ndarray<unsigned>(d.nbinsy(),d.nbinsx());
-  for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
-
-  EntryImage* p = _pentry;
-  if (!FrameCalib::load_pedestals(p,offset)) {
-    ndarray<unsigned,2> pa = p->content();
-    for(unsigned* a=pa.begin(); a!=pa.end(); *a++=offset) ;
-  }
+  const DescImage& d = _entry->desc();
+  _offset = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pixel_offset");
+  _pedestal = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pedestals");
+  _gain_cor = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pixel_gain");
 }
