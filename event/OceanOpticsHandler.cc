@@ -11,6 +11,7 @@ using namespace Ami;
 
 OceanOpticsHandler::OceanOpticsHandler(const Pds::DetInfo& info) :
   EventHandler(info, Pds::TypeId::Id_OceanOpticsData, Pds::TypeId::Id_OceanOpticsConfig),
+  _configBuffer(new char[sizeof(Pds::OceanOptics::ConfigV2)]),
   _iConfigVer(-1),
   _nentries(0)
 {
@@ -28,6 +29,7 @@ OceanOpticsHandler::OceanOpticsHandler(const Pds::DetInfo& info) :
 
 OceanOpticsHandler::~OceanOpticsHandler()
 {
+  if (_configBuffer) delete[] _configBuffer;
 }
 
 unsigned OceanOpticsHandler::nentries() const { return _nentries; }

@@ -36,29 +36,29 @@ void   EBeamReader::_configure(Pds::TypeId id,
   _add_to_cache("BLD:EBEAM:LTUX");
   _add_to_cache("BLD:EBEAM:LTUY");
   _add_to_cache("BLD:EBEAM:LTUXP");
-  int index = _add_to_cache("BLD:EBEAM:LTUYP");
+  _add_to_cache("BLD:EBEAM:LTUYP");
 
   if (id.version()>=1) {
-    index = _add_to_cache("BLD:EBEAM:PKCURRBC2");
+    _add_to_cache("BLD:EBEAM:PKCURRBC2");
     if (id.version()>=2) {
       _add_to_cache("BLD:EBEAM:PKCURRBC2");
-      index = _add_to_cache("BLD:EBEAM:ENERGYBC2");
+      _add_to_cache("BLD:EBEAM:ENERGYBC2");
       if (id.version()>=3) {
         _add_to_cache("BLD:EBEAM:PKCURRBC1");
-        index = _add_to_cache("BLD:EBEAM:ENERGYBC1");
+        _add_to_cache("BLD:EBEAM:ENERGYBC1");
         if (id.version()>=4) {
           _add_to_cache("BLD:EBEAM:UNDX");
           _add_to_cache("BLD:EBEAM:UNDY");
           _add_to_cache("BLD:EBEAM:UNDXP");
-          index = _add_to_cache("BLD:EBEAM:UNDYP");
+          _add_to_cache("BLD:EBEAM:UNDYP");
           if (id.version()>=5) {
             _add_to_cache("BLD:EBEAM:XTCAVAMPL");
             _add_to_cache("BLD:EBEAM:XTCAVPHASE");
-            index = _add_to_cache("BLD:EBEAM:QDUMP");
+            _add_to_cache("BLD:EBEAM:QDUMP");
             if (id.version()>=6) {
               _add_to_cache("BLD:EBEAM:PHOTENERGY");
               _add_to_cache("BLD:EBEAM:LTU250");
-              index = _add_to_cache("BLD:EBEAM:LTU450");
+              _add_to_cache("BLD:EBEAM:LTU450");
             }
           }
         }
