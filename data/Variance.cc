@@ -29,8 +29,8 @@ static void _zero(ndarray<double,2>& m1,
   const unsigned nx = m1.shape()[1];
   for(unsigned iy=0; iy<ny; iy++)
     for(unsigned ix=0; ix<nx; ix++) {
-      m1[iy][ix] = 0;
-      m2[iy][ix] = 0;
+      m1(iy,ix) = 0;
+      m2(iy,ix) = 0;
     }
 }
 

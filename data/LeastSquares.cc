@@ -99,11 +99,11 @@ LeastSquares::~LeastSquares()
 
 void LeastSquares::add(EntryScalar& e, double x, double y)
 {
-  LeastSquaresStats s( _n[0][0],
-		       _x[0][0],
-		      _xx[0][0],
-		       _y[0][0],
-		      _xy[0][0]);
+  LeastSquaresStats s( _n(0,0),
+		       _x(0,0),
+		      _xx(0,0),
+		       _y(0,0),
+		      _xy(0,0));
 
   double a[3];
   if (e.entries()>0)
@@ -122,11 +122,11 @@ void LeastSquares::add(EntryScan&   e, double x, double y, double vx, double vt)
   unsigned current = unsigned(e.info(EntryScan::Current));
   unsigned bin = e.bin(vx);
 
-  LeastSquaresStats s( _n[0][bin],
-		       _x[0][bin],
-		      _xx[0][bin],
-		       _y[0][bin],
-		      _xy[0][bin]);
+  LeastSquaresStats s( _n(0,bin),
+		       _x(0,bin),
+		      _xx(0,bin),
+		       _y(0,bin),
+		      _xy(0,bin));
 
   double a[4];
   if (bin==current)
@@ -141,11 +141,11 @@ void LeastSquares::add(EntryProf&   e, double x, double y, double vx)
 {
   unsigned bin = e.desc().bin(vx);
   if ( bin<e.desc().nbins() ) {
-    LeastSquaresStats s( _n[0][bin],
-			 _x[0][bin],
-			 _xx[0][bin],
-			 _y[0][bin],
-			 _xy[0][bin]);
+    LeastSquaresStats s( _n(0,bin),
+			 _x(0,bin),
+			 _xx(0,bin),
+			 _y(0,bin),
+			 _xy(0,bin));
 
     double a[3];
     if (e.nentries(bin)>0) 
@@ -163,11 +163,11 @@ void LeastSquares::add(EntryProf2D& e, double x, double y, double vx, double vy)
 
   if (xbin < e.desc().nxbins() && 
       ybin < e.desc().nybins()) {
-    LeastSquaresStats s( _n[ybin][xbin],
-			 _x[ybin][xbin],
-			 _xx[ybin][xbin],
-			 _y[ybin][xbin],
-			 _xy[ybin][xbin]);
+    LeastSquaresStats s( _n(ybin,xbin),
+			 _x(ybin,xbin),
+			 _xx(ybin,xbin),
+			 _y(ybin,xbin),
+			 _xy(ybin,xbin));
 
     double a[3];
     if (e.nentries(xbin,ybin)>0) 

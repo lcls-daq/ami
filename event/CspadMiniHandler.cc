@@ -307,9 +307,9 @@ namespace CspadMiniGeometry {
       { float* gn = _gn;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
-            *gn++ *= ((gmap[col][row]>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
+            *gn++ *= ((gmap(col,row)>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
           for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
-            *gn++ *= ((gmap[col][row]>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
+            *gn++ *= ((gmap(col,row)>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
         }
       }
 
@@ -480,8 +480,8 @@ namespace CspadMiniGeometry {
               Ami::FeatureCache&              cache,
               unsigned                        index) const
     {
-      asic[0]->fill(image,&element[0][0][0],cache,index+0);
-      asic[1]->fill(image,&element[0][0][1],cache,index+2);
+      asic[0]->fill(image,&element(0,0,0),cache,index+0);
+      asic[1]->fill(image,&element(0,0,1),cache,index+2);
     }
     void set_pedestals(double* f)
     {
@@ -954,8 +954,8 @@ static ndarray<double,3> get_calib(FILE* f)
     if (sscanf(linep,"%lf %lf %lf",&v,&v,&v)==2) {
       rewind(f);
       Ami::Calib::skip_header(f);
-      double* p0 = &a[0][0][0];
-      double* p1 = &a[1][0][0];
+      double* p0 = &a(0,0,0);
+      double* p1 = &a(1,0,0);
       while(p1 < a.end()) {
         fscanf(f,"%lf %lf",p0,p1);
         p0++;

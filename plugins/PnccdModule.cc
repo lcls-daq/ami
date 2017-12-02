@@ -343,19 +343,19 @@ void Ami::PnccdModule::ModulePlots::_fillQuadrant (const  Pds::PNCCD::FramesV1& 
     //
     //  Find the common mode correction
     //
-    uint32_t* p = &_dist->content()[j][iq*2*nx];
+    uint32_t* p = &_dist->content()(j,iq*2*nx);
 
     memset(p,0,nx*sizeof(uint32_t));
 
-    int32_t* wp = &w[j][0];
+    int32_t* wp = &w(j,0);
     for(unsigned k=0; k<cols_segment; k++) {
       int v = (d[k] & 0x3fff);
       if (v==0x3fff) {
-	v -= _ped[iq][j][k];
+	v -= _ped[iq](j,k);
 	wp[k] = -200;
       }
       else
-	wp[k] = (v -= _ped[iq][j][k]);
+	wp[k] = (v -= _ped[iq](j,k));
       v = v/ppx + nx/2;
       if (v < 0)
 	p[0]++;
@@ -365,7 +365,7 @@ void Ami::PnccdModule::ModulePlots::_fillQuadrant (const  Pds::PNCCD::FramesV1& 
 	p[v]++;
 #ifdef DBUG
       if (j==0 && k==0)
-	printf("d %d  ped %d  w %d\n",d[0],_ped[iq][0][0],wp[0]);
+	printf("d %d  ped %d  w %d\n",d[0],_ped[iq](0,0),wp[0]);
 #endif
     }
 
@@ -375,7 +375,7 @@ void Ami::PnccdModule::ModulePlots::_fillQuadrant (const  Pds::PNCCD::FramesV1& 
     //
     //  Apply the common mode correction
     //
-    p = &_dist->content()[j][(iq*2+1)*nx];
+    p = &_dist->content()(j,(iq*2+1)*nx);
 
     memset(p,0,nx*sizeof(uint32_t));
 
@@ -472,10 +472,10 @@ void Ami::PnccdModule::ModulePlots::reset()
     _ped[i] = make_ndarray<uint16_t>(rows,cols);
   for(unsigned i=0; i<rows_segment; i++)
     for(unsigned j=0; j<cols_segment; j++) {
-      _ped[0][i][j] = uint16_t(ped[i][j]);
-      _ped[1][i][j] = uint16_t(ped[rows-1-i][cols_segment-1-j]);
-      _ped[2][i][j] = uint16_t(ped[rows-1-i][cols-1-j]);
-      _ped[3][i][j] = uint16_t(ped[i][j+cols_segment]);
+      _ped[0](i,j) = uint16_t(ped(i,j));
+      _ped[1](i,j) = uint16_t(ped(rows-1-i,cols_segment-1-j));
+      _ped[2](i,j) = uint16_t(ped(rows-1-i,cols-1-j));
+      _ped[3](i,j) = uint16_t(ped(i,j+cols_segment));
     }
 
   for(unsigned i=0; i<4; i++)
@@ -535,9 +535,9 @@ void Ami::PnccdModule::ModulePlots::_analyze_droplets(ndarray<int32_t,2> v,
 						      double             nbr_cut)
 {
   for(unsigned iy=1; iy<v.shape()[0]-1; iy++) {
-    const int32_t* uv = &v[iy-1][1];
-    const int32_t* cv = &v[iy+0][1];
-    const int32_t* dv = &v[iy+1][1];
+    const int32_t* uv = &v(iy-1,1);
+    const int32_t* cv = &v(iy+0,1);
+    const int32_t* dv = &v(iy+1,1);
     for(unsigned ix=1; ix<v.shape()[1]-1; ix++, uv++, cv++, dv++) {
       int z = cv[0];
       _enrg[iq]->addcontent(1.,double(z));
@@ -611,7 +611,7 @@ void Ami::PnccdModule::ModulePlots::_analyze_droplets(ndarray<int32_t,2> v,
 
 	_enrg_sum[iq]->addcontent(1.,dz);
 
-	int dxy = int(d[iy][ix]&0x3fff);
+	int dxy = int(d(iy,ix)&0x3fff);
 	{ int dm = dxy - 0x3fc0;
 	  if (dm > 0)
 	    _enrg_sum_vm[iq*16+dm/0x10]->addcontent(1.,dz); }

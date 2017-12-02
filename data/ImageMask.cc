@@ -259,7 +259,7 @@ void ImageMask::write(FILE* f) const
 {
   ndarray<unsigned,2> ma = all_mask();
   for(unsigned j=0; j<rows(); j++) {
-    unsigned* mr = &ma[j][0];
+    unsigned* mr = &ma(j,0);
     for(unsigned i=0; i<ma.shape()[1]; i++)
       fprintf(f,"%08x ",mr[i]);
     fprintf(f,"\n");

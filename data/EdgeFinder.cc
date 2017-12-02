@@ -122,8 +122,8 @@ Entry&     EdgeFinder::_operate(const Entry& e) const
     output.resize(n);
     for(unsigned i=0; i<n; i++) {
       double edge[Edges::NumberOf];
-      edge[0] = edges[i][0]/sc;
-      edge[1] = (edges[i][1]+xlo)*xsc + d.xlow();
+      edge[0] = edges(i,0)/sc;
+      edge[1] = (edges(i,1)+xlo)*xsc + d.xlow();
       output.append(edge);
     }
   }

@@ -90,7 +90,7 @@ Entry&     RotateImage::_operate(const Entry& e) const
   if (_input) {
     EntryImage& output = *static_cast<EntryImage*>(_output);
     for(unsigned y=0; y<inputd.nbinsy(); y++) {
-      const unsigned* row = &_input->content()[y][0];
+      const unsigned* row = &_input->content()(y,0);
       switch(_rotation) {
       case D0: 
         { unsigned iy = y;

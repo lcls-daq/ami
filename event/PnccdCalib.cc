@@ -41,7 +41,7 @@ std::string PnccdCalib::save_pedestals(const Entry* entry,
       for(unsigned i1=0; i1<ppb; i1++)
         for(unsigned j=0; j<desc.nbinsx(); j++)
           for(unsigned j1=0; j1<ppb; j1++)
-            pedestals[i*ppb+i1][j*ppb+j1] = (double(image.content(j,i))-o)/n;
+            pedestals(i*ppb+i1,j*ppb+j1) = (double(image.content(j,i))-o)/n;
   }
 
   char tbuf[64];
@@ -73,16 +73,16 @@ std::string PnccdCalib::save_pedestals(const Entry* entry,
       for(unsigned j=0; j<nx; j++) {
         switch(r) {
         case D0:
-          fprintf(fn,"%f ",pedestals[i][j]);
+          fprintf(fn,"%f ",pedestals(i,j));
           break;
         case D90:
-          fprintf(fn,"%f ",pedestals[nx-j-1][i]);
+          fprintf(fn,"%f ",pedestals(nx-j-1,i));
           break;
         case D180:
-          fprintf(fn,"%f ",pedestals[ny-i-1][nx-j-1]);
+          fprintf(fn,"%f ",pedestals(ny-i-1,nx-j-1));
           break;
         case D270:
-          fprintf(fn,"%f ",pedestals[j][ny-i-1]);
+          fprintf(fn,"%f ",pedestals(j,ny-i-1));
           break;
         default:
           break;
@@ -124,28 +124,28 @@ ndarray<double,2> PnccdCalib::load_pedestals(const DescImage& d,
 
       ndarray<double,2> pedestals = make_ndarray<double>(1024,1024);
       for(unsigned i=0; i<512; i++) {
-        double* p = &pedestals[i][0];
+        double* p = &pedestals(i,0);
         Ami::Calib::get_line(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p++ = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
-        double* p = &pedestals[i][511];
+        double* p = &pedestals(i,511);
         Ami::Calib::get_line(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
-        double* p = &pedestals[i][1023];
+        double* p = &pedestals(i,1023);
         Ami::Calib::get_line(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=0; i<512; i++) {
-        double* p = &pedestals[i][512];
+        double* p = &pedestals(i,512);
         Ami::Calib::get_line(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
@@ -182,7 +182,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
-            a[i*ppb+i1][j*ppb+j1] = cont[i][j];
+            a(i*ppb+i1,j*ppb+j1) = cont(i,j);
     break;
   case D90:
     a = make_ndarray<uint32_t>(cont.shape()[1]*ppb,cont.shape()[0]*ppb);
@@ -190,7 +190,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
-            a[i*ppb+i1][j*ppb+j1] = cont[nx-j][i];
+            a(i*ppb+i1,j*ppb+j1) = cont(nx-j,i);
     break;
   case D180:      
     a = make_ndarray<uint32_t>(cont.shape()[0]*ppb,cont.shape()[1]*ppb);
@@ -198,7 +198,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
-            a[i*ppb+i1][j*ppb+j1] = cont[ny-i][nx-j];
+            a(i*ppb+i1,j*ppb+j1) = cont(ny-i,nx-j);
     break;
   case D270:
     a = make_ndarray<uint32_t>(cont.shape()[1]*ppb,cont.shape()[0]*ppb);
@@ -206,7 +206,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
       for(unsigned j=0; j<cont.shape()[1]; j++)
         for(unsigned i1=0; i1<ppb; i1++)
           for(unsigned j1=0; j1<ppb; j1++)
-            a[i*ppb+i1][j*ppb+j1] = cont[j][ny-i];
+            a(i*ppb+i1,j*ppb+j1) = cont(j,ny-i);
     break;
   default:
     break;
@@ -219,8 +219,8 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
     for(unsigned ja=0, j=0; ja<8; ja++) {
       double v=0;
       for(unsigned k=0; k<nadcch; k++,j++)
-        v += factor*a[i][j];
-      cmth[i][ja] = v/double(nadcch);
+        v += factor*a(i,j);
+      cmth(i,ja) = v/double(nadcch);
     }
   }
 
@@ -249,7 +249,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
     fprintf(fn,"# %s\n",oname.c_str());
     for(unsigned i=0; i<cmth.shape()[0]; i++) {
       for(unsigned j=0; j<cmth.shape()[1]; j++)
-        fprintf(fn,"%f ",cmth[i][j]);
+        fprintf(fn,"%f ",cmth(i,j));
       fprintf(fn,"\n");
     }
     fsync(fileno(fn));
@@ -303,28 +303,28 @@ ndarray<double,2> PnccdCalib::load_gains(const DescImage& d,
 
       ndarray<double,2> gains = make_ndarray<double>(1024,1024);
       for(unsigned i=0; i<512; i++) {
-        double* p = &gains[i][0];
+        double* p = &gains(i,0);
         Ami::Calib::get_line(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p++ = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
-        double* p = &gains[i][511];
+        double* p = &gains(i,511);
         Ami::Calib::get_line(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=1023; i>=512; i--) {
-        double* p = &gains[i][1023];
+        double* p = &gains(i,1023);
         Ami::Calib::get_line(&linep, &sz, f);
         *p-- = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)
           *p-- = strtod(pEnd,&pEnd);
       }
       for(unsigned i=0; i<512; i++) {
-        double* p = &gains[i][512];
+        double* p = &gains(i,512);
         Ami::Calib::get_line(&linep, &sz, f);
         *p++ = strtod(linep,&pEnd);
         for(unsigned j=1; j<512; j++)

@@ -75,7 +75,7 @@ void           QtImage::dump  (FILE* f) const
   ndarray<const uint32_t,2> data(_entry.content());
   for(unsigned j=0; j<d.nbinsy(); j++) {
     for(unsigned k=0; k<d.nbinsx(); k++)
-      fprintf(f,"%d ", data[j][k]);
+      fprintf(f,"%d ", data(j,k));
     fprintf(f,"\n");
   }
 }
@@ -198,7 +198,7 @@ QImage*  QtImage::image(ImageColorControl& control)
 	for(unsigned k=0; k<d.nbinsy(); k++) {			      
 	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
 	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	    unsigned sh = unsigned(LINTRANS(src[k][j]));	      
+	    unsigned sh = unsigned(LINTRANS(src(k,j)));	      
 	    *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	  }						      
 	}
@@ -208,7 +208,7 @@ QImage*  QtImage::image(ImageColorControl& control)
 	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
 	  unsigned ks = k/d.disppby();
 	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	    unsigned sh = unsigned(LINTRANS(src[ks][j]));	      
+	    unsigned sh = unsigned(LINTRANS(src(ks,j)));	      
 	    const uint8_t v = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	    for(unsigned m=0; m<d.disppbx(); m++)
 	      *dst++ = v;
@@ -226,7 +226,7 @@ QImage*  QtImage::image(ImageColorControl& control)
 	for(unsigned k=0; k<d.nbinsy(); k++) {			      
 	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
 	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	    unsigned sh = unsigned(LOGTRANS(src[k][j]));	      
+	    unsigned sh = unsigned(LOGTRANS(src(k,j)));	      
 	    *dst++ = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	  }		
 	}				      
@@ -236,7 +236,7 @@ QImage*  QtImage::image(ImageColorControl& control)
 	  uint8_t* dst = (uint8_t*)qimage->scanLine(k);		      
 	  unsigned ks=k/d.disppby();
 	  for(unsigned j=0; j<d.nbinsx(); j++) {		      
-	    unsigned sh = unsigned(LOGTRANS(src[ks][j]));	      
+	    unsigned sh = unsigned(LOGTRANS(src(ks,j)));	      
 	    const uint8_t v = 0x01*(sh >= 0xff ? 0xff : sh);	      
 	    for(unsigned m=0; m<d.disppbx(); m++)
 	      *dst++ = v;

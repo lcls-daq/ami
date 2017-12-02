@@ -869,9 +869,9 @@ void MaskDisplay::thrh(int v)
   v *= int(_entry->info(EntryImage::Normalization));
   v *= d.ppxbin()*d.ppybin();
   v += int(_entry->info(EntryImage::Pedestal));
-  printf("thrh value %d  v[40,40] %d\n",v,_entry->content()[40][40]);
+  printf("thrh value %d  v[40,40] %d\n",v,_entry->content()(40,40));
   for(unsigned iy=0; iy<d.nbinsy(); iy++) {
-    const uint32_t* p = &_entry->content()[iy][0];
+    const uint32_t* p = &_entry->content()(iy,0);
     for(unsigned ix=0; ix<d.nbinsx(); ix++)
       if (p[ix]>unsigned(v))
         m.fill(iy,ix);

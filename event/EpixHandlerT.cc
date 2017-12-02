@@ -25,7 +25,7 @@ static double frameNoise(const ndarray<const uint32_t,2> data,
   { memset(hist, 0, fnPixelBins*sizeof(unsigned));
     for(unsigned i=0; i<data.shape()[0]; i++) {
       for(unsigned j=0; j<data.shape()[1]; j++) {
-	int v = data[i][j] - fnPixelMin;
+	int v = data(i,j) - fnPixelMin;
 	if (v >= 0 && v < int(fnPixelBins))
 	  hist[v]++;
       }
@@ -189,7 +189,7 @@ void EpixHandlerT::_event    (Pds::TypeId, const void* payload, const Pds::Clock
 	  for(unsigned k=0; k<_config.nchip_rows; k++)
 	    for(unsigned m=0; m<_config.nchip_columns; m++,fn++) {
 	      const SubFrame& f = _entry->desc().frame(fn);
-	      _entry->addcontent(p[fn]+po[fn][i][j], f.x+j/ppbin, f.y+i/ppbin);
+	      _entry->addcontent(p[fn]+po(fn,i,j), f.x+j/ppbin, f.y+i/ppbin);
 	    }
 	  p += ((fn+1)&~1)*_config.nsamples;
 	}
@@ -223,7 +223,7 @@ void EpixHandlerT::_load_pedestals(const DescImage& desc)
   for(unsigned i=0; i<nf; i++)
     for(unsigned j=0; j<ny; j++)
       for(unsigned k=0; k<nx; k++)
-	_offset[i][j][k] = offset;
+	_offset(i,j,k) = offset;
 
   //
   //  Load pedestals
@@ -248,9 +248,9 @@ void EpixHandlerT::_load_pedestals(const DescImage& desc)
 	for (unsigned row=0; row < ny; row++) {
 	  if (feof(f)) return;
 	  getline(&linep, &sz, f);
-	  _pedestals[s][row][0] = offset-strtoul(linep,&pEnd,0);
+	  _pedestals(s,row,0) = offset-strtoul(linep,&pEnd,0);
 	  for(unsigned col=1; col<nx; col++) 
-	    _pedestals[s][row][col] = offset-strtoul(pEnd, &pEnd,0);
+	    _pedestals(s,row,col) = offset-strtoul(pEnd, &pEnd,0);
 	}
       }    
     }
@@ -262,6 +262,6 @@ void EpixHandlerT::_load_pedestals(const DescImage& desc)
     for(unsigned i=0; i<nf; i++)
       for(unsigned j=0; j<ny; j++)
 	for(unsigned k=0; k<nx; k++)
-	  _pedestals[i][j][k] = offset;
+	  _pedestals(i,j,k) = offset;
   }
 }

@@ -167,7 +167,7 @@ void ZylaHandler::_event(Pds::TypeId type, const void* payload, const Pds::Clock
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
     const uint16_t* d = reinterpret_cast<const uint16_t*>(array(_configtc, f).data());
     for(unsigned j=0; j<height(_configtc); j++) {
-      const unsigned* p = &pa[j][0];
+      const unsigned* p = &pa(j,0);
       for(unsigned k=0; k<width(_configtc); k++, d++, p++)
         _entry->addcontent(*d + *p, k/ppbin, j/ppbin);
     }

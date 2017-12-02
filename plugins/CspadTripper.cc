@@ -105,9 +105,9 @@ void BlackHole::_dump(ndarray<const data_t, 3> data) {
 bool BlackHole::_maybePush(unsigned seg, unsigned r, unsigned c,
                            const ndarray<const data_t, 3>& data) {
   // check for unassigned pixel
-  if (_conmap[r][c]==-1) {
-    if (data[seg][r][c]>_thresh) {
-      _conmap[r][c]=0; // above threshold
+  if (_conmap(r,c)==-1) {
+    if (data(seg,r,c)>_thresh) {
+      _conmap(r,c)=0; // above threshold
     }
     else {
       _stack.push_back(Point(r,c)); // connected pixel
@@ -130,10 +130,10 @@ void BlackHole::setupGoodPix(ndarray<const data_t, 3> data, uint quad,
   for(unsigned s = 0; s<data.shape()[0]; s++) {
     for(unsigned r = 0; r<data.shape()[1]; r++) {
       for(unsigned c = 0; c<data.shape()[2]; c++) {
-        if (data[s][r][c]<(_thresh-1000)) {
-          _goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][s][r][c] = 1;
+        if (data(s,r,c)<(_thresh-1000)) {
+          _goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,s,r,c) = 1;
         } else {
-          _goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][s][r][c] = 0;
+          _goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,s,r,c) = 0;
           nbadpix++;
         }
       }
@@ -149,10 +149,10 @@ void BlackHole::updateGoodPix(ndarray<const data_t, 3> data, uint quad,
     for(unsigned r = 0; r<data.shape()[1]; r++) {
       for(unsigned c = 0; c<data.shape()[2]; c++) {
         // check to see if the pixel is bad for two events in a row
-        if (data[s][r][c]<(_thresh-1000) && !_goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][s][r][c]) {
-          _goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][s][r][c] = 1;
+        if (data(s,r,c)<(_thresh-1000) && !_goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,s,r,c)) {
+          _goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,s,r,c) = 1;
         }
-        if (!_goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][s][r][c]) nbadpix++;
+        if (!_goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,s,r,c)) nbadpix++;
       }
     }
   }
@@ -168,7 +168,7 @@ bool BlackHole::floodFill(ndarray<const data_t, 3> data, uint quad, unsigned cur
     unsigned nabovethresh = 0;
     for(unsigned row = 0; row<nrows; row++) {
       for(unsigned col = 0; col<ncols; col++) {
-        if (data[sec][row][col]>_thresh && _goodpix[currentDet*Pds::CsPad::MaxQuadsPerSensor+quad][sec][row][col]) nabovethresh++;
+        if (data(sec,row,col)>_thresh && _goodpix(currentDet*Pds::CsPad::MaxQuadsPerSensor+quad,sec,row,col)) nabovethresh++;
       }
     }
     // don't bother with flood-fill if we don't have enough
@@ -188,7 +188,7 @@ bool BlackHole::floodFill(ndarray<const data_t, 3> data, uint quad, unsigned cur
           _stack.pop_back();
           unsigned r = val.r();
           unsigned c = val.c();
-          _conmap[r][c] = _numreg;
+          _conmap(r,c) = _numreg;
 
           if (r>0)       _maybePush(sec,r-1,c,data);
           if (r<nrows-1) _maybePush(sec,r+1,c,data);
@@ -218,8 +218,8 @@ bool BlackHole::_trip() {
 
   for(unsigned r = 0; r<_conmap.shape()[0]; r++) {
     for(unsigned c = 0; c<_conmap.shape()[1]; c++) {
-      conmap_t region = _conmap[r][c];
-      if (_conmap[r][c]==0) continue;
+      conmap_t region = _conmap(r,c);
+      if (_conmap(r,c)==0) continue;
       if (region==0) continue; // ignore above-threshold pixels
       region -= 1; // to count from zero
       if (region >= MAXREGION) continue; // shouldn't happen

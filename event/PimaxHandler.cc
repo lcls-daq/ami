@@ -132,7 +132,7 @@ void PimaxHandler::_event(Pds::TypeId type, const void* payload, const Pds::Cloc
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
     const uint16_t* d = reinterpret_cast<const uint16_t*>(f.data(_config).data());
     for(unsigned j=0; j<height(_config); j++) {
-      const unsigned* p = &pa[j][0];
+      const unsigned* p = &pa(j,0);
       for(unsigned k=0; k<width(_config); k++, d++, p++)
         _entry->addcontent(*d + *p, k/ppbin, j/ppbin);
     }

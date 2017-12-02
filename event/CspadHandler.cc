@@ -512,9 +512,9 @@ namespace CspadGeometry {
       { float* gn = _gn;
         for(unsigned col=0; col<CsPad::ColumnsPerASIC; col++) {
           for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
-            *gn++ *= ((gmap[col][row]>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
+            *gn++ *= ((gmap(col,row)>>imap)&1) ? HI_GAIN_F:LO_GAIN_F;
           for (unsigned row=0; row < Pds::CsPad::MaxRowsPerASIC; row++)
-            *gn++ *= ((gmap[col][row]>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
+            *gn++ *= ((gmap(col,row)>>imap)&2) ? HI_GAIN_F:LO_GAIN_F;
         }
       }
 
@@ -781,7 +781,7 @@ namespace CspadGeometry {
       for(unsigned id=0,j=0; mask!=0; id++)
         if (mask&(1<<id)) {
 	  mask ^= (1<<id);
-          element[id>>1]->fill(image,&a[j][0][0],id,cache,index+id*2);
+          element[id>>1]->fill(image,&a(j,0,0),id,cache,index+id*2);
           j++;
         }
     }      

@@ -161,7 +161,7 @@ void DualAndorHandler::_event(Pds::TypeId type, const void* payload, const Pds::
     for(unsigned s=0; s<_entry->desc().nframes(); s++) {
       const SubFrame& pframe = _pentry->desc().frame(s);
       for(unsigned j=pframe.y; j<(pframe.y+pframe.ny); j++) {
-        const unsigned* p = &pa[j][pframe.x];
+        const unsigned* p = &pa(j,pframe.x);
         for(unsigned k=pframe.x; k<(pframe.x+pframe.nx); k++, d++, p++)
           _entry->addcontent(*d + *p, k/ppbin+s*gapbin, j/ppbin);
       }

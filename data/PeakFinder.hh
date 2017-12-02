@@ -50,7 +50,7 @@ namespace Ami {
     EntryImage*       _output_entry; /// Holds single event result and indefinite running sum
     EntryImage*       _cache;        /// Holds fixed event number sum
     PeakFinderFn*     _fn;
-    ndarray<unsigned,2> _threshold;
+    mutable ndarray<unsigned,2> _threshold;
   };
 
 };

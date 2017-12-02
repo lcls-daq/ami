@@ -150,7 +150,7 @@ Entry&     PeakFinder::_operate(const Entry& e) const
     const_cast<PeakFinder*>(this)->_threshold = ndarray<unsigned,2>(shape);
     for(unsigned j=0; j<ny; j++)
       for(unsigned k=0; k<nx; k++)
-        _threshold[j][k] = p + unsigned(dn*_fn->value(k,j)+0.5);
+        _threshold(j,k) = p + unsigned(dn*_fn->value(k,j)+0.5);
   }
 
   if (_accumulate==-1) {

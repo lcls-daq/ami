@@ -100,8 +100,8 @@ namespace Ami {
     }
   public:
     MedianSlopeStats stats(unsigned xbin, unsigned ybin) {
-      return MedianSlopeStats(_points[xbin][ybin],
-			      _slopes[xbin][ybin]);
+      return MedianSlopeStats(_points(xbin,ybin),
+			      _slopes(xbin,ybin));
     }
   private:
     ndarray<std::list<Point>,2> _points;

@@ -6,6 +6,10 @@
 #include <stdint.h>
 #include <string>
 
+namespace Pds {
+  class DetInfo;
+}
+
 namespace Ami {
   class Entry;
   class EntryImage;
@@ -44,6 +48,21 @@ namespace Ami {
     static ndarray<double,2>   load_darray(const DescImage&,
                                            const char* prefix,
                                            const char* offl_type);
+
+    static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned nz,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              const char* onl_prefix,
+                                              const char* off_prefix);
+
+    static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned nz,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              FILE*);
 
     static ndarray<unsigned,2>   load_array (FILE*);
     static ndarray<double  ,2>   load_darray(FILE*);

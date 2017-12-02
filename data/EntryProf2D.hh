@@ -77,9 +77,9 @@ namespace Ami {
 
   inline double EntryProf2D::zmean(unsigned xbin, unsigned ybin) const 
   {
-    double n = _nentries[ybin][xbin];
+    double n = _nentries(ybin,xbin);
     if (n > 0) {
-      double y = _zsum[ybin][xbin];
+      double y = _zsum(ybin,xbin);
       double mean = y/n;
       return mean;
     } else {
@@ -89,10 +89,10 @@ namespace Ami {
 
   inline double EntryProf2D::sigma(unsigned xbin, unsigned ybin) const 
   {
-    double n = _nentries[ybin][xbin];
+    double n = _nentries(ybin,xbin);
     if (n > 0) {
-      double y  = _zsum [ybin][xbin];
-      double y2 = _z2sum[ybin][xbin];
+      double y  = _zsum (ybin,xbin);
+      double y2 = _z2sum(ybin,xbin);
       double mean = y/n;
       double s = sqrt(y2/n-mean*mean);
       return s;
@@ -101,20 +101,20 @@ namespace Ami {
     }
   }
 
-  inline double EntryProf2D::zsum(unsigned xbin, unsigned ybin) const {return _zsum[ybin][xbin];}
-  inline   void EntryProf2D::zsum(double z, unsigned xbin, unsigned ybin) {_zsum[ybin][xbin] = z; }
+  inline double EntryProf2D::zsum(unsigned xbin, unsigned ybin) const {return _zsum(ybin,xbin);}
+  inline   void EntryProf2D::zsum(double z, unsigned xbin, unsigned ybin) {_zsum(ybin,xbin) = z; }
 
-  inline double EntryProf2D::z2sum(unsigned xbin, unsigned ybin) const {return _z2sum[ybin][xbin];}
-  inline void EntryProf2D::z2sum(double z2, unsigned xbin, unsigned ybin) {_z2sum[ybin][xbin]=z2;}
+  inline double EntryProf2D::z2sum(unsigned xbin, unsigned ybin) const {return _z2sum(ybin,xbin);}
+  inline void EntryProf2D::z2sum(double z2, unsigned xbin, unsigned ybin) {_z2sum(ybin,xbin)=z2;}
 
-  inline double EntryProf2D::nentries(unsigned xbin,unsigned ybin) const {return _nentries[ybin][xbin];}
-  inline void EntryProf2D::nentries(double nent, unsigned xbin, unsigned ybin) {_nentries[ybin][xbin]=nent;}
+  inline double EntryProf2D::nentries(unsigned xbin,unsigned ybin) const {return _nentries(ybin,xbin);}
+  inline void EntryProf2D::nentries(double nent, unsigned xbin, unsigned ybin) {_nentries(ybin,xbin)=nent;}
 
   inline void EntryProf2D::addz(double z, unsigned xbin, unsigned ybin, double w) 
   {
-    _zsum    [ybin][xbin] += z*w;
-    _z2sum   [ybin][xbin] += z*z*w;
-    _nentries[ybin][xbin] += w;
+    _zsum    (ybin,xbin) += z*w;
+    _z2sum   (ybin,xbin) += z*z*w;
+    _nentries(ybin,xbin) += w;
   }
 
   inline double EntryProf2D::info(Info i) const { return *(_nentries.end()+int(i)); }
@@ -124,10 +124,10 @@ namespace Ami {
   inline const ndarray<double,2>& EntryProf2D::entries() const { return _nentries; }
   inline const ndarray<double,2>& EntryProf2D::zsum   () const { return _zsum; }
   inline const ndarray<double,2>& EntryProf2D::z2sum  () const { return _z2sum; }
-  inline void EntryProf2D::content(unsigned xbin, unsigned ybin, const double* y) { _nentries[ybin][xbin]=y[0]; _zsum[ybin][xbin]=y[1]; _z2sum[ybin][xbin]=y[2]; }
+  inline void EntryProf2D::content(unsigned xbin, unsigned ybin, const double* y) { _nentries(ybin,xbin)=y[0]; _zsum(ybin,xbin)=y[1]; _z2sum(ybin,xbin)=y[2]; }
 
-  inline double EntryProf2D::slope    (unsigned xbin,unsigned ybin) const { return _nentries[ybin][xbin] ? _zsum[ybin][xbin]/_nentries[ybin][xbin]:0; }
-  inline double EntryProf2D::intercept(unsigned xbin,unsigned ybin) const { return _nentries[ybin][xbin] ? _z2sum[ybin][xbin]/_nentries[ybin][xbin]:0; }
+  inline double EntryProf2D::slope    (unsigned xbin,unsigned ybin) const { return _nentries(ybin,xbin) ? _zsum(ybin,xbin)/_nentries(ybin,xbin):0; }
+  inline double EntryProf2D::intercept(unsigned xbin,unsigned ybin) const { return _nentries(ybin,xbin) ? _z2sum(ybin,xbin)/_nentries(ybin,xbin):0; }
 };
 
 #endif

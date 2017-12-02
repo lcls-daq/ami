@@ -304,7 +304,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
             int v = int(fio.getdb());
             if (fio.get_failed()) {
               // Aren't enough cols in the data
-              printf("FrameCalib[%s] retrieved pedestal has [%d] columns which is rather than the expected [%d]!\n",
+              printf("FrameCalib[%s] retrieved pedestal has [%d] columns which is smaller than the expected [%d]!\n",
                      Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
                      col,
                      frame.nx*ppb);
@@ -325,7 +325,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
           }
         } else {
           // Aren't enough rows in the data
-          printf("FrameCalib[%s] retrieved pedestal has only %d rows rather than the expected %d\n",
+          printf("FrameCalib[%s] retrieved pedestal has only %d rows smaller than the expected %d\n",
                  Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
                  row,
                  frame.ny*ppb);
@@ -350,7 +350,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
           int v = int(fio.getdb());
           if (fio.get_failed()) {
             // Aren't enough cols in the data
-            printf("FrameCalib[%s] retrieved pedestal has %d columns rather than the expected %d\n",
+            printf("FrameCalib[%s] retrieved pedestal has %d columns smaller than the expected %d\n",
                    Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
                    col,
                    d.nbinsx()*ppb);
@@ -371,7 +371,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
         }
       } else {
         // Aren't enough rows in the data
-        printf("FrameCalib[%s] retrieved pedestal has only %d rows rather than the expected %d\n",
+        printf("FrameCalib[%s] retrieved pedestal has only %d rows smaller than the expected %d\n",
                Pds::DetInfo::name(static_cast<const Pds::DetInfo&>(d.info())),
                row,
                d.nbinsy()*ppb);
@@ -430,7 +430,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
 	const SubFrame& frame = desc.frame(i);
 	for (unsigned row=0; row < frame.ny*ppy; row++) {
 	  for(unsigned col=0; col<frame.nx*ppx; col++)
-	    fprintf(fn, " %f", a[i][row][col]);
+	    fprintf(fn, " %f", a(i,row,col));
 	  fprintf(fn, "\n");
 	}
       }
@@ -438,7 +438,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
     else {
       for (unsigned row=0; row < desc.nbinsy()*ppy; row++) {
 	for(unsigned col=0; col<desc.nbinsx()*ppx; col++)
-	  fprintf(fn, " %f", a[0][row][col]);
+	  fprintf(fn, " %f", a(0,row,col));
 	fprintf(fn, "\n");
       }
     }
@@ -509,7 +509,7 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
             double v = strtod(p,&pEnd);
             if (pEnd == p) break;
             //  when binned, simply take last read value for that bin
-            a[i][row/ppb][col/ppb] = v;
+            a(i,row/ppb,col/ppb) = v;
             col++;
             p = pEnd+1;
           }
@@ -525,7 +525,7 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
           char* pEnd;
           double v = strtod(p,&pEnd);
           if (pEnd == p) break;
-          a[0][row/ppb][col/ppb] = v;
+          a(0,row/ppb,col/ppb) = v;
           col++;
           p = pEnd+1;
         }
@@ -568,7 +568,7 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
         char* pEnd;
 	double v = strtod(p,&pEnd);
 	if (pEnd == p) break;
-	a[row/ppb][col/ppb] = v;
+	a(row/ppb,col/ppb) = v;
 	col++;
 	p = pEnd+1;
       }
@@ -581,9 +581,9 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
 	row  != max_rows) {
       ndarray<double,2> b = make_ndarray<double>(row,maxc);
       for(unsigned i=0; i<row; i++) {
-	double* p = &b[i][0];
+	double* p = &b(i,0);
 	for(unsigned j=0; j<maxc; j++)
-	  p[j] = a[i][j];
+	  p[j] = a(i,j);
       }
       a = b;
     }
@@ -627,7 +627,7 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
         char* pEnd;
 	unsigned v = strtoul(p,&pEnd,0);
 	if (pEnd == p) break;
-	a[row/ppb][col/ppb] = v;
+	a(row/ppb,col/ppb) = v;
 	col++;
 	p = pEnd+1;
       }
@@ -640,9 +640,9 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
 	row  != max_rows) {
       ndarray<unsigned,2> b = make_ndarray<unsigned>(row,maxc);
       for(unsigned i=0; i<row; i++) {
-	unsigned* p = &b[i][0];
+	unsigned* p = &b(i,0);
 	for(unsigned j=0; j<maxc; j++)
-	  p[j] = a[i][j];
+	  p[j] = a(i,j);
       }
       a = b;
     }
@@ -682,7 +682,7 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
         char* pEnd;
 	double v = strtod(p,&pEnd);
 	if (pEnd == p) break;
-	a[row/ppb][col/ppb] = v;
+	a(row/ppb,col/ppb) = v;
 	col++;
 	p = pEnd+1;
       }
@@ -695,9 +695,9 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
 	row  != max_rows) {
       ndarray<double,2> b = make_ndarray<double>(row/ppb,maxc/ppb);
       for(unsigned i=0; i<row/ppb; i++) {
-	double* p = &b[i][0];
+	double* p = &b(i,0);
 	for(unsigned j=0; j<maxc/ppb; j++)
-	  p[j] = a[i][j];
+	  p[j] = a(i,j);
       }
       a = b;
     }
@@ -705,6 +705,100 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
   else
     a = make_ndarray<double>(0U,0);
   
+  return a;
+}
+
+ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
+                                               unsigned nm,
+                                               unsigned nz,
+                                               unsigned ny,
+                                               unsigned nx,
+                                               const char* onl_prefix,
+                                               const char* off_prefix)
+{
+  //
+  //  Load calibration from a file (include offline too)
+  //    Always read and write values for each pixel (even when binned)
+  //
+  ndarray<double,4> a;
+
+  FILE* f = Calib::fopen(info, onl_prefix, off_prefix);
+  if (f) {
+    a = load_multi_array(info,nm,nz,ny,nx,f);
+    fclose(f);
+  }
+  else {
+    a = make_ndarray<double>(nm,nz,ny,nx);
+    for(double* val = a.begin(); val!=a.end(); *val++ = 0.0) ;
+  }
+  return a;
+}
+
+ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
+                                               unsigned nm,
+                                               unsigned nz,
+                                               unsigned ny,
+                                               unsigned nx,
+                                               FILE* f)
+{
+  unsigned nlines = 0;
+  unsigned maxlines =  nm * nz * ny;
+  bool size_match = true;
+  CalibIO fio(*f);
+  ndarray<double,4> a = make_ndarray<double>(nm,nz,ny,nx);
+
+  for(unsigned m=0; m < nm; m++) {
+    if (!size_match) break;
+    for(unsigned z=0; z < nz; z++) {
+      if (!size_match) break;
+      for(unsigned y=0; y < ny; y++) {
+        if (!size_match) break;
+        if (fio.next_line()) {
+          nlines++;
+          for(unsigned x=0; x < nx; x++) {
+            double val = fio.getdb();
+            if (fio.get_failed()) {
+              // Aren't enough cols in the data
+              printf("FrameCalib[%s] retrieved calib data has only %d colums less than the expected %d\n",
+                     Pds::DetInfo::name(info),
+                     x,
+                     nx);
+              size_match = false;
+              break;
+            }
+            a(m,z,y,x) = val;
+          }
+          // test if there are more columns in this row than expected
+          fio.getdb();
+          if (!fio.get_failed()) {
+            printf("FrameCalib[%s] retrieved calib data has more columns than the expected %d\n",
+                   Pds::DetInfo::name(info),
+                   nx);
+            size_match = false;
+          }
+        } else {
+          printf("FrameCalib[%s] retrieved calib data has only %d rows less than the expected %d\n",
+                 Pds::DetInfo::name(info),
+                 nlines,
+                 maxlines);
+          size_match = false;
+        }
+      }
+    }
+  }
+  if (fio.next_line()) {
+    printf("FrameCalib[%s] retrieved calib data has more rows than the expected %d\n",
+           Pds::DetInfo::name(info),
+           maxlines);
+    size_match = false;
+  }
+
+  if (!size_match) {
+    printf("FrameCalib[%s] retrieved calib data is not of the expected size - clearing data!\n",
+           Pds::DetInfo::name(info));
+    for(double* val = a.begin(); val!=a.end(); *val++ = 0.0) ;
+  }
+
   return a;
 }
 
@@ -735,7 +829,7 @@ ndarray<unsigned,2> FrameCalib::load_array(FILE* f)
   for(unsigned i=0; i<nrows; i++) {
     fio.next_line();
     for(unsigned j=0; j<ncols; j++)
-      a[i][j] = fio.getul();
+      a(i,j) = fio.getul();
   }
 
   return a;
@@ -768,7 +862,7 @@ ndarray<double,2> FrameCalib::load_darray(FILE* f)
   for(unsigned i=0; i<nrows; i++) {
     fio.next_line();
     for(unsigned j=0; j<ncols; j++)
-      a[i][j] = fio.getdb();
+      a(i,j) = fio.getdb();
   }
 
   return a;
@@ -1074,7 +1168,7 @@ int FrameCalib::median(ndarray<const uint32_t,2> d,
     memset(bins,0,nbins*sizeof(unsigned));
 
     for(unsigned j=0; j<d.shape()[0]; j++) {
-      const uint32_t* data = &d[j][0];
+      const uint32_t* data = &d(j,0);
       for(unsigned i=0; i<d.shape()[1]; i++)
         if (data[i] < iLo)
           bins[0]++;

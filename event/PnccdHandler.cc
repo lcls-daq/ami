@@ -199,13 +199,13 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       if (!lped) {
         row[i] = *d++;
       } else {
-        row[i] = int32_t(*d++ - _ped[y+j][x+i]);
+        row[i] = int32_t(*d++ - _ped(y+j,x+i));
       }
     }
     // Apply the common mode correction
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {
-        int32_t cm, cmth = int32_t(_cmth[j+y][i0+cx]);
+        int32_t cm, cmth = int32_t(_cmth(j+y,i0+cx));
         int32_t* mrow = &row[i0*len];
         psalg::commonMode((const int32_t*)mrow,0,len,cmth,cmth,cm);
         for(unsigned i=0; i<len; i++)
@@ -216,7 +216,7 @@ void PnccdHandler::_fillQuadrant(const uint16_t* d, unsigned x, unsigned y)
       if (!lgain)
         row[i] += o;
       else
-        row[i] = int32_t(row[i] * _gain[y+j][x+i]) + o;
+        row[i] = int32_t(row[i] * _gain(y+j,x+i)) + o;
     }
 
     if (ppb==2) {
@@ -255,13 +255,13 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
       if (!lped) {
         row[i] = *d++;
       } else {
-        row[i] = int32_t(*d++ - _ped[y-j][x-i]);
+        row[i] = int32_t(*d++ - _ped(y-j,x-i));
       }
     }
     // Apply the common mode correction
     if (lcommon)
       for(unsigned i0=0; i0<4; i0++) {
-        int32_t cm, cmth = int32_t(_cmth[y-j][cx-i0]);
+        int32_t cm, cmth = int32_t(_cmth(y-j,cx-i0));
         int32_t* mrow = &row[i0*len];
         psalg::commonMode((const int32_t*)mrow,0,len,cmth,cmth,cm);
         for(unsigned i=0; i<len; i++)
@@ -272,7 +272,7 @@ void PnccdHandler::_fillQuadrantR(const uint16_t* d, unsigned x, unsigned y)
       if (!lgain)
         row[i] += o;
       else
-        row[i] = int32_t(row[i] * _gain[y-j][x-i]) + o;
+        row[i] = int32_t(row[i] * _gain(y-j,x-i)) + o;
     }
 
     if (ppb==2) {

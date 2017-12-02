@@ -119,9 +119,9 @@ void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
       ndarray<uint16_t,2> fc = make_ndarray<uint16_t>(fr.shape()[0],
                                                       fr.shape()[1]);
       for(unsigned i=0; i<fr.shape()[0]; i++) {
-        uint16_t*       pc = &fc[i][0];
-        const uint16_t* pf = &fr[i][0];
-        const int*      pp = &_pedestals[i][0];
+        uint16_t*       pc = &fc(i,0);
+        const uint16_t* pf = &fr(i,0);
+        const int*      pp = &_pedestals(i,0);
         for(unsigned j=0; j<fr.shape()[1]; j++)
           pc[j] = pf[j]-pp[j];
       }
@@ -137,9 +137,9 @@ void FrameHandler::_event    (Pds::TypeId id, const void* payload, const Pds::Cl
       ndarray<uint8_t,2> fc = make_ndarray<uint8_t>(fr.shape()[0],
                                                     fr.shape()[1]);
       for(unsigned i=0; i<fr.shape()[0]; i++) {
-        uint8_t*      pc = &fc[i][0];
-        const uint8_t* pf = &fr[i][0];
-        const int*     pp = &_pedestals[i][0];
+        uint8_t*       pc = &fc(i,0);
+        const uint8_t* pf = &fr(i,0);
+        const int*     pp = &_pedestals(i,0);
         for(unsigned j=0; j<fr.shape()[1]; j++)
           pc[j] = pf[j]-pp[j];
       }

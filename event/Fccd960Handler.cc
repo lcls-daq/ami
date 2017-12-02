@@ -168,17 +168,17 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
       for(unsigned i=0; i<e.shape()[0]; i++) {
         for(unsigned j=0; j<e.shape()[1]/asicCol; j++)
           for(unsigned k=0; k<2; k++) {
-            ndarray<uint32_t,1> s = make_ndarray<uint32_t>(&e[i][j*asicCol+k],asicCol/2);
+            ndarray<uint32_t,1> s = make_ndarray<uint32_t>(&e(i,j*asicCol+k),asicCol/2);
             s.strides(str);
             unsigned m=2*j+k;
             int fn = FrameCalib::median(s,
-                                        _cm_row[i][m][0],
-                                        _cm_row[i][m][1]);
+                                        _cm_row(i,m,0),
+                                        _cm_row(i,m,1));
             if (fn<0) {
               printf("Fcc960Handler common_mode2 skipping row %d col %d\n",
                      i,m);
-              _cm_row[i][m][0] = offset-32;
-              _cm_row[i][m][1] = offset+32;
+              _cm_row(i,m,0) = offset-32;
+              _cm_row(i,m,1) = offset+32;
               fn = 0;
             }
             else
@@ -205,13 +205,13 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
       const unsigned asicCol =  10;
       for(unsigned i=0; i<Rows/asicRow; i++)
         for(unsigned j=0; j<Columns/asicCol; j++) {
-          ndarray<uint32_t,2> s = make_ndarray<uint32_t>(&e[i*asicRow][j*asicCol],asicRow,asicCol);
+          ndarray<uint32_t,2> s = make_ndarray<uint32_t>(&e(i*asicRow,j*asicCol),asicRow,asicCol);
           s.strides(e.strides());
           int fn = FrameCalib::median(s,
-                                      _cm_channel[i][j][0],
-                                      _cm_channel[i][j][1])-offset;
+                                      _cm_channel(i,j,0),
+                                      _cm_channel(i,j,1))-offset;
           for(unsigned y=0; y<asicRow; y++) {
-            uint32_t* v = &s[y][0];
+            uint32_t* v = &s(y,0);
             for(unsigned x=0; x<asicCol; x++)
               v[x] -= fn;
           }
@@ -254,8 +254,8 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
     case 2:
       { unsigned* enp = _entry->contents();
         for(unsigned i=0; i<Rows; i+=2) {
-          const unsigned* pe =&e[i][0];
-          const unsigned* pe2=&e[i+1][0];
+          const unsigned* pe =&e(i,0);
+          const unsigned* pe2=&e(i+1,0);
           for(unsigned j=0; j<Columns; j+=2)
             *enp++ = pe[j+0]+pe[j+1]+pe2[j+0]+pe2[j+1];
         }
@@ -263,7 +263,7 @@ void Fccd960Handler::_event    (Pds::TypeId, const void* payload, const Pds::Clo
     default:
       for(unsigned i=0; i<Rows; i++)
         for(unsigned j=0; j<Columns; j++)
-          _entry->addcontent(e[i][j],i/ppbin,j/ppbin);
+          _entry->addcontent(e(i,j),i/ppbin,j/ppbin);
       break;
     }
 #ifdef DBUG

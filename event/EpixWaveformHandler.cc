@@ -168,7 +168,7 @@ void EpixWaveformHandler::_event    (Pds::TypeId, const void* payload, const Pds
   ndarray<const uint16_t,2> wfs = d.frame(_config);
   for (unsigned i=0;i<n;i++) {
     EntryWaveform* entry = _entry[i];
-    const uint16_t* data = &wfs[i][_first_sample];
+    const uint16_t* data = &wfs(i,_first_sample);
     double g = i<_gain.shape()[0] ? _gain[i] : 1;
     if (_filter.shape()[0]) {
       for (unsigned j=0;j<ns; j++, data++) {

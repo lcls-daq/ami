@@ -235,7 +235,7 @@ bool EpixTemp::accept ()
       if (_epix_data[det]) {
         ndarray<const uint32_t,2> env = _epix_data[det]->environmentalRows(_epix_config[det]->config());
         for (uint chan=0; chan<NUM_CHAN; chan++) {
-          _epix_temp_plots[det][chan]->addcontent(env[env.shape()[0]-1][chan]*0.01);
+          _epix_temp_plots[det][chan]->addcontent(env(env.shape()[0]-1,chan)*0.01);
           _epix_temp_plots[det][chan]->valid(_clk);
         }
       }

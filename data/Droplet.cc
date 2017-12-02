@@ -240,9 +240,9 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
   DropletBuilder builder(v, no_mask, offset, cfg, xcal, ycal);
 
   for(unsigned iy=1; iy<v.shape()[0]-1; iy++) {
-    const unsigned* uv = &v[iy-1][1];
-    const unsigned* cv = &v[iy+0][1];
-    const unsigned* dv = &v[iy+1][1];
+    const unsigned* uv = &v(iy-1,1);
+    const unsigned* cv = &v(iy+0,1);
+    const unsigned* dv = &v(iy+1,1);
     for(unsigned ix=1; ix<v.shape()[1]-1; ix++, uv++, cv++, dv++) {
       unsigned z = cv[0];
 
@@ -306,10 +306,10 @@ PLIST find_droplets(const ndarray<const unsigned,2>& v,
     printf("Row %d masked\n",iy);
 #endif
 
-    const unsigned* uv = &v[iy-1][1];
-    const unsigned* cv = &v[iy+0][1];
-    const unsigned* dv = &v[iy+1][1];
-    const unsigned* m = &mask[iy][0];
+    const unsigned* uv = &v(iy-1,1);
+    const unsigned* cv = &v(iy+0,1);
+    const unsigned* dv = &v(iy+1,1);
+    const unsigned* m = &mask(iy,0);
     for(unsigned ix=1; ix<v.shape()[1]-1; ix++, uv++, cv++, dv++) {
 
       if (0 == (m[ix>>5] & (1<<(ix&0x1f))))
@@ -398,10 +398,10 @@ bool DropletBuilder::process(const unsigned* seed)
     unsigned b = _x>>5;
     for(int y=y0; y<y1; y++,iy++)
       if (_x+32 > int(_data.shape()[1]))
-	_map[iy] = ~((_mask[y][b]>>(_x&0x1f)));
+	_map[iy] = ~((_mask(y,b)>>(_x&0x1f)));
       else
-	_map[iy] = ~((_mask[y][b]>>(_x&0x1f)) | 
-		     (_mask[y][b+1]<<(32-(_x&0x1f))));
+	_map[iy] = ~((_mask(y,b)>>(_x&0x1f)) |
+		     (_mask(y,b+1)<<(32-(_x&0x1f))));
   }
 
   _add(seed);

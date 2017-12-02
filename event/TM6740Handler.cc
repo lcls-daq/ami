@@ -39,8 +39,8 @@ void _rfill(const Pds::Camera::FrameV1& f,
     fc = make_ndarray<T>(p.shape()[0],
                          p.shape()[1]);
     for(unsigned i=0; i<fc.shape()[0]; i++) {
-      T*         pc = &fc[i][0];
-      const int* pp = &p[i][0];
+      T*         pc = &fc(i,0);
+      const int* pp = &p(i,0);
       for(unsigned j=0; j<fc.shape()[1]; j++)
         pc[j] = *d++ - pp[j];
     }
