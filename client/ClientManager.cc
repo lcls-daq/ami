@@ -367,7 +367,7 @@ void ClientManager::handle(int s)
 #ifdef DBUG
   printf("CM handle skt %d  connectid %d\n",s, _connect_id);
 #endif
-  *new ClientSocket(*this,s);
+  new ClientSocket(*this,s);
   _state = Connected;
 }
 
