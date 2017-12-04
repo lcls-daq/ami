@@ -8,6 +8,7 @@
 #include "ami/qt/FccdClient.hh"
 #include "ami/qt/FrameClient.hh"
 #include "ami/qt/PnccdClient.hh"
+#include "ami/qt/JungfrauClient.hh"
 #include "ami/qt/EnvClient.hh"
 #include "ami/qt/LineFitClient.hh"
 #include "ami/qt/TdcClient.hh"
@@ -441,7 +442,6 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
       break;
     case Pds::DetInfo::Andor    :
     case Pds::DetInfo::DualAndor:
-    case Pds::DetInfo::Jungfrau :
     case Pds::DetInfo::Zyla     :
     case Pds::DetInfo::Opal1000 :
     case Pds::DetInfo::Opal2000 :
@@ -455,6 +455,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::ControlsCamera :
       client = new Ami::Qt::FrameClient   (this, info, channel, name);
       break;
+    case Pds::DetInfo::Jungfrau : client = new Ami::Qt::JungfrauClient(this, info, channel, name); break;
     case Pds::DetInfo::Fccd     : client = new Ami::Qt::FccdClient    (this, info, channel, name); break;
     case Pds::DetInfo::Cspad    :
     case Pds::DetInfo::Cspad2x2 : client = new Ami::Qt::CspadClient   (this, info, channel, name); break;

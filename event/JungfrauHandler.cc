@@ -204,18 +204,24 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
         for(unsigned k=0; k<columns; k++) {
           unsigned gain_val = (d(i,j,k) & gain_bits) >> 14;
           // The gain index to use is the highest of the set bits
-          //unsigned gain_idx = 0;
-          //for (unsigned n = 0; n<num_gains; n++) {
-          //  if ((1<<n) & gain_val) gain_idx = n;
-          //}
-          unsigned gain_idx = gain_val;
-          if (gain_val>2) gain_idx = 2;
+          unsigned gain_idx = 0;
+          for (unsigned n = 0; n<num_gains-1; n++) {
+            if ((1<<n) & gain_val) gain_idx = n+1;
+          }
           unsigned pixel_val = d(i,j,k) & data_bits;
           unsigned row_bin = (rows * i) + (rows - 1 - j);
+          double calib_val = 0.0;
           if (!(desc.options()&FrameCalib::option_no_pedestal())) {
-            pixel_val = (unsigned) ((pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k))/_gain_cor(gain_idx,i,j,k));
+            if (desc.options()&FrameCalib::option_correct_gain()) {
+              calib_val = (pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k))/_gain_cor(gain_idx,i,j,k) + offset;
+            } else {
+              calib_val = pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k) + offset;
+            }
+          } else {
+            calib_val = (double) (pixel_val + offset);
           }
-          _entry->addcontent(pixel_val + offset, k/ppbin, row_bin/ppbin);
+          if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
+          _entry->addcontent((unsigned) calib_val, k/ppbin, row_bin/ppbin);
         }
       }
     }
@@ -231,7 +237,7 @@ void JungfrauHandler::_damaged() { if (_entry) _entry->invalid(); }
 void JungfrauHandler::_load_pedestals(unsigned modules, unsigned rows, unsigned columns)
 {
   const DescImage& d = _entry->desc();
-  _offset = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pixel_offset");
-  _pedestal = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pedestals");
-  _gain_cor = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, "None", "pixel_gain");
+  _offset = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, "None", "pixel_offset");
+  _pedestal = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, "None", "pedestals");
+  _gain_cor = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 1.0, "None", "pixel_gain");
 }
