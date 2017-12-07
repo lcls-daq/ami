@@ -18,7 +18,7 @@ JungfrauClient::JungfrauClient(QWidget* w,const Pds::DetInfo& i, unsigned u, con
   ImageClient(w, i, u, n),
   _reloadPedestals(false)
 {
-  addWidget(_npBox = new QCheckBox("Retain\nCorrections"));
+  addWidget(_npBox = new QCheckBox("Disable\nCorrections"));
 
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
