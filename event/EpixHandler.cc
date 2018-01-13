@@ -38,9 +38,9 @@ static std::list<Pds::TypeId::Type> config_type_list()
 static const Pds::TypeId Data_Type   = Pds::TypeId(Pds::TypeId::Id_EpixElement,1);
 
 static const unsigned _channel_map[] = { 11, 10, 9,  8,
-					 7,  6,  5,  4,
-					 12, 13, 14, 15,
-					 0,  1,  2,  3 };
+                                         7,  6,  5,  4,
+                                         12, 13, 14, 15,
+                                         0,  1,  2,  3 };
 
 //                        2|1
 //  ASICs are numbered    -+-
@@ -51,11 +51,11 @@ typedef struct AsicLocation AsicLocation_s;
 static const AsicLocation_s _asicLocation[] = { {1,1}, {0,1}, {0,0}, {1,0} };
 
 static void _load_one_asic(ndarray<unsigned,2>& pb, 
-			   unsigned ny,
-			   ndarray<unsigned,2>& pedestals);
+                           unsigned ny,
+                           ndarray<unsigned,2>& pedestals);
 static void _load_one_asic(ndarray<double,2>& pb, 
-			   unsigned ny,
-			   ndarray<double,2>& pedestals);
+                           unsigned ny,
+                           ndarray<double,2>& pedestals);
 static double _tps_temp(const uint16_t q);
 
 static CspadTemp           _therm(RDIV);
@@ -85,9 +85,9 @@ namespace EpixAmi {
     virtual void     addFeatures(const char*   name)=0;
     virtual void     rename     (const char*   name)=0;
     virtual void     fill       (FeatureCache& cache,
-				 ndarray<const uint16_t,2> env) = 0;
+                                 ndarray<const uint16_t,2> env) = 0;
     virtual void     fill       (FeatureCache& cache,
-				 ndarray<const uint32_t,2> env) = 0;
+                                 ndarray<const uint32_t,2> env) = 0;
   };
 
   class EnvData1 : public EnvData {
@@ -152,37 +152,37 @@ namespace EpixAmi {
     unsigned numberOfRowsReadPerAsic() const { return _rowsReadPerAsic; }
   public:
     void event(const void* payload, 
-	       ndarray<const uint16_t,2>& frame, 
-	       ndarray<const uint16_t,1>& temps,
-	       ndarray<const uint16_t,2>& cal,
+               ndarray<const uint16_t,2>& frame,
+               ndarray<const uint16_t,1>& temps,
+               ndarray<const uint16_t,2>& cal,
                FeatureCache&              cache) {
-#define PARSE_CONFIG(typ,dtyp,etyp)  					\
-      const dtyp& f = *reinterpret_cast<const dtyp*>(payload);		\
-      const typ& c = *reinterpret_cast<const typ*>(_buffer);		\
+#define PARSE_CONFIG(typ,dtyp,etyp)                                     \
+      const dtyp& f = *reinterpret_cast<const dtyp*>(payload);          \
+      const typ& c = *reinterpret_cast<const typ*>(_buffer);            \
       frame = f.frame(c);                                               \
       temps = f.temperatures(c);                                        \
       _envData->fill(cache,f.etyp(c));
 
       switch(_id.id()) {
       case Pds::TypeId::Id_EpixConfig   : 
-	{ PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, excludedRows) }
+        { PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, excludedRows) }
         break;
       case Pds::TypeId::Id_Epix10kConfig: 
-	{ PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, excludedRows); }
+        { PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, excludedRows); }
         break;
       case Pds::TypeId::Id_Epix100aConfig: 
-	switch (_id.version()) {
-	case 1:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, environmentalRows);
-	    cal = f.calibrationRows(c); } break;
-	case 2:
-	  { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV3, environmentalRows);
-	    cal = f.calibrationRows(c); } break;
-	default:
-	  break;
-	}
-	default:
-	break;
+        switch (_id.version()) {
+        case 1:
+          { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, environmentalRows);
+            cal = f.calibrationRows(c); } break;
+        case 2:
+          { PARSE_CONFIG(Pds::Epix::Config100aV2,Pds::Epix::ElementV3, environmentalRows);
+            cal = f.calibrationRows(c); } break;
+        default:
+          break;
+        }
+      default:
+        break;
       }
 #undef PARSE_CONFIG
     }
@@ -231,16 +231,16 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
     payload = reinterpret_cast<const void*>(c.payload().data()+c.stream()[0].config_offset());
   }
 
-#define PARSE_CONFIG(typ) 						\
-  const typ& c = *reinterpret_cast<const typ*>(payload);		\
-  _buffer = new char[c._sizeof()];					\
-  memcpy(_buffer, &c, c._sizeof());					\
-  _nchip_columns=c.numberOfAsicsPerRow();				\
-  _nchip_rows   =c.numberOfAsicsPerColumn();				\
-  _columns = c.numberOfColumns();					\
-  _colsPerAsic = c.numberOfPixelsPerAsicRow();				\
-  _rows = c.numberOfRows();						\
-  _rowsPerAsic = c.numberOfRowsPerAsic();				\
+#define PARSE_CONFIG(typ)                                               \
+  const typ& c = *reinterpret_cast<const typ*>(payload);                \
+  _buffer = new char[c._sizeof()];                                      \
+  memcpy(_buffer, &c, c._sizeof());                                     \
+  _nchip_columns=c.numberOfAsicsPerRow();                               \
+  _nchip_rows   =c.numberOfAsicsPerColumn();                            \
+  _columns = c.numberOfColumns();                                       \
+  _colsPerAsic = c.numberOfPixelsPerAsicRow();                          \
+  _rows = c.numberOfRows();                                             \
+  _rowsPerAsic = c.numberOfRowsPerAsic();                               \
   _aMask  = c.asicMask() ? c.asicMask() : 0xf;                          \
   _nAsics = c.numberOfAsics();                                          \
   _envData = c.version() < 0xea020000 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
@@ -258,23 +258,23 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
     switch(_id.version()) {
     case 1:
       { PARSE_CONFIG(Pds::Epix::Config100aV1);
-	_rowsRead        = c.numberOfReadableRows();
-	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
-	_rowsCal         = c.numberOfCalibrationRows();
-	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
+        _rowsRead        = c.numberOfReadableRows();
+        _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
+        _rowsCal         = c.numberOfCalibrationRows();
+        _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
     case 2:
       { PARSE_CONFIG(Pds::Epix::Config100aV2);
-	_rowsRead        = c.numberOfReadableRows();
-	_rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
-	_rowsCal         = c.numberOfCalibrationRows();
-	_rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
+        _rowsRead        = c.numberOfReadableRows();
+        _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
+        _rowsCal         = c.numberOfCalibrationRows();
+        _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
     default:
       printf("Epix100aConfig version %d unknown\n",_id.version());
       break;
     }
   default:
     printf("EpixHandler::ConfigCache unrecognized configuration type %08x\n",
-	   _id.value());
+           _id.value());
     return;
   }
 #undef PARSE_CONFIG
@@ -296,8 +296,8 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   _rowsCalPerAsic (o._rowsCalPerAsic)
 {
   unsigned sz=0;
-#define PARSE_CONFIG(typ) 						\
-  const typ& c = *reinterpret_cast<const typ*>(o._buffer);		\
+#define PARSE_CONFIG(typ)                                     \
+  const typ& c = *reinterpret_cast<const typ*>(o._buffer);    \
   sz = c._sizeof();
 
   switch(_id.id()) {
@@ -335,7 +335,7 @@ void EpixAmi::ConfigCache::dump() const
 
 static double frameNoise(ndarray<const uint32_t,2> data,
                          ndarray<const uint32_t,2> status,
-			 unsigned off)
+                         unsigned off)
 {
   const int fnPixelMin = -100 + off;
   const int fnPixelMax =  100 + off;
@@ -399,7 +399,7 @@ static double frameNoise(ndarray<const uint32_t,2> data,
       unsigned s2 = 0;
       for(unsigned j=i-10; j<i+fnPeakBins; j++) {
         s0 += hist[j];
-	s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
+        s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
       }
 //      const double allowedPedestalWidthSquared = 2.5*2.5;
       //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
@@ -422,7 +422,7 @@ static double frameNoise(ndarray<const uint32_t,2> data,
 
 static int frameNoise(ndarray<const uint32_t,1> data,
                       ndarray<const uint32_t,1> status,
-		      unsigned off)
+                      unsigned off)
 {
   unsigned lo = off-100;
   unsigned hi = off+100;
@@ -486,7 +486,7 @@ void EpixHandler::rename(const char* s)
       for(unsigned a=0; a<16; a++) {
         std::ostringstream ostr;
         ostr << s << ":CommonMode" << _channel_map[a];
-	_rename_cache(_feature[index++],ostr.str().c_str());
+        _rename_cache(_feature[index++],ostr.str().c_str());
       }
   }
 }
@@ -527,7 +527,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
 
   { int ppb = 1;
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, _config_cache->numberOfRows(), ppb, ppb);
+                   columns, _config_cache->numberOfRows(), ppb, ppb);
 
     _pentry = new EntryImage(desc);
     _pentry->invalid();
@@ -547,7 +547,7 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     int ppb = image_ppbin  (columns,rows);
     int dpb = display_ppbin(columns,rows);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb, dpb, dpb);
+                   columns, rows, ppb, ppb, dpb, dpb);
     
     _desc = desc;
     float x0 = 0;
@@ -555,9 +555,9 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     float x1 = x0+colsPerAsic;
     float y1 = y0+rowsPerAsic;
     _desc.add_frame(desc.xbin(x0),desc.ybin(y0),
-		    desc.xbin(x1)-desc.xbin(x0),
-		    desc.ybin(y1)-desc.ybin(y0));
-    
+                    desc.xbin(x1)-desc.xbin(x0),
+                    desc.ybin(y1)-desc.ybin(y0));
+
     _entry = new EntryImage(desc);
     _entry->invalid();
   }
@@ -565,34 +565,34 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
     int ppb = image_ppbin(columns,rows);
     int dpb = display_ppbin(columns,rows);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb, dpb, dpb);
+                   columns, rows, ppb, ppb, dpb, dpb);
 
     _desc = desc;
     for(unsigned i=0; i<nchip_rows; i++)
       for(unsigned j=0; j<nchip_columns; j++) {
-	float x0 = j*(colsPerAsic);
-	float y0 = i*(rowsPerAsic);
-	float x1 = x0+colsPerAsic;
-	float y1 = y0+rowsPerAsic;
-	_desc.add_frame(desc.xbin(x0),desc.ybin(y0),
-			desc.xbin(x1)-desc.xbin(x0),
-			desc.ybin(y1)-desc.ybin(y0));
-	}
-    
+        float x0 = j*(colsPerAsic);
+        float y0 = i*(rowsPerAsic);
+        float x1 = x0+colsPerAsic;
+        float y1 = y0+rowsPerAsic;
+        _desc.add_frame(desc.xbin(x0),desc.ybin(y0),
+                        desc.xbin(x1)-desc.xbin(x0),
+                        desc.ybin(y1)-desc.ybin(y0));
+      }
+
     _entry = new EntryImage(desc);
     _entry->invalid();
   }
-  
+
   if (_config_cache->numberOfRowsCal()) {
     _ewf.resize(_config_cache->numberOfRowsCal());
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
     unsigned channelNumber=0;
     for(unsigned i=0; i<_config_cache->numberOfRowsCal(); i++) {
       DescWaveform desc(det, channelNumber,
-			ChannelID::name(det,channelNumber),
-			"Column","Value",
-			_config_cache->numberOfColumns(), 
-			0., float(_config_cache->numberOfColumns()));
+                        ChannelID::name(det,channelNumber),
+                        "Column","Value",
+                        _config_cache->numberOfColumns(), 
+                        0., float(_config_cache->numberOfColumns()));
       _ewf[channelNumber++] = new EntryWaveform(desc);
     }      
     Channel ch((1<<channelNumber)-1,Channel::BitMask);
@@ -682,55 +682,55 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     if ((aMask&(aMask-1))==0) {
       unsigned asic=0;
       while((aMask&(1<<asic))==0)
-	asic++;
+        asic++;
       unsigned i = _asicLocation[asic].row;
       for(unsigned j=0; j<_config_cache->numberOfRowsReadPerAsic(); j++) {
-	unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
-	unsigned m = _asicLocation[asic].col*_config_cache->numberOfColumnsPerAsic();
-	const uint16_t* d = & a(r,m);
-	const unsigned* p_hi = &pa   (j,0);
-	const unsigned* p_lo = &pa_lo(j,0);
+        unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
+        unsigned m = _asicLocation[asic].col*_config_cache->numberOfColumnsPerAsic();
+        const uint16_t* d = & a(r,m);
+        const unsigned* p_hi = &pa   (j,0);
+        const unsigned* p_lo = &pa_lo(j,0);
         const unsigned* s    = &sta  (r,m);
-	const SubFrame& fr = _desc.frame(0);
-	for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
+        const SubFrame& fr = _desc.frame(0);
+        for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
           unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
                                   unsigned(d[k]&0x3fff) + p_lo[k] :
                                   unsigned(d[k]&0x3fff) + p_hi[k]) :
             offset;
           _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
-	}
+        }
       }
     }
     else {
       for(unsigned i=0; i<_config_cache->numberOfAsicsPerColumn(); i++)
-	for(unsigned j=0; j<_config_cache->numberOfRowsReadPerAsic(); j++) {
-	  unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
-	  for(unsigned m=0; m<_config_cache->numberOfAsicsPerRow(); m++) {
-	    unsigned fn = i*_config_cache->numberOfAsicsPerRow()+m;
-	    if (aMask & 1<<_asic_map[fn]) {
-	      unsigned q = m*_config_cache->numberOfColumnsPerAsic();
-	      const uint16_t* d    = &a    (r,q);
-	      const unsigned* p_hi = &pa   (r,q);
-	      const unsigned* p_lo = &pa_lo(r,q);
+        for(unsigned j=0; j<_config_cache->numberOfRowsReadPerAsic(); j++) {
+          unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
+          for(unsigned m=0; m<_config_cache->numberOfAsicsPerRow(); m++) {
+            unsigned fn = i*_config_cache->numberOfAsicsPerRow()+m;
+            if (aMask & 1<<_asic_map[fn]) {
+              unsigned q = m*_config_cache->numberOfColumnsPerAsic();
+              const uint16_t* d    = &a    (r,q);
+              const unsigned* p_hi = &pa   (r,q);
+              const unsigned* p_lo = &pa_lo(r,q);
               const unsigned* s    = &sta  (r,q);
-	      const SubFrame& fr = _desc.frame(fn);
-	      for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
+              const SubFrame& fr = _desc.frame(fn);
+              for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
                 unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
                                         unsigned(d[k]&0x3fff) + p_lo[k] :
                                         unsigned(d[k]&0x3fff) + p_hi[k]) :
                   offset;
                 _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
-	      }
-	    }
-	  }
-	}
+              }
+            }
+          }
+        }
     }
 
     for(unsigned i=0; i<cal.shape()[0]; i++) {
       EntryWaveform* entry = _ewf[i];
       const uint16_t* v = &cal(i,0);
       for(unsigned j=0; j<cal.shape()[1]; j++)
-	entry->content(double(*v++),j);
+        entry->content(double(*v++),j);
       entry->info(1,EntryWaveform::Normalization);
       entry->valid(t);
     }
@@ -773,7 +773,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
               v[x] -= fn;
           }
         }
-      }	
+      }
     }
 
     if (d.options()&FrameCalib::option_correct_common_mode()) {
@@ -781,24 +781,24 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-	unsigned shape[2];
-	shape[0] = e.shape()[0];
-	shape[1] = e.shape()[1]/4;
-	for(unsigned m=0; m<4; m++) {
-	  ndarray<uint32_t,2> s(&e(0,m*shape[1]),shape);
-	  s.strides(e.strides());
+        unsigned shape[2];
+        shape[0] = e.shape()[0];
+        shape[1] = e.shape()[1]/4;
+        for(unsigned m=0; m<4; m++) {
+          ndarray<uint32_t,2> s(&e(0,m*shape[1]),shape);
+          s.strides(e.strides());
           ndarray<uint32_t,2> t(_status.begin()+(s.begin()-_entry->content().begin()),shape);
           t.strides(_status.strides());
-	  int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-	  for(unsigned y=0; y<shape[0]; y++) {
-	    uint32_t* v = &s(y,0);
-	    for(unsigned x=0; x<shape[1]; x++)
-	      v[x] -= fn;
-	  }
-	  if (Ami::EventHandler::post_diagnostics())
-	    _cache.cache(_feature[4*k+m+index],double(fn));
-	}
-      }	
+          int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          for(unsigned y=0; y<shape[0]; y++) {
+            uint32_t* v = &s(y,0);
+            for(unsigned x=0; x<shape[1]; x++)
+              v[x] -= fn;
+          }
+          if (Ami::EventHandler::post_diagnostics())
+            _cache.cache(_feature[4*k+m+index],double(fn));
+        }
+      }
     }
 
     if (d.options()&FrameCalib::option_correct_common_mode3()) {
@@ -806,18 +806,18 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
           continue;
         ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-	for(unsigned x=0; x<e.shape()[1]; x++) {
-	  ndarray<uint32_t,1> s(&e  (0,x),e.shape());
-	  s.strides(e.strides());
+        for(unsigned x=0; x<e.shape()[1]; x++) {
+          ndarray<uint32_t,1> s(&e  (0,x),e.shape());
+          s.strides(e.strides());
           ndarray<const uint32_t,1> t(&sta(0,x),e.shape());
-	  t.strides(e.strides());
-	  int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-	  //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
-	  //  _cache.cache(_feature[(y%16)+index],double(fn));
-	  for(unsigned y=0; y<e.shape()[0]; y++)
-	    s[y] -= fn;
+          t.strides(e.strides());
+          int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
+          //  _cache.cache(_feature[(y%16)+index],double(fn));
+          for(unsigned y=0; y<e.shape()[0]; y++)
+            s[y] -= fn;
         }
-      }	
+      }
     }
 
     //
@@ -835,21 +835,21 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     {
       for(unsigned k=0; k<_desc.nframes(); k++) {
         if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
-	  continue;
-	ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-	unsigned r = (k/_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfRowsReadPerAsic();
-	unsigned m = (k%_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfColumnsPerAsic();
-	for(unsigned y=0; y<e.shape()[0]; y++,r++) {
-	  uint32_t*        v = &e    (y,0);
-	  const uint16_t*  d = &a    (r,m);
-	  const double* g_hi = &gn   (r,m);
-	  const double* g_lo = &gn_lo(r,m);
-	  for(unsigned x=0; x<e.shape()[1]; x++) {
-	    double q = (double(v[x]) - doffset) * ( (d[x]&0x4000) ? g_lo[x]:g_hi[x] );
-	    v[x] = unsigned(q+offset);
-	  }
-	}
-      }	
+          continue;
+        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
+        unsigned r = (k/_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfRowsReadPerAsic();
+        unsigned m = (k%_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfColumnsPerAsic();
+        for(unsigned y=0; y<e.shape()[0]; y++,r++) {
+          uint32_t*        v = &e    (y,0);
+          const uint16_t*  d = &a    (r,m);
+          const double* g_hi = &gn   (r,m);
+          const double* g_lo = &gn_lo(r,m);
+          for(unsigned x=0; x<e.shape()[1]; x++) {
+            double q = (double(v[x]) - doffset) * ( (d[x]&0x4000) ? g_lo[x]:g_hi[x] );
+            v[x] = unsigned(q+offset);
+          }
+        }
+      }
     }
 
     _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
@@ -881,7 +881,7 @@ void EpixHandler::_load_pedestals()
                               "sta", "pixel_status", true, &loffl);
   if (f) {
     ndarray<unsigned,2>  pb = FrameCalib::load_array(f);
-    if (loffl && pb.shape()[0]) {
+    if (loffl && (pb.shape()[0] == rows) && (pb.shape()[1] == cols)) {
       if ((aMask&(aMask-1))==0) {
         switch(aMask) {
         case 1: {
@@ -911,6 +911,15 @@ void EpixHandler::_load_pedestals()
         for(unsigned* a=_status.begin(), *b=pb.begin(); a!=_status.end(); a++,b++)
           *a = *b;
       }
+    }
+    else {
+      if (loffl)
+        printf("Discarding offline pixel status file with shape (%u, %u) that differs from expected (%u, %u)!\n",
+               pb.shape()[0],
+               pb.shape()[1],
+               rows,
+               cols);
+      for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0);
     }
     fclose(f);
   }
@@ -943,7 +952,7 @@ void EpixHandler::_load_pedestals()
       d.set_mask(mask);
     }
     else
-      for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0) ;
+      for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0);
   }
 
   f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
@@ -951,7 +960,7 @@ void EpixHandler::_load_pedestals()
   printf("f %p  loffl %c\n",f, loffl ? 't':'f');
   if (f) {
     ndarray<double,2>  pb = FrameCalib::load_darray(f);
-    if (/*loffl && */pb.shape()[0]) {
+    if (/*loffl && */(pb.shape()[0] == rows) && (pb.shape()[1] == cols)) {
       printf("aMask %x  rows %u cols %u  shape %u %u\n",
              aMask, rows, cols, pb.shape()[0], pb.shape()[1]);
       if ((aMask&(aMask-1))==0 && pb.shape()[0]) {
@@ -986,6 +995,11 @@ void EpixHandler::_load_pedestals()
       }
     }
     else {
+      printf("Discarding pedestal file with shape (%u, %u) that differs from expected (%u, %u)!\n",
+              pb.shape()[0],
+              pb.shape()[1],
+              rows,
+              cols);
       for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); a++)
         *a = offset;
     }
@@ -1060,13 +1074,13 @@ void EpixHandler::_load_gains()
 }
 
 void _load_one_asic(ndarray<unsigned,2>& pb, 
-		    unsigned ny,
-		    ndarray<unsigned,2>& pedestals)
+                    unsigned ny,
+                    ndarray<unsigned,2>& pedestals)
 {
   printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
-	 pb.shape()[0],pb.shape()[1],
-	 pedestals.shape()[0],pedestals.shape()[1],
-	 ny);
+         pb.shape()[0],pb.shape()[1],
+         pedestals.shape()[0],pedestals.shape()[1],
+         ny);
 
   unsigned nskip = (ny-pb.shape()[0])/2;
   unsigned nx = pb.shape()[1];
@@ -1076,23 +1090,23 @@ void _load_one_asic(ndarray<unsigned,2>& pb,
     unsigned* b0 = &pedestals(nskip+i   ,0);
     unsigned* b1 = &pedestals(nskip+i+ny,0);
     for(unsigned j=0; j<pb.shape()[1]; j++) {
-	unsigned v = a[j];
-	b0[j   ] = v;
-	b0[j+nx] = v;
-	b1[j   ] = v;
-	b1[j+nx] = v;
+      unsigned v = a[j];
+      b0[j   ] = v;
+      b0[j+nx] = v;
+      b1[j   ] = v;
+      b1[j+nx] = v;
     }
   }
 }
 
 void _load_one_asic(ndarray<double,2>& pb, 
-		    unsigned ny,
-		    ndarray<double,2>& pedestals)
+                    unsigned ny,
+                    ndarray<double,2>& pedestals)
 {
   printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
-	 pb.shape()[0],pb.shape()[1],
-	 pedestals.shape()[0],pedestals.shape()[1],
-	 ny);
+         pb.shape()[0],pb.shape()[1],
+         pedestals.shape()[0],pedestals.shape()[1],
+         ny);
 
   unsigned nskip = (ny-pb.shape()[0])/2;
   unsigned nx = pb.shape()[1];
@@ -1101,11 +1115,11 @@ void _load_one_asic(ndarray<double,2>& pb,
     double* b0 = &pedestals(nskip+i   ,0);
     double* b1 = &pedestals(nskip+i+ny,0);
     for(unsigned j=0; j<pb.shape()[1]; j++) {
-	double v = a[j];
-	b0[j   ] = v;
-	b0[j+nx] = v;
-	b1[j   ] = v;
-	b1[j+nx] = v;
+      double v = a[j];
+      b0[j   ] = v;
+      b0[j+nx] = v;
+      b1[j   ] = v;
+      b1[j+nx] = v;
     }
   }
 }
