@@ -476,7 +476,7 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     a = load(d,f);
     fclose(f);
@@ -552,7 +552,7 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
   sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
-  FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
+  FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     CalibIO fio(*f);
 
