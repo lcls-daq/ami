@@ -191,6 +191,12 @@ static void _fill_image(const ndarray<const T,2>& a,
   }
 }
 
+void EntryImage::content(const ndarray<const uint32_t,2>& a)
+{ _fill_image<uint32_t>(a,*this); }
+
+void EntryImage::content(const ndarray<const int32_t,2>& a)
+{ _fill_image<int32_t>(a,*this); }
+
 void EntryImage::content(const ndarray<const uint16_t,2>& a)
 { _fill_image<uint16_t>(a,*this); }
 
