@@ -30,6 +30,7 @@ static std::list<Pds::TypeId::Type> config_type_list()
   std::list<Pds::TypeId::Type> types;
   types.push_back(Pds::TypeId::Id_EpixConfig);
   types.push_back(Pds::TypeId::Id_Epix10kConfig);
+  types.push_back(Pds::TypeId::Id_Epix10kaConfig);
   types.push_back(Pds::TypeId::Id_Epix100aConfig);
   types.push_back(Pds::TypeId::Id_GenericPgpConfig);
   return types;
@@ -170,6 +171,10 @@ namespace EpixAmi {
       case Pds::TypeId::Id_Epix10kConfig: 
         { PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, excludedRows); }
         break;
+      case Pds::TypeId::Id_Epix10kaConfig: 
+        { PARSE_CONFIG(Pds::Epix::Config10kaV1 ,Pds::Epix::ElementV3, environmentalRows); 
+          cal = f.calibrationRows(c); }
+        break;
       case Pds::TypeId::Id_Epix100aConfig: 
         switch (_id.version()) {
         case 1:
@@ -243,7 +248,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   _rowsPerAsic = c.numberOfRowsPerAsic();                               \
   _aMask  = c.asicMask() ? c.asicMask() : 0xf;                          \
   _nAsics = c.numberOfAsics();                                          \
-  _envData = c.version() < 0xea020000 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
+  _envData = ((c.version()>>16)&0xf) < 2 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
 
   switch(_id.id()) {
   case Pds::TypeId::Id_EpixConfig   : 
@@ -254,6 +259,12 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
+  case Pds::TypeId::Id_Epix10kaConfig:
+    { PARSE_CONFIG(Pds::Epix::Config10kaV1);
+      _rowsRead        = _rows;
+      _rowsReadPerAsic = _rows/_nchip_rows;
+      _rowsCal         = c.numberOfCalibrationRows();
+      _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
   case Pds::TypeId::Id_Epix100aConfig: 
     switch(_id.version()) {
     case 1:
@@ -305,6 +316,8 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
     { PARSE_CONFIG(Pds::Epix::ConfigV1) } break;
   case Pds::TypeId::Id_Epix10kConfig: 
     { PARSE_CONFIG(Pds::Epix::Config10KV1) } break;
+  case Pds::TypeId::Id_Epix10kaConfig: 
+    { PARSE_CONFIG(Pds::Epix::Config10kaV1) } break;
   case Pds::TypeId::Id_Epix100aConfig: 
     { PARSE_CONFIG(Pds::Epix::Config100aV1) } break;
   default: break;

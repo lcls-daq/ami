@@ -75,10 +75,13 @@ void Generic1DHandler::_configure(Pds::TypeId, const void* payload, const Pds::C
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
 
   for(unsigned k=0; k<_nentries; k++) {
-    //sprintf(s, "GENERIC1D %u", k);
-    DescWaveform desc(det, k, s, "Samples","ADU", _config->Length()[k], double(_config->Offset()[k])*(_config->Period()[k]), (_config->Length()[k])*(_config->Period()[k]));
+    double doff = double(c.Offset()[k]);
+    double dlen = double(c.Length()[k]);
+    double dtau = double(c.Period()[k]);
+    float xlo = doff*dtau;
+    float xhi = (dlen+doff)*dtau;
+    DescWaveform desc(det, k, s, "Samples","ADU", _config->Length()[k], xlo, xhi);
     _entry[k] = new EntryWaveform(desc);
-    //printf("Config.Length %d %g\n", _config->Length()[k], _config->Period()[k]); 
   }
 
 
