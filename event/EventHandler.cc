@@ -265,6 +265,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_IpmFexConfig:     h = new IpmFexHandler   (info,cache); break;
   case Pds::TypeId::Id_GenericPgpConfig:
   case Pds::TypeId::Id_Epix10kConfig:
+  case Pds::TypeId::Id_Epix10kaConfig:
   case Pds::TypeId::Id_Epix100aConfig:
   case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
   case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
