@@ -41,6 +41,24 @@ namespace Ami {
     static int  get_line(char** p, size_t* n, FILE* f);
     static void skip_header(FILE* f);
   };
+
+  class CalibIO {
+  public:
+    CalibIO(FILE& f);
+    ~CalibIO();
+  public:
+    bool next_line();
+    char*       line();
+    unsigned    getul();
+    double      getdb();
+    bool        get_failed() const;
+  private:
+    FILE&  _f;
+    size_t _sz;
+    char*  _linep;
+    char*  _pEnd;
+    char*  _ppEnd;
+  };
 };
 
 #endif

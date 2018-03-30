@@ -49,25 +49,6 @@ namespace Ami {
                                            const char* prefix,
                                            const char* offl_type);
 
-    static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
-                                              unsigned nm,
-                                              unsigned nz,
-                                              unsigned ny,
-                                              unsigned nx,
-                                              double def_val,
-                                              bool* used_default,
-                                              const char* onl_prefix,
-                                              const char* off_prefix);
-
-    static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
-                                              unsigned nm,
-                                              unsigned nz,
-                                              unsigned ny,
-                                              unsigned nx,
-                                              double used_default,
-                                              bool* def_applied,
-                                              FILE*);
-
     static ndarray<unsigned,2>   load_array (FILE*);
     static ndarray<double  ,2>   load_darray(FILE*);
     

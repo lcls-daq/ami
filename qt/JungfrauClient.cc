@@ -2,7 +2,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
 #include "ami/event/Calib.hh"
-#include "ami/event/FrameCalib.hh"
+#include "ami/event/JungfrauCalib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
@@ -19,8 +19,12 @@ JungfrauClient::JungfrauClient(QWidget* w,const Pds::DetInfo& i, unsigned u, con
   _reloadPedestals(false)
 {
   addWidget(_npBox = new QCheckBox("Disable\nCorrections"));
+  addWidget(_kevBox = new QCheckBox("Corrections in keV"));
+  // Set _kevBox state to checked by default
+  _kevBox->setChecked(true);
 
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
+  connect(_kevBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 JungfrauClient::~JungfrauClient() {}
@@ -28,7 +32,8 @@ JungfrauClient::~JungfrauClient() {}
 void JungfrauClient::save(char*& p) const
 {
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
-  XML_insert(p, "QCheckBox", "_npBox", QtPersistent::insert(p,_npBox->isChecked()) );
+  XML_insert(p, "QCheckBox", "_npBox",  QtPersistent::insert(p,_npBox->isChecked())  );
+  XML_insert(p, "QCheckBox", "_kevBox", QtPersistent::insert(p,_kevBox->isChecked()) );
 }
 
 void JungfrauClient::load(const char*& p)
@@ -38,6 +43,8 @@ void JungfrauClient::load(const char*& p)
       ImageClient::load(p);
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
+    else if (tag.name == "_kevBox")
+      _kevBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(JungfrauClient,tag);
 }
 
@@ -50,12 +57,15 @@ void JungfrauClient::_configure(char*& p,
 {
   unsigned o = 0;
   if (_npBox->isChecked()) {
-    o |= FrameCalib::option_no_pedestal();
+    o |= JungfrauCalib::option_no_pedestal();
   } else {
-    o |= FrameCalib::option_correct_gain();
+    o |= JungfrauCalib::option_correct_gain();
+  }
+  if (_kevBox->isChecked()) {
+    o |= JungfrauCalib::option_pixel_value_in_kev();
   }
   if (_reloadPedestals) {
-    o |= FrameCalib::option_reload_pedestal();
+    o |= JungfrauCalib::option_reload_pedestal();
     _reloadPedestals = false;
   }
   ConfigureRequest& req = *new(p) ConfigureRequest(_input,o);

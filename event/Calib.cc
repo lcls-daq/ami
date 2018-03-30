@@ -311,3 +311,50 @@ std::string offl_path(std::string basepath,
   }
   return std::string();
 }
+
+Ami::CalibIO::CalibIO(FILE& f) :
+  _f(f),
+  _sz(8*1024),
+  _linep((char*)malloc(_sz))
+{
+  memset(_linep, 0, _sz);
+}
+
+Ami::CalibIO::~CalibIO()
+{
+  free(_linep);
+}
+
+bool Ami::CalibIO::next_line()
+{
+  while(1) {
+    if (getline(&_linep, &_sz, &_f)<0)
+      return false;
+    if (_linep[0]=='#' || _linep[0]=='\n') continue;
+    _pEnd=_linep;
+    break;
+  }
+  return true;
+}
+
+char* Ami::CalibIO::line()
+{
+  return _linep;
+}
+
+unsigned Ami::CalibIO::getul()
+{
+  _ppEnd=_pEnd;
+  return strtoul(_pEnd,&_pEnd,0);
+}
+
+double Ami::CalibIO::getdb()
+{
+  _ppEnd=_pEnd;
+  return strtod (_pEnd,&_pEnd);
+}
+
+bool Ami::CalibIO::get_failed() const
+{
+  return _pEnd==_ppEnd;
+}

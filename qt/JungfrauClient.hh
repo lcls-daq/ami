@@ -27,6 +27,7 @@ namespace Ami {
     private:
       //  Specialization widgets
       QCheckBox* _npBox;
+      QCheckBox* _kevBox;
       bool _reloadPedestals;
     };
   };
