@@ -15,6 +15,7 @@ static const unsigned num_gains = 3;
 static const unsigned offset=1<<16;
 static const unsigned gain_bits = 3<<14;
 static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
+static const double quasi_adu_factor = 40.0;
 
 static inline unsigned num_modules(const Xtc* tc)
 {
@@ -236,8 +237,12 @@ void JungfrauHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void JungfrauHandler::_load_pedestals(unsigned modules, unsigned rows, unsigned columns)
 {
+  bool used_default_gain = false;
   const DescImage& d = _entry->desc();
-  _offset = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, "None", "pixel_offset");
-  _pedestal = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, "None", "pedestals");
-  _gain_cor = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 1.0, "None", "pixel_gain");
+  _offset = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pixel_offset");
+  _pedestal = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pedestals");
+  _gain_cor = FrameCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 1.0, &used_default_gain, "None", "pixel_gain");
+  if (!used_default_gain) {
+    for(double* val = _gain_cor.begin(); val!=_gain_cor.end(); val++) (*val) /= quasi_adu_factor;
+  }
 }

@@ -55,6 +55,7 @@ namespace Ami {
                                               unsigned ny,
                                               unsigned nx,
                                               double def_val,
+                                              bool* used_default,
                                               const char* onl_prefix,
                                               const char* off_prefix);
 
@@ -63,7 +64,8 @@ namespace Ami {
                                               unsigned nz,
                                               unsigned ny,
                                               unsigned nx,
-                                              double def_val,
+                                              double used_default,
+                                              bool* def_applied,
                                               FILE*);
 
     static ndarray<unsigned,2>   load_array (FILE*);

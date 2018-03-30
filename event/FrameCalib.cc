@@ -714,6 +714,7 @@ ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
                                                unsigned ny,
                                                unsigned nx,
                                                double def_val,
+                                               bool* used_default,
                                                const char* onl_prefix,
                                                const char* off_prefix)
 {
@@ -725,12 +726,15 @@ ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
 
   FILE* f = Calib::fopen(info, onl_prefix, off_prefix);
   if (f) {
-    a = load_multi_array(info,nm,nz,ny,nx,def_val,f);
+    a = load_multi_array(info,nm,nz,ny,nx,def_val,used_default,f);
     fclose(f);
   }
   else {
     a = make_ndarray<double>(nm,nz,ny,nx);
     for(double* val = a.begin(); val!=a.end(); *val++ = def_val) ;
+    if (used_default) {
+      *used_default = true;
+    }
   }
   return a;
 }
@@ -741,6 +745,7 @@ ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
                                                unsigned ny,
                                                unsigned nx,
                                                double def_val,
+                                               bool* used_default,
                                                FILE* f)
 {
   unsigned nlines = 0;
@@ -799,6 +804,10 @@ ndarray<double,4> FrameCalib::load_multi_array(const Pds::DetInfo& info,
     printf("FrameCalib[%s] retrieved calib data is not of the expected size - clearing data!\n",
            Pds::DetInfo::name(info));
     for(double* val = a.begin(); val!=a.end(); *val++ = def_val) ;
+  }
+
+  if (used_default) {
+    *used_default = !size_match;
   }
 
   return a;
