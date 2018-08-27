@@ -190,6 +190,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/AndorHandler.hh"
 #include "ami/event/DualAndorHandler.hh"
 #include "ami/event/PimaxHandler.hh"
+#include "ami/event/PixisHandler.hh"
 #include "ami/event/ImpWaveformHandler.hh"
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
@@ -245,6 +246,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_AndorConfig:      h = new AndorHandler      (info,cache); break;
   case Pds::TypeId::Id_Andor3dConfig:    h = new DualAndorHandler  (info,cache); break;
   case Pds::TypeId::Id_PimaxConfig:      h = new PimaxHandler      (info,cache); break;
+  case Pds::TypeId::Id_PixisConfig:      h = new PixisHandler      (info,cache); break;
   case Pds::TypeId::Id_ControlConfig:    h = new ControlXtcReader  (cache); break;
   case Pds::TypeId::Id_L3TConfig:        h = new L3THandler        (cache); break;
   case Pds::TypeId::Id_Epics:            

@@ -36,6 +36,8 @@
 #include "pds/config/IpimbDataType.hh"
 #include "pds/config/PimaxConfigType.hh"
 #include "pds/config/PimaxDataType.hh"
+#include "pds/config/PixisConfigType.hh"
+#include "pds/config/PixisDataType.hh"
 #include "pds/config/EpicsCamConfigType.hh"
 #include "pds/config/EpicsCamDataType.hh"
 
@@ -145,6 +147,7 @@ namespace Ami {
   typedef Ami::DataSpace <ZylaConfigType,     ZylaDataType>              zylaDataSpace;
   typedef Ami::DataSpace <JungfrauConfigType,    JungfrauDataType>       jungfrauDataSpace;
   typedef Ami::DataSpace <PimaxConfigType,    PimaxDataType>             pimaxDataSpace;
+  typedef Ami::DataSpace <PixisConfigType,    PixisDataType>             pixisDataSpace;
   typedef Ami::DataSpace <Pds::FCCD::FccdConfigV2, FrameType>            fccdDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataEBeamV3,  Pds::Bld::BldDataEBeamV3>     eBeamDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataPhaseCavity,     Pds::Bld::BldDataPhaseCavity>      phaseCavityDataSpace;

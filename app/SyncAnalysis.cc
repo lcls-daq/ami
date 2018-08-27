@@ -281,6 +281,18 @@ namespace Ami {
     return ((double)val);
   }
 
+  template<> double pixisDataSpace::processData()
+  {
+    PixisConfigType& pixisConfig = detConfig;
+    PixisDataType*   pixisFrame  = detDataPtr;
+    const uint16_t* dataArray = pixisFrame->data(pixisConfig).data();
+    unsigned totalPixels = pixisConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
+
   template<> double ipimbDataSpace::processData()
   {
     Pds::Ipimb::DataV2* ipimbData = detDataPtr;

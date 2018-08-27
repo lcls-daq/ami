@@ -100,6 +100,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_PimaxConfig:
       h = new pimaxDataSpace(detInfo, Pds::TypeId::Id_PimaxFrame,  Pds::TypeId::Id_PimaxConfig, payload, "Pimax");
       break;
+    case Pds::TypeId::Id_PixisConfig:
+      h = new pixisDataSpace(detInfo, Pds::TypeId::Id_PixisFrame,  Pds::TypeId::Id_PixisConfig, payload, "Pixis");
+      break;
     case Pds::TypeId::Id_pnCCDconfig:
       h = new pnccdDataSpace(detInfo, Pds::TypeId::Id_pnCCDframe,          Pds::TypeId::Id_pnCCDconfig,     payload, "PnCCD");
       break;
@@ -148,7 +151,7 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_PrincetonFrame)  || (type.id() == Pds::TypeId::Id_FliFrame)  ||
           (type.id() == Pds::TypeId::Id_AndorFrame)      || (type.id() == Pds::TypeId::Id_PimaxFrame)||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData) ||
-          (type.id() == Pds::TypeId::Id_Zylaframe)  ) {
+          (type.id() == Pds::TypeId::Id_Zylaframe)       || (type.id() == Pds::TypeId::Id_PixisFrame) ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
 #ifdef VERBOSE

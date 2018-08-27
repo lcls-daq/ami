@@ -50,6 +50,7 @@ namespace Ami {
     void processZylaData(SyncAnalysis* syncPtr);
     void processJungfrauData(SyncAnalysis* syncPtr);
     void processPimaxData(SyncAnalysis* syncPtr);
+    void processPixisData(SyncAnalysis* syncPtr);
     void processGasDetectorData(SyncAnalysis* syncPtr);
     void processEBeamData(SyncAnalysis* syncPtr);
     void processPhaseCavityData(SyncAnalysis* syncPtr);
