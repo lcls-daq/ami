@@ -206,6 +206,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/ZylaHandler.hh"
 #include "ami/event/SharedUsdUsbHandler.hh"
 #include "ami/event/EpicsCamHandler.hh"
+#include "ami/event/UxiHandler.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
 {
@@ -281,6 +282,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_JungfrauConfig:   h = new JungfrauHandler   (info,cache); break;
   case Pds::TypeId::Id_ZylaConfig:       h = new ZylaHandler       (info,cache); break;
   case Pds::TypeId::Id_ControlsCameraConfig: h = new EpicsCamHandler   (info); break;
+  case Pds::TypeId::Id_UxiConfig:        h = new UxiHandler        (info,cache); break;
   default: break;
   }
   return h;

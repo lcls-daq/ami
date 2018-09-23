@@ -124,6 +124,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_ControlsCameraConfig:
       h = new epicsCamDataSpace(detInfo, Pds::TypeId::Id_Frame, Pds::TypeId::Id_ControlsCameraConfig, payload, "EpicsCam");
       break;
+    case Pds::TypeId::Id_UxiConfig:
+      h = new uxiDataSpace(detInfo, Pds::TypeId::Id_UxiFrame,  Pds::TypeId::Id_UxiConfig, payload, "Uxi");
+      break;
 
     default: break;
   }
@@ -151,7 +154,8 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_PrincetonFrame)  || (type.id() == Pds::TypeId::Id_FliFrame)  ||
           (type.id() == Pds::TypeId::Id_AndorFrame)      || (type.id() == Pds::TypeId::Id_PimaxFrame)||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData) ||
-          (type.id() == Pds::TypeId::Id_Zylaframe)       || (type.id() == Pds::TypeId::Id_PixisFrame) ) {
+          (type.id() == Pds::TypeId::Id_Zylaframe)       || (type.id() == Pds::TypeId::Id_PixisFrame)||
+          (type.id() == Pds::TypeId::Id_Uxiframe) ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
 #ifdef VERBOSE

@@ -343,4 +343,16 @@ namespace Ami {
     }
     return ((double) val);
   }
+
+  template<> double uxiDataSpace::processData()
+  {
+    UxiConfigType& uxiConfig = detConfig;
+    UxiDataType*   uxiFrame  = detDataPtr;
+    const uint16_t* dataArray = uxiFrame->data(uxiConfig).data();
+    unsigned totalPixels = uxiConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
 };

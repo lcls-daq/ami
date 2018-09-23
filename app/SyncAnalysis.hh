@@ -40,6 +40,8 @@
 #include "pds/config/PixisDataType.hh"
 #include "pds/config/EpicsCamConfigType.hh"
 #include "pds/config/EpicsCamDataType.hh"
+#include "pds/config/UxiConfigType.hh"
+#include "pds/config/UxiDataType.hh"
 
 typedef Pds::Camera::FrameV1 FrameType;
 
@@ -154,6 +156,7 @@ namespace Ami {
   typedef Ami::DataSpace <Pds::Bld::BldDataFEEGasDetEnergy, Pds::Bld::BldDataFEEGasDetEnergy>  gasDetectorDataSpace;
   typedef Ami::DataSpace <Pds::Bld::BldDataGMDV2,     Pds::Bld::BldDataGMDV2>          gmdDataSpace;
   typedef Ami::DataSpace <EpicsCamConfigType, EpicsCamDataType>          epicsCamDataSpace;
+  typedef Ami::DataSpace <UxiConfigType,      UxiDataType>               uxiDataSpace
 
   template <class CONFIG, class DATA>
   class DataSpace : public SyncAnalysis {
