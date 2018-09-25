@@ -40,8 +40,8 @@ namespace Ami {
                                               unsigned nz,
                                               unsigned ny,
                                               unsigned nx,
-                                              double used_default,
-                                              bool* def_applied,
+                                              double def_val,
+                                              bool* used_default,
                                               FILE*);
   };
 };
