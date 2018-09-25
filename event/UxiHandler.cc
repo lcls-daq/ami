@@ -1,6 +1,6 @@
 #include "UxiHandler.hh"
 
-#include "ami/event/FrameCalib.hh"
+#include "ami/event/UxiCalib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -104,7 +104,7 @@ UxiHandler::UxiHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   _configtc(0),
   _cache(cache),
   _entry        (0),
-  _pedestal     (make_ndarray<uint16_t>(0U,0,0)),
+  _pedestal     (make_ndarray<unsigned>(0U,0,0)),
   _options      (0)
 {
 }
@@ -171,9 +171,9 @@ void UxiHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockT
     unsigned rows    = num_rows(_configtc);
     double   norm    = 1.0;
     
-    if (desc.options() & FrameCalib::option_reload_pedestal()) {
+    if (desc.options() & UxiCalib::option_reload_pedestal()) {
       _load_pedestals(frames, rows, columns);
-      _entry->desc().options( desc.options()&~FrameCalib::option_reload_pedestal() );
+      _entry->desc().options( desc.options()&~UxiCalib::option_reload_pedestal() );
     }
 
     int ppbin = _entry->desc().ppxbin();
@@ -193,7 +193,7 @@ void UxiHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockT
           unsigned column_bin = k + (columns * i);
           unsigned pixel_val = d(i,j,k);
           unsigned calib_val = 0;
-          if (!(desc.options()&FrameCalib::option_no_pedestal())) {
+          if (!(desc.options()&UxiCalib::option_no_pedestal())) {
             calib_val = (offset + pixel_val) - _pedestal(i,j,k);
           } else {
             calib_val = offset + pixel_val;
@@ -213,18 +213,6 @@ void UxiHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void UxiHandler::_load_pedestals(unsigned frames, unsigned rows, unsigned columns)
 {
-  //const DescImage& d = _entry->desc();
-
-  _pedestal = make_ndarray<uint16_t>(frames, rows, columns);
-  for(uint16_t* val = _pedestal.begin(); val!=_pedestal.end(); val++) (*val) = 0;
-  /*
-  _offset    = make_ndarray<unsigned>(d.nbinsy(),d.nbinsx());
-  for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
-
-  EntryImage* p = _pentry;
-  if (!FrameCalib::load_pedestals_all(p,offset)) {
-    ndarray<unsigned,2> pa = p->content();
-    for(unsigned* a=pa.begin(); a!=pa.end(); *a++=offset) ;
-  }
-  */
+  const DescImage& d = _entry->desc();
+  _pedestal = UxiCalib::load_array(d.info(), frames, rows, columns, 0U, NULL, "ped", "pedestals");
 }

@@ -30,7 +30,7 @@ namespace Ami {
     Pds::Xtc*           _configtc;
     FeatureCache&       _cache;
     EntryImage*         _entry;
-    ndarray<uint16_t,3> _pedestal;
+    ndarray<unsigned,3> _pedestal;
     unsigned            _options;
   };
 };
