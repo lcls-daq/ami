@@ -32,6 +32,9 @@ namespace Ami {
     EntryImage*         _entry;
     ndarray<unsigned,3> _pedestal;
     unsigned            _options;
+    int                 _cacheIndexAcqCount;
+    int                 _cacheIndexTs;
+    int                 _cacheIndexTemp;
   };
 };
 

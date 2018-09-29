@@ -62,6 +62,54 @@ static inline unsigned num_columns(const Xtc* tc)
   return 0;
 }
 
+static inline unsigned acq_count(const Xtc* tc)
+{
+#define CASE_VSN(v) case v:                                         \
+  { const Pds::Uxi::FrameV##v& d =                                  \
+      *reinterpret_cast<const Pds::Uxi::FrameV##v*>(tc->payload()); \
+      return d.acquisitionCount(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1);
+    //CASE_VSN(2);
+    default: break;
+  }
+#undef CASE_VSN
+  return 0;
+}
+
+static inline unsigned timestamp(const Xtc* tc)
+{
+#define CASE_VSN(v) case v:                                         \
+  { const Pds::Uxi::FrameV##v& d =                                  \
+      *reinterpret_cast<const Pds::Uxi::FrameV##v*>(tc->payload()); \
+      return d.timestamp(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1);
+    //CASE_VSN(2);
+    default: break;
+  }
+#undef CASE_VSN
+  return 0;
+}
+
+static inline double temperature(const Xtc* tc)
+{
+#define CASE_VSN(v) case v:                                         \
+  { const Pds::Uxi::FrameV##v& d =                                  \
+      *reinterpret_cast<const Pds::Uxi::FrameV##v*>(tc->payload()); \
+      return d.temperature(); }
+
+  switch(tc->contains.version()) {
+    CASE_VSN(1);
+    //CASE_VSN(2);
+    default: break;
+  }
+#undef CASE_VSN
+  return 0;
+}
+
 static inline unsigned height(const Xtc* tc)
 {
   return num_rows(tc);
@@ -105,7 +153,10 @@ UxiHandler::UxiHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   _cache(cache),
   _entry        (0),
   _pedestal     (make_ndarray<unsigned>(0U,0,0)),
-  _options      (0)
+  _options      (0),
+  _cacheIndexAcqCount(-1),
+  _cacheIndexTs      (-1),
+  _cacheIndexTemp    (-1)
 {
 }
 
@@ -121,6 +172,23 @@ const Entry* UxiHandler::entry(unsigned i) const { return i==0 ? _entry : 0; }
 void UxiHandler::rename(const char* s)
 {
   if (_entry) _entry->desc().name(s);
+
+  char buffer[64];
+  snprintf(buffer,53,s);
+  char* c = buffer+strlen(buffer);
+
+  if (_cacheIndexAcqCount != -1) {
+    sprintf(c,":ACQ_COUNT");
+    _cache.rename(_cacheIndexAcqCount,buffer);
+  }
+  if (_cacheIndexTs != -1) {
+    sprintf(c,":TS");
+    _cache.rename(_cacheIndexTs,buffer);
+  }
+  if (_cacheIndexTemp != -1) {
+    sprintf(c,":TEMP");
+    _cache.rename(_cacheIndexTemp,buffer);
+  }
 }
 
 void UxiHandler::reset() 
@@ -134,7 +202,7 @@ void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
 
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());  
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   unsigned columns = width (_configtc);
   unsigned rows    = height(_configtc);
   unsigned pixels  = (columns > rows) ? columns : rows;
@@ -147,6 +215,16 @@ void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
                  columns, rows, ppb, ppb);
   _entry  = new EntryImage(desc);
   _entry->invalid();
+
+  char buffer[64];
+  strncpy(buffer,Pds::DetInfo::name(det),53);
+  char* c = buffer+strlen(buffer);
+  sprintf(c,":ACQ_COUNT");
+  _cacheIndexAcqCount = _cache.add(buffer);
+  sprintf(c,":TS");
+  _cacheIndexTs = _cache.add(buffer);
+  sprintf(c,":TEMP");
+  _cacheIndexTemp = _cache.add(buffer);
     
   _load_pedestals(num_frames(_configtc), num_rows(_configtc), num_columns(_configtc));
 }
@@ -159,12 +237,17 @@ void UxiHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockT
   {
     if (!_entry) return;
 
+    const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
     const DescImage& desc = _entry->desc();
     unsigned o = desc.options();
     if (_options != o) {
       printf("UxiHandler options %x -> %x\n",_options,o);
       _options = desc.options();
     }
+
+    if (_cacheIndexAcqCount != -1) _cache.cache(_cacheIndexAcqCount, acq_count(tc));
+    if (_cacheIndexTs != -1) _cache.cache(_cacheIndexTs, timestamp(tc));
+    if (_cacheIndexTemp != -1) _cache.cache(_cacheIndexTemp, temperature(tc));
 
     unsigned frames  = num_frames(_configtc);
     unsigned columns = num_columns(_configtc);
