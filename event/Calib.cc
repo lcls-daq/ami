@@ -57,6 +57,7 @@ static struct off_lookup _off_lookup[] = { {Pds::DetInfo::pnCCD,    "PNCCD::Cali
                                            {Pds::DetInfo::Fccd960,  "Camera::CalibV1"},
                                            {Pds::DetInfo::Zyla,     "Camera::CalibV1"},
                                            {Pds::DetInfo::Uxi,      "Uxi::CalibV1"},
+                                           {Pds::DetInfo::Archon,   "Camera::CalibV1"},
                                            {Pds::DetInfo::Jungfrau, "Jungfrau::CalibV1"} };
 
 static const char* offCalibClass(Pds::DetInfo::Device t)

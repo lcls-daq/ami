@@ -99,6 +99,7 @@ void ArchonHandler::_configure(Pds::TypeId tid,
        columns, rows, ppb, ppb);
     _entry = new EntryImage(desc);
     _entry->invalid();
+    _load_pedestals();
   } else {
     printf("%s line %d: unexpected type ID (%u)\n", __FILE__, __LINE__, (unsigned)type);
   }
