@@ -127,6 +127,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_UxiConfig:
       h = new uxiDataSpace(detInfo, Pds::TypeId::Id_UxiFrame,  Pds::TypeId::Id_UxiConfig, payload, "Uxi");
       break;
+    case Pds::TypeId::Id_ArchonConfig:
+      h = new archonDataSpace(detInfo, Pds::TypeId::Id_Frame,  Pds::TypeId::Id_ArchonConfig, payload, "Archon");
+      break;
 
     default: break;
   }

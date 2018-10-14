@@ -355,4 +355,16 @@ namespace Ami {
       val = val + (*(dataArray+i) );
     return ((double)val);
   }
+
+  template<> double ArchonDataSpace::processData()
+  {
+    ArchonConfigType& archonConfig = detConfig;
+    ArchonDataType*   archonFrame  = detDataPtr;
+    const uint16_t* dataArray = archonFrame->data16().data();
+    unsigned totalPixels = archonFrame->width()*archonFrame->height();
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
 };
