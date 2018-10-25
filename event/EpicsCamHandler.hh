@@ -1,5 +1,5 @@
 #ifndef Ami_EpicsCamHandler_hh
-#define Ami_EpicsCamkHandler_hh
+#define Ami_EpicsCamHandler_hh
 
 #include "ami/event/FrameHandler.hh"
 #include "pdsdata/psddl/lusi.ddl.h"
