@@ -17,6 +17,7 @@ static unsigned max_row_pixels   (const DetInfo& info)
   case Pds::DetInfo::Opal2000: return 1080;
   case Pds::DetInfo::Opal4000: return 1752;
   case Pds::DetInfo::Opal8000: return 2472;
+  case Pds::DetInfo::StreakC7700: return 1024;
   default:       return 0;
   }
 }
@@ -33,6 +34,7 @@ static unsigned max_column_pixels(const DetInfo& info)
   case Pds::DetInfo::Opal2000: return 1920;
   case Pds::DetInfo::Opal4000: return 2336;
   case Pds::DetInfo::Opal8000: return 3296;
+  case Pds::DetInfo::StreakC7700: return 1344;
   default:       return 0;
   }
 }
