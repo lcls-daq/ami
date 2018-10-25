@@ -63,8 +63,9 @@ namespace Ami {
     float binx(unsigned) const;
     float biny(unsigned) const;
 
-    float mmppx() const { return _mmppx; }
-    float mmppy() const { return _mmppy; }
+    const char* units() const { return _units; }
+    float unitppx() const { return _unitppx; }
+    float unitppy() const { return _unitppy; }
 
     unsigned disppbx() const;
     unsigned disppby() const;
@@ -76,8 +77,9 @@ namespace Ami {
 		int ppxbin,
 		int ppybin);
 
-    void set_scale(float mmppx,
-		   float mmppy);
+    void set_units(const char* units);
+    void set_scale(float unitppx,
+		   float unitppy);
 
     void add_frame(unsigned x,  // units are bins
 		   unsigned y,
@@ -115,14 +117,16 @@ namespace Ami {
     ///  Detector pixel coordinates at bin origin
     int32_t  _xp0;
     int32_t  _yp0;
-    float    _mmppx;
-    float    _mmppy;
+    float    _unitppx;
+    float    _unitppy;
     uint32_t _reserved;
     enum { MAX_SUBFRAMES=64 };
     uint32_t _nsubframes;
     SubFrame _subframes[MAX_SUBFRAMES];
     enum { PATHLEN=256 };
-    char       _mask_path[PATHLEN];
+    char     _mask_path[PATHLEN];
+    enum { UnitsSize=64 };
+    char     _units[UnitsSize];
     union {
       ImageMask* _ptr;
       uint64_t   _field;

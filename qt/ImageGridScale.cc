@@ -22,7 +22,7 @@
 
 using namespace Ami::Qt;
 
-enum { Pixels, Millimeters };
+enum { Pixels, CustomUnits };
 
 ImageGridScale::ImageGridScale(ImageFrame& frame, bool grab) :
   QGroupBox("XY"),
@@ -37,7 +37,7 @@ ImageGridScale::ImageGridScale(ImageFrame& frame, bool grab) :
   pixelsB->setChecked(!_scaled);
   phyB   ->setChecked( _scaled);
   _group->addButton(pixelsB,Pixels);
-  _group->addButton(phyB   ,Millimeters);
+  _group->addButton(phyB   ,CustomUnits);
 
   QPushButton* saveB = new QPushButton("Save");
   QPushButton* loadB = new QPushButton("Load");
@@ -101,18 +101,19 @@ void ImageGridScale::setup_payload(Cds& cds)
     const Entry* e = cds.entry(i);
     if (e) {
       if (e->desc().type() == Ami::DescEntry::Image) {
-	_scalex = static_cast<const DescImage&>(e->desc()).mmppx();
-	_scaley = static_cast<const DescImage&>(e->desc()).mmppy();
+        _scalex = static_cast<const DescImage&>(e->desc()).unitppx();
+        _scaley = static_cast<const DescImage&>(e->desc()).unitppy();
+        _group->button(CustomUnits)->setText(static_cast<const DescImage&>(e->desc()).units());
         if (_scalex==0) {
           _group->button(Pixels     )->setChecked(true);
-          _group->button(Millimeters)->setEnabled(false);
+          _group->button(CustomUnits)->setEnabled(false);
           _scaled=false;
         }
         else {
-          _group->button(1)->setEnabled(true);
+          _group->button(CustomUnits)->setEnabled(true);
         }
-	phy_scale(_scaled);
-	return;
+        phy_scale(_scaled);
+        return;
       }
       n++;
     }

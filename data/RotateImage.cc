@@ -27,7 +27,7 @@ RotateImage::RotateImage(const DescEntry& output, Rotation r) :
     SWAP(o._ppbx  ,o._ppby);
     SWAP(o._dpbx  ,o._dpby);
     SWAP(o._xp0   ,o._yp0);
-    { float u=o._mmppx; o._mmppx=o._mmppy; o._mmppy=u; }
+    { float u=o._unitppx; o._unitppx=o._unitppy; o._unitppy=u; }
     break;
   default:
     break;

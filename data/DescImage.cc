@@ -9,69 +9,73 @@
 using namespace Ami;
 
 DescImage::DescImage(const char* name, 
-		     unsigned nbinsx, 
-		     unsigned nbinsy, 
-		     int ppbx,
-		     int ppby,
+                     unsigned nbinsx, 
+                     unsigned nbinsy, 
+                     int ppbx,
+                     int ppby,
                      unsigned xp0,
                      unsigned yp0,
                      bool isnormalized) :
   DescEntry(name, "x", "y", Image, sizeof(DescImage), DescEntry::Mean, isnormalized),
-  _nbinsx(nbinsx ? nbinsx : 1),
-  _nbinsy(nbinsy ? nbinsy : 1),
-  _ppbx  (ppbx),
-  _ppby  (ppby),
-  _dpbx  (1),
-  _dpby  (1),
-  _xp0   (xp0),
-  _yp0   (yp0),
-  _mmppx (0),
-  _mmppy (1),
+  _nbinsx (nbinsx ? nbinsx : 1),
+  _nbinsy (nbinsy ? nbinsy : 1),
+  _ppbx   (ppbx),
+  _ppby   (ppby),
+  _dpbx   (1),
+  _dpby   (1),
+  _xp0    (xp0),
+  _yp0    (yp0),
+  _unitppx(0),
+  _unitppy(1),
   _reserved  (0),
   _nsubframes(0)
 {
   memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
+  strncpy_val(_units, "mms", UnitsSize);
+  _units[UnitsSize-1] = 0;
 }
 
 DescImage::DescImage(const Pds::DetInfo& info,
-		     unsigned channel,
-		     const char* name, 
-		     unsigned nbinsx, 
-		     unsigned nbinsy, 
-		     int ppbx,
-		     int ppby,
-		     int dpbx,
-		     int dpby,
+                     unsigned channel,
+                     const char* name, 
+                     unsigned nbinsx, 
+                     unsigned nbinsy, 
+                     int ppbx,
+                     int ppby,
+                     int dpbx,
+                     int dpby,
                      unsigned xp0,
                      unsigned yp0) :
   DescEntry(info, channel, name, "x", "y", Image, sizeof(DescImage)),
-  _nbinsx(nbinsx ? nbinsx : 1),
-  _nbinsy(nbinsy ? nbinsy : 1),
-  _ppbx  (ppbx),
-  _ppby  (ppby),
-  _dpbx  (dpbx),
-  _dpby  (dpby),
-  _xp0   (xp0),
-  _yp0   (yp0),
-  _mmppx (0),
-  _mmppy (1),
+  _nbinsx (nbinsx ? nbinsx : 1),
+  _nbinsy (nbinsy ? nbinsy : 1),
+  _ppbx   (ppbx),
+  _ppby   (ppby),
+  _dpbx   (dpbx),
+  _dpby   (dpby),
+  _xp0    (xp0),
+  _yp0    (yp0),
+  _unitppx(0),
+  _unitppy(1),
   _reserved  (0),
   _nsubframes(0)
 {
   memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
+  strncpy_val(_units, "mms", UnitsSize);
+  _units[UnitsSize-1] = 0;
 }
 
 DescImage::DescImage(const Pds::DetInfo& info,
-		     const char* name, 
+                     const char* name, 
                      const char* zunits,
-		     unsigned nbinsx, 
-		     unsigned nbinsy, 
-		     int ppbx,
-		     int ppby,
+                     unsigned nbinsx, 
+                     unsigned nbinsy, 
+                     int ppbx,
+                     int ppby,
                      bool pedCalib,
                      bool gainCalib,
                      bool rmsCalib) :
@@ -79,22 +83,24 @@ DescImage::DescImage(const Pds::DetInfo& info,
             Image, sizeof(DescImage), DescEntry::Mean,
             true, false, 
             pedCalib, gainCalib, rmsCalib),
-  _nbinsx(nbinsx ? nbinsx : 1),
-  _nbinsy(nbinsy ? nbinsy : 1),
-  _ppbx  (ppbx),
-  _ppby  (ppby),
-  _dpbx  (1),
-  _dpby  (1),
-  _xp0   (0),
-  _yp0   (0),
-  _mmppx (0),
-  _mmppy (1),
+  _nbinsx (nbinsx ? nbinsx : 1),
+  _nbinsy (nbinsy ? nbinsy : 1),
+  _ppbx   (ppbx),
+  _ppby   (ppby),
+  _dpbx   (1),
+  _dpby   (1),
+  _xp0    (0),
+  _yp0    (0),
+  _unitppx(0),
+  _unitppy(1),
   _reserved  (0),
   _nsubframes(0)
 {
   memset(&_subframes[0], 0, MAX_SUBFRAMES*sizeof(SubFrame));
   memset(_mask_path,0,PATHLEN);
   _mask._field = 0;
+  strncpy_val(_units, "mms", UnitsSize);
+  _units[UnitsSize-1] = 0;
 }
 
 DescImage::DescImage(const DescImage& d) :
@@ -107,9 +113,9 @@ DescImage::DescImage(const DescImage& d) :
   _dpby    (d._dpby),
   _xp0     (d._xp0),
   _yp0     (d._yp0),
-  _mmppx   (d._mmppx),
-  _mmppy   (d._mmppy),
-  _reserved  (d._reserved),
+  _unitppx (d._unitppx),
+  _unitppy (d._unitppy),
+  _reserved(d._reserved),
   _nsubframes(0)
 {
   for(unsigned i=0; i<d._nsubframes; i++) {
@@ -127,6 +133,9 @@ DescImage::DescImage(const DescImage& d) :
     _mask._ptr = new ImageMask(*d.mask());
   else
     _mask._field = 0;
+
+  strncpy_val(_units, d._units, UnitsSize);
+  _units[UnitsSize-1] = 0;
 }
 
 DescImage::DescImage(const DescImage& d, const char* mask_path) :
@@ -139,8 +148,8 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
   _dpby    (d._dpby),
   _xp0     (d._xp0),
   _yp0     (d._yp0),
-  _mmppx   (d._mmppx),
-  _mmppy   (d._mmppy),
+  _unitppx (d._unitppx),
+  _unitppy (d._unitppy),
   _reserved(d._reserved),
   _nsubframes(0)
 {
@@ -157,6 +166,9 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
     _mask._ptr = new ImageMask(d._nbinsy, d._nbinsx, d._nsubframes, d._subframes, mask_path);
   else
     _mask._field = 0;
+
+  strncpy_val(_units, d._units, UnitsSize);
+  _units[UnitsSize-1] = 0;
 }
 
 DescImage::~DescImage()
@@ -165,9 +177,9 @@ DescImage::~DescImage()
 }
 
 void DescImage::params(unsigned nbinsx,
-		       unsigned nbinsy,
-		       int ppxbin,
-		       int ppybin)
+                       unsigned nbinsy,
+                       int ppxbin,
+                       int ppybin)
 {
   _nbinsx = nbinsx ? nbinsx : 1;
   _nbinsy = nbinsy ? nbinsy : 1;
@@ -175,18 +187,24 @@ void DescImage::params(unsigned nbinsx,
   _ppby = ppybin;
 }
 
-void DescImage::set_scale(float scalex, 
-			  float scaley)
+void DescImage::set_units(const char* units)
 {
-  _mmppx = scalex;
-  _mmppy = scaley;
+  strncpy_val(_units, units, UnitsSize);
+  _units[UnitsSize-1] = 0;
+}
+
+void DescImage::set_scale(float scalex, 
+                          float scaley)
+{
+  _unitppx = scalex;
+  _unitppy = scaley;
 }
 
 void DescImage::add_frame(unsigned x,
-			  unsigned y,
-			  unsigned nx,
-			  unsigned ny,
-			  Rotation r)
+                          unsigned y,
+                          unsigned nx,
+                          unsigned ny,
+                          Rotation r)
 {
   if (_nsubframes < MAX_SUBFRAMES) {
     unsigned frame = _nsubframes++;
@@ -198,7 +216,7 @@ void DescImage::add_frame(unsigned x,
   }
   else {
     printf("DescImage::add_frame already at maximum (%d)\n",
-	   MAX_SUBFRAMES);
+           MAX_SUBFRAMES);
   }
 }
 
@@ -240,7 +258,7 @@ bool DescImage::xy_bounds(int& x0, int& x1, int& y0, int& y1, unsigned fn) const
 }
 
 bool DescImage::rphi_bounds(int& x0, int& x1, int& y0, int& y1,
-			    double xc, double yc, double r) const
+                            double xc, double yc, double r) const
 {
   x0 = xbin(xc - r);
   x1 = xbin(xc + r);
@@ -259,7 +277,7 @@ bool DescImage::rphi_bounds(int& x0, int& x1, int& y0, int& y1,
 }
 
 bool DescImage::rphi_bounds(int& x0, int& x1, int& y0, int& y1,
-			    double xc, double yc, double r, unsigned fn) const
+                            double xc, double yc, double r, unsigned fn) const
 {
   const SubFrame& f = frame(fn);
   x0 = xbin(xc - r) - f.x;
