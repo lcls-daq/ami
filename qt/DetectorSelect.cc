@@ -456,6 +456,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::ControlsCamera :
     case Pds::DetInfo::Uxi :
     case Pds::DetInfo::Archon :
+    case Pds::DetInfo::StreakC7700:
       client = new Ami::Qt::FrameClient   (this, info, channel, name);
       break;
     case Pds::DetInfo::Jungfrau : client = new Ami::Qt::JungfrauClient(this, info, channel, name); break;
