@@ -56,18 +56,6 @@ static unsigned rows(const Pds::DetInfo& info)
   return n;
 }
 
-static unsigned get_detector_scale(const char* device_id)
-{
-  if (!strncmp(device_id, MX340HS_DEVICE_STR, strlen(MX340HS_DEVICE_STR))) {
-    return 1;
-  } else if (!strncmp(device_id, MX170HS_DEVICE_STR, strlen(MX170HS_DEVICE_STR))) {
-    return 2;
-  } else {
-    // Assume it is a MX170-HS if device id is unset (this is the case in old data)
-    return 2;
-  }
-}
-
 RayonixHandler::RayonixHandler(const Pds::DetInfo& info) : 
   FrameHandler(info, 
                config_type_list(),
@@ -85,9 +73,8 @@ void RayonixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds:
     // in case binning is 0, avoid divide-by-zero and use default value of 2
     int bin_f = c->binning_f() > 0 ? c->binning_f() : 2;
     int bin_s = c->binning_s() > 0 ? c->binning_s() : 2;
-    unsigned scale = get_detector_scale(c->deviceID());
-    unsigned columns = (n_pixels_fast / scale) / bin_f;
-    unsigned rows = (n_pixels_slow / scale) / bin_s;
+    unsigned columns = c->maxWidth() / bin_f;
+    unsigned rows = c->maxHeight() / bin_s;
     unsigned ppb = image_ppbin(columns,rows,0);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   columns, rows, ppb, ppb);
