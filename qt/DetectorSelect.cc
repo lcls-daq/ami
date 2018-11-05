@@ -469,6 +469,8 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Epix10k  :
     case Pds::DetInfo::Epix10ka :
     case Pds::DetInfo::EpixS    :
+    case Pds::DetInfo::Epix10ka2M   :
+    case Pds::DetInfo::Epix10kaQuad :
       if (channel==0)
 	client = new Ami::Qt::EpixClient    (this, info, channel, name);
       else

@@ -273,6 +273,8 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_Epix10kaConfig:
   case Pds::TypeId::Id_Epix100aConfig:
   case Pds::TypeId::Id_EpixConfig:       h = new EpixHandler     (info,cache); break;
+  case Pds::TypeId::Id_Epix10kaQuadConfig:
+  case Pds::TypeId::Id_Epix10ka2MConfig: h = new EpixArrayHandler(info,cache); break;
   case Pds::TypeId::Id_EpixSamplerConfig:h = new EpixWaveformHandler(info,cache); break;
   case Pds::TypeId::Id_TimeToolConfig:   h = new TimeToolHandler  (info,cache); break;
   case Pds::TypeId::Id_SharedIpimb:      h = new SharedIpimbReader(bldInfo,cache); break;
