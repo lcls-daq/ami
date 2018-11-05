@@ -195,6 +195,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/EpixWaveformHandler.hh"
 #include "ami/event/EpixHandler.hh"
 #include "ami/event/EpixHandlerT.hh"
+#include "ami/event/EpixArrayHandler.hh"
 #include "ami/event/TimeToolHandler.hh"
 #include "ami/event/BldSpectrometerHandler.hh"
 #include "ami/event/AnalogInputHandler.hh"

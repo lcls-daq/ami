@@ -327,7 +327,7 @@ void EpixArrayHandler::reset() { _entry = 0; }
 void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  const char* detname = Pds::DetInfo::name(det.detector());
+  //  const char* detname = Pds::DetInfo::name(det.detector());
 
   if (_config_cache) delete _config_cache;
   _config_cache = EpixArray::ConfigCache::instance(tid,payload,_cache);

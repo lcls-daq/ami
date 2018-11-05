@@ -55,6 +55,7 @@ namespace Ami {
     unsigned      _options;
     ndarray<unsigned,3> _pedestals;
     ndarray<unsigned,3> _offset;
+    ndarray<unsigned,3> _status;
   };
 };
 

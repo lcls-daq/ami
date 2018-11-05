@@ -68,6 +68,13 @@ namespace Ami {
     static int median(ndarray<const uint32_t,1> data,
                       ndarray<const uint32_t,1> status,
                       unsigned& iLo, unsigned& iHi);
+
+    static int frameNoise(ndarray<const uint32_t,1> data,
+                          ndarray<const uint32_t,1> status,
+                          unsigned off);
+    static double frameNoise(ndarray<const uint32_t,2> data,
+                             ndarray<const uint32_t,2> status,
+                             unsigned off);
   };
 };
 

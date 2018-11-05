@@ -200,6 +200,9 @@ void DescImage::set_scale(float scalex,
   _unitppy = scaley;
 }
 
+void DescImage::add_frame(const SubFrame& f)
+{ add_frame(f.x, f.y, f.nx, f.ny, f.r); }
+
 void DescImage::add_frame(unsigned x,
                           unsigned y,
                           unsigned nx,

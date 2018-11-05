@@ -10,6 +10,8 @@ namespace Ami {
   class SubFrame {
   public:
     SubFrame() : x(0), y(0), nx(0), ny(0), r(D0) {}
+    SubFrame(unsigned _x, unsigned _y, unsigned _nx, unsigned _ny, Rotation _r) 
+      : x(_x), y(_y), nx(_nx), ny(_ny), r(_r) {}
   public:
     uint16_t x;  // units are bins
     uint16_t y;
@@ -81,6 +83,7 @@ namespace Ami {
     void set_scale(float unitppx,
 		   float unitppy);
 
+    void add_frame(const SubFrame&);
     void add_frame(unsigned x,  // units are bins
 		   unsigned y,
 		   unsigned nx,

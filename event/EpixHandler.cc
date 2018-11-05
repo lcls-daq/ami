@@ -346,103 +346,6 @@ void EpixAmi::ConfigCache::dump() const
   printf("rowsCal    %u  perasic %u\n",_rowsCal ,_rowsCalPerAsic);
 }
 
-static double frameNoise(ndarray<const uint32_t,2> data,
-                         ndarray<const uint32_t,2> status,
-                         unsigned off)
-{
-  const int fnPixelMin = -100 + off;
-  const int fnPixelMax =  100 + off;
-  const int fnPixelBins = fnPixelMax - fnPixelMin;
-  const int peakSpace   = 5;
-  
-  //  histogram the pixel values
-  unsigned hist[fnPixelBins];
-  unsigned nhist=0;
-  { memset(hist, 0, fnPixelBins*sizeof(unsigned));
-    for(unsigned i=0; i<data.shape()[0]; i++) {
-      for(unsigned j=0; j<data.shape()[1]; j++) {
-        if (status(i,j)==0) {
-          nhist++;
-          int v = data(i,j) - fnPixelMin;
-          if (v >= 0 && v < int(fnPixelBins))
-            hist[v]++;
-        }
-      }
-    }
-  }
-
-  double v = 0;
-  // the first peak from the left above this is the pedestal
-  { const int fnPeakBins = 5;
-    const int fnPixelRange = fnPixelBins-fnPeakBins-1;
-    const unsigned fnPedestalThreshold = nhist>>5;
-    
-    unsigned i=fnPeakBins;
-    while( int(i)<fnPixelRange ) {
-      if (hist[i]>fnPedestalThreshold) break;
-      i++;
-    }
-
-    unsigned thresholdPeakBin=i;
-    unsigned thresholdPeakBinContent=hist[i];
-    while( int(++i)<fnPixelRange ) {
-      if (hist[i]<thresholdPeakBinContent) {
-        if (i > thresholdPeakBin+peakSpace)
-          break;
-      }
-      else {
-        thresholdPeakBin = i;
-        thresholdPeakBinContent = hist[i];
-      }
-    }
-
-    i = thresholdPeakBin;
-    if ( int(i)+fnPeakBins<=fnPixelRange ) {
-      unsigned s0 = 0;
-      unsigned s1 = 0;
-      for(unsigned j=i-fnPeakBins+1; j<i+fnPeakBins; j++) {
-        s0 += hist[j];
-        s1 += hist[j]*j;
-      }
-      
-      double binMean = double(s1)/double(s0);
-      v =  binMean + fnPixelMin - off;
-      
-      s0 = 0;
-      unsigned s2 = 0;
-      for(unsigned j=i-10; j<i+fnPeakBins; j++) {
-        s0 += hist[j];
-        s2 += hist[j]*(j-int(binMean))*(j-int(binMean));
-      }
-//      const double allowedPedestalWidthSquared = 2.5*2.5;
-      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
-//      if (double(s2)/double(s0)>allowedPedestalWidthSquared) v = 0;
-      // this isn't the standard rms around the mean, but should be similar if rms_real < 3
-      //      printf("frameNoise finds mean %f, variance %f\n", v, double(s2)/double(s0));
-
-    }
-    else {
-      static unsigned nPrint=0;
-      nPrint++;
-      if ((nPrint<10) || (nPrint%100)==0)
-        printf("frameNoise : peak not found [%d]\n",nPrint);
-    }
-//    printf("CspadMiniHandler::frameNoise v=%lf\n", v);
-  }
-
-  return v;
-}
-
-static int frameNoise(ndarray<const uint32_t,1> data,
-                      ndarray<const uint32_t,1> status,
-                      unsigned off)
-{
-  unsigned lo = off-100;
-  unsigned hi = off+100;
-  return FrameCalib::median(data,status,lo,hi)-int(off);
-}
-
-
 EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
   EventHandlerF  (info, Data_Type.id(), config_type_list(), cache),
   _cache        (cache),
@@ -778,7 +681,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           for(unsigned y=0; y<shape[0]; y++) {
             ndarray<const uint32_t,1> s(&e  (y,m*shape[1]),&shape[1]);
             ndarray<const uint32_t,1> t(&sta(y,m*shape[1]),&shape[1]);
-            int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+            int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
             if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
               _cache.cache(_feature[(y%16)+index],double(fn));
             uint32_t* v = const_cast<uint32_t*>(&s[0]);
@@ -802,7 +705,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           s.strides(e.strides());
           ndarray<uint32_t,2> t(_status.begin()+(s.begin()-_entry->content().begin()),shape);
           t.strides(_status.strides());
-          int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
           for(unsigned y=0; y<shape[0]; y++) {
             uint32_t* v = &s(y,0);
             for(unsigned x=0; x<shape[1]; x++)
@@ -824,7 +727,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           s.strides(e.strides());
           ndarray<const uint32_t,1> t(&sta(0,x),e.shape());
           t.strides(e.strides());
-          int fn = int(frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
           //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
           //  _cache.cache(_feature[(y%16)+index],double(fn));
           for(unsigned y=0; y<e.shape()[0]; y++)
