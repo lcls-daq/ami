@@ -2,7 +2,7 @@
 #include "ami/qt/ChannelDefinition.hh"
 #include "ami/qt/Control.hh"
 #include "ami/event/Calib.hh"
-#include "ami/event/JungfrauCalib.hh"
+#include "ami/event/GainSwitchCalib.hh"
 #include "ami/data/ConfigureRequest.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/Entry.hh"
@@ -57,15 +57,15 @@ void JungfrauClient::_configure(char*& p,
 {
   unsigned o = 0;
   if (_npBox->isChecked()) {
-    o |= JungfrauCalib::option_no_pedestal();
+    o |= GainSwitchCalib::option_no_pedestal();
   } else {
-    o |= JungfrauCalib::option_correct_gain();
+    o |= GainSwitchCalib::option_correct_gain();
   }
   if (_kevBox->isChecked()) {
-    o |= JungfrauCalib::option_pixel_value_in_kev();
+    o |= GainSwitchCalib::option_pixel_value_in_kev();
   }
   if (_reloadPedestals) {
-    o |= JungfrauCalib::option_reload_pedestal();
+    o |= GainSwitchCalib::option_reload_pedestal();
     _reloadPedestals = false;
   }
   ConfigureRequest& req = *new(p) ConfigureRequest(_input,o);

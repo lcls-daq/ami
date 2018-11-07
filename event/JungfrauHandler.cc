@@ -1,6 +1,6 @@
 #include "JungfrauHandler.hh"
 
-#include "ami/event/JungfrauCalib.hh"
+#include "ami/event/GainSwitchCalib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -183,14 +183,14 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     unsigned rows    = num_rows(_configtc);
     double   norm    = 1.0;
 
-    if (desc.options() & JungfrauCalib::option_reload_pedestal()) {
+    if (desc.options() & GainSwitchCalib::option_reload_pedestal()) {
       _load_pedestals(modules, rows, columns);
-      _entry->desc().options( desc.options()&~JungfrauCalib::option_reload_pedestal() );
+      _entry->desc().options( desc.options()&~GainSwitchCalib::option_reload_pedestal() );
     }
 
     // Set the normalization if gain correcting
-    unsigned norm_mask = JungfrauCalib::normalization_option_mask();
-    if (!(desc.options()&JungfrauCalib::option_no_pedestal())) {
+    unsigned norm_mask = GainSwitchCalib::normalization_option_mask();
+    if (!(desc.options()&GainSwitchCalib::option_no_pedestal())) {
       if (_do_norm && ((desc.options()&norm_mask) == norm_mask)) {
         norm = quasi_adu_factor;
       }
@@ -222,8 +222,8 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
           unsigned pixel_val = d(i,j,k) & data_bits;
           unsigned row_bin = (rows * i) + (rows - 1 - j);
           double calib_val = 0.0;
-          if (!(desc.options()&JungfrauCalib::option_no_pedestal())) {
-            if (desc.options()&JungfrauCalib::option_correct_gain()) {
+          if (!(desc.options()&GainSwitchCalib::option_no_pedestal())) {
+            if (desc.options()&GainSwitchCalib::option_correct_gain()) {
               calib_val = (pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k))/_gain_cor(gain_idx,i,j,k) + offset;
             } else {
               calib_val = pixel_val - _pedestal(gain_idx,i,j,k) - _offset(gain_idx,i,j,k) + offset;
@@ -249,9 +249,9 @@ void JungfrauHandler::_load_pedestals(unsigned modules, unsigned rows, unsigned 
 {
   bool used_default_gain = false;
   const DescImage& d = _entry->desc();
-  _offset = JungfrauCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pixel_offset");
-  _pedestal = JungfrauCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pedestals");
-  _gain_cor = JungfrauCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 1.0, &used_default_gain, "None", "pixel_gain");
+  _offset = GainSwitchCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pixel_offset");
+  _pedestal = GainSwitchCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 0.0, NULL, "None", "pedestals");
+  _gain_cor = GainSwitchCalib::load_multi_array(d.info(), num_gains, modules, rows, columns, 1.0, &used_default_gain, "None", "pixel_gain");
   if (!used_default_gain) {
     _do_norm = true;
     for(double* val = _gain_cor.begin(); val!=_gain_cor.end(); val++) (*val) /= quasi_adu_factor;
