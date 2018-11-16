@@ -3,9 +3,8 @@
 
 #include "ami/event/EventHandlerF.hh"
 #include "ami/event/CspadTemp.hh"
+#include "pdsdata/xtc/DetInfo.hh"
 #include "ami/data/DescImage.hh"
-
-#include "pdsdata/xtc/TypeId.hh"
 
 #include "ndarray/ndarray.h"
 
@@ -20,8 +19,8 @@ namespace Ami {
   class FeatureCache;
   class EpixHandler : public EventHandlerF {
   public:
-    EpixHandler(const Pds::Src&     info, 
-		FeatureCache&       cache);
+    EpixHandler(const Pds::DetInfo&     info,
+                FeatureCache&           cache);
     virtual ~EpixHandler();
   public:
     void   _configure(Pds::TypeId, const void* payload, const Pds::ClockTime& t);
@@ -44,18 +43,14 @@ namespace Ami {
     FeatureCache&       _cache;
     DescImage           _desc;
     EntryImage*         _entry;
-    EntryImage*         _pentry;
     std::vector<EntryWaveform*> _ewf;
     EntryRef*           _ref;
     unsigned            _options;
     ndarray<unsigned,2> _status;
-    ndarray<unsigned,2> _pedestals;
-    ndarray<unsigned,2> _pedestals_lo;
-    ndarray<unsigned,2> _offset;
-
-    ndarray<double,2>   _gain;
-    ndarray<double,2>   _gain_lo;
-    ndarray<double,2>   _no_gain;
+    ndarray<double,3>   _pedestals;
+    ndarray<double,3>   _gains;
+    ndarray<unsigned,2> _data;
+    ndarray<unsigned,2> _gstatus;
 
     ndarray<int,1>      _feature;
 

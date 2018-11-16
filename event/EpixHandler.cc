@@ -1,6 +1,7 @@
 #include "EpixHandler.hh"
 
 #include "ami/event/FrameCalib.hh"
+#include "ami/event/GainSwitchCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryRef.hh"
@@ -23,6 +24,9 @@ using namespace Ami;
 
 static const unsigned offset=1<<16;
 static const double  doffset=double(offset);
+static const unsigned gain_bits = 3<<14;
+static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
+static const unsigned conf_bits = 0x1c;
 static const double  RDIV=30000;
 
 static std::list<Pds::TypeId::Type> config_type_list()
@@ -51,12 +55,6 @@ struct AsicLocation { unsigned row, col; };
 typedef struct AsicLocation AsicLocation_s;
 static const AsicLocation_s _asicLocation[] = { {1,1}, {0,1}, {0,0}, {1,0} };
 
-static void _load_one_asic(ndarray<unsigned,2>& pb, 
-                           unsigned ny,
-                           ndarray<unsigned,2>& pedestals);
-static void _load_one_asic(ndarray<double,2>& pb, 
-                           unsigned ny,
-                           ndarray<double,2>& pedestals);
 static double _tps_temp(const uint16_t q);
 
 static CspadTemp           _therm(RDIV);
@@ -128,9 +126,9 @@ namespace EpixAmi {
     ConfigCache(Pds::TypeId, const void*, EventHandlerF*);
     ~ConfigCache();
   public:
-    unsigned numberOfAsics() const  { return _nAsics; }
-    unsigned asicMask      () const { return _aMask; }
-    EnvData* envData       () const { return _envData; }
+    unsigned numberOfAsics   () const  { return _nAsics; }
+    unsigned asicMask        () const { return _aMask; }
+    EnvData* envData         () const { return _envData; }
   public:
     // ASIC layout
     unsigned numberOfAsicsPerRow   () const { return _nchip_columns; }
@@ -151,17 +149,23 @@ namespace EpixAmi {
 
     // subframe data size
     unsigned numberOfRowsReadPerAsic() const { return _rowsReadPerAsic; }
+
+    // number of gain modes
+    unsigned numberOfGainModes() const { return _nGainModes; }
+
+    // asic pixel config
+    ndarray <const uint16_t,2> pixelGainConfig() const { return _pixelGainConfig; }
   public:
     void event(const void* payload, 
                ndarray<const uint16_t,2>& frame,
                ndarray<const uint16_t,1>& temps,
                ndarray<const uint16_t,2>& cal,
                FeatureCache&              cache) {
-#define PARSE_CONFIG(typ,dtyp,etyp)                                     \
-      const dtyp& f = *reinterpret_cast<const dtyp*>(payload);          \
-      const typ& c = *reinterpret_cast<const typ*>(_buffer);            \
-      frame = f.frame(c);                                               \
-      temps = f.temperatures(c);                                        \
+#define PARSE_CONFIG(typ,dtyp,etyp)                                       \
+      const dtyp& f = *reinterpret_cast<const dtyp*>(payload);            \
+      const typ& c = *reinterpret_cast<const typ*>(_buffer);              \
+      frame = f.frame(c);                                                 \
+      temps = f.temperatures(c);                                          \
       _envData->fill(cache,f.etyp(c));
 
       switch(_id.id()) {
@@ -193,6 +197,7 @@ namespace EpixAmi {
     }
     void dump() const;
   private:
+    enum { AML=0, FL=8, FM=12, AHL=16, FL_ALT=24, FH=28 };
     Pds::TypeId _id;
     char*       _buffer;
 
@@ -208,7 +213,9 @@ namespace EpixAmi {
     unsigned _rowsReadPerAsic;
     unsigned _rowsCal;
     unsigned _rowsCalPerAsic;
+    unsigned _nGainModes;
     EnvData* _envData;
+    ndarray<uint16_t,2> _pixelGainConfig;
   };
 };
 
@@ -229,6 +236,8 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   _colsPerAsic = 0;
   _aMask = 0;
   _nAsics = 0;
+  _nGainModes = 1;
+  _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
 
   if (tid.id()==Pds::TypeId::Id_GenericPgpConfig) {
     const Pds::GenericPgp::ConfigV1& c = *reinterpret_cast<const Pds::GenericPgp::ConfigV1*>(payload);
@@ -253,14 +262,57 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   switch(_id.id()) {
   case Pds::TypeId::Id_EpixConfig   : 
     { PARSE_CONFIG(Pds::Epix::ConfigV1);
+      _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+      for(uint16_t* val = _pixelGainConfig.begin(); val != _pixelGainConfig.end(); val++) {
+        *val = 0;
+      }
+      _nGainModes      = 1;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kConfig:
     { PARSE_CONFIG(Pds::Epix::Config10KV1);
+      _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+      for(uint16_t* val = _pixelGainConfig.begin(); val != _pixelGainConfig.end(); val++) {
+        *val = 0;
+      }
+      _nGainModes      = 1;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kaConfig:
     { PARSE_CONFIG(Pds::Epix::Config10kaV1);
+      ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
+      _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+      for(unsigned j=0; j<_rows; j++) {
+        for(unsigned k=0; k<_columns; k++) {
+          uint16_t gain_config = 0;
+          uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                               (c.asics(_asic_map[(j/_rowsPerAsic)*_nchip_columns + k/_colsPerAsic]).trbit() << 4);
+          switch(gain_bits) {
+            case FH:
+              gain_config = 0;
+              break;
+            case FM:
+              gain_config = 1;
+              break;
+            case FL:
+            case FL_ALT:
+              gain_config = 2;
+              break;
+            case AML:
+              gain_config = 3;
+              break;
+            case AHL:
+              gain_config = 3;
+              break;
+            default:
+              printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+              gain_config = 0;
+              break;
+          }
+          _pixelGainConfig(j,k) = gain_config;  
+        }
+      }
+      _nGainModes      = 7;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows;
       _rowsCal         = c.numberOfCalibrationRows();
@@ -269,12 +321,22 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
     switch(_id.version()) {
     case 1:
       { PARSE_CONFIG(Pds::Epix::Config100aV1);
+        _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        for(uint16_t* val = _pixelGainConfig.begin(); val != _pixelGainConfig.end(); val++) {
+          *val = 0;
+        }
+        _nGainModes      = 1;
         _rowsRead        = c.numberOfReadableRows();
         _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
         _rowsCal         = c.numberOfCalibrationRows();
         _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
     case 2:
       { PARSE_CONFIG(Pds::Epix::Config100aV2);
+        _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        for(uint16_t* val = _pixelGainConfig.begin(); val != _pixelGainConfig.end(); val++) {
+          *val = 0;
+        }
+        _nGainModes      = 1;
         _rowsRead        = c.numberOfReadableRows();
         _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
         _rowsCal         = c.numberOfCalibrationRows();
@@ -304,7 +366,9 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   _rowsRead       (o._rowsRead),
   _rowsReadPerAsic(o._rowsReadPerAsic),
   _rowsCal        (o._rowsCal),
-  _rowsCalPerAsic (o._rowsCalPerAsic)
+  _rowsCalPerAsic (o._rowsCalPerAsic),
+  _nGainModes     (o._nGainModes),
+  _pixelGainConfig(o._pixelGainConfig)
 {
   unsigned sz=0;
 #define PARSE_CONFIG(typ)                                     \
@@ -346,16 +410,18 @@ void EpixAmi::ConfigCache::dump() const
   printf("rowsCal    %u  perasic %u\n",_rowsCal ,_rowsCalPerAsic);
 }
 
-EpixHandler::EpixHandler(const Pds::Src& info, FeatureCache& cache) :
+EpixHandler::EpixHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   EventHandlerF  (info, Data_Type.id(), config_type_list(), cache),
   _cache        (cache),
   _desc         ("template",0,0),
   _entry        (0),
-  _pentry       (0),
   _ref          (0),
   _options      (0),
-  _pedestals    (make_ndarray<unsigned>(1,1)),
-  _pedestals_lo (make_ndarray<unsigned>(1,1)),
+  _status       (make_ndarray<unsigned>(0U,0)),
+  _pedestals    (make_ndarray<double>(0U,0,0)),
+  _gains        (make_ndarray<double>(0U,0,0)),
+  _data         (make_ndarray<unsigned>(0U,0)),
+  _gstatus      (make_ndarray<unsigned>(0U,0)),
   _config_cache (new EpixAmi::ConfigCache)
 {
 }
@@ -415,11 +481,6 @@ void EpixHandler::reset()
   for(unsigned i=0; i<_ewf.size(); i++)
     delete _ewf[i];
   _ewf.clear();
-
-  if (_pentry) { 
-    delete _pentry; 
-    _pentry=0; 
-  }
 }
 
 //
@@ -440,14 +501,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   unsigned nchip_columns = _config_cache->numberOfAsicsPerRow();
   unsigned colsPerAsic   = _config_cache->numberOfColumnsPerAsic();
   unsigned rowsPerAsic   = _config_cache->numberOfRowsReadPerAsic();
-
-  { int ppb = 1;
-    DescImage desc(det, (unsigned)0, ChannelID::name(det),
-                   columns, _config_cache->numberOfRows(), ppb, ppb);
-
-    _pentry = new EntryImage(desc);
-    _pentry->invalid();
-  }
 
   //
   //  Special case of one ASIC
@@ -572,74 +625,40 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     _entry->reset();
     const DescImage& d = _entry->desc();
 
-    unsigned nskip = (_config_cache->numberOfRows()-a.shape()[0])/_config_cache->numberOfAsicsPerColumn();
-
-    ndarray<const unsigned,2> pa =
-      d.options()&FrameCalib::option_no_pedestal() ?
-      make_ndarray(&_offset   (nskip,0),a.shape()[0],a.shape()[1]) : 
-      make_ndarray(&_pedestals(nskip,0),a.shape()[0],a.shape()[1]);
-
-    ndarray<const unsigned,2> pa_lo =
-      d.options()&FrameCalib::option_no_pedestal() ?
-      make_ndarray(&_offset      (nskip,0),a.shape()[0],a.shape()[1]) : 
-      make_ndarray(&_pedestals_lo(nskip,0),a.shape()[0],a.shape()[1]);
-
-    ndarray<const unsigned,2> sta =
-      make_ndarray(&_status      (nskip,0),a.shape()[0],a.shape()[1]);
-
     int ppbin = _entry->desc().ppxbin();
 
     //
     //  Special case of one ASIC
     //
-    unsigned aMask = _config_cache->asicMask();
+    unsigned rows           = _config_cache->numberOfRowsRead();;
+    unsigned cols           = _config_cache->numberOfColumns();
+    unsigned nchip_rows     = _config_cache->numberOfAsicsPerColumn();
+    unsigned nchip_columns  = _config_cache->numberOfAsicsPerRow();
+    unsigned colsPerAsic    = _config_cache->numberOfColumnsPerAsic();
+    unsigned rowsPerAsic    = _config_cache->numberOfRowsReadPerAsic();
+    unsigned aMask          = _config_cache->asicMask();
+    ndarray<const uint16_t,2> pixelGainConfig = _config_cache->pixelGainConfig();
     if (aMask==0) return;
 
-    if ((aMask&(aMask-1))==0) {
-      unsigned asic=0;
-      while((aMask&(1<<asic))==0)
-        asic++;
-      unsigned i = _asicLocation[asic].row;
-      for(unsigned j=0; j<_config_cache->numberOfRowsReadPerAsic(); j++) {
-        unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
-        unsigned m = _asicLocation[asic].col*_config_cache->numberOfColumnsPerAsic();
-        const uint16_t* d = & a(r,m);
-        const unsigned* p_hi = &pa   (j,0);
-        const unsigned* p_lo = &pa_lo(j,0);
-        const unsigned* s    = &sta  (r,m);
-        const SubFrame& fr = _desc.frame(0);
-        for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
-          unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
-                                  unsigned(d[k]&0x3fff) + p_lo[k] :
-                                  unsigned(d[k]&0x3fff) + p_hi[k]) :
-            offset;
-          _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
-        }
-      }
-    }
-    else {
-      for(unsigned i=0; i<_config_cache->numberOfAsicsPerColumn(); i++)
-        for(unsigned j=0; j<_config_cache->numberOfRowsReadPerAsic(); j++) {
-          unsigned r = i*_config_cache->numberOfRowsReadPerAsic()+j;
-          for(unsigned m=0; m<_config_cache->numberOfAsicsPerRow(); m++) {
-            unsigned fn = i*_config_cache->numberOfAsicsPerRow()+m;
-            if (aMask & 1<<_asic_map[fn]) {
-              unsigned q = m*_config_cache->numberOfColumnsPerAsic();
-              const uint16_t* d    = &a    (r,q);
-              const unsigned* p_hi = &pa   (r,q);
-              const unsigned* p_lo = &pa_lo(r,q);
-              const unsigned* s    = &sta  (r,q);
-              const SubFrame& fr = _desc.frame(fn);
-              for(unsigned k=0; k<_config_cache->numberOfColumnsPerAsic(); k++) {
-                unsigned v = s[k]==0 ? ((d[k]&0x4000) ? 
-                                        unsigned(d[k]&0x3fff) + p_lo[k] :
-                                        unsigned(d[k]&0x3fff) + p_hi[k]) :
-                  offset;
-                _entry->addcontent(v, fr.x+k/ppbin, fr.y+j/ppbin);
-              }
-            }
+    for(unsigned j=0; j<rows; j++) {
+      for(unsigned k=0; k<cols; k++) {
+        // The gain index to use is the highest of the set bits
+        unsigned raw_val = a(j,k);
+        unsigned gain_val = (raw_val & gain_bits) >> 14;
+        unsigned gain_idx = pixelGainConfig(j,k) + (gain_val ? 2 : 0);
+        double calib_val = (double) ((raw_val & data_bits) + offset);
+        if (_status(j,k)) {
+          calib_val = doffset;
+        } else {
+          if (!(d.options()&GainSwitchCalib::option_no_pedestal())) {
+            calib_val -= _pedestals(gain_idx,j,k);
           }
         }
+        if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
+        // combined status mask with set of gain switched pixels to not use in common mode
+        _gstatus(j,k) = _status(j,k) | gain_val;
+        _data(j,k) = unsigned(calib_val + 0.5);
+      }
     }
 
     for(unsigned i=0; i<cal.shape()[0]; i++) {
@@ -670,68 +689,78 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 #endif
 
     if (d.options()&FrameCalib::option_correct_common_mode2()) {
-      for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
-          continue;
-        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-        unsigned shape[2];
-        shape[0] = e.shape()[0];
-        shape[1] = e.shape()[1]/4;
-        for(unsigned m=0; m<4; m++) {
-          for(unsigned y=0; y<shape[0]; y++) {
-            ndarray<const uint32_t,1> s(&e  (y,m*shape[1]),&shape[1]);
-            ndarray<const uint32_t,1> t(&sta(y,m*shape[1]),&shape[1]);
-            int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-            if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
-              _cache.cache(_feature[(y%16)+index],double(fn));
-            uint32_t* v = const_cast<uint32_t*>(&s[0]);
-            for(unsigned x=0; x<shape[1]; x++)
-              v[x] -= fn;
+      for(unsigned i=0; i<nchip_rows; i++) {
+        for(unsigned j=0; j<nchip_columns; j++) {
+          if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[i*nchip_columns+j]))==0)
+            continue;
+          unsigned shape[2];
+          shape[0] = rowsPerAsic;
+          shape[1] = colsPerAsic/4;
+          for(unsigned m=0; m<4; m++) {
+            for(unsigned y=0; y<rowsPerAsic; y++) {
+              ndarray<uint32_t,1> s(&_data (y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
+              ndarray<const uint32_t,1> t(&_gstatus(y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
+              int fn = int(FrameCalib::frameNoise(s,t,offset));
+              if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
+                _cache.cache(_feature[(y%16)+index],double(fn));
+              for(unsigned x=0; x<shape[1]; x++) {
+                if (t[x] == 0)
+                  s[x] -= fn;
+              }
+            }
           }
         }
       }
     }
 
     if (d.options()&FrameCalib::option_correct_common_mode()) {
-      for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
-          continue;
-        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-        unsigned shape[2];
-        shape[0] = e.shape()[0];
-        shape[1] = e.shape()[1]/4;
-        for(unsigned m=0; m<4; m++) {
-          ndarray<uint32_t,2> s(&e(0,m*shape[1]),shape);
-          s.strides(e.strides());
-          ndarray<uint32_t,2> t(_status.begin()+(s.begin()-_entry->content().begin()),shape);
-          t.strides(_status.strides());
-          int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-          for(unsigned y=0; y<shape[0]; y++) {
-            uint32_t* v = &s(y,0);
-            for(unsigned x=0; x<shape[1]; x++)
-              v[x] -= fn;
+      for(unsigned i=0; i<nchip_rows; i++) {
+        for(unsigned j=0; j<nchip_columns; j++) {
+          if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[i*nchip_columns+j]))==0)
+            continue;
+          unsigned shape[2];
+          shape[0] = rowsPerAsic;
+          shape[1] = colsPerAsic/4;
+          for(unsigned m=0; m<4; m++) {
+            ndarray<uint32_t,2> s(&_data (i*shape[0],(m+4*j)*shape[1]),shape);
+            s.strides(_data.strides());
+            ndarray<uint32_t,2> t(&_gstatus(i*shape[0],(m+4*j)*shape[1]),shape);
+            t.strides(_data.strides());
+            int fn = int(FrameCalib::frameNoise(s,t,offset));
+            for(unsigned y=0; y<shape[0]; y++) {
+              for(unsigned x=0; x<shape[1]; x++) {
+                if (t(y,x) == 0)
+                  s(y,x) -= fn;
+              }
+            }
+            if (Ami::EventHandler::post_diagnostics())
+              _cache.cache(_feature[4*(i*nchip_columns+j)+m+index],double(fn));
           }
-          if (Ami::EventHandler::post_diagnostics())
-            _cache.cache(_feature[4*k+m+index],double(fn));
         }
       }
     }
 
     if (d.options()&FrameCalib::option_correct_common_mode3()) {
-      for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
-          continue;
-        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-        for(unsigned x=0; x<e.shape()[1]; x++) {
-          ndarray<uint32_t,1> s(&e  (0,x),e.shape());
-          s.strides(e.strides());
-          ndarray<const uint32_t,1> t(&sta(0,x),e.shape());
-          t.strides(e.strides());
-          int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
-          //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
-          //  _cache.cache(_feature[(y%16)+index],double(fn));
-          for(unsigned y=0; y<e.shape()[0]; y++)
-            s[y] -= fn;
+      for(unsigned i=0; i<nchip_rows; i++) {
+        for(unsigned j=0; j<nchip_columns; j++) {
+          if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[i*nchip_columns+j]))==0)
+            continue;
+          unsigned shape[2];
+          shape[0] = rowsPerAsic;
+          shape[1] = colsPerAsic;
+          for(unsigned x=0; x<shape[1]; x++) {
+            ndarray<uint32_t,1> s(&_data (i*shape[0],x+j*shape[1]),shape);
+            s.strides(_data.strides());
+            ndarray<uint32_t,1> t(&_gstatus(i*shape[0],x+j*shape[1]),shape);
+            t.strides(_data.strides());
+            int fn = int(FrameCalib::frameNoise(s,t,offset));
+            //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
+            //  _cache.cache(_feature[(y%16)+index],double(fn));
+            for(unsigned y=0; y<shape[0]; y++) {
+              if (t[y] == 0)
+                s[y] -= fn;
+            }
+          }
         }
       }
     }
@@ -739,32 +768,36 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     //
     //  Correct for gain
     //
-    ndarray<const double,2> gn    = 
-      (d.options()&FrameCalib::option_correct_gain()) ? 
-      make_ndarray(&_gain   (nskip,0),a.shape()[0],a.shape()[1]) : 
-      make_ndarray(&_no_gain(nskip,0),a.shape()[0],a.shape()[1]);
+    if (d.options()&GainSwitchCalib::option_correct_gain()) {
+      for(unsigned j=0; j<rows; j++) {
+        for(unsigned k=0; k<cols; k++) {
+          unsigned gain_idx = pixelGainConfig(j,k) + (((a(j,k) & gain_bits) >> 14) ? 2 : 0);
+          double calib_val = ((double(_data(j,k)) - doffset) / _gains(gain_idx,j,k)) + doffset;
+          _data(j,k) = unsigned(calib_val + 0.5);
+        }
+      }
+    }
 
-    ndarray<const double,2> gn_lo = 
-      (d.options()&FrameCalib::option_correct_gain()) ?
-      make_ndarray(&_gain_lo(nskip,0),a.shape()[0],a.shape()[1]) : 
-      make_ndarray(&_no_gain(nskip,0),a.shape()[0],a.shape()[1]);
-    {
-      for(unsigned k=0; k<_desc.nframes(); k++) {
-        if ((aMask&(aMask-1))!=0 && (aMask&(1<<_asic_map[k]))==0) 
-          continue;
-        ndarray<uint32_t,2> e = _entry->contents(_desc.frame(k));
-        unsigned r = (k/_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfRowsReadPerAsic();
-        unsigned m = (k%_config_cache->numberOfAsicsPerRow()) * _config_cache->numberOfColumnsPerAsic();
-        for(unsigned y=0; y<e.shape()[0]; y++,r++) {
-          uint32_t*        v = &e    (y,0);
-          const uint16_t* da = &a    (r,m);
-          const double* g_hi = &gn   (r,m);
-          const double* g_lo = &gn_lo(r,m);
-          const double  doff = doffset * int(d.ppxbin()*d.ppybin()+0.5);
-          for(unsigned x=0; x<e.shape()[1]; x++) {
-            double q = (double(v[x]) - doff) * ( (da[x]&0x4000) ? g_lo[x]:g_hi[x] );
-            v[x] = unsigned(q+doff);
-          }
+    //
+    //  Special case of one ASIC
+    //
+    if ((aMask&(aMask-1))==0) {
+      unsigned asic=0;
+      while((aMask&(1<<asic))==0)
+        asic++;
+      unsigned i = _asicLocation[asic].row;
+      for(unsigned j=0; j<rowsPerAsic; j++) {
+        unsigned r = i*rowsPerAsic+j;
+        unsigned m = _asicLocation[asic].col*colsPerAsic;
+        const SubFrame& fr = _desc.frame(0);
+        for(unsigned k=0; k<colsPerAsic; k++) {
+          _entry->addcontent(_data(r,m+k), fr.x+k/ppbin, fr.y+j/ppbin);
+        }
+      }
+    } else {
+      for(unsigned j=0; j<rows; j++) {
+        for(unsigned k=0; k<cols; k++) {
+          _entry->addcontent(_data(j,k), k/ppbin, j/ppbin);
         }
       }
     }
@@ -782,322 +815,29 @@ void EpixHandler::_damaged() {
 
 void EpixHandler::_load_pedestals()
 {
-  unsigned rows =_config_cache->numberOfRows();
-  unsigned cols =_config_cache->numberOfColumns();
-  unsigned aMask=_config_cache->asicMask();
+  unsigned rows  = _config_cache->numberOfRowsRead();
+  unsigned cols  = _config_cache->numberOfColumns();
+  unsigned gains = _config_cache->numberOfGainModes();
+  unsigned aMask = _config_cache->asicMask();
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   if (aMask==0) return;
 
-  _status       = make_ndarray<unsigned>(rows,cols);
-  _pedestals    = make_ndarray<unsigned>(rows,cols);
-  _pedestals_lo = make_ndarray<unsigned>(rows,cols);
-  _offset       = make_ndarray<unsigned>(rows,cols);
-  for(unsigned* a = _offset.begin(); a!=_offset.end(); *a++ = offset) ;
-
-  bool loffl=false;
-  FILE* f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
-                              "sta", "pixel_status", true, &loffl);
-  if (f) {
-    if (loffl) {
-      ndarray<unsigned,2> pb = FrameCalib::load_array(f);
-      if ((pb.shape()[0] == rows) && (pb.shape()[1] == cols)) {
-        if ((aMask&(aMask-1))==0) {
-          switch(aMask) {
-          case 1: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _status(i,j) = pb(i+rows/2,j+cols/2);
-          } break;
-          case 2: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _status(i,j) = pb(i,j+cols/2);
-          } break;
-          case 4: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _status(i,j) = pb(i,j);
-          } break;
-          case 8: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _status(i,j) = pb(i+rows/2,j);
-          } break;
-          default: break;
-          }
-        }
-        else {
-          for(unsigned* a=_status.begin(), *b=pb.begin(); a!=_status.end(); a++,b++)
-            *a = *b;
-        }
-      }
-      else {
-        printf("Discarding offline pixel status file with shape (%u, %u) that differs from expected (%u, %u)!\n",
-               pb.shape()[0],
-               pb.shape()[1],
-               rows,
-               cols);
-        for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0);
-      }
-    }
-    else {
-      EntryImage* p = _pentry;
-      ndarray<unsigned,2> pb = FrameCalib::load_array(f);
-      if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-        unsigned nskip = (_status.shape()[0]-pb.shape()[0])/2;
-        for(unsigned *a=pb.begin(), *b=&_status(nskip,0); a!=pb.end(); *b++=*a++) ;
-        DescImage& d = _entry->desc();
-        _load_one_asic(pb, d.nbinsy(), _status);
-        ImageMask mask(d.nbinsy(),d.nbinsx());
-        mask.fill();
-        for(unsigned i=0; i<d.nbinsy(); i++)
-          for(unsigned j=0; j<d.nbinsx(); j++)
-            if (_status(nskip+i,j)) mask.clear(i,j);
-        mask.update();
-        d.set_mask(mask);
-
-      }
-      else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
-        DescImage& d = _entry->desc();
-        _load_one_asic(pb, d.nbinsy(), _status);
-        ImageMask mask(d.nbinsy(),d.nbinsx());
-        mask.fill();
-        for(unsigned i=0; i<d.nbinsy(); i++)
-          for(unsigned j=0; j<d.nbinsx(); j++)
-            if (_status(i,j)) mask.clear(i,j);
-        mask.update();
-        d.set_mask(mask);
-      }
-      else
-        for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0);
-    }
-    fclose(f);
-  }
-  else
-    for(unsigned* a=_status.begin(); a!=_status.end(); *a++=0);
-
-  f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()), 
-                        "ped", "pedestals", true, &loffl);
-  if (f) {
-    if (loffl) {
-      ndarray<double,2>  pb = FrameCalib::load_darray(f);
-      if ((pb.shape()[0] == rows) && (pb.shape()[1] == cols)) {
-        if ((aMask&(aMask-1))==0) {
-          switch(aMask) {
-          case 1: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _pedestals(i,j) = offset-unsigned(pb(i+rows/2,j+cols/2)+0.5);
-          } break;
-          case 2: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _pedestals(i,j) = offset-unsigned(pb(i,j+cols/2)+0.5);
-          } break;
-          case 4: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _pedestals(i,j) = offset-unsigned(pb(i,j)+0.5);
-          } break;
-          case 8: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _pedestals(i,j) = offset-unsigned(pb(i+rows/2,j)+0.5);
-          } break;
-          default: break;
-          }
-        }
-        else {
-          double* b = pb.begin();
-          for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); a++,b++)
-            *a = offset-unsigned(*b+0.5);
-        }
-      }
-      else {
-        printf("Discarding pedestal file with shape (%u, %u) that differs from expected (%u, %u)!\n",
-               pb.shape()[0],
-               pb.shape()[1],
-               rows,
-               cols);
-        for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
-      }
-    }
-    else {
-      EntryImage* p = _pentry;
-      ndarray<unsigned,2> pb = FrameCalib::load_array(f);
-      printf("pb size %d,%d\n",pb.shape()[0],pb.shape()[1]);
-      if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-        unsigned nskip = (_pedestals.shape()[0]-pb.shape()[0])/2;
-        for(unsigned *a=pb.begin(), *b=&_pedestals(nskip,0); a!=pb.end(); *b++=offset-*a++) ;
-      }
-      else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
-        _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals);
-        for(unsigned* p=_pedestals.begin(); p!=_pedestals.end(); p++)
-          *p = offset-*p;
-      }
-      else
-        for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
-
-      pb = FrameCalib::load_array(p->desc(),"ped_lo");
-      if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-        unsigned nskip = (_pedestals_lo.shape()[0]-pb.shape()[0])/2;
-        for(unsigned *a=pb.begin(), *b=&_pedestals_lo(nskip,0); a!=pb.end(); *b++=offset-*a++) ;
-      }
-      else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
-        _load_one_asic(pb, _entry->desc().nbinsy(), _pedestals_lo);
-        for(unsigned* p=_pedestals_lo.begin(); p!=_pedestals_lo.end(); p++)
-          *p = offset-*p;
-      }
-      else
-        for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
-    }
-    fclose(f);
-  }
-  else {
-    for(unsigned* a=_pedestals.begin(); a!=_pedestals.end(); *a++=offset) ;
-    for(unsigned* a=_pedestals_lo.begin(), *b=_pedestals.begin(); a!=_pedestals_lo.end(); *a++=*b++) ;
-  }
+  _data = make_ndarray<unsigned>(rows, cols);
+  _gstatus = make_ndarray<unsigned>(rows, cols);
+  _status = GainSwitchCalib::load_array(det, rows, cols, 0, NULL, "sta", "pixel_status");
+  _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, NULL, "ped", "pedestals");
 }
 
 void EpixHandler::_load_gains()
 {
-  unsigned rows =_config_cache->numberOfRows();
-  unsigned cols =_config_cache->numberOfColumns();
-  unsigned aMask=_config_cache->asicMask();
+  unsigned rows  = _config_cache->numberOfRowsRead();
+  unsigned cols  = _config_cache->numberOfColumns();
+  unsigned gains = _config_cache->numberOfGainModes();
+  unsigned aMask = _config_cache->asicMask();
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   if (aMask==0) return;
 
-  _gain    = make_ndarray<double>(rows,cols);
-  _gain_lo = make_ndarray<double>(rows,cols);
-  _no_gain = make_ndarray<double>(rows,cols);
-
-  for(double* a=_no_gain.begin(); a!=_no_gain.end(); *a++=1.) ;
-
-  bool loffl=false;
-  FILE* f = Ami::Calib::fopen(static_cast<const Pds::DetInfo&>(info()),
-                              "gain", "pixel_gain", true, &loffl);
-  if (f) {
-    if (loffl) {
-      ndarray<double,2> pb = FrameCalib::load_darray(f);
-      if ((pb.shape()[0] == rows) && (pb.shape()[1] == cols)) {
-        if ((aMask&(aMask-1))==0) {
-          switch(aMask) {
-          case 1: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _gain(i,j) = pb(i+rows/2,j+cols/2);
-          } break;
-          case 2: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _gain(i,j) = pb(i,j+cols/2);
-          } break;
-          case 4: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _gain(i,j) = pb(i,j);
-          } break;
-          case 8: {
-            for(unsigned i=0; i<rows/2; i++)
-              for(unsigned j=0; j<cols/2; j++)
-                _gain(i,j) = pb(i+rows/2,j);
-          } break;
-          default: break;
-          }
-        }
-        else {
-          for(double* a=_gain.begin(), *b=pb.begin(); a!=_gain.end(); a++,b++)
-            *a = *b;
-        }
-      }
-      else {
-        printf("Discarding gain file with shape (%u, %u) that differs from expected (%u, %u)!\n",
-               pb.shape()[0],
-               pb.shape()[1],
-               rows,
-               cols);
-        for(double* a=_gain.begin(); a!=_gain.end(); *a++=1.) ;
-      }
-    }
-    else {
-      EntryImage* p = _pentry;
-      ndarray<double,2> pb = FrameCalib::load_darray(f);
-      if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-        unsigned nskip = (_gain.shape()[0]-pb.shape()[0])/2;
-        for(double *a=pb.begin(), *b=&_gain(nskip,0); a!=pb.end(); *a++=*b++) ;
-      }
-      else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
-        _load_one_asic(pb, _entry->desc().nbinsy(), _gain);
-      }
-      else
-        for(double* a=_gain.begin(); a!=_gain.end(); *a++=1.) ;
-
-      pb = FrameCalib::load_darray(p->desc(),"gain_lo");
-      if (pb.shape()[0] && pb.shape()[1]==p->desc().nbinsx() && pb.shape()[0]<=p->desc().nbinsy()) {
-        unsigned nskip = (_gain_lo.shape()[0]-pb.shape()[0])/2;
-        for(double *a=pb.begin(), *b=&_gain_lo(nskip,0); a!=pb.end(); *a++=*b++) ;
-      }
-      else if ((aMask&(aMask-1))==0 && pb.shape()[0] && pb.shape()[1]==_entry->desc().nbinsx()) {
-        _load_one_asic(pb, _entry->desc().nbinsy(), _gain_lo);
-      }
-      else
-        for(double* a=_gain_lo.begin(); a!=_gain_lo.end(); *a++=100.) ;
-    }
-    fclose(f);
-  }
-  else {
-    for(double* a=_gain.begin(); a!=_gain.end(); *a++=1.) ;
-    for(double* a=_gain_lo.begin(); a!=_gain_lo.end(); *a++=100.) ;
-  }
-}
-
-void _load_one_asic(ndarray<unsigned,2>& pb, 
-                    unsigned ny,
-                    ndarray<unsigned,2>& pedestals)
-{
-  printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
-         pb.shape()[0],pb.shape()[1],
-         pedestals.shape()[0],pedestals.shape()[1],
-         ny);
-
-  unsigned nskip = (ny-pb.shape()[0])/2;
-  unsigned nx = pb.shape()[1];
-
-  for(unsigned i=0; i<pb.shape()[0]; i++) {
-    unsigned* a = &pb(i,0);
-    unsigned* b0 = &pedestals(nskip+i   ,0);
-    unsigned* b1 = &pedestals(nskip+i+ny,0);
-    for(unsigned j=0; j<pb.shape()[1]; j++) {
-      unsigned v = a[j];
-      b0[j   ] = v;
-      b0[j+nx] = v;
-      b1[j   ] = v;
-      b1[j+nx] = v;
-    }
-  }
-}
-
-void _load_one_asic(ndarray<double,2>& pb, 
-                    unsigned ny,
-                    ndarray<double,2>& pedestals)
-{
-  printf("_load_one_asic [%ux%u] [%ux%u] ny %u\n",
-         pb.shape()[0],pb.shape()[1],
-         pedestals.shape()[0],pedestals.shape()[1],
-         ny);
-
-  unsigned nskip = (ny-pb.shape()[0])/2;
-  unsigned nx = pb.shape()[1];
-  for(unsigned i=0; i<pb.shape()[0]; i++) {
-    double* a = &pb(i,0);
-    double* b0 = &pedestals(nskip+i   ,0);
-    double* b1 = &pedestals(nskip+i+ny,0);
-    for(unsigned j=0; j<pb.shape()[1]; j++) {
-      double v = a[j];
-      b0[j   ] = v;
-      b0[j+nx] = v;
-      b1[j   ] = v;
-      b1[j+nx] = v;
-    }
-  }
+  _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, NULL, "gain", "pixel_gain");
 }
 
 double _tps_temp(const uint16_t q)
