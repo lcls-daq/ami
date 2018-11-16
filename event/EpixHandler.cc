@@ -55,6 +55,14 @@ struct AsicLocation { unsigned row, col; };
 typedef struct AsicLocation AsicLocation_s;
 static const AsicLocation_s _asicLocation[] = { {1,1}, {0,1}, {0,0}, {1,0} };
 
+static void _load_one_asic(ndarray<unsigned,2>& asic_array,
+                           unsigned asic,
+                           ndarray<unsigned,2>& full_array);
+
+static void _load_one_asic(ndarray<double,3>& asic_array,
+                           unsigned asic,
+                           ndarray<double,3>& full_array);
+
 static double _tps_temp(const uint16_t q);
 
 static CspadTemp           _therm(RDIV);
@@ -502,6 +510,9 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   unsigned colsPerAsic   = _config_cache->numberOfColumnsPerAsic();
   unsigned rowsPerAsic   = _config_cache->numberOfRowsReadPerAsic();
 
+  _data = make_ndarray<unsigned>(rows, columns);
+  _gstatus = make_ndarray<unsigned>(rows, columns);
+
   //
   //  Special case of one ASIC
   //     Make frame only as large as one ASIC
@@ -815,29 +826,101 @@ void EpixHandler::_damaged() {
 
 void EpixHandler::_load_pedestals()
 {
-  unsigned rows  = _config_cache->numberOfRowsRead();
-  unsigned cols  = _config_cache->numberOfColumns();
-  unsigned gains = _config_cache->numberOfGainModes();
-  unsigned aMask = _config_cache->asicMask();
+  unsigned rows         = _config_cache->numberOfRowsRead();
+  unsigned cols         = _config_cache->numberOfColumns();
+  unsigned colsPerAsic  = _config_cache->numberOfColumnsPerAsic();
+  unsigned rowsPerAsic  = _config_cache->numberOfRowsReadPerAsic();
+  unsigned gains        = _config_cache->numberOfGainModes();
+  unsigned aMask        = _config_cache->asicMask();
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   if (aMask==0) return;
 
-  _data = make_ndarray<unsigned>(rows, cols);
-  _gstatus = make_ndarray<unsigned>(rows, cols);
-  _status = GainSwitchCalib::load_array(det, rows, cols, 0, NULL, "sta", "pixel_status");
-  _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, NULL, "ped", "pedestals");
+  if ((aMask&(aMask-1))==0) {
+    unsigned asic=0;
+    while((aMask&(1<<asic))==0)
+      asic++;
+    bool failed = false;
+    _status = GainSwitchCalib::load_array(det, rows, cols, 0, &failed, "sta", "pixel_status");
+    if (failed) {
+      ndarray<unsigned,2> asic_status = GainSwitchCalib::load_array(det, rowsPerAsic, colsPerAsic, 0, &failed, "sta", "pixel_status");
+      if (!failed) {
+        _load_one_asic(asic_status, asic, _status);
+      }
+    }
+    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, &failed, "ped", "pedestals");
+    if (failed) {
+      ndarray<double,3> asic_pedestals = GainSwitchCalib::load_multi_array(det, gains, rowsPerAsic, colsPerAsic, 0.0, &failed, "ped", "pedestals");
+      if (!failed) {
+        _load_one_asic(asic_pedestals, asic, _pedestals);
+      }
+    }
+  } else {
+    _status = GainSwitchCalib::load_array(det, rows, cols, 0, NULL, "sta", "pixel_status");
+    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, NULL, "ped", "pedestals");
+  }
 }
 
 void EpixHandler::_load_gains()
 {
-  unsigned rows  = _config_cache->numberOfRowsRead();
-  unsigned cols  = _config_cache->numberOfColumns();
-  unsigned gains = _config_cache->numberOfGainModes();
-  unsigned aMask = _config_cache->asicMask();
+  unsigned rows         = _config_cache->numberOfRowsRead();
+  unsigned cols         = _config_cache->numberOfColumns();
+  unsigned colsPerAsic  = _config_cache->numberOfColumnsPerAsic();
+  unsigned rowsPerAsic  = _config_cache->numberOfRowsReadPerAsic();
+  unsigned gains        = _config_cache->numberOfGainModes();
+  unsigned aMask        = _config_cache->asicMask();
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   if (aMask==0) return;
 
-  _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, NULL, "gain", "pixel_gain");
+  if ((aMask&(aMask-1))==0) {
+    unsigned asic=0;
+    while((aMask&(1<<asic))==0)
+      asic++;
+    bool failed = false;
+    _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, &failed, "gain", "pixel_gain");
+    if (failed) {
+      ndarray<double,3> asic_gains = GainSwitchCalib::load_multi_array(det, gains, rowsPerAsic, colsPerAsic, 1.0, &failed, "gain", "pixel_gain");
+      if (!failed) {
+        _load_one_asic(asic_gains, asic, _gains);
+      }
+    }
+  } else {
+    _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, NULL, "gain", "pixel_gain");
+  }
+}
+
+void _load_one_asic(ndarray<unsigned,2>& asic_array,
+                    unsigned asic,
+                    ndarray<unsigned,2>& full_array)
+{
+  unsigned rowsPerAsic = asic_array.shape()[0];
+  unsigned colsPerAsic = asic_array.shape()[1];
+  unsigned i = _asicLocation[asic].row;
+  for(unsigned j=0; j<rowsPerAsic; j++) {
+    unsigned r = i*rowsPerAsic+j;
+    unsigned m = _asicLocation[asic].col*colsPerAsic;
+    for(unsigned k=0; k<colsPerAsic; k++) {
+      full_array(r,m+k) = asic_array(j,k);
+    }
+  }
+}
+
+void _load_one_asic(ndarray<double,3>& asic_array,
+                    unsigned asic,
+                    ndarray<double,3>& full_array)
+{
+  unsigned gains = asic_array.shape()[0];
+  unsigned rowsPerAsic = asic_array.shape()[1];
+  unsigned colsPerAsic = asic_array.shape()[2];
+  for (unsigned g=0; g<gains; g++) {
+    unsigned i = _asicLocation[asic].row;
+    for(unsigned j=0; j<rowsPerAsic; j++) {
+      unsigned r = i*rowsPerAsic+j;
+      unsigned m = _asicLocation[asic].col*colsPerAsic;
+      for(unsigned k=0; k<colsPerAsic; k++) {
+        full_array(g,r,m+k) = asic_array(g,j,k);
+      }
+    }
+  }
 }
 
 double _tps_temp(const uint16_t q)
