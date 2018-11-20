@@ -20,8 +20,13 @@ typedef Pds::Epix::Config10ka2MV1   Cfg10ka2M;
 typedef Pds::Epix::Config10kaQuadV1 Cfg10kaQuad;
 typedef Pds::Epix::Config10ka       Cfg10ka;
 
-static const unsigned      wElem = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_numberOfAsicsPerRow;
-static const unsigned      hElem = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
+static const unsigned      wE = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_numberOfAsicsPerRow;
+static const unsigned      hE = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
+//  Three margin parameters
+static const unsigned      gM = 2;
+static const unsigned      eM = 64;  // "edge" margin
+static const unsigned      hM = 4;   // 1/2 "horizontal" margin between ASICs
+static const unsigned      vM = 12;  // 1/2 "vertical" margin between ASICs
 
 using Ami::EventHandlerF;
 using Ami::FeatureCache;
@@ -221,12 +226,12 @@ DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
   //
   //  (Epix10ka2m)
   //         |
-  //  Quad 3 | Quad 0      Quad 1 is rotated  90d clockwise
-  //  -------+--------     Quad 2 is rotated 180d clockwise
-  //  Quad 2 | Quad 1      Quad 3 is rotated 270d clockwise
+  //  Quad 0 | Quad 1      Quad 2 is rotated  90d clockwise
+  //  -------+--------     Quad 3 is rotated 180d clockwise
+  //  Quad 3 | Quad 2      Quad 0 is rotated 270d clockwise
   //         |
   //
-  //  (Quad 0)
+  //  (Quad 1)
   //         |
   //  Elem 0 | Elem 1
   //  -------+--------     No rotations
@@ -235,31 +240,40 @@ DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
   //
   //  (Elem 0)
   //         |
-  //  ASIC 2 | ASIC 1
+  //  ASIC 0 | ASIC 3
   //  -------+--------     No rotations
-  //  ASIC 3 | ASIC 0
+  //  ASIC 1 | ASIC 2
   //         |
-  static const unsigned      eMargin = 4;
-  static const SubFrame elem[] = { SubFrame( 3*eMargin + 2*hElem        , 1*eMargin                  , wElem, hElem, D180 ),
-                                   SubFrame( 4*eMargin + 2*hElem + wElem, 1*eMargin                  , wElem, hElem, D180 ),
-                                   SubFrame( 3*eMargin + 2*hElem        , 2*eMargin + 1*hElem        , wElem, hElem, D180 ),
-                                   SubFrame( 4*eMargin + 2*hElem + wElem, 2*eMargin + 1*hElem        , wElem, hElem, D180 ),
-
-                                   SubFrame( 4*eMargin + 2*wElem + hElem, 3*eMargin + 2*hElem        , hElem, wElem, D270 ),
-                                   SubFrame( 4*eMargin + 2*wElem + hElem, 4*eMargin + 2*hElem + wElem, hElem, wElem, D270 ),
-                                   SubFrame( 3*eMargin + 2*wElem        , 3*eMargin + 2*hElem        , hElem, wElem, D270 ),
-                                   SubFrame( 3*eMargin + 2*wElem        , 4*eMargin + 2*hElem + wElem, hElem, wElem, D270 ),
-
-                                   SubFrame( 1*eMargin                  , 3*eMargin + 2*wElem        , wElem, hElem, D0 ),
-                                   SubFrame( 2*eMargin + 1*wElem        , 3*eMargin + 2*wElem        , wElem, hElem, D0 ),
-                                   SubFrame( 1*eMargin                  , 4*eMargin + 2*wElem + hElem, wElem, hElem, D0 ),
-                                   SubFrame( 2*eMargin + 1*wElem        , 4*eMargin + 2*wElem + hElem, wElem, hElem, D0 ),
-
-                                   SubFrame( 1*eMargin                  , 2*eMargin + 1*wElem        , hElem, wElem, D90 ),
-                                   SubFrame( 1*eMargin                  , 1*eMargin                  , hElem, wElem, D90 ),
-                                   SubFrame( 2*eMargin + 1*hElem        , 2*eMargin + 1*wElem        , hElem, wElem, D90 ),
-                                   SubFrame( 2*eMargin + 1*hElem        , 1*eMargin                  , hElem, wElem, D90 ) };
   //
+  //  (Elem 0-3 pixel array)
+  //                    row increasing
+  //                          ^
+  //                          |
+  //                          |
+  //  column increasing <-- (0,0)
+  //
+  //                                         eM     vM     hM     hE     wE, eM     vM     hM     hE       wE
+  static const SubFrame elem[] = { SubFrame( eM + 1*vM                     ,             3*hM         + 1*wE, hE, wE, D90 ),
+                                   SubFrame( eM + 1*vM                     ,             1*hM               , hE, wE, D90 ),
+                                   SubFrame( eM + 3*vM        + 1*hE       ,             3*hM         + 1*wE, hE, wE, D90 ),
+                                   SubFrame( eM + 3*vM        + 1*hE       ,             1*hM               , hE, wE, D90 ),
+
+                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 1*vM                      , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 1*vM                      , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 3*vM        + 1*hE        , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 3*vM        + 1*hE        , wE, hE, D180 ),
+
+                                   SubFrame(      3*vM + 3*hM + 1*hE + 2*wE, eM + 3*vM + 2*hM + 2*hE        , hE, wE, D270 ),
+                                   SubFrame(      3*vM + 3*hM + 1*hE + 2*wE, eM + 3*vM + 4*hM + 2*hE  + 1*wE, hE, wE, D270 ),
+                                   SubFrame(      1*vM + 3*hM        + 2*wE, eM + 3*vM + 2*hM + 2*hE        , hE, wE, D270 ),
+                                   SubFrame(      1*vM + 3*hM        + 2*wE, eM + 3*vM + 4*hM + 2*hE  + 1*wE, hE, wE, D270 ),
+
+                                   SubFrame(             3*hM        + 1*wE,      3*vM + 3*hM + 1*hE  + 2*wE, wE, hE, D0 ),
+                                   SubFrame(             1*hM              ,      3*vM + 3*hM + 1*hE  + 2*wE, wE, hE, D0 ),
+                                   SubFrame(             3*hM        + 1*wE,      1*vM + 3*hM         + 2*wE, wE, hE, D0 ),
+                                   SubFrame(             1*hM              ,      1*vM + 3*hM         + 2*wE, wE, hE, D0 ) };
+
+      //
   // Determine the bounds of the larger rectangular frame
   //
   unsigned xmin=-1U, xmax=0, ymin=-1U, ymax=0, v;
@@ -272,8 +286,8 @@ DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
       if ((v=elem[i].y + elem[i].ny) > ymax) ymax = v;
     }
 
-  unsigned wImage = xmax - xmin + 2*eMargin;
-  unsigned hImage = ymax - ymin + 2*eMargin;
+  unsigned wImage = xmax - xmin + 2*gM;
+  unsigned hImage = ymax - ymin + 2*gM;
 
   printf("x [%u,%u]  y [%u,%u]  w %u  h %u\n",
          xmin, xmax, ymin, ymax, wImage, hImage);
@@ -288,8 +302,8 @@ DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
     //    if (_config->elemCfg(i).asicMask()) {
     if (1) {
       SubFrame fr(elem[i]);
-      fr.x += eMargin - xmin;
-      fr.y += eMargin - ymin;
+      fr.x += gM - xmin;
+      fr.y += gM - ymin;
       desc.add_frame( fr );
     }
   return desc;
@@ -321,15 +335,14 @@ DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det) const
   //
   //  (Elem 0)
   //         |
-  //  ASIC 2 | ASIC 1
+  //  ASIC 0 | ASIC 3
   //  -------+--------     No rotations
-  //  ASIC 3 | ASIC 0
+  //  ASIC 1 | ASIC 2
   //         |
-  static const unsigned      eMargin = 4;
-  static const SubFrame elem[] = { SubFrame( 3*eMargin + 2*hElem        , 1*eMargin                  , wElem, hElem, D180 ),
-                                   SubFrame( 4*eMargin + 2*hElem + wElem, 1*eMargin                  , wElem, hElem, D180 ),
-                                   SubFrame( 3*eMargin + 2*hElem        , 2*eMargin + 1*hElem        , wElem, hElem, D180 ),
-                                   SubFrame( 4*eMargin + 2*hElem + wElem, 2*eMargin + 1*hElem        , wElem, hElem, D180 ) };
+  static const SubFrame elem[] = { SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 1*vM                      , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 1*vM                      , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 3*vM        + 1*hE        , wE, hE, D180 ),
+                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 3*vM        + 1*hE        , wE, hE, D180 ) };
   //
   // Determine the bounds of the larger rectangular frame
   //
@@ -343,8 +356,8 @@ DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det) const
       if ((v=elem[i].y + elem[i].ny) > ymax) ymax = v;
     }
 
-  unsigned wImage = xmax - xmin + 2*eMargin;
-  unsigned hImage = ymax - ymin + 2*eMargin;
+  unsigned wImage = xmax - xmin + 2*gM;
+  unsigned hImage = ymax - ymin + 2*gM;
 
   printf("x [%u,%u]  y [%u,%u]  w %u  h %u\n",
          xmin, xmax, ymin, ymax, wImage, hImage);
@@ -359,8 +372,8 @@ DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det) const
     //    if (_config->elemCfg(i).asicMask()) {
     if (1) {
       SubFrame fr(elem[i]);
-      fr.x += eMargin - xmin;
-      fr.y += eMargin - ymin;
+      fr.x += gM - xmin;
+      fr.y += gM - ymin;
 #ifdef DBUG
       printf("add_frame x(%d) y(%d) nx(%d) ny(%d)\n",
              fr.x, fr.y, fr.nx, fr.ny);
@@ -509,7 +522,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
     const unsigned mask = (1<<14)-1;
 
-    ndarray<unsigned,2> tmp = make_ndarray<unsigned>(hElem,wElem);
+    ndarray<unsigned,2> tmp = make_ndarray<unsigned>(hE,wE);
 
     //
     //  Apply corrections for each element independently
@@ -539,8 +552,8 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       if (d.options()&FrameCalib::option_correct_common_mode2()) {
         unsigned* ptmp       = tmp.data();
         const unsigned* psta = sta.data();
-        const unsigned shape = wElem/8;
-        for(unsigned y=0; y<src.size(); y+=wElem/8, psta+=wElem/8) {
+        const unsigned shape = wE/8;
+        for(unsigned y=0; y<src.size(); y+=wE/8, psta+=wE/8) {
           ndarray<      unsigned,1> s(ptmp, &shape);
           ndarray<const unsigned,1> t(psta, &shape);
           
@@ -552,7 +565,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
             _cache.cache(_feature[(y%16)+index],double(fn));
 #endif
 
-          for(unsigned z=0; z<wElem/8; z++)
+          for(unsigned z=0; z<wE/8; z++)
             *ptmp++ -= fn;
         }          
       }
@@ -582,7 +595,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
       //  Apply column common mode
       if (d.options()&FrameCalib::option_correct_common_mode3()) {
-        for(unsigned y=0; y<tmp.shape()[0]; y+=hElem) {
+        for(unsigned y=0; y<tmp.shape()[0]; y+=hE) {
           for(unsigned x=0; x<tmp.shape()[1]; x++) {
             ndarray<uint32_t,1> s(&tmp(y,x),tmp.shape());
             s.strides(tmp.strides());
@@ -593,7 +606,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
             int fn = int(FrameCalib::median(s,t,olo,ohi))-int(oav);
             //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
             //  _cache.cache(_feature[(y%16)+index],double(fn));
-            for(unsigned k=0; k<hElem; k++)
+            for(unsigned k=0; k<hE; k++)
               s[k] -= fn;
           }
         }
