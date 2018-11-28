@@ -24,7 +24,7 @@ static const unsigned      wE = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_num
 static const unsigned      hE = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
 //  Three margin parameters
 static const unsigned      gM = 2;
-static const unsigned      eM = 64;  // "edge" margin
+static const unsigned      eM = 80;  // "edge" margin
 static const unsigned      hM = 4;   // 1/2 "horizontal" margin between ASICs
 static const unsigned      vM = 12;  // 1/2 "vertical" margin between ASICs
 
@@ -36,44 +36,40 @@ using Ami::EntryWaveform;
 
 namespace EpixArray {
 
-  class EnvDataElem {
-  public:
-    EnvDataElem(Ami::EventHandlerF&);
-  public:
-    void     addFeatures(const char* name);
-    void     rename     (const char* name);
-    void     fill       (FeatureCache&, ndarray<const uint32_t,2> env);
-  private:
-    EventHandlerF& _handler;
-    ndarray<int,1> _index;
-  };
-
   class EnvData {
   public:
-    EnvData(unsigned n, Ami::EventHandlerF&);
-    virtual ~EnvData();
-    void     addFeatures(const char*   name);
-    void     rename     (const char*   name);
-    void     fill       (FeatureCache&, ndarray<const uint32_t,3> env);
-  private:
-    virtual void _rename(const char* name)=0;
-  protected:
-    std::vector<std::string > _name;
-    std::vector<EnvDataElem*> _elem;
+    virtual ~EnvData() {}
+  public:
+    virtual void     addFeatures(const char* name) = 0;
+    virtual void     rename     (const char* name) = 0;
+    virtual void     fill       (FeatureCache&, ndarray<const uint32_t,3> env) = 0;
   };
 
   class EnvDataQuad : public EnvData {
   public:
     EnvDataQuad(Ami::EventHandlerF&);
+    ~EnvDataQuad() {}
+  public:
+    void     addFeatures(const char* name);
+    void     rename     (const char* name);
+    void     fill       (FeatureCache&, ndarray<const uint32_t,3> env);
+    void     _fill      (FeatureCache&, ndarray<const uint32_t,2> env);
   private:
-    void _rename(const char*);
+    EventHandlerF& _handler;
+    ndarray<int,1> _index;
   };
 
   class EnvData2M : public EnvData {
   public:
     EnvData2M(EventHandlerF&);
+    ~EnvData2M();
+  public:
+    void     addFeatures(const char* name);
+    void     rename     (const char* name);
+    void     fill       (FeatureCache&, ndarray<const uint32_t,3> env);
   private:
-    void _rename(const char*);
+    std::vector<std::string > _name;
+    std::vector<EnvDataQuad*> _quad;
   };
 
   class CalData {
@@ -747,82 +743,54 @@ void EpixArrayHandler::_load_pedestals(const DescImage& desc)
 }
 
 
-EpixArray::EnvData::EnvData(unsigned n, Ami::EventHandlerF& h) : 
-  _name(n), _elem(n) 
+EpixArray::EnvData2M::EnvData2M(Ami::EventHandlerF& h) : 
+  _name(4), _quad(4) 
 {
-  for(unsigned i=0; i<n; i++)
-    _elem[i] = new EpixArray::EnvDataElem(h);
+  for(unsigned i=0; i<_quad.size(); i++)
+    _quad[i] = new EpixArray::EnvDataQuad(h);
 }
 
-EpixArray::EnvData::~EnvData()
+EpixArray::EnvData2M::~EnvData2M()
 {
-  for(unsigned i=0; i<_elem.size(); i++)
-    delete _elem[i];
+  for(unsigned i=0; i<_quad.size(); i++)
+    delete _quad[i];
 }
 
-void EpixArray::EnvData::addFeatures(const char* name)
+void EpixArray::EnvData2M::addFeatures(const char* name)
 {
-  _rename(name);
-  for(unsigned e=0; e<_elem.size(); e++)
-    _elem[e]->addFeatures(_name[e].c_str());
-}
-
-void EpixArray::EnvData::rename(const char* name)
-{
-  _rename(name);
-  for(unsigned e=0; e<_elem.size(); e++)
-    _elem[e]->rename(_name[e].c_str());
-}
-
-
-void EpixArray::EnvData::fill(FeatureCache& cache,
-                              ndarray<const uint32_t,3> env)
-{
-  for(unsigned e=0; e<env.shape()[0]; e++) {
-    ndarray<const uint32_t,2> a(env[e]);
-    _elem[e]->fill(cache,a);
-  }
-}
-
-
-EpixArray::EnvData2M::EnvData2M(EventHandlerF& handler) : EnvData(16, handler)
-{
-}
-
-void EpixArray::EnvData2M::_rename(const char* name)
-{
-  unsigned i=0;
-  for(unsigned q=0; q<4; q++) 
-    for(unsigned e=0; e<4; e++) {
-      std::ostringstream ostr;
-      ostr << name << ":Quad[" << q << "]:Elem[" << e << "]";
-      _name[i++] = ostr.str();
-    }
-}
-
-
-
-EpixArray::EnvDataQuad::EnvDataQuad(EventHandlerF& handler) : EnvData(4, handler)
-{
-}
-
-void EpixArray::EnvDataQuad::_rename(const char* name)
-{
-  unsigned i=0;
-  for(unsigned q=0; q<4; q++) {
+  for(unsigned e=0; e<_quad.size(); e++) {
     std::ostringstream ostr;
-    ostr << name << ":Elem[" << q << "]";
-    _name[i++] = ostr.str();
+    ostr << name << ":Quad[" << e << "]";
+    _quad[e]->addFeatures(ostr.str().c_str());
+  }
+}
+
+void EpixArray::EnvData2M::rename(const char* name)
+{
+  for(unsigned q=0; q<_quad.size(); q++) {
+    std::ostringstream ostr;
+    ostr << name << ":Quad[" << q << "]";
+    _quad[q]->rename(ostr.str().c_str());
   }
 }
 
 
-EpixArray::EnvDataElem::EnvDataElem(EventHandlerF& handler) :
-  _handler(handler), _index(make_ndarray<int>(9))
+void EpixArray::EnvData2M::fill(FeatureCache& cache,
+                                ndarray<const uint32_t,3> env)
+{
+  for(unsigned e=0; e<_quad.size(); e++) {
+    ndarray<const uint32_t,2> a(env[4*e+2]);
+    _quad[e]->_fill(cache,a);
+  }
+}
+
+
+EpixArray::EnvDataQuad::EnvDataQuad(EventHandlerF& handler) :
+  _handler(handler), _index(make_ndarray<int>(38))
 {
 }
 
-void EpixArray::EnvDataElem::addFeatures(const char* name)
+void EpixArray::EnvDataQuad::addFeatures(const char* name)
 {
 #define ADDV(s) {                                                       \
     std::ostringstream ostr;                                            \
@@ -830,20 +798,49 @@ void EpixArray::EnvDataElem::addFeatures(const char* name)
       _index[index++] = _handler._add_to_cache(ostr.str().c_str()); }
   
   unsigned index=0;
-  ADDV(Temp0);                                
-  ADDV(Temp1);                                
-  ADDV(Humidity);                             
-  ADDV(AnalogI);                              
-  ADDV(DigitalI);                             
-  ADDV(GuardI);                               
-  ADDV(BiasI);                                
-  ADDV(AnalogV);                              
-  ADDV(DigitalV);                             
+  ADDV(Sht31_Hum);                                
+  ADDV(Sht31_TempC);                                
+  ADDV(NctLoc_TempC);                             
+  ADDV(NctFpga_TempC);                              
+  ADDV(A0_2V5_Curr_mA);                             
+  ADDV(A1_2V5_Curr_mA);                               
+  ADDV(A2_2V5_Curr_mA);                               
+  ADDV(A3_2V5_Curr_mA);                               
+  ADDV(D0_2V5_Curr_mA);                               
+  ADDV(D1_2V5_Curr_mA);                               
+  ADDV(Therm0_TempC);                                
+  ADDV(Therm1_TempC);                              
+  ADDV(PwrDig_CurrA);                             
+  ADDV(PwrDig_Vin);                             
+  ADDV(PwrDig_TempC);                             
+  ADDV(PwrAna_CurrA);                             
+  ADDV(PwrAna_Vin);                             
+  ADDV(PwrAna_TempC);                             
+  ADDV(A0_2V5_H_TempC);                             
+  ADDV(A0_2V5_L_TempC);                             
+  ADDV(A1_2V5_H_TempC);                             
+  ADDV(A1_2V5_L_TempC);                             
+  ADDV(A2_2V5_H_TempC);                             
+  ADDV(A2_2V5_L_TempC);                             
+  ADDV(A3_2V5_H_TempC);                             
+  ADDV(A3_2V5_L_TempC);                             
+  ADDV(D0_2V5_TempC);                             
+  ADDV(D1_2V5_TempC);                             
+  ADDV(A0_1V8_TempC);                             
+  ADDV(A1_1V8_TempC);                             
+  ADDV(A2_1V8_TempC);                             
+  ADDV(PcbAna_Temp0C);
+  ADDV(PcbAna_Temp1C);
+  ADDV(PcbAna_Temp2C);
+  ADDV(TrOpt_TempC);
+  ADDV(TrOpt_Vcc);
+  ADDV(TrOpt_TxPwr_uW);
+  ADDV(TrOpt_RxPwr_uW);
 
 #undef ADDV
 }
 
-void EpixArray::EnvDataElem::rename(const char* name)
+void EpixArray::EnvDataQuad::rename(const char* name)
 {
 #define ADDV(s) {                                                       \
     std::ostringstream ostr;                                            \
@@ -851,34 +848,104 @@ void EpixArray::EnvDataElem::rename(const char* name)
       _handler._rename_cache(_index[index++],ostr.str().c_str()); }
 
   unsigned index=0;
-  ADDV(Temp0);                                
-  ADDV(Temp1);                                
-  ADDV(Humidity);                             
-  ADDV(AnalogI);                              
-  ADDV(DigitalI);                             
-  ADDV(GuardI);                               
-  ADDV(BiasI);                                
-  ADDV(AnalogV);                              
-  ADDV(DigitalV);                             
+  ADDV(Sht31_Hum);                                
+  ADDV(Sht31_TempC);                                
+  ADDV(NctLoc_TempC);                             
+  ADDV(NctFpga_TempC);                              
+  ADDV(A0_2V5_Curr_mA);                             
+  ADDV(A1_2V5_Curr_mA);                               
+  ADDV(A2_2V5_Curr_mA);                               
+  ADDV(A3_2V5_Curr_mA);                               
+  ADDV(D0_2V5_Curr_mA);                               
+  ADDV(D1_2V5_Curr_mA);                               
+  ADDV(Therm0_TempC);                                
+  ADDV(Therm1_TempC);                              
+  ADDV(PwrDig_CurrA);                             
+  ADDV(PwrDig_Vin);                             
+  ADDV(PwrDig_TempC);                             
+  ADDV(PwrAna_CurrA);                             
+  ADDV(PwrAna_Vin);                             
+  ADDV(PwrAna_TempC);                             
+  ADDV(A0_2V5_H_TempC);                             
+  ADDV(A0_2V5_L_TempC);                             
+  ADDV(A1_2V5_H_TempC);                             
+  ADDV(A1_2V5_L_TempC);                             
+  ADDV(A2_2V5_H_TempC);                             
+  ADDV(A2_2V5_L_TempC);                             
+  ADDV(A3_2V5_H_TempC);                             
+  ADDV(A3_2V5_L_TempC);                             
+  ADDV(D0_2V5_TempC);                             
+  ADDV(D1_2V5_TempC);                             
+  ADDV(A0_1V8_TempC);                             
+  ADDV(A1_1V8_TempC);                             
+  ADDV(A2_1V8_TempC);                             
+  ADDV(PcbAna_Temp0C);
+  ADDV(PcbAna_Temp1C);
+  ADDV(PcbAna_Temp2C);
+  ADDV(TrOpt_TempC);
+  ADDV(TrOpt_Vcc);
+  ADDV(TrOpt_TxPwr_uW);
+  ADDV(TrOpt_RxPwr_uW);
 
 #undef ADDV
 }
 
-void EpixArray::EnvDataElem::fill(FeatureCache& cache,
-                                  ndarray<const uint32_t,2> env)
+static double getThermistorTemp(const uint16_t x)
 {
-  const uint32_t* data = &env(env.shape()[0]-1,0);
-  const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
+  if (x==0) return 0.;
+  double u = double(x)/16383.0 * 2.5;
+  double i = u / 100000;
+  double r = (2.5 - u)/i;
+  double l = log(r/10000);
+  double t = 1.0 / (3.3538646E-03 + 2.5654090E-04 * l + 1.9243889E-06 * (l*l) + 1.0969244E-07 * (l*l*l));
+  return t - 273.15;
+}
+
+void EpixArray::EnvDataQuad::fill(FeatureCache& cache,
+                                  ndarray<const uint32_t,3> env)
+{
+  _fill(cache,ndarray<const uint32_t,2>(env[2]));
+}
+
+void EpixArray::EnvDataQuad::_fill(FeatureCache& cache,
+                                   ndarray<const uint32_t,2> env)
+{
+  uint16_t data[38];
+  ndarray<const uint32_t,1> a(env[0]);
+  ndarray<const uint32_t,1>::reverse_iterator iter = a.rbegin();
+  for(unsigned i=0; i<38; ) {
+    data[i++] = (*iter)&0xffff;
+    data[i++] = (*iter)>>16;
+    iter++;
+  }
   unsigned index=0;
-  cache.cache(_index[index++], double(sdata[0])*0.01);
-  cache.cache(_index[index++], double(sdata[1])*0.01);
-  cache.cache(_index[index++], double(sdata[2])*0.01);
-  cache.cache(_index[index++], double(data[3])*0.001);
-  cache.cache(_index[index++], double(data[4])*0.001);
-  cache.cache(_index[index++], double(data[5])*0.000001);
-  cache.cache(_index[index++], double(data[6])*0.000001);
-  cache.cache(_index[index++], double(data[7])*0.001);
-  cache.cache(_index[index++], double(data[8])*0.001);
+  cache.cache(_index[index++], double(data[0])/65535.0 * 100);
+  cache.cache(_index[index++], double(data[1])/65535.0 * 175 - 45);
+  cache.cache(_index[index++], double(data[2]&0xff));
+  cache.cache(_index[index++], double(data[3]>>8)+double(data[3]&0xc0)/256.);
+  cache.cache(_index[index++], double(data[4])/16383.0*2.5/330.*1.e6);
+  cache.cache(_index[index++], double(data[5])/16383.0*2.5/330.*1.e6);
+  cache.cache(_index[index++], double(data[6])/16383.0*2.5/330.*1.e6);
+  cache.cache(_index[index++], double(data[7])/16383.0*2.5/330.*1.e6);
+  cache.cache(_index[index++], double(data[8])/16383.0*2.5/330.*0.5e6);
+  cache.cache(_index[index++], double(data[9])/16383.0*2.5/330.*0.5e6);
+  cache.cache(_index[index++], getThermistorTemp(data[10]));
+  cache.cache(_index[index++], getThermistorTemp(data[11]));
+  cache.cache(_index[index++], double(data[12])*0.1024/4095/0.02);
+  cache.cache(_index[index++], double(data[13])*102.4/4095);
+  cache.cache(_index[index++], double(data[14])*2.048/4095*(130/(0.882-1.951)) + (0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[15])*0.1024/4095/0.02);
+  cache.cache(_index[index++], double(data[16])*102.4/4095);
+  cache.cache(_index[index++], double(data[17])*2.048/4095*(130/(0.882-1.951)) + (0.882/0.0082+100));
+  for(unsigned i=0; i<13; i++)
+    cache.cache(_index[index++], double(data[18+i])*1.65/65535*100);
+  cache.cache(_index[index++], double(data[31])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[32])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[33])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[34])/256);
+  cache.cache(_index[index++], double(data[35])*0.0001);
+  cache.cache(_index[index++], double(data[36])*0.1);
+  cache.cache(_index[index++], double(data[37])*0.1);
 }
 
 EpixArray::CalData::~CalData()
