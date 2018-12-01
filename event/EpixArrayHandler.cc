@@ -27,6 +27,7 @@ static const unsigned      gM = 2;
 static const unsigned      eM = 80;  // "edge" margin
 static const unsigned      hM = 4;   // 1/2 "horizontal" margin between ASICs
 static const unsigned      vM = 12;  // 1/2 "vertical" margin between ASICs
+static const unsigned      asicMap[] = { 2, 1, 3, 0 };
 
 using Ami::EventHandlerF;
 using Ami::FeatureCache;
@@ -116,13 +117,16 @@ namespace EpixArray {
     virtual unsigned numberOfAsics    () const = 0;
     virtual unsigned numberOfColumns  () const = 0;
     virtual unsigned numberOfRowsCal  () const = 0;
-    
+
     virtual Ami::DescImage descImage  (const Pds::DetInfo&) const = 0;
     virtual EnvData*       envData    () const = 0;
     virtual CalData*       calData    () const = 0;
+    virtual ndarray<const uint16_t,3> pixelGainConfig() const = 0;
     virtual ndarray<const uint16_t,3> frame(Pds::TypeId, const void*, FeatureCache&, const Pds::ClockTime&) const = 0;
 
     virtual void dump() const = 0;
+  protected:
+    enum { AML=0, FL=8, FM=12, AHL=16, FL_ALT=24, FH=28 };
   };
 
   class Epix10ka2MCache : public ConfigCache {
@@ -138,10 +142,11 @@ namespace EpixArray {
     unsigned numberOfAsics    () const { return Cfg10ka2M::_numberOfElements*4; } //64
     unsigned numberOfColumns  () const { return _config->numberOfColumns(); }
     unsigned numberOfRowsCal  () const { return _config->numberOfCalibrationRows(); }
-    
+
     Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
+    ndarray<const uint16_t,3> pixelGainConfig() const;
     ndarray<const uint16_t,3> frame(Pds::TypeId, const void*, FeatureCache&, const Pds::ClockTime&) const;
 
     void dump() const {}
@@ -164,10 +169,11 @@ namespace EpixArray {
     unsigned numberOfAsics    () const { return Cfg10kaQuad::_numberOfElements*4; }
     unsigned numberOfColumns  () const { return _config->numberOfColumns(); }
     unsigned numberOfRowsCal  () const { return _config->numberOfCalibrationRows(); }
-    
+
     Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
+    ndarray<const uint16_t,3> pixelGainConfig() const;
     ndarray<const uint16_t,3> frame(Pds::TypeId, const void*, FeatureCache&, const Pds::ClockTime&) const;
 
     void dump() const {}
@@ -213,6 +219,50 @@ EpixArray::ConfigCache* EpixArray::ConfigCache::instance(Pds::TypeId    config_t
   }
 
   return cache;
+}
+
+ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
+{
+  const unsigned nE = numberOfElements();
+  const unsigned conf_bits = 0x1c;
+  ndarray<uint16_t,3> pixelGainConfig = make_ndarray<uint16_t>(Cfg10ka2M::_numberOfElements, hE, wE);
+  for(unsigned i=0; i<nE; i++) {
+    const Cfg10ka& eC = _config->elemCfg(i);
+    ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
+    for(unsigned j=0; j<hE; j++) {
+      for(unsigned k=0; k<wE; k++) {
+        uint16_t gain_config = 0;
+        uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                             (eC.asics(asicMap[(j/Cfg10ka::_numberOfRowsPerAsic)*Cfg10ka::_numberOfAsicsPerRow +
+                                               k/Cfg10ka::_numberOfPixelsPerAsicRow]).trbit() << 4);
+        switch(gain_bits) {
+          case FH:
+            gain_config = 0;
+            break;
+          case FM:
+            gain_config = 1;
+            break;
+          case FL:
+          case FL_ALT:
+            gain_config = 2;
+            break;
+          case AML:
+            gain_config = 3;
+            break;
+          case AHL:
+            gain_config = 3;
+            break;
+          default:
+            printf("Epix10ka2MCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+            gain_config = 0;
+            break;
+        }
+        pixelGainConfig(i,j,k) = gain_config;
+      }
+    }
+  }
+
+  return pixelGainConfig;
 }
 
 DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
@@ -317,6 +367,49 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::frame(Pds::TypeId tid,
   return a;
 }
 
+ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::pixelGainConfig() const {
+  const unsigned nE = numberOfElements();
+  const unsigned conf_bits = 0x1c;
+  ndarray<uint16_t,3> pixelGainConfig = make_ndarray<uint16_t>(nE, hE, wE);
+  for(unsigned i=0; i<nE; i++) {
+    const Cfg10ka& eC = _config->elemCfg(i);
+    ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
+    for(unsigned j=0; j<hE; j++) {
+      for(unsigned k=0; k<wE; k++) {
+        uint16_t gain_config = 0;
+        uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                             (eC.asics(asicMap[(j/Cfg10ka::_numberOfRowsPerAsic)*Cfg10ka::_numberOfAsicsPerRow +
+                                               k/Cfg10ka::_numberOfPixelsPerAsicRow]).trbit() << 4);
+        switch(gain_bits) {
+          case FH:
+            gain_config = 0;
+            break;
+          case FM:
+            gain_config = 1;
+            break;
+          case FL:
+          case FL_ALT:
+            gain_config = 2;
+            break;
+          case AML:
+            gain_config = 3;
+            break;
+          case AHL:
+            gain_config = 3;
+            break;
+          default:
+            printf("Epix10kaQuadCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+            gain_config = 0;
+            break;
+        }
+        pixelGainConfig(i,j,k) = gain_config;
+      }
+    }
+  }
+
+  return pixelGainConfig;
+}
+
 DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det) const
 {
   //
@@ -393,6 +486,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::frame(Pds::TypeId tid,
 
 static const unsigned offset=1<<16;
 //static const unsigned offset=0;
+static const double doffset=double(offset);
 
 
 static std::list<Pds::TypeId::Type> config_type_list()
@@ -482,6 +576,8 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
   _entry = new EntryImage(_desc);
   _entry->invalid();
 
+  _gain_config = _config_cache->pixelGainConfig();
+
   _load_pedestals(_desc);
 }
 
@@ -509,6 +605,8 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
     }
 
     ndarray<const uint16_t,3> frame = _config_cache->frame(tid, payload, _cache, t);
+    ndarray<const uint16_t,3> pixelGainConfig = _config_cache->pixelGainConfig();
+
     _entry->reset();
     const DescImage& d = _entry->desc();
 
@@ -536,6 +634,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       ndarray<      unsigned,2> dst(_entry->contents(i));
       ndarray<const unsigned,2> ped(pa[i]);
       ndarray<const unsigned,2> sta(_status[i]);
+      ndarray<const uint16_t,2> gcf(_gain_config[i]);
 
       //
       //  Apply mask and pedestal
@@ -608,6 +707,15 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
         }
       }
 
+      // Apply gain correction hack
+      if (d.options()&FrameCalib::option_correct_gain()) {
+        // This is ugly...
+        const unsigned gain_cor[] = { 1, 3, 100, 3, 1, 100, 100 };
+        for(unsigned j=0; j<src.shape()[0]; j++)
+          for(unsigned k=0; k<src.shape()[1]; k++)
+            tmp(j,k) = unsigned((tmp(j,k) - doffset) * gain_cor[gcf(j,k)] + doffset +0.5);
+      }
+
       //
       //  Copy the (rotated) frame into the destination
       //
@@ -667,7 +775,7 @@ void EpixArrayHandler::_load_pedestals(const DescImage& desc)
   for(unsigned i=0; i<nf; i++)
     for(unsigned j=0; j<ny; j++)
       for(unsigned k=0; k<nx; k++) {
-	_offset(i,j,k) = offset;
+        _offset(i,j,k) = offset;
         _status(i,j,k) = 0;
       }
 

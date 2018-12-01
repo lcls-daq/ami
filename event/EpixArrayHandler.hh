@@ -56,6 +56,7 @@ namespace Ami {
     ndarray<unsigned,3> _pedestals;
     ndarray<unsigned,3> _offset;
     ndarray<unsigned,3> _status;
+    ndarray<const uint16_t,3> _gain_config;
   };
 };
 
