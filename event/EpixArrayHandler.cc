@@ -391,11 +391,11 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::pixelGainConfig() const 
           case FL_ALT:
             gain_config = 2;
             break;
-          case AML:
-            gain_config = 3;
-            break;
           case AHL:
             gain_config = 3;
+            break;
+          case AML:
+            gain_config = 4;
             break;
           default:
             printf("Epix10kaQuadCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);

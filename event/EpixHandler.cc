@@ -159,7 +159,8 @@ namespace EpixAmi {
     unsigned numberOfRowsReadPerAsic() const { return _rowsReadPerAsic; }
 
     // number of gain modes
-    unsigned numberOfGainModes() const { return _nGainModes; }
+    unsigned numberOfGainModes     () const { return _nGainModes; }
+    unsigned numberOfFixedGainModes() const { return _nFixedGainModes; }
 
     // asic pixel config
     ndarray <const uint16_t,2> pixelGainConfig() const { return _pixelGainConfig; }
@@ -222,6 +223,7 @@ namespace EpixAmi {
     unsigned _rowsCal;
     unsigned _rowsCalPerAsic;
     unsigned _nGainModes;
+    unsigned _nFixedGainModes;
     EnvData* _envData;
     ndarray<uint16_t,2> _pixelGainConfig;
   };
@@ -245,6 +247,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   _aMask = 0;
   _nAsics = 0;
   _nGainModes = 1;
+  _nFixedGainModes = 1;
   _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
 
   if (tid.id()==Pds::TypeId::Id_GenericPgpConfig) {
@@ -275,6 +278,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
         *val = 0;
       }
       _nGainModes      = 1;
+      _nFixedGainModes = _nGainModes;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kConfig:
@@ -284,6 +288,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
         *val = 0;
       }
       _nGainModes      = 1;
+      _nFixedGainModes = _nGainModes;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kaConfig:
@@ -306,11 +311,11 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
             case FL_ALT:
               gain_config = 2;
               break;
-            case AML:
-              gain_config = 3;
-              break;
             case AHL:
               gain_config = 3;
+              break;
+            case AML:
+              gain_config = 4;
               break;
             default:
               printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
@@ -321,6 +326,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
         }
       }
       _nGainModes      = 7;
+      _nFixedGainModes = 3;
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows;
       _rowsCal         = c.numberOfCalibrationRows();
@@ -334,6 +340,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
           *val = 0;
         }
         _nGainModes      = 1;
+        _nFixedGainModes = _nGainModes;
         _rowsRead        = c.numberOfReadableRows();
         _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
         _rowsCal         = c.numberOfCalibrationRows();
@@ -345,6 +352,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
           *val = 0;
         }
         _nGainModes      = 1;
+        _nFixedGainModes = _nGainModes;
         _rowsRead        = c.numberOfReadableRows();
         _rowsReadPerAsic = c.numberOfReadableRowsPerAsic();
         _rowsCal         = c.numberOfCalibrationRows();
@@ -376,6 +384,7 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   _rowsCal        (o._rowsCal),
   _rowsCalPerAsic (o._rowsCalPerAsic),
   _nGainModes     (o._nGainModes),
+  _nFixedGainModes(o._nFixedGainModes),
   _pixelGainConfig(o._pixelGainConfig)
 {
   unsigned sz=0;
@@ -647,6 +656,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     unsigned nchip_columns  = _config_cache->numberOfAsicsPerRow();
     unsigned colsPerAsic    = _config_cache->numberOfColumnsPerAsic();
     unsigned rowsPerAsic    = _config_cache->numberOfRowsReadPerAsic();
+    unsigned fixed_gain_idx = _config_cache->numberOfFixedGainModes() - 1;
     unsigned aMask          = _config_cache->asicMask();
     ndarray<const uint16_t,2> pixelGainConfig = _config_cache->pixelGainConfig();
     if (aMask==0) return;
@@ -654,9 +664,16 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     for(unsigned j=0; j<rows; j++) {
       for(unsigned k=0; k<cols; k++) {
         // The gain index to use is the highest of the set bits
+        bool is_switch_mode = false;
         unsigned raw_val = a(j,k);
         unsigned gain_val = (raw_val & gain_bits) >> 14;
-        unsigned gain_idx = pixelGainConfig(j,k) + (gain_val ? 2 : 0);
+        unsigned gain_idx = pixelGainConfig(j,k);
+        // Check if the pixel is in a gain switching mode
+        is_switch_mode = gain_idx > fixed_gain_idx;
+        // If the pixel is in a gain switching mode update the index
+        if (is_switch_mode && gain_val) {
+          gain_idx += 2;
+        }
         double calib_val = (double) ((raw_val & data_bits) + offset);
         if (_status(j,k)) {
           calib_val = doffset;
@@ -667,7 +684,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         }
         if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
         // combined status mask with set of gain switched pixels to not use in common mode
-        _gstatus(j,k) = _status(j,k) | gain_val;
+        _gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
         _data(j,k) = unsigned(calib_val + 0.5);
       }
     }
