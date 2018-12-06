@@ -437,8 +437,6 @@ EpixHandler::EpixHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   _status       (make_ndarray<unsigned>(0U,0)),
   _pedestals    (make_ndarray<double>(0U,0,0)),
   _gains        (make_ndarray<double>(0U,0,0)),
-  _data         (make_ndarray<unsigned>(0U,0)),
-  _gstatus      (make_ndarray<unsigned>(0U,0)),
   _config_cache (new EpixAmi::ConfigCache)
 {
 }
@@ -518,9 +516,6 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   unsigned nchip_columns = _config_cache->numberOfAsicsPerRow();
   unsigned colsPerAsic   = _config_cache->numberOfColumnsPerAsic();
   unsigned rowsPerAsic   = _config_cache->numberOfRowsReadPerAsic();
-
-  _data = make_ndarray<unsigned>(rows, columns);
-  _gstatus = make_ndarray<unsigned>(rows, columns);
 
   //
   //  Special case of one ASIC
@@ -658,6 +653,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     unsigned rowsPerAsic    = _config_cache->numberOfRowsReadPerAsic();
     unsigned fixed_gain_idx = _config_cache->numberOfFixedGainModes() - 1;
     unsigned aMask          = _config_cache->asicMask();
+    ndarray<unsigned,2> data    = make_ndarray<unsigned>(rows, cols);
+    ndarray<unsigned,2> gstatus = make_ndarray<unsigned>(rows, cols);
     ndarray<const uint16_t,2> pixelGainConfig = _config_cache->pixelGainConfig();
     if (aMask==0) return;
 
@@ -684,8 +681,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         }
         if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
         // combined status mask with set of gain switched pixels to not use in common mode
-        _gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
-        _data(j,k) = unsigned(calib_val + 0.5);
+        gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
+        data(j,k) = unsigned(calib_val + 0.5);
       }
     }
 
@@ -726,8 +723,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           shape[1] = colsPerAsic/4;
           for(unsigned m=0; m<4; m++) {
             for(unsigned y=0; y<rowsPerAsic; y++) {
-              ndarray<uint32_t,1> s(&_data (y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
-              ndarray<const uint32_t,1> t(&_gstatus(y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
+              ndarray<uint32_t,1> s(&data (y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
+              ndarray<const uint32_t,1> t(&gstatus(y+i*shape[0],(m+4*j)*shape[1]),&shape[1]);
               int fn = int(FrameCalib::frameNoise(s,t,offset));
               if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
                 _cache.cache(_feature[(y%16)+index],double(fn));
@@ -750,10 +747,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           shape[0] = rowsPerAsic;
           shape[1] = colsPerAsic/4;
           for(unsigned m=0; m<4; m++) {
-            ndarray<uint32_t,2> s(&_data (i*shape[0],(m+4*j)*shape[1]),shape);
-            s.strides(_data.strides());
-            ndarray<uint32_t,2> t(&_gstatus(i*shape[0],(m+4*j)*shape[1]),shape);
-            t.strides(_data.strides());
+            ndarray<uint32_t,2> s(&data (i*shape[0],(m+4*j)*shape[1]),shape);
+            s.strides(data.strides());
+            ndarray<uint32_t,2> t(&gstatus(i*shape[0],(m+4*j)*shape[1]),shape);
+            t.strides(data.strides());
             int fn = int(FrameCalib::frameNoise(s,t,offset));
             for(unsigned y=0; y<shape[0]; y++) {
               for(unsigned x=0; x<shape[1]; x++) {
@@ -777,10 +774,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           shape[0] = rowsPerAsic;
           shape[1] = colsPerAsic;
           for(unsigned x=0; x<shape[1]; x++) {
-            ndarray<uint32_t,1> s(&_data (i*shape[0],x+j*shape[1]),shape);
-            s.strides(_data.strides());
-            ndarray<uint32_t,1> t(&_gstatus(i*shape[0],x+j*shape[1]),shape);
-            t.strides(_data.strides());
+            ndarray<uint32_t,1> s(&data (i*shape[0],x+j*shape[1]),shape);
+            s.strides(data.strides());
+            ndarray<uint32_t,1> t(&gstatus(i*shape[0],x+j*shape[1]),shape);
+            t.strides(data.strides());
             int fn = int(FrameCalib::frameNoise(s,t,offset));
             //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
             //  _cache.cache(_feature[(y%16)+index],double(fn));
@@ -800,8 +797,8 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       for(unsigned j=0; j<rows; j++) {
         for(unsigned k=0; k<cols; k++) {
           unsigned gain_idx = pixelGainConfig(j,k) + (((a(j,k) & gain_bits) >> 14) ? 2 : 0);
-          double calib_val = ((double(_data(j,k)) - doffset) / _gains(gain_idx,j,k)) + doffset;
-          _data(j,k) = unsigned(calib_val + 0.5);
+          double calib_val = ((double(data(j,k)) - doffset) / _gains(gain_idx,j,k)) + doffset;
+          data(j,k) = unsigned(calib_val + 0.5);
         }
       }
     }
@@ -819,13 +816,13 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         unsigned m = _asicLocation[asic].col*colsPerAsic;
         const SubFrame& fr = _desc.frame(0);
         for(unsigned k=0; k<colsPerAsic; k++) {
-          _entry->addcontent(_data(r,m+k), fr.x+k/ppbin, fr.y+j/ppbin);
+          _entry->addcontent(data(r,m+k), fr.x+k/ppbin, fr.y+j/ppbin);
         }
       }
     } else {
       for(unsigned j=0; j<rows; j++) {
         for(unsigned k=0; k<cols; k++) {
-          _entry->addcontent(_data(j,k), k/ppbin, j/ppbin);
+          _entry->addcontent(data(j,k), k/ppbin, j/ppbin);
         }
       }
     }

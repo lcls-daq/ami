@@ -49,8 +49,6 @@ namespace Ami {
     ndarray<unsigned,2> _status;
     ndarray<double,3>   _pedestals;
     ndarray<double,3>   _gains;
-    ndarray<unsigned,2> _data;
-    ndarray<unsigned,2> _gstatus;
 
     ndarray<int,1>      _feature;
 
