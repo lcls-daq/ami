@@ -16,7 +16,7 @@ namespace Ami {
                             const char* off_calib_type="None",
                             bool        no_cache=false,
                             bool*       offl_type=0,
-			    std::string* fname=0);
+                            std::string* fname=0);
 
     static FILE *fopen_dual(const char *path1, const char * path2, 
                             const char *description,
@@ -26,8 +26,8 @@ namespace Ami {
                                  unsigned phy,
                                  const char* pfx, const char* dsc);
     static void load_integral_symm(ndarray<double,1>& a, 
-				   unsigned phy,
-				   const char* pfx, const char* dsc);
+                                   unsigned phy,
+                                   const char* pfx, const char* dsc);
     static void use_online(bool);
     static bool use_online();
     static void use_offline(bool);

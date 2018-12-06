@@ -114,7 +114,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
                         const char* off_calib_type,
                         bool no_cache,
                         bool* offl_type,
-			std::string* fname)
+                        std::string* fname)
 {
   std::string path1;
   { std::ostringstream o;
