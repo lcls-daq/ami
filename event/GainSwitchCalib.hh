@@ -59,6 +59,44 @@ namespace Ami {
                                           bool* used_default,
                                           FILE*);
 
+    static ndarray<unsigned,4> load_array(const Pds::DetInfo&,
+                                          unsigned nm,
+                                          unsigned nz,
+                                          unsigned ny,
+                                          unsigned nx,
+                                          unsigned def_val,
+                                          bool* used_default,
+                                          const char* onl_prefix,
+                                          const char* off_prefix);
+
+    static ndarray<unsigned,4> load_array(const Pds::DetInfo&,
+                                          unsigned nm,
+                                          unsigned nz,
+                                          unsigned ny,
+                                          unsigned nx,
+                                          unsigned def_val,
+                                          bool* used_default,
+                                          FILE*);
+
+    static ndarray<unsigned,3> load_array_sum(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned nz,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              unsigned def_val,
+                                              bool* used_default,
+                                              const char* onl_prefix,
+                                              const char* off_prefix);
+
+    static ndarray<unsigned,3> load_array_sum(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned nz,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              unsigned def_val,
+                                              bool* used_default,
+                                              FILE*);
+
     static ndarray<double,3> load_multi_array(const Pds::DetInfo&,
                                               unsigned nm,
                                               unsigned ny,

@@ -662,24 +662,20 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       for(unsigned k=0; k<cols; k++) {
         // The gain index to use is the highest of the set bits
         bool is_switch_mode = false;
-        unsigned raw_val = a(j,k);
-        unsigned gain_val = (raw_val & gain_bits) >> 14;
+        unsigned gain_val = (a(j,k) & gain_bits) >> 14;
         unsigned gain_idx = pixelGainConfig(j,k);
+        double calib_val = (double) ((_status(j,k) ? 0 : (a(j,k) & data_bits)) + offset);
+
         // Check if the pixel is in a gain switching mode
         is_switch_mode = gain_idx > fixed_gain_idx;
         // If the pixel is in a gain switching mode update the index
-        if (is_switch_mode && gain_val) {
+        if (is_switch_mode && gain_val)
           gain_idx += 2;
-        }
-        double calib_val = (double) ((raw_val & data_bits) + offset);
-        if (_status(j,k)) {
-          calib_val = doffset;
-        } else {
-          if (!(d.options()&GainSwitchCalib::option_no_pedestal())) {
-            calib_val -= _pedestals(gain_idx,j,k);
-          }
-        }
+
+        if (!(d.options()&GainSwitchCalib::option_no_pedestal()))
+          calib_val -= _pedestals(gain_idx,j,k);
         if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
+
         // combined status mask with set of gain switched pixels to not use in common mode
         gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
         data(j,k) = unsigned(calib_val + 0.5);
@@ -796,9 +792,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     if (d.options()&GainSwitchCalib::option_correct_gain()) {
       for(unsigned j=0; j<rows; j++) {
         for(unsigned k=0; k<cols; k++) {
-          unsigned gain_idx = pixelGainConfig(j,k) + (((a(j,k) & gain_bits) >> 14) ? 2 : 0);
-          double calib_val = ((double(data(j,k)) - doffset) / _gains(gain_idx,j,k)) + doffset;
-          data(j,k) = unsigned(calib_val + 0.5);
+          unsigned gain_idx = pixelGainConfig(j,k);
+          if ((gain_idx > fixed_gain_idx) && ((data(j,k) & gain_bits) >> 14))
+            gain_idx += 2;
+          data(j,k) = unsigned((data(j,k) - doffset) / _gains(gain_idx,j,k) + doffset + 0.5);
         }
       }
     }

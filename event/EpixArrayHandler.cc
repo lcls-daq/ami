@@ -746,7 +746,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
             unsigned gain_idx = gcf(j,k);
             if ((gain_idx > fixed_gain_idx) && ((src(j,k)&gain_mask) >> 14))
               gain_idx += 2;
-            tmp(j,k) = unsigned((tmp(j,k) - doffset) / gac(gain_idx,j,k) + doffset +0.5);
+            tmp(j,k) = unsigned((tmp(j,k) - doffset) / gac(gain_idx,j,k) + doffset + 0.5);
           }
         }
       }
@@ -794,15 +794,19 @@ void EpixArrayHandler::_load_pedestals(const DescImage& desc)
   //
   //  Load pedestals
   //
+  bool failed = false;
   bool use_offline = false;
   unsigned elems  = _config_cache->numberOfElements();
   unsigned gains  = _config_cache->numberOfGainModes();
   unsigned rows   = _config_cache->numberOfRows();
   unsigned cols   = _config_cache->numberOfColumns();
 
-  // Try to find files to fill the status array
-  //make_ndarray<double>(gains, elems, rows, cols);
-  _status = GainSwitchCalib::load_array(desc.info(), elems, rows, cols, 0, NULL, "sta", "pixel_status");
+  // Try to find files to fill the status array assuming there is one for each gain!
+  _status = GainSwitchCalib::load_array_sum(desc.info(), gains, elems, rows, cols, 0, &failed, "sta", "pixel_status");
+  if (failed) {
+    // Try to load a status array that doesn't have a gain dimension
+    _status = GainSwitchCalib::load_array(desc.info(), elems, rows, cols, 0, NULL, "sta", "pixel_status");
+  }
 
   // Try loading the pedestal file and see if it is an offline one or not (we need to treat these differently)
   FILE *f = Calib::fopen(desc.info(), "ped", "pedestals", false, &use_offline);
