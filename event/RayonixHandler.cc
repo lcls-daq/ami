@@ -6,9 +6,6 @@
 
 #include <stdio.h>
 
-static const char* MX170HS_DEVICE_STR = "MX170-HS";
-static const char* MX340HS_DEVICE_STR = "MX340-HS";
-
 using namespace Pds;
 
 static unsigned max_row_pixels   (const DetInfo& info)
@@ -66,21 +63,31 @@ RayonixHandler::RayonixHandler(const Pds::DetInfo& info) :
 
 void RayonixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
+#define CASE_VSN(v) case v:                                             \
+  { const Pds::Rayonix::ConfigV##v* c =                                 \
+      reinterpret_cast<const Pds::Rayonix::ConfigV##v*>(payload);       \
+    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info()); \
+    int bin_f = c->binning_f() > 0 ? c->binning_f() : 2;                \
+    int bin_s = c->binning_s() > 0 ? c->binning_s() : 2;                \
+    unsigned columns = c->maxWidth() / bin_f;                           \
+    unsigned rows = c->maxHeight() / bin_s;                             \
+    unsigned ppb = image_ppbin(columns,rows,0);                         \
+    DescImage desc(det, (unsigned)0, ChannelID::name(det),              \
+                     columns, rows, ppb, ppb);                          \
+    _entry = new EntryImage(desc);                                      \
+    _entry->invalid(); } break;
+
   Pds::TypeId::Type type = tid.id();
   if (type == Pds::TypeId::Id_RayonixConfig) {
-    const Pds::Rayonix::ConfigV1* c = reinterpret_cast<const Pds::Rayonix::ConfigV1*>(payload);
-    const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-    // in case binning is 0, avoid divide-by-zero and use default value of 2
-    int bin_f = c->binning_f() > 0 ? c->binning_f() : 2;
-    int bin_s = c->binning_s() > 0 ? c->binning_s() : 2;
-    unsigned columns = c->maxWidth() / bin_f;
-    unsigned rows = c->maxHeight() / bin_s;
-    unsigned ppb = image_ppbin(columns,rows,0);
-    DescImage desc(det, (unsigned)0, ChannelID::name(det),
-		   columns, rows, ppb, ppb);
-    _entry = new EntryImage(desc);
-    _entry->invalid();
+    switch(tid.version()) {
+      CASE_VSN(1);
+      CASE_VSN(2);
+      default:
+        printf("%s line %d: unexpected type version (%u)\n", __FILE__, __LINE__, (unsigned)tid.version());
+        break;
+    }
   } else {
     printf("%s line %d: unexpected type ID (%u)\n", __FILE__, __LINE__, (unsigned)type);
   }
+#undef CASE_VSN
 }
