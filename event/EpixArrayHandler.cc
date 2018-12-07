@@ -1,6 +1,7 @@
 #include "EpixArrayHandler.hh"
 
 #include "ami/event/FrameCalib.hh"
+#include "ami/event/GainSwitchCalib.hh"
 #include "ami/event/Calib.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryRef.hh"
@@ -116,7 +117,10 @@ namespace EpixArray {
     virtual unsigned numberOfElements () const = 0;
     virtual unsigned numberOfAsics    () const = 0;
     virtual unsigned numberOfColumns  () const = 0;
+    virtual unsigned numberOfRows     () const = 0;
     virtual unsigned numberOfRowsCal  () const = 0;
+    virtual unsigned numberOfGainModes() const = 0;
+    virtual unsigned numberOfFixedGainModes() const = 0;
 
     virtual Ami::DescImage descImage  (const Pds::DetInfo&) const = 0;
     virtual EnvData*       envData    () const = 0;
@@ -141,7 +145,10 @@ namespace EpixArray {
     unsigned numberOfElements () const { return Cfg10ka2M::_numberOfElements;   } //16
     unsigned numberOfAsics    () const { return Cfg10ka2M::_numberOfElements*4; } //64
     unsigned numberOfColumns  () const { return _config->numberOfColumns(); }
+    unsigned numberOfRows     () const { return _config->numberOfRows(); }
     unsigned numberOfRowsCal  () const { return _config->numberOfCalibrationRows(); }
+    unsigned numberOfGainModes() const { return 7; }
+    unsigned numberOfFixedGainModes() const { return 3; }
 
     Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
@@ -168,7 +175,10 @@ namespace EpixArray {
     unsigned numberOfElements () const { return Cfg10kaQuad::_numberOfElements;   }
     unsigned numberOfAsics    () const { return Cfg10kaQuad::_numberOfElements*4; }
     unsigned numberOfColumns  () const { return _config->numberOfColumns(); }
+    unsigned numberOfRows     () const { return _config->numberOfRows(); }
     unsigned numberOfRowsCal  () const { return _config->numberOfCalibrationRows(); }
+    unsigned numberOfGainModes() const { return 7; }
+    unsigned numberOfFixedGainModes() const { return 3; }
 
     Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
@@ -225,7 +235,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
 {
   const unsigned nE = numberOfElements();
   const unsigned conf_bits = 0x1c;
-  ndarray<uint16_t,3> pixelGainConfig = make_ndarray<uint16_t>(Cfg10ka2M::_numberOfElements, hE, wE);
+  ndarray<uint16_t,3> pixelGainConfig = make_ndarray<uint16_t>(nE, hE, wE);
   for(unsigned i=0; i<nE; i++) {
     const Cfg10ka& eC = _config->elemCfg(i);
     ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
@@ -579,6 +589,7 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
   _gain_config = _config_cache->pixelGainConfig();
 
   _load_pedestals(_desc);
+  _load_gains(_desc);
 }
 
 void EpixArrayHandler::_calibrate(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t) 
@@ -604,19 +615,18 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
     }
 
+    const unsigned fixed_gain_idx = _config_cache->numberOfFixedGainModes() - 1;
     ndarray<const uint16_t,3> frame = _config_cache->frame(tid, payload, _cache, t);
     ndarray<const uint16_t,3> pixelGainConfig = _config_cache->pixelGainConfig();
 
     _entry->reset();
     const DescImage& d = _entry->desc();
 
-    const ndarray<const unsigned,3>& pa =
-      d.options()&FrameCalib::option_no_pedestal() ?
-      _offset : _pedestals;
-
     const unsigned mask = (1<<14)-1;
+    const unsigned gain_mask = 3<<14;
 
     ndarray<unsigned,2> tmp = make_ndarray<unsigned>(hE,wE);
+    ndarray<unsigned,2> gsta = make_ndarray<unsigned>(hE,wE);
 
     //
     //  Apply corrections for each element independently
@@ -632,21 +642,43 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 #endif
       ndarray<const uint16_t,2> src(frame[i]);
       ndarray<      unsigned,2> dst(_entry->contents(i));
-      ndarray<const unsigned,2> ped(pa[i]);
+      ndarray<const double,  3> ped(&_pedestals(0,i), _element_ped_shape);
+      ndarray<const double,  3> gac(&_gains(0,i), _element_gain_shape);
       ndarray<const unsigned,2> sta(_status[i]);
       ndarray<const uint16_t,2> gcf(_gain_config[i]);
+
+      ped.strides(_element_ped_stride);
+      gac.strides(_element_gain_stride);
 
       //
       //  Apply mask and pedestal
       //
-      for(unsigned j=0; j<src.shape()[0]; j++)
-        for(unsigned k=0; k<src.shape()[1]; k++)
-          tmp(j,k) = (src(j,k)&mask) + ped(j,k);
+      for(unsigned j=0; j<src.shape()[0]; j++) {
+        for(unsigned k=0; k<src.shape()[1]; k++) {
+          bool is_switch_mode = false;
+          unsigned gain_val = (src(j,k)&gain_mask) >> 14;
+          unsigned gain_idx = gcf(j,k);
+          double calib_val = (double) ((sta(j,k) ? 0 : (src(j,k)&mask)) + offset);
+
+          // Check if the pixel is in a gain switching mode
+          is_switch_mode = gain_idx > fixed_gain_idx;
+          // If the pixel is in a gain switching mode update the index
+          if (is_switch_mode && gain_val)
+            gain_idx += 2;
+
+          if (!(d.options()&FrameCalib::option_no_pedestal()))
+            calib_val -= ped(gain_idx,j,k);
+          if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
+
+          gsta(j,k) = sta(j,k) | (is_switch_mode ? gain_val : 0);
+          tmp(j,k) = unsigned(calib_val + 0.5);
+        }
+      }
 
       //  Apply row common mode
       if (d.options()&FrameCalib::option_correct_common_mode2()) {
         unsigned* ptmp       = tmp.data();
-        const unsigned* psta = sta.data();
+        const unsigned* psta = gsta.data();
         const unsigned shape = wE/8;
         for(unsigned y=0; y<src.size(); y+=wE/8, psta+=wE/8) {
           ndarray<      unsigned,1> s(ptmp, &shape);
@@ -673,8 +705,8 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
         for(unsigned m=0; m<8; m++) {
           ndarray<unsigned,2> s(&tmp((m/4)*shape[0],(m%4)*shape[1]),shape);
           s.strides(tmp.strides());
-          ndarray<const unsigned,2> t(&sta((m/4)*shape[0],(m%4)*shape[1]),shape);
-          t.strides(sta.strides());
+          ndarray<const unsigned,2> t(&gsta((m/4)*shape[0],(m%4)*shape[1]),shape);
+          t.strides(gsta.strides());
           int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
           for(unsigned y=0; y<shape[0]; y++) {
             uint32_t* v = &s(y,0);
@@ -694,7 +726,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
           for(unsigned x=0; x<tmp.shape()[1]; x++) {
             ndarray<uint32_t,1> s(&tmp(y,x),tmp.shape());
             s.strides(tmp.strides());
-            ndarray<const uint32_t,1> t(&sta(y,x),tmp.shape());
+            ndarray<const uint32_t,1> t(&gsta(y,x),tmp.shape());
             t.strides(tmp.strides());
             unsigned oav = offset*int(d.ppxbin()*d.ppybin()+0.5);
             unsigned olo = oav-100, ohi = oav+100;
@@ -709,11 +741,14 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
       // Apply gain correction hack
       if (d.options()&FrameCalib::option_correct_gain()) {
-        // This is ugly...
-        const unsigned gain_cor[] = { 1, 3, 100, 3, 1, 100, 100 };
-        for(unsigned j=0; j<src.shape()[0]; j++)
-          for(unsigned k=0; k<src.shape()[1]; k++)
-            tmp(j,k) = unsigned((tmp(j,k) - doffset) * gain_cor[gcf(j,k)] + doffset +0.5);
+        for(unsigned j=0; j<src.shape()[0]; j++) {
+          for(unsigned k=0; k<src.shape()[1]; k++) {
+            unsigned gain_idx = gcf(j,k);
+            if ((gain_idx > fixed_gain_idx) && ((src(j,k)&gain_mask) >> 14))
+              gain_idx += 2;
+            tmp(j,k) = unsigned((tmp(j,k) - doffset) / gac(gain_idx,j,k) + doffset +0.5);
+          }
+        }
       }
 
       //
@@ -756,100 +791,147 @@ void EpixArrayHandler::_damaged() { if (_entry) _entry->invalid(); }
 
 void EpixArrayHandler::_load_pedestals(const DescImage& desc)
 {
-  unsigned nf = desc.nframes();
-  if (nf==0) nf=1;
-  unsigned nx = 0;
-  unsigned ny = 0;
-  for(unsigned i=0; i<nf; i++) {
-    const SubFrame& f = desc.frame(i);
-    if (f.r== D0 ||
-        f.r== D180) {
-      nx = f.nx;
-      ny = f.ny;
-      break;
-    }
-  }
-  _pedestals = make_ndarray<unsigned>(nf,ny,nx);
-  _offset    = make_ndarray<unsigned>(nf,ny,nx);
-  _status    = make_ndarray<unsigned>(nf,ny,nx);
-  for(unsigned i=0; i<nf; i++)
-    for(unsigned j=0; j<ny; j++)
-      for(unsigned k=0; k<nx; k++) {
-        _offset(i,j,k) = offset;
-        _status(i,j,k) = 0;
-      }
-
   //
   //  Load pedestals
   //
-  const int NameSize=128;
-  char oname1[NameSize];
-  char oname2[NameSize];
-    
-  sprintf(oname1,"ped.%08x.dat",desc.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/ped.%08x.dat",desc.info().phy());
-  FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
+  bool use_offline = false;
+  unsigned elems  = _config_cache->numberOfElements();
+  unsigned gains  = _config_cache->numberOfGainModes();
+  unsigned rows   = _config_cache->numberOfRows();
+  unsigned cols   = _config_cache->numberOfColumns();
+
+  // Try to find files to fill the status array
+  //make_ndarray<double>(gains, elems, rows, cols);
+  _status = GainSwitchCalib::load_array(desc.info(), elems, rows, cols, 0, NULL, "sta", "pixel_status");
+
+  // Try loading the pedestal file and see if it is an offline one or not (we need to treat these differently)
+  FILE *f = Calib::fopen(desc.info(), "ped", "pedestals", false, &use_offline);
 
   if (f) {
-
-    //  read pedestals
-    size_t sz = 8 * 1024;
-    char* linep = (char *)malloc(sz);
-    char* pEnd;
-
-    if (nf) {
-      for(unsigned s=0; s<nf; s++) {
-        const SubFrame& fr = desc.frame(s);
-        switch(fr.r) {
-        case D0:
-          for (unsigned row=0,rown=ny-1; row < ny; row++,rown--) {
-            if (feof(f)) return;
-            getline(&linep, &sz, f);
-            _pedestals(s,row,0) = offset-strtoul(linep,&pEnd,0);
-            for(unsigned col=1; col<nx; col++) 
-              _pedestals(s,row,col) = offset-strtoul(pEnd, &pEnd,0);
-          } break;
-        case D90:
-          for (unsigned col=0, coln=nx-1; col < nx; col++,coln--) {
-            if (feof(f)) return;
-            getline(&linep, &sz, f);
-            _pedestals(s,ny-1,col) = offset-strtoul(linep,&pEnd,0);
-            for(unsigned row=1,rown=ny-2; row<ny; row++,rown--) 
-              _pedestals(s,rown,col) = offset-strtoul(pEnd, &pEnd,0);
-          } break;
-        case D180:
-          for (unsigned row=0,rown=ny-1; row < ny; row++,rown--) {
-            if (feof(f)) return;
-            getline(&linep, &sz, f);
-            _pedestals(s,rown,nx-1) = offset-strtoul(linep,&pEnd,0);
-            for(unsigned col=1; col<nx; col++) 
-              _pedestals(s,rown,nx-col-1) = offset-strtoul(pEnd, &pEnd,0);
-          } break;
-        case D270:
-          for (unsigned col=0, coln=nx-1; col < nx; col++,coln--) {
-            if (feof(f)) return;
-            getline(&linep, &sz, f);
-            _pedestals(s,0,coln) = offset-strtoul(linep,&pEnd,0);
-            for(unsigned row=1,rown=nx-2; row<ny; row++,rown--) 
-              _pedestals(s,row,coln) = offset-strtoul(pEnd, &pEnd,0);
-          } break;
-        default: break;
+    if (use_offline) {
+      _pedestals = GainSwitchCalib::load_multi_array(desc.info(), gains, elems, rows, cols, 0.0, NULL, f);
+    } else {
+      unsigned nf = desc.nframes();
+      if (nf==0) nf=1;
+      unsigned nx = 0;
+      unsigned ny = 0;
+      for(unsigned i=0; i<nf; i++) {
+        const SubFrame& f = desc.frame(i);
+        if (f.r== D0 ||
+            f.r== D180) {
+          nx = f.nx;
+          ny = f.ny;
+          break;
         }
-        printf("Ped[0,0]: frame %u: %08x\n", s, _pedestals(s,0,0));
-      }    
+      }
+
+      _pedestals = make_ndarray<double>(gains,nf,ny,nx);
+
+      //  read pedestals
+      size_t sz = 8 * 1024;
+      char* linep = (char *)malloc(sz);
+      char* pEnd;
+
+      if (nf) {
+        for(unsigned s=0; s<nf; s++) {
+          const SubFrame& fr = desc.frame(s);
+          switch(fr.r) {
+          case D0:
+            for (unsigned row=0,rown=ny-1; row < ny; row++,rown--) {
+              if (feof(f)) return;
+              getline(&linep, &sz, f);
+              _pedestals(0,s,row,0) = strtod(linep,&pEnd);
+              for(unsigned col=1; col<nx; col++)
+                _pedestals(0,s,row,col) = strtod(pEnd, &pEnd);
+            } break;
+          case D90:
+            for (unsigned col=0, coln=nx-1; col < nx; col++,coln--) {
+              if (feof(f)) return;
+              getline(&linep, &sz, f);
+              _pedestals(0,s,ny-1,col) = strtod(linep,&pEnd);
+              for(unsigned row=1,rown=ny-2; row<ny; row++,rown--)
+                _pedestals(0,s,rown,col) = strtod(pEnd, &pEnd);
+            } break;
+          case D180:
+            for (unsigned row=0,rown=ny-1; row < ny; row++,rown--) {
+              if (feof(f)) return;
+              getline(&linep, &sz, f);
+              _pedestals(0,s,rown,nx-1) = strtod(linep,&pEnd);
+              for(unsigned col=1; col<nx; col++)
+                _pedestals(0,s,rown,nx-col-1) = strtod(pEnd, &pEnd);
+            } break;
+          case D270:
+            for (unsigned col=0, coln=nx-1; col < nx; col++,coln--) {
+              if (feof(f)) return;
+              getline(&linep, &sz, f);
+              _pedestals(0,s,0,coln) = strtod(linep,&pEnd);
+              for(unsigned row=1,rown=nx-2; row<ny; row++,rown--)
+                _pedestals(0,s,row,coln) = strtod(pEnd, &pEnd);
+            } break;
+          default: break;
+          }
+          printf("Ped[0,0]: frame %u: %g\n", s, _pedestals(0,s,0,0));
+        }
+      }
+
+      free(linep);
+
+      //  Fill in the rest of gain modes with the same data...
+      for(unsigned g=1; g<gains; g++)
+        for(unsigned i=0; i<elems; i++)
+          for(unsigned j=0; j<rows; j++)
+            for(unsigned k=0; k<cols; k++)
+              _pedestals(g,i,j,k) = _pedestals(0,i,j,k);
     }
-      
-    free(linep);
+
     fclose(f);
+  } else {
+    _pedestals = make_ndarray<double>(gains, elems, rows, cols);
+    for(double* val = _pedestals.begin(); val != _pedestals.end(); val++)
+      *val = 0.0;
   }
-  else {
-    for(unsigned i=0; i<nf; i++)
-      for(unsigned j=0; j<ny; j++)
-	for(unsigned k=0; k<nx; k++)
-	  _pedestals(i,j,k) = offset;
-  }
+
+  // Determine the shape and stride for the element specific view of the pedestal data
+  _element_ped_shape[0] = _pedestals.shape()[0];
+  _element_ped_shape[1] = _pedestals.shape()[2];
+  _element_ped_shape[2] = _pedestals.shape()[3];
+
+  _element_ped_stride[0] = _pedestals.strides()[0];
+  _element_ped_stride[1] = _pedestals.strides()[2];
+  _element_ped_stride[2] = _pedestals.strides()[3];
 }
 
+void EpixArrayHandler::_load_gains(const DescImage& desc)
+{
+  //
+  //  Load gain corrections
+  //
+  bool failed = false;
+  unsigned elems  = _config_cache->numberOfElements();
+  unsigned gains  = _config_cache->numberOfGainModes();
+  unsigned rows   = _config_cache->numberOfRows();
+  unsigned cols   = _config_cache->numberOfColumns();
+  const unsigned gain_cor[] = { 1, 3, 100, 3, 1, 100, 100 };
+
+  _gains = GainSwitchCalib::load_multi_array(desc.info(), gains, elems, rows, cols, 1.0, &failed, "gain", "pixel_gain");
+  if (failed) {
+    printf("No valid pixel gain correction file found: using the default corrections!");
+    for(unsigned g=0; g<gains; g++)
+      for(unsigned i=0; i<elems; i++)
+        for(unsigned j=0; j<rows; j++)
+          for(unsigned k=0; k<cols; k++)
+            _gains(g,i,j,k) = (1.0 / gain_cor[g]);
+  }
+
+  // Determine the shape and stride for the element specific view of the pixel gain data
+  _element_gain_shape[0] = _gains.shape()[0];
+  _element_gain_shape[1] = _gains.shape()[2];
+  _element_gain_shape[2] = _gains.shape()[3];
+
+  _element_gain_stride[0] = _gains.strides()[0];
+  _element_gain_stride[1] = _gains.strides()[2];
+  _element_gain_stride[2] = _gains.strides()[3];
+}
 
 EpixArray::EnvData2M::EnvData2M(Ami::EventHandlerF& h) : 
   _name(4), _quad(4) 

@@ -49,18 +49,19 @@ struct off_lookup {
   std::string          value;
 };
 
-static struct off_lookup _off_lookup[] = { {Pds::DetInfo::pnCCD,    "PNCCD::CalibV1"},
-                                           {Pds::DetInfo::Cspad,    "CsPad::CalibV1"},
-                                           {Pds::DetInfo::Cspad2x2, "CsPad2x2::CalibV1"},
-                                           {Pds::DetInfo::Epix10k,  "Epix10k::CalibV1"},
-                                           {Pds::DetInfo::Epix10ka, "Epix10ka::CalibV1"},
-                                           {Pds::DetInfo::Epix100a, "Epix100a::CalibV1"},
-                                           {Pds::DetInfo::Epix10ka, "Epix10ka::CalibV1"},
-                                           {Pds::DetInfo::Fccd960,  "Camera::CalibV1"},
-                                           {Pds::DetInfo::Zyla,     "Camera::CalibV1"},
-                                           {Pds::DetInfo::Uxi,      "Uxi::CalibV1"},
-                                           {Pds::DetInfo::Archon,   "Camera::CalibV1"},
-                                           {Pds::DetInfo::Jungfrau, "Jungfrau::CalibV1"} };
+static struct off_lookup _off_lookup[] = { {Pds::DetInfo::pnCCD,      "PNCCD::CalibV1"},
+                                           {Pds::DetInfo::Cspad,      "CsPad::CalibV1"},
+                                           {Pds::DetInfo::Cspad2x2,   "CsPad2x2::CalibV1"},
+                                           {Pds::DetInfo::Epix10k,    "Epix10k::CalibV1"},
+                                           {Pds::DetInfo::Epix10ka,   "Epix10ka::CalibV1"},
+                                           {Pds::DetInfo::Epix100a,   "Epix100a::CalibV1"},
+                                           {Pds::DetInfo::Epix10ka,   "Epix10ka::CalibV1"},
+                                           {Pds::DetInfo::Epix10ka2M, "Epix10ka2M::CalibV1"},
+                                           {Pds::DetInfo::Fccd960,    "Camera::CalibV1"},
+                                           {Pds::DetInfo::Zyla,       "Camera::CalibV1"},
+                                           {Pds::DetInfo::Uxi,        "Uxi::CalibV1"},
+                                           {Pds::DetInfo::Archon,     "Camera::CalibV1"},
+                                           {Pds::DetInfo::Jungfrau,   "Jungfrau::CalibV1"} };
 
 static const char* offCalibClass(Pds::DetInfo::Device t)
 {
