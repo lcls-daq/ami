@@ -656,9 +656,9 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       for(unsigned j=0; j<src.shape()[0]; j++) {
         for(unsigned k=0; k<src.shape()[1]; k++) {
           bool is_switch_mode = false;
-          unsigned gain_val = (src(j,k)&gain_mask) >> 14;
+          unsigned gain_val = (src(j,k) & gain_mask) >> 14;
           unsigned gain_idx = gcf(j,k);
-          double calib_val = (double) ((sta(j,k) ? 0 : (src(j,k)&mask)) + offset);
+          double calib_val = (double) ((src(j,k) & mask) + offset);
 
           // Check if the pixel is in a gain switching mode
           is_switch_mode = gain_idx > fixed_gain_idx;
@@ -668,10 +668,15 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
           if (!(d.options()&FrameCalib::option_no_pedestal()))
             calib_val -= ped(gain_idx,j,k);
-          if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
 
-          gsta(j,k) = sta(j,k) | (is_switch_mode ? gain_val : 0);
-          tmp(j,k) = unsigned(calib_val + 0.5);
+          if (calib_val < 0.0) { // mask the problem negative pixels to avoid int underflow
+            gsta(j,k) = 1;
+            tmp(j,k) = 0;
+          } else {
+            // combined status mask with set of gain switched pixels to not use in common mode
+            gsta(j,k) = sta(j,k) | (is_switch_mode ? gain_val : 0);
+            tmp(j,k) = unsigned(calib_val + 0.5);
+          }
         }
       }
 
@@ -746,7 +751,12 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
             unsigned gain_idx = gcf(j,k);
             if ((gain_idx > fixed_gain_idx) && ((src(j,k)&gain_mask) >> 14))
               gain_idx += 2;
-            tmp(j,k) = unsigned((tmp(j,k) - doffset) / gac(gain_idx,j,k) + doffset + 0.5);
+            double calib_val = (tmp(j,k) - doffset) / gac(gain_idx,j,k) + doffset;
+            if (calib_val < 0.0) { // mask the problem negative pixels to avoid int underflow
+              tmp(j,k) = 0;
+            } else {
+              tmp(j,k) = unsigned(calib_val +0.5);
+            }
           }
         }
       }
@@ -915,11 +925,11 @@ void EpixArrayHandler::_load_gains(const DescImage& desc)
   unsigned gains  = _config_cache->numberOfGainModes();
   unsigned rows   = _config_cache->numberOfRows();
   unsigned cols   = _config_cache->numberOfColumns();
-  const unsigned gain_cor[] = { 1, 3, 100, 3, 1, 100, 100 };
+  const unsigned gain_cor[] = { 1, 3, 100, 1, 3, 100, 100 };
 
   _gains = GainSwitchCalib::load_multi_array(desc.info(), gains, elems, rows, cols, 1.0, &failed, "gain", "pixel_gain");
   if (failed) {
-    printf("No valid pixel gain correction file found: using the default corrections!");
+    printf("No valid pixel gain correction file found: using the default corrections!\n");
     for(unsigned g=0; g<gains; g++)
       for(unsigned i=0; i<elems; i++)
         for(unsigned j=0; j<rows; j++)

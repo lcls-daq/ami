@@ -664,7 +664,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
         bool is_switch_mode = false;
         unsigned gain_val = (a(j,k) & gain_bits) >> 14;
         unsigned gain_idx = pixelGainConfig(j,k);
-        double calib_val = (double) ((_status(j,k) ? 0 : (a(j,k) & data_bits)) + offset);
+        double calib_val = (double) ((a(j,k) & data_bits) + offset);
 
         // Check if the pixel is in a gain switching mode
         is_switch_mode = gain_idx > fixed_gain_idx;
@@ -674,11 +674,15 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
 
         if (!(d.options()&GainSwitchCalib::option_no_pedestal()))
           calib_val -= _pedestals(gain_idx,j,k);
-        if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
 
-        // combined status mask with set of gain switched pixels to not use in common mode
-        gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
-        data(j,k) = unsigned(calib_val + 0.5);
+        if (calib_val < 0.0) { // mask the problem negative pixels to avoid int underflow
+          gstatus(j,k) = 1;
+          data(j,k) = 0;
+        } else {
+          // combined status mask with set of gain switched pixels to not use in common mode
+          gstatus(j,k) = _status(j,k) | (is_switch_mode ? gain_val : 0);
+          data(j,k) = unsigned(calib_val + 0.5);
+        }
       }
     }
 
@@ -795,7 +799,12 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
           unsigned gain_idx = pixelGainConfig(j,k);
           if ((gain_idx > fixed_gain_idx) && ((data(j,k) & gain_bits) >> 14))
             gain_idx += 2;
-          data(j,k) = unsigned((data(j,k) - doffset) / _gains(gain_idx,j,k) + doffset + 0.5);
+          double calib_val = (data(j,k) - doffset) / _gains(gain_idx,j,k) + doffset;
+          if (calib_val < 0.0) { // mask the problem negative pixels to avoid int underflow
+            data(j,k) = 0;
+          } else {
+            data(j,k) = unsigned(calib_val +0.5);
+          }
         }
       }
     }
@@ -837,6 +846,7 @@ void EpixHandler::_damaged() {
 
 void EpixHandler::_load_pedestals()
 {
+  bool failed = false;
   unsigned rows         = _config_cache->numberOfRowsRead();
   unsigned cols         = _config_cache->numberOfColumns();
   unsigned colsPerAsic  = _config_cache->numberOfColumnsPerAsic();
@@ -851,34 +861,45 @@ void EpixHandler::_load_pedestals()
     while((aMask&(1<<asic))==0)
       asic++;
     bool failed = false;
-    _status = GainSwitchCalib::load_array(det, rows, cols, 0, &failed, "sta", "pixel_status");
+    // Try to find files to fill the status array assuming there is one for each gain!
+    _status = GainSwitchCalib::load_array_sum(det, gains, rows, cols, 0, &failed, "sta", "pixel_status");
     if (failed) {
-      ndarray<unsigned,2> asic_status = GainSwitchCalib::load_array(det, rowsPerAsic, colsPerAsic, 0, &failed, "sta", "pixel_status");
-      if (!failed) {
-        _load_one_asic(asic_status, asic, _status);
+      _status = GainSwitchCalib::load_array(det, rows, cols, 0, &failed, "sta", "pixel_status");
+      // Try if there is a single asic version of the status file...
+      if (failed) {
+        ndarray<unsigned,2> asic_status = GainSwitchCalib::load_array(det, rowsPerAsic, colsPerAsic, 0, &failed, "sta", "pixel_status");
+        if (!failed) {
+          _load_one_asic(asic_status, asic, _status);
+        }
       }
     }
-    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, &failed, "ped", "pedestals");
+    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, &failed, "ped", "pedestals", true);
     if (failed) {
-      ndarray<double,3> asic_pedestals = GainSwitchCalib::load_multi_array(det, gains, rowsPerAsic, colsPerAsic, 0.0, &failed, "ped", "pedestals");
+      ndarray<double,3> asic_pedestals = GainSwitchCalib::load_multi_array(det, gains, rowsPerAsic, colsPerAsic, 0.0, &failed, "ped", "pedestals", true);
       if (!failed) {
         _load_one_asic(asic_pedestals, asic, _pedestals);
       }
     }
   } else {
-    _status = GainSwitchCalib::load_array(det, rows, cols, 0, NULL, "sta", "pixel_status");
-    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, NULL, "ped", "pedestals");
+    // Try to find files to fill the status array assuming there is one for each gain!
+    _status = GainSwitchCalib::load_array_sum(det, gains, rows, cols, 0, &failed, "sta", "pixel_status");
+    if (failed) {
+      _status = GainSwitchCalib::load_array(det, rows, cols, 0, NULL, "sta", "pixel_status");
+    }
+    _pedestals = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 0.0, NULL, "ped", "pedestals", true);
   }
 }
 
 void EpixHandler::_load_gains()
 {
+  bool failed = false;
   unsigned rows         = _config_cache->numberOfRowsRead();
   unsigned cols         = _config_cache->numberOfColumns();
   unsigned colsPerAsic  = _config_cache->numberOfColumnsPerAsic();
   unsigned rowsPerAsic  = _config_cache->numberOfRowsReadPerAsic();
   unsigned gains        = _config_cache->numberOfGainModes();
   unsigned aMask        = _config_cache->asicMask();
+  const unsigned gain_cor[] = { 1, 3, 100, 1, 3, 100, 100 };
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   if (aMask==0) return;
 
@@ -886,7 +907,6 @@ void EpixHandler::_load_gains()
     unsigned asic=0;
     while((aMask&(1<<asic))==0)
       asic++;
-    bool failed = false;
     _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, &failed, "gain", "pixel_gain");
     if (failed) {
       ndarray<double,3> asic_gains = GainSwitchCalib::load_multi_array(det, gains, rowsPerAsic, colsPerAsic, 1.0, &failed, "gain", "pixel_gain");
@@ -895,7 +915,14 @@ void EpixHandler::_load_gains()
       }
     }
   } else {
-    _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, NULL, "gain", "pixel_gain");
+    _gains = GainSwitchCalib::load_multi_array(det, gains, rows, cols, 1.0, &failed, "gain", "pixel_gain");
+  }
+  if (failed) {
+    printf("No valid pixel gain correction file found: using the default corrections!\n");
+    for(unsigned g=0; g<gains; g++)
+      for(unsigned j=0; j<rows; j++)
+        for(unsigned k=0; k<cols; k++)
+          _gains(g,j,k) = (1.0 / gain_cor[g]);
   }
 }
 

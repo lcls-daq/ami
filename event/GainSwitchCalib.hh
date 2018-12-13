@@ -78,6 +78,23 @@ namespace Ami {
                                           bool* used_default,
                                           FILE*);
 
+    static ndarray<unsigned,2> load_array_sum(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              unsigned def_val,
+                                              bool* used_default,
+                                              const char* onl_prefix,
+                                              const char* off_prefix);
+
+    static ndarray<unsigned,2> load_array_sum(const Pds::DetInfo&,
+                                              unsigned nm,
+                                              unsigned ny,
+                                              unsigned nx,
+                                              unsigned def_val,
+                                              bool* used_default,
+                                              FILE*);
+
     static ndarray<unsigned,3> load_array_sum(const Pds::DetInfo&,
                                               unsigned nm,
                                               unsigned nz,
@@ -104,7 +121,8 @@ namespace Ami {
                                               double def_val,
                                               bool* used_default,
                                               const char* onl_prefix,
-                                              const char* off_prefix);
+                                              const char* off_prefix,
+                                              bool expand=false);
 
     static ndarray<double,3> load_multi_array(const Pds::DetInfo&,
                                               unsigned nm,
@@ -112,7 +130,8 @@ namespace Ami {
                                               unsigned nx,
                                               double def_val,
                                               bool* used_default,
-                                              FILE*);
+                                              FILE* f,
+                                              bool expand=false);
 
     static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
                                               unsigned nm,
@@ -122,7 +141,8 @@ namespace Ami {
                                               double def_val,
                                               bool* used_default,
                                               const char* onl_prefix,
-                                              const char* off_prefix);
+                                              const char* off_prefix,
+                                              bool expand=false);
 
     static ndarray<double,4> load_multi_array(const Pds::DetInfo&,
                                               unsigned nm,
@@ -131,7 +151,8 @@ namespace Ami {
                                               unsigned nx,
                                               double def_val,
                                               bool* used_default,
-                                              FILE*);
+                                              FILE* f,
+                                              bool expand=false);
   };
 };
 
