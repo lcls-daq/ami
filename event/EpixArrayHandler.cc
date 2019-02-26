@@ -1143,9 +1143,9 @@ void EpixArray::EnvDataQuad::_fill(FeatureCache& cache,
   cache.cache(_index[index++], double(data[17])*2.048/4095*(130/(0.882-1.951)) + (0.882/0.0082+100));
   for(unsigned i=0; i<13; i++)
     cache.cache(_index[index++], double(data[18+i])*1.65/65535*100);
-  cache.cache(_index[index++], double(data[31])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
-  cache.cache(_index[index++], double(data[32])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
-  cache.cache(_index[index++], double(data[33])*1.65/65535*(130/0.882-1.951)+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[31])*1.65/65535*(130/(0.882-1.951))+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[32])*1.65/65535*(130/(0.882-1.951))+(0.882/0.0082+100));
+  cache.cache(_index[index++], double(data[33])*1.65/65535*(130/(0.882-1.951))+(0.882/0.0082+100));
   cache.cache(_index[index++], double(data[34])/256);
   cache.cache(_index[index++], double(data[35])*0.0001);
   cache.cache(_index[index++], double(data[36])*0.1);
