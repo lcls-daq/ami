@@ -11,9 +11,9 @@ using namespace Ami;
 
 unsigned Ins::parse_ip(const char* ipString) {
   unsigned ip = 0;
-  in_addr inp;
-  if (inet_aton(ipString, &inp)) {
-    ip = ntohl(inp.s_addr);
+  struct hostent* h = gethostbyname(ipString);
+  if (h) {
+    ip = htonl(*(in_addr_t*)h->h_addr_list[0]);
   }
   return ip;
 }
@@ -55,6 +55,6 @@ unsigned Ins::default_interface()
     return 0x7f000001;
   }
   struct hostent* h = gethostbyname(hname);
-  unsigned v = ntohl( *(uint32_t*)h->h_addr_list[0] );
+  unsigned v = ntohl( *(in_addr_t*)h->h_addr_list[0] );
   return v;
 }
