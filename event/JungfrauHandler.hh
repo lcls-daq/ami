@@ -25,6 +25,7 @@ namespace Ami {
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _damaged  ();
   private:
+    void _load_geometry(unsigned modules, unsigned rows, unsigned columns);
     void _load_pedestals(unsigned modules, unsigned rows, unsigned columns);
   private:
     Pds::Xtc*           _configtc;

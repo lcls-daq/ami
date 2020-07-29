@@ -1,6 +1,7 @@
 #include "JungfrauHandler.hh"
 
 #include "ami/event/GainSwitchCalib.hh"
+#include "ami/event/JungfrauAlignment.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/ChannelID.hh"
 #include "pdsdata/xtc/Xtc.hh"
@@ -66,17 +67,6 @@ static inline unsigned num_columns(const Xtc* tc)
   }
 #undef CASE_VSN
   return 0;
-}
-
-static inline unsigned height(const Xtc* tc)
-{
-  /* For now all the modules will be displayed in memory order. Need a geometry... */
-  return num_rows(tc) * num_modules(tc);
-}
-
-static inline unsigned width(const Xtc* tc)
-{
-  return num_columns(tc);
 }
 
 template <class Element>
@@ -145,20 +135,7 @@ void JungfrauHandler::_configure(Pds::TypeId type,const void* payload, const Pds
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
   
-  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
-  unsigned columns = width (_configtc);
-  unsigned rows    = height(_configtc);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-
-
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
-
-  DescImage desc(det, (unsigned)0, ChannelID::name(det),
-                 columns, rows, ppb, ppb);
-  _entry = new EntryImage(desc);
-  _entry->invalid();
+  _load_geometry(num_modules(_configtc), num_rows(_configtc), num_columns(_configtc));
 
   _load_pedestals(num_modules(_configtc), num_rows(_configtc), num_columns(_configtc));
 }   
@@ -198,29 +175,30 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 
     int ppbin = _entry->desc().ppxbin();
     memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
-    ndarray<const uint16_t, 3> d;
+    ndarray<const uint16_t, 3> src;
     switch(type.version()) {
       case 1:
-        d = array<Pds::Jungfrau::ElementV1>(_configtc, payload);
+        src = array<Pds::Jungfrau::ElementV1>(_configtc, payload);
         break;
       case 2:
-        d = array<Pds::Jungfrau::ElementV2>(_configtc, payload);
+        src = array<Pds::Jungfrau::ElementV2>(_configtc, payload);
         break;
       default:
         return;
     }
 
     for(unsigned i=0; i<modules; i++) {
+      ndarray<unsigned,2> dst(_entry->contents(i));
       for(unsigned j=0,j_flip=rows-1; j<rows; j++,j_flip--) {
         for(unsigned k=0; k<columns; k++) {
-          unsigned gain_val = (d(i,j,k) & gain_bits) >> 14;
+          unsigned gain_val = (src(i,j,k) & gain_bits) >> 14;
           // The gain index to use is the highest of the set bits
           unsigned gain_idx = 0;
           for (unsigned n = 0; n<num_gains-1; n++) {
             if ((1<<n) & gain_val) gain_idx = n+1;
           }
-          unsigned pixel_val = d(i,j,k) & data_bits;
-          unsigned row_bin = (rows * i) + (rows - 1 - j);
+          unsigned pixel_val = src(i,j,k) & data_bits;
+          //unsigned row_bin = (rows * i) + (rows - 1 - j);
           double calib_val = 0.0;
           if (!(desc.options()&GainSwitchCalib::option_no_pedestal())) {
             if (desc.options()&GainSwitchCalib::option_correct_gain()) {
@@ -232,7 +210,22 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
             calib_val = (double) (pixel_val + offset);
           }
           if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
-          _entry->addcontent((unsigned) calib_val, k/ppbin, row_bin/ppbin);
+          switch(_entry->desc().frame(i).r) {
+          case D0:
+            dst(k/ppbin, j/ppbin) += (unsigned) calib_val;
+            break;
+          case D90:
+            dst(j/ppbin, (columns -1 -k)/ppbin) += (unsigned) calib_val;
+            break;
+          case D180:
+            dst((columns -1 -k)/ppbin, (rows -1 -j)/ppbin) += (unsigned) calib_val;
+            break;
+          case D270:
+            dst((rows -1 -j)/ppbin, k/ppbin) += (unsigned) calib_val;
+            break;
+          default:
+            break;
+          }
         }
       }
     }
@@ -244,6 +237,28 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 }
 
 void JungfrauHandler::_damaged() { if (_entry) _entry->invalid(); }
+
+void JungfrauHandler::_load_geometry(unsigned modules, unsigned rows, unsigned columns)
+{
+  const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
+  Alignment::Jungfrau align(det, modules, rows, columns);
+
+  unsigned width  = align.width();
+  unsigned height = align.height();
+  unsigned pixels = (width > height) ? width : height;
+  unsigned ppb    = _full_resolution() ? 1 : (pixels-1)/640 + 1;
+
+  width  = (width +ppb-1)/ppb;
+  height = (height+ppb-1)/ppb;
+
+  DescImage desc(det, (unsigned)0, ChannelID::name(det),
+                 width, height, ppb, ppb);
+  // add the frames to the DescImage
+  align.add_frames(desc, ppb, ppb);
+
+  _entry = new EntryImage(desc);
+  _entry->invalid();
+}
 
 void JungfrauHandler::_load_pedestals(unsigned modules, unsigned rows, unsigned columns)
 {
