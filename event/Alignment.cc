@@ -22,6 +22,11 @@ static Rotation as_rotation(double value)
   return Rotation(unsigned(value/90.+0.5)%NPHI);
 }
 
+static Rotation add_rotations(Rotation r1, Rotation r2)
+{
+  return Rotation((r1+r2)%NPHI);
+}
+
 Element::Element() :
   pname(""),
   pindex(0),
@@ -107,7 +112,8 @@ Detector::Detector(const Pds::DetInfo& det,
   _width(0),
   _index(index),
   _dettype(dettype),
-  _elemtype(elemtype)
+  _elemtype(elemtype),
+  _rotation(D0)
 {
   bool offl_type=false;
   FILE* gm = Calib::fopen(det, "geo", "geometry", false, &offl_type);
@@ -158,8 +164,8 @@ Detector::Detector(const Pds::DetInfo& det,
       ss >> pname >> pindex >> oname >> oindex >> y0 >> x0 >> z0
          >> rot_z >> rot_x >> rot_y >> tilt_z >> tilt_x >> tilt_y;
 
-      if ((_dettype.compare(pname) == 0) &&
-          (_elemtype.compare(oname) == 0) &&
+      if ((pname.compare(_dettype) == 0) &&
+          (oname.compare(_elemtype) == 0) &&
           (pindex == _index)) {
         if (oindex >= _elements.size()) {
           printf("Unexpected index for %s: %d\n", oname.c_str(), oindex);
@@ -194,10 +200,10 @@ Detector::Detector(const Pds::DetInfo& det,
                                           rot_z, rot_y, rot_x,
                                           tilt_z, tilt_y, tilt_x, frame);
         }
-      } else if((_dettype.compare("IP:V1") == 0) &&
-                (_elemtype.compare(pname) == 0) &&
+      } else if((pname.compare("IP:V1") == 0) &&
+                (oname.compare(_dettype) == 0) &&
                 (pindex == _index)) {
-        _rotation = rot_z;
+        _rotation = as_rotation(rot_z);
       }
     }
 
@@ -215,11 +221,56 @@ Detector::Detector(const Pds::DetInfo& det,
         xoffset -= (xmin - _margin);
       if ((ymin - _margin) < 0.0)
         yoffset -= (ymin - _margin);
-      _width = calc_size(xmax - xmin);
-      _height = calc_size(ymax - ymin);
-      for (unsigned i=0; i<_elements.size(); i++) {
-        _elements[i]->frame.x = calc_binned(_elements[i]->x0 + xoffset);
-        _elements[i]->frame.y = calc_binned(_elements[i]->y0 + yoffset);
+      // Rotate the whole image around the interaction point
+      switch (_rotation) {
+      case D0:
+        _width = calc_size(xmax - xmin);
+        _height = calc_size(ymax - ymin);
+        for (unsigned i=0; i<_elements.size(); i++) {
+          unsigned xbin = calc_binned(_elements[i]->x0 + xoffset);
+          unsigned ybin = calc_binned(_elements[i]->y0 + yoffset);
+          _elements[i]->frame.x = xbin;
+          _elements[i]->frame.y = ybin;
+          _elements[i]->frame.r = add_rotations(_elements[i]->frame.r, _rotation);
+        }
+        break;
+      case D90:
+        _width = calc_size(ymax - ymin);
+        _height = calc_size(xmax - xmin);
+        for (unsigned i=0; i<_elements.size(); i++) {
+          unsigned xbin = calc_binned(_elements[i]->x0 + xoffset);
+          unsigned ybin = calc_binned(_elements[i]->y0 + yoffset);
+          _elements[i]->frame.x = ybin;
+          _elements[i]->frame.y = _height - xbin - _elements[i]->frame.nx - 1;
+          std::swap(_elements[i]->frame.nx, _elements[i]->frame.ny);
+          _elements[i]->frame.r = add_rotations(_elements[i]->frame.r, _rotation);
+        }
+        break;
+      case D180:
+        _width = calc_size(xmax - xmin);
+        _height = calc_size(ymax - ymin);
+        for (unsigned i=0; i<_elements.size(); i++) {
+          unsigned xbin = calc_binned(_elements[i]->x0 + xoffset);
+          unsigned ybin = calc_binned(_elements[i]->y0 + yoffset);
+          _elements[i]->frame.x = _width - xbin - _elements[i]->frame.nx - 1;
+          _elements[i]->frame.y = _height - ybin - _elements[i]->frame.ny - 1;
+          _elements[i]->frame.r = add_rotations(_elements[i]->frame.r, _rotation);
+        }
+        break;
+      case D270:
+        _width = calc_size(ymax - ymin);
+        _height = calc_size(xmax - xmin);
+        for (unsigned i=0; i<_elements.size(); i++) {
+          unsigned xbin = calc_binned(_elements[i]->x0 + xoffset);
+          unsigned ybin = calc_binned(_elements[i]->y0 + yoffset);
+          _elements[i]->frame.x = _width - ybin - _elements[i]->frame.ny - 1;
+          _elements[i]->frame.y = xbin;
+          std::swap(_elements[i]->frame.nx, _elements[i]->frame.ny);
+          _elements[i]->frame.r = add_rotations(_elements[i]->frame.r, _rotation);
+        }
+        break;
+      default:
+        break;
       }
     }
 
@@ -316,5 +367,5 @@ SubFrame Detector::binned_frame(const SubFrame& frame, int ppbx, int ppby) const
 
 Rotation Detector::rotation() const
 {
-  return as_rotation(_rotation);
+  return _rotation;
 }

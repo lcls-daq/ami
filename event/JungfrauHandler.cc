@@ -189,7 +189,7 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
 
     for(unsigned i=0; i<modules; i++) {
       ndarray<unsigned,2> dst(_entry->contents(i));
-      for(unsigned j=0,j_flip=rows-1; j<rows; j++,j_flip--) {
+      for(unsigned j=0; j<rows; j++) {
         for(unsigned k=0; k<columns; k++) {
           unsigned gain_val = (src(i,j,k) & gain_bits) >> 14;
           // The gain index to use is the highest of the set bits
@@ -198,7 +198,6 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
             if ((1<<n) & gain_val) gain_idx = n+1;
           }
           unsigned pixel_val = src(i,j,k) & data_bits;
-          //unsigned row_bin = (rows * i) + (rows - 1 - j);
           double calib_val = 0.0;
           if (!(desc.options()&GainSwitchCalib::option_no_pedestal())) {
             if (desc.options()&GainSwitchCalib::option_correct_gain()) {
@@ -215,13 +214,13 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
             dst(k/ppbin, j/ppbin) += (unsigned) calib_val;
             break;
           case D90:
-            dst(j/ppbin, (columns -1 -k)/ppbin) += (unsigned) calib_val;
+            dst((rows -1 -j)/ppbin, k/ppbin) += (unsigned) calib_val;
             break;
           case D180:
             dst((columns -1 -k)/ppbin, (rows -1 -j)/ppbin) += (unsigned) calib_val;
             break;
           case D270:
-            dst((rows -1 -j)/ppbin, k/ppbin) += (unsigned) calib_val;
+            dst(j/ppbin, (columns -1 -k)/ppbin) += (unsigned) calib_val;
             break;
           default:
             break;

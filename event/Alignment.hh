@@ -86,7 +86,7 @@ namespace Ami {
       unsigned              _index;
       std::string           _dettype;
       std::string           _elemtype;
-      double                _rotation;
+      Rotation              _rotation;
     };
   }
 }
