@@ -51,8 +51,10 @@ void XtcClientT::processDgram(Pds::Dgram* dg)
 
   TransitionId::Value id=dg->seq.service();
   if (id==TransitionId::L1Accept) {
-    _task->call(new AmiT::EventRoutine(*this,ndg,_sem));
-    sem_wait(_sem);
+    if (_sem) { // sem won't exist if L1Accept comes after disable!
+      _task->call(new AmiT::EventRoutine(*this,ndg,_sem));
+      sem_wait(_sem);
+    }
   }
   else {
     if (_sem) {
