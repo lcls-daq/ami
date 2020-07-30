@@ -3,6 +3,7 @@
 
 #include <sstream>
 
+#include <cmath>
 #include <stdio.h>
 #include <string.h>
 
@@ -42,6 +43,23 @@ Element::Element() :
   tilt_y(0.0),
   tilt_x(0.0),
   frame()
+{}
+
+Element::Element(const SubFrame& frame) :
+  pname(""),
+  pindex(0),
+  oname(""),
+  oindex(0),
+  x0(0.0),
+  y0(0.0),
+  z0(0.0),
+  rot_z(0.0),
+  rot_y(0.0),
+  rot_x(0.0),
+  tilt_z(0.0),
+  tilt_y(0.0),
+  tilt_x(0.0),
+  frame(frame)
 {}
 
 Element::Element(const std::string& pname,
@@ -137,6 +155,7 @@ Detector::Detector(const Pds::DetInfo& det,
     double ymax=0.0;
     double xoffset = 0.0;
     double yoffset = 0.0;
+    unsigned count = 0;
 
     while(true) {
       if (Ami::Calib::get_line(&linep, &sz, gm)<0) break;
@@ -168,11 +187,11 @@ Detector::Detector(const Pds::DetInfo& det,
           (oname.compare(_elemtype) == 0) &&
           (pindex == _index)) {
         if (oindex >= _elements.size()) {
-          printf("Unexpected index for %s: %d\n", oname.c_str(), oindex);
+          printf("Unexpected index for %s in geometry: %d\n", oname.c_str(), oindex);
           lerror = true;
           break;
         } else if (_elements[oindex]) {
-          printf("Duplicate index for %s: %d\n", oname.c_str(), oindex);
+          printf("Duplicate index for %s in geometry: %d\n", oname.c_str(), oindex);
           lerror = true;
           break;
         } else {
@@ -199,6 +218,7 @@ Detector::Detector(const Pds::DetInfo& det,
                                           x0, y0, z0,
                                           rot_z, rot_y, rot_x,
                                           tilt_z, tilt_y, tilt_x, frame);
+          count++;
         }
       } else if((pname.compare("IP:V1") == 0) &&
                 (oname.compare(_dettype) == 0) &&
@@ -207,20 +227,24 @@ Detector::Detector(const Pds::DetInfo& det,
       }
     }
 
+    // check that we found the expected number of elements in the file
+    if (count != _elements.size()) {
+      printf("Unexpected number of elements in geometry for %s: %u vs. %zu\n",
+             Pds::DetInfo::name(det), count, _elements.size());
+      lerror = true;
+    }
+
     if (linep) {
       free(linep);
     }
-  
+
     if (lerror) {
-      for (unsigned i=0; i<_elements.size(); i++) {
-        if (_elements[i]) delete _elements[i];
-      }
-      _elements.clear();
+      printf("No usable geometry found for %s, using default geometry!\n",
+             Pds::DetInfo::name(det));
+      load_default();
     } else {
-      if ((xmin - _margin) < 0.0)
-        xoffset -= (xmin - _margin);
-      if ((ymin - _margin) < 0.0)
-        yoffset -= (ymin - _margin);
+      xoffset -= (xmin - _margin);
+      yoffset -= (ymin - _margin);
       // Rotate the whole image around the interaction point
       switch (_rotation) {
       case D0:
@@ -305,6 +329,42 @@ unsigned Detector::width() const
   return _width;
 }
 
+void Detector::load_default()
+{
+  // margin between elements
+  const unsigned margin = 10;
+  // cleanup any elements that were created
+  for (unsigned i=0; i<_elements.size(); i++) {
+    if (_elements[i]) {
+      delete _elements[i];
+      _elements[i] = NULL;
+    }
+  }
+  // set overall rotation to zero
+  _rotation = D0;
+
+  // calculate the grid to stick elements in
+  unsigned ngrid = (unsigned) std::sqrt(_elements.size());
+  if (ngrid*ngrid < _elements.size()) ngrid++;
+  _height = margin;
+  _width = ngrid * (_pixel_nx + margin) + margin;
+
+  for (unsigned j=0; j<ngrid; j++) {
+    for (unsigned k=0; k<ngrid; k++) {
+      unsigned nelem = j*ngrid + k;
+      if (nelem >= _elements.size()) {
+        break;
+      } else if (k == 0) {
+        _height += (_pixel_ny + margin);
+      }
+      SubFrame frame(k * (_pixel_nx + margin) + margin,
+                     j * (_pixel_ny + margin) + margin,
+                     _pixel_nx, _pixel_ny, D0);
+      _elements[nelem] = new Element(frame);
+    }
+  }
+}
+
 unsigned Detector::calc_size(double value) const
 {
   return calc_binned(value + 2 * _margin);
@@ -361,7 +421,7 @@ SubFrame Detector::create_subframe(double rotation) const
 SubFrame Detector::binned_frame(const SubFrame& frame, int ppbx, int ppby) const
 {
   return SubFrame(frame.x / ppbx, frame.y / ppby,
-                  frame.nx / ppbx, frame.ny / ppby,
+                  (frame.nx + ppbx - 1) / ppbx, (frame.ny + ppby - 1) / ppby,
                   frame.r);
 }
 

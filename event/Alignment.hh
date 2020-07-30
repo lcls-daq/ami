@@ -17,6 +17,7 @@ namespace Ami {
     class Element {
     public:
       Element();
+      Element(const SubFrame& frame);
       Element(const std::string& pname,
               unsigned pindex,
               const std::string& oname,
@@ -68,6 +69,8 @@ namespace Ami {
       unsigned width() const;
       void add_frames(DescImage& desc, int ppbx=1, int ppby=1) const;
     protected:
+      virtual void load_default();
+    private:
       unsigned calc_size(double value) const;
       unsigned calc_binned(double value) const;
       double get_size_x(const SubFrame& frame) const;

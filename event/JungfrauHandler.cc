@@ -245,7 +245,7 @@ void JungfrauHandler::_load_geometry(unsigned modules, unsigned rows, unsigned c
   unsigned width  = align.width();
   unsigned height = align.height();
   unsigned pixels = (width > height) ? width : height;
-  unsigned ppb    = _full_resolution() ? 1 : (pixels-1)/640 + 1;
+  unsigned ppb    = _full_resolution() ? 1 : (pixels-1)/512 + 1;
 
   width  = (width +ppb-1)/ppb;
   height = (height+ppb-1)/ppb;
