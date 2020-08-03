@@ -300,6 +300,10 @@ Detector::Detector(const Pds::DetInfo& det,
 
     // close the file
     fclose(gm);
+  } else {
+    printf("No usable geometry found for %s, using default geometry!\n",
+           Pds::DetInfo::name(det));
+    load_default();
   }
 }
 
