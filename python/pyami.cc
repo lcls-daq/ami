@@ -49,13 +49,15 @@
 #include <string>
 #include <vector>
 
-static const unsigned CDS_SUBNET_LO = 37;
-static const unsigned CDS_SUBNET_HI = 44;
+static const unsigned CDS_SUBNET_LO = 68;
+static const unsigned CDS_SUBNET_HI = 95;
 static const unsigned CDS_SUBNET_L2 = 10;
+static const unsigned CDS_SUBNET_DT = 58;
 
-static const unsigned FEZ_SUBNET_LO = 20;
-static const unsigned FEZ_SUBNET_HI = 27;
+static const unsigned FEZ_SUBNET_LO = 19;
+static const unsigned FEZ_SUBNET_HI = 31;
 static const unsigned FEZ_SUBNET_L2 =  8;
+static const unsigned FEZ_SUBNET_DT = 59;
 
 static PyObject* AmiError;
 
@@ -868,12 +870,14 @@ pyami_connect(PyObject *self, PyObject *args)
         unsigned subn = (addr>>8)&0xff;
         //      printf("Found addr %08x  subn %d\n",addr,subn);
         if ((subn>=CDS_SUBNET_LO &&
-	     subn<=CDS_SUBNET_HI) ||
-	    subn==CDS_SUBNET_L2) 
+          subn<=CDS_SUBNET_HI) ||
+          subn==CDS_SUBNET_L2 ||
+          subn==CDS_SUBNET_DT)
           ppinterface = addr;
         else if ((subn>=FEZ_SUBNET_LO && 
-		  subn<=FEZ_SUBNET_HI) ||
-		 subn==FEZ_SUBNET_L2)
+          subn<=FEZ_SUBNET_HI) ||
+          subn==FEZ_SUBNET_L2 ||
+          subn==FEZ_SUBNET_DT)
           mcinterface = addr;
       }
     }
