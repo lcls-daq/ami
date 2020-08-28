@@ -3,6 +3,7 @@
 #include "ami/event/FrameCalib.hh"
 #include "ami/event/GainSwitchCalib.hh"
 #include "ami/event/Calib.hh"
+#include "ami/event/EpixAlignment.hh"
 #include "ami/data/EntryImage.hh"
 #include "ami/data/EntryRef.hh"
 #include "ami/data/EntryWaveform.hh"
@@ -23,11 +24,6 @@ typedef Pds::Epix::Config10ka       Cfg10ka;
 
 static const unsigned      wE = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_numberOfAsicsPerRow;
 static const unsigned      hE = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
-//  Three margin parameters
-static const unsigned      gM = 2;
-static const unsigned      eM = 80;  // "edge" margin
-static const unsigned      hM = 4;   // 1/2 "horizontal" margin between ASICs
-static const unsigned      vM = 12;  // 1/2 "vertical" margin between ASICs
 static const unsigned      asicMap[] = { 2, 1, 3, 0 };
 
 using Ami::EventHandlerF;
@@ -122,7 +118,7 @@ namespace EpixArray {
     virtual unsigned numberOfGainModes() const = 0;
     virtual unsigned numberOfFixedGainModes() const = 0;
 
-    virtual Ami::DescImage descImage  (const Pds::DetInfo&) const = 0;
+    virtual Ami::DescImage descImage  (const Pds::DetInfo&, bool) const = 0;
     virtual EnvData*       envData    () const = 0;
     virtual CalData*       calData    () const = 0;
     virtual ndarray<const uint16_t,3> pixelGainConfig() const = 0;
@@ -150,7 +146,7 @@ namespace EpixArray {
     unsigned numberOfGainModes() const { return 7; }
     unsigned numberOfFixedGainModes() const { return 3; }
 
-    Ami::DescImage descImage  (const Pds::DetInfo&) const;
+    Ami::DescImage descImage  (const Pds::DetInfo&, bool) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
     ndarray<const uint16_t,3> pixelGainConfig() const;
@@ -180,7 +176,7 @@ namespace EpixArray {
     unsigned numberOfGainModes() const { return 7; }
     unsigned numberOfFixedGainModes() const { return 3; }
 
-    Ami::DescImage descImage  (const Pds::DetInfo&) const;
+    Ami::DescImage descImage  (const Pds::DetInfo&, bool) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
     ndarray<const uint16_t,3> pixelGainConfig() const;
@@ -275,93 +271,29 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
   return pixelGainConfig;
 }
 
-DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det) const
+DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det, bool full_resolution) const
 {
-  //
-  //   Hard code the array's geometry for now
-  //
-  //  (Epix10ka2m)
-  //         |
-  //  Quad 0 | Quad 1      Quad 2 is rotated  90d clockwise
-  //  -------+--------     Quad 3 is rotated 180d clockwise
-  //  Quad 3 | Quad 2      Quad 0 is rotated 270d clockwise
-  //         |
-  //
-  //  (Quad 1)
-  //         |
-  //  Elem 0 | Elem 1
-  //  -------+--------     No rotations
-  //  Elem 2 | Elem 3
-  //         |
-  //
-  //  (Elem 0)
-  //         |
-  //  ASIC 0 | ASIC 3
-  //  -------+--------     No rotations
-  //  ASIC 1 | ASIC 2
-  //         |
-  //
-  //  (Elem 0-3 pixel array)
-  //                    row increasing
-  //                          ^
-  //                          |
-  //                          |
-  //  column increasing <-- (0,0)
-  //
-  //                                         eM     vM     hM     hE     wE, eM     vM     hM     hE       wE
-  static const SubFrame elem[] = { SubFrame( eM + 1*vM                     ,             3*hM         + 1*wE, hE, wE, D90 ),
-                                   SubFrame( eM + 1*vM                     ,             1*hM               , hE, wE, D90 ),
-                                   SubFrame( eM + 3*vM        + 1*hE       ,             3*hM         + 1*wE, hE, wE, D90 ),
-                                   SubFrame( eM + 3*vM        + 1*hE       ,             1*hM               , hE, wE, D90 ),
+  // Create alignment object
+  Alignment::Epix10ka2M align(det);
 
-                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 1*vM                      , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 1*vM                      , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 3*vM        + 1*hE        , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 3*vM        + 1*hE        , wE, hE, D180 ),
+  // Get the image width and height from the alignment object
+  unsigned width  = align.width();
+  unsigned height = align.height();
+  unsigned pixels = (width > height) ? width : height;
+  unsigned ppb    = full_resolution ? 1 : (pixels-1)/512 + 1;
+  unsigned dpb    = 1;
 
-                                   SubFrame(      3*vM + 3*hM + 1*hE + 2*wE, eM + 3*vM + 2*hM + 2*hE        , hE, wE, D270 ),
-                                   SubFrame(      3*vM + 3*hM + 1*hE + 2*wE, eM + 3*vM + 4*hM + 2*hE  + 1*wE, hE, wE, D270 ),
-                                   SubFrame(      1*vM + 3*hM        + 2*wE, eM + 3*vM + 2*hM + 2*hE        , hE, wE, D270 ),
-                                   SubFrame(      1*vM + 3*hM        + 2*wE, eM + 3*vM + 4*hM + 2*hE  + 1*wE, hE, wE, D270 ),
-
-                                   SubFrame(             3*hM        + 1*wE,      3*vM + 3*hM + 1*hE  + 2*wE, wE, hE, D0 ),
-                                   SubFrame(             1*hM              ,      3*vM + 3*hM + 1*hE  + 2*wE, wE, hE, D0 ),
-                                   SubFrame(             3*hM        + 1*wE,      1*vM + 3*hM         + 2*wE, wE, hE, D0 ),
-                                   SubFrame(             1*hM              ,      1*vM + 3*hM         + 2*wE, wE, hE, D0 ) };
-
-      //
-  // Determine the bounds of the larger rectangular frame
-  //
-  unsigned xmin=-1U, xmax=0, ymin=-1U, ymax=0, v;
-  for(unsigned i=0; i<numberOfElements(); i++)
-    //    if (_config->elemCfg(i).asicMask()) {
-    if (1) {
-      if ((v=elem[i].x             ) < xmin) xmin = v;
-      if ((v=elem[i].x + elem[i].nx) > xmax) xmax = v;
-      if ((v=elem[i].y)              < ymin) ymin = v;
-      if ((v=elem[i].y + elem[i].ny) > ymax) ymax = v;
-    }
-
-  unsigned wImage = xmax - xmin + 2*gM;
-  unsigned hImage = ymax - ymin + 2*gM;
-
-  printf("x [%u,%u]  y [%u,%u]  w %u  h %u\n",
-         xmin, xmax, ymin, ymax, wImage, hImage);
+  width  = (width +ppb-1)/ppb;
+  height = (height+ppb-1)/ppb;
 
   //
   // Place each element within the larger rectangular frame
   //
-  unsigned ppb=1, dpb=1; // pixels per bin, display ppb
   DescImage desc(det, unsigned(0), ChannelID::name(det),
-                 wImage, hImage, ppb, ppb, dpb, dpb);
-  for(unsigned i=0; i<numberOfElements(); i++)
-    //    if (_config->elemCfg(i).asicMask()) {
-    if (1) {
-      SubFrame fr(elem[i]);
-      fr.x += gM - xmin;
-      fr.y += gM - ymin;
-      desc.add_frame( fr );
-    }
+                 width, height, ppb, ppb, dpb, dpb);
+  // add the frames to the DescImage
+  align.add_frames(desc, ppb, ppb);
+
   return desc;
 }
 
@@ -420,65 +352,29 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::pixelGainConfig() const 
   return pixelGainConfig;
 }
 
-DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det) const
+DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det, bool full_resolution) const
 {
-  //
-  //   Hard code the array's geometry for now
-  //
-  //  (Epix10kaQuad)
-  //         |
-  //  Elem 0 | Elem 1
-  //  -------+--------     No rotations
-  //  Elem 2 | Elem 3
-  //         |
-  //
-  //  (Elem 0)
-  //         |
-  //  ASIC 0 | ASIC 3
-  //  -------+--------     No rotations
-  //  ASIC 1 | ASIC 2
-  //         |
-  static const SubFrame elem[] = { SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 1*vM                      , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 1*vM                      , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 1*hM + 2*hE       , eM + 3*vM        + 1*hE        , wE, hE, D180 ),
-                                   SubFrame( eM + 4*vM + 3*hM + 2*hE + 1*wE, eM + 3*vM        + 1*hE        , wE, hE, D180 ) };
-  //
-  // Determine the bounds of the larger rectangular frame
-  //
-  unsigned xmin=-1U, xmax=0, ymin=-1U, ymax=0, v;
-  for(unsigned i=0; i<numberOfElements(); i++)
-    //    if (_config->elemCfg(i).asicMask()) {
-    if (1) {
-      if ((v=elem[i].x             ) < xmin) xmin = v;
-      if ((v=elem[i].x + elem[i].nx) > xmax) xmax = v;
-      if ((v=elem[i].y)              < ymin) ymin = v;
-      if ((v=elem[i].y + elem[i].ny) > ymax) ymax = v;
-    }
+  // Create alignment object
+  Alignment::Epix10kaQuad align(det);
 
-  unsigned wImage = xmax - xmin + 2*gM;
-  unsigned hImage = ymax - ymin + 2*gM;
+  // Get the image width and height from the alignment object
+  unsigned width  = align.width();
+  unsigned height = align.height();
+  unsigned pixels = (width > height) ? width : height;
+  unsigned ppb    = full_resolution ? 1 : (pixels-1)/512 + 1;
+  unsigned dpb    = 1;
 
-  printf("x [%u,%u]  y [%u,%u]  w %u  h %u\n",
-         xmin, xmax, ymin, ymax, wImage, hImage);
+  width  = (width +ppb-1)/ppb;
+  height = (height+ppb-1)/ppb;
 
   //
   // Place each element within the larger rectangular frame
   //
-  unsigned ppb=1, dpb=1; // pixels per bin, display ppb
   DescImage desc(det, unsigned(0), ChannelID::name(det),
-                 wImage, hImage, ppb, ppb, dpb, dpb);
-  for(unsigned i=0; i<numberOfElements(); i++)
-    //    if (_config->elemCfg(i).asicMask()) {
-    if (1) {
-      SubFrame fr(elem[i]);
-      fr.x += gM - xmin;
-      fr.y += gM - ymin;
-#ifdef DBUG
-      printf("add_frame x(%d) y(%d) nx(%d) ny(%d)\n",
-             fr.x, fr.y, fr.nx, fr.ny);
-#endif
-      desc.add_frame( fr );
-    }
+                 width, height, ppb, ppb, dpb, dpb);
+  // add the frames to the DescImage
+  align.add_frames(desc, ppb, ppb);
+
   return desc;
 }
 
@@ -582,7 +478,7 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
   _config_cache->dump();
 
   //  Construct Epix elements and place them in the large rectangular frame
-  _desc = _config_cache->descImage(det);
+  _desc = _config_cache->descImage(det, _full_resolution());
   _entry = new EntryImage(_desc);
   _entry->invalid();
 
@@ -621,6 +517,9 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
     _entry->reset();
     const DescImage& d = _entry->desc();
+
+    const int ppbx = d.ppxbin();
+    const int ppby = d.ppybin();
 
     const unsigned mask = (1<<14)-1;
     const unsigned gain_mask = 3<<14;
@@ -689,7 +588,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
           ndarray<      unsigned,1> s(ptmp, &shape);
           ndarray<const unsigned,1> t(psta, &shape);
           
-          unsigned oav = offset*int(d.ppxbin()*d.ppybin()+0.5);
+          unsigned oav = offset;
           unsigned olo = oav-100, ohi = oav+100;
           int fn = int(FrameCalib::median(s,t,olo,ohi))-int(oav);
 #if 0
@@ -712,7 +611,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
           s.strides(tmp.strides());
           ndarray<const unsigned,2> t(&gsta((m/4)*shape[0],(m%4)*shape[1]),shape);
           t.strides(gsta.strides());
-          int fn = int(FrameCalib::frameNoise(s,t,offset*int(d.ppxbin()*d.ppybin()+0.5)));
+          int fn = int(FrameCalib::frameNoise(s,t,offset));
           for(unsigned y=0; y<shape[0]; y++) {
             uint32_t* v = &s(y,0);
             for(unsigned x=0; x<shape[1]; x++)
@@ -733,7 +632,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
             s.strides(tmp.strides());
             ndarray<const uint32_t,1> t(&gsta(y,x),tmp.shape());
             t.strides(tmp.strides());
-            unsigned oav = offset*int(d.ppxbin()*d.ppybin()+0.5);
+            unsigned oav = offset;
             unsigned olo = oav-100, ohi = oav+100;
             int fn = int(FrameCalib::median(s,t,olo,ohi))-int(oav);
             //if (Ami::EventHandler::post_diagnostics() && m==0 && y<80)
@@ -769,29 +668,29 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       case D0: 
         for(unsigned j=0; j<src.shape()[0]; j++)
           for(unsigned k=0; k<src.shape()[1]; k++)
-            dst(j,k) = tmp(j,k);
+            dst(j/ppbx,k/ppby) += tmp(j,k);
         break;
       case D90:
-        for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
-          for(unsigned k=0; k<src.shape()[1]; k++)
-            dst(k,jn) = tmp(j,k);
+        for(unsigned j=0; j<src.shape()[0]; j++)
+          for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
+            dst(kn/ppbx,j/ppby) += tmp(j,k);
         break;
       case D180:
         for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
           for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
-            dst(jn,kn) = tmp(j,k);
+            dst(jn/ppbx,kn/ppby) += tmp(j,k);
         break;
       case D270:
-        for(unsigned j=0; j<src.shape()[0]; j++)
-          for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
-            dst(kn,j) = tmp(j,k);
+        for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
+          for(unsigned k=0; k<src.shape()[1]; k++)
+            dst(k/ppbx,jn/ppby) += tmp(j,k);
         break;
       default:
         break;
       }
     }
 
-    _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
+    _entry->info(double(offset*ppbx*ppby),EntryImage::Pedestal);
     _entry->info(1.,EntryImage::Normalization);
     _entry->valid(t);
   }

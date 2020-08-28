@@ -8,9 +8,11 @@ Jungfrau::Jungfrau(const Pds::DetInfo& det, unsigned nelems,
                    unsigned rows, unsigned columns, unsigned index) :
   Detector(det, "JFCAMERA:V1", "JUNGFRAU:V1",
            nelems, pixel_size,
-           rows, columns,
+           columns, rows,
            index)
-{}
+{
+  if (_use_default) load_default();
+}
 
 Jungfrau::~Jungfrau()
 {}

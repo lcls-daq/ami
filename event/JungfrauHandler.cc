@@ -148,6 +148,8 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
   {
     if (!_entry) return;
 
+    _entry->reset();
+
     const DescImage& desc = _entry->desc();
     unsigned o = desc.options();
     if (_options != o) {
@@ -174,7 +176,6 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     }
 
     int ppbin = _entry->desc().ppxbin();
-    memset(_entry->contents(),0,desc.nbinsx()*desc.nbinsy()*sizeof(unsigned));
     ndarray<const uint16_t, 3> src;
     switch(type.version()) {
       case 1:
@@ -188,9 +189,11 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     }
 
     for(unsigned i=0; i<modules; i++) {
+      bool fx=_entry->desc().frame(i).flipx;
+      bool fy=_entry->desc().frame(i).flipy;
       ndarray<unsigned,2> dst(_entry->contents(i));
-      for(unsigned j=0; j<rows; j++) {
-        for(unsigned k=0; k<columns; k++) {
+      for(unsigned j=0, jn=rows-1; j<rows; j++, jn--) {
+        for(unsigned k=0, kn=columns-1; k<columns; k++, kn--) {
           unsigned gain_val = (src(i,j,k) & gain_bits) >> 14;
           // The gain index to use is the highest of the set bits
           unsigned gain_idx = 0;
@@ -211,16 +214,16 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
           if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
           switch(_entry->desc().frame(i).r) {
           case D0:
-            dst(k/ppbin, j/ppbin) += (unsigned) calib_val;
+            dst((fy ? jn : j)/ppbin, (fx ? kn : k)/ppbin) += (unsigned) calib_val;
             break;
           case D90:
-            dst((rows -1 -j)/ppbin, k/ppbin) += (unsigned) calib_val;
+            dst((fx ? kn : k)/ppbin, (fy ? j: jn)/ppbin) += (unsigned) calib_val;
             break;
           case D180:
-            dst((columns -1 -k)/ppbin, (rows -1 -j)/ppbin) += (unsigned) calib_val;
+            dst((fy ? j : jn)/ppbin, (fx ? k: kn)/ppbin) += (unsigned) calib_val;
             break;
           case D270:
-            dst(j/ppbin, (columns -1 -k)/ppbin) += (unsigned) calib_val;
+            dst((fx ? k : kn)/ppbin, (fy ? jn : j)/ppbin) += (unsigned) calib_val;
             break;
           default:
             break;
