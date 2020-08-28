@@ -20,6 +20,8 @@ static const unsigned margin_pixels = 40;
 
 static const char* unusedtype = "UNUSED";
 
+static const std::string IPNAME = "IP";
+
 static Rotation as_rotation(double value, bool transpose=false)
 {
   if (transpose)
@@ -311,7 +313,7 @@ void Detector::load_geometry(const Pds::DetInfo& det,
                                           tilt_y, tilt_x, tilt_z, frame);
           qecount++;
         }
-      } else if((pname.compare("IP:V1") == 0) &&
+      } else if((pname.compare(0, IPNAME.length(), IPNAME) == 0) &&
                 (oname.compare(dettype) == 0) &&
                 (pindex == _index)) {
         _rotation = as_rotation(rot_z);
