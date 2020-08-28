@@ -120,7 +120,7 @@ DescImage::DescImage(const DescImage& d) :
 {
   for(unsigned i=0; i<d._nsubframes; i++) {
     const SubFrame& f = d._subframes[i];
-    add_frame(f.x, f.y, f.nx, f.ny, f.r);
+    add_frame(f.x, f.y, f.nx, f.ny, f.r, f.flipx, f.flipy);
   }
 
   memset(&_subframes[d._nsubframes], 0, (MAX_SUBFRAMES-d._nsubframes)*sizeof(SubFrame));
@@ -155,7 +155,7 @@ DescImage::DescImage(const DescImage& d, const char* mask_path) :
 {
   for(unsigned i=0; i<d._nsubframes; i++) {
     const SubFrame& f = d._subframes[i];
-    add_frame(f.x, f.y, f.nx, f.ny, f.r);
+    add_frame(f.x, f.y, f.nx, f.ny, f.r, f.flipx, f.flipy);
   }
 
   memset(&_subframes[d._nsubframes], 0, (MAX_SUBFRAMES-d._nsubframes)*sizeof(SubFrame));
@@ -201,21 +201,25 @@ void DescImage::set_scale(float scalex,
 }
 
 void DescImage::add_frame(const SubFrame& f)
-{ add_frame(f.x, f.y, f.nx, f.ny, f.r); }
+{ add_frame(f.x, f.y, f.nx, f.ny, f.r, f.flipx, f.flipy); }
 
 void DescImage::add_frame(unsigned x,
                           unsigned y,
                           unsigned nx,
                           unsigned ny,
-                          Rotation r)
+                          Rotation r,
+                          bool flipx,
+                          bool flipy)
 {
   if (_nsubframes < MAX_SUBFRAMES) {
     unsigned frame = _nsubframes++;
-    _subframes[frame].x  = x;
-    _subframes[frame].y  = y;
-    _subframes[frame].nx = nx;
-    _subframes[frame].ny = ny;
-    _subframes[frame].r  = r;
+    _subframes[frame].x     = x;
+    _subframes[frame].y     = y;
+    _subframes[frame].nx    = nx;
+    _subframes[frame].ny    = ny;
+    _subframes[frame].r     = r;
+    _subframes[frame].flipx = flipx;
+    _subframes[frame].flipy = flipy;
   }
   else {
     printf("DescImage::add_frame already at maximum (%d)\n",

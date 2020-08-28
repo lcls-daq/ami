@@ -9,15 +9,20 @@ namespace Ami {
 
   class SubFrame {
   public:
-    SubFrame() : x(0), y(0), nx(0), ny(0), r(D0) {}
+    SubFrame() : x(0), y(0), nx(0), ny(0), r(D0), flipx(false), flipy(false) {}
     SubFrame(unsigned _x, unsigned _y, unsigned _nx, unsigned _ny, Rotation _r) 
-      : x(_x), y(_y), nx(_nx), ny(_ny), r(_r) {}
+      : x(_x), y(_y), nx(_nx), ny(_ny), r(_r), flipx(false), flipy(false) {}
+    SubFrame(unsigned _x, unsigned _y, unsigned _nx, unsigned _ny, Rotation _r,
+             bool _flipx, bool _flipy)
+      : x(_x), y(_y), nx(_nx), ny(_ny), r(_r), flipx(_flipx), flipy(_flipy) {}
   public:
     uint16_t x;  // units are bins
     uint16_t y;
     uint16_t nx;
     uint16_t ny;
     Rotation r;  // rotation from standard orientation
+    bool flipx;
+    bool flipy;
   };
 
   class ImageMask;
@@ -85,10 +90,13 @@ namespace Ami {
 
     void add_frame(const SubFrame&);
     void add_frame(unsigned x,  // units are bins
-		   unsigned y,
-		   unsigned nx,
-		   unsigned ny,
-                   Rotation r=D0);
+                   unsigned y,
+                   unsigned nx,
+                   unsigned ny,
+                   Rotation r=D0,
+                   bool flipx=true,
+                   bool flipy=true);
+
 
     void set_mask(const ImageMask&);
 
