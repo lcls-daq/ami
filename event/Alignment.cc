@@ -606,15 +606,15 @@ SubFrame Detector::create_subframe(double rot_z, double rot_y, double rot_x,
                                    bool transpose) const
 {
   Rotation rot = as_rotation(rot_z, transpose);
-  bool xflip = (as_rotation(rot_x) == D180);
-  bool yflip = (as_rotation(rot_y) == D180);
+  bool xflip = (as_rotation(transpose ? rot_y : rot_x) == D180);
+  bool yflip = (as_rotation(transpose ? rot_x : rot_y) == D180);
   switch(rot) {
   case D0:
   case D180:
     return SubFrame(0, 0, _pixel_nx, _pixel_ny, rot, xflip, yflip);
   case D90:
   case D270:
-    return SubFrame(0, 0, _pixel_ny, _pixel_nx, rot, xflip, yflip);
+    return SubFrame(0, 0, _pixel_ny, _pixel_nx, rot, yflip, xflip);
   default:
     return SubFrame();
   }

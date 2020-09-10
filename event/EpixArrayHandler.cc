@@ -546,6 +546,9 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       ndarray<const unsigned,2> sta(_status[i]);
       ndarray<const uint16_t,2> gcf(_gain_config[i]);
 
+      bool fk=d.frame(i).flipx;
+      bool fj=d.frame(i).flipy;
+
       ped.strides(_element_ped_stride);
       gac.strides(_element_gain_stride);
 
@@ -664,26 +667,26 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       //  Copy the (rotated) frame into the destination
       //
 
-      switch(_entry->desc().frame(i).r) {
+      switch(d.frame(i).r) {
       case D0: 
-        for(unsigned j=0; j<src.shape()[0]; j++)
-          for(unsigned k=0; k<src.shape()[1]; k++)
-            dst(j/ppbx,k/ppby) += tmp(j,k);
+        for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
+          for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
+            dst((fj?jn:j)/ppbx,(fk?kn:k)/ppby) += tmp(j,k);
         break;
       case D90:
-        for(unsigned j=0; j<src.shape()[0]; j++)
+        for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
           for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
-            dst(kn/ppbx,j/ppby) += tmp(j,k);
+            dst((fk?k:kn)/ppbx,(fj?jn:j)/ppby) += tmp(j,k);
         break;
       case D180:
         for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
           for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
-            dst(jn/ppbx,kn/ppby) += tmp(j,k);
+            dst((fj?j:jn)/ppbx,(fk?k:kn)/ppby) += tmp(j,k);
         break;
       case D270:
         for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
-          for(unsigned k=0; k<src.shape()[1]; k++)
-            dst(k/ppbx,jn/ppby) += tmp(j,k);
+          for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
+            dst((fk?kn:k)/ppbx,(fj?j:jn)/ppby) += tmp(j,k);
         break;
       default:
         break;

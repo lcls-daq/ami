@@ -189,8 +189,8 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     }
 
     for(unsigned i=0; i<modules; i++) {
-      bool fx=_entry->desc().frame(i).flipx;
-      bool fy=_entry->desc().frame(i).flipy;
+      bool fk=_entry->desc().frame(i).flipx;
+      bool fj=_entry->desc().frame(i).flipy;
       ndarray<unsigned,2> dst(_entry->contents(i));
       for(unsigned j=0, jn=rows-1; j<rows; j++, jn--) {
         for(unsigned k=0, kn=columns-1; k<columns; k++, kn--) {
@@ -214,16 +214,16 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
           if (calib_val < 0.0) calib_val = 0.0; // mask the problem negative pixels
           switch(_entry->desc().frame(i).r) {
           case D0:
-            dst((fy ? jn : j)/ppbin, (fx ? kn : k)/ppbin) += (unsigned) calib_val;
+            dst((fj ? jn : j)/ppbin, (fk ? kn : k)/ppbin) += (unsigned) calib_val;
             break;
           case D90:
-            dst((fx ? kn : k)/ppbin, (fy ? j: jn)/ppbin) += (unsigned) calib_val;
+            dst((fk ? k : kn)/ppbin, (fj ? jn : j)/ppbin) += (unsigned) calib_val;
             break;
           case D180:
-            dst((fy ? j : jn)/ppbin, (fx ? k: kn)/ppbin) += (unsigned) calib_val;
+            dst((fj ? j : jn)/ppbin, (fk ? k : kn)/ppbin) += (unsigned) calib_val;
             break;
           case D270:
-            dst((fx ? k : kn)/ppbin, (fy ? jn : j)/ppbin) += (unsigned) calib_val;
+            dst((fk ? kn : k)/ppbin, (fj ? j : jn)/ppbin) += (unsigned) calib_val;
             break;
           default:
             break;
