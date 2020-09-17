@@ -19,12 +19,8 @@ JungfrauClient::JungfrauClient(QWidget* w,const Pds::DetInfo& i, unsigned u, con
   _reloadPedestals(false)
 {
   addWidget(_npBox = new QCheckBox("Disable\nCorrections"));
-  addWidget(_kevBox = new QCheckBox("Corrections in keV"));
-  // Set _kevBox state to checked by default
-  _kevBox->setChecked(true);
 
   connect(_npBox, SIGNAL(clicked()), this, SIGNAL(changed()));
-  connect(_kevBox, SIGNAL(clicked()), this, SIGNAL(changed()));
 }
 
 JungfrauClient::~JungfrauClient() {}
@@ -33,7 +29,6 @@ void JungfrauClient::save(char*& p) const
 {
   XML_insert(p, "ImageClient", "self", ImageClient::save(p) );
   XML_insert(p, "QCheckBox", "_npBox",  QtPersistent::insert(p,_npBox->isChecked())  );
-  XML_insert(p, "QCheckBox", "_kevBox", QtPersistent::insert(p,_kevBox->isChecked()) );
 }
 
 void JungfrauClient::load(const char*& p)
@@ -43,8 +38,6 @@ void JungfrauClient::load(const char*& p)
       ImageClient::load(p);
     else if (tag.name == "_npBox")
       _npBox->setChecked(QtPersistent::extract_b(p));
-    else if (tag.name == "_kevBox")
-      _kevBox->setChecked(QtPersistent::extract_b(p));
   XML_iterate_close(JungfrauClient,tag);
 }
 
@@ -60,9 +53,6 @@ void JungfrauClient::_configure(char*& p,
     o |= GainSwitchCalib::option_no_pedestal();
   } else {
     o |= GainSwitchCalib::option_correct_gain();
-  }
-  if (_kevBox->isChecked()) {
-    o |= GainSwitchCalib::option_pixel_value_in_kev();
   }
   if (_reloadPedestals) {
     o |= GainSwitchCalib::option_reload_pedestal();
