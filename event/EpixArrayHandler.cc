@@ -252,11 +252,11 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
           case FL_ALT:
             gain_config = 2;
             break;
-          case AML:
-            gain_config = 3;
-            break;
           case AHL:
             gain_config = 3;
+            break;
+          case AML:
+            gain_config = 4;
             break;
           default:
             printf("Epix10ka2MCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
@@ -490,7 +490,15 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
 
 void EpixArrayHandler::_calibrate(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t) 
 {
-  if (!_entry) _configure(tid,payload,t);
+  if (!_entry) {
+    _configure(tid,payload,t);
+  } else {
+    if (_config_cache) delete _config_cache;
+    _config_cache = EpixArray::ConfigCache::instance(tid,payload,*this);
+    _config_cache->dump();
+
+    _gain_config = _config_cache->pixelGainConfig();
+  }
 }
 
 #include "pdsdata/xtc/ClockTime.hh"
