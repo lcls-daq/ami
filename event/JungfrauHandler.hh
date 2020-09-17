@@ -9,6 +9,8 @@
 namespace Ami {
   class EntryImage;
 
+  namespace Jungfrau { class ConfigCache; }
+
   class JungfrauHandler : public EventHandler {
   public:
     JungfrauHandler(const Pds::DetInfo& info, FeatureCache& cache);
@@ -25,17 +27,19 @@ namespace Ami {
     virtual void _event    (Pds::TypeId type, const void* payload, const Pds::ClockTime& t);
     virtual void _damaged  ();
   private:
-    void _load_geometry(unsigned modules, unsigned rows, unsigned columns);
-    void _load_pedestals(unsigned modules, unsigned rows, unsigned columns);
+    void _load_pedestals();
+    void _load_offsets  ();
+    void _load_gains    ();
+    ndarray<double,4> _load_calib(const char* online, const char* offline,
+                                  double default_val, bool* used_default=NULL) const;
   private:
-    Pds::Xtc*           _configtc;
-    FeatureCache&       _cache;
-    EntryImage*         _entry;
-    ndarray<double,4>   _offset;
-    ndarray<double,4>   _pedestal;
-    ndarray<double,4>   _gain_cor;
-    unsigned            _options;
-    bool                _do_norm;
+    Jungfrau::ConfigCache*  _config_cache;
+    FeatureCache&           _cache;
+    EntryImage*             _entry;
+    ndarray<double,4>       _offset;
+    ndarray<double,4>       _pedestal;
+    ndarray<double,4>       _gain_cor;
+    unsigned                _options;
   };
 };
 
