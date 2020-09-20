@@ -797,7 +797,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       for(unsigned j=0; j<rows; j++) {
         for(unsigned k=0; k<cols; k++) {
           unsigned gain_idx = pixelGainConfig(j,k);
-          if ((gain_idx > fixed_gain_idx) && ((data(j,k) & gain_bits) >> 14))
+          if ((gain_idx > fixed_gain_idx) && ((a(j,k) & gain_bits) >> 14))
             gain_idx += 2;
           double calib_val = (data(j,k) - doffset) / _gains(gain_idx,j,k) + doffset;
           if (calib_val < 0.0) { // mask the problem negative pixels to avoid int underflow
