@@ -38,6 +38,7 @@ namespace Ami {
     static bool show_write_pedestals();
     static void set_experiment(const char*);
     static void set_run(int);
+    static void set_offline_root(const char*);
     static int  get_line(char** p, size_t* n, FILE* f);
     static void skip_header(FILE* f);
   };

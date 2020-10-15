@@ -41,6 +41,7 @@ static void usage(char* progname) {
           "          [-t (calib test mode)]\n"
           "          [-a <include|only> (EPICS aliases include|only)]\n"
           "          [-w (enable legacy online write pedestal feature)]\n"
+          "          [-c <calibdir>]\n"
           "          [-A (attach dialogs rather than popup)]\n"
           "          [-C <color palette>]    (list from {%s); for example \"mono,jet\")\n"
           "          [-D (post detector diagnostics)]\n"
@@ -137,7 +138,7 @@ int main(int argc, char* argv[]) {
   qRegisterMetaType<Pds::TransitionId::Value>("Pds::TransitionId::Value");
 
   int c;
-  while ((c = getopt(argc, argv, "a:p:f:o:e:r:wAC:L:N:OlDERQ:StTWX:YZ?h")) != -1) {
+  while ((c = getopt(argc, argv, "a:p:f:o:e:r:wc:AC:L:N:OlDERQ:StTWX:YZ?h")) != -1) {
     switch (c) {
     case 'p':
       path = optarg;
@@ -147,6 +148,9 @@ int main(int argc, char* argv[]) {
       break;
     case 'A':
       Ami::Qt::QtPStack::attach(true);
+      break;
+    case 'c':
+      Ami::Calib::set_offline_root(optarg);
       break;
     case 'C':
       if (!Ami::Qt::ImageColorControl::parse_palette_set(optarg)) {

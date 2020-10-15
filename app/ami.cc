@@ -24,6 +24,7 @@ static void usage(char* progname) {
     "          [-R] (set full resolution)\n"
     "          [-O] (disable legacy online pedestal corrections)\n"
     "          [-E <expt name>] (set experiment for offline calib access)\n"
+    "          [-c <calibdir>] (set the calibdir path for offline calib access)\n"
     "          [-a <include|only>] (include EPICS aliases [only])\n"
 	  "          [-f] (offline) [-h] (help)\n", progname);
 }
@@ -38,7 +39,7 @@ int main(int argc, char* argv[]) {
   std::vector<char *> module_names;
   bool parseValid=true;
 
-  while ((c = getopt(argc, argv, "?hfDa:Q:ROE:p:n:i:s:L:")) != -1) {
+  while ((c = getopt(argc, argv, "?hfDa:Q:ROE:c:p:n:i:s:L:")) != -1) {
     switch (c) {
     case 'f':
       offline=true;
@@ -72,6 +73,9 @@ int main(int argc, char* argv[]) {
     case 'E':
       Ami::Calib::use_offline(true);
       Ami::Calib::set_experiment(optarg);
+      break;
+    case 'c':
+      Ami::Calib::set_offline_root(optarg);
       break;
     case 'D':
       Ami::EventHandler::post_diagnostics(true);

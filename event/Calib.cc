@@ -11,6 +11,7 @@
 #include <string.h>
 #include <iomanip>
 #include <vector>
+#include <list>
 
 #define DBUG
 
@@ -27,8 +28,16 @@ static std::string offl_path(std::string basepath,
                              const Pds::DetInfo& info,
                              std::string off_calib_type);
 
-void Ami::Calib::set_experiment(const char* e) { _expt = std::string(e); }
-void Ami::Calib::set_run       (int r)         { _run  = r; }
+void Ami::Calib::set_experiment  (const char* e) { _expt = std::string(e); }
+void Ami::Calib::set_run         (int r)         { _run  = r; }
+void Ami::Calib::set_offline_root(const char* p) {
+  offRoot = std::string(p);
+  if (!offRoot.empty()) {
+    char last = *offRoot.rbegin();
+    if (last != '/')
+      offRoot.push_back('/');
+  }
+}
 
 void Ami::Calib::use_offline(bool v) { _use_offline=v; }
 void Ami::Calib::use_online (bool v) { _use_online=v; }
@@ -138,9 +147,26 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
     for(unsigned i=0; i<hutch.size(); i++)
       hutch[i] = toupper(hutch[i]);
 
-    std::ostringstream o;
-    o << offRoot << hutch << "/" << _expt << "/calib/";
-    path3 = offl_path(o.str(),info,off_calib_type);
+    // check using <base>/<hutch>/<expt>/calib - upper case hutch
+    if (path3.empty()) {
+      std::ostringstream o;
+      o << offRoot << hutch << "/" << _expt << "/calib/";
+      path3 = offl_path(o.str(),info,off_calib_type);
+    }
+
+    // check using <base>/<hutch>/<expt>/calib - lower case hutch
+    if (path3.empty()) {
+      std::ostringstream o;
+      o << offRoot << hutch << "/" << _expt << "/calib/";
+      path3 = offl_path(o.str(),info,off_calib_type);
+    }
+
+    // check using <base>/<expt>/calib
+    if (path3.empty()) {
+      std::ostringstream o;
+      o << offRoot << _expt << "/calib/";
+      path3 = offl_path(o.str(),info,off_calib_type);
+    }
   }
 
   std::string path4;
@@ -312,7 +338,7 @@ std::string offl_path(std::string basepath,
   typedef std::vector<Ami::CalibFile>::const_reverse_iterator FileIter;
   for (FileIter it = calfiles.rbegin() ; it != calfiles.rend() ; ++ it ) {
     if (it->begin() <= _run &&
-	_run <= it->end())
+        _run <= it->end())
       return it->path();
   }
   return std::string();
