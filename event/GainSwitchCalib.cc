@@ -27,18 +27,16 @@ static const unsigned _option_correct_common_mode2= 0x08;
 static const unsigned _option_correct_common_mode3= 0x10;
 static const unsigned _option_correct_gain        = 0x20;
 static const unsigned _option_suppress_bad_pixels = 0x40;
-static const unsigned _option_pixel_value_in_kev  = 0x80;
 
 unsigned GainSwitchCalib::option_no_pedestal         () { return _option_no_pedestal; }
 unsigned GainSwitchCalib::option_reload_pedestal     () { return _option_reload_pedestal; }
 unsigned GainSwitchCalib::option_correct_common_mode () { return _option_correct_common_mode; }
 unsigned GainSwitchCalib::option_suppress_bad_pixels () { return _option_suppress_bad_pixels; }
 unsigned GainSwitchCalib::option_correct_gain        () { return _option_correct_gain; }
-unsigned GainSwitchCalib::option_pixel_value_in_kev  () { return _option_pixel_value_in_kev; }
 
 unsigned GainSwitchCalib::normalization_option_mask()
 {
-  return _option_correct_gain | _option_pixel_value_in_kev;
+  return _option_correct_gain;
 }
 
 ndarray<unsigned,2> GainSwitchCalib::load_array(const Pds::DetInfo& info,

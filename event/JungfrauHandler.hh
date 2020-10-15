@@ -40,6 +40,7 @@ namespace Ami {
     ndarray<double,4>       _pedestal;
     ndarray<double,4>       _gain_cor;
     unsigned                _options;
+    bool                    _do_norm;
   };
 };
 

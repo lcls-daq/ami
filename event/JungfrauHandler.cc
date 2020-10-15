@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 static const unsigned offset=1<<16;
+static const double prec_norm_factor=100.0;
 
 typedef Pds::Jungfrau::ConfigV1 CfgJfV1;
 typedef Pds::Jungfrau::ConfigV2 CfgJfV2;
@@ -176,7 +177,8 @@ JungfrauHandler::JungfrauHandler(const Pds::DetInfo& info, FeatureCache& cache) 
   _offset       (make_ndarray<double>(0U,0,0,0)),
   _pedestal     (make_ndarray<double>(0U,0,0,0)),
   _gain_cor     (make_ndarray<double>(0U,0,0,0)),
-  _options      (0)
+  _options      (0),
+  _do_norm      (false)
 {
 }
 
@@ -246,10 +248,18 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     unsigned modules   = _config_cache->numberOfModules();
     unsigned columns   = _config_cache->numberOfColumnsPerModule();
     unsigned rows      = _config_cache->numberOfRowsPerModule();
+    double   norm      = 1.0;
 
     if (desc.options() & GainSwitchCalib::option_reload_pedestal()) {
       _load_pedestals();
       _entry->desc().options( desc.options()&~GainSwitchCalib::option_reload_pedestal() );
+    }
+
+    // Set the normalization if gain correcting
+    if (!(desc.options()&GainSwitchCalib::option_no_pedestal())) {
+      if (_do_norm && (desc.options()&GainSwitchCalib::option_correct_gain())) {
+        norm = prec_norm_factor;
+      }
     }
 
     int ppbin = _entry->desc().ppxbin();
@@ -310,7 +320,7 @@ void JungfrauHandler::_event(Pds::TypeId type, const void* payload, const Pds::C
     }
 
     _entry->info(double(offset*ppbin*ppbin),EntryImage::Pedestal);
-    _entry->info(1,EntryImage::Normalization);
+    _entry->info(norm,EntryImage::Normalization);
     _entry->valid(t);
   }
 }
@@ -329,7 +339,14 @@ void JungfrauHandler::_load_offsets()
 
 void JungfrauHandler::_load_gains()
 {
-  _gain_cor = _load_calib("None", "pixel_gain", 1.0);
+  bool used_default_gain = false;
+  _gain_cor = _load_calib("None", "pixel_gain", 1.0, &used_default_gain);
+  if (!used_default_gain) {
+    _do_norm = true;
+    for(double* val = _gain_cor.begin(); val!=_gain_cor.end(); val++) (*val) /= prec_norm_factor;
+  } else {
+    _do_norm = false;
+  }
 }
 
 ndarray<double,4> JungfrauHandler::_load_calib(const char* online,
