@@ -89,7 +89,8 @@ void   Ami::EpicsXtcReader::_configure(Pds::TypeId id, const void* payload, cons
         _indexpv   [pvId] = index;
       }
       else {
-        printf("EpicsXtcReader::_configure ignoring PV type %d\n",pvData.dbrType());
+        if (pvData.dbrType() != DBR_CTRL_STRING) // avoid log spam due to string pvs
+          printf("EpicsXtcReader::_configure ignoring PV type %d\n",pvData.dbrType());
       }
     } break;
   case Pds::TypeId::Id_EpicsConfig:
