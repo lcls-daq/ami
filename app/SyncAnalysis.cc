@@ -257,6 +257,18 @@ namespace Ami {
     return ((double)val);
   }
 
+  template<> double istarDataSpace::processData()
+  {
+    iStarConfigType& iStarConfig = detConfig;
+    ZylaDataType*    iStarFrame  = detDataPtr;
+    const uint16_t* dataArray = istarFrame->data(istarConfig).data();
+    unsigned totalPixels = istarConfig.frameSize() / sizeof(uint16_t);
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
+
   template<> double jungfrauDataSpace::processData()
   {
     JungfrauConfigType& jungfrauConfig = detConfig;

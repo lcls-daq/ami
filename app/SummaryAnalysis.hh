@@ -48,6 +48,7 @@ namespace Ami {
     void processFliData(SyncAnalysis* syncPtr);
     void processAndorData(SyncAnalysis* syncPtr);
     void processZylaData(SyncAnalysis* syncPtr);
+    void processiStarData(SyncAnalysis* syncPtr);
     void processJungfrauData(SyncAnalysis* syncPtr);
     void processPimaxData(SyncAnalysis* syncPtr);
     void processPixisData(SyncAnalysis* syncPtr);

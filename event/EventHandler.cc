@@ -285,6 +285,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_EOrbits:          h = new EOrbitsHandler       (bldInfo,cache); break;
   case Pds::TypeId::Id_BeamMonitorBldData: h = new BeamMonitorHandler (bldInfo,cache); break;
   case Pds::TypeId::Id_JungfrauConfig:   h = new JungfrauHandler   (info,cache); break;
+  case Pds::TypeId::Id_iStarConfig:
   case Pds::TypeId::Id_ZylaConfig:       h = new ZylaHandler       (info,cache); break;
   case Pds::TypeId::Id_ControlsCameraConfig: h = new EpicsCamHandler   (info); break;
   case Pds::TypeId::Id_UxiConfig:        h = new UxiHandler        (info,cache); break;

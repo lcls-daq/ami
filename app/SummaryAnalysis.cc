@@ -94,6 +94,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_ZylaConfig:
       h = new zylaDataSpace(detInfo, Pds::TypeId::Id_ZylaFrame,  Pds::TypeId::Id_ZylaConfig, payload, "Zyla");
       break;
+    case Pds::TypeId::Id_iStarConfig:
+      h = new zylaDataSpace(detInfo, Pds::TypeId::Id_iStarFrame,  Pds::TypeId::Id_iStarConfig, payload, "iStar");
+      break;
     case Pds::TypeId::Id_JungfrauConfig:
       h = new jungfrauDataSpace(detInfo, Pds::TypeId::Id_JungfrauElement,  Pds::TypeId::Id_JungfrauConfig, payload, "Jungfrau");
       break;

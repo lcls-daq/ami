@@ -15,14 +15,26 @@ static const unsigned offset=1<<16;
 
 static inline unsigned height(const Xtc* tc)
 {
-#define CASE_VSN(v) case v:                                           \
-  { const Pds::Zyla::ConfigV##v& c =                                  \
-      *reinterpret_cast<const Pds::Zyla::ConfigV##v*>(tc->payload()); \
+#define CASE_VSN(t,v) case v:                                      \
+  { const Pds::t::ConfigV##v& c =                                  \
+      *reinterpret_cast<const Pds::t::ConfigV##v*>(tc->payload()); \
       return c.height()/c.binY(); }
 
-  switch(tc->contains.version()) {
-    CASE_VSN(1);
-    //CASE_VSN(2);
+  switch(tc->contains.id()) {
+    case TypeId::Id_ZylaConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(Zyla,1);
+        //CASE_ZYLA_VSN(Zyla,2);
+        default: break;
+      }
+      break;
+    case TypeId::Id_iStarConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(iStar,1);
+        //CASE_VSN(iStar,2);
+        default: break;
+      }
+      break;
     default: break;
   }
 #undef CASE_VSN
@@ -31,14 +43,26 @@ static inline unsigned height(const Xtc* tc)
 
 static inline unsigned width(const Xtc* tc)
 {
-#define CASE_VSN(v) case v:                                           \
-  { const Pds::Zyla::ConfigV##v& c =                                  \
-      *reinterpret_cast<const Pds::Zyla::ConfigV##v*>(tc->payload()); \
+#define CASE_VSN(t,v) case v:                                      \
+  { const Pds::t::ConfigV##v& c =                                  \
+      *reinterpret_cast<const Pds::t::ConfigV##v*>(tc->payload()); \
       return c.width()/c.binX(); }
 
-  switch(tc->contains.version()) {
-    CASE_VSN(1);
-    //CASE_VSN(2);
+  switch(tc->contains.id()) {
+    case TypeId::Id_ZylaConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(Zyla,1);
+        //CASE_VSN(Zyla,2);
+        default: break;
+      }
+      break;
+    case TypeId::Id_iStarConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(iStar,1);
+        //CASE_VSN(iStar,2);
+        default: break;
+      }
+      break;
     default: break;
   }
 #undef CASE_VSN
@@ -48,14 +72,26 @@ static inline unsigned width(const Xtc* tc)
 static inline ndarray<const uint16_t,2> array(const Xtc* tc,
                                               const Pds::Zyla::FrameV1& f)
 {
-  #define CASE_VSN(v) case v:                                           \
-  { const Pds::Zyla::ConfigV##v& c =                                    \
-      *reinterpret_cast<const Pds::Zyla::ConfigV##v*>(tc->payload());   \
+  #define CASE_VSN(t,v) case v:                                      \
+  { const Pds::t::ConfigV##v& c =                                    \
+      *reinterpret_cast<const Pds::t::ConfigV##v*>(tc->payload());   \
     return f.data(c); }
 
-  switch(tc->contains.version()) {
-    CASE_VSN(1);
-    //CASE_VSN(2);
+  switch(tc->contains.id()) {
+    case TypeId::Id_ZylaConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(Zyla,1);
+        //CASE_VSN(Zyla,2);
+        default: break;
+      }
+      break;
+    case TypeId::Id_iStarConfig:
+      switch(tc->contains.version()) {
+        CASE_VSN(iStar,1);
+        //CASE_VSN(iStar,2);
+        default: break;
+      }
+      break;
     default: break;
   }
 #undef CASE_VSN

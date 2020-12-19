@@ -69,6 +69,7 @@ static struct off_lookup _off_lookup[] = { {Pds::DetInfo::pnCCD,        "PNCCD::
                                            {Pds::DetInfo::Epix10ka2M,   "Epix10ka2M::CalibV1"},
                                            {Pds::DetInfo::Fccd960,      "Camera::CalibV1"},
                                            {Pds::DetInfo::Zyla,         "Camera::CalibV1"},
+                                           {Pds::DetInfo::iStar,        "Camera::CalibV1"},
                                            {Pds::DetInfo::Uxi,          "Uxi::CalibV1"},
                                            {Pds::DetInfo::Archon,       "Camera::CalibV1"},
                                            {Pds::DetInfo::Jungfrau,     "Jungfrau::CalibV1"} };
@@ -144,6 +145,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
   std::string path3;
   if (!_expt.empty() && offCalibClass(info.device())) {
     std::string hutch = _expt.substr(0,3);
+    // convert hutch to upper case
     for(unsigned i=0; i<hutch.size(); i++)
       hutch[i] = toupper(hutch[i]);
 
@@ -153,6 +155,10 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
       o << offRoot << hutch << "/" << _expt << "/calib/";
       path3 = offl_path(o.str(),info,off_calib_type);
     }
+
+    // convert hutch to lower case
+    for(unsigned i=0; i<hutch.size(); i++)
+      hutch[i] = tolower(hutch[i]);
 
     // check using <base>/<hutch>/<expt>/calib - lower case hutch
     if (path3.empty()) {

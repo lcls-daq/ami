@@ -111,6 +111,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
       case DetInfo::Zyla:
         sprintf(_buffer,"Zyla.%d.%d",info.detId(),info.devId());
         break;
+      case DetInfo::iStar:
+        sprintf(_buffer,"iStar.%d.%d",info.detId(),info.devId());
+        break;
       case DetInfo::Jungfrau:
         sprintf(_buffer,"Jungfrau.%d.%d",info.detId(),info.devId());
         break;
@@ -159,6 +162,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
         break;
       case DetInfo::Zyla:
         sprintf(_buffer,"Zyla.%d.%d",info.detId(),info.devId());
+        break;
+      case DetInfo::iStar:
+        sprintf(_buffer,"iStar.%d.%d",info.detId(),info.devId());
         break;
       case DetInfo::Uxi:
         sprintf(_buffer,"Uxi.%d.%d",info.detId(),info.devId());
