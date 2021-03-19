@@ -412,7 +412,7 @@ void DetectorSelect::save_plots()
 }
 
 Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
-						   unsigned channel,
+                                                   unsigned channel,
                                                    const QString& name,
                                                    const char*& p)
 {
@@ -432,6 +432,7 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Imp      :
     case Pds::DetInfo::Wave8    :
     case Pds::DetInfo::EpixSampler:
+    case Pds::DetInfo::QuadAdc  :
     case Pds::DetInfo::Acqiris  : client = new Ami::Qt::WaveformClient(this, info, channel, name); break;
     case Pds::DetInfo::AcqTDC   : client = new Ami::Qt::TdcClient     (this, info, channel, name); break;
     case Pds::DetInfo::Timepix  :
@@ -473,9 +474,9 @@ Ami::Qt::AbsClient* DetectorSelect::_create_client(const Pds::Src& src,
     case Pds::DetInfo::Epix10ka2M   :
     case Pds::DetInfo::Epix10kaQuad :
       if (channel==0)
-	client = new Ami::Qt::EpixClient    (this, info, channel, name);
+        client = new Ami::Qt::EpixClient    (this, info, channel, name);
       else
-	client = new Ami::Qt::WaveformClient(this, info, channel, name); 
+        client = new Ami::Qt::WaveformClient(this, info, channel, name);
       break;
     case Pds::DetInfo::Fccd960  :
     case Pds::DetInfo::NumDevice: client = new Ami::Qt::EpixClient    (this, info, channel, name); break;
