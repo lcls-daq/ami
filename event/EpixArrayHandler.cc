@@ -18,9 +18,11 @@
 
 //#define DBUG
 
-typedef Pds::Epix::Config10ka2MV1   Cfg10ka2M;
-typedef Pds::Epix::Config10kaQuadV1 Cfg10kaQuad;
-typedef Pds::Epix::Config10ka       Cfg10ka;
+typedef Pds::Epix::Config10ka2MV1   Cfg10ka2MV1;
+typedef Pds::Epix::Config10ka2MV2   Cfg10ka2MV2;
+typedef Pds::Epix::Config10kaQuadV1 Cfg10kaQuadV1;
+typedef Pds::Epix::Config10kaQuadV2 Cfg10kaQuadV2;
+typedef Pds::Epix::Elem10kaConfigV1 Cfg10ka;
 
 static const unsigned      wE = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_numberOfAsicsPerRow;
 static const unsigned      hE = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
@@ -88,7 +90,7 @@ namespace EpixArray {
     EntryRef*                   _ref;
     std::vector<EntryWaveform*> _elem;
   };
-    
+
   class CalDataQuad : public CalData {
   public:
     CalDataQuad();
@@ -102,7 +104,7 @@ namespace EpixArray {
   private:
     void _rename(const char*) {}
   };
-    
+
   class ConfigCache {
   public:
     static ConfigCache* instance(Pds::TypeId        config_type,
@@ -129,11 +131,12 @@ namespace EpixArray {
     enum { AML=0, FL=8, FM=12, AHL=16, FL_ALT=24, FH=28 };
   };
 
+  template<class Cfg10ka2M>
   class Epix10ka2MCache : public ConfigCache {
   public:
     Epix10ka2MCache(const Cfg10ka2M*    config,
                     Ami::EventHandlerF& handler) :
-      _config (new Cfg10ka2M(*config)), 
+      _config (new Cfg10ka2M(*config)),
       _envData(new EnvData2M(handler)),
       _calData(new CalData2M) {}
     ~Epix10ka2MCache() { delete _config; delete _envData; }
@@ -159,10 +162,11 @@ namespace EpixArray {
     CalData2M*          _calData;
   };
 
+  template<class Cfg10kaQuad>
   class Epix10kaQuadCache : public ConfigCache {
   public:
     Epix10kaQuadCache(const Cfg10kaQuad*  config,
-                      Ami::EventHandlerF& handler) : 
+                      Ami::EventHandlerF& handler) :
       _config (new Cfg10kaQuad(*config)),
       _envData(new EnvDataQuad(handler)),
       _calData(new CalDataQuad) {}
@@ -200,14 +204,30 @@ EpixArray::ConfigCache* EpixArray::ConfigCache::instance(Pds::TypeId    config_t
   switch(config_type.id()) {
   case Pds::TypeId::Id_Epix10ka2MConfig:
     switch(config_type.version()) {
-    case 1: cache = new EpixArray::Epix10ka2MCache(reinterpret_cast<const Cfg10ka2M*>(config_payload),
-                                                   handler);
+    case 1:
+      cache = new EpixArray::Epix10ka2MCache<Cfg10ka2MV1>(
+          reinterpret_cast<const Cfg10ka2MV1*>(config_payload),
+          handler);
+      break;
+    case 2:
+      cache = new EpixArray::Epix10ka2MCache<Cfg10ka2MV2>(
+          reinterpret_cast<const Cfg10ka2MV2*>(config_payload),
+          handler);
+      break;
     default: break;
     } break;
   case Pds::TypeId::Id_Epix10kaQuadConfig:
     switch(config_type.version()) {
-    case 1: cache = new EpixArray::Epix10kaQuadCache(reinterpret_cast<const Cfg10kaQuad*>(config_payload),
-                                                     handler);
+    case 1:
+      cache = new EpixArray::Epix10kaQuadCache<Cfg10kaQuadV1>(
+          reinterpret_cast<const Cfg10kaQuadV1*>(config_payload),
+          handler);
+      break;
+    case 2:
+      cache = new EpixArray::Epix10kaQuadCache<Cfg10kaQuadV2>(
+          reinterpret_cast<const Cfg10kaQuadV2*>(config_payload),
+          handler);
+      break;
     default: break;
     } break;
   default: break;
@@ -219,15 +239,16 @@ EpixArray::ConfigCache* EpixArray::ConfigCache::instance(Pds::TypeId    config_t
     const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(handler.info());
     const char* detname = Pds::DetInfo::name(det.detector());
     cache->envData()->addFeatures(detname);
-    cache->calData()->config     (det, 
-                                  cache->numberOfRowsCal(), 
+    cache->calData()->config     (det,
+                                  cache->numberOfRowsCal(),
                                   cache->numberOfColumns());
   }
 
   return cache;
 }
 
-ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
+template<class Cfg10ka2M>
+ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache<Cfg10ka2M>::pixelGainConfig() const
 {
   const unsigned nE = numberOfElements();
   const unsigned conf_bits = 0x1c;
@@ -271,7 +292,8 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::pixelGainConfig() const
   return pixelGainConfig;
 }
 
-DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det, bool full_resolution) const
+template<class Cfg10ka2M>
+DescImage EpixArray::Epix10ka2MCache<Cfg10ka2M>::descImage(const Pds::DetInfo& det, bool full_resolution) const
 {
   // Create alignment object
   Alignment::Epix10ka2M align(det);
@@ -297,10 +319,11 @@ DescImage EpixArray::Epix10ka2MCache::descImage(const Pds::DetInfo& det, bool fu
   return desc;
 }
 
-ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::frame(Pds::TypeId tid, 
-                                                            const void* payload,
-                                                            FeatureCache& cache,
-                                                            const Pds::ClockTime& t) const
+template<class Cfg10ka2M>
+ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache<Cfg10ka2M>::frame(Pds::TypeId tid,
+                                                                       const void* payload,
+                                                                       FeatureCache& cache,
+                                                                       const Pds::ClockTime& t) const
 {
   const Pds::Epix::ArrayV1* array = reinterpret_cast<const Pds::Epix::ArrayV1*>(payload);
   ndarray<const uint16_t,3> a = array->frame(*_config);
@@ -309,7 +332,8 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache::frame(Pds::TypeId tid,
   return a;
 }
 
-ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::pixelGainConfig() const {
+template<class Cfg10kaQuad>
+ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::pixelGainConfig() const {
   const unsigned nE = numberOfElements();
   const unsigned conf_bits = 0x1c;
   ndarray<uint16_t,3> pixelGainConfig = make_ndarray<uint16_t>(nE, hE, wE);
@@ -352,7 +376,8 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::pixelGainConfig() const 
   return pixelGainConfig;
 }
 
-DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det, bool full_resolution) const
+template<class Cfg10kaQuad>
+DescImage EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::descImage(const Pds::DetInfo& det, bool full_resolution) const
 {
   // Create alignment object
   Alignment::Epix10kaQuad align(det);
@@ -378,10 +403,11 @@ DescImage EpixArray::Epix10kaQuadCache::descImage(const Pds::DetInfo& det, bool 
   return desc;
 }
 
-ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache::frame(Pds::TypeId tid, 
-                                                              const void* payload,
-                                                              FeatureCache& cache,
-                                                              const Pds::ClockTime& t) const
+template<class Cfg10kaQuad>
+ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::frame(Pds::TypeId tid,
+                                                                             const void* payload,
+                                                                             FeatureCache& cache,
+                                                                             const Pds::ClockTime& t) const
 {
   const Pds::Epix::ArrayV1* array = reinterpret_cast<const Pds::Epix::ArrayV1*>(payload);
   ndarray<const uint16_t,3> a = array->frame(*_config);
@@ -419,7 +445,7 @@ EpixArrayHandler::~EpixArrayHandler()
     delete _config_cache;
 }
 
-unsigned EpixArrayHandler::nentries() const 
+unsigned EpixArrayHandler::nentries() const
 {
   unsigned n=0;
   if (_entry) n++;
@@ -427,11 +453,11 @@ unsigned EpixArrayHandler::nentries() const
   return n;
 }
 
-const Entry* EpixArrayHandler::entry(unsigned i) const 
+const Entry* EpixArrayHandler::entry(unsigned i) const
 {
   if (i==0)
     return _entry;
-  
+
   return _config_cache->calData()->entry(i-1);
 }
 
@@ -463,9 +489,9 @@ void EpixArrayHandler::rename(const char* s)
   }
 }
 
-void EpixArrayHandler::reset() 
+void EpixArrayHandler::reset()
 {
-  _entry = 0; 
+  _entry = 0;
   _config_cache->calData()->reset();
 }
 
@@ -488,7 +514,7 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
   _load_gains(_desc);
 }
 
-void EpixArrayHandler::_calibrate(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t) 
+void EpixArrayHandler::_calibrate(Pds::TypeId tid, const void* payload, const Pds::ClockTime& t)
 {
   if (!_entry) {
     _configure(tid,payload,t);
@@ -541,10 +567,10 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
     for(unsigned i=0; i<frame.shape()[0]; i++) {
 #ifdef DBUG
       printf(" frame(%u) x(%u) y(%u) nx(%u) ny(%u)\n",
-             i, 
-             _desc.frame(i).x, 
+             i,
+             _desc.frame(i).x,
              _desc.frame(i).y,
-             _desc.frame(i).nx, 
+             _desc.frame(i).nx,
              _desc.frame(i).ny );
 #endif
       ndarray<const uint16_t,2> src(frame[i]);
@@ -598,7 +624,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
         for(unsigned y=0; y<src.size(); y+=wE/8, psta+=wE/8) {
           ndarray<      unsigned,1> s(ptmp, &shape);
           ndarray<const unsigned,1> t(psta, &shape);
-          
+
           unsigned oav = offset;
           unsigned olo = oav-100, ohi = oav+100;
           int fn = int(FrameCalib::median(s,t,olo,ohi))-int(oav);
@@ -609,7 +635,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
 
           for(unsigned z=0; z<wE/8; z++)
             *ptmp++ -= fn;
-        }          
+        }
       }
 
       //  Apply channel common mode
@@ -676,7 +702,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
       //
 
       switch(d.frame(i).r) {
-      case D0: 
+      case D0:
         for(unsigned j=0,jn=src.shape()[0]-1; j<src.shape()[0]; j++,jn--)
           for(unsigned k=0,kn=src.shape()[1]-1; k<src.shape()[1]; k++,kn--)
             dst((fj?jn:j)/ppbx,(fk?kn:k)/ppby) += tmp(j,k);
@@ -857,8 +883,8 @@ void EpixArrayHandler::_load_gains(const DescImage& desc)
   _element_gain_stride[2] = _gains.strides()[3];
 }
 
-EpixArray::EnvData2M::EnvData2M(Ami::EventHandlerF& h) : 
-  _name(4), _quad(4) 
+EpixArray::EnvData2M::EnvData2M(Ami::EventHandlerF& h) :
+  _name(4), _quad(4)
 {
   for(unsigned i=0; i<_quad.size(); i++)
     _quad[i] = new EpixArray::EnvDataQuad(h);
@@ -910,39 +936,39 @@ void EpixArray::EnvDataQuad::addFeatures(const char* name)
     std::ostringstream ostr;                                            \
     ostr << name << ":" << #s;                                          \
       _index[index++] = _handler._add_to_cache(ostr.str().c_str()); }
-  
+
   unsigned index=0;
-  ADDV(Sht31_Hum);                                
-  ADDV(Sht31_TempC);                                
-  ADDV(NctLoc_TempC);                             
-  ADDV(NctFpga_TempC);                              
-  ADDV(A0_2V5_Curr_mA);                             
-  ADDV(A1_2V5_Curr_mA);                               
-  ADDV(A2_2V5_Curr_mA);                               
-  ADDV(A3_2V5_Curr_mA);                               
-  ADDV(D0_2V5_Curr_mA);                               
-  ADDV(D1_2V5_Curr_mA);                               
-  ADDV(Therm0_TempC);                                
-  ADDV(Therm1_TempC);                              
-  ADDV(PwrDig_CurrA);                             
-  ADDV(PwrDig_Vin);                             
-  ADDV(PwrDig_TempC);                             
-  ADDV(PwrAna_CurrA);                             
-  ADDV(PwrAna_Vin);                             
-  ADDV(PwrAna_TempC);                             
-  ADDV(A0_2V5_H_TempC);                             
-  ADDV(A0_2V5_L_TempC);                             
-  ADDV(A1_2V5_H_TempC);                             
-  ADDV(A1_2V5_L_TempC);                             
-  ADDV(A2_2V5_H_TempC);                             
-  ADDV(A2_2V5_L_TempC);                             
-  ADDV(A3_2V5_H_TempC);                             
-  ADDV(A3_2V5_L_TempC);                             
-  ADDV(D0_2V5_TempC);                             
-  ADDV(D1_2V5_TempC);                             
-  ADDV(A0_1V8_TempC);                             
-  ADDV(A1_1V8_TempC);                             
-  ADDV(A2_1V8_TempC);                             
+  ADDV(Sht31_Hum);
+  ADDV(Sht31_TempC);
+  ADDV(NctLoc_TempC);
+  ADDV(NctFpga_TempC);
+  ADDV(A0_2V5_Curr_mA);
+  ADDV(A1_2V5_Curr_mA);
+  ADDV(A2_2V5_Curr_mA);
+  ADDV(A3_2V5_Curr_mA);
+  ADDV(D0_2V5_Curr_mA);
+  ADDV(D1_2V5_Curr_mA);
+  ADDV(Therm0_TempC);
+  ADDV(Therm1_TempC);
+  ADDV(PwrDig_CurrA);
+  ADDV(PwrDig_Vin);
+  ADDV(PwrDig_TempC);
+  ADDV(PwrAna_CurrA);
+  ADDV(PwrAna_Vin);
+  ADDV(PwrAna_TempC);
+  ADDV(A0_2V5_H_TempC);
+  ADDV(A0_2V5_L_TempC);
+  ADDV(A1_2V5_H_TempC);
+  ADDV(A1_2V5_L_TempC);
+  ADDV(A2_2V5_H_TempC);
+  ADDV(A2_2V5_L_TempC);
+  ADDV(A3_2V5_H_TempC);
+  ADDV(A3_2V5_L_TempC);
+  ADDV(D0_2V5_TempC);
+  ADDV(D1_2V5_TempC);
+  ADDV(A0_1V8_TempC);
+  ADDV(A1_1V8_TempC);
+  ADDV(A2_1V8_TempC);
   ADDV(PcbAna_Temp0C);
   ADDV(PcbAna_Temp1C);
   ADDV(PcbAna_Temp2C);
@@ -962,37 +988,37 @@ void EpixArray::EnvDataQuad::rename(const char* name)
       _handler._rename_cache(_index[index++],ostr.str().c_str()); }
 
   unsigned index=0;
-  ADDV(Sht31_Hum);                                
-  ADDV(Sht31_TempC);                                
-  ADDV(NctLoc_TempC);                             
-  ADDV(NctFpga_TempC);                              
-  ADDV(A0_2V5_Curr_mA);                             
-  ADDV(A1_2V5_Curr_mA);                               
-  ADDV(A2_2V5_Curr_mA);                               
-  ADDV(A3_2V5_Curr_mA);                               
-  ADDV(D0_2V5_Curr_mA);                               
-  ADDV(D1_2V5_Curr_mA);                               
-  ADDV(Therm0_TempC);                                
-  ADDV(Therm1_TempC);                              
-  ADDV(PwrDig_CurrA);                             
-  ADDV(PwrDig_Vin);                             
-  ADDV(PwrDig_TempC);                             
-  ADDV(PwrAna_CurrA);                             
-  ADDV(PwrAna_Vin);                             
-  ADDV(PwrAna_TempC);                             
-  ADDV(A0_2V5_H_TempC);                             
-  ADDV(A0_2V5_L_TempC);                             
-  ADDV(A1_2V5_H_TempC);                             
-  ADDV(A1_2V5_L_TempC);                             
-  ADDV(A2_2V5_H_TempC);                             
-  ADDV(A2_2V5_L_TempC);                             
-  ADDV(A3_2V5_H_TempC);                             
-  ADDV(A3_2V5_L_TempC);                             
-  ADDV(D0_2V5_TempC);                             
-  ADDV(D1_2V5_TempC);                             
-  ADDV(A0_1V8_TempC);                             
-  ADDV(A1_1V8_TempC);                             
-  ADDV(A2_1V8_TempC);                             
+  ADDV(Sht31_Hum);
+  ADDV(Sht31_TempC);
+  ADDV(NctLoc_TempC);
+  ADDV(NctFpga_TempC);
+  ADDV(A0_2V5_Curr_mA);
+  ADDV(A1_2V5_Curr_mA);
+  ADDV(A2_2V5_Curr_mA);
+  ADDV(A3_2V5_Curr_mA);
+  ADDV(D0_2V5_Curr_mA);
+  ADDV(D1_2V5_Curr_mA);
+  ADDV(Therm0_TempC);
+  ADDV(Therm1_TempC);
+  ADDV(PwrDig_CurrA);
+  ADDV(PwrDig_Vin);
+  ADDV(PwrDig_TempC);
+  ADDV(PwrAna_CurrA);
+  ADDV(PwrAna_Vin);
+  ADDV(PwrAna_TempC);
+  ADDV(A0_2V5_H_TempC);
+  ADDV(A0_2V5_L_TempC);
+  ADDV(A1_2V5_H_TempC);
+  ADDV(A1_2V5_L_TempC);
+  ADDV(A2_2V5_H_TempC);
+  ADDV(A2_2V5_L_TempC);
+  ADDV(A3_2V5_H_TempC);
+  ADDV(A3_2V5_L_TempC);
+  ADDV(D0_2V5_TempC);
+  ADDV(D1_2V5_TempC);
+  ADDV(A0_1V8_TempC);
+  ADDV(A1_1V8_TempC);
+  ADDV(A2_1V8_TempC);
   ADDV(PcbAna_Temp0C);
   ADDV(PcbAna_Temp1C);
   ADDV(PcbAna_Temp2C);
@@ -1094,7 +1120,7 @@ void EpixArray::CalData::config(const Pds::DetInfo& det,
 void     EpixArray::CalData::rename     (const char* name)
 {
   if (!_ref) return;
-     
+
   _rename(name);
 
   std::ostringstream ostr;
@@ -1130,5 +1156,5 @@ void     EpixArray::CalData::fill       (ndarray<const uint16_t,3> cal,
 }
 
 EpixArray::CalDataQuad::CalDataQuad() : CalData(4) {}
- 
+
 EpixArray::CalData2M::CalData2M() : CalData(16) {}

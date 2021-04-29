@@ -165,7 +165,7 @@ namespace EpixAmi {
     // asic pixel config
     ndarray <const uint16_t,2> pixelGainConfig() const { return _pixelGainConfig; }
   public:
-    void event(const void* payload, 
+    void event(const void* payload,
                ndarray<const uint16_t,2>& frame,
                ndarray<const uint16_t,1>& temps,
                ndarray<const uint16_t,2>& cal,
@@ -178,17 +178,25 @@ namespace EpixAmi {
       _envData->fill(cache,f.etyp(c));
 
       switch(_id.id()) {
-      case Pds::TypeId::Id_EpixConfig   : 
+      case Pds::TypeId::Id_EpixConfig   :
         { PARSE_CONFIG(Pds::Epix::ConfigV1    ,Pds::Epix::ElementV1, excludedRows) }
         break;
-      case Pds::TypeId::Id_Epix10kConfig: 
+      case Pds::TypeId::Id_Epix10kConfig:
         { PARSE_CONFIG(Pds::Epix::Config10KV1 ,Pds::Epix::ElementV1, excludedRows); }
         break;
-      case Pds::TypeId::Id_Epix10kaConfig: 
-        { PARSE_CONFIG(Pds::Epix::Config10kaV1 ,Pds::Epix::ElementV3, environmentalRows); 
-          cal = f.calibrationRows(c); }
+      case Pds::TypeId::Id_Epix10kaConfig:
+        switch (_id.version()) {
+        case 1:
+          { PARSE_CONFIG(Pds::Epix::Config10kaV1 ,Pds::Epix::ElementV3, environmentalRows);
+            cal = f.calibrationRows(c); } break;
+        case 2:
+          { PARSE_CONFIG(Pds::Epix::Config10kaV2 ,Pds::Epix::ElementV3, environmentalRows);
+            cal = f.calibrationRows(c); } break;
+        default:
+          break;
+        }
         break;
-      case Pds::TypeId::Id_Epix100aConfig: 
+      case Pds::TypeId::Id_Epix100aConfig:
         switch (_id.version()) {
         case 1:
           { PARSE_CONFIG(Pds::Epix::Config100aV1,Pds::Epix::ElementV2, environmentalRows);
@@ -199,6 +207,7 @@ namespace EpixAmi {
         default:
           break;
         }
+        break;
       default:
         break;
       }
@@ -229,7 +238,7 @@ namespace EpixAmi {
   };
 };
 
-EpixAmi::ConfigCache::ConfigCache() : 
+EpixAmi::ConfigCache::ConfigCache() :
   _id    (Pds::TypeId(Pds::TypeId::Any,0)),
   _buffer(0)
 {
@@ -271,7 +280,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
   _envData = ((c.version()>>16)&0xf) < 2 ? (EnvData*)new EnvData1(*handler) : (EnvData*)new EnvData2(*handler);
 
   switch(_id.id()) {
-  case Pds::TypeId::Id_EpixConfig   : 
+  case Pds::TypeId::Id_EpixConfig   :
     { PARSE_CONFIG(Pds::Epix::ConfigV1);
       _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
       for(uint16_t* val = _pixelGainConfig.begin(); val != _pixelGainConfig.end(); val++) {
@@ -292,46 +301,94 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
       _rowsRead        = _rows;
       _rowsReadPerAsic = _rows/_nchip_rows; } break;
   case Pds::TypeId::Id_Epix10kaConfig:
-    { PARSE_CONFIG(Pds::Epix::Config10kaV1);
-      ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
-      _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
-      for(unsigned j=0; j<_rows; j++) {
-        for(unsigned k=0; k<_columns; k++) {
-          uint16_t gain_config = 0;
-          uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
-                               (c.asics(_asic_map[(j/_rowsPerAsic)*_nchip_columns + k/_colsPerAsic]).trbit() << 4);
-          switch(gain_bits) {
-            case FH:
-              gain_config = 0;
-              break;
-            case FM:
-              gain_config = 1;
-              break;
-            case FL:
-            case FL_ALT:
-              gain_config = 2;
-              break;
-            case AHL:
-              gain_config = 3;
-              break;
-            case AML:
-              gain_config = 4;
-              break;
-            default:
-              printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
-              gain_config = 0;
-              break;
+    switch(_id.version()) {
+    case 1:
+      { PARSE_CONFIG(Pds::Epix::Config10kaV1);
+        ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
+        _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        for(unsigned j=0; j<_rows; j++) {
+          for(unsigned k=0; k<_columns; k++) {
+            uint16_t gain_config = 0;
+            uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                                 (c.asics(_asic_map[(j/_rowsPerAsic)*_nchip_columns + k/_colsPerAsic]).trbit() << 4);
+            switch(gain_bits) {
+              case FH:
+                gain_config = 0;
+                break;
+              case FM:
+                gain_config = 1;
+                break;
+              case FL:
+              case FL_ALT:
+                gain_config = 2;
+                break;
+              case AHL:
+                gain_config = 3;
+                break;
+              case AML:
+                gain_config = 4;
+                break;
+              default:
+                printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                gain_config = 0;
+                break;
+            }
+            _pixelGainConfig(j,k) = gain_config;
           }
-          _pixelGainConfig(j,k) = gain_config;  
         }
-      }
-      _nGainModes      = 7;
-      _nFixedGainModes = 3;
-      _rowsRead        = _rows;
-      _rowsReadPerAsic = _rows/_nchip_rows;
-      _rowsCal         = c.numberOfCalibrationRows();
-      _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
-  case Pds::TypeId::Id_Epix100aConfig: 
+        _nGainModes      = 7;
+        _nFixedGainModes = 3;
+        _rowsRead        = _rows;
+        _rowsReadPerAsic = _rows/_nchip_rows;
+        _rowsCal         = c.numberOfCalibrationRows();
+        _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
+    case 2:
+      { PARSE_CONFIG(Pds::Epix::Config10kaV2);
+        ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
+        _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        for(unsigned j=0; j<_rows; j++) {
+          for(unsigned k=0; k<_columns; k++) {
+            uint16_t gain_config = 0;
+            uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                                 (c.asics(_asic_map[(j/_rowsPerAsic)*_nchip_columns + k/_colsPerAsic]).trbit() << 4);
+            switch(gain_bits) {
+              case FH:
+                gain_config = 0;
+                break;
+              case FM:
+                gain_config = 1;
+                break;
+              case FL:
+              case FL_ALT:
+                gain_config = 2;
+                break;
+              case AHL:
+                gain_config = 3;
+                break;
+              case AML:
+                gain_config = 4;
+                break;
+              default:
+                printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                gain_config = 0;
+                break;
+            }
+            _pixelGainConfig(j,k) = gain_config;
+          }
+        }
+        _nGainModes      = 7;
+        _nFixedGainModes = 3;
+        _rowsRead        = _rows;
+        _rowsReadPerAsic = _rows/_nchip_rows;
+        _rowsCal         = c.numberOfCalibrationRows();
+        _rowsCalPerAsic  = _rowsCal/c.numberOfAsicsPerColumn(); } break;
+
+    default:
+      printf("Epix10kaConfig version %d unknown\n",_id.version());
+      break;
+    }
+    break;
+  case Pds::TypeId::Id_Epix100aConfig:
     switch(_id.version()) {
     case 1:
       { PARSE_CONFIG(Pds::Epix::Config100aV1);
@@ -361,6 +418,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
       printf("Epix100aConfig version %d unknown\n",_id.version());
       break;
     }
+    break;
   default:
     printf("EpixHandler::ConfigCache unrecognized configuration type %08x\n",
            _id.value());
@@ -393,14 +451,28 @@ EpixAmi::ConfigCache::ConfigCache(const EpixAmi::ConfigCache& o) :
   sz = c._sizeof();
 
   switch(_id.id()) {
-  case Pds::TypeId::Id_EpixConfig   : 
+  case Pds::TypeId::Id_EpixConfig   :
     { PARSE_CONFIG(Pds::Epix::ConfigV1) } break;
-  case Pds::TypeId::Id_Epix10kConfig: 
+  case Pds::TypeId::Id_Epix10kConfig:
     { PARSE_CONFIG(Pds::Epix::Config10KV1) } break;
-  case Pds::TypeId::Id_Epix10kaConfig: 
-    { PARSE_CONFIG(Pds::Epix::Config10kaV1) } break;
-  case Pds::TypeId::Id_Epix100aConfig: 
-    { PARSE_CONFIG(Pds::Epix::Config100aV1) } break;
+  case Pds::TypeId::Id_Epix10kaConfig:
+    switch(_id.version()) {
+    case 1:
+      { PARSE_CONFIG(Pds::Epix::Config10kaV1) } break;
+    case 2:
+      { PARSE_CONFIG(Pds::Epix::Config10kaV2) } break;
+    default: break;
+    }
+    break;
+  case Pds::TypeId::Id_Epix100aConfig:
+    switch(_id.version()) {
+    case 1:
+      { PARSE_CONFIG(Pds::Epix::Config100aV1) } break;
+    case 2:
+      { PARSE_CONFIG(Pds::Epix::Config100aV2) } break;
+    default: break;
+    }
+    break;
   default: break;
   }
   if (sz) {
@@ -450,17 +522,17 @@ EpixHandler::~EpixHandler()
 unsigned EpixHandler::nentries() const { return (_entry ? 1 : 0) + (_ref ? 1 : 0); }
 
 const Entry* EpixHandler::entry(unsigned i) const {
-  switch(i) { 
-  case 0: return _entry; 
-  case 1: return _ref; 
-  default: return 0; } 
+  switch(i) {
+  case 0: return _entry;
+  case 1: return _ref;
+  default: return 0; }
 }
 
 void EpixHandler::rename(const char* s)
 {
   if (_entry) {
     _entry->desc().name(s);
- 
+
     if (_ref) {
       std::ostringstream ostr;
       ostr << s << "-Cal";
@@ -476,7 +548,7 @@ void EpixHandler::rename(const char* s)
     }
 
     EpixAmi::EnvData* envData =_config_cache->envData();
-    if (envData) 
+    if (envData)
       envData->rename(s);
 
     if (Ami::EventHandler::post_diagnostics())
@@ -488,9 +560,9 @@ void EpixHandler::rename(const char* s)
   }
 }
 
-void EpixHandler::reset() 
+void EpixHandler::reset()
 {
-  _entry = 0; 
+  _entry = 0;
   _ref   = 0;
 
   for(unsigned i=0; i<_ewf.size(); i++)
@@ -527,12 +599,12 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
   if ((aMask&(aMask-1))==0) {
     columns = colsPerAsic;
     rows    = rowsPerAsic;
-    
+
     int ppb = image_ppbin  (columns,rows);
     int dpb = display_ppbin(columns,rows);
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns, rows, ppb, ppb, dpb, dpb);
-    
+
     _desc = desc;
     float x0 = 0;
     float y0 = 0;
@@ -575,10 +647,10 @@ void EpixHandler::_configure(Pds::TypeId tid, const void* payload, const Pds::Cl
       DescWaveform desc(det, channelNumber,
                         ChannelID::name(det,channelNumber),
                         "Column","Value",
-                        _config_cache->numberOfColumns(), 
+                        _config_cache->numberOfColumns(),
                         0., float(_config_cache->numberOfColumns()));
       _ewf[channelNumber++] = new EntryWaveform(desc);
-    }      
+    }
     Channel ch((1<<channelNumber)-1,Channel::BitMask);
     std::string name(ChannelID::name(det,ch));
     name += "-Cal";
@@ -838,10 +910,10 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     _entry->valid(t);
   }
 }
-  
-void EpixHandler::_damaged() { 
-  if (_entry) _entry->invalid(); 
-  if (_ref  ) _ref  ->invalid(); 
+
+void EpixHandler::_damaged() {
+  if (_entry) _entry->invalid();
+  if (_ref  ) _ref  ->invalid();
 }
 
 void EpixHandler::_load_pedestals()
@@ -968,7 +1040,7 @@ double _tps_temp(const uint16_t q)
   return double(q)*degCperADU + t0;
 }
 
-EpixAmi::EnvData1::EnvData1(EventHandlerF& h) : 
+EpixAmi::EnvData1::EnvData1(EventHandlerF& h) :
   _handler(h), _index(make_ndarray<int>(5)) {}
 
 void     EpixAmi::EnvData1::addFeatures(const char* name)
@@ -1015,7 +1087,7 @@ void      EpixAmi::EnvData1::fill      (FeatureCache& cache,
   cache.cache(_index[index++], double(last[7])*0.0291 - 23.8);
 }
 
-EpixAmi::EnvData2::EnvData2(EventHandlerF& h) : 
+EpixAmi::EnvData2::EnvData2(EventHandlerF& h) :
   _handler(h), _index(make_ndarray<int>(9)) {}
 
 void     EpixAmi::EnvData2::addFeatures(const char* name)

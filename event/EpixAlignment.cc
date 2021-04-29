@@ -4,9 +4,9 @@
 
 using namespace Ami::Alignment;
 
-typedef Pds::Epix::Config10ka2MV1   Cfg10ka2M;
-typedef Pds::Epix::Config10kaQuadV1 Cfg10kaQuad;
-typedef Pds::Epix::Config10ka       Cfg10ka;
+typedef Pds::Epix::Config10ka2MV2   Cfg10ka2M;
+typedef Pds::Epix::Config10kaQuadV2 Cfg10kaQuad;
+typedef Pds::Epix::Elem10kaConfigV1 Cfg10ka;
 
 static const unsigned      wE = Cfg10ka::_numberOfPixelsPerAsicRow*Cfg10ka::_numberOfAsicsPerRow;
 static const unsigned      hE = Cfg10ka::_numberOfRowsPerAsic     *Cfg10ka::_numberOfAsicsPerColumn;
