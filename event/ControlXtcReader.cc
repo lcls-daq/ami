@@ -83,6 +83,22 @@ void   ControlXtcReader::_configure(Pds::TypeId id, const void* payload, const P
       _values.push_back(pv.value());
     }
   }
+  else if (id.version()==Pds::ControlData::ConfigV4::Version) {
+    const Pds::ControlData::ConfigV4& c =
+      *reinterpret_cast<const Pds::ControlData::ConfigV4*>(payload);
+
+    //  Add the PVControl variables
+    for(unsigned k=0; k<c.npvControls(); k++) {
+      const Pds::ControlData::PVControlV1& pv = c.pvControls()[k];
+      if (pv.array())
+        snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s[%d](SCAN)", pv.name(), pv.index());
+      else
+        snprintf(nbuf, FeatureCache::FEATURE_NAMELEN, "%s(SCAN)", pv.name());
+      _pv.push_back(_add_to_cache(nbuf));
+      _cache.cache(_pv[k],pv.value());
+      _values.push_back(pv.value());
+    }
+  }
 
   //
   //  Add an alias for each variable
