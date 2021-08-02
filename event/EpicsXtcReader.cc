@@ -103,7 +103,10 @@ void   Ami::EpicsXtcReader::_configure(Pds::TypeId id, const void* payload, cons
 
       for(unsigned i=0; i<iNumPv; i++) {
         const PvConfigV1& pv = pvData.getPvConfig()[i];
-        _alias[pv.pvId()] = std::string(pv.description());
+        if (pv.pvId() < 0)
+          printf("EpicsXtcReader::_configure ignoring dangling PV alias: %s\n", pv.description());
+        else
+          _alias[pv.pvId()] = std::string(pv.description());
       }
     } break;
   default:
