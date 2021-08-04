@@ -215,7 +215,8 @@ namespace EpixAmi {
     }
     void dump() const;
   private:
-    enum { AML=0, FL=8, FM=12, AHL=16, FL_ALT=24, FH=28 };
+    static const unsigned MAX_PRINT = 100;
+    enum { AML=0, AML_FORCE=4, FL=8, FM=12, AHL=16, AHL_FORCE=20, FL_ALT=24, FH=28 };
     Pds::TypeId _id;
     char*       _buffer;
 
@@ -306,6 +307,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
       { PARSE_CONFIG(Pds::Epix::Config10kaV1);
         ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
         _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        unsigned nprint = 0;
         for(unsigned j=0; j<_rows; j++) {
           for(unsigned k=0; k<_columns; k++) {
             uint16_t gain_config = 0;
@@ -323,13 +325,18 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
                 gain_config = 2;
                 break;
               case AHL:
+              case AHL_FORCE:
                 gain_config = 3;
                 break;
               case AML:
+              case AML_FORCE:
                 gain_config = 4;
                 break;
               default:
-                printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                if (nprint < MAX_PRINT) {
+                  printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                  nprint++;
+                }
                 gain_config = 0;
                 break;
             }
@@ -346,6 +353,7 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
       { PARSE_CONFIG(Pds::Epix::Config10kaV2);
         ndarray<const uint16_t,2> asicPixelConfig = c.asicPixelConfigArray();
         _pixelGainConfig = make_ndarray<uint16_t>(_rows, _columns);
+        unsigned nprint = 0;
         for(unsigned j=0; j<_rows; j++) {
           for(unsigned k=0; k<_columns; k++) {
             uint16_t gain_config = 0;
@@ -363,13 +371,18 @@ EpixAmi::ConfigCache::ConfigCache(Pds::TypeId tid, const void* payload,
                 gain_config = 2;
                 break;
               case AHL:
+              case AHL_FORCE:
                 gain_config = 3;
                 break;
               case AML:
+              case AML_FORCE:
                 gain_config = 4;
                 break;
               default:
-                printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                if (nprint < MAX_PRINT) {
+                  printf("EpixHandler::event unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+                  nprint++;
+                }
                 gain_config = 0;
                 break;
             }

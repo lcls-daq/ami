@@ -128,7 +128,8 @@ namespace EpixArray {
 
     virtual void dump() const = 0;
   protected:
-    enum { AML=0, FL=8, FM=12, AHL=16, FL_ALT=24, FH=28 };
+    static const unsigned MAX_PRINT = 100;
+    enum { AML=0, AML_FORCE=4, FL=8, FM=12, AHL=16, AHL_FORCE=20, FL_ALT=24, FH=28 };
   };
 
   template<class Cfg10ka2M>
@@ -256,6 +257,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache<Cfg10ka2M>::pixelGainConfig
   for(unsigned i=0; i<nE; i++) {
     const Cfg10ka& eC = _config->elemCfg(i);
     ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
+    unsigned nprint = 0;
     for(unsigned j=0; j<hE; j++) {
       for(unsigned k=0; k<wE; k++) {
         uint16_t gain_config = 0;
@@ -274,13 +276,18 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache<Cfg10ka2M>::pixelGainConfig
             gain_config = 2;
             break;
           case AHL:
+          case AHL_FORCE:
             gain_config = 3;
             break;
           case AML:
+          case AML_FORCE:
             gain_config = 4;
             break;
           default:
-            printf("Epix10ka2MCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+            if (nprint < MAX_PRINT) {
+              printf("Epix10ka2MCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+              nprint++;
+            }
             gain_config = 0;
             break;
         }
@@ -340,6 +347,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::pixelGainCo
   for(unsigned i=0; i<nE; i++) {
     const Cfg10ka& eC = _config->elemCfg(i);
     ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
+    unsigned nprint = 0;
     for(unsigned j=0; j<hE; j++) {
       for(unsigned k=0; k<wE; k++) {
         uint16_t gain_config = 0;
@@ -358,13 +366,18 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::pixelGainCo
             gain_config = 2;
             break;
           case AHL:
+          case AHL_FORCE:
             gain_config = 3;
             break;
           case AML:
+          case AML_FORCE:
             gain_config = 4;
             break;
           default:
-            printf("Epix10kaQuadCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+            if (nprint < MAX_PRINT) {
+              printf("Epix10kaQuadCache::pixelGainConfig unknown gain control bits %x for pixel (%u, %u)\n", gain_bits, j, k);
+              nprint++;
+            }
             gain_config = 0;
             break;
         }
