@@ -379,4 +379,16 @@ namespace Ami {
       val = val + (*(dataArray+i) );
     return ((double)val);
   }
+
+  template<> double AlviumDataSpace::processData()
+  {
+    VimbaConfigType& alviumConfig = detConfig;
+    VimbaDataType*   alviumFrame  = detDataPtr;
+    const uint16_t* dataArray = alviumFrame->data(alviumConfig).data();
+    unsigned totalPixels = alviumConfig->numPixels();
+    unsigned val = 0;
+    for (unsigned i = 0 ; i<totalPixels ; i++)
+      val = val + (*(dataArray+i) );
+    return ((double)val);
+  }
 };

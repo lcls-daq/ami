@@ -127,7 +127,10 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
         sprintf(_buffer,"EpicsCam.%d.%d",info.detId(),info.devId());
         break;
       case DetInfo::Archon:
-          sprintf(_buffer,"RIXS.%d.%d",info.detId(),info.devId());
+        sprintf(_buffer,"RIXS.%d.%d",info.detId(),info.devId());
+        break;
+      case DetInfo::Alvium:
+        sprintf(_buffer,"Alvium.%d.%d",info.detId(),info.devId());
         break;
       default: _default(_buffer,info,channel); break;
       }
@@ -171,6 +174,9 @@ const char* Ami::ChannelID::name(const Pds::DetInfo& info, Channel channel)
         break;
       case DetInfo::Archon:
         sprintf(_buffer,"Archon.%d.%d",info.detId(),info.devId());
+        break;
+      case DetInfo::Alvium:
+        sprintf(_buffer,"Alvium.%d.%d",info.detId(),info.devId());
         break;
       default:
         _default(_buffer,info,channel);

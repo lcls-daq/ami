@@ -44,6 +44,8 @@
 #include "pds/config/UxiDataType.hh"
 #include "pds/config/ArchonConfigType.hh"
 #include "pds/config/ArchonDataType.hh"
+#include "pds/config/VimbaConfigType.hh"
+#include "pds/config/VimbaDataType.hh"
 
 typedef Pds::Camera::FrameV1 FrameType;
 
@@ -160,6 +162,7 @@ namespace Ami {
   typedef Ami::DataSpace <EpicsCamConfigType, EpicsCamDataType>          epicsCamDataSpace;
   typedef Ami::DataSpace <UxiConfigType,      UxiDataType>               uxiDataSpace;
   typedef Ami::DataSpace <ArchonConfigType,   ArchonDataType>            archonDataSpace;
+  typedef Ami::DataSpace <AlviumConfigType,   VimbaDataType>             alviumDataSpace;
 
   template <class CONFIG, class DATA>
   class DataSpace : public SyncAnalysis {

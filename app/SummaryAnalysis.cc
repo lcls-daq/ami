@@ -133,6 +133,9 @@ void SummaryAnalysis::configure ( const Pds::Src& src, const Pds::TypeId& type, 
     case Pds::TypeId::Id_ArchonConfig:
       h = new archonDataSpace(detInfo, Pds::TypeId::Id_Frame,  Pds::TypeId::Id_ArchonConfig, payload, "Archon");
       break;
+    case Pds::TypeId::Id_AlviumConfig:
+      h = new alviumDataSpace(detInfo, Pds::TypeId::Id_VimbaFrame, Pds::TypeId::Id_ArchonConfig, payload, "Alvium");
+      break;
 
     default: break;
   }
@@ -161,7 +164,7 @@ void SummaryAnalysis::event (const Pds::Src& src, const Pds::TypeId& type, void*
           (type.id() == Pds::TypeId::Id_AndorFrame)      || (type.id() == Pds::TypeId::Id_PimaxFrame)||
           (type.id() == Pds::TypeId::Id_pnCCDframe)      || (type.id() == Pds::TypeId::Id_IpimbData) ||
           (type.id() == Pds::TypeId::Id_Zylaframe)       || (type.id() == Pds::TypeId::Id_PixisFrame)||
-          (type.id() == Pds::TypeId::Id_Uxiframe) ) {
+          (type.id() == Pds::TypeId::Id_Uxiframe)        || (type.id() == Pds::TypeId::Id_VimbaFrame) ) {
     if (_syncAnalysisPList.empty()) {
       if (!throttle) {
 #ifdef VERBOSE

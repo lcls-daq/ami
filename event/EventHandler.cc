@@ -210,6 +210,7 @@ Pds::DetInfo EventHandler::info_mask() const
 #include "ami/event/UxiHandler.hh"
 #include "ami/event/ArchonHandler.hh"
 #include "ami/event/StreakHandler.hh"
+#include "ami/event/VimbaHandler.hh"
 
 EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, FeatureCache& cache)
 {
@@ -291,6 +292,7 @@ EventHandler* EventHandler::lookup(Pds::TypeId::Type id, const Pds::Src& src, Fe
   case Pds::TypeId::Id_UxiConfig:        h = new UxiHandler        (info,cache); break;
   case Pds::TypeId::Id_ArchonConfig:     h = new ArchonHandler     (info); break;
   case Pds::TypeId::Id_StreakConfig:     h = new StreakHandler     (info); break;
+  case Pds::TypeId::Id_AlviumConfig:     h = new VimbaHandler      (info,cache); break;
   default: break;
   }
   return h;
