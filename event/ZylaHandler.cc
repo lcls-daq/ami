@@ -100,6 +100,14 @@ static inline ndarray<const uint16_t,2> array(const Xtc* tc,
 
 using namespace Ami;
 
+static std::list<Pds::TypeId::Type> config_type_list()
+{
+  std::list<Pds::TypeId::Type> types;
+  types.push_back(Pds::TypeId::Id_ZylaConfig);
+  types.push_back(Pds::TypeId::Id_iStarConfig);
+  return types;
+}
+
 static std::list<Pds::TypeId::Type> data_type_list()
 {
   std::list<Pds::TypeId::Type> types;
@@ -108,7 +116,7 @@ static std::list<Pds::TypeId::Type> data_type_list()
 }
 
 ZylaHandler::ZylaHandler(const Pds::DetInfo& info, FeatureCache& cache) : 
-  EventHandler(info, data_type_list(), Pds::TypeId::Id_ZylaConfig),
+  EventHandler(info, data_type_list(), config_type_list()),
   _configtc(0),
   _cache(cache),
   _entry        (0),
@@ -157,10 +165,7 @@ void ZylaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Cl
   
   unsigned columns = width (_configtc);
   unsigned rows    = height(_configtc);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
+  unsigned ppb     = image_ppbin(columns, rows);
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   { DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns, rows, ppb, ppb);
@@ -174,7 +179,10 @@ void ZylaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Cl
   _load_pedestals();
 }
 
-void ZylaHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t) {}
+void ZylaHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
+{
+  _configure(type, payload, t);
+}
 
 void ZylaHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {

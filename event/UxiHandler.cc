@@ -205,11 +205,7 @@ void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   unsigned columns = width (_configtc);
   unsigned rows    = height(_configtc);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
+  unsigned ppb     = image_ppbin(columns, rows);
 
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
                  columns, rows, ppb, ppb);

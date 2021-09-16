@@ -35,7 +35,7 @@ namespace Ami {
       virtual unsigned gainBitMask  () const;
       virtual unsigned dataBitMask  () const;
 
-      virtual Ami::DescImage descImage  (const Pds::DetInfo&, bool) const;
+      virtual Ami::DescImage descImage  (const Pds::DetInfo&) const;
       virtual void dump() const = 0;
 
       template<class Elem>
@@ -73,7 +73,7 @@ namespace Ami {
 
 using namespace Ami;
 
-Ami::DescImage Jungfrau::ConfigCache::descImage(const Pds::DetInfo& det, bool full_resolution) const
+Ami::DescImage Jungfrau::ConfigCache::descImage(const Pds::DetInfo& det) const
 {
   // Create alignment object
   Alignment::Jungfrau align(det,
@@ -84,11 +84,7 @@ Ami::DescImage Jungfrau::ConfigCache::descImage(const Pds::DetInfo& det, bool fu
   // Get the image width and height from the alignment object
   unsigned width  = align.width();
   unsigned height = align.height();
-  unsigned pixels = (width > height) ? width : height;
-  unsigned ppb    = full_resolution ? 1 : (pixels-1)/512 + 1;
-
-  width  = (width +ppb-1)/ppb;
-  height = (height+ppb-1)/ppb;
+  unsigned ppb    = EventHandler::image_ppbin(width, height);
 
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
                  width, height, ppb, ppb);
@@ -211,7 +207,7 @@ void JungfrauHandler::_configure(Pds::TypeId tid, const void* payload, const Pds
   _config_cache->dump();
   
   //  Construct Jungfrau modules and place them in the large rectangular frame
-  DescImage desc = _config_cache->descImage(det, _full_resolution());
+  DescImage desc = _config_cache->descImage(det);
   _entry = new EntryImage(desc);
   _entry->invalid();
 

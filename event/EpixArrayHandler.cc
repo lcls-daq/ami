@@ -120,7 +120,7 @@ namespace EpixArray {
     virtual unsigned numberOfGainModes() const = 0;
     virtual unsigned numberOfFixedGainModes() const = 0;
 
-    virtual Ami::DescImage descImage  (const Pds::DetInfo&, bool) const = 0;
+    virtual Ami::DescImage descImage  (const Pds::DetInfo&) const = 0;
     virtual EnvData*       envData    () const = 0;
     virtual CalData*       calData    () const = 0;
     virtual ndarray<const uint16_t,3> pixelGainConfig() const = 0;
@@ -150,7 +150,7 @@ namespace EpixArray {
     unsigned numberOfGainModes() const { return 7; }
     unsigned numberOfFixedGainModes() const { return 3; }
 
-    Ami::DescImage descImage  (const Pds::DetInfo&, bool) const;
+    Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
     ndarray<const uint16_t,3> pixelGainConfig() const;
@@ -181,7 +181,7 @@ namespace EpixArray {
     unsigned numberOfGainModes() const { return 7; }
     unsigned numberOfFixedGainModes() const { return 3; }
 
-    Ami::DescImage descImage  (const Pds::DetInfo&, bool) const;
+    Ami::DescImage descImage  (const Pds::DetInfo&) const;
     EnvData*       envData    () const { return _envData; }
     CalData*       calData    () const { return _calData; }
     ndarray<const uint16_t,3> pixelGainConfig() const;
@@ -300,7 +300,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10ka2MCache<Cfg10ka2M>::pixelGainConfig
 }
 
 template<class Cfg10ka2M>
-DescImage EpixArray::Epix10ka2MCache<Cfg10ka2M>::descImage(const Pds::DetInfo& det, bool full_resolution) const
+DescImage EpixArray::Epix10ka2MCache<Cfg10ka2M>::descImage(const Pds::DetInfo& det) const
 {
   // Create alignment object
   Alignment::Epix10ka2M align(det);
@@ -308,12 +308,8 @@ DescImage EpixArray::Epix10ka2MCache<Cfg10ka2M>::descImage(const Pds::DetInfo& d
   // Get the image width and height from the alignment object
   unsigned width  = align.width();
   unsigned height = align.height();
-  unsigned pixels = (width > height) ? width : height;
-  unsigned ppb    = full_resolution ? 1 : (pixels-1)/512 + 1;
+  unsigned ppb    = EventHandler::image_ppbin(width, height);
   unsigned dpb    = 1;
-
-  width  = (width +ppb-1)/ppb;
-  height = (height+ppb-1)/ppb;
 
   //
   // Place each element within the larger rectangular frame
@@ -390,7 +386,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::pixelGainCo
 }
 
 template<class Cfg10kaQuad>
-DescImage EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::descImage(const Pds::DetInfo& det, bool full_resolution) const
+DescImage EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::descImage(const Pds::DetInfo& det) const
 {
   // Create alignment object
   Alignment::Epix10kaQuad align(det);
@@ -398,12 +394,8 @@ DescImage EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::descImage(const Pds::DetInf
   // Get the image width and height from the alignment object
   unsigned width  = align.width();
   unsigned height = align.height();
-  unsigned pixels = (width > height) ? width : height;
-  unsigned ppb    = full_resolution ? 1 : (pixels-1)/512 + 1;
+  unsigned ppb    = EventHandler::image_ppbin(width, height);
   unsigned dpb    = 1;
-
-  width  = (width +ppb-1)/ppb;
-  height = (height+ppb-1)/ppb;
 
   //
   // Place each element within the larger rectangular frame
@@ -517,7 +509,7 @@ void EpixArrayHandler::_configure(Pds::TypeId tid, const void* payload, const Pd
   _config_cache->dump();
 
   //  Construct Epix elements and place them in the large rectangular frame
-  _desc = _config_cache->descImage(det, _full_resolution());
+  _desc = _config_cache->descImage(det);
   _entry = new EntryImage(_desc);
   _entry->invalid();
 

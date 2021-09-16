@@ -64,10 +64,7 @@ void FliHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
   
   unsigned columns = width (_config);
   unsigned rows    = height(_config);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-  columns = (columns+ppb-1)/ppb;
-  rows    = (rows   +ppb-1)/ppb;
+  unsigned ppb     = image_ppbin(columns, rows);
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
      columns, rows, ppb, ppb);

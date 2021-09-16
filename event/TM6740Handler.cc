@@ -138,10 +138,7 @@ void TM6740Handler::_configure(Pds::TypeId tid, const void* payload, const Pds::
         rows    = c.roiEnd().row   ()-c.roiBegin().row   ();
       }
     }
-    unsigned pixels  = (columns > rows) ? columns : rows;
-    unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/640 + 1;
-    columns = (columns+ppb-1)/ppb;
-    rows    = (rows   +ppb-1)/ppb;
+    unsigned ppb     = image_ppbin(columns, rows);
 
     DescImage desc(det, (unsigned)0, ChannelID::name(det),
 		   //		 columns, rows, ppb, ppb);

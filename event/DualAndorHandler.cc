@@ -87,8 +87,11 @@ void DualAndorHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   unsigned columns = scols * nsensor;
   unsigned rows    = srows;
   unsigned gap     = gap_size(_config);
-  unsigned pixels  = (columns > rows) ? columns : rows;
-  unsigned ppb     = _full_resolution() ? 1 : (pixels-1)/1024 + 1;
+
+  // image_ppbin modifies args so make copies of the check
+  unsigned check_columns = columns;
+  unsigned check_rows    = rows;
+  unsigned ppb           = image_ppbin(check_columns, check_rows);
   // check that binning is an even divison 
   if (columns % ppb || rows % ppb)
     ppb = 1;
