@@ -132,6 +132,7 @@ void VimbaHandler::reset()
 void VimbaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
   
@@ -141,7 +142,8 @@ void VimbaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   { DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns, rows, ppb, ppb);
-    _entry  = new EntryImage(desc); }
+    _entry  = new EntryImage(desc);
+    _entry->invalid(); }
     
   { DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns*ppb, rows*ppb, 1, 1);
@@ -153,7 +155,14 @@ void VimbaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
 
 void VimbaHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
-  _configure(type, payload, t);
+  if (!_entry) {
+    _configure(type, payload, t);
+  } else {
+    const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
+    _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
+    memcpy(_configtc, tc, tc->extent);
+  }
 }
 
 void VimbaHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)

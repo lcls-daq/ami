@@ -160,6 +160,7 @@ void ZylaHandler::reset()
 void ZylaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
   
@@ -169,7 +170,8 @@ void ZylaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Cl
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   { DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns, rows, ppb, ppb);
-    _entry  = new EntryImage(desc); }
+    _entry  = new EntryImage(desc);
+    _entry->invalid(); }
     
   { DescImage desc(det, (unsigned)0, ChannelID::name(det),
                    columns*ppb, rows*ppb, 1, 1);
@@ -181,7 +183,14 @@ void ZylaHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Cl
 
 void ZylaHandler::_calibrate(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)
 {
-  _configure(type, payload, t);
+  if (!_entry) {
+    _configure(type, payload, t);
+  } else {
+    const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
+    _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
+    memcpy(_configtc, tc, tc->extent);
+  }
 }
 
 void ZylaHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockTime& t)

@@ -199,6 +199,7 @@ void UxiHandler::reset()
 void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::ClockTime& t)
 {
   { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
 

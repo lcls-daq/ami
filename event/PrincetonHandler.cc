@@ -118,6 +118,7 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
 
   { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
+    if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
     memcpy(_configtc, tc, tc->extent); }
 
@@ -129,6 +130,7 @@ void PrincetonHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   DescImage desc(det, (unsigned)0, ChannelID::name(det),
      columns, rows, ppb, ppb);
   _entry  = new EntryImage(desc);
+  _entry->invalid();
 
   /*
    * Setup temperature variable
