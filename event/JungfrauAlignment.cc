@@ -6,7 +6,7 @@ static const double pixel_size = 75.0; // um
 
 Jungfrau::Jungfrau(const Pds::DetInfo& det, unsigned nelems,
                    unsigned rows, unsigned columns, unsigned index) :
-  Detector(det, "JFCAMERA:V1", "JUNGFRAU:V1",
+  Detector(det, "JFCAMERA", "JUNGFRAU",
            nelems, pixel_size,
            columns, rows,
            index)

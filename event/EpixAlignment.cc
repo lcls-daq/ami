@@ -18,7 +18,7 @@ static const unsigned      vM = 12;  // 1/2 "vertical" margin between ASICs
 static const double pixel_size = 100.0; // um
 
 Epix10ka2M::Epix10ka2M(const Pds::DetInfo& det, unsigned index) :
-  Detector(det, "CAMERA", "QUAD", "EPIX10KA:V1",
+  Detector(det, "CAMERA", "QUAD", "EPIX10KA",
            4, Cfg10ka2M::_numberOfElements, pixel_size,
            wE, hE,
            index)
@@ -122,7 +122,7 @@ void Epix10ka2M::load_default()
 }
 
 Epix10kaQuad::Epix10kaQuad(const Pds::DetInfo& det, unsigned index) :
-  Detector(det, "CAMERA", "QUAD", "EPIX10KA:V1",
+  Detector(det, "CAMERA", "QUAD", "EPIX10KA",
            1, Cfg10kaQuad::_numberOfElements, pixel_size,
            wE, hE,
            index)

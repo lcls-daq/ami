@@ -35,6 +35,11 @@ static Rotation add_rotations(Rotation r1, Rotation r2)
   return Rotation((r1+r2)%NPHI);
 }
 
+static std::string strip_version(const std::string& name)
+{
+  return name.substr(0, name.rfind(":V"));
+}
+
 Element::Element() :
   pname(""),
   pindex(0),
@@ -248,8 +253,8 @@ void Detector::load_geometry(const Pds::DetInfo& det,
       ss >> pname >> pindex >> oname >> oindex >> x0 >> y0 >> z0
          >> rot_z >> rot_y >> rot_x >> tilt_z >> tilt_y >> tilt_x;
 
-      if ((pname.compare(dettype) == 0) &&
-          (oname.compare(elemtype) == 0) &&
+      if ((strip_version(pname).compare(dettype) == 0) &&
+          (strip_version(oname).compare(elemtype) == 0) &&
           (pindex == _index)) {
         if (oindex >= _elements.size()) {
           printf("Unexpected index for %s in geometry: %d\n", oname.c_str(), oindex);
@@ -269,8 +274,8 @@ void Detector::load_geometry(const Pds::DetInfo& det,
                                           tilt_y, tilt_x, tilt_z, frame);
           ecount++;
         }
-      } else if ((pname.compare(dettype) == 0) &&
-                 (oname.compare(quadtype) == 0) &&
+      } else if ((strip_version(pname).compare(dettype) == 0) &&
+                 (strip_version(oname).compare(quadtype) == 0) &&
                  (pindex == _index)) {
         if (oindex >= _quads.size()) {
           printf("Unexpected index for %s in geometry: %d\n", oname.c_str(), oindex);
@@ -290,8 +295,8 @@ void Detector::load_geometry(const Pds::DetInfo& det,
                                        tilt_y, tilt_x, tilt_z, frame);
           qcount++;
         }
-      } else if ((pname.compare(quadtype) == 0) &&
-                 (oname.compare(elemtype) == 0)) {
+      } else if ((strip_version(pname).compare(quadtype) == 0) &&
+                 (strip_version(oname).compare(elemtype) == 0)) {
         // Calculate the overall element index
         unsigned eindex = _quads.size() * pindex + oindex;
         if ((oindex >= _quads.size()) || (eindex >= _elements.size())) {
@@ -313,8 +318,8 @@ void Detector::load_geometry(const Pds::DetInfo& det,
                                           tilt_y, tilt_x, tilt_z, frame);
           qecount++;
         }
-      } else if((pname.compare(0, IPNAME.length(), IPNAME) == 0) &&
-                (oname.compare(dettype) == 0) &&
+      } else if((strip_version(pname).compare(IPNAME) == 0) &&
+                (strip_version(oname).compare(dettype) == 0) &&
                 (pindex == _index)) {
         _rotation = as_rotation(rot_z);
       }
