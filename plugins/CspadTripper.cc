@@ -537,7 +537,7 @@ void CspadTripper::analyzeDetector  ()
       _result[currentDet]->valid(_clk);
     }
     if (trip) {
-      float deltaT = _clk.seconds() - _lastTrip.seconds() + (_clk.nanoseconds()-_lastTrip.nanoseconds())/1000000000.;
+      float deltaT = _clk.asDouble() - _lastTrip.asDouble();
       if (deltaT>1.) {
         _lastTrip = _clk;
         printf("%d pixels in blackhole at event %d, no trips in last %f seconds, attempt to trip, shunt, or ignore beam\n", bh_pixelCount, _nevt, deltaT);
