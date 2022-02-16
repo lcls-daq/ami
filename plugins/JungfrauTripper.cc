@@ -293,6 +293,8 @@ void JungfrauTripper::analyzeDetector  ()
 
     bool trip = false;
     int32_t pixelCount = 0;
+    static const uint16_t gain_bits = 3<<14;
+    static const uint16_t data_bits = (1<<14) - 1;
 
     const Pds::Jungfrau::ElementV2& s = *_frame[currentDet];
     const Pds::Jungfrau::ConfigV3& cfg = *_config[currentDet];
@@ -301,7 +303,9 @@ void JungfrauTripper::analyzeDetector  ()
     for (unsigned i=0; i<data.shape()[0]; i++) {
       for (unsigned j=0; j<data.shape()[1]; j++) {
         for (unsigned k=0; k<data.shape()[2]; k++) {
-          if (data(i,j,k) > _tripCountThreshold[currentDet]) {
+          uint16_t value = data(i,j,k);
+          if (((value&gain_bits) == gain_bits) &&
+              ((value&data_bits) < _tripCountThreshold[currentDet])) {
             if(++pixelCount > _nPixelsToTrip[currentDet]) {
               trip = true;
             }
