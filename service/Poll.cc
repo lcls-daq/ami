@@ -247,45 +247,45 @@ int Poll::poll()
       LMsg lmsg;
       int sz;
       if ((sz=_loopback->read(&lmsg,sizeof(lmsg)))<int(sizeof(LMsg))) {
-	printf("Error reading loopback:");
-	uint32_t* p = reinterpret_cast<uint32_t*>(&lmsg);
-	while(sz>0) { printf(" %08x",*p++); sz-=sizeof(uint32_t); }
-	printf(". Ignored.\n");
-	return result;
+        printf("Error reading loopback:");
+        uint32_t* p = reinterpret_cast<uint32_t*>(&lmsg);
+        while(sz>0) { printf(" %08x",*p++); sz-=sizeof(uint32_t); }
+        printf(". Ignored.\n");
+        return result;
       }
       else if (lmsg.cmd()==Shutdown)
-	result = 0;
+        result = 0;
       else {
-	if (lmsg.cmd()==BroadcastIn || lmsg.cmd()==BroadcastOut) {
-	  for (unsigned short n=1; n<_nfds; n++) {
-	    if (_ofd[n]) {
-	      if (lmsg.cmd()==BroadcastOut) {
-		if (::write(_ofd[n]->fd(), lmsg.payload(), lmsg.size())==-1)
-		  perror("Ami::Poll::poll BroadcastOut");
-	      }
-	      else if (!_ofd[n]->processIo(lmsg.payload(),lmsg.size())) {
-		Fd* fd = _ofd[n];
-		unmanage(*fd);
-		delete fd;
-	      }
-	    }
+        if (lmsg.cmd()==BroadcastIn || lmsg.cmd()==BroadcastOut) {
+          for (unsigned short n=1; n<_nfds; n++) {
+            if (_ofd[n]) {
+              if (lmsg.cmd()==BroadcastOut) {
+                if (::write(_ofd[n]->fd(), lmsg.payload(), lmsg.size())==-1)
+                  perror("Ami::Poll::poll BroadcastOut");
+              }
+              else if (!_ofd[n]->processIo(lmsg.payload(),lmsg.size())) {
+                Fd* fd = _ofd[n];
+                unmanage(*fd);
+                delete fd;
+              }
+            }
           }
-	}
-	else if (lmsg.cmd()==PostIn)
-	  processIn(lmsg.payload(),lmsg.size());
-	else if (lmsg.cmd()==Manage) {
-	  Fd* fd = reinterpret_cast<Fd*>(const_cast<char*>(lmsg.payload()));
-	  manage(*fd);
-	  _msem.give();
-	  lmsg.free();
-	  return result;  // not safe to loop over _ofd's below
-	}
+        }
+        else if (lmsg.cmd()==PostIn)
+          processIn(lmsg.payload(),lmsg.size());
+        else if (lmsg.cmd()==Manage) {
+          Fd* fd = reinterpret_cast<Fd*>(const_cast<char*>(lmsg.payload()));
+          manage(*fd);
+          _msem.give();
+          lmsg.free();
+          return result;  // not safe to loop over _ofd's below
+        }
       }
       lmsg.free();
     }
     for (unsigned short n=1; n<_nfds; n++) {
       if (_ofd[n] && (_pfd[n].revents & (POLLIN | POLLERR)))
-	if (!_ofd[n]->processIo()) {
+        if (!_ofd[n]->processIo()) {
           Fd* fd = _ofd[n];
           unmanage(*fd);
           delete fd;

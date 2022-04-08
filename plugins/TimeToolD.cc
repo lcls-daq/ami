@@ -188,18 +188,18 @@ namespace Ami {
       if ((_data && _data->projected_signal(c).size()) ||
           (_evrdata && _frame)) {
 
-	reset();
+        reset();
 
         if (_data && _data->projected_signal(c).size()) {
-	  if (c.use_reference_roi())
-	    TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
-				   _data->projected_signal(c),
-				   _data->projected_sideband(c),
-				   _data->projected_reference(c));
-	  else
-	    TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
-				   _data->projected_signal(c),
-				   _data->projected_sideband(c));
+          if (c.use_reference_roi())
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->projected_signal(c),
+                                   _data->projected_sideband(c),
+                                   _data->projected_reference(c));
+          else
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->projected_signal(c),
+                                   _data->projected_sideband(c));
         }
         else {
           m_pedestal = _frame->offset();
