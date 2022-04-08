@@ -24,6 +24,11 @@ libsrcs_timetooldbd := TimeToolD.cc
 libincs_timetooldbd := pdsdata/include ndarray/include boost/include psalg/include timetool/include
 liblibs_timetooldbd := timetool/ttsvc psalg/psalg
 
+libnames += timetooldbe
+libsrcs_timetooldbe := TimeToolE.cc
+libincs_timetooldbe := pdsdata/include ndarray/include boost/include psalg/include timetool/include
+liblibs_timetooldbe := timetool/ttsvc psalg/psalg
+
 libnames += xppbase
 libsrcs_xppbase := XppBase.cc
 libincs_xppbase := pdsdata/include ndarray/include boost/include
@@ -71,6 +76,11 @@ libnames += CspadTripper
 libsrcs_CspadTripper := EpicsCA.cc CspadTripper.cc
 libincs_CspadTripper := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_CspadTripper := epics/ca
+
+libnames += JungfrauTripper
+libsrcs_JungfrauTripper := EpicsCA.cc JungfrauTripper.cc
+libincs_JungfrauTripper := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
+liblibs_JungfrauTripper := epics/ca
 
 libnames += IpmSumEScan
 libsrcs_IpmSumEScan := IpmSumEScan.cc

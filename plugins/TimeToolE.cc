@@ -1,4 +1,4 @@
-#include "TimeToolM.hh"
+#include "TimeToolE.hh"
 
 #include "ami/data/Cds.hh"
 
@@ -18,6 +18,7 @@
 #include "pdsdata/psddl/opal1k.ddl.h"
 #include "pdsdata/psddl/evr.ddl.h"
 #include "pdsdata/psddl/lusi.ddl.h"
+#include "pdsdata/psddl/timetool.ddl.h"
 
 using namespace Ami;
 
@@ -32,6 +33,24 @@ using std::string;
 
 typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
 typedef Pds::EvrData::DataV3 EvrDataType;
+typedef Pds::TimeTool::ConfigV3 TimeToolConfigType;
+
+static const char* op_name[] = { "OR", "AND", "OR_NOT", "AND_NOT", NULL };
+
+static void dump_logic(const ndarray<const Pds::TimeTool::EventLogic,1>& logic)
+{
+  for(unsigned i=0; i<logic.size(); i++)
+    printf("%s %u", op_name[logic[i].logic_op()], logic[i].event_code());
+  printf("\n");
+}
+
+static void dump(const TimeToolConfigType& c)
+{
+  printf("--beam logic--\n");
+  dump_logic(c.beam_logic());
+  printf("--laser logic--\n");
+  dump_logic(c.laser_logic());
+}
 
 //
 //  Create all plot entries
@@ -46,8 +65,16 @@ namespace Ami {
 
   class FexM : public TimeTool::Fex {
   public:
-    FexM(const char* fname) : Fex(fname), _cds(0) {}
-    ~FexM() {}
+    FexM(const Pds::Src& src,
+         const TimeToolConfigType& cfg) : 
+      Fex(src,cfg,false), _cols(0), _cds(0), _cache(0),
+      _config_buffer(new char[cfg._sizeof()]) 
+    {
+      dump(cfg); 
+      memcpy(_config_buffer, &cfg, cfg._sizeof());
+      reset_data();
+    }
+    ~FexM() { clear(_cds); delete[] _config_buffer; }
   public:
     void _monitor_raw_sig(const ndarray<const double,1>& wf)
     {
@@ -58,6 +85,7 @@ namespace Ami {
     {
       for(unsigned k=0; k<wf.size(); k++)
         _ref_signal->content(wf[k],k);
+      printf("\n");
     }
     void _monitor_sub_sig (const ndarray<const double,1>& wf)
     {
@@ -81,30 +109,23 @@ namespace Ami {
       cache.add(base_name()+":AMI:REFAMPL"); 
       return _cache_index;
     }
-    void configure() {
-      TimeTool::Fex::configure();
+    void reset_data() {
+      //  Reset pointer references
+      _data = 0;
       _frame = 0;
       _evrdata = 0;
       _ipmdata = 0;
     }
-    void configure(const Pds::Epics::EpicsPvCtrlHeader& pv) {
-      /*
-      const int slen = base_name().length();
-      if (strncmp(pv.pvName(),base_name().c_str(),slen)==0) {
-        if      (strcmp(&pv.pvName()[slen],":SIGNAL_WF")==0)
-          _id_sig = pv.pvId();
-        else if (strcmp(&pv.pvName()[slen],":SIDEBAND_WF")==0)
-          _id_sb  = pv.pvId();
-        else if (strcmp(&pv.pvName()[slen],":REFERENCE_WF")==0)
-          _id_ref = pv.pvId();
-      }
-      */
-    }
     void event(const Pds::DetInfo&   src,
                const Pds::TypeId&    type,
                void*                 payload) {
-      if (src.phy()==_src.phy()) {
-        if (type.id()==Pds::TypeId::Id_Frame) {
+      switch(type.id()) {
+      case Pds::TypeId::Id_TimeToolData:
+        if (src.phy()==_src.phy())
+          _data = reinterpret_cast<Pds::TimeTool::DataV3*>(payload);
+        break;
+      case Pds::TypeId::Id_Frame:
+        if (src.phy()==_src.phy()) {
           if (type.compressed()) {
             const Pds::Xtc* xtc = reinterpret_cast<const Pds::Xtc*>(payload)-1;
             _pXtc = Pds::CompressedXtc::uncompress(*xtc);
@@ -112,16 +133,19 @@ namespace Ami {
           }
           else
             _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
-        }
-      }
-      else if (type.id()==Pds::TypeId::Id_EvrData) {
+        } break;
+      case Pds::TypeId::Id_EvrData:
         // Pds::EvrData::DataV3 can be used for both V3 and V4
         _evrdata = reinterpret_cast<Pds::EvrData::DataV3*>(payload);
+        break;
+      case Pds::TypeId::Id_IpmFex:
+        if (src.level()==m_ipm_get_key.level() && 
+            src.phy  ()==m_ipm_get_key.phy  ())
+          _ipmdata = reinterpret_cast<Pds::Lusi::IpmFexV1*>(payload);
+        break;
+      default:
+        break;
       }
-      else if (src.level()==m_ipm_get_key.level() && 
-               src.phy  ()==m_ipm_get_key.phy  () &&
-               type.id  ()==Pds::TypeId::Id_IpmFex)
-        _ipmdata = reinterpret_cast<Pds::Lusi::IpmFexV1*>(payload);
     }
     void clear(Cds* cds) {
       if (_cds) {
@@ -136,8 +160,7 @@ namespace Ami {
         delete _flt_signal;
         delete _indicator;
       }
-      _cds=0;
-      TimeTool::Fex::configure();
+      _cds = 0;
     }
     void create(Cds& cds, unsigned column) {
       char buff[128];
@@ -163,17 +186,46 @@ namespace Ami {
       cds.add(_flt_signal);
       cds.add(_indicator);
       _cols_offset=ilo;
-      _cols=cols;
-      _cds=&cds;
+      _cols= cols;
+      _cds = &cds;
+      init_plots();
     }
     void analyze(const Pds::ClockTime& _clk) {
-      printf("analyze[%08x] evrdata %p  frame %p\n",
-             _src.phy(), _evrdata, _frame);
-      if (_evrdata && _frame) {
-        m_pedestal = _frame->offset();
-        TimeTool::Fex::analyze(_frame->data16(),
-                               _evrdata->fifoEvents(),
-                               _ipmdata);
+      const TimeToolConfigType& c = 
+        *reinterpret_cast<const TimeToolConfigType*>(_config_buffer);
+      if ((_data && (_data->projected_signal(c).size() || _data->full_signal(c).size())) ||
+          (_evrdata && _frame)) {
+
+        reset();
+
+        if (_data && _data->projected_signal(c).size()) {
+          if (c.use_reference_roi())
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->projected_signal(c),
+                                   _data->projected_sideband(c),
+                                   _data->projected_reference(c));
+          else
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->projected_signal(c),
+                                   _data->projected_sideband(c));
+        }
+        else if (_data && _data->full_signal(c).size()) {
+          if (c.use_reference_roi())
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->full_signal(c),
+                                   _data->full_sideband(c),
+                                   _data->full_reference(c));
+          else
+            TimeTool::Fex::analyze(TimeTool::Fex::EventType(_data->event_type()),
+                                   _data->full_signal(c),
+                                   _data->full_sideband(c));
+        }
+        else {
+          m_pedestal = _frame->offset();
+          TimeTool::Fex::analyze(_frame->data16(),
+                                 _evrdata->fifoEvents(),
+                                 _ipmdata);
+        }
 
         if (_cache) {
           _cache->cache(_cache_index+0, amplitude());
@@ -205,7 +257,7 @@ namespace Ami {
 
           int ix = int(filtered_position()-_cols_offset);
           if (ix>=0 && ix<_cols)
-            _indicator->content(max,ix);
+            _sub_signal->content(max,ix);
         }
 
         _ref_signal->valid(_clk);
@@ -215,10 +267,7 @@ namespace Ami {
         _indicator->valid(_clk);
       }
 
-      //  Reset pointer references
-      _frame = 0;
-      _evrdata = 0;
-      _ipmdata = 0;
+      reset_data();
     }
   private:
     EntryTH1F* _ref_signal;
@@ -227,59 +276,45 @@ namespace Ami {
     EntryTH1F* _flt_signal;
     EntryTH1F* _indicator;
 
-    Pds::Camera::FrameV1* _frame;
-    Pds::EvrData::DataV3* _evrdata;
-    Pds::Lusi::IpmFexV1*  _ipmdata;
-
-    int         _cols;
-    int         _cols_offset;
-    Cds*        _cds;
-
+    int                  _cols;
+    int                  _cols_offset;
+    Cds*                 _cds;
     Ami::FeatureCache*   _cache;
     int                  _cache_index;
     boost::shared_ptr<Pds::Xtc> _pXtc;
+
+    char* _config_buffer;
+    Pds::TimeTool::DataV3* _data;
+    Pds::Camera::FrameV1*  _frame;
+    Pds::EvrData::DataV3*  _evrdata;
+    Pds::Lusi::IpmFexV1*   _ipmdata;
   };
 };
 
 
-TimeToolM::TimeToolM() : 
-  _cds(0),
+TimeToolE::TimeToolE() : 
+  _cds      (0),
   _cache    (0)
 {
-  const char* fname = "timetool.input";
-  char buff[128];
-  const char* dir = getenv("HOME");
-  sprintf(buff,"%s/%s", dir ? dir : "/tmp", fname);
-  std::ifstream f(buff);
-  if (f) {
-    while(!f.eof()) {
-      string sline;
-      std::getline(f,sline);
-      if (sline[0]=='<')
-        _fex.push_back(new FexM(sline.substr(1).c_str()));
-    }
-    if (_fex.size()==0)
-      _fex.push_back(new FexM(fname));
-  }
 }
 
-TimeToolM::~TimeToolM() 
+TimeToolE::~TimeToolE() 
 {
   for(unsigned i=0; i<_fex.size(); i++)
     delete _fex[i];
+  _fex.clear();
 }
 
-void TimeToolM::reset(Ami::FeatureCache& cache)
+void TimeToolE::reset(Ami::FeatureCache& cache)
 {
+  for(unsigned i=0; i<_fex.size(); i++)
+    delete _fex[i];
+  _fex.clear();
+
   _cache = &cache;
-  for(unsigned i=0; i<_fex.size(); i++) {
-    _fex[i]->configure();
-    if (_cds)
-      _fex[i]->cache(cache);
-  }
 }
 
-void TimeToolM::clock    (const Pds::ClockTime& clk) 
+void TimeToolE::clock    (const Pds::ClockTime& clk) 
 {
 //   if (clk.seconds() > _clk.seconds() &&
 //       (clk.seconds()&0xf)==0)
@@ -291,66 +326,57 @@ void TimeToolM::clock    (const Pds::ClockTime& clk)
 //
 //  Cache the configuration for camera
 //
-void TimeToolM::configure(const Pds::DetInfo&   src,
+void TimeToolE::configure(const Pds::DetInfo&   src,
 			  const Pds::TypeId&    type,
 			  void*                 payload) 
 {
-  if (type.id()==Pds::TypeId::Id_Opal1kConfig) {
-    for(unsigned i=0; i<_fex.size(); i++)
-      if (_fex[i]->src().phy() == src.phy())
-        _fex[i]->configure();
-  }
-  else if (type.id()==Pds::TypeId::Id_Epics) {
-    for(unsigned i=0; i<_fex.size(); i++) {
-      FexM& fex = *_fex[i];
-      if (src.phy() == fex.src().phy())
-        fex.configure(*reinterpret_cast<const Pds::Epics::EpicsPvCtrlHeader*>(payload));
-    }
+  if (type.id()==Pds::TypeId::Id_TimeToolConfig) {
+    FexM* f = new FexM(src,*reinterpret_cast<const TimeToolConfigType*>(payload));
+    if (_cds)
+      f->create(*_cds,_fex.size());
+    if (_cache)
+      f->cache(*_cache);
+    _fex.push_back(f);
   }
 }
 
 //
 //  Capture pointer to detector data we want
 //
-void TimeToolM::event    (const Pds::DetInfo&   src,
+void TimeToolE::event    (const Pds::DetInfo&   src,
 			  const Pds::TypeId&    type,
                           const Pds::Damage&    damage,
 			  void*                 payload) 
 {
   if (damage.value()) return;
 
-  for(unsigned i=0; i<_fex.size(); i++)
-    _fex[i]->event(src,type,payload);
+  if (_cds)
+    for(unsigned i=0; i<_fex.size(); i++)
+      _fex[i]->event(src,type,payload);
 }
 
 //
 //  Remove all plot entries
 //
-void TimeToolM::clear    () 
+void TimeToolE::clear    () 
 {
   for(unsigned i=0; i<_fex.size(); i++)
     _fex[i]->clear(_cds);
+  _cds = 0;
 }
 
-#if 0
-static DescTH1F no_agg(DescTH1F d) { d.aggregate(false); return d; }
-#endif
-
-void TimeToolM::create   (Cds& cds)
+void TimeToolE::create   (Cds& cds)
 {
+  if (!_cds)
+    for(unsigned i=0; i<_fex.size(); i++)
+      _fex[i]->create(cds,i);
   _cds = &cds; 
-  for(unsigned i=0; i<_fex.size(); i++) {
-    _fex[i]->create(cds,i);
-    if (_cache)
-      _fex[i]->cache(*_cache);
-    _fex[i]->init_plots();
-  }
 }
 
 //
 //  Analyze data for current event from the pointers we captured
 //
-void TimeToolM::analyze  ()
+void TimeToolE::analyze  ()
 {
   if (_cds)
     for(unsigned i=0; i<_fex.size(); i++)
@@ -359,12 +385,12 @@ void TimeToolM::analyze  ()
 
 
 // FROM FILTER
-const char* TimeToolM::name() const { return "TimeTool"; }
+const char* TimeToolE::name() const { return "TimeTool"; }
 
 //
 //  Analyze data for current event from the pointers we captured
 //
-bool TimeToolM::accept  () 
+bool TimeToolE::accept  () 
 {
   analyze();
   return true;
@@ -375,6 +401,6 @@ bool TimeToolM::accept  ()
 //  Plug-in module creator
 //
 
-extern "C" UserModule* create() { return new TimeToolM; }
+extern "C" UserModule* create() { return new TimeToolE; }
 
 extern "C" void destroy(UserModule* p) { delete p; }
