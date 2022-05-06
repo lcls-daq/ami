@@ -46,6 +46,7 @@ namespace Ami {
     std::vector<EntryWaveform*> _ewf;
     EntryRef*           _ref;
     unsigned            _options;
+    bool                _do_norm;
     ndarray<unsigned,2> _status;
     ndarray<double,3>   _pedestals;
     ndarray<double,3>   _gains;

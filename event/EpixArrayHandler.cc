@@ -424,6 +424,7 @@ ndarray<const uint16_t,3> EpixArray::Epix10kaQuadCache<Cfg10kaQuad>::frame(Pds::
 static const unsigned offset=1<<16;
 //static const unsigned offset=0;
 static const double doffset=double(offset);
+static const double prec_norm_factor=100.0;
 
 
 static std::list<Pds::TypeId::Type> config_type_list()
@@ -440,7 +441,9 @@ EpixArrayHandler::EpixArrayHandler(const Pds::Src& info,
   EventHandlerF(info, Pds::TypeId::Id_Epix10kaArray, config_type_list(), cache),
   _desc        ("template",0,0),
   _entry       (0),
-  _config_cache(0)
+  _config_cache(0),
+  _options     (0),
+  _do_norm     (false)
 {
 }
 
@@ -548,6 +551,15 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
     if (_entry->desc().options() & FrameCalib::option_reload_pedestal()) {
       _load_pedestals(_entry->desc());
       _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
+    }
+
+    // Set the normalization if gain correcting
+    double norm = 1.0;
+    if (!(_entry->desc().options() & FrameCalib::option_no_pedestal())) {
+      if (_do_norm &&
+          (_entry->desc().options() & FrameCalib::option_correct_gain())) {
+        norm = prec_norm_factor;
+      }
     }
 
     const unsigned fixed_gain_idx = _config_cache->numberOfFixedGainModes() - 1;
@@ -733,7 +745,7 @@ void EpixArrayHandler::_event    (Pds::TypeId tid, const void* payload, const Pd
     }
 
     _entry->info(double(offset*ppbx*ppby),EntryImage::Pedestal);
-    _entry->info(1.,EntryImage::Normalization);
+    _entry->info(norm,EntryImage::Normalization);
     _entry->valid(t);
   }
 }
@@ -871,11 +883,16 @@ void EpixArrayHandler::_load_gains(const DescImage& desc)
   _gains = GainSwitchCalib::load_multi_array(desc.info(), gains, elems, rows, cols, 1.0, &failed, "gain", "pixel_gain");
   if (failed) {
     printf("No valid pixel gain correction file found: using the default corrections!\n");
+    _do_norm = false;
     for(unsigned g=0; g<gains; g++)
       for(unsigned i=0; i<elems; i++)
         for(unsigned j=0; j<rows; j++)
           for(unsigned k=0; k<cols; k++)
             _gains(g,i,j,k) = (1.0 / gain_cor[g]);
+  } else {
+    _do_norm = true;
+    for(double* val = _gains.begin(); val!=_gains.end(); val++)
+      (*val) /= prec_norm_factor;
   }
 
   // Determine the shape and stride for the element specific view of the pixel gain data

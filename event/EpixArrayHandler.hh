@@ -54,6 +54,7 @@ namespace Ami {
     EpixArray::ConfigCache* _config_cache;
 
     unsigned            _options;
+    bool                _do_norm;
     ndarray<double,4>   _pedestals;
     ndarray<double,4>   _gains;
     ndarray<unsigned,3> _status;

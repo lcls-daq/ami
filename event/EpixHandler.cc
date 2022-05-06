@@ -28,6 +28,7 @@ static const unsigned gain_bits = 3<<14;
 static const unsigned data_bits = ((1<<16) - 1) - gain_bits;
 static const unsigned conf_bits = 0x1c;
 static const double  RDIV=30000;
+static const double prec_norm_factor=100.0;
 
 static std::list<Pds::TypeId::Type> config_type_list()
 {
@@ -519,6 +520,7 @@ EpixHandler::EpixHandler(const Pds::DetInfo& info, FeatureCache& cache) :
   _entry        (0),
   _ref          (0),
   _options      (0),
+  _do_norm      (false),
   _status       (make_ndarray<unsigned>(0U,0)),
   _pedestals    (make_ndarray<double>(0U,0,0)),
   _gains        (make_ndarray<double>(0U,0,0)),
@@ -711,9 +713,17 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
       _options = o;
     }
 
-    if (_entry->desc().options() & FrameCalib::option_reload_pedestal()) {
+    if (_options & FrameCalib::option_reload_pedestal()) {
       _load_pedestals();
-      _entry->desc().options( _entry->desc().options()&~FrameCalib::option_reload_pedestal() );
+      _entry->desc().options( _options&~FrameCalib::option_reload_pedestal() );
+    }
+
+    // Set the normalization if gain correcting
+    double norm = 1.0;
+    if (!(_options & FrameCalib::option_no_pedestal())) {
+      if (_do_norm && (_options & FrameCalib::option_correct_gain())) {
+        norm = prec_norm_factor;
+      }
     }
 
     ndarray<const uint16_t,2> a;
@@ -919,7 +929,7 @@ void EpixHandler::_event    (Pds::TypeId, const void* payload, const Pds::ClockT
     }
 
     _entry->info(double(offset*d.ppxbin()*d.ppybin()),EntryImage::Pedestal);
-    _entry->info(1.,EntryImage::Normalization);
+    _entry->info(norm,EntryImage::Normalization);
     _entry->valid(t);
   }
 }
@@ -1004,10 +1014,15 @@ void EpixHandler::_load_gains()
   }
   if (failed) {
     printf("No valid pixel gain correction file found: using the default corrections!\n");
+    _do_norm = false;
     for(unsigned g=0; g<gains; g++)
       for(unsigned j=0; j<rows; j++)
         for(unsigned k=0; k<cols; k++)
           _gains(g,j,k) = (1.0 / gain_cor[g]);
+  } else {
+    _do_norm = true;
+    for(double* val = _gains.begin(); val!=_gains.end(); val++)
+      (*val) /= prec_norm_factor;
   }
 }
 
