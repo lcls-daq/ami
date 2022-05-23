@@ -40,6 +40,7 @@ static inline unsigned num_rows(const Xtc* tc)
     CASE_VSN(1)
     CASE_VSN(2);
     CASE_VSN(3);
+    CASE_VSN(4);
     default: break;
   }
 #undef CASE_VSN
@@ -60,6 +61,7 @@ static inline unsigned num_columns(const Xtc* tc)
           return c.pixels() * 8; }
     CASE_VSN(2);
     CASE_VSN(3);
+    CASE_VSN(4);
     default: break;
   }
 #undef CASE_VSN
