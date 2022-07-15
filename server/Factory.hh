@@ -24,6 +24,8 @@ namespace Ami {
     virtual void beginRun (unsigned) = 0;
     virtual void endRun   (unsigned) = 0;
     virtual void remove   (unsigned id) = 0;
+    virtual unsigned version() = 0;
+    virtual void increment() = 0;
   };
 
 };

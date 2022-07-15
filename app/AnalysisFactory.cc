@@ -33,7 +33,8 @@ AnalysisFactory::AnalysisFactory(std::vector<FeatureCache*>&  cache,
   _user      (user),
   _user_cds  (user.size()),
   _filter    (filter),
-  _waitingForConfigure(false)
+  _waitingForConfigure(false),
+  _version   (0)
 {
   pthread_mutex_init(&_mutex, NULL);
   pthread_cond_init(&_condition, NULL);
@@ -133,7 +134,7 @@ void AnalysisFactory::discover(bool waitForConfigure)
   _srv.discover(); 
   pthread_mutex_unlock(&_mutex);
 
-  printf("AnalysisFactory::discover(%c) complete\n",waitForConfigure?'T':'F');
+  printf("AnalysisFactory::discover(%c) complete [version %x]\n",waitForConfigure?'T':'F',_version);
 }
 
 void AnalysisFactory::beginRun(unsigned v)

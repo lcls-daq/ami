@@ -114,6 +114,7 @@ int AnalysisServer::processIo()
     }
     _factory.configure(fd(), request,_buffer,_cds,_post_service);
     _described = true;
+    _version   = _factory.version();
   case Message::DescriptionReq:
     { int n = _cds.description()+1;
       _adjust(n);
@@ -126,7 +127,7 @@ int AnalysisServer::processIo()
       _factory.refresh(fd(), request,_buffer,_cds); }
     break;
   case Message::PayloadReq:
-    if (_described) {
+    if (_described && _version==_factory.version()) {
       int n = _cds.payload()+1;
       _adjust(n);
       n = _cds.payload(_iov+1, request.list())+1;
@@ -135,6 +136,10 @@ int AnalysisServer::processIo()
       _cds.refresh();
     }
 #ifdef DBUG
+    else if (_version!=_factory.version()) {
+        printf("PayloadReq %d ignored version mismatch [%x/%x]\n",
+               request.id(),_version,_factory.version());
+    }
     else
       printf("PayloadReq %d ignored\n",request.id());
 #endif

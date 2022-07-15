@@ -31,6 +31,7 @@ namespace Ami {
     EventFd*&       _event;
     Message         _repeat;
     bool            _post_service;
+    unsigned        _version;
   };
 
 };

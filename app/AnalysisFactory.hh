@@ -40,6 +40,8 @@ namespace Ami {
     void refresh  (unsigned, const Message&, const char*, Cds&);
     void analyze  ();
     void remove   (unsigned);
+    unsigned version() { return _version; }
+    void increment() { _version++; }
   public:
     void recreate (UserModule*);
   public:
@@ -59,6 +61,7 @@ namespace Ami {
     pthread_mutex_t _mutex;
     pthread_cond_t _condition;
     bool _waitingForConfigure;
+    unsigned _version;
   };
 
 };

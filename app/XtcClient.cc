@@ -166,24 +166,10 @@ void XtcClient::processDgram(Pds::Dgram* dg)
     //  Cleanup previous entries
     _factory.discovery().reset();
     _factory.hidden   ().reset();
-#if 0
-    for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++) {
-      EventHandler* handler = *hit;
-      handler->reset();
-      if (handler->nentries() != 0) {
-        printf("Warning: after reset, handler->nentries() = %d for handler %p\n", handler->nentries(), handler);
-        const std::list<Pds::TypeId::Type>& types = handler->config_types();
-        for (std::list<Pds::TypeId::Type>::const_iterator it=types.begin(); it != types.end(); it++) {
-          const Pds::TypeId::Type& type = *it;
-          printf("(handler %p type %s)\n", handler, Pds::TypeId::name(type));
-        }
-      }
-    }
-#else
+    _factory.increment();
     for(HList::iterator hit = _handlers.begin(); hit != _handlers.end(); hit++)
       delete *hit;
     _handlers.clear();
-#endif
 
     _filter.reset();
     _filter.configure(dg);
@@ -226,9 +212,7 @@ void XtcClient::processDgram(Pds::Dgram* dg)
         }
       }
     }
-#ifdef DBUG
-    printf("XC\n");
-#endif
+
     _factory.discovery().sort();  // Need to set a consistent order across all server processes
     _factory.discovery().showentries();
     //    _factory.hidden   ().showentries();
@@ -310,7 +294,7 @@ void XtcClient::_configure(Pds::Xtc* xtc, EventHandler* h)
 
 int XtcClient::process(Pds::Xtc* xtc)
 {
-#ifdef DBUG
+#if 0
   if (_seq->service()==Pds::TransitionId::Configure) {
     printf("Xtc %p  Type %s  Src %08x.%08x  Extent %x\n",
            xtc,
@@ -348,7 +332,7 @@ int XtcClient::process(Pds::Xtc* xtc)
             for(std::list<Pds::TypeId::Type>::const_iterator it=types.begin();
                 it != types.end(); it++) {
               if (*it == type) {
-#ifdef DBUG
+#if 0
                 printf("Src %08x.%08x  Type %08x handled by %p\n",
                        xtc->src.log(),xtc->src.phy(),xtc->contains.value(),h);
 #endif
@@ -360,7 +344,7 @@ int XtcClient::process(Pds::Xtc* xtc)
                 continue;
             }
           }
-#ifdef DBUG
+#if 0
           else {
             const std::list<Pds::TypeId::Type>& types = h->data_types();
             printf("Handler %p not used [",h);
@@ -428,7 +412,7 @@ int XtcClient::process(Pds::Xtc* xtc)
         }
 
         const char* typeName = Pds::TypeId::name(xtc->contains.id());
-#ifdef DBUG
+#if 0
         printf("XtcClient::process: adding handler %p for info %s type %s\n", h, infoName, typeName);
 #endif
 #if 1
