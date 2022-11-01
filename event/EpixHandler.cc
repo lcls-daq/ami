@@ -1021,8 +1021,13 @@ void EpixHandler::_load_gains()
           _gains(g,j,k) = (1.0 / gain_cor[g]);
   } else {
     _do_norm = true;
-    for(double* val = _gains.begin(); val!=_gains.end(); val++)
-      (*val) /= prec_norm_factor;
+    for(double* val = _gains.begin(); val!=_gains.end(); val++) {
+      if (gains == 1) {
+        (*val) = 1.0 / ((*val) * prec_norm_factor);
+      } else {
+        (*val) /= prec_norm_factor;
+      }
+    }
   }
 }
 
