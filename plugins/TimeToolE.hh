@@ -6,11 +6,10 @@
 
 #include "pdsdata/xtc/ClockTime.hh"  // Event Timestamp definition
 
-namespace Pds { 
-  namespace Opal1k  { class ConfigV1; } 
-  namespace EvrData { class DataV3; } 
-  namespace Lusi    { class IpmFexV1; } 
-  namespace Camera  { class FrameV1; } 
+#include <map>
+
+namespace TimeTool {
+  class FrameCache;
 };
 
 namespace Ami {
@@ -47,7 +46,8 @@ namespace Ami {
     Ami::Cds* _cds;
     Ami::FeatureCache* _cache;
     std::vector<FexM*> _fex;
-    Pds::ClockTime       _clk;
+    Pds::ClockTime     _clk;
+    std::map<Pds::Src, TimeTool::FrameCache*> _tmp;
 
   public:
     /// Empty instanciations

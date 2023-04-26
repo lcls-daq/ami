@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 
 #include "timetool/service/Fex.hh"
+#include "timetool/service/FrameCache.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
@@ -31,9 +32,9 @@ using namespace Ami;
 
 using std::string;
 
-typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
-typedef Pds::EvrData::DataV3 EvrDataType;
 typedef Pds::TimeTool::ConfigV3 TimeToolConfigType;
+typedef std::map<Pds::Src, TimeTool::FrameCache*> FrameCacheMap;
+typedef FrameCacheMap::iterator FrameCacheIter;
 
 static const char* op_name[] = { "OR", "AND", "OR_NOT", "AND_NOT", NULL };
 
@@ -68,7 +69,11 @@ namespace Ami {
     FexM(const Pds::Src& src,
          const TimeToolConfigType& cfg) : 
       Fex(src,cfg,false), _cols(0), _cds(0), _cache(0),
-      _config_buffer(new char[cfg._sizeof()]) 
+      _config_buffer(new char[cfg._sizeof()]),
+      _data(0),
+      _frame(0),
+      _evrdata(0),
+      _ipmdata(0)
     {
       dump(cfg); 
       memcpy(_config_buffer, &cfg, cfg._sizeof());
@@ -112,7 +117,8 @@ namespace Ami {
     void reset_data() {
       //  Reset pointer references
       _data = 0;
-      _frame = 0;
+      if (_frame)
+        _frame->clear_frame();
       _evrdata = 0;
       _ipmdata = 0;
     }
@@ -129,10 +135,18 @@ namespace Ami {
           if (type.compressed()) {
             const Pds::Xtc* xtc = reinterpret_cast<const Pds::Xtc*>(payload)-1;
             _pXtc = Pds::CompressedXtc::uncompress(*xtc);
-            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(_pXtc->payload());
+            if (_frame)
+              _frame->set_frame(type, _pXtc->payload());
           }
-          else
-            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
+          else {
+            if (_frame)
+              _frame->set_frame(type, payload);
+          }
+        } break;
+      case Pds::TypeId::Id_VimbaFrame:
+        if (src.phy()==_src.phy()) {
+          if (_frame)
+            _frame->set_frame(type, payload);
         } break;
       case Pds::TypeId::Id_EvrData:
         // Pds::EvrData::DataV3 can be used for both V3 and V4
@@ -194,7 +208,7 @@ namespace Ami {
       const TimeToolConfigType& c = 
         *reinterpret_cast<const TimeToolConfigType*>(_config_buffer);
       if ((_data && (_data->projected_signal(c).size() || _data->full_signal(c).size())) ||
-          (_evrdata && _frame)) {
+          (_evrdata && _frame && !_frame->empty())) {
 
         reset();
 
@@ -222,7 +236,7 @@ namespace Ami {
         }
         else {
           m_pedestal = _frame->offset();
-          TimeTool::Fex::analyze(_frame->data16(),
+          TimeTool::Fex::analyze(_frame->data(),
                                  _evrdata->fifoEvents(),
                                  _ipmdata);
         }
@@ -257,7 +271,7 @@ namespace Ami {
 
           int ix = int(filtered_position()-_cols_offset);
           if (ix>=0 && ix<_cols)
-            _sub_signal->content(max,ix);
+            _indicator->content(max,ix);
         }
 
         _ref_signal->valid(_clk);
@@ -268,6 +282,12 @@ namespace Ami {
       }
 
       reset_data();
+    }
+    void set_frame(TimeTool::FrameCache* frame) {
+      // replace old frame cache with new one
+      if (_frame)
+        delete _frame;
+      _frame = frame;
     }
   private:
     EntryTH1F* _ref_signal;
@@ -285,7 +305,7 @@ namespace Ami {
 
     char* _config_buffer;
     Pds::TimeTool::DataV3* _data;
-    Pds::Camera::FrameV1*  _frame;
+    TimeTool::FrameCache*  _frame;
     Pds::EvrData::DataV3*  _evrdata;
     Pds::Lusi::IpmFexV1*   _ipmdata;
   };
@@ -303,6 +323,11 @@ TimeToolE::~TimeToolE()
   for(unsigned i=0; i<_fex.size(); i++)
     delete _fex[i];
   _fex.clear();
+  for(FrameCacheIter it=_tmp.begin(); it!=_tmp.end(); ++it) {
+    if (it->second)
+      delete it->second;
+  }
+  _tmp.clear();
 }
 
 void TimeToolE::reset(Ami::FeatureCache& cache)
@@ -310,6 +335,11 @@ void TimeToolE::reset(Ami::FeatureCache& cache)
   for(unsigned i=0; i<_fex.size(); i++)
     delete _fex[i];
   _fex.clear();
+  for(FrameCacheIter it=_tmp.begin(); it!=_tmp.end(); ++it) {
+    if (it->second)
+      delete it->second;
+  }
+  _tmp.clear();
 
   _cache = &cache;
 }
@@ -327,8 +357,8 @@ void TimeToolE::clock    (const Pds::ClockTime& clk)
 //  Cache the configuration for camera
 //
 void TimeToolE::configure(const Pds::DetInfo&   src,
-			  const Pds::TypeId&    type,
-			  void*                 payload) 
+                          const Pds::TypeId&    type,
+                          void*                 payload)
 {
   if (type.id()==Pds::TypeId::Id_TimeToolConfig) {
     FexM* f = new FexM(src,*reinterpret_cast<const TimeToolConfigType*>(payload));
@@ -337,6 +367,25 @@ void TimeToolE::configure(const Pds::DetInfo&   src,
     if (_cache)
       f->cache(*_cache);
     _fex.push_back(f);
+
+    FrameCacheIter it = _tmp.find(src);
+    if (it != _tmp.end()) {
+      // add framecache to fex
+      f->set_frame(it->second);
+      // remove framecache from tmp map
+      _tmp.erase(it);
+    }
+  }
+  else if (type.id()==Pds::TypeId::Id_Opal1kConfig || type.id()==Pds::TypeId::Id_AlviumConfig) {
+    bool found = false;
+    for(unsigned i=0; i<_fex.size(); i++)
+      if (_fex[i]->src().phy() == src.phy()) {
+        _fex[i]->set_frame(TimeTool::FrameCache::instance(src, type, payload));
+        found = true;
+      }
+    if (!found) {
+      _tmp[src] = TimeTool::FrameCache::instance(src, type, payload);
+    }
   }
 }
 
@@ -344,9 +393,9 @@ void TimeToolE::configure(const Pds::DetInfo&   src,
 //  Capture pointer to detector data we want
 //
 void TimeToolE::event    (const Pds::DetInfo&   src,
-			  const Pds::TypeId&    type,
+                          const Pds::TypeId&    type,
                           const Pds::Damage&    damage,
-			  void*                 payload) 
+                          void*                 payload)
 {
   if (damage.value()) return;
 

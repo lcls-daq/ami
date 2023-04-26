@@ -7,6 +7,7 @@
 #include "ami/data/EntryTH1F.hh"
 
 #include "timetool/service/Fex.hh"
+#include "timetool/service/FrameCache.hh"
 
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/xtc/TypeId.hh"
@@ -25,13 +26,11 @@ using namespace Ami;
 
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <string>
 #include <fstream>
 
 using std::string;
-
-typedef Pds::Opal1k::ConfigV1 Opal1kConfig;
-typedef Pds::EvrData::DataV3 EvrDataType;
 
 //
 //  Create all plot entries
@@ -46,7 +45,12 @@ namespace Ami {
 
   class FexM : public TimeTool::Fex {
   public:
-    FexM(const char* fname) : Fex(fname), _cds(0) {}
+    FexM(const char* fname) :
+      Fex(fname),
+      _frame(0),
+      _evrdata(0),
+      _ipmdata(0),
+      _cds(0) {}
     ~FexM() {}
   public:
     void _monitor_raw_sig(const ndarray<const double,1>& wf)
@@ -83,7 +87,8 @@ namespace Ami {
     }
     void configure() {
       TimeTool::Fex::configure();
-      _frame = 0;
+      if (_frame)
+        _frame->clear_frame();
       _evrdata = 0;
       _ipmdata = 0;
     }
@@ -108,10 +113,17 @@ namespace Ami {
           if (type.compressed()) {
             const Pds::Xtc* xtc = reinterpret_cast<const Pds::Xtc*>(payload)-1;
             _pXtc = Pds::CompressedXtc::uncompress(*xtc);
-            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(_pXtc->payload());
+            if (_frame)
+              _frame->set_frame(type, _pXtc->payload());
           }
-          else
-            _frame = reinterpret_cast<Pds::Camera::FrameV1*>(payload);
+          else {
+            if (_frame)
+              _frame->set_frame(type, payload);
+          }
+        }
+        else if (type.id()==Pds::TypeId::Id_VimbaFrame) {
+          if (_frame)
+            _frame->set_frame(type, payload);
         }
       }
       else if (type.id()==Pds::TypeId::Id_EvrData) {
@@ -167,11 +179,11 @@ namespace Ami {
       _cds=&cds;
     }
     void analyze(const Pds::ClockTime& _clk) {
-      printf("analyze[%08x] evrdata %p  frame %p\n",
-             _src.phy(), _evrdata, _frame);
-      if (_evrdata && _frame) {
+      //printf("analyze[%08x] evrdata %p  frame %p\n",
+      //       _src.phy(), _evrdata, _frame);
+      if (_evrdata && _frame && !_frame->empty()) {
         m_pedestal = _frame->offset();
-        TimeTool::Fex::analyze(_frame->data16(),
+        TimeTool::Fex::analyze(_frame->data(),
                                _evrdata->fifoEvents(),
                                _ipmdata);
 
@@ -216,9 +228,16 @@ namespace Ami {
       }
 
       //  Reset pointer references
-      _frame = 0;
+      if (_frame)
+        _frame->clear_frame();
       _evrdata = 0;
       _ipmdata = 0;
+    }
+    void set_frame(TimeTool::FrameCache* frame) {
+      // replace old frame cache with new one
+      if (_frame)
+        delete _frame;
+      _frame = frame;
     }
   private:
     EntryTH1F* _ref_signal;
@@ -227,7 +246,7 @@ namespace Ami {
     EntryTH1F* _flt_signal;
     EntryTH1F* _indicator;
 
-    Pds::Camera::FrameV1* _frame;
+    TimeTool::FrameCache* _frame;
     Pds::EvrData::DataV3* _evrdata;
     Pds::Lusi::IpmFexV1*  _ipmdata;
 
@@ -242,14 +261,14 @@ namespace Ami {
 };
 
 
-TimeToolM::TimeToolM() : 
+TimeToolM::TimeToolM() :
   _cds(0),
   _cache    (0)
 {
   const char* fname = "timetool.input";
-  char buff[128];
-  const char* dir = getenv("HOME");
-  sprintf(buff,"%s/%s", dir ? dir : "/tmp", fname);
+  char buff[PATH_MAX];
+  const char* dir = TimeTool::default_file_path();
+  sprintf(buff,"%s/%s", dir, fname);
   std::ifstream f(buff);
   if (f) {
     while(!f.eof()) {
@@ -295,10 +314,12 @@ void TimeToolM::configure(const Pds::DetInfo&   src,
 			  const Pds::TypeId&    type,
 			  void*                 payload) 
 {
-  if (type.id()==Pds::TypeId::Id_Opal1kConfig) {
+  if (type.id()==Pds::TypeId::Id_Opal1kConfig || type.id()==Pds::TypeId::Id_AlviumConfig) {
     for(unsigned i=0; i<_fex.size(); i++)
-      if (_fex[i]->src().phy() == src.phy())
+      if (_fex[i]->src().phy() == src.phy()) {
+        _fex[i]->set_frame(TimeTool::FrameCache::instance(src, type, payload));
         _fex[i]->configure();
+      }
   }
   else if (type.id()==Pds::TypeId::Id_Epics) {
     for(unsigned i=0; i<_fex.size(); i++) {
