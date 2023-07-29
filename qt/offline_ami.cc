@@ -125,8 +125,8 @@ int main(int argc, char* argv[]) {
   bool separateWindowMode = false;
   char* outputFile = NULL;
   char* errorFile = NULL;
-  char* userModulesArg = NULL;
   bool parse_valid = true;
+  std::vector<char *> userModulesArgs;
 
   Ami::Calib::use_offline(true);
 
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
       Ami::Qt::ImageDisplay::enable_movie_option();
       break;
     case 'L':
-      userModulesArg = optarg;
+      userModulesArgs.push_back(optarg);
       break;
     case 'N':
       nclients = atoi(optarg);
@@ -251,7 +251,9 @@ int main(int argc, char* argv[]) {
   while(nclients--) {
     //  Create User Modules
     list<UserModule*>& userModules = *new list<UserModule*>;
-    Ami::AmiApp::load_syms<UserModule,create_m>(userModules, userModulesArg);
+    for (unsigned i = 0; i < userModulesArgs.size(); i++) {
+      Ami::AmiApp::load_syms<UserModule,create_m>(userModules, userModulesArgs[i]);
+    }
 
     // Create ServerManager
     AnalysisServerManager& srv = *new AnalysisServerManager(interface, serverGroup);
