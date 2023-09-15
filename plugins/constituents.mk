@@ -99,3 +99,8 @@ libincs_CsPadTemp := pdsdata/include ndarray/include boost/include
 libnames += EpixTemp
 libsrcs_EpixTemp := EpixTemp.cc
 libincs_EpixTemp := pdsdata/include ndarray/include boost/include
+
+libnames += DetectorProtection
+libsrcs_DetectorProtection := EpicsCA.cc DetectorProtection.cc
+libincs_DetectorProtection := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
+liblibs_DetectorProtection := epics/ca
