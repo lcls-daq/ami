@@ -73,7 +73,7 @@ libincs_AmiEpics := pdsdata/include ndarray/include boost/include epics/include 
 liblibs_AmiEpics := epics/ca
 
 libnames += CspadTripper
-libsrcs_CspadTripper := EpicsCA.cc CspadTripper.cc
+libsrcs_CspadTripper := EpicsCA.cc BlackHole.cc CspadTripper.cc
 libincs_CspadTripper := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_CspadTripper := epics/ca
 
@@ -101,6 +101,6 @@ libsrcs_EpixTemp := EpixTemp.cc
 libincs_EpixTemp := pdsdata/include ndarray/include boost/include
 
 libnames += DetectorProtection
-libsrcs_DetectorProtection := EpicsCA.cc DetectorProtection.cc
+libsrcs_DetectorProtection := EpicsCA.cc BlackHole.cc ProtectionIOC.cc Protectors.cc DetectorProtection.cc
 libincs_DetectorProtection := pdsdata/include ndarray/include boost/include epics/include epics/include/os/Linux
 liblibs_DetectorProtection := epics/ca

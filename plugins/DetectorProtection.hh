@@ -22,7 +22,7 @@ namespace Ami {
   class DetectorProtection : public UserModule {
   public:
     DetectorProtection(const char* name="DetectorProtection",
-                       const char* short_name="DetProt");
+                       const char* short_name="DetProtect");
     virtual ~DetectorProtection();
   public:  // Handler functions
     void reset    (FeatureCache&);
