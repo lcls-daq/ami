@@ -15,8 +15,20 @@
 
 #define DBUG
 
-static std::string onlRoot("/reg/g/pcds/pds/");
-static std::string offRoot("/reg/d/psdm/");
+static std::string offRootPsana("/cds/data/psdm/");
+static std::string offRootSdf("/sdf/data/lcls/ds/");
+
+static std::string default_offRoot()
+{
+  struct stat64 st;
+  if (stat64(offRootSdf.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+    return offRootSdf;
+  else
+    return offRootPsana;
+}
+
+static std::string onlRoot("/cds/group/pcds/pds/");
+static std::string offRoot = default_offRoot();
 static std::string _expt;
 static unsigned    _run =0x7fffffff;
 static bool        _use_offline=false;
@@ -129,6 +141,7 @@ FILE* Ami::Calib::fopen(const Pds::DetInfo& info,
                         bool* offl_type,
                         std::string* fname)
 {
+  printf("OFLINE PATH IS %s\n", offRoot.c_str());
   std::string path1;
   { std::ostringstream o;
     o << onl_calib_type << "."
