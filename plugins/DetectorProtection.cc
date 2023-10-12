@@ -35,7 +35,7 @@ DetectorProtection::DetectorProtection(const char* name, const char* short_name)
   _sname(short_name),
   _alias_ready(false),
   _name_service(new NameService),
-  _threshold(new Threshold("DetectorProtection.cfg", _name_service))
+  _threshold(new Threshold(".DetectorProtection.cfg", _name_service))
 {
   SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
            "detprotect calling ca_context_create" );
