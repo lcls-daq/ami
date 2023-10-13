@@ -18,6 +18,7 @@ static const char* EpixArrayName = "EpixArrayName";
 
 typedef Pds::Jungfrau::ConfigV3 JfCfgV3;
 typedef Pds::Jungfrau::ElementV2 JfDataV2;
+typedef Pds::Epix::Elem10kaConfigV1 EpixCfg10ka;
 typedef Pds::Epix::Config10kaQuadV1 EpixCfg10kaQuadV1;
 typedef Pds::Epix::Config10kaQuadV2 EpixCfg10kaQuadV2;
 typedef Pds::Epix::Config10ka2MV1 EpixCfg10ka2MV1;
@@ -360,6 +361,18 @@ bool JungfrauProtector<Cfg, Data>::ready() const
 }
 
 template<class Cfg, class Data>
+const unsigned EpixArrayProtector<Cfg, Data>::nE = Cfg::_numberOfElements;
+
+template<class Cfg, class Data>
+const unsigned EpixArrayProtector<Cfg, Data>::wE = EpixCfg10ka::_numberOfPixelsPerAsicRow * EpixCfg10ka::_numberOfAsicsPerRow;
+
+template<class Cfg, class Data>
+const unsigned EpixArrayProtector<Cfg, Data>::hE = EpixCfg10ka::_numberOfRowsPerAsic * EpixCfg10ka::_numberOfAsicsPerColumn;
+
+template<class Cfg, class Data>
+const unsigned EpixArrayProtector<Cfg, Data>::asicMap[] = { 2, 1, 3, 0 };
+
+template<class Cfg, class Data>
 EpixArrayProtector<Cfg, Data>::EpixArrayProtector(const Pds::DetInfo& info,
                                                   const Pds::TypeId&  type,
                                                   void*               payload,
@@ -367,7 +380,8 @@ EpixArrayProtector<Cfg, Data>::EpixArrayProtector(const Pds::DetInfo& info,
   Protector(EpixArrayName, info, handler),
   _config(NULL),
   _config_size(0),
-  _data(NULL)
+  _data(NULL),
+  _gain_mask(0)
 {
   if (type.version() == Cfg::Version) {
     // need to copy the configuration, since it doesn't persist
@@ -382,6 +396,61 @@ EpixArrayProtector<Cfg, Data>::EpixArrayProtector(const Pds::DetInfo& info,
     }
     _config_size = config->_sizeof();
     memcpy(_config, config, config->_sizeof());
+    // fill the gain config info
+    unsigned ngains[] = {0, 0, 0};
+    _gain_cfg = make_ndarray<uint16_t>(nE, hE, wE);
+    for(unsigned i=0; i<nE; i++) {
+      const EpixCfg10ka& eC = _config->elemCfg(i);
+      ndarray<const uint16_t,2> asicPixelConfig = eC.asicPixelConfigArray();
+      for(unsigned j=0; j<hE; j++) {
+        for(unsigned k=0; k<wE; k++) {
+          uint16_t gain_config = 0;
+          uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                               (eC.asics(asicMap[(j/EpixCfg10ka::_numberOfRowsPerAsic)*EpixCfg10ka::_numberOfAsicsPerRow +
+                                                 k/EpixCfg10ka::_numberOfPixelsPerAsicRow]).trbit() << 4);
+          switch(gain_bits) {
+            case FH:
+              gain_config = 0;
+              ngains[0]++;
+              break;
+            case FM:
+              gain_config = 1;
+              ngains[1]++;
+              break;
+            case FL:
+            case FL_ALT:
+              gain_config = 2;
+              ngains[2]++;
+              break;
+            case AHL:
+            case AHL_FORCE:
+              gain_config = 3;
+              ngains[2]++;
+              break;
+            case AML:
+            case AML_FORCE:
+              gain_config = 4;
+              ngains[2]++;
+              break;
+            default:
+              gain_config = 0;
+              break;
+          }
+          _gain_cfg(i,j,k) = gain_config;
+        }
+      }
+    }
+    //
+    if (ngains[2] > 0) {
+      // only fixed low or both switched low
+      _gain_mask = 0x64;
+    } else if (ngains[1] > 0) {
+      // onyl fixed med gain
+      _gain_mask = 0x2;
+    } else {
+      // only fixed high gain
+      _gain_mask = 0x1;
+    }
   } else {
     printf("%s unsupported EpixArray config version for %s: %u\n",
            _pname, _name.c_str(), type.version());
@@ -425,12 +494,16 @@ bool EpixArrayProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, i
     for (unsigned j=0; j<data.shape()[1]; j++) {
       for (unsigned k=0; k<data.shape()[2]; k++) {
         uint16_t value = data(i,j,k);
-        if (((value&gain_bits) == gain_bits) &&
-            ((value&data_bits) < _handler->threshold())) {
+        uint16_t gain_mode = _gain_cfg(i,j,k);
+        // keep if switched
+        if ((gain_mode > 2) && (value & gain_bits))
+          gain_mode += 2;
+        if ((gain_mode & _gain_mask) &&
+            ((value & data_bits) < _handler->threshold())){
           if(++pixelCount > _handler->npixels()) {
             trip = true;
           }
-        }   
+        }
       }
     }
   }

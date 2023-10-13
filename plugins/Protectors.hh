@@ -5,6 +5,8 @@
 #include "pdsdata/xtc/TypeId.hh"
 #include "pdsdata/xtc/ClockTime.hh"
 
+#include "ndarray/ndarray.h"
+
 #include <string>
 #include <stdint.h>
 
@@ -116,13 +118,22 @@ namespace Ami {
                        void* payload);
 
   protected:
+    enum { AML=0, AML_FORCE=4, FL=8, FM=12, AHL=16, AHL_FORCE=20, FL_ALT=24, FH=28 };
+    static const unsigned conf_bits = 0x1c;
+    static const unsigned nE;
+    static const unsigned wE;
+    static const unsigned hE;
+    static const unsigned asicMap[4];
+
     virtual bool analyzeDetector(const Pds::ClockTime& clk, int32_t& pixelCount);
     virtual bool ready() const;
 
   private:
-    Cfg*        _config;
-    uint32_t    _config_size;
-    const Data* _data;
+    Cfg*                _config;
+    uint32_t            _config_size;
+    const Data*         _data;
+    unsigned            _gain_mask;
+    ndarray<uint16_t,3> _gain_cfg;
   };
 }
 
