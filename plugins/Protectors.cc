@@ -340,7 +340,7 @@ bool JungfrauProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, in
       for (unsigned k=0; k<data.shape()[2]; k++) {
         uint16_t value = data(i,j,k);
         if (((value&gain_bits) == gain_bits) &&
-            ((value&data_bits) < _handler->threshold())) {
+            ((value&data_bits) > _handler->threshold())) {
           if(++pixelCount > _handler->npixels()) {
             trip = true;
           }
@@ -499,7 +499,7 @@ bool EpixArrayProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, i
         if ((gain_mode > 2) && (value & gain_bits))
           gain_mode += 2;
         if ((gain_mode & _gain_mask) &&
-            ((value & data_bits) < _handler->threshold())){
+            ((value & data_bits) > _handler->threshold())){
           if(++pixelCount > _handler->npixels()) {
             trip = true;
           }
