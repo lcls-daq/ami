@@ -38,7 +38,7 @@ PVHandler::PVHandler(const std::string& pvbase) :
   _thres_value(0x100000),
   _npixel_value(0x4000),
   _enable_value(false),
-  _shutter(new Ami_Epics::PVWriter(_shutter_pv.c_str()))
+  _shutter(NULL)
 {
   printf("%s PVs loaded: thres - %s, npixels - %s, enable - %s, tripper - %s\n",
          pname,
@@ -46,6 +46,12 @@ PVHandler::PVHandler(const std::string& pvbase) :
          _npixel_pv.c_str(),
          _npixel_pv.c_str(),
          _shutter_pv.c_str());
+
+  SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
+           "detprotect calling ca_context_create" );
+
+  // needs to be created after context is initialized
+  _shutter = new Ami_Epics::PVWriter(_shutter_pv.c_str());
 }
 
 PVHandler::~PVHandler()
