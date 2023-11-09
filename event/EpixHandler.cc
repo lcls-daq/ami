@@ -1111,13 +1111,15 @@ void     EpixAmi::EnvData1::rename     (const char* name)
 void      EpixAmi::EnvData1::fill      (FeatureCache& cache,
                                         ndarray<const uint16_t,2> env)
 {
-  const uint16_t* last = &env(env.shape()[0]-1,0);
-  unsigned index=0;
-  cache.cache(_index[index++], double(last[2])*0.00183);
-  cache.cache(_index[index++], double(last[3])*0.00183);
-  cache.cache(_index[index++], double(last[4])*(-0.0194) + 78.393);
-  cache.cache(_index[index++], _therm.getTemp(last[6]));
-  cache.cache(_index[index++], double(last[7])*0.0291 - 23.8);
+  if (env.shape()[0] > 0 && env.shape()[1]) {
+    const uint16_t* last = &env(env.shape()[0]-1,0);
+    unsigned index=0;
+    cache.cache(_index[index++], double(last[2])*0.00183);
+    cache.cache(_index[index++], double(last[3])*0.00183);
+    cache.cache(_index[index++], double(last[4])*(-0.0194) + 78.393);
+    cache.cache(_index[index++], _therm.getTemp(last[6]));
+    cache.cache(_index[index++], double(last[7])*0.0291 - 23.8);
+  }
 }
 
 EpixAmi::EnvData2::EnvData2(EventHandlerF& h) :
@@ -1166,16 +1168,18 @@ void     EpixAmi::EnvData2::rename     (const char* name)
 void      EpixAmi::EnvData2::fill      (FeatureCache& cache,
                                         ndarray<const uint32_t,2> env)
 {
-  const uint32_t* data = &env(env.shape()[0]-1,0);
-  const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
-  unsigned index=0;
-  cache.cache(_index[index++], double(sdata[0])*0.01);
-  cache.cache(_index[index++], double(sdata[1])*0.01);
-  cache.cache(_index[index++], double(sdata[2])*0.01);
-  cache.cache(_index[index++], double(data[3])*0.001);
-  cache.cache(_index[index++], double(data[4])*0.001);
-  cache.cache(_index[index++], double(data[5])*0.000001);
-  cache.cache(_index[index++], double(data[6])*0.000001);
-  cache.cache(_index[index++], double(data[7])*0.001);
-  cache.cache(_index[index++], double(data[8])*0.001);
+  if (env.shape()[0] > 0 && env.shape()[1]) {
+    const uint32_t* data = &env(env.shape()[0]-1,0);
+    const int32_t* sdata = reinterpret_cast<const int32_t*>(data);
+    unsigned index=0;
+    cache.cache(_index[index++], double(sdata[0])*0.01);
+    cache.cache(_index[index++], double(sdata[1])*0.01);
+    cache.cache(_index[index++], double(sdata[2])*0.01);
+    cache.cache(_index[index++], double(data[3])*0.001);
+    cache.cache(_index[index++], double(data[4])*0.001);
+    cache.cache(_index[index++], double(data[5])*0.000001);
+    cache.cache(_index[index++], double(data[6])*0.000001);
+    cache.cache(_index[index++], double(data[7])*0.001);
+    cache.cache(_index[index++], double(data[8])*0.001);
+  }
 }
