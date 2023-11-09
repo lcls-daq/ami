@@ -14,15 +14,23 @@
 
 static const char* CspadName = "CspadProtect";
 static const char* JungfrauName = "JungfrauProtect";
-static const char* EpixArrayName = "EpixArrayName";
+static const char* EpixArrayName = "EpixArrayProtect";
+static const char* Epix10kaName = "Epix10kaProtect";
+static const char* EpixName = "EpixProtect";
 
 typedef Pds::Jungfrau::ConfigV3 JfCfgV3;
 typedef Pds::Jungfrau::ElementV2 JfDataV2;
+typedef Pds::Epix::Config100aV1 EpixCfg100aV1;
+typedef Pds::Epix::Config100aV2 EpixCfg100aV2;
+typedef Pds::Epix::Config10kaV1 EpixCfg10kaV1;
+typedef Pds::Epix::Config10kaV2 EpixCfg10kaV2;
 typedef Pds::Epix::Elem10kaConfigV1 EpixCfg10ka;
 typedef Pds::Epix::Config10kaQuadV1 EpixCfg10kaQuadV1;
 typedef Pds::Epix::Config10kaQuadV2 EpixCfg10kaQuadV2;
 typedef Pds::Epix::Config10ka2MV1 EpixCfg10ka2MV1;
 typedef Pds::Epix::Config10ka2MV2 EpixCfg10ka2MV2;
+typedef Pds::Epix::ElementV2 EpixDataV2;
+typedef Pds::Epix::ElementV3 EpixDataV3;
 typedef Pds::Epix::ArrayV1 EpixArrayV1;
 
 using namespace Ami;
@@ -101,6 +109,32 @@ Protector* Protector::instance(const Pds::DetInfo& info,
         default:
           printf("%s unsupported Epix version: %u\n",
                  EpixArrayName,
+                 type.version());
+      }
+    } else if (type.id()==Pds::TypeId::Id_Epix10kaConfig) {
+      switch(type.version()) {
+        case 2:
+          prot = new Epix10kaProtector<EpixCfg10kaV2, EpixDataV3>(info, type, payload, handler);
+          break;
+        case 1:
+          prot = new Epix10kaProtector<EpixCfg10kaV1, EpixDataV3>(info, type, payload, handler);
+          break;
+        default:
+          printf("%s unsupported Epix version: %u\n",
+                 Epix10kaName,
+                 type.version());
+      }
+    } else if (type.id()==Pds::TypeId::Id_Epix100aConfig) {
+      switch(type.version()) {
+        case 2:
+          prot = new EpixProtector<EpixCfg100aV2, EpixDataV3>(info, type, payload, handler);
+          break;
+        case 1:
+          prot = new EpixProtector<EpixCfg100aV1, EpixDataV2>(info, type, payload, handler);
+          break;
+        default:
+          printf("%s unsupported Epix version: %u\n",
+                 EpixName,
                  type.version());
       }
     }
@@ -440,12 +474,12 @@ EpixArrayProtector<Cfg, Data>::EpixArrayProtector(const Pds::DetInfo& info,
         }
       }
     }
-    //
+    // pick which gain modes can trip
     if (ngains[2] > 0) {
       // only fixed low or both switched low
       _gain_mask = 0x64;
     } else if (ngains[1] > 0) {
-      // onyl fixed med gain
+      // only fixed med gain
       _gain_mask = 0x2;
     } else {
       // only fixed high gain
@@ -515,6 +549,234 @@ bool EpixArrayProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, i
 
 template<class Cfg, class Data>
 bool EpixArrayProtector<Cfg, Data>::ready() const
+{
+  return _config && _data;
+}
+
+template<class Cfg, class Data>
+const unsigned Epix10kaProtector<Cfg, Data>::asicMap[] = { 2, 1, 3, 0 };
+
+template<class Cfg, class Data>
+Epix10kaProtector<Cfg, Data>::Epix10kaProtector(const Pds::DetInfo& info,
+                                                const Pds::TypeId&  type,
+                                                void*               payload,
+                                                const PVHandler*    handler) :
+  Protector(Epix10kaName, info, handler),
+  _config(NULL),
+  _config_size(0),
+  _data(NULL),
+  _gain_mask(0)
+{
+  if (type.version() == Cfg::Version) {
+    // need to copy the configuration, since it doesn't persist
+    const Cfg* config = reinterpret_cast<const Cfg*>(payload);
+    if (config->_sizeof() > _config_size) {
+      // need to allocate a larger buffer
+      if (_config) {
+        delete[] (char *)(_config);
+      }
+      char* buffer = new char[config->_sizeof()];
+      _config = reinterpret_cast<Cfg*>(buffer);
+    }
+    _config_size = config->_sizeof();
+    memcpy(_config, config, config->_sizeof());
+    // fill the gain config info
+    unsigned ngains[] = {0, 0, 0};
+    unsigned wE = _config->numberOfRows();
+    unsigned hE = _config->numberOfColumns();
+    _gain_cfg = make_ndarray<uint16_t>(hE, wE);
+    ndarray<const uint16_t,2> asicPixelConfig = _config->asicPixelConfigArray();
+    for(unsigned j=0; j<hE; j++) {
+      for(unsigned k=0; k<wE; k++) {
+        uint16_t gain_config = 0;
+        uint16_t gain_bits = (asicPixelConfig(j,k) & conf_bits) |
+                             (_config->asics(asicMap[(j/_config->numberOfRowsPerAsic())*_config->numberOfAsicsPerRow() +
+                                                     k/_config->numberOfPixelsPerAsicRow()]).trbit() << 4);
+        switch(gain_bits) {
+          case FH:
+            gain_config = 0;
+            ngains[0]++;
+            break;
+          case FM:
+            gain_config = 1;
+            ngains[1]++;
+            break;
+          case FL:
+          case FL_ALT:
+            gain_config = 2;
+            ngains[2]++;
+            break;
+          case AHL:
+          case AHL_FORCE:
+            gain_config = 3;
+            ngains[2]++;
+            break;
+          case AML:
+          case AML_FORCE:
+            gain_config = 4;
+            ngains[2]++;
+            break;
+          default:
+            gain_config = 0;
+            break;
+          }
+          _gain_cfg(j,k) = gain_config;
+      }
+    }
+    // pick which gain modes can trip
+    if (ngains[2] > 0) {
+      // only fixed low or both switched low
+      _gain_mask = 0x64;
+    } else if (ngains[1] > 0) {
+      // only fixed med gain
+      _gain_mask = 0x2;
+    } else {
+      // only fixed high gain
+      _gain_mask = 0x1;
+    }
+  } else {
+    printf("%s unsupported Epix10ka config version for %s: %u\n",
+           _pname, _name.c_str(), type.version());
+  }
+}
+
+template<class Cfg, class Data>
+Epix10kaProtector<Cfg, Data>::~Epix10kaProtector()
+{
+  if (_config) {
+    delete[] (char *)(_config);
+  }
+}
+
+template<class Cfg, class Data>
+void Epix10kaProtector<Cfg, Data>::event(const Pds::TypeId& type,
+                                         void* payload)
+{
+  if (type.id() == Pds::TypeId::Id_EpixElement) {
+    if (type.version() == Data::Version) {
+      _data = reinterpret_cast<const Data*>(payload);
+    } else {
+      printf("%s unsupported Epix10ka data version for %s: %u\n",
+             _pname, _name.c_str(), type.version());
+    }
+  }
+}
+
+template<class Cfg, class Data>
+bool Epix10kaProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, int32_t& pixelCount)
+{
+  bool trip = false;
+  static const uint16_t gain_bits = 3<<14;
+  static const uint16_t data_bits = (1<<14) - 1;
+
+  const Data& s = *_data;
+  const Cfg& cfg = *_config;
+
+  ndarray<const uint16_t, 2> data = s.frame(cfg);
+  for (unsigned j=0; j<data.shape()[0]; j++) {
+    for (unsigned k=0; k<data.shape()[1]; k++) {
+      uint16_t value = data(j,k);
+      uint16_t gain_mode = _gain_cfg(j,k);
+      // keep if switched
+      if ((gain_mode > 2) && (value & gain_bits))
+        gain_mode += 2;
+      if ((gain_mode & _gain_mask) &&
+          ((value & data_bits) > _handler->threshold())){
+        if(++pixelCount > _handler->npixels()) {
+          trip = true;
+        }
+      }
+    }
+  }
+
+  _data = 0;
+
+  return trip;
+}
+
+template<class Cfg, class Data>
+bool Epix10kaProtector<Cfg, Data>::ready() const
+{
+  return _config && _data;
+}
+
+template<class Cfg, class Data>
+EpixProtector<Cfg, Data>::EpixProtector(const Pds::DetInfo& info,
+                                        const Pds::TypeId&  type,
+                                        void*               payload,
+                                        const PVHandler*    handler) :
+  Protector(EpixName, info, handler),
+  _config(NULL),
+  _config_size(0),
+  _data(NULL)
+{
+  if (type.version() == Cfg::Version) {
+    // need to copy the configuration, since it doesn't persist
+    const Cfg* config = reinterpret_cast<const Cfg*>(payload);
+    if (config->_sizeof() > _config_size) {
+      // need to allocate a larger buffer
+      if (_config) {
+        delete[] (char *)(_config);
+      }
+      char* buffer = new char[config->_sizeof()];
+      _config = reinterpret_cast<Cfg*>(buffer);
+    }
+    _config_size = config->_sizeof();
+    memcpy(_config, config, config->_sizeof());
+  } else {
+    printf("%s unsupported Epix config version for %s: %u\n",
+           _pname, _name.c_str(), type.version());
+  }
+}
+
+template<class Cfg, class Data>
+EpixProtector<Cfg, Data>::~EpixProtector()
+{
+  if (_config) {
+    delete[] (char *)(_config);
+  }
+}
+
+template<class Cfg, class Data>
+void EpixProtector<Cfg, Data>::event(const Pds::TypeId& type,
+                                     void* payload)
+{
+  if (type.id() == Pds::TypeId::Id_EpixElement) {
+    if (type.version() == Data::Version) {
+      _data = reinterpret_cast<const Data*>(payload);
+    } else {
+      printf("%s unsupported Epix data version for %s: %u\n",
+             _pname, _name.c_str(), type.version());
+    }
+  }
+}
+
+template<class Cfg, class Data>
+bool EpixProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, int32_t& pixelCount)
+{
+  bool trip = false;
+
+  const Data& s = *_data;
+  const Cfg& cfg = *_config;
+
+  ndarray<const uint16_t, 2> data = s.frame(cfg);
+  for (unsigned i=0; i<data.shape()[0]; i++) {
+    for (unsigned j=0; j<data.shape()[1]; j++) {
+      if (data(i,j) > _handler->threshold()) {
+        if (++pixelCount > _handler->npixels()) {
+          trip = true;
+        }
+      }
+    }
+  }
+
+  _data = 0;
+
+  return trip;
+}
+
+template<class Cfg, class Data>
+bool EpixProtector<Cfg, Data>::ready() const
 {
   return _config && _data;
 }

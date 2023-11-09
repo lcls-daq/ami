@@ -135,6 +135,56 @@ namespace Ami {
     unsigned            _gain_mask;
     ndarray<uint16_t,3> _gain_cfg;
   };
+
+  template<class Cfg, class Data>
+  class Epix10kaProtector : public Protector {
+  public:
+    Epix10kaProtector(const Pds::DetInfo& info,
+                      const Pds::TypeId&  type,
+                      void*               payload,
+                      const PVHandler*    handler);
+    virtual ~Epix10kaProtector();
+
+    virtual void event(const Pds::TypeId& type,
+                       void* payload);
+
+    protected:
+      enum { AML=0, AML_FORCE=4, FL=8, FM=12, AHL=16, AHL_FORCE=20, FL_ALT=24, FH=28 };
+      static const unsigned conf_bits = 0x1c;
+      static const unsigned asicMap[4];
+
+      virtual bool analyzeDetector(const Pds::ClockTime& clk, int32_t& pixelCount);
+      virtual bool ready() const;
+
+    private:
+      Cfg*                _config;
+      uint32_t            _config_size;
+      const Data*         _data;
+      unsigned            _gain_mask;
+      ndarray<uint16_t,2> _gain_cfg;
+  };
+
+  template<class Cfg, class Data>
+  class EpixProtector : public Protector {
+  public:
+    EpixProtector(const Pds::DetInfo& info,
+                  const Pds::TypeId&  type,
+                  void*               payload,
+                  const PVHandler*    handler);
+    virtual ~EpixProtector();
+
+    virtual void event(const Pds::TypeId& type,
+                       void* payload);
+
+  protected:
+    virtual bool analyzeDetector(const Pds::ClockTime& clk, int32_t& pixelCount);
+    virtual bool ready() const;
+
+  private:
+    Cfg*        _config;
+    uint32_t    _config_size;
+    const Data* _data;
+  };
 }
 
 #endif
