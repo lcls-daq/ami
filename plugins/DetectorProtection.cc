@@ -65,8 +65,9 @@ void DetectorProtection::reset(FeatureCache& cache)
   for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
     if (it->second) {
       if (_cds) {
-        _cds->remove(it->second->entry());
-        _cds->remove(it->second->scan());
+        _cds->remove(it->second->numPixelEntry());
+        _cds->remove(it->second->numPixelScan());
+        _cds->remove(it->second->trippedScan());
       }
       delete it->second;
     }
@@ -105,12 +106,15 @@ void DetectorProtection::configure(const Pds::ProcInfo&  src,
     if (_cds) {
       for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
         it->second->setName(_name_service->name(it->second->info()));
-        EntryScalar* entry = it->second->entry();
-        _cds->add(entry);
-        entry->valid(_clk);
-        EntryScan* scan = it->second->scan();
-        _cds->add(scan);
-        scan->valid(_clk);
+        EntryScalar* npixel_entry = it->second->numPixelEntry();
+        _cds->add(npixel_entry);
+        npixel_entry->valid(_clk);
+        EntryScan* npixel_scan = it->second->numPixelScan();
+        _cds->add(npixel_scan);
+        npixel_scan->valid(_clk);
+        EntryScan* tripped_scan = it->second->trippedScan();
+        _cds->add(tripped_scan);
+        tripped_scan->valid(_clk);
       }
     }
     if (_cache) {
@@ -139,12 +143,16 @@ void DetectorProtection::configure(const Pds::DetInfo&   src,
       if (_alias_ready) {
         prot->setName(_name_service->name(src));
         if (_cds) {
-          EntryScalar* entry = prot->entry();
-          _cds->add(entry);
-          entry->valid(_clk);
-          EntryScan* scan = prot->scan();
-          _cds->add(scan);
-          scan->valid(_clk);
+          EntryScalar* npixel_entry = prot->numPixelEntry();
+          _cds->add(npixel_entry);
+          npixel_entry->valid(_clk);
+          EntryScan* npixel_scan = prot->numPixelScan();
+          _cds->add(npixel_scan);
+          npixel_scan->valid(_clk);
+          EntryScan* tripped_scan = prot->trippedScan();
+          _cds->add(tripped_scan);
+          tripped_scan->valid(_clk);
+
         }
         if (_cache) {
           prot->cache(_cache);
@@ -200,11 +208,13 @@ void DetectorProtection::clear()
   if (_cds) {
     for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
       if (it->second) {
-        if (it->second->hasEntry() || it->second->hasScan()) {
-          if (it->second->hasEntry())
-            _cds->remove(it->second->entry());
-          if (it->second->hasScan())
-            _cds->remove(it->second->scan());
+        if (it->second->hasEntries()) {
+          if (it->second->hasNumPixelEntry())
+            _cds->remove(it->second->numPixelEntry());
+          if (it->second->hasNumPixelScan())
+            _cds->remove(it->second->numPixelScan());
+          if (it->second->hasTrippedScan())
+            _cds->remove(it->second->trippedScan());
           // clean up the entry
           it->second->clear();
         }
@@ -222,12 +232,15 @@ void DetectorProtection::create(Cds& cds)
   if (_alias_ready) {
     for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
       it->second->setName(_name_service->name(it->second->info()));
-      EntryScalar* entry = it->second->entry();
-      cds.add(entry);
-      entry->valid(_clk);
-      EntryScan* scan = it->second->scan();
-      cds.add(scan);
-      scan->valid(_clk);
+      EntryScalar* npixel_entry = it->second->numPixelEntry();
+      cds.add(npixel_entry);
+      npixel_entry->valid(_clk);
+      EntryScan* npixel_scan = it->second->numPixelScan();
+      cds.add(npixel_scan);
+      npixel_scan->valid(_clk);
+      EntryScan* tripped_scan = it->second->trippedScan();
+      cds.add(tripped_scan);
+      tripped_scan->valid(_clk);
     }
   }
   _cds = &cds;

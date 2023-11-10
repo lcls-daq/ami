@@ -45,8 +45,9 @@ Protector::Protector(const char* pname,
   _pname(pname),
   _name(Pds::DetInfo::name(info)),
   _info(info),
-  _entry(NULL),
-  _scan(NULL),
+  _npixel_entry(NULL),
+  _npixel_scan(NULL),
+  _tripped_scan(NULL),
   _handler(handler),
   _uses_bh(uses_bh),
   _nevt(0),
@@ -59,11 +60,14 @@ Protector::Protector(const char* pname,
 
 Protector::~Protector()
 {
-  if (_entry) {
-    delete _entry;
+  if (_npixel_entry) {
+    delete _npixel_entry;
   }
-  if (_scan) {
-    delete _scan;
+  if (_npixel_scan) {
+    delete _npixel_scan;
+  }
+  if (_tripped_scan) {
+    delete _tripped_scan;
   }
 }
 
@@ -160,13 +164,17 @@ const Pds::DetInfo& Protector::info() const
 
 void Protector::clear()
 {
-  if (_entry) {
-    delete _entry;
-    _entry = NULL;
+  if (_npixel_entry) {
+    delete _npixel_entry;
+    _npixel_entry = NULL;
   }
-  if (_scan) {
-    delete _scan;
-    _scan = NULL;
+  if (_npixel_scan) {
+    delete _npixel_scan;
+    _npixel_scan = NULL;
+  }
+  if (_tripped_scan) {
+    delete _tripped_scan;
+    _tripped_scan = NULL;
   }
 }
 
@@ -177,34 +185,49 @@ void Protector::setName(const char* name)
   }
 }
 
-bool Protector::hasEntry() const
+bool Protector::hasNumPixelEntry() const
 {
-  return _entry != NULL;
+  return _npixel_entry != NULL;
 }
 
-bool Protector::hasScan() const
+bool Protector::hasNumPixelScan() const
 {
-  return _scan != NULL;
+  return _npixel_scan != NULL;
 }
 
-EntryScalar* Protector::entry()
+bool Protector::hasTrippedScan() const
+{
+  return _tripped_scan != NULL;
+}
+
+EntryScalar* Protector::numPixelEntry()
 {
   std::string title = "Pixels over threshold#" + _name + "#0#0";
-  if (!_entry) {
-    _entry = new EntryScalar(DescScalar(title.c_str(), "npixels"));
+  if (!_npixel_entry) {
+    _npixel_entry = new EntryScalar(DescScalar(title.c_str(), "npixels"));
   }
 
-  return _entry;
+  return _npixel_entry;
 }
 
-EntryScan* Protector::scan()
+EntryScan* Protector::numPixelScan()
 {
   std::string title = "Pixels over threshold vs event#" + _name + "#0#1";
-  if (!_scan) {
-    _scan = new EntryScan(DescScan(title.c_str(), "event time", "npixels", 10000));
+  if (!_npixel_scan) {
+    _npixel_scan = new EntryScan(DescScan(title.c_str(), "event time", "npixels", 10000));
   }
 
-  return _scan;
+  return _npixel_scan;
+}
+
+EntryScan* Protector::trippedScan()
+{
+  std::string title = "Tripped state vs event#" + _name + "#0#3";
+  if (!_tripped_scan) {
+    _tripped_scan = new EntryScan(DescScan(title.c_str(), "event time", "tripped", 10000));
+  }
+
+  return _tripped_scan;
 }
 
 void Protector::cache(FeatureCache* cache)
@@ -224,14 +247,19 @@ void Protector::accept(const Pds::ClockTime& clk)
   // call the detector specific analysis code
   trip = analyzeDetector(clk, pixelCount);
 
-  if (_entry) {
-    _entry->addcontent(pixelCount);
-    _entry->valid(clk);
+  if (_npixel_entry) {
+    _npixel_entry->addcontent(pixelCount);
+    _npixel_entry->valid(clk);
   }
 
-  if (_scan) {
-    _scan->addy(pixelCount, clk.asDouble());
-    _scan->valid(clk);
+  if (_npixel_scan) {
+    _npixel_scan->addy(pixelCount, clk.asDouble());
+    _npixel_scan->valid(clk);
+  }
+
+  if (_tripped_scan) {
+    _tripped_scan->addy(trip, clk.asDouble());
+    _tripped_scan->valid(clk);
   }
 
   if (_cache) {

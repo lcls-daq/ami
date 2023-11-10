@@ -40,10 +40,13 @@ namespace Ami {
     const Pds::DetInfo& info() const;
     void setName(const char* name);
     void clear();
-    bool hasEntry() const;
-    bool hasScan() const;
-    EntryScalar* entry();
-    EntryScan* scan();
+    bool hasEntries() const;
+    bool hasNumPixelEntry() const;
+    bool hasNumPixelScan() const;
+    bool hasTrippedScan() const;
+    EntryScalar* numPixelEntry();
+    EntryScan* numPixelScan();
+    EntryScan* trippedScan();
 
     void cache(FeatureCache* cache);
 
@@ -60,8 +63,9 @@ namespace Ami {
     const char*        _pname;
     std::string        _name;
     const Pds::DetInfo _info;
-    EntryScalar*       _entry;
-    EntryScan*         _scan;
+    EntryScalar*       _npixel_entry;
+    EntryScan*         _npixel_scan;
+    EntryScan*         _tripped_scan;
     const PVHandler*   _handler;
     bool               _uses_bh;
     unsigned           _nevt;
