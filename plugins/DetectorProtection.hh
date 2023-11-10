@@ -64,11 +64,12 @@ namespace Ami {
 
     std::map<unsigned, Protector*> _dets;
 
-    const char*  _fname;
-    const char*  _sname;
-    bool         _alias_ready;
-    NameService* _name_service;
-    Threshold*   _threshold;
+    const char*   _fname;
+    const char*   _sname;
+    bool          _alias_ready;
+    NameService*  _name_service;
+    Threshold*    _threshold;
+    FeatureCache* _cache;
   };
 };
 

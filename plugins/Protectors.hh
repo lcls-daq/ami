@@ -21,7 +21,9 @@ namespace Ami {
   class PVHandler;
   class Threshold;
   class BlackHole;
+  class EntryScan;
   class EntryScalar;
+  class FeatureCache;
 
   class Protector {
   public:
@@ -39,7 +41,11 @@ namespace Ami {
     void setName(const char* name);
     void clear();
     bool hasEntry() const;
+    bool hasScan() const;
     EntryScalar* entry();
+    EntryScan* scan();
+
+    void cache(FeatureCache* cache);
 
     void accept(const Pds::ClockTime& clk);
 
@@ -55,10 +61,15 @@ namespace Ami {
     std::string        _name;
     const Pds::DetInfo _info;
     EntryScalar*       _entry;
+    EntryScan*         _scan;
     const PVHandler*   _handler;
     bool               _uses_bh;
     unsigned           _nevt;
     Pds::ClockTime     _lastTrip;
+    FeatureCache*      _cache;
+    int                _npoints_index;
+    int                _tripped_index;
+    int                _evttime_index;
   };
 
   class CsPadProtector : public Protector {

@@ -1,7 +1,10 @@
 #include "Protectors.hh"
 
+#include "ami/data/FeatureCache.hh"
 #include "ami/data/EntryScalar.hh"
 #include "ami/data/DescScalar.hh"
+#include "ami/data/EntryScan.hh"
+#include "ami/data/DescScan.hh"
 
 #include "pdsdata/psddl/cspad.ddl.h"
 #include "pdsdata/psddl/jungfrau.ddl.h"
@@ -43,16 +46,24 @@ Protector::Protector(const char* pname,
   _name(Pds::DetInfo::name(info)),
   _info(info),
   _entry(NULL),
+  _scan(NULL),
   _handler(handler),
   _uses_bh(uses_bh),
   _nevt(0),
-  _lastTrip(Pds::ClockTime(0,0))
+  _lastTrip(Pds::ClockTime(0,0)),
+  _cache(NULL),
+  _npoints_index(0),
+  _tripped_index(0),
+  _evttime_index(0)
 {}
 
 Protector::~Protector()
 {
   if (_entry) {
     delete _entry;
+  }
+  if (_scan) {
+    delete _scan;
   }
 }
 
@@ -151,7 +162,11 @@ void Protector::clear()
 {
   if (_entry) {
     delete _entry;
-    _entry = 0;
+    _entry = NULL;
+  }
+  if (_scan) {
+    delete _scan;
+    _scan = NULL;
   }
 }
 
@@ -167,14 +182,36 @@ bool Protector::hasEntry() const
   return _entry != NULL;
 }
 
+bool Protector::hasScan() const
+{
+  return _scan != NULL;
+}
+
 EntryScalar* Protector::entry()
 {
-  std::string title = "Pixels over threshold#" + _name;
+  std::string title = "Pixels over threshold#" + _name + "#0#0";
   if (!_entry) {
     _entry = new EntryScalar(DescScalar(title.c_str(), "npixels"));
   }
 
   return _entry;
+}
+
+EntryScan* Protector::scan()
+{
+  std::string title = "Pixels over threshold vs event#" + _name + "#0#1";
+  if (!_scan) {
+    _scan = new EntryScan(DescScan(title.c_str(), "event time", "npixels", 10000));
+  }
+
+  return _scan;
+}
+
+void Protector::cache(FeatureCache* cache)
+{
+  _cache = cache;
+  _npoints_index = _cache->add(_name+":protect:npixels");
+  _tripped_index = _cache->add(_name+":protect:tripped");
 }
 
 void Protector::accept(const Pds::ClockTime& clk)
@@ -190,6 +227,16 @@ void Protector::accept(const Pds::ClockTime& clk)
   if (_entry) {
     _entry->addcontent(pixelCount);
     _entry->valid(clk);
+  }
+
+  if (_scan) {
+    _scan->addy(pixelCount, clk.asDouble());
+    _scan->valid(clk);
+  }
+
+  if (_cache) {
+    _cache->cache(_npoints_index, pixelCount);
+    _cache->cache(_tripped_index, trip);
   }
 
   if (trip) {
@@ -532,7 +579,7 @@ bool EpixArrayProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, i
         // keep if switched
         if ((gain_mode > 2) && (value & gain_bits))
           gain_mode += 2;
-        if ((gain_mode & _gain_mask) &&
+        if (((1<<gain_mode) & _gain_mask) &&
             ((value & data_bits) > _handler->threshold())){
           if(++pixelCount > _handler->npixels()) {
             trip = true;
@@ -680,7 +727,7 @@ bool Epix10kaProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, in
       // keep if switched
       if ((gain_mode > 2) && (value & gain_bits))
         gain_mode += 2;
-      if ((gain_mode & _gain_mask) &&
+      if (((1<<gain_mode) & _gain_mask) &&
           ((value & data_bits) > _handler->threshold())){
         if(++pixelCount > _handler->npixels()) {
           trip = true;

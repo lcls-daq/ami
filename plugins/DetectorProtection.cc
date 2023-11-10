@@ -3,6 +3,7 @@
 #include "ami/data/Cds.hh"
 
 #include "ami/data/EntryScalar.hh"
+#include "ami/data/EntryScan.hh"
 
 #include "ami/app/NameService.hh"
 
@@ -35,7 +36,8 @@ DetectorProtection::DetectorProtection(const char* name, const char* short_name)
   _sname(short_name),
   _alias_ready(false),
   _name_service(new NameService),
-  _threshold(new Threshold(".DetectorProtection.cfg", _name_service))
+  _threshold(new Threshold(".DetectorProtection.cfg", _name_service)),
+  _cache(NULL)
 {}
 
 DetectorProtection::~DetectorProtection()
@@ -58,12 +60,13 @@ DetectorProtection::~DetectorProtection()
   ca_context_destroy();
 }
 
-void DetectorProtection::reset(FeatureCache& f)
+void DetectorProtection::reset(FeatureCache& cache)
 {
   for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
     if (it->second) {
       if (_cds) {
         _cds->remove(it->second->entry());
+        _cds->remove(it->second->scan());
       }
       delete it->second;
     }
@@ -73,6 +76,8 @@ void DetectorProtection::reset(FeatureCache& f)
   _threshold->reset();
 
   _alias_ready = false;
+
+  _cache = &cache;
 }
 
 void DetectorProtection::clock(const Pds::ClockTime& clk)
@@ -103,6 +108,14 @@ void DetectorProtection::configure(const Pds::ProcInfo&  src,
         EntryScalar* entry = it->second->entry();
         _cds->add(entry);
         entry->valid(_clk);
+        EntryScan* scan = it->second->scan();
+        _cds->add(scan);
+        scan->valid(_clk);
+      }
+    }
+    if (_cache) {
+      for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
+        it->second->cache(_cache);
       }
     }
   }
@@ -123,11 +136,19 @@ void DetectorProtection::configure(const Pds::DetInfo&   src,
     Protector* prot = Protector::instance(src, type, payload, _threshold);
     if (prot) {
       _dets[src.phy()] = prot;
-      if (_cds && _alias_ready) {
+      if (_alias_ready) {
         prot->setName(_name_service->name(src));
-        EntryScalar* entry = prot->entry();
-        _cds->add(entry);
-        entry->valid(_clk);
+        if (_cds) {
+          EntryScalar* entry = prot->entry();
+          _cds->add(entry);
+          entry->valid(_clk);
+          EntryScan* scan = prot->scan();
+          _cds->add(scan);
+          scan->valid(_clk);
+        }
+        if (_cache) {
+          prot->cache(_cache);
+        }
       }
       printf("%s initialized protection for %s\n",
              _sname,
@@ -178,10 +199,15 @@ void DetectorProtection::clear()
 {
   if (_cds) {
     for(ProtectorIter it = _dets.begin(); it != _dets.end(); ++it) {
-      if (it->second && it->second->hasEntry()) {
-        _cds->remove(it->second->entry());
-        // clean up the entry
-        it->second->clear();
+      if (it->second) {
+        if (it->second->hasEntry() || it->second->hasScan()) {
+          if (it->second->hasEntry())
+            _cds->remove(it->second->entry());
+          if (it->second->hasScan())
+            _cds->remove(it->second->scan());
+          // clean up the entry
+          it->second->clear();
+        }
       }
     }
   }
@@ -199,6 +225,9 @@ void DetectorProtection::create(Cds& cds)
       EntryScalar* entry = it->second->entry();
       cds.add(entry);
       entry->valid(_clk);
+      EntryScan* scan = it->second->scan();
+      cds.add(scan);
+      scan->valid(_clk);
     }
   }
   _cds = &cds;
