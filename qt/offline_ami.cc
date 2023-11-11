@@ -21,6 +21,7 @@
 #include "ami/service/DataLock.hh"
 #include "ami/service/Semaphore.hh"
 
+#include <sys/stat.h>
 #include <iostream>
 #include <fstream>
 #include <QtGui/QApplication>
@@ -30,6 +31,18 @@
 
 using namespace Ami;
 using namespace std;
+
+static const char* defaultPathPsana = "/cds/data/psdm";
+static const char* defaultPathSdf = "/sdf/data/lcls/ds";
+
+static const char* defaultPath()
+{
+  struct stat64 st;
+  if (stat64(defaultPathSdf, &st) == 0 && S_ISDIR(st.st_mode))
+    return defaultPathSdf;
+  else
+    return defaultPathPsana;
+}
 
 static void usage(char* progname) {
   fprintf(stderr,
@@ -116,7 +129,7 @@ static unsigned getLocallyUniqueServerGroup() {
 }
 
 int main(int argc, char* argv[]) {
-  const char* path = "/reg/d";
+  const char* path = defaultPath();
   unsigned interface = 0x7f000001;
   unsigned serverGroup = getLocallyUniqueServerGroup();
   unsigned nclients = 1;
