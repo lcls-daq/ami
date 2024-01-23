@@ -22,6 +22,7 @@ static const char* Epix10kaName = "Epix10kaProtect";
 static const char* EpixName = "EpixProtect";
 
 typedef Pds::Jungfrau::ConfigV3 JfCfgV3;
+typedef Pds::Jungfrau::ConfigV4 JfCfgV4;
 typedef Pds::Jungfrau::ElementV2 JfDataV2;
 typedef Pds::Epix::Config100aV1 EpixCfg100aV1;
 typedef Pds::Epix::Config100aV2 EpixCfg100aV2;
@@ -94,6 +95,9 @@ Protector* Protector::instance(const Pds::DetInfo& info,
       switch(type.version()) {
         case 3:
           prot = new JungfrauProtector<JfCfgV3,JfDataV2>(info, type, payload, handler);
+          break;
+        case 4:
+          prot = new JungfrauProtector<JfCfgV4,JfDataV2>(info, type, payload, handler);
           break;
         default:
           printf("%s unsupported Jungfrau version: %u\n",

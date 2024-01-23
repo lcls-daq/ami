@@ -16,6 +16,7 @@ static const double prec_norm_factor=100.0;
 typedef Pds::Jungfrau::ConfigV1 CfgJfV1;
 typedef Pds::Jungfrau::ConfigV2 CfgJfV2;
 typedef Pds::Jungfrau::ConfigV3 CfgJfV3;
+typedef Pds::Jungfrau::ConfigV4 CfgJfV4;
 typedef Pds::Jungfrau::ElementV1 ElemJfV1;
 typedef Pds::Jungfrau::ElementV2 ElemJfV2;
 
@@ -116,6 +117,9 @@ Jungfrau::ConfigCache* Jungfrau::ConfigCache::instance(Pds::TypeId config_type,
           break;
         case 3:
           cache = _create<CfgJfV3>(config_payload);
+          break;
+        case 4:
+          cache = _create<CfgJfV4>(config_payload);
           break;
         default:
           break;
