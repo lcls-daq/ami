@@ -989,7 +989,7 @@ void CspadMiniHandler::_configure(Pds::TypeId type,const void* payload, const Pd
   ndarray<double,3> s = get_calib(Calib::fopen(dInfo, "sta", "pixel_status"));
 
   sprintf(oname1,"gain.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
+  sprintf(oname2,"/cds/group/pcds/pds/cspadcalib/gain.%08x.dat",info().phy());
   ndarray<double,3> g = get_calib(Calib::fopen_dual(oname1, oname2, "gain map"));
 
   ndarray<double,3> rms = get_calib(Calib::fopen(dInfo, "res", "pixel_rms"));

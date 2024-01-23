@@ -59,7 +59,7 @@ namespace Pds {
           if (src.src().level()==Pds::Level::Source) {
             const Pds::DetInfo& info = static_cast<const Pds::DetInfo&>(src.src());
             if (!_lookup("fiducial_shift.dat",info))
-              _lookup("/reg/g/pcds/pds/calib/fiducial_shift.dat",info);
+              _lookup("/cds/group/pcds/pds/calib/fiducial_shift.dat",info);
           }
         }
       }

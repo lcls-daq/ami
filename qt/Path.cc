@@ -29,7 +29,7 @@ const QString* Path::archive() { return _archive; }
 FILE* Path::helpFile()
 {
   //  QString fname = QString("%1/help.dat").arg(_base);
-  QString fname("/reg/g/pcds/dist/pds/misc/ami_help.dat");
+  QString fname("/cds/group/pcds/dist/pds/misc/ami_help.dat");
 
   if (fname.isNull())
     return 0;

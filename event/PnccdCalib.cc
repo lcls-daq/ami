@@ -49,7 +49,7 @@ std::string PnccdCalib::save_pedestals(const Entry* entry,
   std::string oname;
     
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/pnccdcalib/ped.") + tbuf;
+    oname = std::string("/cds/group/pcds/pds/pnccdcalib/ped.") + tbuf;
   else
     oname = std::string("ped.") + tbuf;
     
@@ -229,7 +229,7 @@ std::string PnccdCalib::save_cmth(const Entry* entry,
   std::string oname;
 
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/pnccdcalib/cmth.") + tbuf;
+    oname = std::string("/cds/group/pcds/pds/pnccdcalib/cmth.") + tbuf;
   else
     oname = std::string("cmth.") + tbuf;
 

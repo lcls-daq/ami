@@ -92,7 +92,7 @@ std::string FrameCalib::save_pedestals(Entry* e,
     char oname2[NameSize];
     
     sprintf(oname1,"%s.%08x.dat",prefix,desc.info().phy());
-    sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s.%08x.dat",prefix,desc.info().phy());
+    sprintf(oname2,"/cds/group/pcds/pds/framecalib/%s.%08x.dat",prefix,desc.info().phy());
     FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
     
     if (f) {
@@ -126,7 +126,7 @@ std::string FrameCalib::save_pedestals(Entry* e,
   std::string oname;
 
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/framecalib/") + tbuf;
+    oname = std::string("/cds/group/pcds/pds/framecalib/") + tbuf;
   else
     oname = std::string("./") + tbuf;
 
@@ -220,7 +220,7 @@ bool FrameCalib::load_pedestals(EntryImage* c,
   char oname2[NameSize];
   const DescImage& d = c->desc();
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  sprintf(oname2,"/cds/group/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,"pedestals");
   if (f) {
     bool result=load_pedestals(c,offset,f);
@@ -375,7 +375,7 @@ std::string FrameCalib::save(ndarray<const double,3> a,
   std::string oname;
 
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/framecalib/") + tbuf;
+    oname = std::string("/cds/group/pcds/pds/framecalib/") + tbuf;
   else
     oname = std::string("./") + tbuf;
 
@@ -446,7 +446,7 @@ ndarray<double,3> FrameCalib::load(const DescImage& d,
   char oname1[NameSize];
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  sprintf(oname2,"/cds/group/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     a = load(d,f);
@@ -522,7 +522,7 @@ ndarray<double,2> FrameCalib::load_darray(const DescImage& d,
   char oname1[NameSize];
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  sprintf(oname2,"/cds/group/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     CalibIO fio(*f);
@@ -581,7 +581,7 @@ ndarray<unsigned,2> FrameCalib::load_array(const DescImage& d,
   char oname1[NameSize];
   char oname2[NameSize];
   sprintf(oname1,"%s.%08x.dat",prefix,d.info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/framecalib/%s",oname1);
+  sprintf(oname2,"/cds/group/pcds/pds/framecalib/%s",oname1);
   FILE* f = Calib::fopen_dual(oname1,oname2,prefix);
   if (f) {
     CalibIO fio(*f);

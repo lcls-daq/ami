@@ -47,7 +47,7 @@ std::string CspadCalib::save_pedestals(Entry* e,
   std::string oname;
 
   if (prod)
-    oname = std::string("/reg/g/pcds/pds/cspadcalib/ped.") + tbuf;
+    oname = std::string("/cds/group/pcds/pds/cspadcalib/ped.") + tbuf;
   else
     oname = std::string("ped.") + tbuf;
 

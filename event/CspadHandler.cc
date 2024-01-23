@@ -1359,7 +1359,7 @@ void CspadHandler::_configure(Pds::TypeId type,const void* payload, const Pds::C
   FILE *s = Calib::fopen(dInfo, "sta", "pixel_status");
 
   sprintf(oname1,"gain.%08x.dat",dInfo.phy());
-  sprintf(oname2,"/reg/g/pcds/pds/cspadcalib/gain.%08x.dat",dInfo.phy());
+  sprintf(oname2,"/cds/group/pcds/pds/cspadcalib/gain.%08x.dat",dInfo.phy());
   FILE *g = Calib::fopen_dual(oname1, oname2, "gain map");
 
   FILE *rms = Calib::fopen(dInfo, "res", "pixel_rms");

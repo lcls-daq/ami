@@ -168,7 +168,7 @@ void FccdHandler::_load_pedestals()
   char oname2[NameSize];
 
   sprintf(oname1,"ped.%08x.dat",info().phy());
-  sprintf(oname2,"/reg/g/pcds/pds/fccdcalib/ped.%08x.dat",info().phy());
+  sprintf(oname2,"/cds/group/pcds/pds/fccdcalib/ped.%08x.dat",info().phy());
   FILE *f = Calib::fopen_dual(oname1, oname2, "pedestals");
 
   if (f) {

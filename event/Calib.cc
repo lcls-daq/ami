@@ -274,7 +274,7 @@ void Ami::Calib::load_array(ndarray<double,1>& a, unsigned phy,
 {
   char path1[128], path2[128];
   sprintf(path1,"%s.%08x.dat",pfx,phy);
-  sprintf(path2,"/reg/g/pcds/pds/calib/%s.%08x.dat",pfx,phy);
+  sprintf(path2,"/cds/group/pcds/pds/calib/%s.%08x.dat",pfx,phy);
   FILE* f = Calib::fopen_dual(path1, path2, dsc);
 
   std::vector<double> va;
@@ -296,7 +296,7 @@ void Ami::Calib::load_integral_symm(ndarray<double,1>& a,
 {
   char path1[128], path2[128];
   sprintf(path1,"%s.%08x.dat",pfx,phy);
-  sprintf(path2,"/reg/g/pcds/pds/calib/%s.%08x.dat",pfx,phy);
+  sprintf(path2,"/cds/group/pcds/pds/calib/%s.%08x.dat",pfx,phy);
   FILE* f = Calib::fopen_dual(path1, path2, dsc);
 
   std::vector<double> va;
