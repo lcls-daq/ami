@@ -70,7 +70,7 @@ namespace Ami {
     const static uint NUM_CSPAD = 5;
     const static uint NUM_CSPAD2x2 = 10;
     const static uint CSPAD_TEMP_CHAN = 0;
-    const static double RDIV=20000;
+    const static double RDIV;
     Cds*            _cds;
     Pds::ClockTime  _clk;
     

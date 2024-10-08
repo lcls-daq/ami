@@ -39,6 +39,8 @@ const Pds::Epix::Config100aV2& EpixTempCache::config() {
   return *reinterpret_cast<const Pds::Epix::Config100aV2*>(_buffer);
 }
 
+const double EpixTemp::RDIV=20000;
+
 EpixTemp::EpixTemp(const char* name, const char* short_name) :
   _cds(0),
   _epix_num(0),

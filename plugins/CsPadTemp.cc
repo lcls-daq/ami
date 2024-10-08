@@ -14,6 +14,8 @@
 
 using namespace Ami;
 
+const double CsPadTemp::RDIV=20000;
+
 CsPadTemp::CsPadTemp(const char* name, const char* short_name) :
   _cds(0),
   _cspad_num(0),

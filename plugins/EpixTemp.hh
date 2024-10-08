@@ -80,7 +80,7 @@ namespace Ami {
     const static uint DMG_MASK = 0xFFFFFFFF;
     const static uint NUM_EPIX = 10;
     const static uint NUM_CHAN = 3;
-    const static double RDIV=20000;
+    const static double RDIV;
     Cds*            _cds;
     Pds::ClockTime  _clk;
     
