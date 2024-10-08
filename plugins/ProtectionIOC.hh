@@ -25,7 +25,7 @@ namespace Ami {
 
     void event(const Pds::Epics::EpicsPvHeader* epics);
 
-    void trip() const;
+    void trip(int32_t pixels_over_thres=0) const;
 
     void reset();
 
@@ -39,6 +39,7 @@ namespace Ami {
     std::string _npixel_pv;
     std::string _enable_pv;
     std::string _shutter_pv;
+    std::string _npixel_ot_pv;
     int16_t _thres_epics;
     int16_t _npixel_epics;
     int16_t _enable_epics;
@@ -46,6 +47,7 @@ namespace Ami {
     int32_t _npixel_value;
     bool    _enable_value;
     Ami_Epics::PVWriter* _shutter;
+    Ami_Epics::PVWriter* _npixel_ot;
   };
 
   class Threshold {

@@ -285,7 +285,7 @@ void Protector::accept(const Pds::ClockTime& clk)
              _nevt,
              deltaT);
       if(_handler->enabled()) {
-        _handler->trip();
+        _handler->trip(pixelCount);
       } else {
         printf("%s trip disabled for detector %s, "
                "not closing shutter!\n",

@@ -29,23 +29,26 @@ typedef DetPvMap::const_iterator ConstDetPvIter;
 PVHandler::PVHandler(const std::string& pvbase) :
   _pvbase(pvbase),
   _thres_pv(_pvbase+":ADU"),
-  _npixel_pv(_pvbase+":DPI"),
+  _npixel_pv(_pvbase+":NPIX"),
   _enable_pv(_pvbase+":ACTIVE"),
-  _shutter_pv(_pvbase+":TRIP"),
+  _shutter_pv(_pvbase+":BLOCK"),
+  _npixel_ot_pv(_pvbase+":NPIX_OT"),
   _thres_epics(-1),
   _npixel_epics(-1),
   _enable_epics(-1),
   _thres_value(0x100000),
   _npixel_value(0x4000),
   _enable_value(false),
-  _shutter(NULL)
+  _shutter(NULL),
+  _npixel_ot(NULL)
 {
-  printf("%s PVs loaded: thres - %s, npixels - %s, enable - %s, tripper - %s\n",
+  printf("%s PVs loaded: thres - %s, npixels - %s, enable - %s, tripper - %s, npixels over threshold - %s\n",
          pname,
          _thres_pv.c_str(),
          _npixel_pv.c_str(),
-         _npixel_pv.c_str(),
-         _shutter_pv.c_str());
+         _enable_pv.c_str(),
+         _shutter_pv.c_str(),
+         _npixel_ot_pv.c_str());
 
   SEVCHK ( ca_context_create(ca_enable_preemptive_callback ),
            "detprotect calling ca_context_create" );
@@ -97,10 +100,12 @@ void PVHandler::event(const Pds::Epics::EpicsPvHeader* epics)
   }
 }
 
-void PVHandler::trip() const
+void PVHandler::trip(int32_t pixels_over_thres) const
 {
   *(dbr_enum_t*) _shutter->data() = 0;
   _shutter->put();
+  *(dbr_long_t*) _npixel_ot->data() = pixels_over_thres;
+  _npixel_ot->put();
   ca_flush_io();
 }
 
