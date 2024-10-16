@@ -55,12 +55,16 @@ PVHandler::PVHandler(const std::string& pvbase) :
 
   // needs to be created after context is initialized
   _shutter = new Ami_Epics::PVWriter(_shutter_pv.c_str());
+  _npixel_ot = new Ami_Epics::PVWriter(_npixel_ot_pv.c_str());
 }
 
 PVHandler::~PVHandler()
 {
   if (_shutter) {
     delete _shutter;
+  }
+  if (_npixel_ot) {
+    delete _npixel_ot;
   }
 }
 
