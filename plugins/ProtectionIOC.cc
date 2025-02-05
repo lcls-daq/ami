@@ -113,6 +113,13 @@ void PVHandler::trip(int32_t pixels_over_thres) const
   ca_flush_io();
 }
 
+void PVHandler::post(int32_t pixels_over_thres) const
+{
+  *(dbr_long_t*) _npixel_ot->data() = pixels_over_thres;
+  _npixel_ot->put();
+  ca_flush_io();
+}
+
 void PVHandler::reset()
 {
   _thres_epics = -1;

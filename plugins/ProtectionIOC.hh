@@ -27,6 +27,8 @@ namespace Ami {
 
     void trip(int32_t pixels_over_thres=0) const;
 
+    void post(int32_t pixels_over_thres) const;
+
     void reset();
 
     int32_t threshold() const { return _thres_value; }

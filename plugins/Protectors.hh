@@ -70,10 +70,12 @@ namespace Ami {
     bool               _uses_bh;
     unsigned           _nevt;
     Pds::ClockTime     _lastTrip;
+    Pds::ClockTime     _lastPost;
     FeatureCache*      _cache;
     int                _npoints_index;
     int                _tripped_index;
     int                _evttime_index;
+    double             _min_put_interval;
   };
 
   class CsPadProtector : public Protector {

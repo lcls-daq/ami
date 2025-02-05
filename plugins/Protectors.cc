@@ -53,10 +53,12 @@ Protector::Protector(const char* pname,
   _uses_bh(uses_bh),
   _nevt(0),
   _lastTrip(Pds::ClockTime(0,0)),
+  _lastPost(Pds::ClockTime(0,0)),
   _cache(NULL),
   _npoints_index(0),
   _tripped_index(0),
-  _evttime_index(0)
+  _evttime_index(0),
+  _min_put_interval(1.)
 {}
 
 Protector::~Protector()
@@ -273,8 +275,10 @@ void Protector::accept(const Pds::ClockTime& clk)
 
   if (trip) {
     float deltaT = clk.asDouble() - _lastTrip.asDouble();
-    if (deltaT>1.) {
+    if (deltaT > _min_put_interval) {
       _lastTrip = clk;
+      // also don't post the pixelCount again since trip also does this
+      _lastPost = clk;
       printf("%s - %s %d pixels %s at event %d, "
              "no trips in last %f seconds, attempt to trip, "
              "shunt, or ignore beam\n",
@@ -290,7 +294,14 @@ void Protector::accept(const Pds::ClockTime& clk)
         printf("%s trip disabled for detector %s, "
                "not closing shutter!\n",
                _pname, _name.c_str());
+        _handler->post(pixelCount);
       }
+    }
+  } else {
+    float deltaT = clk.asDouble() - _lastPost.asDouble();
+    if (deltaT > _min_put_interval) {
+      _lastPost = clk;
+      _handler->post(pixelCount);
     }
   }
 

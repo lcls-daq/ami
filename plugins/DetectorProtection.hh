@@ -59,7 +59,6 @@ namespace Ami {
     Cds* _cds;
 
     Pds::ClockTime _clk;
-    Pds::ClockTime _lastTrip;
     const static uint DMG_MASK = 0xFFFFFFFF;
 
     std::map<unsigned, Protector*> _dets;

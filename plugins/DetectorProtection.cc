@@ -31,7 +31,6 @@ typedef ProtectorMap::iterator ProtectorIter;
 
 DetectorProtection::DetectorProtection(const char* name, const char* short_name) :
   _cds(NULL),
-  _lastTrip(Pds::ClockTime(0,0)),
   _fname(name),
   _sname(short_name),
   _alias_ready(false),
