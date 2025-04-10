@@ -95,12 +95,13 @@ namespace Ami {
   public:
     int cache(Ami::FeatureCache& cache) {
       _cache = &cache;
-      _cache_index = cache.add(base_name()+":AMI:AMPL"); 
-      cache.add(base_name()+":AMI:FLTPOS"); 
-      cache.add(base_name()+":AMI:FLTPOS_PS"); 
-      cache.add(base_name()+":AMI:FLTPOSFWHM"); 
-      cache.add(base_name()+":AMI:AMPLNXT"); 
-      cache.add(base_name()+":AMI:REFAMPL"); 
+      _cache_index = cache.add(base_name()+":AMI:AMPL");
+      cache.add(base_name()+":AMI:FLTPOS");
+      cache.add(base_name()+":AMI:FLTPOS_PS");
+      cache.add(base_name()+":AMI:FLTPOSFWHM");
+      cache.add(base_name()+":AMI:AMPLNXT");
+      cache.add(base_name()+":AMI:REFAMPL");
+      cache.add(base_name()+":AMI:SIGROISUM");
       return _cache_index;
     }
     void configure() {
@@ -190,6 +191,7 @@ namespace Ami {
           _cache->cache(_cache_index+3, filtered_fwhm());
           _cache->cache(_cache_index+4, next_amplitude());
           _cache->cache(_cache_index+5, ref_amplitude());
+          _cache->cache(_cache_index+6, sig_roi_sum());
         }
 
         if (status()) {
