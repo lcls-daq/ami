@@ -17,6 +17,22 @@
 static const char* path = getenv("HOME");
 static const char* pname = "DetProtect";
 
+static int32_t load_default(const char* varname, int32_t default_value)
+{
+  const char* envstr = getenv(varname);
+  if (envstr) {
+    default_value = strtol(envstr, NULL, 0);
+  }
+
+  printf("%s using default %s = %d\n", pname, varname, default_value);
+
+  return default_value;
+}
+
+static const int32_t default_thres = load_default("AMI_DETPROT_THRES", 0x100000);
+static const int32_t default_npixel = load_default("AMI_DETPROT_NPIXEL", 0x4000);
+static const bool default_enable = load_default("AMI_DETPROT_ENABLE", 0) ? true : false;
+
 using namespace Ami;
 
 typedef std::map<std::string, PVHandler*> PvMap;
@@ -36,9 +52,9 @@ PVHandler::PVHandler(const std::string& pvbase) :
   _thres_epics(-1),
   _npixel_epics(-1),
   _enable_epics(-1),
-  _thres_value(0x100000),
-  _npixel_value(0x4000),
-  _enable_value(false),
+  _thres_value(default_thres),
+  _npixel_value(default_npixel),
+  _enable_value(default_enable),
   _shutter(NULL),
   _npixel_ot(NULL)
 {
