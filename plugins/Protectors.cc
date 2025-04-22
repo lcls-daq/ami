@@ -464,7 +464,7 @@ bool JungfrauProtector<Cfg, Data>::analyzeDetector(const Pds::ClockTime& clk, in
       for (unsigned k=0; k<data.shape()[2]; k++) {
         uint16_t value = data(i,j,k);
         if (((value&gain_bits) == gain_bits) &&
-            ((value&data_bits) > _handler->threshold())) {
+            ((data_bits - (value&data_bits)) > _handler->threshold())) {
           if(++pixelCount > _handler->npixels()) {
             trip = true;
           }
