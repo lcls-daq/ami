@@ -126,6 +126,10 @@ namespace Ami {
           if (_frame)
             _frame->set_frame(type, payload);
         }
+        else if (type.id()==Pds::TypeId::Id_ZylaFrame) {
+          if (_frame)
+            _frame->set_frame(type, payload);
+        }
       }
       else if (type.id()==Pds::TypeId::Id_EvrData) {
         // Pds::EvrData::DataV3 can be used for both V3 and V4
@@ -316,7 +320,10 @@ void TimeToolM::configure(const Pds::DetInfo&   src,
 			  const Pds::TypeId&    type,
 			  void*                 payload) 
 {
-  if (type.id()==Pds::TypeId::Id_Opal1kConfig || type.id()==Pds::TypeId::Id_AlviumConfig) {
+  if (type.id()==Pds::TypeId::Id_Opal1kConfig ||
+      type.id()==Pds::TypeId::Id_AlviumConfig ||
+      type.id()==Pds::TypeId::Id_ControlsCameraConfig ||
+      type.id()==Pds::TypeId::Id_ZylaConfig) {
     for(unsigned i=0; i<_fex.size(); i++)
       if (_fex[i]->src().phy() == src.phy()) {
         _fex[i]->set_frame(TimeTool::FrameCache::instance(src, type, payload));

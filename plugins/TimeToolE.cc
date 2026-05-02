@@ -149,6 +149,11 @@ namespace Ami {
           if (_frame)
             _frame->set_frame(type, payload);
         } break;
+      case Pds::TypeId::Id_ZylaFrame:
+        if (src.phy()==_src.phy()) {
+          if (_frame)
+            _frame->set_frame(type, payload);
+        } break;
       case Pds::TypeId::Id_EvrData:
         // Pds::EvrData::DataV3 can be used for both V3 and V4
         _evrdata = reinterpret_cast<Pds::EvrData::DataV3*>(payload);
@@ -378,7 +383,10 @@ void TimeToolE::configure(const Pds::DetInfo&   src,
       _tmp.erase(it);
     }
   }
-  else if (type.id()==Pds::TypeId::Id_Opal1kConfig || type.id()==Pds::TypeId::Id_AlviumConfig) {
+  else if (type.id()==Pds::TypeId::Id_Opal1kConfig ||
+           type.id()==Pds::TypeId::Id_AlviumConfig ||
+           type.id()==Pds::TypeId::Id_ControlsCameraConfig ||
+           type.id()==Pds::TypeId::Id_ZylaConfig) {
     bool found = false;
     for(unsigned i=0; i<_fex.size(); i++)
       if (_fex[i]->src().phy() == src.phy()) {
