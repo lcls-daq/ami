@@ -13,7 +13,11 @@
 
 using namespace Ami::Qt;
 
-Control::Control(Requestor& c, double request_rate, bool hLayout) :
+Control::Control(Requestor& c,
+                 double request_rate,
+                 bool hLayout,
+                 double min,
+                 double max) :
   QWidget(0),
   _client(c),
   _task  (new Task(TaskObject("amitmr")))
@@ -40,7 +44,7 @@ Control::Control(Requestor& c, double request_rate, bool hLayout) :
     setLayout(layout);
   }
 
-  _pRate->setValidator(new QDoubleValidator(0.1,5,1,_pRate));
+  _pRate->setValidator(new QDoubleValidator(min,max,1,_pRate));
 
   connect(_pRun   , SIGNAL(toggled(bool)), this, SLOT(run (bool)));
   connect(_pSingle, SIGNAL(clicked()), this, SLOT(single()));
