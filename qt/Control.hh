@@ -32,6 +32,7 @@ namespace Ami {
       void run   (bool);
       void single();
       void set_rate();
+      void check_rate(const QString& text);
     private:
       Requestor&  _client;
       Task*    _task;

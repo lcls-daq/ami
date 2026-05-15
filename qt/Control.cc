@@ -45,6 +45,7 @@ Control::Control(Requestor& c, double request_rate, bool hLayout) :
   connect(_pRun   , SIGNAL(toggled(bool)), this, SLOT(run (bool)));
   connect(_pSingle, SIGNAL(clicked()), this, SLOT(single()));
   connect(_pRate  , SIGNAL(editingFinished()), this, SLOT(set_rate()));
+  connect(_pRate  , SIGNAL(textChanged(const QString &)), this, SLOT(check_rate(const QString &)));
 
   set_rate();
   _pRun->setChecked(Defaults::instance()->select_run());
@@ -98,6 +99,19 @@ void Control::set_rate() {
   if (_pRun->isChecked()) {
     cancel();
     Timer::start();
+  }
+}
+
+void Control::check_rate(const QString& text) {
+  if (_pRate->hasAcceptableInput()) {
+    _pRate->setStyleSheet("");
+  } else {
+    if (!text.isEmpty()) {
+      const QDoubleValidator* valid = reinterpret_cast<const QDoubleValidator*>(_pRate->validator());
+      printf("Control::check_rate selected rate of %.1f Hz is outside allowed range of [%.1f, %.1f]\n",
+             text.toDouble(), valid->bottom(), valid->top());
+    }
+    _pRate->setStyleSheet("QLineEdit { color: red; }");
   }
 }
 
