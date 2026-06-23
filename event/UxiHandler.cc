@@ -152,7 +152,7 @@ static std::list<Pds::TypeId::Type> data_type_list()
 }
 
 UxiHandler::UxiHandler(const Pds::DetInfo& info, FeatureCache& cache) : 
-  EventHandler(info, data_type_list(), Pds::TypeId::Id_UxiConfig),
+  EventHandlerF(info, data_type_list(), Pds::TypeId::Id_UxiConfig, cache),
   _configtc(0),
   _cache(cache),
   _entry        (0),
@@ -180,19 +180,12 @@ void UxiHandler::rename(const char* s)
   char buffer[64];
   snprintf(buffer,53,s);
   char* c = buffer+strlen(buffer);
-
-  if (_cacheIndexAcqCount != -1) {
-    sprintf(c,":ACQ_COUNT");
-    _cache.rename(_cacheIndexAcqCount,buffer);
-  }
-  if (_cacheIndexTs != -1) {
-    sprintf(c,":TS");
-    _cache.rename(_cacheIndexTs,buffer);
-  }
-  if (_cacheIndexTemp != -1) {
-    sprintf(c,":TEMP");
-    _cache.rename(_cacheIndexTemp,buffer);
-  }
+  sprintf(c,":ACQ_COUNT");
+  _rename_cache(_cacheIndexAcqCount,buffer);
+  sprintf(c,":TS");
+  _rename_cache(_cacheIndexTs,buffer);
+  sprintf(c,":TEMP");
+  _rename_cache(_cacheIndexTemp,buffer);
 }
 
 void UxiHandler::reset() 
@@ -205,7 +198,7 @@ void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
   { const Xtc* tc = reinterpret_cast<const Xtc*>(payload)-1;
     if (_configtc) delete[] reinterpret_cast<char*>(_configtc);
     _configtc = reinterpret_cast<Xtc*>(new char[tc->extent]);
-    memcpy(_configtc, tc, tc->extent); }
+    memcpy(reinterpret_cast<char*>(_configtc), tc, tc->extent); }
 
   const Pds::DetInfo& det = static_cast<const Pds::DetInfo&>(info());
   unsigned columns = width (_configtc);
@@ -221,11 +214,11 @@ void UxiHandler::_configure(Pds::TypeId type,const void* payload, const Pds::Clo
   strncpy(buffer,Pds::DetInfo::name(det),53);
   char* c = buffer+strlen(buffer);
   sprintf(c,":ACQ_COUNT");
-  _cacheIndexAcqCount = _cache.add(buffer);
+  _cacheIndexAcqCount = _add_to_cache(buffer);
   sprintf(c,":TS");
-  _cacheIndexTs = _cache.add(buffer);
+  _cacheIndexTs = _add_to_cache(buffer);
   sprintf(c,":TEMP");
-  _cacheIndexTemp = _cache.add(buffer);
+  _cacheIndexTemp = _add_to_cache(buffer);
     
   _load_pedestals(num_frames(_configtc), num_rows(_configtc), num_columns(_configtc));
 }
@@ -246,9 +239,9 @@ void UxiHandler::_event(Pds::TypeId type, const void* payload, const Pds::ClockT
       _options = desc.options();
     }
 
-    if (_cacheIndexAcqCount != -1) _cache.cache(_cacheIndexAcqCount, acq_count(tc));
-    if (_cacheIndexTs != -1) _cache.cache(_cacheIndexTs, timestamp(tc));
-    if (_cacheIndexTemp != -1) _cache.cache(_cacheIndexTemp, temperature(tc));
+    _cache.cache(_cacheIndexAcqCount, acq_count(tc));
+    _cache.cache(_cacheIndexTs, timestamp(tc));
+    _cache.cache(_cacheIndexTemp, temperature(tc));
 
     unsigned frames  = num_frames(_configtc);
     unsigned columns = num_columns(_configtc);

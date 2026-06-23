@@ -1,7 +1,7 @@
 #ifndef Ami_UxiHandler_hh
 #define Ami_UxiHandler_hh
 
-#include "ami/event/EventHandler.hh"
+#include "ami/event/EventHandlerF.hh"
 #include "ami/data/FeatureCache.hh"
 #include "pdsdata/xtc/DetInfo.hh"
 #include "pdsdata/psddl/uxi.ddl.h"
@@ -9,7 +9,7 @@
 namespace Ami {
   class EntryImage;
 
-  class UxiHandler : public EventHandler {
+  class UxiHandler : public EventHandlerF {
   public:
     UxiHandler(const Pds::DetInfo& info, FeatureCache& cache);
     ~UxiHandler();
